@@ -1,0 +1,27 @@
+[
+{
+  "directory": "/Users/uncled/Documents/Design/Render/RendingEngine/build",
+  "command": "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++  -I/opt/homebrew/Cellar/glm/0.9.9.8/include -I/opt/homebrew/Cellar/glfw/3.3.6/include -I/Users/uncled/Documents/Design/Render/RendingEngine/./include -I/Library/Devp/tinyobjloader-master -I/Library/Devp/stb-master -isystem /usr/local/include  -arch arm64 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.1.sdk -std=gnu++17 -o CMakeFiles/VulkanDemo.dir/main.cpp.o -c /Users/uncled/Documents/Design/Render/RendingEngine/main.cpp",
+  "file": "/Users/uncled/Documents/Design/Render/RendingEngine/main.cpp"
+},
+{
+  "directory": "/Users/uncled/Documents/Design/Render/RendingEngine/build",
+  "command": "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++  -I/opt/homebrew/Cellar/glm/0.9.9.8/include -I/opt/homebrew/Cellar/glfw/3.3.6/include -I/Users/uncled/Documents/Design/Render/RendingEngine/./include -I/Library/Devp/tinyobjloader-master -I/Library/Devp/stb-master -isystem /usr/local/include  -arch arm64 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.1.sdk -std=gnu++17 -o CMakeFiles/VulkanDemo.dir/src/Application.cpp.o -c /Users/uncled/Documents/Design/Render/RendingEngine/src/Application.cpp",
+  "file": "/Users/uncled/Documents/Design/Render/RendingEngine/src/Application.cpp"
+},
+{
+  "directory": "/Users/uncled/Documents/Design/Render/RendingEngine/build",
+  "command": "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++  -I/opt/homebrew/Cellar/glm/0.9.9.8/include -I/opt/homebrew/Cellar/glfw/3.3.6/include -I/Users/uncled/Documents/Design/Render/RendingEngine/./include -I/Library/Devp/tinyobjloader-master -I/Library/Devp/stb-master -isystem /usr/local/include  -arch arm64 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.1.sdk -std=gnu++17 -o CMakeFiles/VulkanDemo.dir/src/Camera.cpp.o -c /Users/uncled/Documents/Design/Render/RendingEngine/src/Camera.cpp",
+  "file": "/Users/uncled/Documents/Design/Render/RendingEngine/src/Camera.cpp"
+},
+{
+  "directory": "/Users/uncled/Documents/Design/Render/RendingEngine/build",
+  "command": "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++  -I/opt/homebrew/Cellar/glm/0.9.9.8/include -I/opt/homebrew/Cellar/glfw/3.3.6/include -I/Users/uncled/Documents/Design/Render/RendingEngine/./include -I/Library/Devp/tinyobjloader-master -I/Library/Devp/stb-master -isystem /usr/local/include  -arch arm64 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.1.sdk -std=gnu++17 -o CMakeFiles/VulkanDemo.dir/src/Loader.cpp.o -c /Users/uncled/Documents/Design/Render/RendingEngine/src/Loader.cpp",
+  "file": "/Users/uncled/Documents/Design/Render/RendingEngine/src/Loader.cpp"
+},
+{
+  "directory": "/Users/uncled/Documents/Design/Render/RendingEngine/build",
+  "command": "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++  -I/opt/homebrew/Cellar/glm/0.9.9.8/include -I/opt/homebrew/Cellar/glfw/3.3.6/include -I/Users/uncled/Documents/Design/Render/RendingEngine/./include -I/Library/Devp/tinyobjloader-master -I/Library/Devp/stb-master -isystem /usr/local/include  -arch arm64 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.1.sdk -std=gnu++17 -o CMakeFiles/VulkanDemo.dir/src/ModelTransMat.cpp.o -c /Users/uncled/Documents/Design/Render/RendingEngine/src/ModelTransMat.cpp",
+  "file": "/Users/uncled/Documents/Design/Render/RendingEngine/src/ModelTransMat.cpp"
+}
+]
