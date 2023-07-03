@@ -978,10 +978,10 @@ void TriangleApplication::updateKeyBoard(){
 void TriangleApplication::mainLoop(){
     std::cout << "exec loop..." << std::endl;
 
-    auto vertexShader = TriangleApplication::createShaderModule("../shader/vert.spv");
-    auto fragmentShader = TriangleApplication::createShaderModule("../shader/frag.spv");
-    auto cartoonShader = TriangleApplication::createShaderModule("../shader/cartoonFrag.spv");
-    auto originalShader = TriangleApplication::createShaderModule("../shader/originalFrag.spv");
+    auto vertexShader = TriangleApplication::createShaderModule("./shader/vert.spv");
+    auto fragmentShader = TriangleApplication::createShaderModule("./shader/frag.spv");
+    auto cartoonShader = TriangleApplication::createShaderModule("./shader/cartoonFrag.spv");
+    auto originalShader = TriangleApplication::createShaderModule("./shader/originalFrag.spv");
 
     //PipelineLayout创建，需要在createPipeline之前初始化
     descPool = createDescPool();
