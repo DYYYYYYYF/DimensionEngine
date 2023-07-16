@@ -1,0 +1,6 @@
+[submodule "RendingEngine/3rd/uncledon-logger"]
+	path = RendingEngine/3rd/uncledon-logger
+	url = https://github.com/DYYYYYYYF/UncleDon-Logger
+[submodule "RenderEngine/3rd/uncledon-logger"]
+	path = RenderEngine/3rd/uncledon-logger
+	url = https://github.com/DYYYYYYYF/UncleDon-Logger

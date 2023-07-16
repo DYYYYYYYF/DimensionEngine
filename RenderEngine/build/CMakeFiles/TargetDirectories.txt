@@ -1,0 +1,14 @@
+/Users/uncled/Documents/CFiles/VulkanEngine/RendingEngine/build/CMakeFiles/VulkanRender.dir
+/Users/uncled/Documents/CFiles/VulkanEngine/RendingEngine/build/CMakeFiles/edit_cache.dir
+/Users/uncled/Documents/CFiles/VulkanEngine/RendingEngine/build/CMakeFiles/rebuild_cache.dir
+/Users/uncled/Documents/CFiles/VulkanEngine/RendingEngine/build/engine/CMakeFiles/engine.dir
+/Users/uncled/Documents/CFiles/VulkanEngine/RendingEngine/build/engine/CMakeFiles/edit_cache.dir
+/Users/uncled/Documents/CFiles/VulkanEngine/RendingEngine/build/engine/CMakeFiles/rebuild_cache.dir
+/Users/uncled/Documents/CFiles/VulkanEngine/RendingEngine/build/vulkan/CMakeFiles/edit_cache.dir
+/Users/uncled/Documents/CFiles/VulkanEngine/RendingEngine/build/vulkan/CMakeFiles/rebuild_cache.dir
+/Users/uncled/Documents/CFiles/VulkanEngine/RendingEngine/build/renderer/CMakeFiles/edit_cache.dir
+/Users/uncled/Documents/CFiles/VulkanEngine/RendingEngine/build/renderer/CMakeFiles/rebuild_cache.dir
+/Users/uncled/Documents/CFiles/VulkanEngine/RendingEngine/build/physics/CMakeFiles/edit_cache.dir
+/Users/uncled/Documents/CFiles/VulkanEngine/RendingEngine/build/physics/CMakeFiles/rebuild_cache.dir
+/Users/uncled/Documents/CFiles/VulkanEngine/RendingEngine/build/application/CMakeFiles/edit_cache.dir
+/Users/uncled/Documents/CFiles/VulkanEngine/RendingEngine/build/application/CMakeFiles/rebuild_cache.dir
