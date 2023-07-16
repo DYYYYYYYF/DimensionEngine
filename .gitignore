@@ -6,8 +6,10 @@
 # 以叹号“!”表示不忽略(跟踪)匹配到的文件或目录；
 
 /RenderEngine/.cache/* ,
-/RenderEngine/.cache ,
+/RenderEngine/.cache/ ,
 /RenderEngine/build/*,
-/RenderEngine/build,
+/RenderEngine/build/,
+/RenderEngine/bin/*,
+/RenderEngine/bin/,
 *.DS_Store
 
