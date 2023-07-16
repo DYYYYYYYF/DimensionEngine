@@ -1,2 +1,0 @@
-
-message("\n-- Renderer:\n")

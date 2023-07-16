@@ -11,5 +11,7 @@ RenderEngine/build/*,
 RenderEngine/build/,
 RenderEngine/bin/*,
 RenderEngine/bin/,
+RenderEngine/.cache/,
+RenderEngine/.cache/*,
 *.DS_Store
 
