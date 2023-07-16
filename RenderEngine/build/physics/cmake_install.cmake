@@ -1,4 +1,4 @@
-# Install script for directory: /Users/uncled/Documents/CFiles/VulkanEngine/RendingEngine/physics
+# Install script for directory: /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/physics
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)

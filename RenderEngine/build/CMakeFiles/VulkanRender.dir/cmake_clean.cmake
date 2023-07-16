@@ -1,6 +1,6 @@
 file(REMOVE_RECURSE
-  "/Users/uncled/Documents/CFiles/VulkanEngine/RendingEngine/bin/VulkanRender"
-  "/Users/uncled/Documents/CFiles/VulkanEngine/RendingEngine/bin/VulkanRender.pdb"
+  "/Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/bin/VulkanRender"
+  "/Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/bin/VulkanRender.pdb"
   "CMakeFiles/VulkanRender.dir/Launcher.cpp.o"
   "CMakeFiles/VulkanRender.dir/Launcher.cpp.o.d"
 )

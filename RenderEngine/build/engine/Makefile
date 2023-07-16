@@ -57,10 +57,10 @@ RM = /opt/homebrew/Cellar/cmake/3.26.4/bin/cmake -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /Users/uncled/Documents/CFiles/VulkanEngine/RendingEngine
+CMAKE_SOURCE_DIR = /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /Users/uncled/Documents/CFiles/VulkanEngine/RendingEngine/build
+CMAKE_BINARY_DIR = /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/build
 
 #=============================================================================
 # Targets provided globally by CMake.
@@ -87,14 +87,14 @@ rebuild_cache/fast: rebuild_cache
 
 # The main all target
 all: cmake_check_build_system
-	cd /Users/uncled/Documents/CFiles/VulkanEngine/RendingEngine/build && $(CMAKE_COMMAND) -E cmake_progress_start /Users/uncled/Documents/CFiles/VulkanEngine/RendingEngine/build/CMakeFiles /Users/uncled/Documents/CFiles/VulkanEngine/RendingEngine/build/engine//CMakeFiles/progress.marks
-	cd /Users/uncled/Documents/CFiles/VulkanEngine/RendingEngine/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 engine/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /Users/uncled/Documents/CFiles/VulkanEngine/RendingEngine/build/CMakeFiles 0
+	cd /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/build && $(CMAKE_COMMAND) -E cmake_progress_start /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/build/CMakeFiles /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/build/engine//CMakeFiles/progress.marks
+	cd /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 engine/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/build/CMakeFiles 0
 .PHONY : all
 
 # The main clean target
 clean:
-	cd /Users/uncled/Documents/CFiles/VulkanEngine/RendingEngine/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 engine/clean
+	cd /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 engine/clean
 .PHONY : clean
 
 # The main clean target
@@ -103,22 +103,22 @@ clean/fast: clean
 
 # Prepare targets for installation.
 preinstall: all
-	cd /Users/uncled/Documents/CFiles/VulkanEngine/RendingEngine/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 engine/preinstall
+	cd /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 engine/preinstall
 .PHONY : preinstall
 
 # Prepare targets for installation.
 preinstall/fast:
-	cd /Users/uncled/Documents/CFiles/VulkanEngine/RendingEngine/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 engine/preinstall
+	cd /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 engine/preinstall
 .PHONY : preinstall/fast
 
 # clear depends
 depend:
-	cd /Users/uncled/Documents/CFiles/VulkanEngine/RendingEngine/build && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 1
+	cd /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/build && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 1
 .PHONY : depend
 
 # Convenience name for target.
 engine/CMakeFiles/engine.dir/rule:
-	cd /Users/uncled/Documents/CFiles/VulkanEngine/RendingEngine/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 engine/CMakeFiles/engine.dir/rule
+	cd /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 engine/CMakeFiles/engine.dir/rule
 .PHONY : engine/CMakeFiles/engine.dir/rule
 
 # Convenience name for target.
@@ -127,7 +127,7 @@ engine: engine/CMakeFiles/engine.dir/rule
 
 # fast build rule for target.
 engine/fast:
-	cd /Users/uncled/Documents/CFiles/VulkanEngine/RendingEngine/build && $(MAKE) $(MAKESILENT) -f engine/CMakeFiles/engine.dir/build.make engine/CMakeFiles/engine.dir/build
+	cd /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/build && $(MAKE) $(MAKESILENT) -f engine/CMakeFiles/engine.dir/build.make engine/CMakeFiles/engine.dir/build
 .PHONY : engine/fast
 
 EngineLogger.o: EngineLogger.cpp.o
@@ -135,7 +135,7 @@ EngineLogger.o: EngineLogger.cpp.o
 
 # target to build an object file
 EngineLogger.cpp.o:
-	cd /Users/uncled/Documents/CFiles/VulkanEngine/RendingEngine/build && $(MAKE) $(MAKESILENT) -f engine/CMakeFiles/engine.dir/build.make engine/CMakeFiles/engine.dir/EngineLogger.cpp.o
+	cd /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/build && $(MAKE) $(MAKESILENT) -f engine/CMakeFiles/engine.dir/build.make engine/CMakeFiles/engine.dir/EngineLogger.cpp.o
 .PHONY : EngineLogger.cpp.o
 
 EngineLogger.i: EngineLogger.cpp.i
@@ -143,7 +143,7 @@ EngineLogger.i: EngineLogger.cpp.i
 
 # target to preprocess a source file
 EngineLogger.cpp.i:
-	cd /Users/uncled/Documents/CFiles/VulkanEngine/RendingEngine/build && $(MAKE) $(MAKESILENT) -f engine/CMakeFiles/engine.dir/build.make engine/CMakeFiles/engine.dir/EngineLogger.cpp.i
+	cd /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/build && $(MAKE) $(MAKESILENT) -f engine/CMakeFiles/engine.dir/build.make engine/CMakeFiles/engine.dir/EngineLogger.cpp.i
 .PHONY : EngineLogger.cpp.i
 
 EngineLogger.s: EngineLogger.cpp.s
@@ -151,7 +151,7 @@ EngineLogger.s: EngineLogger.cpp.s
 
 # target to generate assembly for a file
 EngineLogger.cpp.s:
-	cd /Users/uncled/Documents/CFiles/VulkanEngine/RendingEngine/build && $(MAKE) $(MAKESILENT) -f engine/CMakeFiles/engine.dir/build.make engine/CMakeFiles/engine.dir/EngineLogger.cpp.s
+	cd /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/build && $(MAKE) $(MAKESILENT) -f engine/CMakeFiles/engine.dir/build.make engine/CMakeFiles/engine.dir/EngineLogger.cpp.s
 .PHONY : EngineLogger.cpp.s
 
 # Help Target
@@ -177,6 +177,6 @@ help:
 # No rule that depends on this can have commands that come from listfiles
 # because they might be regenerated.
 cmake_check_build_system:
-	cd /Users/uncled/Documents/CFiles/VulkanEngine/RendingEngine/build && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 0
+	cd /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/build && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 0
 .PHONY : cmake_check_build_system
 

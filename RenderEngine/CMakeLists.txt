@@ -40,14 +40,14 @@ if(${APPLE})
 
 endif()
 
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/library)
 add_subdirectory(engine)
 add_subdirectory(vulkan)
 add_subdirectory(renderer)
 add_subdirectory(physics)
 add_subdirectory(application)
 
-add_executable(VulkanRender Launcher.cpp 
-    ${VULKAN_SRC_DIR})
+add_executable(VulkanRender Launcher.cpp)
 
 target_link_libraries(VulkanRender Vulkan::Vulkan)
 target_link_libraries(VulkanRender ${GLFW_LIBRARIES})
@@ -56,6 +56,6 @@ if(${APPLE})
     target_link_libraries(VulkanRender libLogger.a)
 endif()
 
-target_link_libraries(VulkanRender engine)
+target_link_libraries(VulkanRender engine vulkan)
 
 message("-- Add executable program to ${PROJECT_SOURCE_DIR}/bin")

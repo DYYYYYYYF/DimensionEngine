@@ -1,4 +1,4 @@
-# Install script for directory: /Users/uncled/Documents/CFiles/VulkanEngine/RendingEngine/application
+# Install script for directory: /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/application
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)

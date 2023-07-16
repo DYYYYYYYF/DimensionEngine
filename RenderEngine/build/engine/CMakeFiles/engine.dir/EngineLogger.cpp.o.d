@@ -1,7 +1,7 @@
 engine/CMakeFiles/engine.dir/EngineLogger.cpp.o: \
-  /Users/uncled/Documents/CFiles/VulkanEngine/RendingEngine/engine/EngineLogger.cpp \
-  /Users/uncled/Documents/CFiles/VulkanEngine/RendingEngine/engine/EngineLogger.hpp \
-  /Users/uncled/Documents/CFiles/VulkanEngine/RendingEngine/3rd/uncledon-logger/include/Logger.hpp \
+  /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/engine/EngineLogger.cpp \
+  /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/engine/EngineLogger.hpp \
+  /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/3rd/uncledon-logger/include/Logger.hpp \
   /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX13.3.sdk/usr/include/c++/v1/iostream \
   /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX13.3.sdk/usr/include/c++/v1/__assert \
   /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX13.3.sdk/usr/include/c++/v1/__config \

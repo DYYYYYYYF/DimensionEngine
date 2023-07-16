@@ -1,4 +1,4 @@
-# Install script for directory: /Users/uncled/Documents/CFiles/VulkanEngine/RendingEngine
+# Install script for directory: /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -39,11 +39,11 @@ endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for each subdirectory.
-  include("/Users/uncled/Documents/CFiles/VulkanEngine/RendingEngine/build/engine/cmake_install.cmake")
-  include("/Users/uncled/Documents/CFiles/VulkanEngine/RendingEngine/build/vulkan/cmake_install.cmake")
-  include("/Users/uncled/Documents/CFiles/VulkanEngine/RendingEngine/build/renderer/cmake_install.cmake")
-  include("/Users/uncled/Documents/CFiles/VulkanEngine/RendingEngine/build/physics/cmake_install.cmake")
-  include("/Users/uncled/Documents/CFiles/VulkanEngine/RendingEngine/build/application/cmake_install.cmake")
+  include("/Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/build/engine/cmake_install.cmake")
+  include("/Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/build/vulkan/cmake_install.cmake")
+  include("/Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/build/renderer/cmake_install.cmake")
+  include("/Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/build/physics/cmake_install.cmake")
+  include("/Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/build/application/cmake_install.cmake")
 
 endif()
 
@@ -55,5 +55,5 @@ endif()
 
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
-file(WRITE "/Users/uncled/Documents/CFiles/VulkanEngine/RendingEngine/build/${CMAKE_INSTALL_MANIFEST}"
+file(WRITE "/Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/build/${CMAKE_INSTALL_MANIFEST}"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")

@@ -1,3 +1,4 @@
 message("\n-- Vulkan:\n")
 
-aux_source_directory(src VULKAN_SRC_DIR)
+file(GLOB VULkAN_RESOURCE_FILES *.cpp)
+add_library(vulkan ${VULkAN_RESOURCE_FILES})

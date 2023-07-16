@@ -54,10 +54,10 @@ RM = /opt/homebrew/Cellar/cmake/3.26.4/bin/cmake -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /Users/uncled/Documents/CFiles/VulkanEngine/RendingEngine
+CMAKE_SOURCE_DIR = /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /Users/uncled/Documents/CFiles/VulkanEngine/RendingEngine/build
+CMAKE_BINARY_DIR = /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/build
 
 #=============================================================================
 # Directory level rules for the build root directory
@@ -152,7 +152,7 @@ renderer/clean:
 # Directory level rules for directory vulkan
 
 # Recursive "all" directory target.
-vulkan/all:
+vulkan/all: vulkan/CMakeFiles/vulkan.dir/all
 .PHONY : vulkan/all
 
 # Recursive "preinstall" directory target.
@@ -160,7 +160,7 @@ vulkan/preinstall:
 .PHONY : vulkan/preinstall
 
 # Recursive "clean" directory target.
-vulkan/clean:
+vulkan/clean: vulkan/CMakeFiles/vulkan.dir/clean
 .PHONY : vulkan/clean
 
 #=============================================================================
@@ -168,16 +168,17 @@ vulkan/clean:
 
 # All Build rule for target.
 CMakeFiles/VulkanRender.dir/all: engine/CMakeFiles/engine.dir/all
+CMakeFiles/VulkanRender.dir/all: vulkan/CMakeFiles/vulkan.dir/all
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/VulkanRender.dir/build.make CMakeFiles/VulkanRender.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/VulkanRender.dir/build.make CMakeFiles/VulkanRender.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/Users/uncled/Documents/CFiles/VulkanEngine/RendingEngine/build/CMakeFiles --progress-num=1,2 "Built target VulkanRender"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/build/CMakeFiles --progress-num=1,2 "Built target VulkanRender"
 .PHONY : CMakeFiles/VulkanRender.dir/all
 
 # Build rule for subdir invocation for target.
 CMakeFiles/VulkanRender.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Users/uncled/Documents/CFiles/VulkanEngine/RendingEngine/build/CMakeFiles 4
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/build/CMakeFiles 6
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/VulkanRender.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /Users/uncled/Documents/CFiles/VulkanEngine/RendingEngine/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/build/CMakeFiles 0
 .PHONY : CMakeFiles/VulkanRender.dir/rule
 
 # Convenience name for target.
@@ -196,14 +197,14 @@ CMakeFiles/VulkanRender.dir/clean:
 engine/CMakeFiles/engine.dir/all:
 	$(MAKE) $(MAKESILENT) -f engine/CMakeFiles/engine.dir/build.make engine/CMakeFiles/engine.dir/depend
 	$(MAKE) $(MAKESILENT) -f engine/CMakeFiles/engine.dir/build.make engine/CMakeFiles/engine.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/Users/uncled/Documents/CFiles/VulkanEngine/RendingEngine/build/CMakeFiles --progress-num=3,4 "Built target engine"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/build/CMakeFiles --progress-num=3,4 "Built target engine"
 .PHONY : engine/CMakeFiles/engine.dir/all
 
 # Build rule for subdir invocation for target.
 engine/CMakeFiles/engine.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Users/uncled/Documents/CFiles/VulkanEngine/RendingEngine/build/CMakeFiles 2
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/build/CMakeFiles 2
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 engine/CMakeFiles/engine.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /Users/uncled/Documents/CFiles/VulkanEngine/RendingEngine/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/build/CMakeFiles 0
 .PHONY : engine/CMakeFiles/engine.dir/rule
 
 # Convenience name for target.
@@ -214,6 +215,32 @@ engine: engine/CMakeFiles/engine.dir/rule
 engine/CMakeFiles/engine.dir/clean:
 	$(MAKE) $(MAKESILENT) -f engine/CMakeFiles/engine.dir/build.make engine/CMakeFiles/engine.dir/clean
 .PHONY : engine/CMakeFiles/engine.dir/clean
+
+#=============================================================================
+# Target rules for target vulkan/CMakeFiles/vulkan.dir
+
+# All Build rule for target.
+vulkan/CMakeFiles/vulkan.dir/all:
+	$(MAKE) $(MAKESILENT) -f vulkan/CMakeFiles/vulkan.dir/build.make vulkan/CMakeFiles/vulkan.dir/depend
+	$(MAKE) $(MAKESILENT) -f vulkan/CMakeFiles/vulkan.dir/build.make vulkan/CMakeFiles/vulkan.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/build/CMakeFiles --progress-num=5,6 "Built target vulkan"
+.PHONY : vulkan/CMakeFiles/vulkan.dir/all
+
+# Build rule for subdir invocation for target.
+vulkan/CMakeFiles/vulkan.dir/rule: cmake_check_build_system
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/build/CMakeFiles 2
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 vulkan/CMakeFiles/vulkan.dir/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/build/CMakeFiles 0
+.PHONY : vulkan/CMakeFiles/vulkan.dir/rule
+
+# Convenience name for target.
+vulkan: vulkan/CMakeFiles/vulkan.dir/rule
+.PHONY : vulkan
+
+# clean rule for target.
+vulkan/CMakeFiles/vulkan.dir/clean:
+	$(MAKE) $(MAKESILENT) -f vulkan/CMakeFiles/vulkan.dir/build.make vulkan/CMakeFiles/vulkan.dir/clean
+.PHONY : vulkan/CMakeFiles/vulkan.dir/clean
 
 #=============================================================================
 # Special targets to cleanup operation of make.

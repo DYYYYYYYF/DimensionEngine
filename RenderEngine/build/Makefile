@@ -57,10 +57,10 @@ RM = /opt/homebrew/Cellar/cmake/3.26.4/bin/cmake -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /Users/uncled/Documents/CFiles/VulkanEngine/RendingEngine
+CMAKE_SOURCE_DIR = /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /Users/uncled/Documents/CFiles/VulkanEngine/RendingEngine/build
+CMAKE_BINARY_DIR = /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/build
 
 #=============================================================================
 # Targets provided globally by CMake.
@@ -87,9 +87,9 @@ rebuild_cache/fast: rebuild_cache
 
 # The main all target
 all: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Users/uncled/Documents/CFiles/VulkanEngine/RendingEngine/build/CMakeFiles /Users/uncled/Documents/CFiles/VulkanEngine/RendingEngine/build//CMakeFiles/progress.marks
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/build/CMakeFiles /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/build//CMakeFiles/progress.marks
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 all
-	$(CMAKE_COMMAND) -E cmake_progress_start /Users/uncled/Documents/CFiles/VulkanEngine/RendingEngine/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/build/CMakeFiles 0
 .PHONY : all
 
 # The main clean target
@@ -142,6 +142,19 @@ engine/fast:
 	$(MAKE) $(MAKESILENT) -f engine/CMakeFiles/engine.dir/build.make engine/CMakeFiles/engine.dir/build
 .PHONY : engine/fast
 
+#=============================================================================
+# Target rules for targets named vulkan
+
+# Build rule for target.
+vulkan: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 vulkan
+.PHONY : vulkan
+
+# fast build rule for target.
+vulkan/fast:
+	$(MAKE) $(MAKESILENT) -f vulkan/CMakeFiles/vulkan.dir/build.make vulkan/CMakeFiles/vulkan.dir/build
+.PHONY : vulkan/fast
+
 Launcher.o: Launcher.cpp.o
 .PHONY : Launcher.o
 
@@ -176,6 +189,7 @@ help:
 	@echo "... rebuild_cache"
 	@echo "... VulkanRender"
 	@echo "... engine"
+	@echo "... vulkan"
 	@echo "... Launcher.o"
 	@echo "... Launcher.i"
 	@echo "... Launcher.s"

@@ -53,10 +53,10 @@ RM = /opt/homebrew/Cellar/cmake/3.26.4/bin/cmake -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /Users/uncled/Documents/CFiles/VulkanEngine/RendingEngine
+CMAKE_SOURCE_DIR = /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /Users/uncled/Documents/CFiles/VulkanEngine/RendingEngine/build
+CMAKE_BINARY_DIR = /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/build
 
 # Include any dependencies generated for this target.
 include engine/CMakeFiles/engine.dir/depend.make
@@ -70,18 +70,18 @@ include engine/CMakeFiles/engine.dir/progress.make
 include engine/CMakeFiles/engine.dir/flags.make
 
 engine/CMakeFiles/engine.dir/EngineLogger.cpp.o: engine/CMakeFiles/engine.dir/flags.make
-engine/CMakeFiles/engine.dir/EngineLogger.cpp.o: /Users/uncled/Documents/CFiles/VulkanEngine/RendingEngine/engine/EngineLogger.cpp
+engine/CMakeFiles/engine.dir/EngineLogger.cpp.o: /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/engine/EngineLogger.cpp
 engine/CMakeFiles/engine.dir/EngineLogger.cpp.o: engine/CMakeFiles/engine.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/Users/uncled/Documents/CFiles/VulkanEngine/RendingEngine/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object engine/CMakeFiles/engine.dir/EngineLogger.cpp.o"
-	cd /Users/uncled/Documents/CFiles/VulkanEngine/RendingEngine/build/engine && /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT engine/CMakeFiles/engine.dir/EngineLogger.cpp.o -MF CMakeFiles/engine.dir/EngineLogger.cpp.o.d -o CMakeFiles/engine.dir/EngineLogger.cpp.o -c /Users/uncled/Documents/CFiles/VulkanEngine/RendingEngine/engine/EngineLogger.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object engine/CMakeFiles/engine.dir/EngineLogger.cpp.o"
+	cd /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/build/engine && /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT engine/CMakeFiles/engine.dir/EngineLogger.cpp.o -MF CMakeFiles/engine.dir/EngineLogger.cpp.o.d -o CMakeFiles/engine.dir/EngineLogger.cpp.o -c /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/engine/EngineLogger.cpp
 
 engine/CMakeFiles/engine.dir/EngineLogger.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/engine.dir/EngineLogger.cpp.i"
-	cd /Users/uncled/Documents/CFiles/VulkanEngine/RendingEngine/build/engine && /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/uncled/Documents/CFiles/VulkanEngine/RendingEngine/engine/EngineLogger.cpp > CMakeFiles/engine.dir/EngineLogger.cpp.i
+	cd /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/build/engine && /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/engine/EngineLogger.cpp > CMakeFiles/engine.dir/EngineLogger.cpp.i
 
 engine/CMakeFiles/engine.dir/EngineLogger.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/engine.dir/EngineLogger.cpp.s"
-	cd /Users/uncled/Documents/CFiles/VulkanEngine/RendingEngine/build/engine && /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/uncled/Documents/CFiles/VulkanEngine/RendingEngine/engine/EngineLogger.cpp -o CMakeFiles/engine.dir/EngineLogger.cpp.s
+	cd /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/build/engine && /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/engine/EngineLogger.cpp -o CMakeFiles/engine.dir/EngineLogger.cpp.s
 
 # Object files for target engine
 engine_OBJECTS = \
@@ -93,19 +93,19 @@ engine_EXTERNAL_OBJECTS =
 engine/libengine.a: engine/CMakeFiles/engine.dir/EngineLogger.cpp.o
 engine/libengine.a: engine/CMakeFiles/engine.dir/build.make
 engine/libengine.a: engine/CMakeFiles/engine.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/Users/uncled/Documents/CFiles/VulkanEngine/RendingEngine/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Linking CXX static library libengine.a"
-	cd /Users/uncled/Documents/CFiles/VulkanEngine/RendingEngine/build/engine && $(CMAKE_COMMAND) -P CMakeFiles/engine.dir/cmake_clean_target.cmake
-	cd /Users/uncled/Documents/CFiles/VulkanEngine/RendingEngine/build/engine && $(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/engine.dir/link.txt --verbose=$(VERBOSE)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Linking CXX static library libengine.a"
+	cd /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/build/engine && $(CMAKE_COMMAND) -P CMakeFiles/engine.dir/cmake_clean_target.cmake
+	cd /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/build/engine && $(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/engine.dir/link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.
 engine/CMakeFiles/engine.dir/build: engine/libengine.a
 .PHONY : engine/CMakeFiles/engine.dir/build
 
 engine/CMakeFiles/engine.dir/clean:
-	cd /Users/uncled/Documents/CFiles/VulkanEngine/RendingEngine/build/engine && $(CMAKE_COMMAND) -P CMakeFiles/engine.dir/cmake_clean.cmake
+	cd /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/build/engine && $(CMAKE_COMMAND) -P CMakeFiles/engine.dir/cmake_clean.cmake
 .PHONY : engine/CMakeFiles/engine.dir/clean
 
 engine/CMakeFiles/engine.dir/depend:
-	cd /Users/uncled/Documents/CFiles/VulkanEngine/RendingEngine/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /Users/uncled/Documents/CFiles/VulkanEngine/RendingEngine /Users/uncled/Documents/CFiles/VulkanEngine/RendingEngine/engine /Users/uncled/Documents/CFiles/VulkanEngine/RendingEngine/build /Users/uncled/Documents/CFiles/VulkanEngine/RendingEngine/build/engine /Users/uncled/Documents/CFiles/VulkanEngine/RendingEngine/build/engine/CMakeFiles/engine.dir/DependInfo.cmake --color=$(COLOR)
+	cd /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/engine /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/build /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/build/engine /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/build/engine/CMakeFiles/engine.dir/DependInfo.cmake --color=$(COLOR)
 .PHONY : engine/CMakeFiles/engine.dir/depend
 

@@ -57,10 +57,10 @@ RM = /opt/homebrew/Cellar/cmake/3.26.4/bin/cmake -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /Users/uncled/Documents/CFiles/VulkanEngine/RendingEngine
+CMAKE_SOURCE_DIR = /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /Users/uncled/Documents/CFiles/VulkanEngine/RendingEngine/build
+CMAKE_BINARY_DIR = /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/build
 
 #=============================================================================
 # Targets provided globally by CMake.
@@ -87,14 +87,14 @@ rebuild_cache/fast: rebuild_cache
 
 # The main all target
 all: cmake_check_build_system
-	cd /Users/uncled/Documents/CFiles/VulkanEngine/RendingEngine/build && $(CMAKE_COMMAND) -E cmake_progress_start /Users/uncled/Documents/CFiles/VulkanEngine/RendingEngine/build/CMakeFiles /Users/uncled/Documents/CFiles/VulkanEngine/RendingEngine/build/renderer//CMakeFiles/progress.marks
-	cd /Users/uncled/Documents/CFiles/VulkanEngine/RendingEngine/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 renderer/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /Users/uncled/Documents/CFiles/VulkanEngine/RendingEngine/build/CMakeFiles 0
+	cd /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/build && $(CMAKE_COMMAND) -E cmake_progress_start /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/build/CMakeFiles /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/build/renderer//CMakeFiles/progress.marks
+	cd /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 renderer/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/build/CMakeFiles 0
 .PHONY : all
 
 # The main clean target
 clean:
-	cd /Users/uncled/Documents/CFiles/VulkanEngine/RendingEngine/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 renderer/clean
+	cd /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 renderer/clean
 .PHONY : clean
 
 # The main clean target
@@ -103,17 +103,17 @@ clean/fast: clean
 
 # Prepare targets for installation.
 preinstall: all
-	cd /Users/uncled/Documents/CFiles/VulkanEngine/RendingEngine/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 renderer/preinstall
+	cd /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 renderer/preinstall
 .PHONY : preinstall
 
 # Prepare targets for installation.
 preinstall/fast:
-	cd /Users/uncled/Documents/CFiles/VulkanEngine/RendingEngine/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 renderer/preinstall
+	cd /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 renderer/preinstall
 .PHONY : preinstall/fast
 
 # clear depends
 depend:
-	cd /Users/uncled/Documents/CFiles/VulkanEngine/RendingEngine/build && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 1
+	cd /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/build && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 1
 .PHONY : depend
 
 # Help Target
@@ -135,6 +135,6 @@ help:
 # No rule that depends on this can have commands that come from listfiles
 # because they might be regenerated.
 cmake_check_build_system:
-	cd /Users/uncled/Documents/CFiles/VulkanEngine/RendingEngine/build && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 0
+	cd /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/build && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 0
 .PHONY : cmake_check_build_system
 
