@@ -29,12 +29,14 @@ if(${APPLE})
 
     pkg_search_module(GLFW REQUIRED GLFW3)
     pkg_search_module(GLM REQUIRED GLM)
+    pkg_search_module(SDL REQUIRED SDL2)
 
-    link_directories(${GLFW_LIBRARY_DIRS} ${UD_LOGGER_DIR}/lib/MacOS)
+    link_directories(${GLFW_LIBRARY_DIRS} ${SDL_LIBRARY_DIRS} ${UD_LOGGER_DIR}/lib/MacOS)
     include_directories(${GLM_INCLUDE_DIRS} ${GLFW_INCLUDE_DIRS} ${Vulkan_INCLUDE_DIRS} 
-        ${TINY_OBJ_LOADER_DIR} ${STB_MASTER_DIR} ${UD_LOGGER_DIR}/include)
+        ${TINY_OBJ_LOADER_DIR} ${STB_MASTER_DIR} ${SDL_INCLUDE_DIRS} ${UD_LOGGER_DIR}/include)
 
     message("-- Include GLM DIR: ${GLM_INCLUDE_DIRS}")
+    message("-- Include SDL DIR: ${SDL_INCLUDE_DIRS}")
     message("-- Include GLFW DIR: ${GLFW_INCLUDE_DIRS}")
     message("-- Include VULKAN DIR: ${Vulkan_INCLUDE_DIRS}\n")
 
@@ -53,9 +55,9 @@ target_link_libraries(VulkanRender Vulkan::Vulkan)
 target_link_libraries(VulkanRender ${GLFW_LIBRARIES})
 
 if(${APPLE})
-    target_link_libraries(VulkanRender libLogger.a)
+    target_link_libraries(VulkanRender ${SDL_LIBRARIES} libLogger.a)
 endif()
 
-target_link_libraries(VulkanRender engine vulkan)
+target_link_libraries(VulkanRender engine vulkan application)
 
 message("-- Add executable program to ${PROJECT_SOURCE_DIR}/bin")

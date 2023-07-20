@@ -1,7 +1,8 @@
 #include "EngineLogger.hpp"
-#include "Logger.hpp"
+
+using namespace udon;
 
 EngineLogger::EngineLogger(){
-    DEBUG("Engine");
-
+    Log::Logger::getInstance()->open("bin/EngineLog.log");
+    DEBUG("Logger Init Success.");
 }

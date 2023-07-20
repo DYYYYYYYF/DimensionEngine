@@ -1,11 +1,14 @@
 #include <iostream>
-#include "Logger.hpp"
-#include "engine/EngineLogger.hpp"
+#include "application/Application.hpp"
 
 
 int main(int argc, char* argv[]){
 
-    Log::Logger::getInstance()->open("bin/EngineLog.log");
+    udon::Engine* Engine = new udon::Engine();
+
+    Engine->Init();
+    Engine->Run();
+    Engine->Close();
 
     std::cout << "Launch Vulkan!" << std::endl;
 
