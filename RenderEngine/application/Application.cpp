@@ -18,6 +18,9 @@ Engine::~Engine(){
 bool Engine::Init(){
 
     _Renderer = new Renderer();    
+    CHECK(_Renderer);
+    _Renderer->Init();
+
     _window = WsiWindow::GetInstance()->GetWindow();
     CHECK(_window);
 

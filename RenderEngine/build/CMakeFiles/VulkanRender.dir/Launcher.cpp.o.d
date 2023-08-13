@@ -817,11 +817,12 @@ CMakeFiles/VulkanRender.dir/Launcher.cpp.o: \
   /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/application/../renderer/Renderer.hpp \
   /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/application/../renderer/interface/IRenderer.hpp \
   /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/application/../renderer/interface/../../vulkan/VkContext.hpp \
+  /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/application/../renderer/interface/../../vulkan/interface/IContext.hpp \
+  /usr/local/include/vulkan/vulkan.hpp \
+  /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX13.3.sdk/usr/include/c++/v1/sstream \
   /usr/local/include/vulkan/vulkan.h \
   /usr/local/include/vulkan/vk_platform.h \
   /usr/local/include/vulkan/vulkan_core.h \
-  /usr/local/include/vulkan/vulkan.hpp \
-  /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX13.3.sdk/usr/include/c++/v1/sstream \
   /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX13.3.sdk/usr/include/dlfcn.h \
   /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX13.3.sdk/usr/include/c++/v1/stdbool.h \
   /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/14.0.3/include/stdbool.h \
@@ -829,5 +830,9 @@ CMakeFiles/VulkanRender.dir/Launcher.cpp.o: \
   /usr/local/include/vulkan/vulkan_handles.hpp \
   /usr/local/include/vulkan/vulkan_structs.hpp \
   /usr/local/include/vulkan/vulkan_funcs.hpp \
-  /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/application/../renderer/interface/../../vulkan/../engine/EngineLogger.hpp \
-  /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/application/../renderer/interface/../../vulkan/../application/Window.hpp
+  /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/application/../renderer/interface/../../vulkan/interface/../../engine/EngineLogger.hpp \
+  /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/application/../renderer/interface/../../vulkan/interface/../../application/Window.hpp \
+  /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/application/../renderer/interface/../../vulkan/Instance.hpp \
+  /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/application/../renderer/interface/../../vulkan/interface/IInstance.hpp \
+  /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/application/../renderer/interface/../../vulkan/Device.hpp \
+  /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/application/../renderer/interface/../../vulkan/interface/IDevice.hpp

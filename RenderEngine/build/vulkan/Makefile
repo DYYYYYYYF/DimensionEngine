@@ -130,6 +130,54 @@ vulkan/fast:
 	cd /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/build && $(MAKE) $(MAKESILENT) -f vulkan/CMakeFiles/vulkan.dir/build.make vulkan/CMakeFiles/vulkan.dir/build
 .PHONY : vulkan/fast
 
+Device.o: Device.cpp.o
+.PHONY : Device.o
+
+# target to build an object file
+Device.cpp.o:
+	cd /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/build && $(MAKE) $(MAKESILENT) -f vulkan/CMakeFiles/vulkan.dir/build.make vulkan/CMakeFiles/vulkan.dir/Device.cpp.o
+.PHONY : Device.cpp.o
+
+Device.i: Device.cpp.i
+.PHONY : Device.i
+
+# target to preprocess a source file
+Device.cpp.i:
+	cd /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/build && $(MAKE) $(MAKESILENT) -f vulkan/CMakeFiles/vulkan.dir/build.make vulkan/CMakeFiles/vulkan.dir/Device.cpp.i
+.PHONY : Device.cpp.i
+
+Device.s: Device.cpp.s
+.PHONY : Device.s
+
+# target to generate assembly for a file
+Device.cpp.s:
+	cd /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/build && $(MAKE) $(MAKESILENT) -f vulkan/CMakeFiles/vulkan.dir/build.make vulkan/CMakeFiles/vulkan.dir/Device.cpp.s
+.PHONY : Device.cpp.s
+
+Instance.o: Instance.cpp.o
+.PHONY : Instance.o
+
+# target to build an object file
+Instance.cpp.o:
+	cd /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/build && $(MAKE) $(MAKESILENT) -f vulkan/CMakeFiles/vulkan.dir/build.make vulkan/CMakeFiles/vulkan.dir/Instance.cpp.o
+.PHONY : Instance.cpp.o
+
+Instance.i: Instance.cpp.i
+.PHONY : Instance.i
+
+# target to preprocess a source file
+Instance.cpp.i:
+	cd /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/build && $(MAKE) $(MAKESILENT) -f vulkan/CMakeFiles/vulkan.dir/build.make vulkan/CMakeFiles/vulkan.dir/Instance.cpp.i
+.PHONY : Instance.cpp.i
+
+Instance.s: Instance.cpp.s
+.PHONY : Instance.s
+
+# target to generate assembly for a file
+Instance.cpp.s:
+	cd /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/build && $(MAKE) $(MAKESILENT) -f vulkan/CMakeFiles/vulkan.dir/build.make vulkan/CMakeFiles/vulkan.dir/Instance.cpp.s
+.PHONY : Instance.cpp.s
+
 VkContext.o: VkContext.cpp.o
 .PHONY : VkContext.o
 
@@ -163,6 +211,12 @@ help:
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
 	@echo "... vulkan"
+	@echo "... Device.o"
+	@echo "... Device.i"
+	@echo "... Device.s"
+	@echo "... Instance.o"
+	@echo "... Instance.i"
+	@echo "... Instance.s"
 	@echo "... VkContext.o"
 	@echo "... VkContext.i"
 	@echo "... VkContext.s"

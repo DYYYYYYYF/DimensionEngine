@@ -6,9 +6,13 @@ int main(int argc, char* argv[]){
 
     udon::Engine* Engine = new udon::Engine();
 
-    Engine->Init();
-    Engine->Run();
-    Engine->Close();
-
+    try{
+        Engine->Init();
+        Engine->Run();
+        Engine->Close();
+    } catch(const std::exception& e){
+        std::cerr << e.what() << std::endl;
+        return EXIT_FAILURE;
+    }
     return 0;
 }

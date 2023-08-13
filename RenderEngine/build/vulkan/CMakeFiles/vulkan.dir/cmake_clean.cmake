@@ -1,6 +1,10 @@
 file(REMOVE_RECURSE
   "/Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/library/libvulkan.a"
   "/Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/library/libvulkan.pdb"
+  "CMakeFiles/vulkan.dir/Device.cpp.o"
+  "CMakeFiles/vulkan.dir/Device.cpp.o.d"
+  "CMakeFiles/vulkan.dir/Instance.cpp.o"
+  "CMakeFiles/vulkan.dir/Instance.cpp.o.d"
   "CMakeFiles/vulkan.dir/VkContext.cpp.o"
   "CMakeFiles/vulkan.dir/VkContext.cpp.o.d"
 )

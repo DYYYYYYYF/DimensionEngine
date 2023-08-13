@@ -1,4 +1,5 @@
 #include "Renderer.hpp"
+#include <cstdlib>
 
 Renderer::Renderer(){
     _Context = nullptr;
@@ -10,8 +11,11 @@ Renderer::~Renderer(){
 
 bool Renderer::Init(){
     _Context = new VkContext();
-    bool res = _Context->InitInstance();
+    if (!_Context->InitContext()){
+        DEBUG("Create Context Failed.");
+        return false;
+    }
 
-    return res;
+    return true;
 }
 

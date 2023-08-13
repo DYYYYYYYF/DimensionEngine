@@ -820,11 +820,12 @@ CMakeFiles/VulkanRender.dir/Launcher.cpp.o: /Users/uncled/Documents/CFiles/Vulka
   /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/renderer/Renderer.hpp \
   /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/renderer/interface/IRenderer.hpp \
   /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/vulkan/VkContext.hpp \
+  /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/vulkan/interface/IContext.hpp \
+  /usr/local/include/vulkan/vulkan.hpp \
+  /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX13.3.sdk/usr/include/c++/v1/sstream \
   /usr/local/include/vulkan/vulkan.h \
   /usr/local/include/vulkan/vk_platform.h \
   /usr/local/include/vulkan/vulkan_core.h \
-  /usr/local/include/vulkan/vulkan.hpp \
-  /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX13.3.sdk/usr/include/c++/v1/sstream \
   /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX13.3.sdk/usr/include/dlfcn.h \
   /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX13.3.sdk/usr/include/c++/v1/stdbool.h \
   /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/14.0.3/include/stdbool.h \
@@ -833,18 +834,30 @@ CMakeFiles/VulkanRender.dir/Launcher.cpp.o: /Users/uncled/Documents/CFiles/Vulka
   /usr/local/include/vulkan/vulkan_structs.hpp \
   /usr/local/include/vulkan/vulkan_funcs.hpp \
   /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/engine/EngineLogger.hpp \
-  /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/application/Window.hpp
+  /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/application/Window.hpp \
+  /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/vulkan/Instance.hpp \
+  /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/vulkan/interface/IInstance.hpp \
+  /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/vulkan/Device.hpp \
+  /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/vulkan/interface/IDevice.hpp
 
+
+/Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/vulkan/interface/IDevice.hpp:
+
+/Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/vulkan/Device.hpp:
+
+/Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/vulkan/interface/IInstance.hpp:
 
 /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/14.0.3/include/stdbool.h:
 
 /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX13.3.sdk/usr/include/c++/v1/stdbool.h:
 
-/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX13.3.sdk/usr/include/c++/v1/sstream:
+/usr/local/include/vulkan/vulkan.h:
 
 /usr/local/include/vulkan/vk_platform.h:
 
-/usr/local/include/vulkan/vulkan.h:
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX13.3.sdk/usr/include/c++/v1/sstream:
+
+/Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/vulkan/interface/IContext.hpp:
 
 /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/vulkan/VkContext.hpp:
 
@@ -2353,6 +2366,8 @@ CMakeFiles/VulkanRender.dir/Launcher.cpp.o: /Users/uncled/Documents/CFiles/Vulka
 /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX13.3.sdk/usr/include/sys/_types/_int32_t.h:
 
 /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX13.3.sdk/usr/include/c++/v1/__type_traits/is_signed_integer.h:
+
+/Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/vulkan/Instance.hpp:
 
 /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX13.3.sdk/usr/include/_types/_uint64_t.h:
 

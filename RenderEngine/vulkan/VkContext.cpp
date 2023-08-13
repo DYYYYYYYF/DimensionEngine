@@ -1,9 +1,5 @@
 #include "VkContext.hpp"
-#include "vulkan/vulkan_enums.hpp"
-#include "vulkan/vulkan_handles.hpp"
-#include "vulkan/vulkan_structs.hpp"
-#include <cstdlib>
-#include <vector>
+#include "Device.hpp"
 
 using namespace udon;
 using namespace VkCore;
@@ -13,12 +9,30 @@ VkContext::~VkContext(){
 }
 
 VkContext::VkContext(){
-    _VkInstance = nullptr;
+    _Instance = nullptr;
+    _Device = nullptr;
 }
 
+bool VkContext::InitContext(){
+    if (!CreateInstance()) return false;
 
-bool VkContext::InitInstance(){
-    return InitVulkan() && InitWindow();
+    return true;
+}
+
+// Instance
+bool VkContext::CreateInstance(){
+
+    if (!InitWindow()){
+        DEBUG("NULL WINDOW.");
+        return false;
+    }
+
+    _Instance = new Instance();
+    CHECK(_Instance);
+    _VkInstance = _Instance->CreateInstance(_Window);
+    CHECK(_VkInstance);
+
+    return true;
 }
 
 bool VkContext::InitWindow(){
@@ -26,44 +40,24 @@ bool VkContext::InitWindow(){
     return true;
 }
 
-bool VkContext::InitVulkan(){
-    // Enum all extensions
-    std::vector<vk::ExtensionProperties> enumInstanceExtensions;
-    uint32_t enumExtensionsCount;
-    vk::Result res = vk::enumerateInstanceExtensionProperties(nullptr, &enumExtensionsCount, enumInstanceExtensions.data());
-    enumInstanceExtensions.resize(enumExtensionsCount);
-    res = vk::enumerateInstanceExtensionProperties(nullptr, &enumExtensionsCount, enumInstanceExtensions.data());
-    if (res != vk::Result::eSuccess) {
-        std::cout << "Enum instance extensions:\n";
-        for (auto& extension : enumInstanceExtensions){
-            std::cout << "\t" << extension.extensionName << std::endl;
-        }
-    }
+bool VkContext::CreatePhysicalDevice(){
+    if (!_Device) _Device = new Device();
+    CHECK(_Device);
+    
+    _VkPhyDevice = _Device->CreatePhysicalDeivce();
+    CHECK(_VkPhyDevice);
 
-    vk::InstanceCreateInfo info;
+    return true;
+}
 
-    // Get SDL instance extensions
-    const char** extensionNames;
-    unsigned int extensionsCount;
-    SDL_Vulkan_GetInstanceExtensions(_Window, &extensionsCount, extensionNames);
+bool VkContext::CreateDevice(){
+    if (_Device) _Device = new Device();
+    CHECK(_Device);
 
-    #ifdef __APPLE_
-        // MacOS requirment
-        extensionNames[extensionsCount] = "VK_KHR_get_physical_device_properties2";
-    #endif
+    _VkDevice = _Device->CreateDevice();
+    CHECK(_VkDevice);
 
-    //validation layers
-    std::array<const char*, 1> layers{"VK_LAYER_KHRONOS_validation"};
-
-    info.setPpEnabledExtensionNames(extensionNames)
-        .setPpEnabledLayerNames(layers.data())
-        .setEnabledExtensionCount(++extensionsCount)
-        .setEnabledLayerCount(layers.size());
-        
-    _VkInstance = vk::createInstance(info);
-    CHECK(_VkInstance);
-
-    return  true;
+    return true;
 }
 
 void VkContext::Release(){

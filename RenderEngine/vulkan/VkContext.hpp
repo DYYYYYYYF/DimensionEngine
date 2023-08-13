@@ -1,32 +1,30 @@
 #pragma once
-#include <vulkan/vulkan.h>
-#include <vulkan/vulkan.hpp>
-#include <vulkan/vulkan_handles.hpp>
-#include "../engine/EngineLogger.hpp"
-#include "../application/Window.hpp"
+#include "interface/IContext.hpp"
+#include "Instance.hpp"
+#include "Device.hpp"
 
 namespace VkCore{
-class VkContext{
+class VkContext : public IContext{
 public:
     VkContext();
     virtual ~VkContext();
-
-    bool InitInstance();
+    virtual bool InitContext();
+    virtual void Release();
 
 public:
+    bool CreateInstance();
+    bool CreatePhysicalDevice();
+    bool CreateDevice();
+
     vk::Instance GetInstance() const {return _VkInstance;} 
     SDL_Window* GetWindow() const {return _Window;}
 
 private:
     bool InitWindow();
-    bool InitVulkan();
-    void Release();
 
 private:
-    SDL_Window* _Window;
-    vk::Instance _VkInstance;
-    vk::PhysicalDevice _VkPhyDevice;
-    vk::Device _VkDevice;
+    Instance* _Instance;
+    Device* _Device;
 
 };
 }

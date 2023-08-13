@@ -8,6 +8,8 @@ set(CMAKE_DEPENDS_LANGUAGES
 
 # The set of dependency files which are needed:
 set(CMAKE_DEPENDS_DEPENDENCY_FILES
+  "/Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/vulkan/Device.cpp" "vulkan/CMakeFiles/vulkan.dir/Device.cpp.o" "gcc" "vulkan/CMakeFiles/vulkan.dir/Device.cpp.o.d"
+  "/Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/vulkan/Instance.cpp" "vulkan/CMakeFiles/vulkan.dir/Instance.cpp.o" "gcc" "vulkan/CMakeFiles/vulkan.dir/Instance.cpp.o.d"
   "/Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/vulkan/VkContext.cpp" "vulkan/CMakeFiles/vulkan.dir/VkContext.cpp.o" "gcc" "vulkan/CMakeFiles/vulkan.dir/VkContext.cpp.o.d"
   )
 
