@@ -1,7 +1,5 @@
-2023-08-13 17:08:44 DEBUG /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/engine/EngineLogger.cpp:8	Logger Init Success.
-2023-08-13 17:09:07 DEBUG /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/engine/EngineLogger.cpp:8	Logger Init Success.
-2023-08-13 17:10:09 DEBUG /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/engine/EngineLogger.cpp:8	Logger Init Success.
-2023-08-13 17:14:02 DEBUG /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/engine/EngineLogger.cpp:8	Logger Init Success.
-2023-08-13 17:16:14 DEBUG /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/engine/EngineLogger.cpp:8	Logger Init Success.
-2023-08-13 17:17:55 DEBUG /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/engine/EngineLogger.cpp:8	Logger Init Success.
-2023-08-13 17:20:00 DEBUG /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/engine/EngineLogger.cpp:8	Logger Init Success.
+2023-08-13 17:21:50 DEBUG /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/engine/EngineLogger.cpp:8	Logger Init Success.
+2023-08-13 17:22:08 DEBUG /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/engine/EngineLogger.cpp:8	Logger Init Success.
+2023-08-13 17:22:43 DEBUG /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/engine/EngineLogger.cpp:8	Logger Init Success.
+2023-08-13 17:29:36 DEBUG /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/engine/EngineLogger.cpp:12	Logger Init Success.
+2023-08-13 17:29:36 INFO /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/engine/EngineLogger.cpp:13	/Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/bin/EngineLog.log

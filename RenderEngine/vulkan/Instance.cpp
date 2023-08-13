@@ -22,19 +22,6 @@ vk::Instance Instance::CreateInstance(SDL_Window* window){
         exit(-1);
     }
 
-    // Enum all extensions
-    std::vector<vk::ExtensionProperties> enumInstanceExtensions;
-    uint32_t enumExtensionsCount;
-    vk::Result res = vk::enumerateInstanceExtensionProperties(nullptr, &enumExtensionsCount, nullptr);
-    enumInstanceExtensions.resize(enumExtensionsCount);
-    res = vk::enumerateInstanceExtensionProperties(nullptr, &enumExtensionsCount, enumInstanceExtensions.data());
-    if (res != vk::Result::eSuccess) {
-        std::cout << "Enum instance extensions:\n";
-        for (auto& extension : enumInstanceExtensions){
-            std::cout << "\t" << extension.extensionName << std::endl;
-        }
-    }
-
     vk::InstanceCreateInfo info;
 
     // Get SDL instance extensions
@@ -56,6 +43,7 @@ vk::Instance Instance::CreateInstance(SDL_Window* window){
         .setPEnabledLayerNames(layers)
         .setEnabledExtensionCount(++extensionsCount)
         .setEnabledLayerCount(layers.size());
+
         
     return vk::createInstance(info);
 }
