@@ -1,7 +1,7 @@
 #pragma once
 #include "Window.hpp"
 #include "utils/EngineUtils.hpp"
-#include "../vulkan/VkContext.hpp"
+#include "../renderer/Renderer.hpp"
 
 namespace udon{
 class Engine{
@@ -15,6 +15,7 @@ public:
 
 private:
     SDL_Window* _window;
+    Renderer* _Renderer;
 
 };
 } 

@@ -93,9 +93,10 @@ VulkanRender_EXTERNAL_OBJECTS =
 /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/bin/VulkanRender: CMakeFiles/VulkanRender.dir/Launcher.cpp.o
 /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/bin/VulkanRender: CMakeFiles/VulkanRender.dir/build.make
 /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/bin/VulkanRender: /usr/local/lib/libvulkan.dylib
-/Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/bin/VulkanRender: engine/libengine.a
-/Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/bin/VulkanRender: vulkan/libvulkan.a
-/Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/bin/VulkanRender: application/libapplication.a
+/Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/bin/VulkanRender: /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/library/libengine.a
+/Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/bin/VulkanRender: /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/library/libvulkan.a
+/Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/bin/VulkanRender: /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/library/libapplication.a
+/Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/bin/VulkanRender: /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/library/librenderer.a
 /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/bin/VulkanRender: CMakeFiles/VulkanRender.dir/link.txt
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Linking CXX executable /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/bin/VulkanRender"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/VulkanRender.dir/link.txt --verbose=$(VERBOSE)

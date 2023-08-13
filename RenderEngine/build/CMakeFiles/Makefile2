@@ -137,7 +137,7 @@ physics/clean:
 # Directory level rules for directory renderer
 
 # Recursive "all" directory target.
-renderer/all:
+renderer/all: renderer/CMakeFiles/renderer.dir/all
 .PHONY : renderer/all
 
 # Recursive "preinstall" directory target.
@@ -145,7 +145,7 @@ renderer/preinstall:
 .PHONY : renderer/preinstall
 
 # Recursive "clean" directory target.
-renderer/clean:
+renderer/clean: renderer/CMakeFiles/renderer.dir/clean
 .PHONY : renderer/clean
 
 #=============================================================================
@@ -169,6 +169,7 @@ vulkan/clean: vulkan/CMakeFiles/vulkan.dir/clean
 # All Build rule for target.
 CMakeFiles/VulkanRender.dir/all: engine/CMakeFiles/engine.dir/all
 CMakeFiles/VulkanRender.dir/all: vulkan/CMakeFiles/vulkan.dir/all
+CMakeFiles/VulkanRender.dir/all: renderer/CMakeFiles/renderer.dir/all
 CMakeFiles/VulkanRender.dir/all: application/CMakeFiles/application.dir/all
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/VulkanRender.dir/build.make CMakeFiles/VulkanRender.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/VulkanRender.dir/build.make CMakeFiles/VulkanRender.dir/build
@@ -177,7 +178,7 @@ CMakeFiles/VulkanRender.dir/all: application/CMakeFiles/application.dir/all
 
 # Build rule for subdir invocation for target.
 CMakeFiles/VulkanRender.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/build/CMakeFiles 9
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/build/CMakeFiles 11
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/VulkanRender.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/build/CMakeFiles 0
 .PHONY : CMakeFiles/VulkanRender.dir/rule
@@ -224,7 +225,7 @@ engine/CMakeFiles/engine.dir/clean:
 vulkan/CMakeFiles/vulkan.dir/all:
 	$(MAKE) $(MAKESILENT) -f vulkan/CMakeFiles/vulkan.dir/build.make vulkan/CMakeFiles/vulkan.dir/depend
 	$(MAKE) $(MAKESILENT) -f vulkan/CMakeFiles/vulkan.dir/build.make vulkan/CMakeFiles/vulkan.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/build/CMakeFiles --progress-num=8,9 "Built target vulkan"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/build/CMakeFiles --progress-num=10,11 "Built target vulkan"
 .PHONY : vulkan/CMakeFiles/vulkan.dir/all
 
 # Build rule for subdir invocation for target.
@@ -242,6 +243,32 @@ vulkan: vulkan/CMakeFiles/vulkan.dir/rule
 vulkan/CMakeFiles/vulkan.dir/clean:
 	$(MAKE) $(MAKESILENT) -f vulkan/CMakeFiles/vulkan.dir/build.make vulkan/CMakeFiles/vulkan.dir/clean
 .PHONY : vulkan/CMakeFiles/vulkan.dir/clean
+
+#=============================================================================
+# Target rules for target renderer/CMakeFiles/renderer.dir
+
+# All Build rule for target.
+renderer/CMakeFiles/renderer.dir/all:
+	$(MAKE) $(MAKESILENT) -f renderer/CMakeFiles/renderer.dir/build.make renderer/CMakeFiles/renderer.dir/depend
+	$(MAKE) $(MAKESILENT) -f renderer/CMakeFiles/renderer.dir/build.make renderer/CMakeFiles/renderer.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/build/CMakeFiles --progress-num=8,9 "Built target renderer"
+.PHONY : renderer/CMakeFiles/renderer.dir/all
+
+# Build rule for subdir invocation for target.
+renderer/CMakeFiles/renderer.dir/rule: cmake_check_build_system
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/build/CMakeFiles 2
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 renderer/CMakeFiles/renderer.dir/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/build/CMakeFiles 0
+.PHONY : renderer/CMakeFiles/renderer.dir/rule
+
+# Convenience name for target.
+renderer: renderer/CMakeFiles/renderer.dir/rule
+.PHONY : renderer
+
+# clean rule for target.
+renderer/CMakeFiles/renderer.dir/clean:
+	$(MAKE) $(MAKESILENT) -f renderer/CMakeFiles/renderer.dir/build.make renderer/CMakeFiles/renderer.dir/clean
+.PHONY : renderer/CMakeFiles/renderer.dir/clean
 
 #=============================================================================
 # Target rules for target application/CMakeFiles/application.dir

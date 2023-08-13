@@ -1,0 +1,2 @@
+/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ar qc /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/library/librenderer.a CMakeFiles/renderer.dir/Renderer.cpp.o
+/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ranlib /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/library/librenderer.a

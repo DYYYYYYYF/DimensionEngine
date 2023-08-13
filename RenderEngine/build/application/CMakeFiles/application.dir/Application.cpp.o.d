@@ -814,7 +814,9 @@ application/CMakeFiles/application.dir/Application.cpp.o: \
   /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX13.3.sdk/usr/include/c++/v1/__filesystem/recursive_directory_iterator.h \
   /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX13.3.sdk/usr/include/c++/v1/__filesystem/u8path.h \
   /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/application/utils/../../engine/EngineLogger.hpp \
-  /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/application/../vulkan/VkContext.hpp \
+  /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/application/../renderer/Renderer.hpp \
+  /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/application/../renderer/interface/IRenderer.hpp \
+  /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/application/../renderer/interface/../../vulkan/VkContext.hpp \
   /usr/local/include/vulkan/vulkan.h \
   /usr/local/include/vulkan/vk_platform.h \
   /usr/local/include/vulkan/vulkan_core.h \
@@ -826,4 +828,6 @@ application/CMakeFiles/application.dir/Application.cpp.o: \
   /usr/local/include/vulkan/vulkan_enums.hpp \
   /usr/local/include/vulkan/vulkan_handles.hpp \
   /usr/local/include/vulkan/vulkan_structs.hpp \
-  /usr/local/include/vulkan/vulkan_funcs.hpp
+  /usr/local/include/vulkan/vulkan_funcs.hpp \
+  /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/application/../renderer/interface/../../vulkan/../engine/EngineLogger.hpp \
+  /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/application/../renderer/interface/../../vulkan/../application/Window.hpp

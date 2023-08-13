@@ -10,7 +10,5 @@ int main(int argc, char* argv[]){
     Engine->Run();
     Engine->Close();
 
-    std::cout << "Launch Vulkan!" << std::endl;
-
     return 0;
 }

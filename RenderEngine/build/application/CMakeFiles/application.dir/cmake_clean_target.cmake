@@ -1,3 +1,3 @@
 file(REMOVE_RECURSE
-  "libapplication.a"
+  "/Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/library/libapplication.a"
 )

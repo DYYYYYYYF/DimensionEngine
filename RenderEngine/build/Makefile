@@ -156,6 +156,19 @@ vulkan/fast:
 .PHONY : vulkan/fast
 
 #=============================================================================
+# Target rules for targets named renderer
+
+# Build rule for target.
+renderer: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 renderer
+.PHONY : renderer
+
+# fast build rule for target.
+renderer/fast:
+	$(MAKE) $(MAKESILENT) -f renderer/CMakeFiles/renderer.dir/build.make renderer/CMakeFiles/renderer.dir/build
+.PHONY : renderer/fast
+
+#=============================================================================
 # Target rules for targets named application
 
 # Build rule for target.
@@ -203,6 +216,7 @@ help:
 	@echo "... VulkanRender"
 	@echo "... application"
 	@echo "... engine"
+	@echo "... renderer"
 	@echo "... vulkan"
 	@echo "... Launcher.o"
 	@echo "... Launcher.i"

@@ -64,5 +64,6 @@ set(CMAKE_DEPEND_INFO_FILES
   "CMakeFiles/VulkanRender.dir/DependInfo.cmake"
   "engine/CMakeFiles/engine.dir/DependInfo.cmake"
   "vulkan/CMakeFiles/vulkan.dir/DependInfo.cmake"
+  "renderer/CMakeFiles/renderer.dir/DependInfo.cmake"
   "application/CMakeFiles/application.dir/DependInfo.cmake"
   )

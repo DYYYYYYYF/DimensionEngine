@@ -1,8 +1,8 @@
 file(REMOVE_RECURSE
+  "/Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/library/libvulkan.a"
+  "/Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/library/libvulkan.pdb"
   "CMakeFiles/vulkan.dir/VkContext.cpp.o"
   "CMakeFiles/vulkan.dir/VkContext.cpp.o.d"
-  "libvulkan.a"
-  "libvulkan.pdb"
 )
 
 # Per-language clean rules from dependency scanning.

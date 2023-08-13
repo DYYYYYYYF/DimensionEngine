@@ -3,6 +3,7 @@ project(VulkanRender VERSION 0.1.0)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
+set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/library)
 
 set(TINY_OBJ_LOADER_DIR ${PROJECT_SOURCE_DIR}/3rd/tinyobjloader-master)
 set(STB_MASTER_DIR ${PROJECT_SOURCE_DIR}/3rd/stb_master)
@@ -58,6 +59,6 @@ if(${APPLE})
     target_link_libraries(VulkanRender ${SDL_LIBRARIES} libLogger.a)
 endif()
 
-target_link_libraries(VulkanRender engine vulkan application)
+target_link_libraries(VulkanRender engine vulkan application renderer)
 
 message("-- Add executable program to ${PROJECT_SOURCE_DIR}/bin")

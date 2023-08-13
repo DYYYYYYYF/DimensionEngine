@@ -116,6 +116,44 @@ depend:
 	cd /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/build && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 1
 .PHONY : depend
 
+# Convenience name for target.
+renderer/CMakeFiles/renderer.dir/rule:
+	cd /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 renderer/CMakeFiles/renderer.dir/rule
+.PHONY : renderer/CMakeFiles/renderer.dir/rule
+
+# Convenience name for target.
+renderer: renderer/CMakeFiles/renderer.dir/rule
+.PHONY : renderer
+
+# fast build rule for target.
+renderer/fast:
+	cd /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/build && $(MAKE) $(MAKESILENT) -f renderer/CMakeFiles/renderer.dir/build.make renderer/CMakeFiles/renderer.dir/build
+.PHONY : renderer/fast
+
+Renderer.o: Renderer.cpp.o
+.PHONY : Renderer.o
+
+# target to build an object file
+Renderer.cpp.o:
+	cd /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/build && $(MAKE) $(MAKESILENT) -f renderer/CMakeFiles/renderer.dir/build.make renderer/CMakeFiles/renderer.dir/Renderer.cpp.o
+.PHONY : Renderer.cpp.o
+
+Renderer.i: Renderer.cpp.i
+.PHONY : Renderer.i
+
+# target to preprocess a source file
+Renderer.cpp.i:
+	cd /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/build && $(MAKE) $(MAKESILENT) -f renderer/CMakeFiles/renderer.dir/build.make renderer/CMakeFiles/renderer.dir/Renderer.cpp.i
+.PHONY : Renderer.cpp.i
+
+Renderer.s: Renderer.cpp.s
+.PHONY : Renderer.s
+
+# target to generate assembly for a file
+Renderer.cpp.s:
+	cd /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/build && $(MAKE) $(MAKESILENT) -f renderer/CMakeFiles/renderer.dir/build.make renderer/CMakeFiles/renderer.dir/Renderer.cpp.s
+.PHONY : Renderer.cpp.s
+
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
@@ -124,6 +162,10 @@ help:
 	@echo "... depend"
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
+	@echo "... renderer"
+	@echo "... Renderer.o"
+	@echo "... Renderer.i"
+	@echo "... Renderer.s"
 .PHONY : help
 
 
