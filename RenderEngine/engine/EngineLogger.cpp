@@ -14,7 +14,11 @@ EngineLogger::EngineLogger(){
 
 #else
 EngineLogger::EngineLogger(){
-    Log::Logger::getInstance()->open("bin/EngineLog.log");
+    // Get current path
+    std::filesystem::path curPath = std::filesystem::current_path();
+    curPath.append("bin/EngineLog.log");
+
+    Log::Logger::getInstance()->open(curPath.c_str());
     INFO("Logger Init Success.");
 }
 #endif
