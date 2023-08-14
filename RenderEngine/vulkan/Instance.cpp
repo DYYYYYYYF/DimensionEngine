@@ -1,7 +1,8 @@
 #include "Instance.hpp"
-#include "vulkan/vulkan_handles.hpp"
 #include <iostream>
 #include <vector>
+
+using namespace VkCore; 
 
 Instance::Instance(){
 
@@ -44,6 +45,10 @@ vk::Instance Instance::CreateInstance(SDL_Window* window){
         .setEnabledExtensionCount(++extensionsCount)
         .setEnabledLayerCount(layers.size());
 
+    std::cout << "Added Extensions:\n";
+    for(auto& extension : extensionNames) std::cout << extension << std::endl;
+    std::cout << "Added Layers:\n";
+    for(auto& layer : layers) std::cout << layer << std::endl;
         
     return vk::createInstance(info);
 }

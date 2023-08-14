@@ -833,8 +833,8 @@ application/CMakeFiles/application.dir/Application.cpp.o: /Users/uncled/Document
   /usr/local/include/vulkan/vulkan_handles.hpp \
   /usr/local/include/vulkan/vulkan_structs.hpp \
   /usr/local/include/vulkan/vulkan_funcs.hpp \
-  /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/engine/EngineLogger.hpp \
   /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/application/Window.hpp \
+  /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/application/utils/EngineUtils.hpp \
   /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/vulkan/Instance.hpp \
   /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/vulkan/interface/IInstance.hpp \
   /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/vulkan/Device.hpp \

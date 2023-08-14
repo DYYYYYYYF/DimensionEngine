@@ -1,8 +1,8 @@
 #pragma once
 #include <vulkan/vulkan.hpp>
-#include "../../engine/EngineLogger.hpp"
 #include "../../application/Window.hpp"
 
+namespace VkCore{
 class IInstance{
 public:
     IInstance(){}
@@ -11,5 +11,6 @@ public:
     virtual vk::Instance CreateInstance() = 0;
 
 protected:
-    vk::Instance _Intance;
+    vk::Instance _Intance = nullptr;
 };
+}

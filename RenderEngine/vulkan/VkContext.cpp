@@ -15,6 +15,7 @@ VkContext::VkContext(){
 
 bool VkContext::InitContext(){
     if (!CreateInstance()) return false;
+    if (!CreatePhysicalDevice()) return false; 
 
     return true;
 }
@@ -44,7 +45,7 @@ bool VkContext::CreatePhysicalDevice(){
     if (!_Device) _Device = new Device();
     CHECK(_Device);
     
-    _VkPhyDevice = _Device->CreatePhysicalDeivce();
+    _VkPhyDevice = _Device->CreatePhysicalDeivce(_VkInstance);
     CHECK(_VkPhyDevice);
 
     return true;

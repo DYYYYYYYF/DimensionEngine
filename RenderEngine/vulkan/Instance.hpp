@@ -2,6 +2,7 @@
 #include "interface/IInstance.hpp"
 #include "vulkan/vulkan_handles.hpp"
 
+namespace VkCore{
 class Instance : public IInstance{
 public:
     Instance();
@@ -11,3 +12,4 @@ public:
     virtual vk::Instance CreateInstance(SDL_Window* window);
 
 };
+}

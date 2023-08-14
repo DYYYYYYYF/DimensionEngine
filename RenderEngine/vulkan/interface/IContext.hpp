@@ -2,8 +2,8 @@
 #include <iostream>
 #include <vector>
 #include <vulkan/vulkan.hpp>
-#include "../../engine/EngineLogger.hpp"
 #include "../../application/Window.hpp"
+#include "../../application/utils/EngineUtils.hpp"
 
 namespace VkCore{
 class IContext{
