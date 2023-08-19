@@ -29,6 +29,7 @@ public:
         images = _VkDevice.getSwapchainImagesKHR(_SwapchainKHR);
     }
     void GetImageViews(const std::vector<vk::Image>& images, std::vector<vk::ImageView>& views) const;
+    SwapchainSupport GetSwapchainSupport() const {return _SupportInfo;}
 
 private:
     bool QuerySupportInfo(vk::PhysicalDevice phyDevice);

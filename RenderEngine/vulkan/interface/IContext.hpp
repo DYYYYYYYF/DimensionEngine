@@ -4,6 +4,7 @@
 #include <vulkan/vulkan.hpp>
 #include "../../application/Window.hpp"
 #include "../../application/utils/EngineUtils.hpp"
+#include "vulkan/vulkan_handles.hpp"
 
 namespace VkCore{
 class IContext{
@@ -23,6 +24,7 @@ protected:
     vk::SwapchainKHR _SwapchainKHR = nullptr;
     std::vector<vk::Image> _Images;
     std::vector<vk::ImageView> _ImageViews;
+    vk::RenderPass _VkRenderPass = nullptr;
 
 };
 }

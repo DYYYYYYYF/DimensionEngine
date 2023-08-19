@@ -178,6 +178,30 @@ Instance.cpp.s:
 	cd /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/build && $(MAKE) $(MAKESILENT) -f vulkan/CMakeFiles/vulkan.dir/build.make vulkan/CMakeFiles/vulkan.dir/Instance.cpp.s
 .PHONY : Instance.cpp.s
 
+RenderPass.o: RenderPass.cpp.o
+.PHONY : RenderPass.o
+
+# target to build an object file
+RenderPass.cpp.o:
+	cd /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/build && $(MAKE) $(MAKESILENT) -f vulkan/CMakeFiles/vulkan.dir/build.make vulkan/CMakeFiles/vulkan.dir/RenderPass.cpp.o
+.PHONY : RenderPass.cpp.o
+
+RenderPass.i: RenderPass.cpp.i
+.PHONY : RenderPass.i
+
+# target to preprocess a source file
+RenderPass.cpp.i:
+	cd /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/build && $(MAKE) $(MAKESILENT) -f vulkan/CMakeFiles/vulkan.dir/build.make vulkan/CMakeFiles/vulkan.dir/RenderPass.cpp.i
+.PHONY : RenderPass.cpp.i
+
+RenderPass.s: RenderPass.cpp.s
+.PHONY : RenderPass.s
+
+# target to generate assembly for a file
+RenderPass.cpp.s:
+	cd /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/build && $(MAKE) $(MAKESILENT) -f vulkan/CMakeFiles/vulkan.dir/build.make vulkan/CMakeFiles/vulkan.dir/RenderPass.cpp.s
+.PHONY : RenderPass.cpp.s
+
 Surface.o: Surface.cpp.o
 .PHONY : Surface.o
 
@@ -265,6 +289,9 @@ help:
 	@echo "... Instance.o"
 	@echo "... Instance.i"
 	@echo "... Instance.s"
+	@echo "... RenderPass.o"
+	@echo "... RenderPass.i"
+	@echo "... RenderPass.s"
 	@echo "... Surface.o"
 	@echo "... Surface.i"
 	@echo "... Surface.s"

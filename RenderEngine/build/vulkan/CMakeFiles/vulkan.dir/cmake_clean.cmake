@@ -5,6 +5,8 @@ file(REMOVE_RECURSE
   "CMakeFiles/vulkan.dir/Device.cpp.o.d"
   "CMakeFiles/vulkan.dir/Instance.cpp.o"
   "CMakeFiles/vulkan.dir/Instance.cpp.o.d"
+  "CMakeFiles/vulkan.dir/RenderPass.cpp.o"
+  "CMakeFiles/vulkan.dir/RenderPass.cpp.o.d"
   "CMakeFiles/vulkan.dir/Surface.cpp.o"
   "CMakeFiles/vulkan.dir/Surface.cpp.o.d"
   "CMakeFiles/vulkan.dir/SwapChain.cpp.o"

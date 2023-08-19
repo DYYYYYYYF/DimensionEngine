@@ -1,5 +1,6 @@
 #include "VkContext.hpp"
 #include "Device.hpp"
+#include "RenderPass.hpp"
 #include "SwapChain.hpp"
 #include "interface/IDevice.hpp"
 
@@ -15,6 +16,7 @@ VkContext::VkContext(){
     _Device = nullptr;
     _Surface = nullptr;
     _Swapchain = nullptr;
+    _RenderPass = nullptr;
 }
 
 bool VkContext::InitContext(){
@@ -29,6 +31,8 @@ bool VkContext::InitContext(){
     if (!CreateSwapchain()) return false;
     _Swapchain->GetImages(_Images);
     _Swapchain->GetImageViews(_Images, _ImageViews);
+
+    if (!CreateRenderPass()) return false;
 
     return true;
 }
@@ -91,6 +95,19 @@ bool VkContext::CreateSwapchain(){
     _SwapchainKHR = _Swapchain->CreateSwapchain(_VkPhyDevice);
     CHECK(_SwapchainKHR);
 
+    return true;
+}
+
+bool VkContext::CreateRenderPass(){
+    _RenderPass = new RenderPass();
+    CHECK(_RenderPass);
+    _RenderPass->SetDevice(_VkDevice);
+    _RenderPass->SetPhyDevice(_VkPhyDevice);
+    _RenderPass->SetSupportInfo(_Swapchain->GetSwapchainSupport());
+
+    _VkRenderPass = _RenderPass->CreateRenderPass();
+    CHECK(_VkRenderPass);
+        
     return true;
 }
 
