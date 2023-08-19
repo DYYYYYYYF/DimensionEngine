@@ -97,10 +97,24 @@ vulkan/CMakeFiles/vulkan.dir/Instance.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/vulkan.dir/Instance.cpp.s"
 	cd /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/build/vulkan && /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/vulkan/Instance.cpp -o CMakeFiles/vulkan.dir/Instance.cpp.s
 
+vulkan/CMakeFiles/vulkan.dir/Surface.cpp.o: vulkan/CMakeFiles/vulkan.dir/flags.make
+vulkan/CMakeFiles/vulkan.dir/Surface.cpp.o: /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/vulkan/Surface.cpp
+vulkan/CMakeFiles/vulkan.dir/Surface.cpp.o: vulkan/CMakeFiles/vulkan.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object vulkan/CMakeFiles/vulkan.dir/Surface.cpp.o"
+	cd /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/build/vulkan && /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT vulkan/CMakeFiles/vulkan.dir/Surface.cpp.o -MF CMakeFiles/vulkan.dir/Surface.cpp.o.d -o CMakeFiles/vulkan.dir/Surface.cpp.o -c /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/vulkan/Surface.cpp
+
+vulkan/CMakeFiles/vulkan.dir/Surface.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/vulkan.dir/Surface.cpp.i"
+	cd /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/build/vulkan && /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/vulkan/Surface.cpp > CMakeFiles/vulkan.dir/Surface.cpp.i
+
+vulkan/CMakeFiles/vulkan.dir/Surface.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/vulkan.dir/Surface.cpp.s"
+	cd /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/build/vulkan && /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/vulkan/Surface.cpp -o CMakeFiles/vulkan.dir/Surface.cpp.s
+
 vulkan/CMakeFiles/vulkan.dir/VkContext.cpp.o: vulkan/CMakeFiles/vulkan.dir/flags.make
 vulkan/CMakeFiles/vulkan.dir/VkContext.cpp.o: /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/vulkan/VkContext.cpp
 vulkan/CMakeFiles/vulkan.dir/VkContext.cpp.o: vulkan/CMakeFiles/vulkan.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object vulkan/CMakeFiles/vulkan.dir/VkContext.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object vulkan/CMakeFiles/vulkan.dir/VkContext.cpp.o"
 	cd /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/build/vulkan && /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT vulkan/CMakeFiles/vulkan.dir/VkContext.cpp.o -MF CMakeFiles/vulkan.dir/VkContext.cpp.o.d -o CMakeFiles/vulkan.dir/VkContext.cpp.o -c /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/vulkan/VkContext.cpp
 
 vulkan/CMakeFiles/vulkan.dir/VkContext.cpp.i: cmake_force
@@ -115,6 +129,7 @@ vulkan/CMakeFiles/vulkan.dir/VkContext.cpp.s: cmake_force
 vulkan_OBJECTS = \
 "CMakeFiles/vulkan.dir/Device.cpp.o" \
 "CMakeFiles/vulkan.dir/Instance.cpp.o" \
+"CMakeFiles/vulkan.dir/Surface.cpp.o" \
 "CMakeFiles/vulkan.dir/VkContext.cpp.o"
 
 # External object files for target vulkan
@@ -122,10 +137,11 @@ vulkan_EXTERNAL_OBJECTS =
 
 /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/library/libvulkan.a: vulkan/CMakeFiles/vulkan.dir/Device.cpp.o
 /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/library/libvulkan.a: vulkan/CMakeFiles/vulkan.dir/Instance.cpp.o
+/Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/library/libvulkan.a: vulkan/CMakeFiles/vulkan.dir/Surface.cpp.o
 /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/library/libvulkan.a: vulkan/CMakeFiles/vulkan.dir/VkContext.cpp.o
 /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/library/libvulkan.a: vulkan/CMakeFiles/vulkan.dir/build.make
 /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/library/libvulkan.a: vulkan/CMakeFiles/vulkan.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Linking CXX static library /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/library/libvulkan.a"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Linking CXX static library /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/library/libvulkan.a"
 	cd /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/build/vulkan && $(CMAKE_COMMAND) -P CMakeFiles/vulkan.dir/cmake_clean_target.cmake
 	cd /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/build/vulkan && $(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/vulkan.dir/link.txt --verbose=$(VERBOSE)
 

@@ -28,7 +28,7 @@ vk::Instance Instance::CreateInstance(SDL_Window* window){
     // Get SDL instance extensions
     std::vector<const char*> extensionNames;
     unsigned int extensionsCount;
-    SDL_Vulkan_GetInstanceExtensions(window, &extensionsCount, extensionNames.data());
+    SDL_Vulkan_GetInstanceExtensions(window, &extensionsCount, nullptr);
     extensionNames.resize(extensionsCount);
     SDL_Vulkan_GetInstanceExtensions(window, &extensionsCount, extensionNames.data());
 

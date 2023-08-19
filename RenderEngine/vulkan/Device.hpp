@@ -16,8 +16,10 @@ public:
     virtual vk::PhysicalDevice CreatePhysicalDeivce();
     virtual vk::PhysicalDevice CreatePhysicalDeivce(vk::Instance instance);
     virtual vk::Device CreateDevice();
+    virtual vk::Device CreateDevice(vk::SurfaceKHR surface);
 
-private:
+protected:
+    bool QueryQueueFamilyProp(vk::SurfaceKHR surface);
     void PickupPhysicsDevice(vk::Instance instance);
 
 };

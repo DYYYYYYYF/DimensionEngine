@@ -19,6 +19,7 @@ protected:
     vk::Instance _VkInstance = nullptr;
     vk::PhysicalDevice _VkPhyDevice = nullptr;
     vk::Device _VkDevice = nullptr;
+    vk::SurfaceKHR _VkSurface = nullptr;
 
 };
 }

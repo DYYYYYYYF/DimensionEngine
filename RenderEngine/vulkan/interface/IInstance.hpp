@@ -7,7 +7,6 @@ class IInstance{
 public:
     IInstance(){}
     virtual ~IInstance(){};
-
     virtual vk::Instance CreateInstance() = 0;
 
 protected:

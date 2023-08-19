@@ -1,17 +1,30 @@
 #include "Surface.hpp"
 
-Surface::Surface(){
-    _Window = udon::WsiWindow::GetInstance()->GetWindow();
-}
+using namespace VkCore;
 
+Surface::Surface(){_Window = udon::WsiWindow::GetInstance()->GetWindow();}
 Surface::Surface(SDL_Window* window) : _Window(window){};
 Surface::Surface(vk::Instance instance, SDL_Window* window) : _VkInstance(instance), _Window(window){};
 
 
 vk::SurfaceKHR Surface::CreateSurface(){
-    vk::SurfaceKHR surface;
-    // SDL_Vulkan_CreateSurface(_Window, _VkInstance, &surface);
+    CHECK(_Window);
+    CHECK(_VkInstance);
 
+    VkSurfaceKHR surface;
 
-    return surface;
+    if (!SDL_Vulkan_CreateSurface(_Window, _VkInstance, &surface)){
+        INFO("Create surface failed.");
+        return nullptr;
+    }
+
+    CHECK(surface);
+    _VkSurface = vk::SurfaceKHR(surface);
+    CHECK(_VkSurface);
+
+    return _VkSurface;
+}
+
+Surface::~Surface(){
+    _VkInstance.destroySurfaceKHR(_VkSurface);
 }

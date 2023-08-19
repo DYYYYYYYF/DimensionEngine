@@ -178,6 +178,30 @@ Instance.cpp.s:
 	cd /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/build && $(MAKE) $(MAKESILENT) -f vulkan/CMakeFiles/vulkan.dir/build.make vulkan/CMakeFiles/vulkan.dir/Instance.cpp.s
 .PHONY : Instance.cpp.s
 
+Surface.o: Surface.cpp.o
+.PHONY : Surface.o
+
+# target to build an object file
+Surface.cpp.o:
+	cd /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/build && $(MAKE) $(MAKESILENT) -f vulkan/CMakeFiles/vulkan.dir/build.make vulkan/CMakeFiles/vulkan.dir/Surface.cpp.o
+.PHONY : Surface.cpp.o
+
+Surface.i: Surface.cpp.i
+.PHONY : Surface.i
+
+# target to preprocess a source file
+Surface.cpp.i:
+	cd /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/build && $(MAKE) $(MAKESILENT) -f vulkan/CMakeFiles/vulkan.dir/build.make vulkan/CMakeFiles/vulkan.dir/Surface.cpp.i
+.PHONY : Surface.cpp.i
+
+Surface.s: Surface.cpp.s
+.PHONY : Surface.s
+
+# target to generate assembly for a file
+Surface.cpp.s:
+	cd /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/build && $(MAKE) $(MAKESILENT) -f vulkan/CMakeFiles/vulkan.dir/build.make vulkan/CMakeFiles/vulkan.dir/Surface.cpp.s
+.PHONY : Surface.cpp.s
+
 VkContext.o: VkContext.cpp.o
 .PHONY : VkContext.o
 
@@ -217,6 +241,9 @@ help:
 	@echo "... Instance.o"
 	@echo "... Instance.i"
 	@echo "... Instance.s"
+	@echo "... Surface.o"
+	@echo "... Surface.i"
+	@echo "... Surface.s"
 	@echo "... VkContext.o"
 	@echo "... VkContext.i"
 	@echo "... VkContext.s"

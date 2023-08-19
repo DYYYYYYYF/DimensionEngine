@@ -3,7 +3,9 @@
 #include "../application/Window.hpp"
 #include "vulkan/vulkan_handles.hpp"
 
+namespace VkCore{
 class Surface{
+public:
     Surface();
     Surface(SDL_Window* window);
     Surface(vk::Instance instance, SDL_Window* window);
@@ -14,5 +16,7 @@ class Surface{
 private:
     SDL_Window* _Window;
     vk::Instance _VkInstance;
+    vk::SurfaceKHR _VkSurface;
 
 };
+}
