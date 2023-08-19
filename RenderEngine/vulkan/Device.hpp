@@ -3,11 +3,6 @@
 #include "vulkan/vulkan_handles.hpp"
 
 namespace VkCore{
-
-struct QueueFamilyIndex{
-
-};
-
 class Device : public IDevice{
 public:
     Device();
@@ -18,9 +13,13 @@ public:
     virtual vk::Device CreateDevice();
     virtual vk::Device CreateDevice(vk::SurfaceKHR surface);
 
+public:
+    QueueFamilyProperty GetQueueFamily() const {return _QueueFamileProp;}
+
 protected:
     bool QueryQueueFamilyProp(vk::SurfaceKHR surface);
     void PickupPhysicsDevice(vk::Instance instance);
+
 
 };
 }

@@ -1,5 +1,6 @@
 #include "VkContext.hpp"
 #include "Device.hpp"
+#include "interface/IDevice.hpp"
 
 using namespace udon;
 using namespace VkCore;
@@ -19,6 +20,9 @@ bool VkContext::InitContext(){
     if (!CreatePhysicalDevice()) return false; 
     if (!CreateSurface()) return false;
     if (!CreateDevice()) return false;
+
+    _QueueFamily = _Device->GetQueueFamily();
+    if (!_Queue.InitQueue(_VkDevice, _QueueFamily)) return false;
 
     return true;
 }

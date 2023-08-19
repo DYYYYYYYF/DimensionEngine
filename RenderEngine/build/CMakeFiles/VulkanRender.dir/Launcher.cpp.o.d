@@ -837,4 +837,5 @@ CMakeFiles/VulkanRender.dir/Launcher.cpp.o: \
   /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/application/../renderer/interface/../../vulkan/Device.hpp \
   /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/application/../renderer/interface/../../vulkan/interface/IDevice.hpp \
   /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/application/../renderer/interface/../../vulkan/Surface.hpp \
-  /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/application/../renderer/interface/../../vulkan/../application/Window.hpp
+  /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/application/../renderer/interface/../../vulkan/../application/Window.hpp \
+  /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/application/../renderer/interface/../../vulkan/Queue.hpp

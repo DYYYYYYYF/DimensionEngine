@@ -840,7 +840,8 @@ application/CMakeFiles/application.dir/Application.cpp.o: /Users/uncled/Document
   /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/vulkan/Device.hpp \
   /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/vulkan/interface/IDevice.hpp \
   /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/vulkan/Surface.hpp \
-  /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/application/Window.hpp
+  /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/application/Window.hpp \
+  /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/vulkan/Queue.hpp
 
 application/CMakeFiles/application.dir/Window.cpp.o: /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/application/Window.cpp \
   /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/application/Window.hpp \
@@ -2200,6 +2201,8 @@ application/CMakeFiles/application.dir/Window.cpp.o: /Users/uncled/Documents/CFi
 /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX13.3.sdk/usr/include/c++/v1/__algorithm/ranges_rotate_copy.h:
 
 /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX13.3.sdk/usr/include/c++/v1/__algorithm/minmax_element.h:
+
+/Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/vulkan/Queue.hpp:
 
 /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX13.3.sdk/usr/include/sys/_types/_rune_t.h:
 

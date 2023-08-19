@@ -834,4 +834,5 @@ renderer/CMakeFiles/renderer.dir/Renderer.cpp.o: \
   /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/renderer/interface/../../vulkan/Device.hpp \
   /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/renderer/interface/../../vulkan/interface/IDevice.hpp \
   /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/renderer/interface/../../vulkan/Surface.hpp \
-  /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/renderer/interface/../../vulkan/../application/Window.hpp
+  /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/renderer/interface/../../vulkan/../application/Window.hpp \
+  /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/renderer/interface/../../vulkan/Queue.hpp

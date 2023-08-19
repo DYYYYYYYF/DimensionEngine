@@ -3262,7 +3262,8 @@ vulkan/CMakeFiles/vulkan.dir/VkContext.cpp.o: /Users/uncled/Documents/CFiles/Vul
   /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/vulkan/Device.hpp \
   /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/vulkan/interface/IDevice.hpp \
   /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/vulkan/Surface.hpp \
-  /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/application/Window.hpp
+  /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/application/Window.hpp \
+  /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/vulkan/Queue.hpp
 
 
 /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/vulkan/interface/IContext.hpp:
@@ -4010,6 +4011,8 @@ vulkan/CMakeFiles/vulkan.dir/VkContext.cpp.o: /Users/uncled/Documents/CFiles/Vul
 /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX13.3.sdk/usr/include/sys/_pthread/_pthread_condattr_t.h:
 
 /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX13.3.sdk/usr/include/c++/v1/__algorithm/minmax_element.h:
+
+/Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/vulkan/Queue.hpp:
 
 /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX13.3.sdk/usr/include/sys/_types/_rune_t.h:
 

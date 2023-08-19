@@ -3,6 +3,7 @@
 #include "Instance.hpp"
 #include "Device.hpp"
 #include "Surface.hpp"
+#include "Queue.hpp"
 #include "vulkan/vulkan_handles.hpp"
 
 namespace VkCore{
@@ -31,6 +32,8 @@ private:
     Instance* _Instance;
     Device* _Device;
     Surface* _Surface;
+    QueueFamilyProperty _QueueFamily;
+    Queue _Queue;
 
 };
 }
