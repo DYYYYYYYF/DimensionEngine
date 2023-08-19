@@ -838,8 +838,13 @@ renderer/CMakeFiles/renderer.dir/Renderer.cpp.o: /Users/uncled/Documents/CFiles/
   /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/vulkan/interface/IDevice.hpp \
   /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/vulkan/Surface.hpp \
   /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/application/Window.hpp \
-  /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/vulkan/Queue.hpp
+  /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/vulkan/Queue.hpp \
+  /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/vulkan/SwapChain.hpp \
+  /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/application/utils/EngineUtils.hpp \
+  /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/application/Window.hpp
 
+
+/Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/vulkan/SwapChain.hpp:
 
 /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/vulkan/Surface.hpp:
 

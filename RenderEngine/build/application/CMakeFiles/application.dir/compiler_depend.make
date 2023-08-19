@@ -841,7 +841,10 @@ application/CMakeFiles/application.dir/Application.cpp.o: /Users/uncled/Document
   /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/vulkan/interface/IDevice.hpp \
   /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/vulkan/Surface.hpp \
   /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/application/Window.hpp \
-  /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/vulkan/Queue.hpp
+  /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/vulkan/Queue.hpp \
+  /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/vulkan/SwapChain.hpp \
+  /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/application/utils/EngineUtils.hpp \
+  /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/application/Window.hpp
 
 application/CMakeFiles/application.dir/Window.cpp.o: /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/application/Window.cpp \
   /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/application/Window.hpp \
@@ -1661,6 +1664,8 @@ application/CMakeFiles/application.dir/Window.cpp.o: /Users/uncled/Documents/CFi
 
 
 /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/application/Window.cpp:
+
+/Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/vulkan/SwapChain.hpp:
 
 /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/vulkan/Surface.hpp:
 

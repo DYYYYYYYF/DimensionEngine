@@ -8,6 +8,7 @@ class WsiWindow{
 public:
     static SDL_Window* GetWindow();
     static WsiWindow* GetInstance();
+    static void GetWindowSize(int& w, int& h);
     static void DestoryWindow();
     virtual ~WsiWindow();
 

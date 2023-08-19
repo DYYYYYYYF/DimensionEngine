@@ -12,6 +12,9 @@ struct Queue{
         GraphicsQueue = device.getQueue(queueFamily.graphicsIndex.value(), 0);
         PresentQueue = device.getQueue(queueFamily.presentIndex.value(), 0);
 
+        CHECK(GraphicsQueue);
+        CHECK(PresentQueue);
+
         return GraphicsQueue && PresentQueue;
     }
 };

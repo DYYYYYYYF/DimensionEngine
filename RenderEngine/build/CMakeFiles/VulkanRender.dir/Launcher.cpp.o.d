@@ -838,4 +838,7 @@ CMakeFiles/VulkanRender.dir/Launcher.cpp.o: \
   /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/application/../renderer/interface/../../vulkan/interface/IDevice.hpp \
   /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/application/../renderer/interface/../../vulkan/Surface.hpp \
   /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/application/../renderer/interface/../../vulkan/../application/Window.hpp \
-  /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/application/../renderer/interface/../../vulkan/Queue.hpp
+  /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/application/../renderer/interface/../../vulkan/Queue.hpp \
+  /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/application/../renderer/interface/../../vulkan/SwapChain.hpp \
+  /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/3rd/tinyobjloader-master/../../application/utils/EngineUtils.hpp \
+  /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/3rd/tinyobjloader-master/../../application/Window.hpp

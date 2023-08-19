@@ -833,4 +833,7 @@ vulkan/CMakeFiles/vulkan.dir/VkContext.cpp.o: \
   /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/vulkan/interface/IDevice.hpp \
   /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/vulkan/Surface.hpp \
   /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/vulkan/../application/Window.hpp \
-  /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/vulkan/Queue.hpp
+  /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/vulkan/Queue.hpp \
+  /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/vulkan/SwapChain.hpp \
+  /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/3rd/tinyobjloader-master/../../application/utils/EngineUtils.hpp \
+  /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/3rd/tinyobjloader-master/../../application/Window.hpp

@@ -7,6 +7,8 @@ file(REMOVE_RECURSE
   "CMakeFiles/vulkan.dir/Instance.cpp.o.d"
   "CMakeFiles/vulkan.dir/Surface.cpp.o"
   "CMakeFiles/vulkan.dir/Surface.cpp.o.d"
+  "CMakeFiles/vulkan.dir/SwapChain.cpp.o"
+  "CMakeFiles/vulkan.dir/SwapChain.cpp.o.d"
   "CMakeFiles/vulkan.dir/VkContext.cpp.o"
   "CMakeFiles/vulkan.dir/VkContext.cpp.o.d"
 )

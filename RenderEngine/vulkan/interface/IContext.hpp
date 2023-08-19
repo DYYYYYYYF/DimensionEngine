@@ -19,7 +19,10 @@ protected:
     vk::Instance _VkInstance = nullptr;
     vk::PhysicalDevice _VkPhyDevice = nullptr;
     vk::Device _VkDevice = nullptr;
-    vk::SurfaceKHR _VkSurface = nullptr;
+    vk::SurfaceKHR _SurfaceKHR = nullptr;
+    vk::SwapchainKHR _SwapchainKHR = nullptr;
+    std::vector<vk::Image> _Images;
+    std::vector<vk::ImageView> _ImageViews;
 
 };
 }

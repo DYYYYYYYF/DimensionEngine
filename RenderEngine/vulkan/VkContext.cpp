@@ -1,5 +1,6 @@
 #include "VkContext.hpp"
 #include "Device.hpp"
+#include "SwapChain.hpp"
 #include "interface/IDevice.hpp"
 
 using namespace udon;
@@ -13,6 +14,7 @@ VkContext::VkContext(){
     _Instance = nullptr;
     _Device = nullptr;
     _Surface = nullptr;
+    _Swapchain = nullptr;
 }
 
 bool VkContext::InitContext(){
@@ -23,6 +25,10 @@ bool VkContext::InitContext(){
 
     _QueueFamily = _Device->GetQueueFamily();
     if (!_Queue.InitQueue(_VkDevice, _QueueFamily)) return false;
+
+    if (!CreateSwapchain()) return false;
+    _Swapchain->GetImages(_Images);
+    _Swapchain->GetImageViews(_Images, _ImageViews);
 
     return true;
 }
@@ -63,19 +69,27 @@ bool VkContext::CreateDevice(){
     if (!_Device) _Device = new Device();
     CHECK(_Device);
 
-    _VkDevice = _Device->CreateDevice(_VkSurface);
+    _VkDevice = _Device->CreateDevice(_SurfaceKHR);
     CHECK(_VkDevice);
 
     return true;
 }
 
 bool VkContext::CreateSurface(){
-
-    //Surface
     _Surface = new Surface(_VkInstance, _Window);
     CHECK(_Surface);
-    _VkSurface = _Surface->CreateSurface();
-    CHECK(_VkSurface);
+    _SurfaceKHR = _Surface->CreateSurface();
+    CHECK(_SurfaceKHR);
+
+    return true;
+}
+
+bool VkContext::CreateSwapchain(){
+    _Swapchain = new SwapChain(_SurfaceKHR, _QueueFamily);
+    CHECK(_Swapchain);
+    _Swapchain->SetDevice(_VkDevice);
+    _SwapchainKHR = _Swapchain->CreateSwapchain(_VkPhyDevice);
+    CHECK(_SwapchainKHR);
 
     return true;
 }

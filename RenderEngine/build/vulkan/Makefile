@@ -202,6 +202,30 @@ Surface.cpp.s:
 	cd /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/build && $(MAKE) $(MAKESILENT) -f vulkan/CMakeFiles/vulkan.dir/build.make vulkan/CMakeFiles/vulkan.dir/Surface.cpp.s
 .PHONY : Surface.cpp.s
 
+SwapChain.o: SwapChain.cpp.o
+.PHONY : SwapChain.o
+
+# target to build an object file
+SwapChain.cpp.o:
+	cd /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/build && $(MAKE) $(MAKESILENT) -f vulkan/CMakeFiles/vulkan.dir/build.make vulkan/CMakeFiles/vulkan.dir/SwapChain.cpp.o
+.PHONY : SwapChain.cpp.o
+
+SwapChain.i: SwapChain.cpp.i
+.PHONY : SwapChain.i
+
+# target to preprocess a source file
+SwapChain.cpp.i:
+	cd /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/build && $(MAKE) $(MAKESILENT) -f vulkan/CMakeFiles/vulkan.dir/build.make vulkan/CMakeFiles/vulkan.dir/SwapChain.cpp.i
+.PHONY : SwapChain.cpp.i
+
+SwapChain.s: SwapChain.cpp.s
+.PHONY : SwapChain.s
+
+# target to generate assembly for a file
+SwapChain.cpp.s:
+	cd /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/build && $(MAKE) $(MAKESILENT) -f vulkan/CMakeFiles/vulkan.dir/build.make vulkan/CMakeFiles/vulkan.dir/SwapChain.cpp.s
+.PHONY : SwapChain.cpp.s
+
 VkContext.o: VkContext.cpp.o
 .PHONY : VkContext.o
 
@@ -244,6 +268,9 @@ help:
 	@echo "... Surface.o"
 	@echo "... Surface.i"
 	@echo "... Surface.s"
+	@echo "... SwapChain.o"
+	@echo "... SwapChain.i"
+	@echo "... SwapChain.s"
 	@echo "... VkContext.o"
 	@echo "... VkContext.i"
 	@echo "... VkContext.s"

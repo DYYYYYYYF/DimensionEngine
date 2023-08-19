@@ -4,7 +4,7 @@
 #include "Device.hpp"
 #include "Surface.hpp"
 #include "Queue.hpp"
-#include "vulkan/vulkan_handles.hpp"
+#include "SwapChain.hpp"
 
 namespace VkCore{
 class VkContext : public IContext{
@@ -19,11 +19,13 @@ public:
     bool CreatePhysicalDevice();
     bool CreateDevice();
     bool CreateSurface();
+    bool CreateSwapchain();
 
     SDL_Window* GetWindow() const {return _Window;}
     vk::Instance GetInstance() const {return _VkInstance;} 
     vk::Device GetDevice() const {return _VkDevice;}
-    vk::SurfaceKHR GetSurface() const {return _VkSurface;}
+    vk::SurfaceKHR GetSurface() const {return _SurfaceKHR;}
+    vk::SwapchainKHR GetSwapchain() const {return _SwapchainKHR;}
 
 private:
     bool InitWindow();
@@ -34,6 +36,7 @@ private:
     Surface* _Surface;
     QueueFamilyProperty _QueueFamily;
     Queue _Queue;
+    SwapChain* _Swapchain;
 
 };
 }

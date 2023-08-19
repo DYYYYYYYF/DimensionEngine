@@ -49,3 +49,8 @@ void WsiWindow::DestoryWindow(){
     SDL_DestroyWindow(_SDLWindow);
     SDL_Quit();
 }
+
+void WsiWindow::GetWindowSize(int& w, int& h){
+    w = _Width;
+    h = _Height;
+}
