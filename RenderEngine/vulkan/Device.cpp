@@ -75,7 +75,9 @@ vk::Device Device::CreateDevice(vk::SurfaceKHR surface){
         std::cout << _QueueFamileProp.graphicsIndex.value() << " " << _QueueFamileProp.presentIndex.value() << std::endl;
     #endif
 
-    return _VkPhyDevice.createDevice(dInfo);
+    _VkDevice = _VkPhyDevice.createDevice(dInfo);
+    CHECK(_VkDevice);
+    return _VkDevice;
 }
 
 bool Device::QueryQueueFamilyProp(vk::SurfaceKHR surface){

@@ -15,6 +15,8 @@ public:
 
 public:
     QueueFamilyProperty GetQueueFamily() const {return _QueueFamileProp;}
+    vk::Device GetDevice() const {return _VkDevice;}
+    vk::PhysicalDevice GetPhyDevice() const {return _VkPhyDevice;}
 
 protected:
     bool QueryQueueFamilyProp(vk::SurfaceKHR surface);

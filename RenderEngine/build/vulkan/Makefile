@@ -130,6 +130,54 @@ vulkan/fast:
 	cd /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/build && $(MAKE) $(MAKESILENT) -f vulkan/CMakeFiles/vulkan.dir/build.make vulkan/CMakeFiles/vulkan.dir/build
 .PHONY : vulkan/fast
 
+Buffer.o: Buffer.cpp.o
+.PHONY : Buffer.o
+
+# target to build an object file
+Buffer.cpp.o:
+	cd /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/build && $(MAKE) $(MAKESILENT) -f vulkan/CMakeFiles/vulkan.dir/build.make vulkan/CMakeFiles/vulkan.dir/Buffer.cpp.o
+.PHONY : Buffer.cpp.o
+
+Buffer.i: Buffer.cpp.i
+.PHONY : Buffer.i
+
+# target to preprocess a source file
+Buffer.cpp.i:
+	cd /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/build && $(MAKE) $(MAKESILENT) -f vulkan/CMakeFiles/vulkan.dir/build.make vulkan/CMakeFiles/vulkan.dir/Buffer.cpp.i
+.PHONY : Buffer.cpp.i
+
+Buffer.s: Buffer.cpp.s
+.PHONY : Buffer.s
+
+# target to generate assembly for a file
+Buffer.cpp.s:
+	cd /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/build && $(MAKE) $(MAKESILENT) -f vulkan/CMakeFiles/vulkan.dir/build.make vulkan/CMakeFiles/vulkan.dir/Buffer.cpp.s
+.PHONY : Buffer.cpp.s
+
+CmdBuffer.o: CmdBuffer.cpp.o
+.PHONY : CmdBuffer.o
+
+# target to build an object file
+CmdBuffer.cpp.o:
+	cd /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/build && $(MAKE) $(MAKESILENT) -f vulkan/CMakeFiles/vulkan.dir/build.make vulkan/CMakeFiles/vulkan.dir/CmdBuffer.cpp.o
+.PHONY : CmdBuffer.cpp.o
+
+CmdBuffer.i: CmdBuffer.cpp.i
+.PHONY : CmdBuffer.i
+
+# target to preprocess a source file
+CmdBuffer.cpp.i:
+	cd /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/build && $(MAKE) $(MAKESILENT) -f vulkan/CMakeFiles/vulkan.dir/build.make vulkan/CMakeFiles/vulkan.dir/CmdBuffer.cpp.i
+.PHONY : CmdBuffer.cpp.i
+
+CmdBuffer.s: CmdBuffer.cpp.s
+.PHONY : CmdBuffer.s
+
+# target to generate assembly for a file
+CmdBuffer.cpp.s:
+	cd /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/build && $(MAKE) $(MAKESILENT) -f vulkan/CMakeFiles/vulkan.dir/build.make vulkan/CMakeFiles/vulkan.dir/CmdBuffer.cpp.s
+.PHONY : CmdBuffer.cpp.s
+
 Device.o: Device.cpp.o
 .PHONY : Device.o
 
@@ -283,6 +331,12 @@ help:
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
 	@echo "... vulkan"
+	@echo "... Buffer.o"
+	@echo "... Buffer.i"
+	@echo "... Buffer.s"
+	@echo "... CmdBuffer.o"
+	@echo "... CmdBuffer.i"
+	@echo "... CmdBuffer.s"
 	@echo "... Device.o"
 	@echo "... Device.i"
 	@echo "... Device.s"

@@ -6,6 +6,7 @@
 #include "Queue.hpp"
 #include "SwapChain.hpp"
 #include "RenderPass.hpp"
+#include "CmdBuffer.hpp"
 #include "vulkan/vulkan_handles.hpp"
 
 namespace VkCore{
@@ -23,6 +24,7 @@ public:
     bool CreateSurface();
     bool CreateSwapchain();
     bool CreateRenderPass();
+    bool AllocateCmdBuffer();
 
     SDL_Window* GetWindow() const {return _Window;}
     vk::Instance GetInstance() const {return _VkInstance;} 
@@ -30,6 +32,7 @@ public:
     vk::SurfaceKHR GetSurface() const {return _SurfaceKHR;}
     vk::SwapchainKHR GetSwapchain() const {return _SwapchainKHR;}
     vk::RenderPass GetRenderPass() const {return _VkRenderPass;}
+    vk::CommandBuffer GetCommandBuf() const {return _CmdBuffer;}
 
 private:
     bool InitWindow();
@@ -42,6 +45,7 @@ private:
     Queue _Queue;
     SwapChain* _Swapchain;
     RenderPass* _RenderPass;
+    CommandBuf* _ICmdBuffer;
 
 };
 }

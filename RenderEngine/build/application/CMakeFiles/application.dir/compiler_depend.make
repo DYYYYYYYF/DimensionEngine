@@ -845,7 +845,8 @@ application/CMakeFiles/application.dir/Application.cpp.o: /Users/uncled/Document
   /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/vulkan/SwapChain.hpp \
   /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/application/utils/EngineUtils.hpp \
   /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/application/Window.hpp \
-  /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/vulkan/RenderPass.hpp
+  /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/vulkan/RenderPass.hpp \
+  /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/vulkan/CmdBuffer.hpp
 
 application/CMakeFiles/application.dir/Window.cpp.o: /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/application/Window.cpp \
   /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/application/Window.hpp \
@@ -1665,6 +1666,8 @@ application/CMakeFiles/application.dir/Window.cpp.o: /Users/uncled/Documents/CFi
 
 
 /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/application/Window.cpp:
+
+/Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/vulkan/CmdBuffer.hpp:
 
 /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/vulkan/RenderPass.hpp:
 

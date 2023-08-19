@@ -1,4 +1,5 @@
 #include "VkContext.hpp"
+#include "CmdBuffer.hpp"
 #include "Device.hpp"
 #include "RenderPass.hpp"
 #include "SwapChain.hpp"
@@ -17,6 +18,7 @@ VkContext::VkContext(){
     _Surface = nullptr;
     _Swapchain = nullptr;
     _RenderPass = nullptr;
+    _ICmdBuffer = nullptr;
 }
 
 bool VkContext::InitContext(){
@@ -33,6 +35,7 @@ bool VkContext::InitContext(){
     _Swapchain->GetImageViews(_Images, _ImageViews);
 
     if (!CreateRenderPass()) return false;
+    if (!AllocateCmdBuffer()) return false;
 
     return true;
 }
@@ -108,6 +111,17 @@ bool VkContext::CreateRenderPass(){
     _VkRenderPass = _RenderPass->CreateRenderPass();
     CHECK(_VkRenderPass);
         
+    return true;
+}
+
+bool VkContext::AllocateCmdBuffer(){
+    _ICmdBuffer = new CommandBuf();
+    CHECK(_ICmdBuffer);
+    _CmdPool = _ICmdBuffer->CreateCmdPool(_Device);
+    CHECK(_CmdPool);
+    _CmdBuffer = _ICmdBuffer->AllocateCmdBuffer(_Device);
+    CHECK(_CmdBuffer);
+
     return true;
 }
 

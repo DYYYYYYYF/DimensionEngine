@@ -25,6 +25,8 @@ protected:
     std::vector<vk::Image> _Images;
     std::vector<vk::ImageView> _ImageViews;
     vk::RenderPass _VkRenderPass = nullptr;
+    vk::CommandPool _CmdPool = nullptr;
+    vk::CommandBuffer _CmdBuffer = nullptr;
 
 };
 }

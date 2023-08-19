@@ -1,4 +1,3 @@
-2023-08-19 17:12:41 DEBUG /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/engine/EngineLogger.cpp:12	Logger Init Success.
-2023-08-19 17:36:02 DEBUG /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/engine/EngineLogger.cpp:12	Logger Init Success.
-2023-08-19 17:38:11 DEBUG /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/engine/EngineLogger.cpp:12	Logger Init Success.
-2023-08-19 17:39:41 DEBUG /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/engine/EngineLogger.cpp:12	Logger Init Success.
+2023-08-19 18:28:54 DEBUG /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/engine/EngineLogger.cpp:12	Logger Init Success.
+2023-08-19 18:28:54 DEBUG /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/vulkan/CmdBuffer.cpp:17	deviceis null!
+2023-08-19 18:32:43 DEBUG /Users/uncled/Documents/CFiles/VulkanEngine/RenderEngine/engine/EngineLogger.cpp:12	Logger Init Success.
