@@ -19,3 +19,6 @@ bool Renderer::Init(){
     return true;
 }
 
+void Renderer::Draw(){
+    _Context->Draw();
+}

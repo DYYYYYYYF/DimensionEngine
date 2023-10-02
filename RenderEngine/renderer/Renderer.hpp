@@ -6,6 +6,7 @@ public:
     Renderer();
     virtual ~Renderer();
     virtual bool Init();
+    virtual void Draw();
 
 private:
 

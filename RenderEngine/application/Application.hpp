@@ -16,6 +16,7 @@ public:
 private:
     SDL_Window* _window;
     Renderer* _Renderer;
+    int _FrameCount = 0;
 
 };
 } 

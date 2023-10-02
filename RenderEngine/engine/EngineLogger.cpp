@@ -9,10 +9,13 @@ EngineLogger::EngineLogger(){
     curPath.append("bin/EngineLog.log");
 
     Log::Logger::getInstance()->open(curPath.c_str());
-    DEBUG("Logger Init Success.");
+    Log::Logger::getInstance()->setMaxSize(1024000);
+
+    INFO("Logger Init Success.");
 }
 
 #else
+
 EngineLogger::EngineLogger(){
     // Get current path
     std::filesystem::path curPath = std::filesystem::current_path();

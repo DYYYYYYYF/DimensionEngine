@@ -17,12 +17,12 @@ Engine::~Engine(){
 
 bool Engine::Init(){
 
+    _window = WsiWindow::GetInstance()->GetWindow();
+    CHECK(_window);
+
     _Renderer = new Renderer();    
     CHECK(_Renderer);
     _Renderer->Init();
-
-    _window = WsiWindow::GetInstance()->GetWindow();
-    CHECK(_window);
 
     return true;
 }
@@ -44,6 +44,9 @@ void Engine::Run(){
                 isQuit = true;
             }
         }
+
+        _Renderer->Draw();
+        _FrameCount++;
 
     }
 }
