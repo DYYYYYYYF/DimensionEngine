@@ -7,6 +7,7 @@
 #include "SwapChain.hpp"
 #include "RenderPass.hpp"
 #include "CmdBuffer.hpp"
+#include "vulkan/vulkan_enums.hpp"
 #include "vulkan/vulkan_handles.hpp"
 
 namespace VkCore{
@@ -24,7 +25,23 @@ public:
     bool CreateSurface();
     bool CreateSwapchain();
     bool CreateRenderPass();
+    bool CreateCmdPool();
     bool AllocateCmdBuffer();
+    bool CreateFrameBuffers();
+    bool InitSyncStructures();
+    bool CreateShaderModule(const char* shader_file, vk::ShaderModule& module);
+    bool InitPipeline();
+
+    // Pipeline
+    vk::PipelineShaderStageCreateInfo InitShaderStageCreateInfo(vk::ShaderStageFlagBits stage, vk::ShaderModule shader_module);
+    vk::PipelineVertexInputStateCreateInfo InitVertexInputStateCreateInfo();
+    vk::PipelineInputAssemblyStateCreateInfo InitAssemblyStateCreateInfo(vk::PrimitiveTopology topology);
+    vk::PipelineRasterizationStateCreateInfo InitRasterizationStateCreateInfo(vk::PolygonMode polygonMode);
+    vk::PipelineMultisampleStateCreateInfo InitMultisampleStateCreateInfo();
+    vk::PipelineColorBlendAttachmentState InitColorBlendAttachmentState();
+    vk::PipelineLayoutCreateInfo InitPipelineLayoutCreateInfo();
+
+    void Draw();
 
     SDL_Window* GetWindow() const {return _Window;}
     vk::Instance GetInstance() const {return _VkInstance;} 
@@ -32,6 +49,7 @@ public:
     vk::SurfaceKHR GetSurface() const {return _SurfaceKHR;}
     vk::SwapchainKHR GetSwapchain() const {return _SwapchainKHR;}
     vk::RenderPass GetRenderPass() const {return _VkRenderPass;}
+    vk::CommandPool GetCmdPool() const {return _CmdPool;}
     vk::CommandBuffer GetCommandBuf() const {return _CmdBuffer;}
 
 private:
@@ -46,7 +64,6 @@ private:
     SwapChain* _Swapchain;
     RenderPass* _RenderPass;
     CommandBuf* _ICmdBuffer;
-
 };
 }
 

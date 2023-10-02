@@ -16,6 +16,9 @@ public:
     void SetDevice(const vk::Device device) {_VkDevice = device;}
     void SetPhyDevice(const vk::PhysicalDevice phyDevice) {_VkPhyDevice = phyDevice;}
 
+    vk::RenderPass GetRenderPass() const {return _VkRenderPass;}
+
+
 private:
     vk::Format FindSupportedFormat(const std::vector<vk::Format>& candidates, vk::ImageTiling tiling, vk::FormatFeatureFlags features) const;
     vk::Format FindDepthFormat() const;

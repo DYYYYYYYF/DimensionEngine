@@ -1,4 +1,5 @@
 #include "SwapChain.hpp"
+#include "vulkan/vulkan_handles.hpp"
 
 using namespace VkCore;
 SwapChain::SwapChain(vk::SurfaceKHR surface, VkCore::QueueFamilyProperty queueFamily){
@@ -102,5 +103,23 @@ void SwapChain::GetImageViews(const std::vector<vk::Image>& images, std::vector<
         vk::ComponentMapping mapping;
         info.setComponents(mapping);
         views[i] = _VkDevice.createImageView(info);
+    }
+}
+
+void SwapChain::CreateFrameBuffers(const std::vector<vk::Image>& images, const std::vector<vk::ImageView>& views,
+                                   std::vector<vk::Framebuffer>& frameBuffers, const vk::RenderPass& renderpass){
+       
+    const uint32_t nSwapchainCount = images.size();
+    frameBuffers = std::vector<vk::Framebuffer>(nSwapchainCount);
+
+    for (int i=0; i<nSwapchainCount; ++i){
+        vk::FramebufferCreateInfo info;
+        info.setRenderPass(renderpass)
+            .setAttachmentCount(1)
+            .setWidth(w)
+            .setHeight(h)
+            .setLayers(1)
+            .setPAttachments(&views[i]);
+        frameBuffers[i] = _VkDevice.createFramebuffer(info);
     }
 }

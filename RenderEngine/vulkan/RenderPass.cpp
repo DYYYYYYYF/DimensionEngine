@@ -48,30 +48,31 @@ vk::RenderPass RenderPass::CreateRenderPass(){
                  .setFinalLayout(vk::ImageLayout::ePresentSrcKHR);
     info.setAttachments(attchmentDesc);
     
-    vk::SubpassDescription subpassDesc;
     vk::AttachmentReference colRefer;
     colRefer.setLayout(vk::ImageLayout::eColorAttachmentOptimal);
     colRefer.setAttachment(0);
 
        //深度附件
-    vk::AttachmentDescription depthAttchDesc;
-    depthAttchDesc.setFormat(FindDepthFormat())
-                  .setSamples(vk::SampleCountFlagBits::e1)
-                  .setLoadOp(vk::AttachmentLoadOp::eClear)
-                  .setStoreOp(vk::AttachmentStoreOp::eDontCare)
-                  .setStencilLoadOp(vk::AttachmentLoadOp::eDontCare)
-                  .setStencilStoreOp(vk::AttachmentStoreOp::eDontCare)
-                  .setInitialLayout(vk::ImageLayout::eUndefined)
-                  .setFinalLayout(vk::ImageLayout::eDepthReadOnlyStencilAttachmentOptimal);
-    vk::AttachmentReference depthRef;
-    depthRef.setAttachment(1)
-            .setLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal);
-
+    // vk::AttachmentDescription depthAttchDesc;
+    // depthAttchDesc.setFormat(FindDepthFormat())
+    //               .setSamples(vk::SampleCountFlagBits::e1)
+    //               .setLoadOp(vk::AttachmentLoadOp::eClear)
+    //               .setStoreOp(vk::AttachmentStoreOp::eDontCare)
+    //               .setStencilLoadOp(vk::AttachmentLoadOp::eDontCare)
+    //               .setStencilStoreOp(vk::AttachmentStoreOp::eDontCare)
+    //               .setInitialLayout(vk::ImageLayout::eUndefined)
+    //               .setFinalLayout(vk::ImageLayout::eDepthReadOnlyStencilAttachmentOptimal);
+    // vk::AttachmentReference depthRef;
+    // depthRef.setAttachment(1)
+    //         .setLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal);
+    //
+    vk::SubpassDescription subpassDesc;
     subpassDesc.setColorAttachments(colRefer);
-    subpassDesc.setPDepthStencilAttachment(&depthRef);
+    // subpassDesc.setPDepthStencilAttachment(&depthRef);
     subpassDesc.setPipelineBindPoint(vk::PipelineBindPoint::eGraphics);
 
-    std::array<vk::AttachmentDescription, 2> attachments = {attchmentDesc, depthAttchDesc};
+    // std::array<vk::AttachmentDescription, 2> attachments = {attchmentDesc, depthAttchDesc};
+    std::array<vk::AttachmentDescription, 1> attachments = {attchmentDesc};
     info.setSubpassCount(1)
         .setSubpasses(subpassDesc)
         .setAttachmentCount(attachments.size())

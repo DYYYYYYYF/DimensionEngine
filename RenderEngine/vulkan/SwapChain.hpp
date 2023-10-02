@@ -1,7 +1,9 @@
 #pragma once
+#include <vector>
 #include <vulkan/vulkan.hpp>
 #include "Device.hpp"
 #include "interface/IDevice.hpp"
+#include "vulkan/vulkan_handles.hpp"
 #include <../../application/utils/EngineUtils.hpp>
 #include <../../application/Window.hpp>
 
@@ -22,6 +24,8 @@ public:
     virtual ~SwapChain();
     
     virtual vk::SwapchainKHR CreateSwapchain(vk::PhysicalDevice phyDevice);
+    virtual void CreateFrameBuffers(const std::vector<vk::Image>& images, const std::vector<vk::ImageView>& views,
+                                    std::vector<vk::Framebuffer>& frameBuffers, const vk::RenderPass& renderpass);
 
 public:
     void SetDevice(vk::Device device){_VkDevice = device;}
@@ -40,6 +44,9 @@ private:
     vk::SurfaceKHR _SurfaceKHR;
     vk::Device _VkDevice;
     vk::SwapchainKHR _SwapchainKHR;
+
+    std::vector<vk::Image> _Images;
+    std::vector<vk::ImageView> _ImageViews;
 
     SwapchainSupport _SupportInfo;
     QueueFamilyProperty _QueueFamily;
