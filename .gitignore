@@ -6,12 +6,12 @@
 # 以叹号“!”表示不忽略(跟踪)匹配到的文件或目录；
 
 /.cache/* ,
-/.cache/ ,
+/.cache ,
 /build/*,
-/build/,
+/build,
 /bin/*,
-/bin/,
-/.cache/,
+/bin,
+/.cache,
 /.cache/*,
 /library,
 *.DS_Store
