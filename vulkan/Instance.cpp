@@ -35,14 +35,27 @@ vk::Instance Instance::CreateInstance(SDL_Window* window){
     #ifdef __APPLE__
         // MacOS requirment
         extensionNames.push_back("VK_KHR_get_physical_device_properties2");
+        ++extensionsCount;
     #endif
 
+
+    std::vector<VkLayerProperties> enumLayers;
+    uint32_t enumLayerCount;
+    vkEnumerateInstanceLayerProperties(&enumLayerCount, enumLayers.data());
+    enumLayers.resize(enumLayerCount);
+    vkEnumerateInstanceLayerProperties(&enumLayerCount, enumLayers.data());
+
     //validation layers
-    std::array<const char*, 1> layers{"VK_LAYER_KHRONOS_validation"};
+    std::vector<const char*> layers;
+    for (auto& enumLayer : enumLayers) {
+        if (strcmp(enumLayer.layerName, "VK_LAYER_KHRONOS_validation") == 0) {
+            layers.push_back("VK_LAYER_KHRONOS_validation");
+        }
+    }
 
     info.setPpEnabledExtensionNames(extensionNames.data())
         .setPEnabledLayerNames(layers)
-        .setEnabledExtensionCount(++extensionsCount)
+        .setEnabledExtensionCount(extensionsCount)
         .setEnabledLayerCount(layers.size());
 
     std::cout << "Added Extensions:\n";

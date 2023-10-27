@@ -1,6 +1,6 @@
 #pragma once
+#include <iostream>
 #include "interface/IDevice.hpp"
-#include "vulkan/vulkan_handles.hpp"
 
 namespace VkCore{
 class Device : public IDevice{

@@ -41,7 +41,7 @@ bool SwapChain::QuerySupportInfo(vk::PhysicalDevice phyDevice){
     _SupportInfo.imageCount = std::clamp<uint32_t>(2,
                             _SupportInfo.capabilities.minImageCount,
                             _SupportInfo.capabilities.maxImageCount);
-    _SupportInfo.presnetMode = vk::PresentModeKHR::eFifo;    //默认值--先进先出绘制图像
+    _SupportInfo.presnetMode = vk::PresentModeKHR::eFifo;    //Default
     auto presentModes = phyDevice.getSurfacePresentModesKHR(_SurfaceKHR);
     for(auto& mode:presentModes){
         if(mode == vk::PresentModeKHR::eMailbox){
@@ -90,7 +90,7 @@ void SwapChain::GetImageViews(const std::vector<vk::Image>& images, std::vector<
     views.resize(images.size());
     for(int i=0; i<images.size(); i++){
         vk::ImageViewCreateInfo info;
-        info.setImage(images[i]);     //纹理贴图
+        info.setImage(images[i]);     // Texture
         info.setFormat(_SupportInfo.format.format);
         info.setViewType(vk::ImageViewType::e2D);
         vk::ImageSubresourceRange range;

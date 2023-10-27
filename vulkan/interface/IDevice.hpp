@@ -1,5 +1,4 @@
 #pragma once
-#include <_types/_uint32_t.h>
 #include <vulkan/vulkan.hpp>
 #include <optional>
 #include "../../application/utils/EngineUtils.hpp"

@@ -1,7 +1,4 @@
 #include "Device.hpp"
-#include "vulkan/vulkan_handles.hpp"
-#include "vulkan/vulkan_structs.hpp"
-#include <iostream>
 
 using namespace VkCore; 
 
@@ -41,14 +38,14 @@ vk::Device Device::CreateDevice(vk::SurfaceKHR surface){
     }
 
     std::vector<vk::DeviceQueueCreateInfo> dqInfo;
-    //两者索引值相同，只需要创建一个实体
-    if(_QueueFamileProp.graphicsIndex.value() == _QueueFamileProp.presentIndex.value()){
+    // Only one instance when graphicsIndex sames as presentIndex
+    if (_QueueFamileProp.graphicsIndex.value() == _QueueFamileProp.presentIndex.value()){
         vk::DeviceQueueCreateInfo info;
         float priority = 1.0;
-        info.setQueuePriorities(priority);      //优先级
-        info.setQueueCount(1);          //队列个数
-        info.setQueueFamilyIndex(_QueueFamileProp.graphicsIndex.value());     //下标  
-        dqInfo.push_back(info);        
+        info.setQueuePriorities(priority);
+        info.setQueueCount(1);
+        info.setQueueFamilyIndex(_QueueFamileProp.graphicsIndex.value());    
+        dqInfo.push_back(info);
     } else {
         vk::DeviceQueueCreateInfo info1;
         float priority = 1.0;
@@ -67,8 +64,13 @@ vk::Device Device::CreateDevice(vk::SurfaceKHR surface){
 
     vk::DeviceCreateInfo dInfo;
     dInfo.setQueueCreateInfos(dqInfo);
+
+#ifdef __APPLE__
     std::array<const char*,2> extensions{"VK_KHR_portability_subset",
                                           VK_KHR_SWAPCHAIN_EXTENSION_NAME};
+#elif _WIN32
+    std::array<const char*, 1> extensions{ VK_KHR_SWAPCHAIN_EXTENSION_NAME};
+#endif
     dInfo.setPEnabledExtensionNames(extensions);
 
     #ifdef __BUILD__
@@ -87,15 +89,15 @@ bool Device::QueryQueueFamilyProp(vk::SurfaceKHR surface){
     auto families = _VkPhyDevice.getQueueFamilyProperties();
     uint32_t index = 0;
     for(auto &family:families){
-        //选取Graph相关指令
+        //Pickup Graph command
         if(family.queueFlags | vk::QueueFlagBits::eGraphics){
             _QueueFamileProp.graphicsIndex = index;
         }
-        //选取Surface相关指令
+        //Pickup Surface command
         if(_VkPhyDevice.getSurfaceSupportKHR(index, surface)){
             _QueueFamileProp.presentIndex = index;
         }
-        //如果都找到对应序列索引，直接退出
+        //if no command, break
         if(_QueueFamileProp.graphicsIndex && _QueueFamileProp.presentIndex) {
             break;
         }

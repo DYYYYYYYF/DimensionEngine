@@ -8,7 +8,6 @@
 #include "vulkan/vulkan_enums.hpp"
 #include "vulkan/vulkan_handles.hpp"
 #include "vulkan/vulkan_structs.hpp"
-#include <_types/_uint32_t.h>
 #include <fstream>
 #include <vector>
 
@@ -244,7 +243,7 @@ void VkContext::Draw(){
 
 bool VkContext::CreateShaderModule(const char* shader_file, vk::ShaderModule& module){
 
-    //二进制格式读取文件
+    // Load file by binary
     std::ifstream file(shader_file, std::ios::binary | std::ios::in);
     std::vector<char> content((std::istreambuf_iterator<char>(file)),
                                std::istreambuf_iterator<char>());
@@ -340,8 +339,8 @@ vk::PipelineLayoutCreateInfo VkContext::InitPipelineLayoutCreateInfo(){
 
 bool VkContext::InitPipeline(){
 
-    if (!CreateShaderModule("./shader/triangle_vert.spv", _VertShader)) return false;
-    if (!CreateShaderModule("./shader/triangle_frag.spv", _FragShader)) return false;
+    if (!CreateShaderModule("../shader/triangle_vert.spv", _VertShader)) return false;
+    if (!CreateShaderModule("../shader/triangle_frag.spv", _FragShader)) return false;
 
     INFO("Pipeline Layout");
     vk::PipelineLayoutCreateInfo info = InitPipelineLayoutCreateInfo();
