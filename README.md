@@ -11,16 +11,5 @@ cmd 'make'
 
 after all, it will create a executable program named VulkanTestDemo
 
-## Key  
-X：Realism Renderding.  
-C：Cartoon Renderding.  
-V：Normal Renderding.  
-  
-W：move forward.  
-A：move left.  
-S：move back.  
-D：move right.  
-  
-J/K：Rotate by X axis.  
-U/I：Rotate by Y axis.  
-<- / ->：Rotate by Z axis.  
+## Warn: Under refactory 
+By far, impl Triangle renderer.
