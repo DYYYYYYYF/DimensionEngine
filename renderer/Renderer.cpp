@@ -1,4 +1,5 @@
 #include "Renderer.hpp"
+#include "VulkanRenderer.hpp"
 #include <cstdlib>
 
 using namespace renderer;
@@ -17,6 +18,9 @@ bool Renderer::Init(){
         DEBUG("Create Context Failed.");
         return false;
     }
+
+    _Renderer = new VulkanRenderer();
+    _Renderer->CreateInstance();
 
     return true;
 }

@@ -60,7 +60,7 @@ void VulkanRenderer::CreateInstance() {
     _VkInstance = vk::createInstance(info);
 }
 
-void CreatePhyDevice() {
+void VulkanRenderer::CreatePhyDevice() {
 
 
 }
