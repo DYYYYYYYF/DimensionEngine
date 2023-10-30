@@ -6,11 +6,14 @@ namespace udon {
 
 static EngineLogger* GLOBAL_LOGGER = new EngineLogger();
 
-#define CHECK(expr) \
-    if(!(expr)) { \
-        DEBUG(#expr "is null!"); \
-        exit(-1); \
-}
-
+#ifdef DEBUG
+    #define CHECK(expr) \
+        if(!(expr)) { \
+            DEBUG(#expr "is null!"); \
+            exit(-1); \
+    }
+#else
+    #define CHECK(expr)
+#endif //ifdef DEBUG
 }
 
