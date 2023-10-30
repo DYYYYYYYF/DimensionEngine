@@ -3,8 +3,6 @@
 
 using namespace udon;
 
-EngineLogger* GLOBAL_LOGGER = new EngineLogger();
-
 Engine::Engine(){
     
     _window = nullptr;

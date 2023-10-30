@@ -3,6 +3,8 @@
 #include "utils/EngineUtils.hpp"
 #include "../renderer/Renderer.hpp"
 
+using namespace renderer;
+
 namespace udon{
 class Engine{
 public:

@@ -1,6 +1,8 @@
 #include "Renderer.hpp"
 #include <cstdlib>
 
+using namespace renderer;
+
 Renderer::Renderer(){
     _Context = nullptr;
 }

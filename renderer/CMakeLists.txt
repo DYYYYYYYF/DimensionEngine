@@ -1,8 +1,9 @@
-message("\n-- Renderer:\n")
+message("\n-- Renderer:")
 
-include_directories("../")
-file(GLOB RENDERER_RESOURCE_FILES *.cpp)
+include_directories("../" "vulkan")
+
+file(GLOB RENDERER_RESOURCE_FILES *.cpp vulkan/*.cpp)
 
 add_library(renderer ${RENDERER_RESOURCE_FILES})
 
-message("-- Renderer file: ${RENDERER_RESOURCE_FILES}")
+message("${RENDERER_RESOURCE_FILES}")
