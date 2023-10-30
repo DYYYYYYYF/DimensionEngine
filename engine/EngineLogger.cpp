@@ -14,7 +14,7 @@ using namespace udon;
 EngineLogger::EngineLogger(){
     // Get current path
     path curPath = current_path();
-    curPath.append("bin/EngineLog.log");
+    curPath.append("EngineLog");
 
 #ifdef __APPLE__
     Log::Logger::getInstance()->open(curPath.c_str());
@@ -22,6 +22,7 @@ EngineLogger::EngineLogger(){
     Log::Logger::getInstance()->open(curPath.u8string());
 #endif
 
+    std::cout << curPath << std::endl;
     Log::Logger::getInstance()->setMaxSize(1024000);
 
     INFO("Logger Init Success.");
@@ -32,7 +33,7 @@ EngineLogger::EngineLogger(){
 EngineLogger::EngineLogger(){
     // Get current path
     std::filesystem::path curPath = std::filesystem::current_path();
-    curPath.append("bin/EngineLog.log");
+    curPath.append("EngineLog");
 
 #ifdef __APPLE__
     Log::Logger::getInstance()->open(curPath.c_str());
