@@ -40,7 +40,7 @@ if(${APPLE})
 elseif(${WIN32})
     message("-- Current environment: Windows\n")
 
-    set(Vulkan_DIR " ")
+    set(Vulkan_DIR "D:/Library/Vulkan")
 
     if(${Vulkan_DIR} STREQUAL " ")
         message("-- Please set Vulkan direction!!!!")
@@ -50,6 +50,9 @@ elseif(${WIN32})
     set(Vulkan_LIBRARY_DIRS "${Vulkan_DIR}/Lib")
     set(Vulkan_INCLUDE_DIRS "${Vulkan_DIR}/Include")
     set(SDL_INCLUDE_DIRS "${Vulkan_DIR}/Include/SDL2")
+
+    # Copy SDL2.dll to output path
+    file(COPY ${Vulkan_DIR}/bin/SDL2.dll DESTINATION ${EXECUTABLE_OUTPUT_PATH})
 
     link_directories(${Vulkan_LIBRARY_DIRS} ${UD_LOGGER_DIR}/lib/Windows/release)
     include_directories(${GLM_INCLUDE_DIRS} ${Vulkan_INCLUDE_DIRS} ${TINY_OBJ_LOADER_DIR} 
