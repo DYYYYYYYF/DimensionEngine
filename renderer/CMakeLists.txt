@@ -1,6 +1,6 @@
 message("\n-- Renderer:")
 
-include_directories("../" "vulkan")
+include_directories("../" "interface" "vulkan")
 
 file(GLOB RENDERER_RESOURCE_FILES *.cpp vulkan/*.cpp)
 

@@ -9,8 +9,8 @@ namespace renderer {
     public:
         Renderer();
         virtual ~Renderer();
-        virtual bool Init();
-        virtual void Draw();
+        virtual bool Init() override;
+        virtual void Draw() override;
 
     protected:
         // Deprect

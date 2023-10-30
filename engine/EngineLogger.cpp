@@ -22,10 +22,9 @@ EngineLogger::EngineLogger(){
     Log::Logger::getInstance()->open(curPath.u8string());
 #endif
 
-    std::cout << curPath << std::endl;
     Log::Logger::getInstance()->setMaxSize(1024000);
-
     INFO("Logger Init Success.");
+    INFO("Mode: Debug.");
 }
 
 #else
@@ -41,9 +40,9 @@ EngineLogger::EngineLogger(){
     Log::Logger::getInstance()->open(curPath.u8string());
 #endif
 
-    Log::Logger::getInstance()->open(curPath.c_str());
     Log::Logger::getInstance()->setMaxSize(1024000);
 
     INFO("Logger Init Success.");
+    INFO("Mode: Release.");
 }
 #endif
