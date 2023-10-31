@@ -33,6 +33,9 @@ bool VulkanRenderer::Init() {
 }
 void VulkanRenderer::Release(){
 
+    INFO("Release Renderer");
+    _VkDevice.destroyPipelineLayout(_PipelineLayout);
+    _VkDevice.destroyPipeline(_Pipeline);
     _VkDevice.destroyFence(_RenderFence);
     _VkDevice.destroySemaphore(_PresentSemaphore);
     _VkDevice.destroySemaphore(_RenderSemaphore);
@@ -332,6 +335,31 @@ void VulkanRenderer::InitSyncStructures() {
 void VulkanRenderer::CreatePipeline() {
     PipelineBuilder pipelineBuilder;
 
+    _VertShader = CreateShaderModule("../shader/triangle_vert.spv");
+    _FragShader = CreateShaderModule("../shader/triangle_frag.spv");
+    CHECK(_VertShader);
+    CHECK(_FragShader);
+
+    INFO("Push constants");
+    vk::PushConstantRange pushConstant;
+    pushConstant.setOffset(0);
+    pushConstant.setSize(sizeof(MeshPushConstants));
+    pushConstant.setStageFlags(vk::ShaderStageFlagBits::eVertex);
+    CHECK(pushConstant);
+
+    INFO("Pipeline Layout");
+    vk::PipelineLayoutCreateInfo info = InitPipelineLayoutCreateInfo();
+    info.setPushConstantRanges(pushConstant);
+    info.setPushConstantRangeCount(1);
+    _PipelineLayout = _VkDevice.createPipelineLayout(info);
+    pipelineBuilder._PipelineLayout = _PipelineLayout;
+    CHECK(_PipelineLayout);
+
+    INFO("Pipeline Shader Stages");
+    pipelineBuilder._ShaderStages.clear();
+    pipelineBuilder._ShaderStages.push_back(InitShaderStageCreateInfo(vk::ShaderStageFlagBits::eVertex, _VertShader));
+    pipelineBuilder._ShaderStages.push_back(InitShaderStageCreateInfo(vk::ShaderStageFlagBits::eFragment, _FragShader));
+
     INFO("Pipeline Assembly");
     pipelineBuilder._InputAssembly = InitAssemblyStateCreateInfo(vk::PrimitiveTopology::eTriangleList);
 
@@ -363,21 +391,6 @@ void VulkanRenderer::CreatePipeline() {
     pipelineBuilder._VertexInputInfo.pVertexBindingDescriptions = bindingDescription.data();
     pipelineBuilder._VertexInputInfo.vertexBindingDescriptionCount = (uint32_t)bindingDescription.size();
 
-    _VertShader = CreateShaderModule("../shader/triangle_vert.spv");
-    _FragShader = CreateShaderModule("../shader/triangle_frag.spv");
-    CHECK(_VertShader);
-    CHECK(_FragShader);
-
-    INFO("Pipeline Layout");
-    vk::PipelineLayoutCreateInfo info = InitPipelineLayoutCreateInfo();
-    _PipelineLayout = _VkDevice.createPipelineLayout(info);
-    CHECK(_PipelineLayout);
-
-    INFO("Pipeline Shader Stages");
-    pipelineBuilder._ShaderStages.clear();
-    pipelineBuilder._ShaderStages.push_back(InitShaderStageCreateInfo(vk::ShaderStageFlagBits::eVertex, _VertShader));
-    pipelineBuilder._ShaderStages.push_back(InitShaderStageCreateInfo(vk::ShaderStageFlagBits::eFragment, _FragShader));
-
     _Pipeline = pipelineBuilder.BuildPipeline(_VkDevice, _VkRenderPass);
 }
 
@@ -392,6 +405,12 @@ void VulkanRenderer::DrawPerFrame() {
 
     auto res = _VkDevice.acquireNextImageKHR(_SwapchainKHR, 1000000000, _PresentSemaphore, nullptr);
     uint32_t nSwapchainImageIndex = res.value;
+
+    // Model view matrix for rendering
+    Eigen::Vector3f camPos = { 0.f, 0.f, -2.f };
+    Eigen::Matrix4f projection = GetPrespective(70.f, 1700.f / 900.f, 0.1f, 200.0f);
+    // projection(1, 1) *= -1;
+    
 
     _VkCmdBuffer.reset();
 
