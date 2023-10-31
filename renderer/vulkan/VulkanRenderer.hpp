@@ -10,8 +10,7 @@
 #include "../../application/Window.hpp"
 #include "../../application/utils/EngineUtils.hpp"
 
-#include "VkDevice.hpp"
-#include "Swapchain.hpp"
+#include "VkStructures.hpp"
 /*
     Dont forget delete Init()
 */
@@ -81,9 +80,9 @@ namespace renderer {
         vk::Semaphore _RenderSemaphore;
         vk::Semaphore _PresentSemaphore;
         vk::Fence _RenderFence;
+
         vk::PipelineLayout _PipelineLayout;
         vk::Pipeline _Pipeline;
-
         vk::ShaderModule _VertShader;
         vk::ShaderModule _FragShader;
 

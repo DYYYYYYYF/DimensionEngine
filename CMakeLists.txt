@@ -6,7 +6,7 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/library)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/library)
 
-
+set(EIGEN_DIR ${PROJECT_SOURCE_DIR}/3rd/eigen3)
 set(TINY_OBJ_LOADER_DIR ${PROJECT_SOURCE_DIR}/3rd/tinyobjloader-master)
 set(STB_MASTER_DIR ${PROJECT_SOURCE_DIR}/3rd/stb_master)
 set(UD_LOGGER_DIR ${PROJECT_SOURCE_DIR}/3rd/uncledon-logger)
@@ -34,7 +34,7 @@ if(${APPLE})
     pkg_search_module(SDL REQUIRED SDL2)
     
     link_directories(${GLFW_LIBRARY_DIRS} ${SDL_LIBRARY_DIRS} ${UD_LOGGER_DIR}/lib/MacOS)
-    include_directories(${GLM_INCLUDE_DIRS} ${GLFW_INCLUDE_DIRS} ${Vulkan_INCLUDE_DIRS} 
+    include_directories(${EIGEN_DIR} ${GLFW_INCLUDE_DIRS} ${Vulkan_INCLUDE_DIRS} 
         ${TINY_OBJ_LOADER_DIR} ${STB_MASTER_DIR} ${SDL_INCLUDE_DIRS} ${UD_LOGGER_DIR}/include)
 
 elseif(${WIN32})
@@ -55,12 +55,12 @@ elseif(${WIN32})
     file(COPY ${Vulkan_DIR}/bin/SDL2.dll DESTINATION ${EXECUTABLE_OUTPUT_PATH})
 
     link_directories(${Vulkan_LIBRARY_DIRS} ${UD_LOGGER_DIR}/lib/Windows/release)
-    include_directories(${GLM_INCLUDE_DIRS} ${Vulkan_INCLUDE_DIRS} ${TINY_OBJ_LOADER_DIR} 
+    include_directories(${EIGEN_DIR} ${Vulkan_INCLUDE_DIRS} ${TINY_OBJ_LOADER_DIR} 
         ${STB_MASTER_DIR} ${SDL_INCLUDE_DIRS} ${UD_LOGGER_DIR}/include)
 
 endif()
 
-message("-- Include GLM DIR: ${GLM_INCLUDE_DIRS}")
+message("-- Include EIGEN3 DIR: ${EIGEN_DIR}")
 message("-- Include GLFW DIR: ${GLFW_INCLUDE_DIRS}")
 message("-- Include VULKAN DIR: ${Vulkan_INCLUDE_DIRS}")
 message("-- stb_master path: ${STB_MASTER_DIR}")
@@ -69,7 +69,6 @@ message("-- UncleDon-Logger Path: ${UD_LOGGER_DIR}")
 message("-- Include SDL DIR: ${SDL_INCLUDE_DIRS}")
 
 add_subdirectory(engine)
-add_subdirectory(vulkan)
 add_subdirectory(renderer)
 add_subdirectory(physics)
 add_subdirectory(application)
@@ -84,6 +83,6 @@ elseif(${WIN32})
     target_link_libraries(VulkanRender "vulkan-1.lib" "SDL2.lib" "SDL2main.lib" "Logger.lib")
 endif()
 
-target_link_libraries(VulkanRender engine vulkan application renderer)
+target_link_libraries(VulkanRender engine application renderer)
 
 message("-- Add executable program to ${PROJECT_SOURCE_DIR}/bin")
