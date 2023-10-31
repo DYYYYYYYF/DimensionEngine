@@ -9,11 +9,7 @@ namespace udon {
         exit(-1); \
 }
 #else
-#define CHECK(expr) \
-        if(!(expr)) { \
-            FATAL(#expr " IS NULL OR INVALID!"); \
-            exit(-1); \
-    }
+#define CHECK(expr) 
 #endif //ifdef DEBUG
 }
 
