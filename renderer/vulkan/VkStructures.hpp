@@ -12,8 +12,14 @@ namespace renderer{
     /*
         Vulkan Memory
     */
+    struct MemRequiredInfo {
+        uint32_t index;
+        size_t size;
+    };
+
     struct AllocatedBuffer {
-        vk::Buffer buffer;
+        vk::Buffer buffer;  // CPU
+        vk::DeviceMemory memory;    // GPU
     };
 
     /*

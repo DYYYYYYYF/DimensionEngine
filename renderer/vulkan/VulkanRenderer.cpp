@@ -25,6 +25,8 @@ bool VulkanRenderer::Init() {
     AllocateCmdBuffer();
     CreateFrameBuffers();
     InitSyncStructures();
+    UploadTriangleMesh();
+
     CreatePipeline();
 
     return true; 
@@ -285,6 +287,16 @@ vk::CommandBuffer VulkanRenderer::AllocateCmdBuffer() {
     return _VkCmdBuffer;
 }
 
+void VulkanRenderer::EndCmdBuffer(vk::CommandBuffer cmdBuf) {
+    CHECK(cmdBuf)
+    vk::SubmitInfo submitInfo;
+    submitInfo.setCommandBuffers(cmdBuf);
+
+    _Queue.GraphicsQueue.submit(submitInfo);
+    _VkDevice.waitIdle();
+    _VkDevice.freeCommandBuffers(_VkCmdPool, cmdBuf);
+}
+
 void VulkanRenderer::CreateFrameBuffers() {
     CHECK(_SwapchainKHR);
     const int nSwapchainCount = (int)_Images.size();
@@ -318,24 +330,8 @@ void VulkanRenderer::InitSyncStructures() {
 }
 
 void VulkanRenderer::CreatePipeline() {
-
-    _VertShader = CreateShaderModule("../shader/triangle_vert.spv");
-    _FragShader = CreateShaderModule("../shader/triangle_frag.spv");
-    CHECK(_VertShader);
-    CHECK(_FragShader);
-
-    INFO("Pipeline Layout");
-    vk::PipelineLayoutCreateInfo info = InitPipelineLayoutCreateInfo();
-    _PipelineLayout = _VkDevice.createPipelineLayout(info);
-    CHECK(_PipelineLayout);
-
-    INFO("Pipeline Shader Stages");
     PipelineBuilder pipelineBuilder;
-    pipelineBuilder._ShaderStages.push_back(InitShaderStageCreateInfo(vk::ShaderStageFlagBits::eVertex, _VertShader));
-    pipelineBuilder._ShaderStages.push_back(InitShaderStageCreateInfo(vk::ShaderStageFlagBits::eFragment, _FragShader));
 
-    INFO("Pipeline Vertex");
-    pipelineBuilder._VertexInputInfo = InitVertexInputStateCreateInfo();
     INFO("Pipeline Assembly");
     pipelineBuilder._InputAssembly = InitAssemblyStateCreateInfo(vk::PrimitiveTopology::eTriangleList);
 
@@ -356,6 +352,31 @@ void VulkanRenderer::CreatePipeline() {
     pipelineBuilder._Mutisampling = InitMultisampleStateCreateInfo();
     pipelineBuilder._ColorBlendAttachment = InitColorBlendAttachmentState();
     pipelineBuilder._PipelineLayout = _PipelineLayout;
+
+    INFO("Pipeline Bingding and Attribute Descroptions");
+    std::vector<vk::VertexInputBindingDescription> bindingDescription = Vertex::GetBindingDescription();
+    std::array<vk::VertexInputAttributeDescription, 3> attributeDescription = Vertex::GetAttributeDescription();
+    
+    //connect the pipeline builder vertex input info to the one we get from Vertex
+    pipelineBuilder._VertexInputInfo.pVertexAttributeDescriptions = attributeDescription.data();
+    pipelineBuilder._VertexInputInfo.vertexAttributeDescriptionCount = (uint32_t)attributeDescription.size();
+    pipelineBuilder._VertexInputInfo.pVertexBindingDescriptions = bindingDescription.data();
+    pipelineBuilder._VertexInputInfo.vertexBindingDescriptionCount = (uint32_t)bindingDescription.size();
+
+    _VertShader = CreateShaderModule("../shader/triangle_vert.spv");
+    _FragShader = CreateShaderModule("../shader/triangle_frag.spv");
+    CHECK(_VertShader);
+    CHECK(_FragShader);
+
+    INFO("Pipeline Layout");
+    vk::PipelineLayoutCreateInfo info = InitPipelineLayoutCreateInfo();
+    _PipelineLayout = _VkDevice.createPipelineLayout(info);
+    CHECK(_PipelineLayout);
+
+    INFO("Pipeline Shader Stages");
+    pipelineBuilder._ShaderStages.clear();
+    pipelineBuilder._ShaderStages.push_back(InitShaderStageCreateInfo(vk::ShaderStageFlagBits::eVertex, _VertShader));
+    pipelineBuilder._ShaderStages.push_back(InitShaderStageCreateInfo(vk::ShaderStageFlagBits::eFragment, _FragShader));
 
     _Pipeline = pipelineBuilder.BuildPipeline(_VkDevice, _VkRenderPass);
 }
@@ -393,9 +414,12 @@ void VulkanRenderer::DrawPerFrame() {
         .setClearValues(ClearValue);
 
     _VkCmdBuffer.beginRenderPass(rpInfo, vk::SubpassContents::eInline);
-
     _VkCmdBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, _Pipeline);
-    _VkCmdBuffer.draw(3, 1, 0, 0);
+
+    VkDeviceSize offset = 0;
+    _VkCmdBuffer.bindVertexBuffers(0, _TriangleMesh.vertexBuffer.buffer, offset);
+
+    _VkCmdBuffer.draw(_TriangleMesh.vertices.size(), 1, 0, 0);
 
     _VkCmdBuffer.endRenderPass();
     _VkCmdBuffer.end();
@@ -501,6 +525,109 @@ vk::ShaderModule VulkanRenderer::CreateShaderModule(const char* shader_file) {
     return _VkDevice.createShaderModule(info);
 }
 
+/*
+    Vulkan Buffer
+*/
+MemRequiredInfo VulkanRenderer::QueryMemReqInfo(vk::Buffer buf, vk::MemoryPropertyFlags flag) {
+    CHECK(_VkPhyDevice);
+    CHECK(_VkDevice);
+    
+    MemRequiredInfo info;
+    vk::PhysicalDeviceMemoryProperties property = _VkPhyDevice.getMemoryProperties();
+    vk::MemoryRequirements requirement = _VkDevice.getBufferMemoryRequirements(buf);
+    info.size = requirement.size;
+
+    for (uint32_t i = 0; i < property.memoryTypeCount; i++) {
+        if (requirement.memoryTypeBits & (1 << i) &&
+            property.memoryTypes[i].propertyFlags & (flag)) {
+            info.index = i;
+        }
+    }
+    return info;
+}
+
+MemRequiredInfo VulkanRenderer::QueryImgReqInfo(vk::Image image, vk::MemoryPropertyFlags flag) {
+    CHECK(_VkPhyDevice);
+    CHECK(_VkDevice);
+
+    MemRequiredInfo info;
+    vk::PhysicalDeviceMemoryProperties property = _VkPhyDevice.getMemoryProperties();
+    vk::MemoryRequirements requirement = _VkDevice.getImageMemoryRequirements(image);
+    info.size = requirement.size;
+
+    for (uint32_t i = 0; i < property.memoryTypeCount; i++) {
+        if (requirement.memoryTypeBits & (1 << i) &&
+            property.memoryTypes[i].propertyFlags & (flag)) {
+            info.index = i;
+        }
+    }
+    return info;
+}
+
+vk::Buffer VulkanRenderer::CreateBuffer(uint64_t size, vk::BufferUsageFlags flag, vk::SharingMode mode) {
+    CHECK(_VkDevice);
+    vk::BufferCreateInfo info;
+    info.setSharingMode(mode)
+        .setQueueFamilyIndices(_QueueFamilyProp.graphicsIndex.value())
+        .setSize(size)
+        .setUsage(flag);
+    return _VkDevice.createBuffer(info);
+}
+
+vk::DeviceMemory VulkanRenderer::AllocateMemory(vk::Buffer buffer, vk::MemoryPropertyFlags flag) {
+    MemRequiredInfo memInfo = QueryMemReqInfo(buffer, flag);
+
+    vk::MemoryAllocateInfo info;
+    info.setAllocationSize(memInfo.size)
+        .setMemoryTypeIndex(memInfo.index);
+    return _VkDevice.allocateMemory(info);
+}
+
+void VulkanRenderer::CopyBuffer(vk::Buffer src, vk::Buffer dst, vk::DeviceSize size) {
+    vk::CommandBuffer transformCmdBuffer = AllocateCmdBuffer();
+    CHECK(transformCmdBuffer);
+
+    vk::BufferCopy regin;
+    regin.setSize(size)
+        .setSrcOffset(0)
+        .setDstOffset(0);
+    transformCmdBuffer.copyBuffer(src, dst, regin);
+    transformCmdBuffer.end();
+
+    EndCmdBuffer(transformCmdBuffer);
+}
+
+void VulkanRenderer::UpLoadMeshes(Mesh& mesh) {
+    //Allocate vertex buffer
+    vk::DeviceSize size = mesh.vertices.size() * sizeof(Vertex);
+    vk::Buffer tempBuffer = CreateBuffer(size,
+        vk::BufferUsageFlagBits::eTransferSrc, vk::SharingMode::eExclusive);
+    vk::DeviceMemory tempMemory = AllocateMemory(tempBuffer, 
+        vk::MemoryPropertyFlagBits::eHostVisible |
+        vk::MemoryPropertyFlagBits::eHostCoherent);
+
+    CHECK(mesh.vertexBuffer.buffer);
+    CHECK(mesh.vertexBuffer.memory);
+
+    mesh.vertexBuffer.buffer = CreateBuffer(size, vk::BufferUsageFlagBits::eTransferDst |
+        vk::BufferUsageFlagBits::eVertexBuffer, vk::SharingMode::eExclusive);
+    mesh.vertexBuffer.memory = AllocateMemory(mesh.vertexBuffer.buffer, vk::MemoryPropertyFlagBits::eDeviceLocal);
+    CHECK(deviceBuffer);
+    CHECK(deviceMemory);
+
+    _VkDevice.bindBufferMemory(tempBuffer, tempMemory, 0);
+    _VkDevice.bindBufferMemory(mesh.vertexBuffer.buffer, mesh.vertexBuffer.memory, 0);
+
+    void* data = _VkDevice.mapMemory(tempMemory, 0, size);
+    memcpy(data, mesh.vertices.data(), size);
+    _VkDevice.unmapMemory(tempMemory);
+
+    CopyBuffer(tempBuffer, mesh.vertexBuffer.buffer, size);
+    
+    // Free mem
+    _VkDevice.destroyBuffer(tempBuffer);
+    _VkDevice.freeMemory(tempMemory);
+}
 
 /*
 *  Pipeline
@@ -578,4 +705,28 @@ vk::PipelineLayoutCreateInfo VulkanRenderer::InitPipelineLayoutCreateInfo() {
         .setPushConstantRanges(nullptr);
 
     return info;
+}
+
+
+
+// Decpater
+void VulkanRenderer::UploadTriangleMesh() {
+
+    INFO("Loading triangle");
+    //make the array 3 vertices long
+    _TriangleMesh.vertices.resize(3);
+
+    //vertex positions
+    _TriangleMesh.vertices[0].position = { 1.f, 1.f, 0.0f };
+    _TriangleMesh.vertices[1].position = { -1.f, 1.f, 0.0f };
+    _TriangleMesh.vertices[2].position = { 0.f,-1.f, 0.0f };
+
+    //vertex colors, all green
+    _TriangleMesh.vertices[0].color = { 0.f, 1.f, 0.0f }; //pure green
+    _TriangleMesh.vertices[1].color = { 0.f, 1.f, 0.0f }; //pure green
+    _TriangleMesh.vertices[2].color = { 0.f, 1.f, 0.0f }; //pure green
+
+    //we don't care about the vertex normals
+
+    UpLoadMeshes(_TriangleMesh);
 }

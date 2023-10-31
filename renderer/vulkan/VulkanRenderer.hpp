@@ -11,6 +11,7 @@
 #include "../../application/utils/EngineUtils.hpp"
 
 #include "VkStructures.hpp"
+#include "VkMesh.hpp"
 /*
     Dont forget delete Init()
 */
@@ -40,13 +41,25 @@ namespace renderer {
 
     public:
         vk::CommandBuffer AllocateCmdBuffer();
+        void EndCmdBuffer(vk::CommandBuffer cmdBuf);
+        vk::Buffer CreateBuffer(uint64_t size, vk::BufferUsageFlags flag,
+            vk::SharingMode mode = vk::SharingMode::eExclusive);
+        vk::DeviceMemory AllocateMemory(vk::Buffer buffer,
+            vk::MemoryPropertyFlags flag = vk::MemoryPropertyFlagBits::eHostVisible |
+            vk::MemoryPropertyFlagBits::eHostCoherent);
 
     protected:
         bool QueryQueueFamilyProp();
         bool InitQueue();
         void GetVkImages();
         void GetVkImageViews();
+
         vk::ShaderModule CreateShaderModule(const char* shader_file);
+        MemRequiredInfo QueryMemReqInfo(vk::Buffer buf, vk::MemoryPropertyFlags flag);
+        MemRequiredInfo QueryImgReqInfo(vk::Image image, vk::MemoryPropertyFlags flag);
+
+        void CopyBuffer(vk::Buffer src, vk::Buffer dst, vk::DeviceSize size);
+        void UpLoadMeshes(Mesh& mesh);
 
     private:
         // Pipeline stages
@@ -86,5 +99,8 @@ namespace renderer {
         vk::ShaderModule _VertShader;
         vk::ShaderModule _FragShader;
 
+    private:
+        void UploadTriangleMesh();
+        Mesh _TriangleMesh;
     };// class VulkanRenderer
 }// namespace renderer
