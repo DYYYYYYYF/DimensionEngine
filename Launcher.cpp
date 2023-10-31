@@ -1,6 +1,12 @@
 #include <iostream>
 #include "application/Application.hpp"
+#include "../../engine/EngineLogger.hpp"
 
+#define USE_LOGGER
+
+#ifdef USE_LOGGER
+static udon::EngineLogger* GLOBAL_LOGGER = new udon::EngineLogger();
+#endif // !USE_LOGGER
 
 int main(int argc, char* argv[]){
 
