@@ -25,10 +25,12 @@ bool Renderer::Init(){
     // }
 
     _Renderer = new VulkanRenderer();
-    _Renderer->CreateInstance();
-    _Renderer->PickupPhyDevice();
-    _Renderer->CreateSurface();
-    _Renderer->CreateDevice();
+    if (_Renderer == nullptr) {
+        FATAL("Create Renderer failed.");
+        return false;
+    }
+
+    _Renderer->Init();
 
     return true;
 }

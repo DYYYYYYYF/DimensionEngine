@@ -12,6 +12,7 @@ namespace renderer {
         virtual void PickupPhyDevice() = 0;
         virtual void CreateSurface() = 0;
         virtual void CreateDevice() = 0;
+        virtual void CreateSwapchain() = 0;
 
     };
 }// namespace renderer

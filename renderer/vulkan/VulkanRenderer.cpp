@@ -10,10 +10,19 @@ VulkanRenderer::~VulkanRenderer() {
 
 }
 
-bool VulkanRenderer::Init() { return true; }
+bool VulkanRenderer::Init() { 
+    CreateInstance();
+    PickupPhyDevice();
+    CreateSurface();
+    CreateDevice();
+    InitQueue();
+    CreateSwapchain();
+    return true; 
+}
 void VulkanRenderer::Release(){
+    
     _VkDevice.destroy();
-    _VkInstance.destroySurfaceKHR(_Surface);
+    _VkInstance.destroySurfaceKHR(_SurfaceKHR);
     _VkInstance.destroy();
 }
 
@@ -89,8 +98,8 @@ void VulkanRenderer::CreateSurface(){
         return;
     }
 
-    _Surface = vk::SurfaceKHR(surface);
-    CHECK(_Surface);
+    _SurfaceKHR = vk::SurfaceKHR(surface);
+    CHECK(_SurfaceKHR);
 }
 
 void VulkanRenderer::CreateDevice(){
@@ -139,12 +148,44 @@ void VulkanRenderer::CreateDevice(){
     CHECK(_VkDevice);
 }
 
+void VulkanRenderer::CreateSwapchain() {
+    _SupportInfo.QuerySupportInfo(_VkPhyDevice, _SurfaceKHR);
+
+    vk::SwapchainCreateInfoKHR scInfo;
+    scInfo.setImageColorSpace(_SupportInfo.format.colorSpace);
+    scInfo.setImageFormat(_SupportInfo.format.format);
+    scInfo.setImageExtent(_SupportInfo.extent);
+    scInfo.setMinImageCount(_SupportInfo.imageCount);
+    scInfo.setPresentMode(_SupportInfo.presnetMode);
+    scInfo.setPreTransform(_SupportInfo.capabilities.currentTransform);
+
+    if (_QueueFamilyProp.graphicsIndex.value() == _QueueFamilyProp.presentIndex.value()) {
+        scInfo.setQueueFamilyIndices(_QueueFamilyProp.graphicsIndex.value());
+        scInfo.setImageSharingMode(vk::SharingMode::eExclusive);
+    }
+    else {
+        std::array<uint32_t, 2> index{ _QueueFamilyProp.graphicsIndex.value(),
+                                     _QueueFamilyProp.presentIndex.value() };
+        scInfo.setQueueFamilyIndices(index);
+        scInfo.setImageSharingMode(vk::SharingMode::eConcurrent);
+    }
+
+    scInfo.setClipped(true);
+    scInfo.setSurface(_SurfaceKHR);
+    scInfo.setImageArrayLayers(1);
+    scInfo.setCompositeAlpha(vk::CompositeAlphaFlagBitsKHR::eOpaque);
+    scInfo.setImageUsage(vk::ImageUsageFlagBits::eColorAttachment);
+
+    _SwapchainKHR = _VkDevice.createSwapchainKHR(scInfo);
+    CHECK(_SwapchainKHR);
+}
+
 /*
  *  Utils functions
  * */
 bool VulkanRenderer::QueryQueueFamilyProp(){
     CHECK(_VkPhyDevice)
-    CHECK(_Surface);
+    CHECK(_SurfaceKHR);
      
     auto families = _VkPhyDevice.getQueueFamilyProperties();
     uint32_t index = 0;
@@ -154,7 +195,7 @@ bool VulkanRenderer::QueryQueueFamilyProp(){
             _QueueFamilyProp.graphicsIndex = index;
         }
         //Pickup Surface command
-        if(_VkPhyDevice.getSurfaceSupportKHR(index, _Surface)){
+        if(_VkPhyDevice.getSurfaceSupportKHR(index, _SurfaceKHR)){
             _QueueFamilyProp.presentIndex = index;
         }
         //if no command, break
@@ -171,3 +212,12 @@ bool VulkanRenderer::QueryQueueFamilyProp(){
     return _QueueFamilyProp.graphicsIndex && _QueueFamilyProp.presentIndex;
 }
 
+bool VulkanRenderer::InitQueue() {
+    CHECK(_VkDevice);
+    _VkGraphicsQueue = _VkDevice.getQueue(_QueueFamilyProp.graphicsIndex.value(), 0);
+    _VkPresentQueue = _VkDevice.getQueue(_QueueFamilyProp.presentIndex.value(), 0);
+
+    CHECK(_VkGraphicsQueue);
+    CHECK(_VkPresentQueue);
+    return _VkPresentQueue && _VkPresentQueue;
+}
