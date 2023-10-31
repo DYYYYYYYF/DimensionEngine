@@ -22,7 +22,7 @@ bool VulkanRenderer::Init() {
     GetVkImageViews();
     CreateRenderPass();
     CreateCmdPool();
-    AllocateCmdBuffer();
+    _VkCmdBuffer = AllocateCmdBuffer();
     CreateFrameBuffers();
     InitSyncStructures();
     UploadTriangleMesh();
@@ -281,13 +281,14 @@ vk::CommandBuffer VulkanRenderer::AllocateCmdBuffer() {
         .setCommandBufferCount(1)
         .setLevel(vk::CommandBufferLevel::ePrimary);
 
-    _VkCmdBuffer = _VkDevice.allocateCommandBuffers(allocte)[0];
+    vk::CommandBuffer CmdBuffer;
+    CmdBuffer = _VkDevice.allocateCommandBuffers(allocte)[0];
 
     vk::CommandBufferBeginInfo info;
     info.setFlags(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
-    _VkCmdBuffer.begin(info);
+    CmdBuffer.begin(info);
 
-    return _VkCmdBuffer;
+    return CmdBuffer;
 }
 
 void VulkanRenderer::EndCmdBuffer(vk::CommandBuffer cmdBuf) {
@@ -407,11 +408,12 @@ void VulkanRenderer::DrawPerFrame() {
     uint32_t nSwapchainImageIndex = res.value;
 
     // Model view matrix for rendering
-    Eigen::Vector3f camPos = { 0.f, 0.f, -2.f };
-    Eigen::Matrix4f projection = GetPrespective(70.f, 1700.f / 900.f, 0.1f, 200.0f);
+    // Eigen::Vector3f camPos = { 0.f, 0.f, -2.f };
+    // Eigen::Matrix4f projection = GetPrespective(70.f, 1700.f / 900.f, 0.1f, 200.0f);
     // projection(1, 1) *= -1;
     
 
+    CHECK(_VkCmdBuffer);
     _VkCmdBuffer.reset();
 
     vk::CommandBufferBeginInfo info;
