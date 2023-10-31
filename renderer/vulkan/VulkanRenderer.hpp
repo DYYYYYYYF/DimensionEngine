@@ -99,8 +99,15 @@ namespace renderer {
         vk::ShaderModule _VertShader;
         vk::ShaderModule _FragShader;
 
+    public:
+        void AddCount(){
+            _FrameCount++;
+        }
+
     private:
         void UploadTriangleMesh();
         Mesh _TriangleMesh;
+        Mesh _MonkeyMesh;
+        float _FrameCount = 1.0f;
     };// class VulkanRenderer
 }// namespace renderer

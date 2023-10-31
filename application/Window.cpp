@@ -36,7 +36,7 @@ SDL_Window* WsiWindow::GetWindow(){
 
 WsiWindow* WsiWindow::GetInstance(){
     if(!_WindowObj){
-        _WindowObj = new WsiWindow(400, 600);
+        _WindowObj = new WsiWindow(800, 1200);
     }
 
     CHECK(_WindowObj);

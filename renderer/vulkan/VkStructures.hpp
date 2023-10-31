@@ -7,6 +7,7 @@
 #include "engine/EngineLogger.hpp"
 #include "application/Window.hpp"
 
+#include <glm/glm.hpp>
 namespace renderer{
 
     struct Camera{
@@ -30,8 +31,12 @@ namespace renderer{
         Vulkan Utils
     */
     struct MeshPushConstants {
-        Eigen::Vector4f data;
-        Eigen::Matrix4f renderMatrix;
+        // Eigen::Vector4f data;
+        // Eigen::Matrix4f renderMatrix;
+
+        glm::vec4 data;
+        glm::mat4 render_matrix;
+        
     };
 
     /*

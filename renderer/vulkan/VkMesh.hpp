@@ -1,4 +1,9 @@
+#define TINYOBJLOADER_IMPLEMENTATION
+
 #pragma once
+
+#include <iostream>
+#include <string>
 #include "VkStructures.hpp"
 
 namespace renderer {
@@ -19,6 +24,8 @@ namespace renderer {
     struct Mesh {
         std::vector<Vertex> vertices;
         AllocatedBuffer vertexBuffer;
+
+        bool LoadFromObj(const char* filename);
     };
 
 }

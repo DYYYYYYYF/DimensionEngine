@@ -1,5 +1,8 @@
 #include "VulkanRenderer.hpp"
 #include "PipelineBuilder.hpp"
+#include "VkStructures.hpp"
+
+#include "Camera.hpp"
 
 using namespace renderer;
 
@@ -353,7 +356,6 @@ void VulkanRenderer::CreatePipeline() {
     info.setPushConstantRanges(pushConstant);
     info.setPushConstantRangeCount(1);
     _PipelineLayout = _VkDevice.createPipelineLayout(info);
-    pipelineBuilder._PipelineLayout = _PipelineLayout;
     CHECK(_PipelineLayout);
 
     INFO("Pipeline Shader Stages");
@@ -392,6 +394,8 @@ void VulkanRenderer::CreatePipeline() {
     pipelineBuilder._VertexInputInfo.pVertexBindingDescriptions = bindingDescription.data();
     pipelineBuilder._VertexInputInfo.vertexBindingDescriptionCount = (uint32_t)bindingDescription.size();
 
+    pipelineBuilder._PipelineLayout = _PipelineLayout;
+
     _Pipeline = pipelineBuilder.BuildPipeline(_VkDevice, _VkRenderPass);
 }
 
@@ -408,9 +412,21 @@ void VulkanRenderer::DrawPerFrame() {
     uint32_t nSwapchainImageIndex = res.value;
 
     // Model view matrix for rendering
-    // Eigen::Vector3f camPos = { 0.f, 0.f, -2.f };
-    // Eigen::Matrix4f projection = GetPrespective(70.f, 1700.f / 900.f, 0.1f, 200.0f);
-    // projection(1, 1) *= -1;
+    glm::vec3 camPos = { 0.0f, 0.0f,-2.0f };
+
+    glm::mat4 view = glm::translate(glm::mat4(1.f), camPos);
+    //camera projection
+    glm::mat4 projection = glm::perspective(glm::radians(45.0f), 
+             _SupportInfo.GetWindowWidth() / (float)_SupportInfo.GetWindowHeight(), 0.1f, 1000.0f);
+    projection[1][1] = projection[1][1] * -1;
+    //model rotation
+    glm::mat4 model = glm::rotate(glm::mat4{ 1.0f }, glm::radians(_FrameCount * 0.4f), glm::vec3(0, 1, 0));
+
+    //calculate final mesh matrix
+    glm::mat4 mesh_matrix = projection * view * model;
+
+    MeshPushConstants pushConstant;
+    pushConstant.render_matrix = mesh_matrix;
     
 
     CHECK(_VkCmdBuffer);
@@ -438,9 +454,10 @@ void VulkanRenderer::DrawPerFrame() {
     _VkCmdBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, _Pipeline);
 
     VkDeviceSize offset = 0;
-    _VkCmdBuffer.bindVertexBuffers(0, _TriangleMesh.vertexBuffer.buffer, offset);
+    _VkCmdBuffer.bindVertexBuffers(0, _MonkeyMesh.vertexBuffer.buffer, offset);
+    _VkCmdBuffer.pushConstants(_PipelineLayout, vk::ShaderStageFlagBits::eVertex, 0, sizeof(MeshPushConstants), &pushConstant);
 
-    _VkCmdBuffer.draw(_TriangleMesh.vertices.size(), 1, 0, 0);
+    _VkCmdBuffer.draw(_MonkeyMesh.vertices.size(), 1, 0, 0);
 
     _VkCmdBuffer.endRenderPass();
     _VkCmdBuffer.end();
@@ -619,6 +636,8 @@ void VulkanRenderer::CopyBuffer(vk::Buffer src, vk::Buffer dst, vk::DeviceSize s
 }
 
 void VulkanRenderer::UpLoadMeshes(Mesh& mesh) {
+    CHECK(mesh);
+
     //Allocate vertex buffer
     vk::DeviceSize size = mesh.vertices.size() * sizeof(Vertex);
     vk::Buffer tempBuffer = CreateBuffer(size,
@@ -684,7 +703,7 @@ vk::PipelineRasterizationStateCreateInfo VulkanRenderer::InitRasterizationStateC
     info.setLineWidth(1.0f)
         // No back cull
         .setFrontFace(vk::FrontFace::eClockwise)
-        .setCullMode(vk::CullModeFlagBits::eBack)
+        .setCullMode(vk::CullModeFlagBits::eNone)
         // Depth
         .setDepthBiasClamp(0.0f)
         .setDepthBiasEnable(VK_FALSE)
@@ -738,16 +757,18 @@ void VulkanRenderer::UploadTriangleMesh() {
     _TriangleMesh.vertices.resize(3);
 
     //vertex positions
-    _TriangleMesh.vertices[0].position = { 1.f, 1.f, 0.0f };
-    _TriangleMesh.vertices[1].position = { -1.f, 1.f, 0.0f };
-    _TriangleMesh.vertices[2].position = { 0.f,-1.f, 0.0f };
+    _TriangleMesh.vertices[0].position = { 1.f,1.f, 0.5f };
+    _TriangleMesh.vertices[1].position = { -1.f,1.f, 0.5f };
+    _TriangleMesh.vertices[2].position = { 0.f,-1.f, 0.5f };
 
     //vertex colors, all green
-    _TriangleMesh.vertices[0].color = { 0.f, 1.f, 0.0f }; //pure green
+    _TriangleMesh.vertices[0].color = { 1.f, 0.f, 0.0f }; //pure green
     _TriangleMesh.vertices[1].color = { 0.f, 1.f, 0.0f }; //pure green
-    _TriangleMesh.vertices[2].color = { 0.f, 1.f, 0.0f }; //pure green
+    _TriangleMesh.vertices[2].color = { 0.f, 0.f, 1.0f }; //pure green
 
-    //we don't care about the vertex normals
+    //we don't a
+    _MonkeyMesh.LoadFromObj("../asset/model/ball.obj");
 
-    UpLoadMeshes(_TriangleMesh);
+    // UpLoadMeshes(_TriangleMesh);
+    UpLoadMeshes(_MonkeyMesh);
 }

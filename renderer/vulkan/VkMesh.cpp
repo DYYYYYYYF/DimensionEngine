@@ -1,5 +1,7 @@
 #include "VkMesh.hpp"
 #include "VkStructures.hpp"
+#include <tiny_obj_loader.h>
+#include <unordered_map>
 
 using namespace renderer;
 
@@ -32,4 +34,65 @@ std::array<vk::VertexInputAttributeDescription, 3> Vertex::GetAttributeDescripti
         .setFormat(vk::Format::eR32G32Sfloat)
         .setOffset(offsetof(Vertex, texCoord));*/
     return attributes;
+}
+
+bool Mesh::LoadFromObj(const char* filename){
+    tinyobj::attrib_t attrib;
+    std::vector<tinyobj::shape_t> shapes;
+    std::vector<tinyobj::material_t> materials;
+    std::string warn, err;
+
+    if(!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, filename)){
+        std::runtime_error("Error: " + err);
+    }
+
+    // std::unordered_map<Vertex, uint32_t> uniqueVertices;
+    vertices.clear();
+    
+    //attrib will contain the vertex arrays of the file
+    // Loop over shapes
+    for (size_t s = 0; s < shapes.size(); s++) {
+		    // Loop over faces(polygon)
+        size_t index_offset = 0;
+        for (size_t f = 0; f < shapes[s].mesh.num_face_vertices.size(); f++) {
+            //hardcode loading to triangles
+            int fv = 3;
+
+            // Loop over vertices in the face.
+            for (size_t v = 0; v < fv; v++) {
+                // access to vertex
+                tinyobj::index_t idx = shapes[s].mesh.indices[index_offset + v];
+
+                //vertex position
+                tinyobj::real_t vx = attrib.vertices[3 * idx.vertex_index + 0];
+                tinyobj::real_t vy = attrib.vertices[3 * idx.vertex_index + 1];
+                tinyobj::real_t vz = attrib.vertices[3 * idx.vertex_index + 2];
+                //vertex normal
+                tinyobj::real_t nx = attrib.normals[3 * idx.normal_index + 0];
+                tinyobj::real_t ny = attrib.normals[3 * idx.normal_index + 1];
+                tinyobj::real_t nz = attrib.normals[3 * idx.normal_index + 2];
+
+                //copy it into our vertex
+                Vertex new_vert;
+                new_vert.position[0] = vx;
+                new_vert.position[1] = vy;
+                new_vert.position[2] = vz;
+
+                new_vert.normal[0] = nx;
+                new_vert.normal[1] = ny;
+                new_vert.normal[2] = nz;
+
+                //we are setting the vertex color as the vertex normal. This is just for display purposes
+                new_vert.color = new_vert.normal;
+
+                // if(uniqueVertices.count(new_vert) == 0){
+                //     uniqueVertices[new_vert] = static_cast<uint32_t>(vertices.size());
+                    vertices.push_back(new_vert);
+                //     std::cout << vertices.size() << std::endl;
+                // }
+            }
+        index_offset += fv;
+        }
+    }
+    return true;
 }

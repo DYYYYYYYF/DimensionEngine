@@ -25,5 +25,6 @@ bool Renderer::Init(){
 }
 
 void Renderer::Draw(){
+    ((VulkanRenderer*)_Renderer)->AddCount();
     _Renderer->DrawPerFrame();
 }
