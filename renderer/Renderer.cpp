@@ -6,8 +6,10 @@
 using namespace renderer;
 
 Renderer::Renderer(){
-    _Context = nullptr;
-    _Renderer = nullptr;
+    _Renderer = new VulkanRenderer();
+    if (_Renderer == nullptr) {
+        FATAL("Create Renderer failed.");
+    }
 }
 
 Renderer::~Renderer(){
@@ -18,23 +20,10 @@ Renderer::~Renderer(){
 }
 
 bool Renderer::Init(){
-    // _Context = new VkContext();
-    // if (!_Context->InitContext()){
-    //     DEBUG("Create Context Failed.");
-    //     return false;
-    // }
-
-    _Renderer = new VulkanRenderer();
-    if (_Renderer == nullptr) {
-        FATAL("Create Renderer failed.");
-        return false;
-    }
-
     _Renderer->Init();
-
     return true;
 }
 
 void Renderer::Draw(){
-    // _Context->Draw();
+    _Renderer->DrawPerFrame();
 }

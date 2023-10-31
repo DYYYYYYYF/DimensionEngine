@@ -15,6 +15,9 @@ namespace renderer {
         vk::PresentModeKHR presnetMode;     //显示模式
         uint32_t imageCount;
 
+        int GetWindowWidth() const { return window_size.width; }
+        int GetWindowHeight() const { return window_size.height; }
+
         void GetWindowSize() {
             udon::WsiWindow::GetInstance()->GetWindowSize(window_size.width, window_size.height);
         }

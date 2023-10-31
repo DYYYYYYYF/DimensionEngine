@@ -13,8 +13,6 @@ namespace renderer {
         virtual void Draw() override;
 
     protected:
-        // Deprect
-        VkContext* _Context;
 
     };
 }
