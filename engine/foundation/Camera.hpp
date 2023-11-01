@@ -24,13 +24,13 @@ class Camera{
         float keyBoardSpeedY = 0.0f;
         float keyBoardSpeedZ = 0.0f;
 
-        glm::mat4 getViewMatrix();
+        glm::mat4 GetViewMatrix();
 
-        void mouserMovement(float x, float y);
-        void updateCameraPosition();
+        void MouserMovement(float x, float y);
+        void UpdateCameraPosition();
 
     private:
-        void updateCameraVectors();
+        void UpdateCameraVectors();
 
 };
 }

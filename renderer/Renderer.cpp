@@ -33,6 +33,10 @@ void Renderer::UploadMeshes(Mesh& mesh) {
     _RendererImpl->UpLoadMeshes(mesh);
 }
 
+void Renderer::UpdateViewMat(glm::mat4 view_matrix){
+    ((VulkanRenderer*)_RendererImpl)->UpdateViewMat(view_matrix);
+}
+
 void Renderer::Release() {
     if (_RendererImpl != nullptr) {
         //_RendererImpl->Release();

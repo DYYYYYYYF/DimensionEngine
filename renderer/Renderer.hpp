@@ -15,6 +15,7 @@ namespace renderer {
 
     public:
         void UploadMeshes(Mesh& mesh);
+        void UpdateViewMat(glm::mat4 view_matrix);
 
     protected:
 

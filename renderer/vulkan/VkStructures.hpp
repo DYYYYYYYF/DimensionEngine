@@ -18,7 +18,9 @@ namespace renderer{
         // Eigen::Matrix4f renderMatrix;
 
         glm::vec4 data;
-        glm::mat4 render_matrix;
+        glm::mat4 model;
+        glm::mat4 view;
+        glm::mat4 proj;
         
     };
 

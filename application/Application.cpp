@@ -39,8 +39,10 @@ void Engine::Run(){
     bool isQuit = false;
     while(!isQuit){
         if(SDL_PollEvent(&event)){
-            if(event.type == SDL_QUIT){
+            if(event.type == SDL_QUIT || event.key.keysym.sym == SDLK_ESCAPE){
                 isQuit = true;
+            } else{
+                _Scene->UpdatePosition(event);
             }
         }
 

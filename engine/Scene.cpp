@@ -7,14 +7,10 @@ using namespace engine;
 Scene::Scene() {
 	_Renderer = new Renderer();
 	CHECK(_Renderer);
-
-	_Camera = new Camera(glm::vec3(0.0f, 2.0f, 2.0f), glm::radians(-45.0f), glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-	CHECK(_Camera);
 }
 
 Scene::~Scene() {
 	_Renderer = nullptr;
-	_Camera = nullptr;
 }
 
 void Scene::InitScene() {
@@ -52,13 +48,7 @@ void Scene::InitScene() {
 }
 
 void Scene::Update() {
-	UpdatePosition();
-	_Renderer->Draw(_Renderables.data(), (int)_Renderables.size());
-	_FrameCount++;
-}
-
-void Scene::UpdatePosition() {
-	int count = 1;
+  int count = 1;
 	for (int x = -20; x <= 20; x++) {
 		for (int y = -20; y <= 20; y++) {
 
@@ -70,6 +60,42 @@ void Scene::UpdatePosition() {
 
 		}
 	}
+
+	_Renderer->Draw(_Renderables.data(), (int)_Renderables.size());
+	_FrameCount++;
+}
+
+void Scene::UpdatePosition(SDL_Event event) {
+    // Move 
+    switch (event.key.keysym.sym) {
+        case SDLK_w :{
+            _Camera.keyBoardSpeedZ = 10;
+            break;
+        }
+        case SDLK_s :{
+            _Camera.keyBoardSpeedZ = -10;
+            break;
+        }
+        case SDLK_a :{
+            _Camera.keyBoardSpeedX = -10;
+            break;
+        }
+        case SDLK_d :{
+            _Camera.keyBoardSpeedX = 10;
+            break;
+        }
+        case SDLK_q :{
+            _Camera.keyBoardSpeedY = 10;
+            break;
+        }
+        case SDLK_e :{
+            _Camera.keyBoardSpeedY = -10;
+            break;
+        }
+    }
+       
+    _Camera.UpdateCameraPosition();
+    ((Renderer*)_Renderer)->UpdateViewMat(_Camera.GetViewMatrix());
 }
 
 void Scene::UploadMesh(const char* filename, const char* mesh_name) {

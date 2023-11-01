@@ -22,11 +22,11 @@ Camera::Camera(glm::vec3 position, float pitch, float yaw, glm::vec3 worldup){
     this->up = glm::normalize(glm::cross(right, forward));
 }
 
-glm::mat4 Camera::getViewMatrix(){
+glm::mat4 Camera::GetViewMatrix(){
     return glm::lookAt(position,position + forward, worldUp);
 }
 
-void Camera::mouserMovement(float x, float y){  
+void Camera::MouserMovement(float x, float y){  
     pitch += y * mouseSpeedX;
     yaw += x * mouseSpeedY;
     if(pitch >  89.0f) pitch =  89.0f;
@@ -34,10 +34,10 @@ void Camera::mouserMovement(float x, float y){
     if(yaw > 179.0f) yaw =  -179.0f;
     if(yaw < -179.0f) yaw = 179.0f;
 
-    updateCameraVectors();
+    UpdateCameraVectors();
 }
 
-void Camera::updateCameraVectors(){
+void Camera::UpdateCameraVectors(){
     this->forward.x = glm::cos(pitch) * glm::sin(yaw);
     this->forward.y = glm::sin(pitch);
     this->forward.z = glm::cos(pitch) * glm::cos(yaw);
@@ -45,8 +45,11 @@ void Camera::updateCameraVectors(){
     this->up = glm::normalize(glm::cross(right, forward));
 }
 
-void Camera::updateCameraPosition(){
+void Camera::UpdateCameraPosition(){
     position += forward * keyBoardSpeedZ * 0.01f 
              + right * keyBoardSpeedX * 0.01f
              + up * keyBoardSpeedY * 0.01f;
+    keyBoardSpeedX = 0;
+    keyBoardSpeedY = 0;
+    keyBoardSpeedZ = 0;
 }

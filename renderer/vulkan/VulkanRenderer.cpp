@@ -452,14 +452,6 @@ void VulkanRenderer::CreatePipeline(Material& mat) {
 
 void VulkanRenderer::DrawObjects(vk::CommandBuffer cmd, RenderObject* first, int count) {
     //make a model view matrix for rendering the object
-    //camera view
-    glm::vec3 camPos = { 0.f, 8.f,-20.f };
-
-    glm::mat4 view = glm::lookAt(camPos, glm::vec3{0, -5.f, 0.f}, glm::vec3{0, 1, 0});
-    //camera projection
-    glm::mat4 projection = glm::perspective(glm::radians(45.f),
-        _SupportInfo.GetWindowHeight() / (float)_SupportInfo.GetWindowWidth(), 0.1f, 200.0f);
-    projection[1][1] *= -1;
 
     Mesh* lastMesh = nullptr;
     Material* lastMaterial = nullptr;
@@ -473,16 +465,15 @@ void VulkanRenderer::DrawObjects(vk::CommandBuffer cmd, RenderObject* first, int
             lastMaterial = object.material;
         }
 
-        glm::mat4 model = object.transformMatrix;
-        //final render matrix, that we are calculating on the cpu
-        glm::mat4 mesh_matrix = projection * view * model;
-
-        MeshPushConstants constants;
-        constants.render_matrix = mesh_matrix;
+        //camera projection
+        _PushConstants.proj= glm::perspective(glm::radians(45.f),
+            _SupportInfo.GetWindowHeight() / (float)_SupportInfo.GetWindowWidth(), 0.1f, 200.0f);
+        _PushConstants.proj[1][1] *= -1;
+        _PushConstants.model = object.transformMatrix;
 
         //upload the mesh to the GPU via push constants
         _VkCmdBuffer.pushConstants(object.material->pipelineLayout, 
-            vk::ShaderStageFlagBits::eVertex, 0, sizeof(MeshPushConstants), &constants);
+            vk::ShaderStageFlagBits::eVertex, 0, sizeof(MeshPushConstants), &_PushConstants);
 
         //only bind the mesh if it's a different one from last bind
         if (object.mesh != lastMesh) {

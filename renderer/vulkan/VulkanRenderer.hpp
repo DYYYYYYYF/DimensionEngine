@@ -47,6 +47,8 @@ namespace renderer {
     public:
         vk::CommandBuffer AllocateCmdBuffer();
         void EndCmdBuffer(vk::CommandBuffer cmdBuf);
+
+        // Buffer
         vk::Buffer CreateBuffer(uint64_t size, vk::BufferUsageFlags flag,
             vk::SharingMode mode = vk::SharingMode::eExclusive);
         vk::DeviceMemory AllocateMemory(MemRequiredInfo memInfo,
@@ -56,6 +58,11 @@ namespace renderer {
         // Image
         vk::Image CreateImage(vk::Format format, vk::ImageUsageFlags usage, vk::Extent3D extent);
         vk::ImageView CreateImageView(vk::Format format, vk::Image image, vk::ImageAspectFlags aspect);
+
+        // Uniform
+        void UpdateViewMat(glm::mat4 view_matrix){
+            _PushConstants.view = view_matrix;
+        }
 
     protected:
         bool QueryQueueFamilyProp();
@@ -96,6 +103,7 @@ namespace renderer {
         QueueFamilyProperty _QueueFamilyProp;
         SwapchainSupport _SupportInfo;
         Queue _Queue;
+        MeshPushConstants _PushConstants;
 
         SDL_Window* _Window;
         vk::Instance _VkInstance;
