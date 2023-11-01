@@ -280,6 +280,7 @@ void VulkanRenderer::CreateRenderPass() {
     dependency.setDstSubpass(0);
     dependency.setDstStageMask(vk::PipelineStageFlagBits::eColorAttachmentOutput);
     dependency.setDstAccessMask(vk::AccessFlagBits::eColorAttachmentWrite);
+    dependency.setDependencyFlags(vk::DependencyFlagBits::eByRegion);
 
     vk::SubpassDependency depthDependency;
     depthDependency.setSrcStageMask(
@@ -290,6 +291,7 @@ void VulkanRenderer::CreateRenderPass() {
     depthDependency.setDstStageMask(vk::PipelineStageFlagBits::eEarlyFragmentTests |
         vk::PipelineStageFlagBits::eLateFragmentTests);
     depthDependency.setDstAccessMask(vk::AccessFlagBits::eDepthStencilAttachmentWrite);
+    depthDependency.setDependencyFlags(vk::DependencyFlagBits::eByRegion);
 
     std::vector<vk::SubpassDependency> dependecies = { dependency, depthDependency };
 
@@ -451,11 +453,11 @@ void VulkanRenderer::CreatePipeline(Material& mat) {
 void VulkanRenderer::DrawObjects(vk::CommandBuffer cmd, RenderObject* first, int count) {
     //make a model view matrix for rendering the object
     //camera view
-    glm::vec3 camPos = { 0.f,-3.f,-20.f };
+    glm::vec3 camPos = { 0.f, 8.f,-20.f };
 
-    glm::mat4 view = glm::translate(glm::mat4(1.f), camPos);
+    glm::mat4 view = glm::lookAt(camPos, glm::vec3{0, -5.f, 0.f}, glm::vec3{0, 1, 0});
     //camera projection
-    glm::mat4 projection = glm::perspective(glm::radians(70.f),
+    glm::mat4 projection = glm::perspective(glm::radians(45.f),
         _SupportInfo.GetWindowHeight() / (float)_SupportInfo.GetWindowWidth(), 0.1f, 200.0f);
     projection[1][1] *= -1;
 

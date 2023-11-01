@@ -5,7 +5,7 @@
 #define USE_LOGGER
 
 #ifdef USE_LOGGER
-static udon::EngineLogger* GLOBAL_LOGGER = new udon::EngineLogger();
+static engine::EngineLogger* GLOBAL_LOGGER = new engine::EngineLogger();
 #endif // !USE_LOGGER
 
 int main(int argc, char* argv[]){

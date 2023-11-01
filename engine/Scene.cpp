@@ -22,6 +22,7 @@ void Scene::InitScene() {
 
 	UploadMesh("../asset/model/room.obj", "room");
 	UploadMesh("../asset/model/sponza.obj", "sponza");
+	UploadMesh("../asset/model/ball.obj", "ball");
 	UploadTriangleMesh();
 
 	Material deafaultMaterial;
@@ -29,18 +30,17 @@ void Scene::InitScene() {
 	_Materials["Default"] = deafaultMaterial;
 
 	RenderObject monkey;
-	monkey.mesh = GetMesh("monkey");
+	monkey.mesh = GetMesh("ball");
 	monkey.material = GetMaterial("Default");
 	monkey.transformMatrix = glm::mat4{ 1.0f };
 
-	//_Renderables.push_back(monkey);
+	_Renderables.push_back(monkey);
 
 	for (int x = -20; x <= 20; x++) {
 		for (int y = -20; y <= 20; y++) {
 
 			RenderObject tri;
-			//tri.mesh = GetMesh("Triangle");
-			tri.mesh = GetMesh("room");
+			tri.mesh = GetMesh("Triangle");
 			tri.material = GetMaterial("Default");
 			glm::mat4 translation = glm::translate(glm::mat4{ 1.0 }, glm::vec3(x, 0, y));
 			glm::mat4 scale = glm::scale(glm::mat4{ 1.0 }, glm::vec3(0.2, 0.2, 0.2));
@@ -58,20 +58,18 @@ void Scene::Update() {
 }
 
 void Scene::UpdatePosition() {
-	int count = 0;
+	int count = 1;
 	for (int x = -20; x <= 20; x++) {
 		for (int y = -20; y <= 20; y++) {
 
 			RenderObject& tri = _Renderables[count++];
 			glm::mat4 translation = glm::translate(glm::mat4{ 1.0 }, glm::vec3(x, 0, y));
-			glm::mat4 rotate = glm::rotate_slow(glm::mat4{ 1.0 }, glm::radians(_FrameCount / 10.f), glm::vec3{ 0, 1, 0 });
+			glm::mat4 rotate = glm::rotate_slow(glm::mat4{ 1.0 }, glm::radians(_FrameCount / 0.4f), glm::vec3{ 0, 1, 0 });
 			glm::mat4 scale = glm::scale(glm::mat4{ 1.0 }, glm::vec3(0.2, 0.2, 0.2));
 			tri.transformMatrix = translation * rotate * scale;
 
 		}
 	}
-
-	UpdatePushConstants(_Camera->getViewMatrix());
 }
 
 void Scene::UploadMesh(const char* filename, const char* mesh_name) {

@@ -25,9 +25,6 @@ public:
 	void UpdatePosition();
 
 private:
-	void UpdatePushConstants(glm::mat4 view_matrix) { ((Renderer*)_Renderer)->UpdatePushConstants(view_matrix); }
-
-private:
 	IRenderer* _Renderer;
 
 	//default array of renderable objects
