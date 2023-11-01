@@ -10,21 +10,6 @@
 #include <glm/glm.hpp>
 namespace renderer{
 
-    struct Camera{
-       static Eigen::Matrix4f GetPrespective(float fovy, float aspect, float zNear, float zFar) {
-            float const tanHalfFovy = tan(fovy / 2);
-
-            Eigen::Matrix4f prespective = Eigen::Matrix4f::Zero();
-            prespective(0, 0) = 1 / (aspect * tanHalfFovy);
-            prespective(1, 1) = 1 / (tanHalfFovy);
-            prespective(2, 2) = -(zFar + zNear) / (zFar - zNear);
-            prespective(3, 2) = -1.0f;
-            prespective(2, 3) = -(2 * zFar * zNear) / (zFar - zNear);
-
-            return prespective;
-        }
-    };
-
      /*
         Vulkan Utils
     */

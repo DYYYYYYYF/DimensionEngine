@@ -14,7 +14,7 @@ public:
 
 private:
     WsiWindow(){}
-    WsiWindow(int width, int height);
+    WsiWindow(int height, int width);
     static bool InitWindow();
 
 private:

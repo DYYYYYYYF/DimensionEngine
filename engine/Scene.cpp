@@ -30,9 +30,9 @@ void Scene::InitScene() {
 	_Materials["Default"] = deafaultMaterial;
 
 	RenderObject monkey;
-	monkey.mesh = GetMesh("ball");
+	monkey.mesh = GetMesh("room");
 	monkey.material = GetMaterial("Default");
-	monkey.transformMatrix = glm::mat4{ 1.0f };
+	monkey.transformMatrix = glm::rotate(glm::mat4{1.0}, -90.0f, glm::vec3{1, 0, 0});
 
 	_Renderables.push_back(monkey);
 
@@ -63,7 +63,7 @@ void Scene::UpdatePosition() {
 		for (int y = -20; y <= 20; y++) {
 
 			RenderObject& tri = _Renderables[count++];
-			glm::mat4 translation = glm::translate(glm::mat4{ 1.0 }, glm::vec3(x, 0, y));
+			glm::mat4 translation = glm::translate(glm::mat4{1.0f}, glm::vec3(x, 0, y));
 			glm::mat4 rotate = glm::rotate_slow(glm::mat4{ 1.0 }, glm::radians(_FrameCount / 0.4f), glm::vec3{ 0, 1, 0 });
 			glm::mat4 scale = glm::scale(glm::mat4{ 1.0 }, glm::vec3(0.2, 0.2, 0.2));
 			tri.transformMatrix = translation * rotate * scale;

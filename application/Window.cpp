@@ -7,7 +7,7 @@ int WsiWindow::_Width = 1200;
 WsiWindow* WsiWindow::_WindowObj = nullptr;
 SDL_Window* WsiWindow::_SDLWindow = nullptr;
 
-WsiWindow::WsiWindow(int height, int width){
+WsiWindow::WsiWindow(int width, int height){
     _SDLWindow = nullptr;
     _WindowObj = nullptr;
     _Height = height;
@@ -36,7 +36,7 @@ SDL_Window* WsiWindow::GetWindow(){
 
 WsiWindow* WsiWindow::GetInstance(){
     if(!_WindowObj){
-        _WindowObj = new WsiWindow(400, 600);
+        _WindowObj = new WsiWindow(1200, 800);
     }
 
     CHECK(_WindowObj);
