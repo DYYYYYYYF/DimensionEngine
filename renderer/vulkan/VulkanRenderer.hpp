@@ -44,15 +44,20 @@ namespace renderer {
         void EndCmdBuffer(vk::CommandBuffer cmdBuf);
         vk::Buffer CreateBuffer(uint64_t size, vk::BufferUsageFlags flag,
             vk::SharingMode mode = vk::SharingMode::eExclusive);
-        vk::DeviceMemory AllocateMemory(vk::Buffer buffer,
+        vk::DeviceMemory AllocateMemory(MemRequiredInfo memInfo,
             vk::MemoryPropertyFlags flag = vk::MemoryPropertyFlagBits::eHostVisible |
             vk::MemoryPropertyFlagBits::eHostCoherent);
+
+        // Image
+        vk::Image CreateImage(vk::Format format, vk::ImageUsageFlags usage, vk::Extent3D extent);
+        vk::ImageView CreateImageView(vk::Format format, vk::Image image, vk::ImageAspectFlags aspect);
 
     protected:
         bool QueryQueueFamilyProp();
         bool InitQueue();
         void GetVkImages();
         void GetVkImageViews();
+        void CreateDepthImage();
 
         vk::ShaderModule CreateShaderModule(const char* shader_file);
         MemRequiredInfo QueryMemReqInfo(vk::Buffer buf, vk::MemoryPropertyFlags flag);
@@ -60,8 +65,17 @@ namespace renderer {
 
         void CopyBuffer(vk::Buffer src, vk::Buffer dst, vk::DeviceSize size);
         void UpLoadMeshes(Mesh& mesh);
+        void TransitionImageLayout(vk::Image image, vk::Format format,
+            vk::ImageLayout oldLayout, vk::ImageLayout newLayout);
+
+        bool IsContainStencilComponent(vk::Format format) {
+            return format == vk::Format::eD32SfloatS8Uint || format == vk::Format::eX8D24UnormPack32;
+        }
 
     private:
+        vk::Format FindSupportedFormat(const std::vector<vk::Format>& candidates,
+            vk::ImageTiling tiling, vk::FormatFeatureFlags features);
+
         // Pipeline stages
         vk::PipelineShaderStageCreateInfo InitShaderStageCreateInfo(vk::ShaderStageFlagBits stage, vk::ShaderModule shader_module);
         vk::PipelineVertexInputStateCreateInfo InitVertexInputStateCreateInfo();
@@ -70,6 +84,7 @@ namespace renderer {
         vk::PipelineMultisampleStateCreateInfo InitMultisampleStateCreateInfo();
         vk::PipelineColorBlendAttachmentState InitColorBlendAttachmentState();
         vk::PipelineLayoutCreateInfo InitPipelineLayoutCreateInfo();
+        vk::PipelineDepthStencilStateCreateInfo InitDepthStencilStateCreateInfo();
 
     protected:
         QueueFamilyProperty _QueueFamilyProp;
@@ -98,6 +113,10 @@ namespace renderer {
         vk::Pipeline _Pipeline;
         vk::ShaderModule _VertShader;
         vk::ShaderModule _FragShader;
+
+        // Depth Image
+        vk::ImageView _DepthImageView;
+        AllocatedImage _DepthImage;
 
     public:
         void AddCount(){

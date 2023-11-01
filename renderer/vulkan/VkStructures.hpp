@@ -11,8 +11,6 @@
 namespace renderer{
 
     struct Camera{
-        
-        
        static Eigen::Matrix4f GetPrespective(float fovy, float aspect, float zNear, float zFar) {
             float const tanHalfFovy = tan(fovy / 2);
 
@@ -49,6 +47,11 @@ namespace renderer{
 
     struct AllocatedBuffer {
         vk::Buffer buffer;  // CPU
+        vk::DeviceMemory memory;    // GPU
+    };
+
+    struct AllocatedImage {
+        vk::Image image;  // CPU
         vk::DeviceMemory memory;    // GPU
     };
 

@@ -27,6 +27,7 @@ vk::Pipeline PipelineBuilder::BuildPipeline(vk::Device device, vk::RenderPass re
         .setLayout(_PipelineLayout)
         .setRenderPass(renderpass)
         .setSubpass(0)
+        .setPDepthStencilState(&_DepthStencilState)
         .setBasePipelineHandle(nullptr);
 
     vk::Pipeline newPipeline;

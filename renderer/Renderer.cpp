@@ -24,6 +24,10 @@ bool Renderer::Init(){
     return true;
 }
 
+void Renderer::BeforeDraw() {
+    _Renderer->CreatePipeline();
+}
+
 void Renderer::Draw(){
     ((VulkanRenderer*)_Renderer)->AddCount();
     _Renderer->DrawPerFrame();

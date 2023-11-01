@@ -8,6 +8,7 @@ namespace renderer {
         IRenderer(){}
         virtual ~IRenderer() {}
         virtual bool Init() = 0;
+        virtual void BeforeDraw() = 0;
         virtual void Draw() = 0;
 
     protected:

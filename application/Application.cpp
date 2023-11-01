@@ -28,6 +28,7 @@ bool Engine::Init(){
 
 void Engine::Run(){
 
+    _Renderer->BeforeDraw();
     if (!_window){
         DEBUG("_window is null.");
         Close();
@@ -45,7 +46,6 @@ void Engine::Run(){
 
         _Renderer->Draw();
         _FrameCount++;
-
     }
 }
 

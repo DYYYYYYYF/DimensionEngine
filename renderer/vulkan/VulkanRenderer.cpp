@@ -8,6 +8,23 @@ using namespace renderer;
 
 VulkanRenderer::VulkanRenderer() {
     INFO("Use Vulkan Renderer.");
+    _Window = nullptr;
+    _VkInstance = nullptr;
+    _VkPhyDevice = nullptr;
+    _SurfaceKHR = nullptr;
+    _VkDevice = nullptr;
+    _SwapchainKHR = nullptr;
+    _VkRenderPass = nullptr;
+    _VkCmdPool = nullptr;
+    _VkCmdBuffer = nullptr;
+    _RenderSemaphore = nullptr;
+    _PresentSemaphore = nullptr;
+    _RenderFence = nullptr;
+    _PipelineLayout = nullptr;
+    _Pipeline = nullptr;
+    _VertShader = nullptr;
+    _FragShader = nullptr;
+    _DepthImageView = nullptr;
 }
 
 VulkanRenderer::~VulkanRenderer() {
@@ -26,11 +43,10 @@ bool VulkanRenderer::Init() {
     CreateRenderPass();
     CreateCmdPool();
     _VkCmdBuffer = AllocateCmdBuffer();
+    CreateDepthImage();
     CreateFrameBuffers();
     InitSyncStructures();
     UploadTriangleMesh();
-
-    CreatePipeline();
 
     return true; 
 }
@@ -213,8 +229,7 @@ void VulkanRenderer::CreateSwapchain() {
 void VulkanRenderer::CreateRenderPass() {
     CHECK(_VkDevice);
     CHECK(_VkPhyDevice);
-
-    vk::RenderPassCreateInfo info;
+    
     //颜色附件
     vk::AttachmentDescription attchmentDesc;
     attchmentDesc.setSamples(vk::SampleCountFlagBits::e1)
@@ -225,37 +240,62 @@ void VulkanRenderer::CreateRenderPass() {
         .setFormat(_SupportInfo.format.format)
         .setInitialLayout(vk::ImageLayout::eUndefined)
         .setFinalLayout(vk::ImageLayout::ePresentSrcKHR);
-    info.setAttachments(attchmentDesc);
 
     vk::AttachmentReference colRefer;
     colRefer.setLayout(vk::ImageLayout::eColorAttachmentOptimal);
     colRefer.setAttachment(0);
 
     //深度附件
- // vk::AttachmentDescription depthAttchDesc;
- // depthAttchDesc.setFormat(FindDepthFormat())
- //               .setSamples(vk::SampleCountFlagBits::e1)
- //               .setLoadOp(vk::AttachmentLoadOp::eClear)
- //               .setStoreOp(vk::AttachmentStoreOp::eDontCare)
- //               .setStencilLoadOp(vk::AttachmentLoadOp::eDontCare)
- //               .setStencilStoreOp(vk::AttachmentStoreOp::eDontCare)
- //               .setInitialLayout(vk::ImageLayout::eUndefined)
- //               .setFinalLayout(vk::ImageLayout::eDepthReadOnlyStencilAttachmentOptimal);
- // vk::AttachmentReference depthRef;
- // depthRef.setAttachment(1)
- //         .setLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal);
- //
+      vk::AttachmentDescription depthAttchDesc;
+      vk::Format depthFormat = FindSupportedFormat({ vk::Format::eD32Sfloat, vk::Format::eD32SfloatS8Uint, vk::Format::eX8D24UnormPack32 },
+          vk::ImageTiling::eOptimal, vk::FormatFeatureFlagBits::eDepthStencilAttachment);
+      depthAttchDesc.setFormat(depthFormat)
+                    .setSamples(vk::SampleCountFlagBits::e1)
+                    .setLoadOp(vk::AttachmentLoadOp::eClear)
+                    .setStoreOp(vk::AttachmentStoreOp::eDontCare)
+                    .setStencilLoadOp(vk::AttachmentLoadOp::eDontCare)
+                    .setStencilStoreOp(vk::AttachmentStoreOp::eDontCare)
+                    .setInitialLayout(vk::ImageLayout::eUndefined)
+                    .setFinalLayout(vk::ImageLayout::eDepthReadOnlyStencilAttachmentOptimal);
+      vk::AttachmentReference depthRef;
+      depthRef.setAttachment(1)
+              .setLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal);
+ 
     vk::SubpassDescription subpassDesc;
-    subpassDesc.setColorAttachments(colRefer);
-    // subpassDesc.setPDepthStencilAttachment(&depthRef);
+    subpassDesc.setColorAttachmentCount(1);
+    subpassDesc.setPColorAttachments(&colRefer);
+    subpassDesc.setPDepthStencilAttachment(&depthRef);
     subpassDesc.setPipelineBindPoint(vk::PipelineBindPoint::eGraphics);
 
-    // std::array<vk::AttachmentDescription, 2> attachments = {attchmentDesc, depthAttchDesc};
-    std::array<vk::AttachmentDescription, 1> attachments = { attchmentDesc };
+    std::array<vk::AttachmentDescription, 2> attachments = {attchmentDesc, depthAttchDesc};
+    
+    vk::SubpassDependency dependency;
+    dependency.setSrcSubpass(VK_SUBPASS_EXTERNAL);
+    dependency.setSrcStageMask(vk::PipelineStageFlagBits::eColorAttachmentOutput);
+    dependency.setSrcAccessMask(vk::AccessFlagBits::eNone);
+    dependency.setDstSubpass(0);
+    dependency.setDstStageMask(vk::PipelineStageFlagBits::eColorAttachmentOutput);
+    dependency.setDstAccessMask(vk::AccessFlagBits::eColorAttachmentWrite);
+
+    vk::SubpassDependency depthDependency;
+    depthDependency.setSrcStageMask(
+        vk::PipelineStageFlagBits::eEarlyFragmentTests | 
+        vk::PipelineStageFlagBits::eLateFragmentTests);
+    depthDependency.setSrcAccessMask(vk::AccessFlagBits::eNone);
+    depthDependency.setDstSubpass(0);
+    depthDependency.setDstStageMask(vk::PipelineStageFlagBits::eEarlyFragmentTests |
+        vk::PipelineStageFlagBits::eLateFragmentTests);
+    depthDependency.setDstAccessMask(vk::AccessFlagBits::eDepthStencilAttachmentWrite);
+
+    std::vector<vk::SubpassDependency> dependecies = { dependency, depthDependency };
+
+    vk::RenderPassCreateInfo info;
     info.setSubpassCount(1)
         .setSubpasses(subpassDesc)
         .setAttachmentCount((uint32_t)attachments.size())
-        .setAttachments(attachments);
+        .setAttachments(attachments)
+        .setDependencies(dependecies)
+        .setDependencyCount((uint32_t)dependecies.size());
 
     _VkRenderPass = _VkDevice.createRenderPass(info);
     CHECK(_VkRenderPass);
@@ -310,13 +350,14 @@ void VulkanRenderer::CreateFrameBuffers() {
     _FrameBuffers = std::vector<vk::Framebuffer>(nSwapchainCount);
 
     for (int i = 0; i < nSwapchainCount; ++i) {
+        std::array<vk::ImageView, 2> attchments = { _ImageViews[i], _DepthImageView };
         vk::FramebufferCreateInfo info;
         info.setRenderPass(_VkRenderPass)
-            .setAttachmentCount(1)
+            .setAttachmentCount((uint32_t)attchments.size())
+            .setPAttachments(attchments.data())
             .setWidth(_SupportInfo.GetWindowWidth())
             .setHeight(_SupportInfo.GetWindowHeight())
-            .setLayers(1)
-            .setPAttachments(&_ImageViews[i]);
+            .setLayers(1);
         _FrameBuffers[i] = _VkDevice.createFramebuffer(info);
         CHECK(_FrameBuffers[i]);
     }
@@ -383,6 +424,7 @@ void VulkanRenderer::CreatePipeline() {
     pipelineBuilder._Mutisampling = InitMultisampleStateCreateInfo();
     pipelineBuilder._ColorBlendAttachment = InitColorBlendAttachmentState();
     pipelineBuilder._PipelineLayout = _PipelineLayout;
+    pipelineBuilder._DepthStencilState = InitDepthStencilStateCreateInfo();
 
     INFO("Pipeline Bingding and Attribute Descroptions");
     std::vector<vk::VertexInputBindingDescription> bindingDescription = Vertex::GetBindingDescription();
@@ -438,17 +480,17 @@ void VulkanRenderer::DrawPerFrame() {
 
     _VkCmdBuffer.begin(info);
 
-    vk::ClearValue ClearValue;
+    std::array<vk::ClearValue, 2> ClearValues;
     vk::ClearColorValue color = std::array<float, 4>{0.5f, 0.5f, 0.5f, 1.0f};
-    ClearValue.setColor(color);
+    ClearValues[0].setColor(color);
+    ClearValues[1].setDepthStencil({ 1.0, 0 });
 
     vk::RenderPassBeginInfo rpInfo;
-    vk::Extent2D extent = _SupportInfo.extent;
     rpInfo.setRenderPass(_VkRenderPass)
-        .setRenderArea(vk::Rect2D({ 0, 0 }, extent))
+        .setRenderArea(vk::Rect2D({ 0, 0 }, _SupportInfo.extent))
         .setFramebuffer(_FrameBuffers[nSwapchainImageIndex])
-        .setClearValueCount(1)
-        .setClearValues(ClearValue);
+        .setClearValueCount((uint32_t)ClearValues.size())
+        .setClearValues(ClearValues);
 
     _VkCmdBuffer.beginRenderPass(rpInfo, vk::SubpassContents::eInline);
     _VkCmdBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, _Pipeline);
@@ -457,7 +499,7 @@ void VulkanRenderer::DrawPerFrame() {
     _VkCmdBuffer.bindVertexBuffers(0, _MonkeyMesh.vertexBuffer.buffer, offset);
     _VkCmdBuffer.pushConstants(_PipelineLayout, vk::ShaderStageFlagBits::eVertex, 0, sizeof(MeshPushConstants), &pushConstant);
 
-    _VkCmdBuffer.draw(_MonkeyMesh.vertices.size(), 1, 0, 0);
+    _VkCmdBuffer.draw((uint32_t)_MonkeyMesh.vertices.size(), 1, 0, 0);
 
     _VkCmdBuffer.endRenderPass();
     _VkCmdBuffer.end();
@@ -485,7 +527,27 @@ void VulkanRenderer::DrawPerFrame() {
     if (_Queue.GraphicsQueue.presentKHR(PresentInfo) != vk::Result::eSuccess) {
         return;
     }
+}
 
+void VulkanRenderer::CreateDepthImage(){
+    // Depth Image
+    vk::Format depthFormat = FindSupportedFormat({ vk::Format::eD32Sfloat, vk::Format::eD32SfloatS8Uint, vk::Format::eX8D24UnormPack32 },
+        vk::ImageTiling::eOptimal, vk::FormatFeatureFlagBits::eDepthStencilAttachment);
+    uint32_t width = _SupportInfo.GetWindowWidth();
+    uint32_t height = _SupportInfo.GetWindowHeight();
+    vk::Extent3D depthImageExtent = { width, height, 1 };
+
+    _DepthImage.image = CreateImage(vk::Format::eD32Sfloat,
+        vk::ImageUsageFlagBits::eDepthStencilAttachment, depthImageExtent);
+    CHECK(_DepthImage.image);
+    MemRequiredInfo memInfo = QueryImgReqInfo(_DepthImage.image, vk::MemoryPropertyFlagBits::eDeviceLocal);
+    _DepthImage.memory = AllocateMemory(memInfo, vk::MemoryPropertyFlagBits::eDeviceLocal);
+    CHECK(_DepthImage.memory);
+    _VkDevice.bindImageMemory(_DepthImage.image, _DepthImage.memory, 0);
+
+    _DepthImageView = CreateImageView(depthFormat, _DepthImage.image, vk::ImageAspectFlagBits::eDepth);
+    TransitionImageLayout(_DepthImage.image, depthFormat, vk::ImageLayout::eUndefined,
+        vk::ImageLayout::eDepthStencilAttachmentOptimal);
 }
 
 /*
@@ -513,7 +575,7 @@ bool VulkanRenderer::QueryQueueFamilyProp(){
         index++;
     }
 
-#ifdef DEBUG 
+#ifdef _DEBUG 
     std::cout << "Graphics Index:" << _QueueFamilyProp.graphicsIndex.value() << 
         "\nPresent Index: " << _QueueFamilyProp.presentIndex.value() << std::endl;
 #endif
@@ -612,9 +674,7 @@ vk::Buffer VulkanRenderer::CreateBuffer(uint64_t size, vk::BufferUsageFlags flag
     return _VkDevice.createBuffer(info);
 }
 
-vk::DeviceMemory VulkanRenderer::AllocateMemory(vk::Buffer buffer, vk::MemoryPropertyFlags flag) {
-    MemRequiredInfo memInfo = QueryMemReqInfo(buffer, flag);
-
+vk::DeviceMemory VulkanRenderer::AllocateMemory(MemRequiredInfo memInfo, vk::MemoryPropertyFlags flag) {
     vk::MemoryAllocateInfo info;
     info.setAllocationSize(memInfo.size)
         .setMemoryTypeIndex(memInfo.index);
@@ -642,7 +702,10 @@ void VulkanRenderer::UpLoadMeshes(Mesh& mesh) {
     vk::DeviceSize size = mesh.vertices.size() * sizeof(Vertex);
     vk::Buffer tempBuffer = CreateBuffer(size,
         vk::BufferUsageFlagBits::eTransferSrc, vk::SharingMode::eExclusive);
-    vk::DeviceMemory tempMemory = AllocateMemory(tempBuffer, 
+    MemRequiredInfo tempMemInfo = QueryMemReqInfo(tempBuffer,
+        vk::MemoryPropertyFlagBits::eHostVisible |
+        vk::MemoryPropertyFlagBits::eHostCoherent);
+    vk::DeviceMemory tempMemory = AllocateMemory(tempMemInfo,
         vk::MemoryPropertyFlagBits::eHostVisible |
         vk::MemoryPropertyFlagBits::eHostCoherent);
 
@@ -651,7 +714,8 @@ void VulkanRenderer::UpLoadMeshes(Mesh& mesh) {
 
     mesh.vertexBuffer.buffer = CreateBuffer(size, vk::BufferUsageFlagBits::eTransferDst |
         vk::BufferUsageFlagBits::eVertexBuffer, vk::SharingMode::eExclusive);
-    mesh.vertexBuffer.memory = AllocateMemory(mesh.vertexBuffer.buffer, vk::MemoryPropertyFlagBits::eDeviceLocal);
+    MemRequiredInfo memInfo = QueryMemReqInfo(mesh.vertexBuffer.buffer, vk::MemoryPropertyFlagBits::eDeviceLocal);
+    mesh.vertexBuffer.memory = AllocateMemory(memInfo, vk::MemoryPropertyFlagBits::eDeviceLocal);
     CHECK(deviceBuffer);
     CHECK(deviceMemory);
 
@@ -667,6 +731,85 @@ void VulkanRenderer::UpLoadMeshes(Mesh& mesh) {
     // Free mem
     _VkDevice.destroyBuffer(tempBuffer);
     _VkDevice.freeMemory(tempMemory);
+}
+
+vk::Format VulkanRenderer::FindSupportedFormat(const std::vector<vk::Format>& candidates,
+    vk::ImageTiling tiling, vk::FormatFeatureFlags features) {
+    for (vk::Format format : candidates) {
+        vk::FormatProperties props;
+        _VkPhyDevice.getFormatProperties(format, &props);
+        if (tiling == vk::ImageTiling::eLinear && (props.linearTilingFeatures & features) == features) {
+            return format;
+        }
+        else if (tiling == vk::ImageTiling::eOptimal && (props.optimalTilingFeatures & features) == features) {
+            return format;
+        }
+        else {
+            WARN("Find Supported Format Failed...");
+        }
+    }
+
+    return vk::Format();
+}
+
+void VulkanRenderer::TransitionImageLayout(vk::Image image, vk::Format format,
+    vk::ImageLayout oldLayout, vk::ImageLayout newLayout) {
+
+    vk::CommandBuffer cmdBuf = AllocateCmdBuffer();
+    CHECK(cmdBuf);
+
+    vk::PipelineStageFlags sourceStage;
+    vk::PipelineStageFlags dstStage;
+    vk::ImageMemoryBarrier barrier;
+    vk::ImageSubresourceRange subRange;
+    subRange.setAspectMask(vk::ImageAspectFlagBits::eColor)
+        .setBaseArrayLayer(0)
+        .setBaseMipLevel(0)
+        .setLayerCount(1)
+        .setLevelCount(1);
+    barrier.setOldLayout(oldLayout)
+        .setNewLayout(newLayout)
+        .setDstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+        .setSrcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+        .setImage(image)
+        .setSubresourceRange(subRange);
+
+    if (newLayout == vk::ImageLayout::eDepthStencilAttachmentOptimal) {
+        barrier.subresourceRange.setAspectMask(vk::ImageAspectFlagBits::eDepth);
+        if (IsContainStencilComponent(format)) {
+            barrier.subresourceRange.setAspectMask(vk::ImageAspectFlagBits::eDepth | vk::ImageAspectFlagBits::eStencil);
+        }
+        else {
+            barrier.subresourceRange.setAspectMask(vk::ImageAspectFlagBits::eDepth);
+        }
+    }
+    if (oldLayout == vk::ImageLayout::eUndefined && newLayout == vk::ImageLayout::eTransferDstOptimal) {
+        barrier.setSrcAccessMask(vk::AccessFlagBits::eNone)
+            .setDstAccessMask(vk::AccessFlagBits::eTransferWrite);
+        sourceStage = vk::PipelineStageFlagBits::eTopOfPipe;
+        dstStage = vk::PipelineStageFlagBits::eTransfer;
+    }
+    else if (oldLayout == vk::ImageLayout::eTransferDstOptimal && newLayout == vk::ImageLayout::eShaderReadOnlyOptimal) {
+        barrier.setSrcAccessMask(vk::AccessFlagBits::eTransferWrite)
+            .setDstAccessMask(vk::AccessFlagBits::eShaderRead);
+        sourceStage = vk::PipelineStageFlagBits::eTransfer;
+        dstStage = vk::PipelineStageFlagBits::eFragmentShader;
+    }
+    else if (oldLayout == vk::ImageLayout::eUndefined && newLayout == vk::ImageLayout::eDepthStencilAttachmentOptimal) {
+        barrier.setSrcAccessMask(vk::AccessFlagBits::eNone);
+        barrier.setDstAccessMask(vk::AccessFlagBits::eDepthStencilAttachmentRead |
+            vk::AccessFlagBits::eDepthStencilAttachmentWrite);
+
+        sourceStage = vk::PipelineStageFlagBits::eTopOfPipe;
+        dstStage = vk::PipelineStageFlagBits::eEarlyFragmentTests;
+    }
+    else {
+        throw std::runtime_error("Transfer ImageLayout Failed...");
+    }
+
+    cmdBuf.pipelineBarrier(sourceStage, dstStage, vk::DependencyFlagBits::eByRegion, 0, nullptr, 0, nullptr, 1, &barrier);
+    cmdBuf.end();
+    EndCmdBuffer(cmdBuf);
 }
 
 /*
@@ -747,7 +890,56 @@ vk::PipelineLayoutCreateInfo VulkanRenderer::InitPipelineLayoutCreateInfo() {
     return info;
 }
 
+vk::PipelineDepthStencilStateCreateInfo VulkanRenderer::InitDepthStencilStateCreateInfo() {
+    vk::PipelineDepthStencilStateCreateInfo depthStencilInfo;
+    depthStencilInfo.setDepthTestEnable(VK_TRUE)    //将新的深度缓冲区与深度缓冲区进行比较，确定是否丢弃
+        .setDepthWriteEnable(VK_TRUE)   //测试新深度缓冲区是否应该写入
+        .setDepthCompareOp(vk::CompareOp::eLess)
+        .setDepthBoundsTestEnable(VK_FALSE)
+        .setMinDepthBounds(0.0f)
+        .setMaxDepthBounds(1.0f)
+        .setStencilTestEnable(VK_FALSE);
 
+    return depthStencilInfo;
+}
+
+/*
+    Image
+*/
+vk::Image VulkanRenderer::CreateImage(vk::Format format, vk::ImageUsageFlags usage, vk::Extent3D extent) {
+    CHECK(_VkDevice);
+
+    vk::ImageCreateInfo info;
+    info.setImageType(vk::ImageType::e2D)
+        .setMipLevels(1)
+        .setFormat(format)
+        .setExtent(extent)
+        .setArrayLayers(1)
+        .setTiling(vk::ImageTiling::eOptimal)
+        .setInitialLayout(vk::ImageLayout::eUndefined)
+        .setSharingMode(vk::SharingMode::eExclusive)
+        .setUsage(usage)
+        .setSamples(vk::SampleCountFlagBits::e1);
+    return _VkDevice.createImage(info);
+}
+
+vk::ImageView VulkanRenderer::CreateImageView(vk::Format format, vk::Image image, vk::ImageAspectFlags aspect) {
+    CHECK(_VkDevice);
+
+    vk::ImageSubresourceRange subresourceRange;
+    subresourceRange.setBaseMipLevel(0)
+        .setLevelCount(1)
+        .setBaseArrayLayer(0)
+        .setLayerCount(1)
+        .setAspectMask(aspect);
+    
+    vk::ImageViewCreateInfo info;
+    info.setViewType(vk::ImageViewType::e2D)
+        .setFormat(format)
+        .setImage(image)
+        .setSubresourceRange(subresourceRange);
+    return _VkDevice.createImageView(info);
+}
 
 // Decpater
 void VulkanRenderer::UploadTriangleMesh() {

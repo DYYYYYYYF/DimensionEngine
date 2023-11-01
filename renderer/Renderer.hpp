@@ -7,6 +7,7 @@ namespace renderer {
         Renderer();
         virtual ~Renderer();
         virtual bool Init() override;
+        virtual void BeforeDraw() override;
         virtual void Draw() override;
 
     protected:
