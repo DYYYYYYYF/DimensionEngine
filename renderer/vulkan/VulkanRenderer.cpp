@@ -50,12 +50,12 @@ bool VulkanRenderer::Init() {
     CreateDepthImage();
     CreateFrameBuffers();
     InitSyncStructures();
-    UploadTriangleMesh();
+    //UploadTriangleMesh();
 
     return true; 
 }
 void VulkanRenderer::Release(){
-
+    CHECK(_VkDevice);
     INFO("Release Renderer");
     _VkDevice.destroyPipelineLayout(_PipelineLayout);
     _VkDevice.destroyPipeline(_Pipeline);
@@ -381,7 +381,7 @@ void VulkanRenderer::InitSyncStructures() {
     CHECK(_PresentSemaphore);
 }
 
-void VulkanRenderer::CreatePipeline() {
+void VulkanRenderer::CreatePipeline(Material& mat) {
     PipelineBuilder pipelineBuilder;
 
     _VertShader = CreateShaderModule("../shader/triangle_vert.spv");
@@ -443,10 +443,60 @@ void VulkanRenderer::CreatePipeline() {
     pipelineBuilder._PipelineLayout = _PipelineLayout;
 
     _Pipeline = pipelineBuilder.BuildPipeline(_VkDevice, _VkRenderPass);
+
+    mat.pipeline = _Pipeline;
+    mat.pipelineLayout = _PipelineLayout;
 }
 
+void VulkanRenderer::DrawObjects(vk::CommandBuffer cmd, RenderObject* first, int count) {
+    //make a model view matrix for rendering the object
+    //camera view
+    glm::vec3 camPos = { 0.f,-3.f,-20.f };
 
-void VulkanRenderer::DrawPerFrame() {
+    glm::mat4 view = glm::translate(glm::mat4(1.f), camPos);
+    //camera projection
+    glm::mat4 projection = glm::perspective(glm::radians(70.f),
+        _SupportInfo.GetWindowHeight() / (float)_SupportInfo.GetWindowWidth(), 0.1f, 200.0f);
+    projection[1][1] *= -1;
+
+    Mesh* lastMesh = nullptr;
+    Material* lastMaterial = nullptr;
+    for (int i = 0; i < count; i++)
+    {
+        RenderObject& object = first[i];
+
+        //only bind the pipeline if it doesn't match with the already bound one
+        if (object.material != lastMaterial) {
+            _VkCmdBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, object.material->pipeline);
+            lastMaterial = object.material;
+        }
+
+
+        glm::mat4 model = object.transformMatrix;
+        //final render matrix, that we are calculating on the cpu
+        glm::mat4 mesh_matrix = projection * view * model;
+
+        MeshPushConstants constants;
+        constants.render_matrix = mesh_matrix;
+
+        //upload the mesh to the GPU via push constants
+        _VkCmdBuffer.pushConstants(object.material->pipelineLayout, 
+            vk::ShaderStageFlagBits::eVertex, 0, sizeof(MeshPushConstants), &constants);
+
+        //only bind the mesh if it's a different one from last bind
+        if (object.mesh != lastMesh) {
+            //bind the mesh vertex buffer with offset 0
+            VkDeviceSize offset = 0;
+            _VkCmdBuffer.bindVertexBuffers(0, object.mesh->vertexBuffer.buffer, offset);
+            lastMesh = object.mesh;
+        }
+
+        //we can now draw
+        _VkCmdBuffer.draw((uint32_t)object.mesh->vertices.size(), 1, 0, 0);
+    }
+}
+
+void VulkanRenderer::DrawPerFrame(RenderObject* first, int count) {
     if (_VkDevice.waitForFences(1, &_RenderFence, true, 1000000000) != vk::Result::eSuccess) {
         return;
     }
@@ -456,24 +506,6 @@ void VulkanRenderer::DrawPerFrame() {
 
     auto res = _VkDevice.acquireNextImageKHR(_SwapchainKHR, 1000000000, _PresentSemaphore, nullptr);
     uint32_t nSwapchainImageIndex = res.value;
-
-    // Model view matrix for rendering
-    glm::vec3 camPos = { 0.0f, 0.0f,-2.0f };
-
-    glm::mat4 view = glm::translate(glm::mat4(1.f), camPos);
-    //camera projection
-    glm::mat4 projection = glm::perspective(glm::radians(45.0f), 
-             _SupportInfo.GetWindowWidth() / (float)_SupportInfo.GetWindowHeight(), 0.1f, 1000.0f);
-    projection[1][1] = projection[1][1] * -1;
-    //model rotation
-    glm::mat4 model = glm::rotate(glm::mat4{ 1.0f }, glm::radians(_FrameCount * 0.4f), glm::vec3(0, 1, 0));
-
-    //calculate final mesh matrix
-    glm::mat4 mesh_matrix = projection * view * model;
-
-    MeshPushConstants pushConstant;
-    pushConstant.render_matrix = mesh_matrix;
-    
 
     CHECK(_VkCmdBuffer);
     _VkCmdBuffer.reset();
@@ -497,13 +529,8 @@ void VulkanRenderer::DrawPerFrame() {
         .setClearValues(ClearValues);
 
     _VkCmdBuffer.beginRenderPass(rpInfo, vk::SubpassContents::eInline);
-    _VkCmdBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, _Pipeline);
 
-    VkDeviceSize offset = 0;
-    _VkCmdBuffer.bindVertexBuffers(0, _MonkeyMesh.vertexBuffer.buffer, offset);
-    _VkCmdBuffer.pushConstants(_PipelineLayout, vk::ShaderStageFlagBits::eVertex, 0, sizeof(MeshPushConstants), &pushConstant);
-
-    _VkCmdBuffer.draw((uint32_t)_MonkeyMesh.vertices.size(), 1, 0, 0);
+    DrawObjects(_VkCmdBuffer, first, count);
 
     _VkCmdBuffer.endRenderPass();
     _VkCmdBuffer.end();
@@ -943,28 +970,4 @@ vk::ImageView VulkanRenderer::CreateImageView(vk::Format format, vk::Image image
         .setImage(image)
         .setSubresourceRange(subresourceRange);
     return _VkDevice.createImageView(info);
-}
-
-// Decpater
-void VulkanRenderer::UploadTriangleMesh() {
-
-    INFO("Loading triangle");
-    //make the array 3 vertices long
-    _TriangleMesh.vertices.resize(3);
-
-    //vertex positions
-    _TriangleMesh.vertices[0].position = { 1.f,1.f, 0.5f };
-    _TriangleMesh.vertices[1].position = { -1.f,1.f, 0.5f };
-    _TriangleMesh.vertices[2].position = { 0.f,-1.f, 0.5f };
-
-    //vertex colors, all green
-    _TriangleMesh.vertices[0].color = { 1.f, 0.f, 0.0f }; //pure green
-    _TriangleMesh.vertices[1].color = { 0.f, 1.f, 0.0f }; //pure green
-    _TriangleMesh.vertices[2].color = { 0.f, 0.f, 1.0f }; //pure green
-
-    //we don't a
-    _MonkeyMesh.LoadFromObj("../asset/model/ball.obj");
-
-    // UpLoadMeshes(_TriangleMesh);
-    UpLoadMeshes(_MonkeyMesh);
 }

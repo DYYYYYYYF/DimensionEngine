@@ -1,9 +1,10 @@
 #pragma once
 #include "Window.hpp"
 #include "utils/EngineUtils.hpp"
-#include "../renderer/Renderer.hpp"
+#include "../engine/Scene.hpp"
 
 using namespace renderer;
+using namespace engine;
 
 namespace udon{
 class Engine{
@@ -17,7 +18,7 @@ public:
 
 private:
     SDL_Window* _window;
-    IRenderer* _Renderer;
+    Scene* _Scene;
     int _FrameCount = 0;
 
 };

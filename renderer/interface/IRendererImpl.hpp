@@ -1,6 +1,12 @@
 #pragma once
 
+#include "../../engine/EngineStructures.hpp"
+using namespace engine;
+
 namespace renderer {
+    struct Mesh;
+    struct Material;
+
     class IRendererImpl {
     public:
         IRendererImpl() {}
@@ -17,8 +23,9 @@ namespace renderer {
         virtual void CreateCmdPool() = 0;
         virtual void CreateFrameBuffers() = 0;
         virtual void InitSyncStructures() = 0;
-        virtual void CreatePipeline() = 0;
+        virtual void CreatePipeline(Material& mat) = 0;
 
-        virtual void DrawPerFrame() = 0;
+        virtual void DrawPerFrame(RenderObject* first, int count) = 0;
+        virtual void UpLoadMeshes(Mesh& mesh) = 0;
     };
 }// namespace renderer

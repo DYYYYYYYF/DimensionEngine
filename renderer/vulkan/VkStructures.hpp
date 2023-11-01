@@ -4,8 +4,8 @@
 #include <iostream>
 #include <vulkan/vulkan.hpp>
 #include <Eigen/Eigen>
-#include "engine/EngineLogger.hpp"
-#include "application/Window.hpp"
+#include "../../engine/EngineLogger.hpp"
+#include "../../application/Window.hpp"
 
 #include <glm/glm.hpp>
 namespace renderer{

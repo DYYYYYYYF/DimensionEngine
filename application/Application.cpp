@@ -2,15 +2,16 @@
 #include "Window.hpp"
 
 using namespace udon;
+using namespace engine;
 
 Engine::Engine(){
-    
     _window = nullptr;
-    _Renderer = nullptr;
+    _Scene = nullptr;
 }
 
 Engine::~Engine(){
-    Close();
+    _window = nullptr;
+    _Scene = nullptr;
 }
 
 bool Engine::Init(){
@@ -18,9 +19,9 @@ bool Engine::Init(){
     _window = WsiWindow::GetInstance()->GetWindow();
     CHECK(_window);
 
-    _Renderer = new Renderer();    
-    CHECK(_Renderer);
-    _Renderer->Init();
+    _Scene = new Scene();
+    CHECK(_Scene);
+    _Scene->InitScene();
 
     return true;
 }
@@ -28,7 +29,6 @@ bool Engine::Init(){
 
 void Engine::Run(){
 
-    _Renderer->BeforeDraw();
     if (!_window){
         DEBUG("_window is null.");
         Close();
@@ -44,13 +44,15 @@ void Engine::Run(){
             }
         }
 
-        _Renderer->Draw();
+        _Scene->Update();
         _FrameCount++;
     }
 }
 
 void Engine::Close(){
-
+    if (_Scene != nullptr) {
+        _Scene->Destroy();
+    }
     WsiWindow::DestoryWindow();
 
 }

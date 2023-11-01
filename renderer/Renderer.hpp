@@ -1,5 +1,7 @@
 #pragma once
 #include "interface/IRenderer.hpp"
+#include "interface/IRendererImpl.hpp"
+#include "vulkan/VkMesh.hpp"
 
 namespace renderer {
     class Renderer : public IRenderer{
@@ -7,8 +9,12 @@ namespace renderer {
         Renderer();
         virtual ~Renderer();
         virtual bool Init() override;
-        virtual void BeforeDraw() override;
-        virtual void Draw() override;
+        virtual void CreatePipeline(Material& mat) override;
+        virtual void Draw(RenderObject* first, int count) override;
+        virtual void Release() override;
+
+    public:
+        void UploadMeshes(Mesh& mesh);
 
     protected:
 

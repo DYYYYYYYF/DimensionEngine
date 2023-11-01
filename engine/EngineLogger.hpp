@@ -2,7 +2,7 @@
 #include <Logger.hpp>
 #include <filesystem>
 
-namespace udon {
+namespace engine {
 class EngineLogger{
 public:
     EngineLogger();

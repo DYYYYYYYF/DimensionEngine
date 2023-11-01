@@ -8,7 +8,7 @@ using namespace std::filesystem;
 using namespace std::experimental::filesystem;
 #endif
 
-using namespace udon;
+using namespace engine;
 
 #ifdef DEBUG
 EngineLogger::EngineLogger(){

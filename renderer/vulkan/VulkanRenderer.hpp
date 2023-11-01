@@ -9,12 +9,15 @@
 #include "../interface/IRendererImpl.hpp"
 #include "../../application/Window.hpp"
 #include "../../application/utils/EngineUtils.hpp"
+#include "../../engine/EngineStructures.hpp"
 
 #include "VkStructures.hpp"
 #include "VkMesh.hpp"
 /*
     Dont forget delete Init()
 */
+
+using namespace engine;
 
 namespace renderer {
 
@@ -36,8 +39,10 @@ namespace renderer {
         virtual void CreateCmdPool() override;
         virtual void CreateFrameBuffers() override;
         virtual void InitSyncStructures() override;
-        virtual void CreatePipeline() override;
-        virtual void DrawPerFrame() override;
+        virtual void CreatePipeline(Material& mat) override;
+        virtual void DrawPerFrame(RenderObject* first, int count) override;
+
+        virtual void UpLoadMeshes(Mesh& mesh) override;
 
     public:
         vk::CommandBuffer AllocateCmdBuffer();
@@ -58,13 +63,13 @@ namespace renderer {
         void GetVkImages();
         void GetVkImageViews();
         void CreateDepthImage();
+        void DrawObjects(vk::CommandBuffer cmd, RenderObject* first, int count);
 
         vk::ShaderModule CreateShaderModule(const char* shader_file);
         MemRequiredInfo QueryMemReqInfo(vk::Buffer buf, vk::MemoryPropertyFlags flag);
         MemRequiredInfo QueryImgReqInfo(vk::Image image, vk::MemoryPropertyFlags flag);
 
         void CopyBuffer(vk::Buffer src, vk::Buffer dst, vk::DeviceSize size);
-        void UpLoadMeshes(Mesh& mesh);
         void TransitionImageLayout(vk::Image image, vk::Format format,
             vk::ImageLayout oldLayout, vk::ImageLayout newLayout);
 
@@ -120,14 +125,11 @@ namespace renderer {
         AllocatedImage _DepthImage;
 
     public:
+        float _FrameCount = 1.0f;
+
         void AddCount(){
             _FrameCount++;
         }
 
-    private:
-        void UploadTriangleMesh();
-        Mesh _TriangleMesh;
-        Mesh _MonkeyMesh;
-        float _FrameCount = 1.0f;
     };// class VulkanRenderer
 }// namespace renderer

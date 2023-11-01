@@ -6,29 +6,37 @@
 using namespace renderer;
 
 Renderer::Renderer(){
-    _Renderer = new VulkanRenderer();
-    if (_Renderer == nullptr) {
+    _RendererImpl = new VulkanRenderer();
+    if (_RendererImpl == nullptr) {
         FATAL("Create Renderer failed.");
     }
 }
 
 Renderer::~Renderer(){
-    if (_Renderer != nullptr){
-        _Renderer->Release();
-        _Renderer = nullptr;
-    }
+    _RendererImpl = nullptr;
 }
 
 bool Renderer::Init(){
-    _Renderer->Init();
+    _RendererImpl->Init();
     return true;
 }
 
-void Renderer::BeforeDraw() {
-    _Renderer->CreatePipeline();
+void Renderer::CreatePipeline(Material& mat) {
+    _RendererImpl->CreatePipeline(mat);
 }
 
-void Renderer::Draw(){
-    ((VulkanRenderer*)_Renderer)->AddCount();
-    _Renderer->DrawPerFrame();
+void Renderer::Draw(RenderObject* first, int count){
+    ((VulkanRenderer*)_RendererImpl)->AddCount();
+    _RendererImpl->DrawPerFrame(first, count);
+}
+
+void Renderer::UploadMeshes(Mesh& mesh) {
+    _RendererImpl->UpLoadMeshes(mesh);
+}
+
+void Renderer::Release() {
+    if (_RendererImpl != nullptr) {
+        //_RendererImpl->Release();
+        //free(_RendererImpl);
+    }
 }
