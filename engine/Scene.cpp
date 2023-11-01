@@ -7,6 +7,9 @@ using namespace engine;
 Scene::Scene() {
 	_Renderer = new Renderer();
 	CHECK(_Renderer);
+
+	//_Camera = new Camera();
+	//CHECK(_Camera);
 }
 
 Scene::~Scene() {
@@ -43,44 +46,47 @@ void Scene::InitScene() {
 }
 
 void Scene::Update() {
-	_Renderer->Draw(_Renderables.data(), _Renderables.size());
+
+	int count = 1;
+	for (int x = -20; x <= 20; x++) {
+		for (int y = -20; y <= 20; y++) {
+
+			RenderObject& tri = _Renderables[count++];
+			glm::mat4 translation = glm::translate(glm::mat4{ 1.0 }, glm::vec3(x, 0, y));
+			glm::mat4 rotate = glm::rotate_slow(glm::mat4{ 1.0 }, glm::radians(_FrameCount / 10.f), glm::vec3{ 0, 1, 0 });
+			glm::mat4 scale = glm::scale(glm::mat4{ 1.0 }, glm::vec3(0.2, 0.2, 0.2));
+			tri.transformMatrix = translation * rotate * scale;
+
+		}
+	}
+
+	_Renderer->Draw(_Renderables.data(), (int)_Renderables.size());
+	_FrameCount++;
 }
 
 void Scene::UploadMeshes() {
 
 	INFO("Loading triangle");
+	Mesh tempMesh;
 	//make the array 3 vertices long
-	_TriangleMesh.vertices.resize(3);
+	tempMesh.vertices.resize(3);
 
 	//vertex positions
-	_TriangleMesh.vertices[0].position = { 1.f,1.f, 0.5f };
-	_TriangleMesh.vertices[1].position = { -1.f,1.f, 0.5f };
-	_TriangleMesh.vertices[2].position = { 0.f,-1.f, 0.5f };
+	tempMesh.vertices[0].position = { 1.f,1.f, 0.5f };
+	tempMesh.vertices[1].position = { -1.f,1.f, 0.5f };
+	tempMesh.vertices[2].position = { 0.f,-1.f, 0.5f };
 
 	//vertex colors, all green
-	_TriangleMesh.vertices[0].color = { 1.f, 0.f, 0.0f }; //pure green
-	_TriangleMesh.vertices[1].color = { 0.f, 1.f, 0.0f }; //pure green
-	_TriangleMesh.vertices[2].color = { 0.f, 0.f, 1.0f }; //pure green
+	tempMesh.vertices[0].color = { 1.f, 0.f, 0.0f }; //pure green
+	tempMesh.vertices[1].color = { 0.f, 1.f, 0.0f }; //pure green
+	tempMesh.vertices[2].color = { 0.f, 0.f, 1.0f }; //pure green
+	((Renderer*)_Renderer)->UploadMeshes(tempMesh);
+	_Meshes["Triangle"] = tempMesh;
 
 	//we don't a
-	_MonkeyMesh.LoadFromObj("../asset/model/ball.obj");
-
-	// UpLoadMeshes(_TriangleMesh);
-	((Renderer*)_Renderer)->UploadMeshes(_MonkeyMesh);
-	((Renderer*)_Renderer)->UploadMeshes(_TriangleMesh);
-
-	_Meshes["monkey"] = _MonkeyMesh;
-	_Meshes["Triangle"] = _TriangleMesh;
-}
-
-//create material and add it to the map
-Material* Scene::CreateMaterial(VkPipeline pipeline, VkPipelineLayout layout, const std::string& name) {
-	
-	Material mat;
-	mat.pipeline = pipeline;
-	mat.pipelineLayout = layout;
-	_Materials[name] = mat;
-	return &_Materials[name];
+	tempMesh.LoadFromObj("../asset/model/room.obj");
+	((Renderer*)_Renderer)->UploadMeshes(tempMesh);
+	_Meshes["monkey"] = tempMesh;
 }
 
 //returns nullptr if it can't be found

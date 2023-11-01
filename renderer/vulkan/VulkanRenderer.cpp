@@ -1,8 +1,8 @@
 #include "VulkanRenderer.hpp"
 #include "PipelineBuilder.hpp"
 #include "VkStructures.hpp"
-
-#include "Camera.hpp"
+#include "glm/glm.hpp"
+#include "glm/gtc/matrix_transform.hpp"
 
 using namespace renderer;
 
@@ -470,7 +470,6 @@ void VulkanRenderer::DrawObjects(vk::CommandBuffer cmd, RenderObject* first, int
             _VkCmdBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, object.material->pipeline);
             lastMaterial = object.material;
         }
-
 
         glm::mat4 model = object.transformMatrix;
         //final render matrix, that we are calculating on the cpu

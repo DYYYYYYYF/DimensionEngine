@@ -124,12 +124,5 @@ namespace renderer {
         vk::ImageView _DepthImageView;
         AllocatedImage _DepthImage;
 
-    public:
-        float _FrameCount = 1.0f;
-
-        void AddCount(){
-            _FrameCount++;
-        }
-
     };// class VulkanRenderer
 }// namespace renderer

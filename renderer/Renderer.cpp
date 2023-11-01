@@ -26,7 +26,6 @@ void Renderer::CreatePipeline(Material& mat) {
 }
 
 void Renderer::Draw(RenderObject* first, int count){
-    ((VulkanRenderer*)_RendererImpl)->AddCount();
     _RendererImpl->DrawPerFrame(first, count);
 }
 
