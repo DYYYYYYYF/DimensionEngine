@@ -8,17 +8,22 @@ Scene::Scene() {
 	_Renderer = new Renderer();
 	CHECK(_Renderer);
 
-	//_Camera = new Camera();
-	//CHECK(_Camera);
+	_Camera = new Camera(glm::vec3(0.0f, 2.0f, 2.0f), glm::radians(-45.0f), glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+	CHECK(_Camera);
 }
 
 Scene::~Scene() {
 	_Renderer = nullptr;
+	_Camera = nullptr;
 }
 
 void Scene::InitScene() {
 	_Renderer->Init();
-	UploadMeshes();
+
+	UploadMesh("../asset/model/room.obj", "room");
+	UploadMesh("../asset/model/sponza.obj", "sponza");
+	UploadTriangleMesh();
+
 	Material deafaultMaterial;
 	_Renderer->CreatePipeline(deafaultMaterial);
 	_Materials["Default"] = deafaultMaterial;
@@ -28,13 +33,14 @@ void Scene::InitScene() {
 	monkey.material = GetMaterial("Default");
 	monkey.transformMatrix = glm::mat4{ 1.0f };
 
-	_Renderables.push_back(monkey);
+	//_Renderables.push_back(monkey);
 
 	for (int x = -20; x <= 20; x++) {
 		for (int y = -20; y <= 20; y++) {
 
 			RenderObject tri;
-			tri.mesh = GetMesh("Triangle");
+			//tri.mesh = GetMesh("Triangle");
+			tri.mesh = GetMesh("room");
 			tri.material = GetMaterial("Default");
 			glm::mat4 translation = glm::translate(glm::mat4{ 1.0 }, glm::vec3(x, 0, y));
 			glm::mat4 scale = glm::scale(glm::mat4{ 1.0 }, glm::vec3(0.2, 0.2, 0.2));
@@ -46,8 +52,13 @@ void Scene::InitScene() {
 }
 
 void Scene::Update() {
+	UpdatePosition();
+	_Renderer->Draw(_Renderables.data(), (int)_Renderables.size());
+	_FrameCount++;
+}
 
-	int count = 1;
+void Scene::UpdatePosition() {
+	int count = 0;
 	for (int x = -20; x <= 20; x++) {
 		for (int y = -20; y <= 20; y++) {
 
@@ -60,11 +71,17 @@ void Scene::Update() {
 		}
 	}
 
-	_Renderer->Draw(_Renderables.data(), (int)_Renderables.size());
-	_FrameCount++;
+	UpdatePushConstants(_Camera->getViewMatrix());
 }
 
-void Scene::UploadMeshes() {
+void Scene::UploadMesh(const char* filename, const char* mesh_name) {
+	Mesh tempMesh;
+	tempMesh.LoadFromObj(filename);
+	((Renderer*)_Renderer)->UploadMeshes(tempMesh);
+	_Meshes[mesh_name] = tempMesh;
+}
+
+void Scene::UploadTriangleMesh() {
 
 	INFO("Loading triangle");
 	Mesh tempMesh;
@@ -82,11 +99,6 @@ void Scene::UploadMeshes() {
 	tempMesh.vertices[2].color = { 0.f, 0.f, 1.0f }; //pure green
 	((Renderer*)_Renderer)->UploadMeshes(tempMesh);
 	_Meshes["Triangle"] = tempMesh;
-
-	//we don't a
-	tempMesh.LoadFromObj("../asset/model/room.obj");
-	((Renderer*)_Renderer)->UploadMeshes(tempMesh);
-	_Meshes["monkey"] = tempMesh;
 }
 
 //returns nullptr if it can't be found
@@ -111,12 +123,6 @@ Mesh* Scene::GetMesh(const std::string& name) {
 		return &(*it).second;
 	}
 }
-
-//our draw function
-void Scene::DrawObjects(vk::CommandBuffer cmd, RenderObject* first, int count) {
-
-}
-
 
 void Scene::Destroy() {
 	if (_Renderer != nullptr)

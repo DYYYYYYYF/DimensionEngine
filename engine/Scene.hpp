@@ -1,9 +1,10 @@
 #pragma once
 
 #include <unordered_map>
+#include <SDL2/SDL.h>
 #include "EngineStructures.hpp"
 #include "../renderer/Renderer.hpp"
-#include "Foundation/Camera.hpp"
+#include "foundation/Camera.hpp"
 
 using namespace renderer;
 
@@ -17,10 +18,14 @@ public:
 	void Update();
 	void Destroy();
 
-	void UploadMeshes();
+	void UploadMesh(const char* filename, const char* mesh_name);
+	void UploadTriangleMesh();
 	Material* GetMaterial(const std::string& name);
 	Mesh* GetMesh(const std::string& name);
-	void DrawObjects(vk::CommandBuffer cmd, RenderObject* first, int count);
+	void UpdatePosition();
+
+private:
+	void UpdatePushConstants(glm::mat4 view_matrix) { ((Renderer*)_Renderer)->UpdatePushConstants(view_matrix); }
 
 private:
 	IRenderer* _Renderer;
