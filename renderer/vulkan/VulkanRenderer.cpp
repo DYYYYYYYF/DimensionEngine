@@ -8,6 +8,14 @@ using namespace renderer;
 
 VulkanRenderer::VulkanRenderer() {
     INFO("Use Vulkan Renderer.");
+    ResetProp();
+}
+
+VulkanRenderer::~VulkanRenderer() {
+    ResetProp();
+}
+
+void VulkanRenderer::ResetProp() {
     _Window = nullptr;
     _VkInstance = nullptr;
     _VkPhyDevice = nullptr;
@@ -25,10 +33,6 @@ VulkanRenderer::VulkanRenderer() {
     _VertShader = nullptr;
     _FragShader = nullptr;
     _DepthImageView = nullptr;
-}
-
-VulkanRenderer::~VulkanRenderer() {
-
 }
 
 bool VulkanRenderer::Init() { 

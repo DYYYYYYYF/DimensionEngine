@@ -73,6 +73,7 @@ namespace renderer {
         }
 
     private:
+        void ResetProp();
         vk::Format FindSupportedFormat(const std::vector<vk::Format>& candidates,
             vk::ImageTiling tiling, vk::FormatFeatureFlags features);
 
