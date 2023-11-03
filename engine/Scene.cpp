@@ -72,19 +72,19 @@ void Scene::UpdatePosition(GLFWwindow* window) {
 	}
 	
 	if (glfwGetKey(window, GLFW_KEY_W)) {
-		_Camera.keyBoardSpeedZ = 10;      //press-W
+		_Camera.keyBoardSpeedZ = 1;      //press-W
 	}
 	else if (glfwGetKey(window, GLFW_KEY_S)) {
-		_Camera.keyBoardSpeedZ = -10;     //press-S
+		_Camera.keyBoardSpeedZ = -1;     //press-S
 	}
 	else {
 		_Camera.keyBoardSpeedZ = 0;
 	}
 	if (glfwGetKey(window, GLFW_KEY_A)) {
-		_Camera.keyBoardSpeedX = -10;     //press-A
+		_Camera.keyBoardSpeedX = -1;     //press-A
 	}
 	else if (glfwGetKey(window, GLFW_KEY_D)) {
-		_Camera.keyBoardSpeedX = 10;      //press-D
+		_Camera.keyBoardSpeedX = 1;      //press-D
 	}
 	else {
 		_Camera.keyBoardSpeedX = 0;
@@ -98,6 +98,33 @@ void Scene::UpdatePosition(GLFWwindow* window) {
 	else {
 		_Camera.keyBoardSpeedY = 0;
 	}
+
+	// Mouse
+	double posX = 0, posY;
+	if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) {
+		//press mouse-left
+		glfwGetCursorPos(window, &posX, &posY);
+		if (_Camera.mouesePos.x == 0 && _Camera.mouesePos.y == 0) {
+			_Camera.mouesePos.x = posX;
+			_Camera.mouesePos.y = posY;
+		}
+		else {
+			double x = posX - _Camera.mouesePos.x;
+			double y = posY - _Camera.mouesePos.y;
+			_Camera.mouesePos.x = posX;
+			_Camera.mouesePos.y = posY;
+
+			_Camera.MouserMovement(-x, -y);
+			// keyBoardScoll.rotateX -= glm::dot(glm::vec3(0, 0, x), glm::vec3(0, 0, y)) * 0.01;
+		}
+	}
+	if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_RELEASE) {
+		//release mouse-left
+		_Camera.mouesePos.x = 0;
+		_Camera.mouesePos.y = 0;
+	}
+
+	// keyBoardScoll.scale = scale_callback;
        
     _Camera.UpdateCameraPosition();
     ((Renderer*)_Renderer)->UpdateViewMat(_Camera.GetViewMatrix());

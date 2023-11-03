@@ -8,6 +8,8 @@ Camera::Camera(glm::vec3 position, glm::vec3 target, glm::vec3 worldup){
     this->forward = glm::normalize(target-position);
     this->right = glm::normalize(glm::cross(forward, worldup));
     this->up = glm::normalize(glm::cross(right, forward));
+    mouesePos.x = 0.0;
+    mouesePos.y = 0.0;
 }
 
 Camera::Camera(glm::vec3 position, float pitch, float yaw, glm::vec3 worldup){
@@ -20,6 +22,8 @@ Camera::Camera(glm::vec3 position, float pitch, float yaw, glm::vec3 worldup){
     this->forward.z = glm::cos(pitch) * glm::cos(yaw);
     this->right = glm::normalize(glm::cross(forward, worldup));
     this->up = glm::normalize(glm::cross(right, forward));
+    mouesePos.x = 0.0;
+    mouesePos.y = 0.0;
 }
 
 glm::mat4 Camera::GetViewMatrix(){
