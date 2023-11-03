@@ -62,9 +62,9 @@ namespace renderer {
         vk::ImageView CreateImageView(vk::Format format, vk::Image image, vk::ImageAspectFlags aspect);
 
         // Uniform
-        void UpdateViewMat(glm::mat4 view_matrix){
-            _PushConstants.view = view_matrix;
-        }
+        void UpdateViewMat(glm::mat4 view_matrix);
+
+        void InitDescriptors();
 
     protected:
         bool QueryQueueFamilyProp();
@@ -92,6 +92,8 @@ namespace renderer {
             return _Frames[_FrameNumber % FRAME_OVERLAP];
         }
 
+        void UpdateDescriptorSet(FrameData current_frame);
+
     private:
         void ResetProp();
         vk::Format FindSupportedFormat(const std::vector<vk::Format>& candidates,
@@ -112,6 +114,7 @@ namespace renderer {
         SwapchainSupport _SupportInfo;
         Queue _Queue;
         MeshPushConstants _PushConstants;
+        CamerData _Camera;
 
         GLFWwindow* _Window;
         vk::Instance _VkInstance;
@@ -138,6 +141,9 @@ namespace renderer {
         unsigned int _FrameNumber;
         FrameData _Frames[FRAME_OVERLAP];
 
+        // Descriptor
+        vk::DescriptorSetLayout _GlobalSetLayout;
+        vk::DescriptorPool _DescriptorPool;
 
     };// class VulkanRenderer
 }// namespace renderer

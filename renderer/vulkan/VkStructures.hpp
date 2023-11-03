@@ -11,32 +11,6 @@
 namespace renderer{
 
     /*
-        Double Buffer
-    */
-    struct FrameData {
-        vk::Semaphore presentSemaphore;
-        vk::Semaphore renderSemaphore;
-        vk::Fence renderFence;
-
-        vk::CommandPool commandPool;
-        vk::CommandBuffer mainCommandBuffer;
-    };
-
-    /*
-        Vulkan Utils
-    */
-    struct MeshPushConstants {
-        // Eigen::Vector4f data;
-        // Eigen::Matrix4f renderMatrix;
-
-        glm::vec4 data;
-        glm::mat4 model;
-        glm::mat4 view;
-        glm::mat4 proj;
-        
-    };
-
-    /*
         Vulkan Memory
     */
     struct MemRequiredInfo {
@@ -52,6 +26,39 @@ namespace renderer{
     struct AllocatedImage {
         vk::Image image;  // CPU
         vk::DeviceMemory memory;    // GPU
+    };
+
+    /*
+        Vulkan Descriptor
+    */
+    struct CamerData {
+        glm::mat4 view;
+        glm::mat4 proj;
+    };
+
+    struct MeshPushConstants {
+        // Eigen::Vector4f data;
+        // Eigen::Matrix4f renderMatrix;
+
+        glm::vec4 data;
+        glm::mat4 model;
+
+    };
+
+    /*
+        Double Buffer
+    */
+    struct FrameData {
+        vk::Semaphore presentSemaphore;
+        vk::Semaphore renderSemaphore;
+        vk::Fence renderFence;
+
+        vk::CommandPool commandPool;
+        vk::CommandBuffer mainCommandBuffer;
+
+        // Buffer contains CameraData
+        AllocatedBuffer cameraBuffer;
+        vk::DescriptorSet globalDescriptor;
     };
 
     /*

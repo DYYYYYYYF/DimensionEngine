@@ -29,9 +29,19 @@ void VulkanRenderer::ResetProp() {
     _FragShader = nullptr;
     _DepthImageView = nullptr;
     _FrameNumber = 0;
+    _DescriptorPool = nullptr;
+    _GlobalSetLayout = nullptr;
 }
 
 bool VulkanRenderer::Init() { 
+
+    _Camera.proj = glm::perspective(glm::radians(45.0f), _SupportInfo.GetWindowWidth() / (float)_SupportInfo.GetWindowHeight(), 0.1f, 1000.0f);
+    _Camera.proj[1][1] *= -1;
+    _Camera.view = { 1,0,0,0,
+                 0,1,0,0,
+                 0,0,1,0,
+                 0,0,0,1 };
+
     CreateInstance();
     PickupPhyDevice();
     CreateSurface();
@@ -46,7 +56,7 @@ bool VulkanRenderer::Init() {
     CreateDepthImage();
     CreateFrameBuffers();
     InitSyncStructures();
-
+    InitDescriptors();
     return true; 
 }
 void VulkanRenderer::Release(){
@@ -54,7 +64,6 @@ void VulkanRenderer::Release(){
     INFO("Release Renderer");
     
     _VkDevice.destroyImageView(_DepthImageView);
-
     _VkDevice.destroyPipelineLayout(_PipelineLayout);
     _VkDevice.destroyPipeline(_Pipeline);
 
@@ -63,6 +72,8 @@ void VulkanRenderer::Release(){
         _VkDevice.destroySemaphore(_Frames[i].renderSemaphore);
         _VkDevice.destroySemaphore(_Frames[i].presentSemaphore);
         _VkDevice.destroyCommandPool(_Frames[i].commandPool);
+        _VkDevice.destroyBuffer(_Frames[i].cameraBuffer.buffer);
+        _VkDevice.freeMemory(_Frames[i].cameraBuffer.memory);
     }
 
     _VkDevice.destroyRenderPass(_VkRenderPass);
@@ -433,8 +444,11 @@ void VulkanRenderer::CreatePipeline(Material& mat) {
 
     INFO("Pipeline Layout");
     vk::PipelineLayoutCreateInfo info = InitPipelineLayoutCreateInfo();
-    info.setPushConstantRanges(pushConstant);
-    info.setPushConstantRangeCount(1);
+    info.setPushConstantRanges(pushConstant)
+        .setPushConstantRangeCount(1)
+        .setSetLayoutCount(1)
+        .setSetLayouts(_GlobalSetLayout);
+
     _PipelineLayout = _VkDevice.createPipelineLayout(info);
     CHECK(_PipelineLayout);
 
@@ -496,15 +510,13 @@ void VulkanRenderer::DrawObjects(vk::CommandBuffer& cmd, RenderObject* first, in
         if (object.material != lastMaterial) {
             cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, object.material->pipeline);
             lastMaterial = object.material;
+
+            cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, object.material->pipelineLayout, 0, 1,
+               &(GetCurrentFrame().globalDescriptor), 0, nullptr);
         }
 
-        //camera projection
-        _PushConstants.proj= glm::perspective(glm::radians(45.f),
-            _SupportInfo.GetWindowHeight() / (float)_SupportInfo.GetWindowWidth(), 0.1f, 200.0f);
-        _PushConstants.proj[1][1] *= -1;
-        _PushConstants.model = object.transformMatrix;
-
         //upload the mesh to the GPU via push constants
+        _PushConstants.model = glm::mat4{ 1 };
         cmd.pushConstants(object.material->pipelineLayout,
             vk::ShaderStageFlagBits::eVertex, 0, sizeof(MeshPushConstants), &_PushConstants);
 
@@ -609,6 +621,78 @@ void VulkanRenderer::CreateDepthImage(){
     _DepthImageView = CreateImageView(depthFormat, _DepthImage.image, vk::ImageAspectFlagBits::eDepth);
     TransitionImageLayout(_DepthImage.image, depthFormat, vk::ImageLayout::eUndefined,
         vk::ImageLayout::eDepthStencilAttachmentOptimal);
+}
+
+void VulkanRenderer::InitDescriptors() {
+    CHECK(_VkDevice);
+
+    //Descriptor Pool
+    std::vector<vk::DescriptorPoolSize> sizes = { {vk::DescriptorType::eUniformBuffer, 0} };
+
+    vk::DescriptorPoolCreateInfo descPoolInfo;
+    descPoolInfo.setMaxSets(10)
+        .setPoolSizeCount((uint32_t)sizes.size())
+        .setPoolSizes(sizes);
+    _DescriptorPool = _VkDevice.createDescriptorPool(descPoolInfo);
+    CHECK(_DescriptorPool);
+
+    // DescriptorLayout
+    vk::DescriptorSetLayoutBinding layoutDinding;
+    layoutDinding.setBinding(0)
+        .setDescriptorCount(1)
+        .setDescriptorType(vk::DescriptorType::eUniformBuffer)
+        .setStageFlags(vk::ShaderStageFlagBits::eVertex);
+
+    vk::DescriptorSetLayoutCreateInfo descSetLayoutInfo;
+    descSetLayoutInfo.setBindingCount(1)
+        .setBindings(layoutDinding);
+    _GlobalSetLayout =  _VkDevice.createDescriptorSetLayout(descSetLayoutInfo);
+    CHECK(_GlobalSetLayout);
+
+    // Camera Uniform buffer
+    //size_t minUboAlignment = _VkPhyDevice.getProperties().limits.minUniformBufferOffsetAlignment;
+    for (int i = 0; i < FRAME_OVERLAP; i++) {
+        _Frames[i].cameraBuffer.buffer = CreateBuffer(sizeof(CamerData),
+            vk::BufferUsageFlagBits::eUniformBuffer, vk::SharingMode::eExclusive);
+        CHECK(_Frames[i].cameraBuffer.buffer);
+
+        MemRequiredInfo memInfo = QueryMemReqInfo(_Frames[i].cameraBuffer.buffer,
+            vk::MemoryPropertyFlagBits::eHostVisible |
+            vk::MemoryPropertyFlagBits::eHostCoherent);
+        _Frames[i].cameraBuffer.memory = AllocateMemory(memInfo,
+            vk::MemoryPropertyFlagBits::eHostVisible |
+            vk::MemoryPropertyFlagBits::eHostCoherent);
+        CHECK(_Frames[i].cameraBuffer.memory);
+
+        _VkDevice.bindBufferMemory(_Frames[i].cameraBuffer.buffer, _Frames[i].cameraBuffer.memory, 0);
+
+        vk::DescriptorSetAllocateInfo descAllocateInfo;
+        descAllocateInfo.setDescriptorPool(_DescriptorPool)
+            .setDescriptorSetCount(1)
+            .setSetLayouts(_GlobalSetLayout);
+       _VkDevice.allocateDescriptorSets(&descAllocateInfo, &(_Frames[i].globalDescriptor));
+        CHECK(_Frames[i].globalDescriptor);
+
+        UpdateDescriptorSet(_Frames[i]);
+    }
+}
+
+void VulkanRenderer::UpdateDescriptorSet(FrameData current_frame) {
+    //  make it point into our camera buffer
+    vk::DescriptorBufferInfo descBufferInfo;
+    descBufferInfo.setBuffer(current_frame.cameraBuffer.buffer)
+        .setOffset(0)
+        .setRange(sizeof(CamerData));
+
+    std::array<vk::WriteDescriptorSet, 1> writeDescSets;;
+    writeDescSets[0].setDstBinding(0)
+        .setDstSet(current_frame.globalDescriptor)
+        .setDescriptorCount(1)
+        .setDescriptorType(vk::DescriptorType::eUniformBuffer)
+        .setBufferInfo(descBufferInfo)
+        .setDstArrayElement(0);
+
+    _VkDevice.updateDescriptorSets(writeDescSets, nullptr);
 }
 
 /*
@@ -871,6 +955,21 @@ void VulkanRenderer::TransitionImageLayout(vk::Image image, vk::Format format,
     cmdBuf.pipelineBarrier(sourceStage, dstStage, vk::DependencyFlagBits::eByRegion, 0, nullptr, 0, nullptr, 1, &barrier);
     cmdBuf.end();
     EndCmdBuffer(cmdBuf);
+}
+
+void VulkanRenderer::UpdateViewMat(glm::mat4 view_matrix) {
+    _Camera.view = view_matrix;
+
+    // Uniform Buffer
+    _Camera.proj = glm::perspective(glm::radians(45.f),
+        _SupportInfo.GetWindowHeight() / (float)_SupportInfo.GetWindowWidth(), 0.1f, 200.0f);
+    _Camera.proj[1][1] *= -1;
+
+    void* data = _VkDevice.mapMemory(GetCurrentFrame().cameraBuffer.memory, 0, sizeof(CamerData));
+    memcpy(data, &_Camera, sizeof(CamerData));
+    _VkDevice.unmapMemory(GetCurrentFrame().cameraBuffer.memory);
+
+    UpdateDescriptorSet(GetCurrentFrame());
 }
 
 /*
