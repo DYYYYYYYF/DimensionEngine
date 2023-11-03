@@ -74,11 +74,6 @@ namespace renderer {
         void CreateDepthImage();
         void DrawObjects(vk::CommandBuffer& cmd, RenderObject* first, int count);
 
-        void AllocateFrameCmdBuffer();
-        FrameData& GetCurrentFrame() {
-            return _Frames[_FrameNumber % FRAME_OVERLAP];
-        }
-
         vk::ShaderModule CreateShaderModule(const char* shader_file);
         MemRequiredInfo QueryMemReqInfo(vk::Buffer buf, vk::MemoryPropertyFlags flag);
         MemRequiredInfo QueryImgReqInfo(vk::Image image, vk::MemoryPropertyFlags flag);
@@ -89,6 +84,12 @@ namespace renderer {
 
         bool IsContainStencilComponent(vk::Format format) {
             return format == vk::Format::eD32SfloatS8Uint || format == vk::Format::eX8D24UnormPack32;
+        }
+
+        // Double Frame Buffer
+        void AllocateFrameCmdBuffer();
+        FrameData& GetCurrentFrame() {
+            return _Frames[_FrameNumber % FRAME_OVERLAP];
         }
 
     private:
@@ -124,12 +125,6 @@ namespace renderer {
         std::vector<vk::Framebuffer> _FrameBuffers;
 
         vk::RenderPass _VkRenderPass;
-        vk::CommandPool _VkCmdPool;
-        vk::CommandBuffer _VkCmdBuffer;
-        vk::Semaphore _RenderSemaphore;
-        vk::Semaphore _PresentSemaphore;
-        vk::Fence _RenderFence;
-
         vk::PipelineLayout _PipelineLayout;
         vk::Pipeline _Pipeline;
         vk::ShaderModule _VertShader;

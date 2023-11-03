@@ -23,11 +23,6 @@ void VulkanRenderer::ResetProp() {
     _VkDevice = nullptr;
     _SwapchainKHR = nullptr;
     _VkRenderPass = nullptr;
-    _VkCmdPool = nullptr;
-    _VkCmdBuffer = nullptr;
-    _RenderSemaphore = nullptr;
-    _PresentSemaphore = nullptr;
-    _RenderFence = nullptr;
     _PipelineLayout = nullptr;
     _Pipeline = nullptr;
     _VertShader = nullptr;
@@ -48,11 +43,9 @@ bool VulkanRenderer::Init() {
     CreateRenderPass();
     CreateCmdPool();
     AllocateFrameCmdBuffer();
-    // _VkCmdBuffer = AllocateCmdBuffer();
     CreateDepthImage();
     CreateFrameBuffers();
     InitSyncStructures();
-    //UploadTriangleMesh();
 
     return true; 
 }
