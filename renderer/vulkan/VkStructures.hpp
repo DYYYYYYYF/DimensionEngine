@@ -10,7 +10,19 @@
 #include <glm/glm.hpp>
 namespace renderer{
 
-     /*
+    /*
+        Double Buffer
+    */
+    struct FrameData {
+        vk::Semaphore presentSemaphore;
+        vk::Semaphore renderSemaphore;
+        vk::Fence renderFence;
+
+        vk::CommandPool commandPool;
+        vk::CommandBuffer mainCommandBuffer;
+    };
+
+    /*
         Vulkan Utils
     */
     struct MeshPushConstants {

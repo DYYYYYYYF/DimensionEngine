@@ -21,6 +21,8 @@ using namespace engine;
 
 namespace renderer {
 
+    constexpr unsigned int FRAME_OVERLAP = 2;
+
     class PipelineBuilder;
 
     class VulkanRenderer : public IRendererImpl {
@@ -70,7 +72,12 @@ namespace renderer {
         void GetVkImages();
         void GetVkImageViews();
         void CreateDepthImage();
-        void DrawObjects(vk::CommandBuffer cmd, RenderObject* first, int count);
+        void DrawObjects(vk::CommandBuffer& cmd, RenderObject* first, int count);
+
+        void AllocateFrameCmdBuffer();
+        FrameData& GetCurrentFrame() {
+            return _Frames[_FrameNumber % FRAME_OVERLAP];
+        }
 
         vk::ShaderModule CreateShaderModule(const char* shader_file);
         MemRequiredInfo QueryMemReqInfo(vk::Buffer buf, vk::MemoryPropertyFlags flag);
@@ -131,6 +138,11 @@ namespace renderer {
         // Depth Image
         vk::ImageView _DepthImageView;
         AllocatedImage _DepthImage;
+
+        // Double frame buffer storage
+        unsigned int _FrameNumber;
+        FrameData _Frames[FRAME_OVERLAP];
+
 
     };// class VulkanRenderer
 }// namespace renderer
