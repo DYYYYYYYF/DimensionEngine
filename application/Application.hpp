@@ -17,7 +17,7 @@ public:
     void Close();
 
 private:
-    SDL_Window* _window;
+    GLFWwindow* _window;
     Scene* _Scene;
     int _FrameCount = 0;
 

@@ -57,6 +57,9 @@ bool VulkanRenderer::Init() {
 void VulkanRenderer::Release(){
     CHECK(_VkDevice);
     INFO("Release Renderer");
+    
+    _VkDevice.destroyImageView(_DepthImageView);
+
     _VkDevice.destroyPipelineLayout(_PipelineLayout);
     _VkDevice.destroyPipeline(_Pipeline);
     _VkDevice.destroyFence(_RenderFence);
@@ -68,9 +71,16 @@ void VulkanRenderer::Release(){
     for (auto& view : _ImageViews) { _VkDevice.destroyImageView(view); }
     for (auto& image : _Images) { _VkDevice.destroyImage(image); }
     _VkDevice.destroySwapchainKHR(_SwapchainKHR);
+    INFO("Release Swapchain");
+
     _VkDevice.destroy();
+    INFO("Release Device");
+
     _VkInstance.destroySurfaceKHR(_SurfaceKHR);
+    INFO("Destroy Instance");
+
     _VkInstance.destroy();
+    INFO("Release Renderer");
 
 }
 
@@ -87,11 +97,9 @@ void VulkanRenderer::CreateInstance() {
     InitWindow();
 
     // Get SDL instance extensions
-    std::vector<const char*> extensionNames;
     unsigned int extensionsCount;
-    SDL_Vulkan_GetInstanceExtensions(_Window, &extensionsCount, nullptr);
-    extensionNames.resize(extensionsCount);
-    SDL_Vulkan_GetInstanceExtensions(_Window, &extensionsCount, extensionNames.data());
+    const char** extensionNames;
+    extensionNames = glfwGetRequiredInstanceExtensions(&extensionsCount);
 
 #ifdef __APPLE__
     // MacOS requirment
@@ -115,7 +123,7 @@ void VulkanRenderer::CreateInstance() {
     }
 
     vk::InstanceCreateInfo info;
-    info.setPpEnabledExtensionNames(extensionNames.data())
+    info.setPpEnabledExtensionNames(extensionNames)
         .setPEnabledLayerNames(layers)
         .setEnabledExtensionCount(extensionsCount)
         .setEnabledLayerCount((uint32_t)layers.size());
@@ -143,7 +151,7 @@ void VulkanRenderer::CreateSurface(){
     CHECK(_VkInstance);
 
     VkSurfaceKHR surface;
-    if (!SDL_Vulkan_CreateSurface(_Window, _VkInstance, &surface)){
+    if (glfwCreateWindowSurface(_VkInstance, _Window, nullptr, &surface) != VK_SUCCESS){
         INFO("Create surface failed.");
         return;
     }
@@ -489,14 +497,9 @@ void VulkanRenderer::DrawObjects(vk::CommandBuffer cmd, RenderObject* first, int
 }
 
 void VulkanRenderer::DrawPerFrame(RenderObject* first, int count) {
-    if (_VkDevice.waitForFences(1, &_RenderFence, true, 1000000000) != vk::Result::eSuccess) {
-        return;
-    }
-    if (_VkDevice.resetFences(1, &_RenderFence) != vk::Result::eSuccess) {
-        return;
-    }
+    _VkDevice.resetFences(_RenderFence);
 
-    auto res = _VkDevice.acquireNextImageKHR(_SwapchainKHR, 1000000000, _PresentSemaphore, nullptr);
+    auto res = _VkDevice.acquireNextImageKHR(_SwapchainKHR, std::numeric_limits<uint64_t>::max(), _PresentSemaphore, nullptr);
     uint32_t nSwapchainImageIndex = res.value;
 
     CHECK(_VkCmdBuffer);
@@ -509,7 +512,7 @@ void VulkanRenderer::DrawPerFrame(RenderObject* first, int count) {
     _VkCmdBuffer.begin(info);
 
     std::array<vk::ClearValue, 2> ClearValues;
-    vk::ClearColorValue color = std::array<float, 4>{0.5f, 0.5f, 0.5f, 1.0f};
+    vk::ClearColorValue color = std::array<float, 4>{1.f, 1.f, 1.f, 1.0f};
     ClearValues[0].setColor(color);
     ClearValues[1].setDepthStencil({ 1.0, 0 });
 
@@ -550,6 +553,12 @@ void VulkanRenderer::DrawPerFrame(RenderObject* first, int count) {
     if (_Queue.GraphicsQueue.presentKHR(PresentInfo) != vk::Result::eSuccess) {
         return;
     }
+
+    if (_VkDevice.waitForFences(_RenderFence, true, std::numeric_limits<uint64_t>::max()) != vk::Result::eSuccess) {
+        return;
+    }
+    
+    _VkDevice.waitIdle();
 }
 
 void VulkanRenderer::CreateDepthImage(){

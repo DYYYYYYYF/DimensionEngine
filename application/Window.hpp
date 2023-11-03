@@ -1,12 +1,11 @@
 #pragma once
-#include <SDL.h>
-#include <SDL_vulkan.h>
+#include <GLFW/glfw3.h>
 #include "utils/EngineUtils.hpp"
 
 namespace udon {
 class WsiWindow{
 public:
-    static SDL_Window* GetWindow();
+    static GLFWwindow* GetWindow();
     static WsiWindow* GetInstance();
     static void GetWindowSize(int& w, int& h);
     static void DestoryWindow();
@@ -20,7 +19,7 @@ private:
 private:
     static int _Height;
     static int _Width;
-    static SDL_Window* _SDLWindow;
+    static GLFWwindow* _GLFWWindow;
 
     static WsiWindow* _WindowObj;
 };

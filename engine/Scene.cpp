@@ -54,7 +54,7 @@ void Scene::Update() {
 
 			RenderObject& tri = _Renderables[count++];
 			glm::mat4 translation = glm::translate(glm::mat4{1.0f}, glm::vec3(x, 0, y));
-			glm::mat4 rotate = glm::rotate_slow(glm::mat4{ 1.0 }, glm::radians(_FrameCount / 0.4f), glm::vec3{ 0, 1, 0 });
+			glm::mat4 rotate = glm::rotate_slow(glm::mat4{ 1.0 }, glm::radians(_FrameCount / 4.f), glm::vec3{ 0, 1, 0 });
 			glm::mat4 scale = glm::scale(glm::mat4{ 1.0 }, glm::vec3(0.2, 0.2, 0.2));
 			tri.transformMatrix = translation * rotate * scale;
 
@@ -65,34 +65,39 @@ void Scene::Update() {
 	_FrameCount++;
 }
 
-void Scene::UpdatePosition(SDL_Event event) {
-    // Move 
-    switch (event.key.keysym.sym) {
-        case SDLK_w :{
-            _Camera.keyBoardSpeedZ = 10;
-            break;
-        }
-        case SDLK_s :{
-            _Camera.keyBoardSpeedZ = -10;
-            break;
-        }
-        case SDLK_a :{
-            _Camera.keyBoardSpeedX = -10;
-            break;
-        }
-        case SDLK_d :{
-            _Camera.keyBoardSpeedX = 10;
-            break;
-        }
-        case SDLK_q :{
-            _Camera.keyBoardSpeedY = 10;
-            break;
-        }
-        case SDLK_e :{
-            _Camera.keyBoardSpeedY = -10;
-            break;
-        }
-    }
+void Scene::UpdatePosition(GLFWwindow* window) {
+
+	if (glfwGetKey(window, GLFW_KEY_ESCAPE)) {
+		glfwSetWindowShouldClose(window, true);
+	}
+	
+	if (glfwGetKey(window, GLFW_KEY_W)) {
+		_Camera.keyBoardSpeedZ = 10;      //press-W
+	}
+	else if (glfwGetKey(window, GLFW_KEY_S)) {
+		_Camera.keyBoardSpeedZ = -10;     //press-S
+	}
+	else {
+		_Camera.keyBoardSpeedZ = 0;
+	}
+	if (glfwGetKey(window, GLFW_KEY_A)) {
+		_Camera.keyBoardSpeedX = -10;     //press-A
+	}
+	else if (glfwGetKey(window, GLFW_KEY_D)) {
+		_Camera.keyBoardSpeedX = 10;      //press-D
+	}
+	else {
+		_Camera.keyBoardSpeedX = 0;
+	}
+	if (glfwGetKey(window, GLFW_KEY_Q)) {
+		_Camera.keyBoardSpeedY = 5;      //press-Q
+	}
+	else if (glfwGetKey(window, GLFW_KEY_E)) {
+		_Camera.keyBoardSpeedY = -5;     //press-E
+	}
+	else {
+		_Camera.keyBoardSpeedY = 0;
+	}
        
     _Camera.UpdateCameraPosition();
     ((Renderer*)_Renderer)->UpdateViewMat(_Camera.GetViewMatrix());

@@ -105,7 +105,7 @@ namespace renderer {
         Queue _Queue;
         MeshPushConstants _PushConstants;
 
-        SDL_Window* _Window;
+        GLFWwindow* _Window;
         vk::Instance _VkInstance;
         vk::PhysicalDevice _VkPhyDevice;
         vk::SurfaceKHR _SurfaceKHR;

@@ -39,7 +39,7 @@ void Renderer::UpdateViewMat(glm::mat4 view_matrix){
 
 void Renderer::Release() {
     if (_RendererImpl != nullptr) {
-        //_RendererImpl->Release();
-        //free(_RendererImpl);
+        _RendererImpl->Release();
+        free(_RendererImpl);
     }
 }

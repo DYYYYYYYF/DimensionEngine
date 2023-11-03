@@ -35,17 +35,9 @@ void Engine::Run(){
         return;
     }
 
-    SDL_Event event;
-    bool isQuit = false;
-    while(!isQuit){
-        if(SDL_PollEvent(&event)){
-            if(event.type == SDL_QUIT || event.key.keysym.sym == SDLK_ESCAPE){
-                isQuit = true;
-            } else{
-                _Scene->UpdatePosition(event);
-            }
-        }
-
+    while (!glfwWindowShouldClose(_window)) {
+        glfwPollEvents();
+        _Scene->UpdatePosition(_window);
         _Scene->Update();
         _FrameCount++;
     }

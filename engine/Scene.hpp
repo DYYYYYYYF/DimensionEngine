@@ -1,7 +1,6 @@
 #pragma once
 
 #include <unordered_map>
-#include <SDL2/SDL.h>
 #include "EngineStructures.hpp"
 #include "../renderer/Renderer.hpp"
 #include "foundation/Camera.hpp"
@@ -20,7 +19,7 @@ public:
 
 	void UploadMesh(const char* filename, const char* mesh_name);
 	void UploadTriangleMesh();
-	void UpdatePosition(SDL_Event event);
+	void UpdatePosition(GLFWwindow* window);
 
 	Material* GetMaterial(const std::string& name);
 	Mesh* GetMesh(const std::string& name);
