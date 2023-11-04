@@ -15,7 +15,9 @@ namespace renderer {
         virtual ~IRenderer() {}
         virtual bool Init() = 0;
         virtual void CreatePipeline(Material& mat) = 0;
+        virtual void BeforeDraw() = 0;
         virtual void Draw(RenderObject* first, int count) = 0;
+        virtual void AfterDraw() = 0;
         virtual void WaitIdel() = 0;
         virtual void Release() = 0;
 

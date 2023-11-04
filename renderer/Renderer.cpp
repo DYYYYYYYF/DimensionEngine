@@ -25,8 +25,17 @@ void Renderer::CreatePipeline(Material& mat) {
     _RendererImpl->CreatePipeline(mat);
 }
 
+
+void Renderer::BeforeDraw(){
+
+}
+
 void Renderer::Draw(RenderObject* first, int count){
     _RendererImpl->DrawPerFrame(first, count);
+}
+
+void Renderer::AfterDraw(){
+
 }
 
 void Renderer::UploadMeshes(Mesh& mesh) {
@@ -34,7 +43,9 @@ void Renderer::UploadMeshes(Mesh& mesh) {
 }
 
 void Renderer::UpdateViewMat(glm::mat4 view_matrix){
-    ((VulkanRenderer*)_RendererImpl)->UpdateViewMat(view_matrix);
+    ((VulkanRenderer*)_RendererImpl)->UpdatePushConstants(view_matrix);
+    ((VulkanRenderer*)_RendererImpl)->UpdateUniformBuffer();
+    ((VulkanRenderer*)_RendererImpl)->UpdateDynamicBuffer();
 }
 
 void Renderer::Release() {

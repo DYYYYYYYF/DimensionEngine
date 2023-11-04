@@ -34,14 +34,6 @@ void VulkanRenderer::ResetProp() {
 }
 
 bool VulkanRenderer::Init() { 
-
-    _Camera.proj = glm::perspective(glm::radians(45.0f), _SupportInfo.GetWindowWidth() / (float)_SupportInfo.GetWindowHeight(), 0.1f, 1000.0f);
-    _Camera.proj[1][1] *= -1;
-    _Camera.view = { 1,0,0,0,
-                 0,1,0,0,
-                 0,0,1,0,
-                 0,0,0,1 };
-
     CreateInstance();
     PickupPhyDevice();
     CreateSurface();
@@ -499,18 +491,7 @@ void VulkanRenderer::CreatePipeline(Material& mat) {
 
 void VulkanRenderer::DrawObjects(vk::CommandBuffer& cmd, RenderObject* first, int count) {
     //make a model view matrix for rendering the object
-
-    //--------- Dynamic Buffer
-    float framed = (_FrameNumber / 120.f);
-    _SceneData.ambientColor = { sin(framed),0,cos(framed),1 };
-    int frameIndex = _FrameNumber % FRAME_OVERLAP;
-    size_t memOffset = PadUniformBuffeSize(sizeof(SceneData)) * frameIndex;
-
-    void* sceneData = _VkDevice.mapMemory(_SceneParameterBuffer.memory, memOffset, sizeof(_SceneData));
-    memcpy(sceneData, &_SceneData, sizeof(SceneData));
-    _VkDevice.unmapMemory(_SceneParameterBuffer.memory);
-    //-----------
-
+    
     Mesh* lastMesh = nullptr;
     Material* lastMaterial = nullptr;
     for (int i = 0; i < count; i++)
@@ -522,7 +503,8 @@ void VulkanRenderer::DrawObjects(vk::CommandBuffer& cmd, RenderObject* first, in
             cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, object.material->pipeline);
             lastMaterial = object.material;
 
-            uint32_t uniform_offset = PadUniformBuffeSize(sizeof(SceneData)) * frameIndex;
+            int curFrame = _FrameNumber % FRAME_OVERLAP;
+            uint32_t uniform_offset = PadUniformBuffeSize(sizeof(SceneData)) * curFrame;
             cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, object.material->pipelineLayout, 0, 1,
                &(GetCurrentFrame().globalDescriptor), 1, &uniform_offset);
         }
@@ -999,7 +981,7 @@ void VulkanRenderer::TransitionImageLayout(vk::Image image, vk::Format format,
     EndCmdBuffer(cmdBuf);
 }
 
-void VulkanRenderer::UpdateViewMat(glm::mat4 view_matrix) {
+void VulkanRenderer::UpdatePushConstants(glm::mat4 view_matrix) {
     _Camera.view = view_matrix;
 
     // Uniform Buffer
@@ -1010,6 +992,29 @@ void VulkanRenderer::UpdateViewMat(glm::mat4 view_matrix) {
     void* data = _VkDevice.mapMemory(GetCurrentFrame().cameraBuffer.memory, 0, sizeof(CamerData));
     memcpy(data, &_Camera, sizeof(CamerData));
     _VkDevice.unmapMemory(GetCurrentFrame().cameraBuffer.memory);
+}
+
+void VulkanRenderer::UpdateUniformBuffer(){
+
+    _Camera.proj = glm::perspective(glm::radians(45.0f), _SupportInfo.GetWindowWidth() / (float)_SupportInfo.GetWindowHeight(), 0.1f, 1000.0f);
+    _Camera.proj[1][1] *= -1;
+    _Camera.view = { 1,0,0,0,
+                 0,1,0,0,
+                 0,0,1,0,
+                 0,0,0,1 };
+}
+
+void VulkanRenderer::UpdateDynamicBuffer(){
+    float framed = (_FrameNumber / 120.f);
+    _SceneData.ambientColor = { sin(framed),0,cos(framed),1 };
+    int frameIndex = _FrameNumber % FRAME_OVERLAP;
+
+    // size_t memOffset = PadUniformBuffeSize(sizeof(SceneData)) * frameIndex;
+    size_t memOffset = 0;
+
+    void* sceneData = _VkDevice.mapMemory(_SceneParameterBuffer.memory, memOffset, sizeof(_SceneData));
+    memcpy(sceneData, &_SceneData, sizeof(SceneData));
+    _VkDevice.unmapMemory(_SceneParameterBuffer.memory);
 }
 
 /*

@@ -70,7 +70,9 @@ namespace renderer {
         vk::ImageView CreateImageView(vk::Format format, vk::Image image, vk::ImageAspectFlags aspect);
 
         // Uniform
-        void UpdateViewMat(glm::mat4 view_matrix);
+        void UpdatePushConstants(glm::mat4 view_matrix);
+        void UpdateUniformBuffer();
+        void UpdateDynamicBuffer();
 
         void InitDescriptors();
 

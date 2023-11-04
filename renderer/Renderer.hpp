@@ -10,7 +10,9 @@ namespace renderer {
         virtual ~Renderer();
         virtual bool Init() override;
         virtual void CreatePipeline(Material& mat) override;
+        virtual void BeforeDraw() override;
         virtual void Draw(RenderObject* first, int count) override;
+        virtual void AfterDraw() override;
         virtual void WaitIdel() override {_RendererImpl->WaitIdel();}
         virtual void Release() override;
 
