@@ -102,6 +102,7 @@ namespace renderer {
 
     private:
         void ResetProp();
+        size_t PadUniformBuffeSize(size_t origin_size);
         vk::Format FindSupportedFormat(const std::vector<vk::Format>& candidates,
             vk::ImageTiling tiling, vk::FormatFeatureFlags features);
 
@@ -115,12 +116,21 @@ namespace renderer {
         vk::PipelineLayoutCreateInfo InitPipelineLayoutCreateInfo();
         vk::PipelineDepthStencilStateCreateInfo InitDepthStencilStateCreateInfo();
 
+        vk::DescriptorSetLayoutBinding InitDescriptorSetLayoutBinding(vk::DescriptorType type, 
+                                                                      vk::ShaderStageFlags stage, uint32_t binding);
+        vk::WriteDescriptorSet InitWriteDescriptorBuffer(vk::DescriptorType type, vk::DescriptorSet dstSet, 
+                                                         vk::DescriptorBufferInfo* bufferInfo, uint32_t binding);
+
     protected:
         QueueFamilyProperty _QueueFamilyProp;
         SwapchainSupport _SupportInfo;
         Queue _Queue;
         MeshPushConstants _PushConstants;
         CamerData _Camera;
+
+        // Scene dynamic buffer
+        SceneData _SceneData;
+        AllocatedBuffer _SceneParameterBuffer;
 
         GLFWwindow* _Window;
         vk::Instance _VkInstance;

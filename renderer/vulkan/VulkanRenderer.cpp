@@ -64,6 +64,8 @@ void VulkanRenderer::Release(){
     CHECK(_VkDevice);
     INFO("Release Renderer");
 
+    _VkDevice.freeMemory(_SceneParameterBuffer.memory);
+    _VkDevice.destroyBuffer(_SceneParameterBuffer.buffer);
     _VkDevice.destroyDescriptorPool(_DescriptorPool);
     _VkDevice.destroyDescriptorSetLayout(_GlobalSetLayout);
     _VkDevice.destroyImageView(_DepthImageView);
@@ -498,19 +500,31 @@ void VulkanRenderer::CreatePipeline(Material& mat) {
 void VulkanRenderer::DrawObjects(vk::CommandBuffer& cmd, RenderObject* first, int count) {
     //make a model view matrix for rendering the object
 
+    //--------- Dynamic Buffer
+    float framed = (_FrameNumber / 120.f);
+    _SceneData.ambientColor = { sin(framed),0,cos(framed),1 };
+    int frameIndex = _FrameNumber % FRAME_OVERLAP;
+    size_t memOffset = PadUniformBuffeSize(sizeof(SceneData)) * frameIndex;
+
+    void* sceneData = _VkDevice.mapMemory(_SceneParameterBuffer.memory, memOffset, sizeof(_SceneData));
+    memcpy(sceneData, &_SceneData, sizeof(SceneData));
+    _VkDevice.unmapMemory(_SceneParameterBuffer.memory);
+    //-----------
+
     Mesh* lastMesh = nullptr;
     Material* lastMaterial = nullptr;
     for (int i = 0; i < count; i++)
     {
         RenderObject& object = first[i];
 
-        //only bind the pipeline if it doesn't match with the already bound one
+            //only bind the pipeline if it doesn't match with the already bound one
         if (object.material != lastMaterial) {
             cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, object.material->pipeline);
             lastMaterial = object.material;
 
+            uint32_t uniform_offset = PadUniformBuffeSize(sizeof(SceneData)) * frameIndex;
             cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, object.material->pipelineLayout, 0, 1,
-               &(GetCurrentFrame().globalDescriptor), 0, nullptr);
+               &(GetCurrentFrame().globalDescriptor), 1, &uniform_offset);
         }
 
         //upload the mesh to the GPU via push constants
@@ -622,11 +636,23 @@ void VulkanRenderer::CreateDepthImage(){
         vk::ImageLayout::eDepthStencilAttachmentOptimal);
 }
 
+size_t VulkanRenderer::PadUniformBuffeSize(size_t origin_size){
+    // Get aligned size
+    size_t minUboAlignment = _VkPhyDevice.getProperties().limits.minUniformBufferOffsetAlignment;
+    size_t alignedSize = sizeof(SceneData);
+    if (minUboAlignment > 0) {
+        alignedSize = (alignedSize + minUboAlignment - 1) & ~(minUboAlignment - 1);
+    }
+    return alignedSize;
+}
+
 void VulkanRenderer::InitDescriptors() {
     CHECK(_VkDevice);
 
     //Descriptor Pool
-    std::vector<vk::DescriptorPoolSize> sizes = { {vk::DescriptorType::eUniformBuffer, 10} };
+    std::vector<vk::DescriptorPoolSize> sizes = { 
+        {vk::DescriptorType::eUniformBuffer, 10},
+        {vk::DescriptorType::eUniformBufferDynamic, 10}};
 
     vk::DescriptorPoolCreateInfo descPoolInfo;
     descPoolInfo.setMaxSets(10)
@@ -636,21 +662,35 @@ void VulkanRenderer::InitDescriptors() {
     CHECK(_DescriptorPool);
 
     // DescriptorLayout
-    vk::DescriptorSetLayoutBinding layoutBinding;
-    layoutBinding.setBinding(0)
-        .setDescriptorCount(1)
-        .setDescriptorType(vk::DescriptorType::eUniformBuffer)
-        .setStageFlags(vk::ShaderStageFlagBits::eVertex);
+    vk::DescriptorSetLayoutBinding cameraUniformBuffer= 
+        InitDescriptorSetLayoutBinding(vk::DescriptorType::eUniformBuffer, vk::ShaderStageFlagBits::eVertex, 0);
+    vk::DescriptorSetLayoutBinding sceneDynamicBuffer =
+        InitDescriptorSetLayoutBinding(vk::DescriptorType::eUniformBufferDynamic, 
+                                       vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment, 1);
+    std::vector<vk::DescriptorSetLayoutBinding> bindings = {cameraUniformBuffer, sceneDynamicBuffer};
 
     vk::DescriptorSetLayoutCreateInfo descSetLayoutInfo;
-    descSetLayoutInfo.setBindingCount(1)
-        .setBindings(layoutBinding);
+    descSetLayoutInfo.setBindingCount((uint32_t)bindings.size())
+        .setBindings(bindings);
     _GlobalSetLayout =  _VkDevice.createDescriptorSetLayout(descSetLayoutInfo);
     CHECK(_GlobalSetLayout);
+    
+    // Scene dynamic buffer
+    const size_t sceneParamBufferSize = FRAME_OVERLAP * PadUniformBuffeSize(sizeof(SceneData));
+    _SceneParameterBuffer.buffer = CreateBuffer(sceneParamBufferSize, vk::BufferUsageFlagBits::eUniformBuffer);
+    CHECK(_SceneParameterBuffer.buffer);
+    MemRequiredInfo sceneMemInfo = QueryMemReqInfo(_SceneParameterBuffer.buffer,
+        vk::MemoryPropertyFlagBits::eHostVisible | 
+        vk::MemoryPropertyFlagBits::eHostCoherent);
+    _SceneParameterBuffer.memory = AllocateMemory(sceneMemInfo,
+        vk::MemoryPropertyFlagBits::eHostVisible | 
+        vk::MemoryPropertyFlagBits::eHostCoherent);
+    CHECK(_SceneParameterBuffer.memory);
+    _VkDevice.bindBufferMemory(_SceneParameterBuffer.buffer, _SceneParameterBuffer.memory, 0);
 
     // Camera Uniform buffer
-    //size_t minUboAlignment = _VkPhyDevice.getProperties().limits.minUniformBufferOffsetAlignment;
     for (int i = 0; i < FRAME_OVERLAP; i++) {
+        // Camera buffer
         _Frames[i].cameraBuffer.buffer = CreateBuffer(sizeof(CamerData),
             vk::BufferUsageFlagBits::eUniformBuffer, vk::SharingMode::eExclusive);
         CHECK(_Frames[i].cameraBuffer.buffer);
@@ -674,18 +714,24 @@ void VulkanRenderer::InitDescriptors() {
         }
 
         //  make it point into our camera buffer
-        vk::DescriptorBufferInfo descBufferInfo;
-        descBufferInfo.setBuffer(_Frames[i].cameraBuffer.buffer)
-        .setOffset(0)
-        .setRange(sizeof(CamerData));
+        vk::DescriptorBufferInfo cameraBufferInfo;
+        cameraBufferInfo.setBuffer(_Frames[i].cameraBuffer.buffer)
+            .setOffset(0)
+            .setRange(sizeof(CamerData));
 
-        std::array<vk::WriteDescriptorSet, 1> writeDescSets;;
-        writeDescSets[0].setDstBinding(0)
-            .setDstSet(_Frames[i].globalDescriptor)
-            .setDescriptorCount(1)
-            .setDescriptorType(vk::DescriptorType::eUniformBuffer)
-            .setBufferInfo(descBufferInfo)
-            .setDstArrayElement(0);
+        vk::DescriptorBufferInfo sceneBufferInfo;
+        sceneBufferInfo.setBuffer(_SceneParameterBuffer.buffer)
+            .setOffset(0)
+            .setRange(sizeof(SceneData));
+
+        vk::WriteDescriptorSet camerWriteSet = InitWriteDescriptorBuffer(vk::DescriptorType::eUniformBuffer,
+            _Frames[i].globalDescriptor, &cameraBufferInfo, 0);
+        CHECK(camerWriteSet);
+
+        vk::WriteDescriptorSet sceneWriteSet = InitWriteDescriptorBuffer(vk::DescriptorType::eUniformBufferDynamic,
+            _Frames[i].globalDescriptor, &sceneBufferInfo, 1);
+        std::vector<vk::WriteDescriptorSet> writeDescSets = {camerWriteSet, sceneWriteSet};
+        CHECK(sceneWriteSet);
 
         _VkDevice.updateDescriptorSets(writeDescSets, nullptr);
     }
@@ -1055,6 +1101,36 @@ vk::PipelineDepthStencilStateCreateInfo VulkanRenderer::InitDepthStencilStateCre
         .setStencilTestEnable(VK_FALSE);
 
     return depthStencilInfo;
+}
+
+/*
+    Vulkan DescriptorSet 
+ */
+vk::DescriptorSetLayoutBinding VulkanRenderer::InitDescriptorSetLayoutBinding(vk::DescriptorType type, 
+    vk::ShaderStageFlags stage, uint32_t binding){
+
+    vk::DescriptorSetLayoutBinding bindingInfo;
+    bindingInfo.setBinding(binding)
+        .setDescriptorCount(1)
+        .setDescriptorType(type)
+        .setPImmutableSamplers(nullptr)
+        .setStageFlags(stage);
+
+    return bindingInfo;
+}
+
+
+vk::WriteDescriptorSet VulkanRenderer::InitWriteDescriptorBuffer(vk::DescriptorType type, vk::DescriptorSet dstSet, 
+    vk::DescriptorBufferInfo* bufferInfo, uint32_t binding){
+
+    vk::WriteDescriptorSet writeSet;
+    writeSet.setDstBinding(binding)
+        .setDstSet(dstSet)
+        .setDescriptorCount(1)
+        .setDescriptorType(type)
+        .setPBufferInfo(bufferInfo);
+
+    return writeSet;
 }
 
 /*

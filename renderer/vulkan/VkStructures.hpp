@@ -31,11 +31,23 @@ namespace renderer{
     /*
         Vulkan Descriptor
     */
+    // Dynamic buffer
+    struct SceneData{
+        glm::vec4 fogColor; // w is for exponent
+        glm::vec4 fogDistances; // x for min, y for max
+
+        glm::vec4 ambientColor; // w for sun power
+        glm::vec4 sunlightDIrection;
+        glm::vec4 sunlightColor;
+    };
+
+    // Uniform buffer
     struct CamerData {
         glm::mat4 view;
         glm::mat4 proj;
     };
 
+    // Push constants
     struct MeshPushConstants {
         glm::vec4 data;
         glm::mat4 model;
