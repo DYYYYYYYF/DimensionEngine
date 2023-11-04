@@ -6,10 +6,10 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/library)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/library)
 
-set(EIGEN_DIR ${PROJECT_SOURCE_DIR}/3rd/eigen3)
 set(TINY_OBJ_LOADER_DIR ${PROJECT_SOURCE_DIR}/3rd/tinyobjloader-master)
 set(STB_MASTER_DIR ${PROJECT_SOURCE_DIR}/3rd/stb-master)
 set(UD_LOGGER_DIR ${PROJECT_SOURCE_DIR}/3rd/uncledon-logger)
+set(GLFW_DIR ${PROJECT_SOURCE_DIR}/3rd/glfw3)
 
 ## Set build type
 if(${CMAKE_BUILD_TYPE})
@@ -40,7 +40,7 @@ if(${APPLE})
 elseif(${WIN32})
     message("-- Current environment: Windows\n")
 
-    set(Vulkan_DIR "D:/Library/Vulkan")
+    set(Vulkan_DIR "D:/C_Library/VulkanSDK")
 
     if(${Vulkan_DIR} STREQUAL " ")
         message("-- Please set Vulkan direction!!!!")
@@ -50,12 +50,14 @@ elseif(${WIN32})
     set(Vulkan_LIBRARY_DIRS "${Vulkan_DIR}/Lib")
     set(Vulkan_INCLUDE_DIRS "${Vulkan_DIR}/Include")
     set(SDL_INCLUDE_DIRS "${Vulkan_DIR}/Include/SDL2")
+    set(GLFW_INCLUDE_DIRS "${GLFW_DIR}/include")
+    set(GLFW_LIBRARY_DIRS "${GLFW_DIR}/lib/Windows/Release")
 
     # Copy SDL2.dll to output path
     file(COPY ${Vulkan_DIR}/bin/SDL2.dll DESTINATION ${EXECUTABLE_OUTPUT_PATH})
 
-    link_directories(${Vulkan_LIBRARY_DIRS} ${UD_LOGGER_DIR}/lib/Windows/release)
-    include_directories(${EIGEN_DIR} ${STB_MASTER_DIR} ${Vulkan_INCLUDE_DIRS} ${TINY_OBJ_LOADER_DIR} 
+    link_directories(${Vulkan_LIBRARY_DIRS} ${GLFW_LIBRARY_DIRS}  ${UD_LOGGER_DIR}/lib/Windows/release)
+    include_directories(${GLFW_INCLUDE_DIRS} ${STB_MASTER_DIR} ${Vulkan_INCLUDE_DIRS} ${TINY_OBJ_LOADER_DIR} 
         ${STB_MASTER_DIR} ${SDL_INCLUDE_DIRS} ${UD_LOGGER_DIR}/include)
 
 endif()
@@ -80,7 +82,7 @@ if(${APPLE})
     target_link_libraries(VulkanRender Vulkan::Vulkan)
     target_link_libraries(VulkanRender ${GLFW_LIBRARIES})   
 elseif(${WIN32})
-    target_link_libraries(VulkanRender "vulkan-1.lib" "SDL2.lib" "SDL2main.lib" "Logger.lib")
+    target_link_libraries(VulkanRender "vulkan-1.lib" "SDL2.lib" "SDL2main.lib" "Logger.lib" "glfw3.lib")
 endif()
 
 target_link_libraries(VulkanRender engine application renderer)

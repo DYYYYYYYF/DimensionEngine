@@ -6,6 +6,7 @@
 
 #include <vector>
 #include <vulkan/vulkan.hpp>
+#include <functional>
 #include "../interface/IRendererImpl.hpp"
 #include "../../application/Window.hpp"
 #include "../../application/utils/EngineUtils.hpp"

@@ -502,7 +502,7 @@ void VulkanRenderer::CreatePipeline(Material& mat) {
 
     vk::PipelineLayoutCreateInfo texturedPipelineLayoutInfo = defaultLayoutInfo;
     std::vector<vk::DescriptorSetLayout> textureSetLayouts = {_GlobalSetLayout, _TextureSetLayout};
-    texturedPipelineLayoutInfo.setSetLayoutCount(textureSetLayouts.size())
+    texturedPipelineLayoutInfo.setSetLayoutCount((uint32_t)textureSetLayouts.size())
         .setSetLayouts(textureSetLayouts);
     vk::PipelineLayout textureLayout = _VkDevice.createPipelineLayout(texturedPipelineLayoutInfo);
 
