@@ -45,6 +45,14 @@ namespace renderer {
         virtual void DrawPerFrame(RenderObject* first, int count) override;
 
         virtual void UpLoadMeshes(Mesh& mesh) override;
+        virtual void UnloadMeshes(std::unordered_map<std::string, Mesh>& meshes) override{
+            for (auto& mesh_map : meshes){
+                Mesh& mesh = mesh_map.second; 
+                _VkDevice.freeMemory(mesh.vertexBuffer.memory);
+                _VkDevice.destroyBuffer(mesh.vertexBuffer.buffer);
+        }
+    }
+        virtual void WaitIdel() override { _VkDevice.waitIdle(); }
 
     public:
         vk::CommandBuffer AllocateCmdBuffer();
@@ -92,8 +100,6 @@ namespace renderer {
             return _Frames[_FrameNumber % FRAME_OVERLAP];
         }
 
-        void UpdateDescriptorSet(FrameData current_frame);
-
     private:
         void ResetProp();
         vk::Format FindSupportedFormat(const std::vector<vk::Format>& candidates,
@@ -128,10 +134,8 @@ namespace renderer {
         std::vector<vk::Framebuffer> _FrameBuffers;
 
         vk::RenderPass _VkRenderPass;
-        vk::PipelineLayout _PipelineLayout;
         vk::Pipeline _Pipeline;
-        vk::ShaderModule _VertShader;
-        vk::ShaderModule _FragShader;
+        vk::PipelineLayout _PipelineLayout;
 
         // Depth Image
         vk::ImageView _DepthImageView;

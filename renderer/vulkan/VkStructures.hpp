@@ -37,9 +37,6 @@ namespace renderer{
     };
 
     struct MeshPushConstants {
-        // Eigen::Vector4f data;
-        // Eigen::Matrix4f renderMatrix;
-
         glm::vec4 data;
         glm::mat4 model;
 

@@ -11,11 +11,13 @@ namespace renderer {
         virtual bool Init() override;
         virtual void CreatePipeline(Material& mat) override;
         virtual void Draw(RenderObject* first, int count) override;
+        virtual void WaitIdel() override {_RendererImpl->WaitIdel();}
         virtual void Release() override;
 
     public:
         void UploadMeshes(Mesh& mesh);
         void UpdateViewMat(glm::mat4 view_matrix);
+        void UnloadMeshes(std::unordered_map<std::string, Mesh>& meshes){_RendererImpl->UnloadMeshes(meshes);}
 
     protected:
 

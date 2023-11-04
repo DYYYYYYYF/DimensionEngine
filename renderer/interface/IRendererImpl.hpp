@@ -26,6 +26,10 @@ namespace renderer {
         virtual void CreatePipeline(Material& mat) = 0;
 
         virtual void DrawPerFrame(RenderObject* first, int count) = 0;
+
         virtual void UpLoadMeshes(Mesh& mesh) = 0;
+        virtual void UnloadMeshes(std::unordered_map<std::string, Mesh>& meshes) = 0;
+
+        virtual void WaitIdel() = 0;
     };
 }// namespace renderer

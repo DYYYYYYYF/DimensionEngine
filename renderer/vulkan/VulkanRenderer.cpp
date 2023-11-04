@@ -1,8 +1,11 @@
 #include "VulkanRenderer.hpp"
+#include "GLFW/glfw3.h"
 #include "PipelineBuilder.hpp"
 #include "VkStructures.hpp"
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
+#include "vulkan/vulkan_core.h"
+#include "vulkan/vulkan_handles.hpp"
 
 using namespace renderer;
 
@@ -23,10 +26,7 @@ void VulkanRenderer::ResetProp() {
     _VkDevice = nullptr;
     _SwapchainKHR = nullptr;
     _VkRenderPass = nullptr;
-    _PipelineLayout = nullptr;
     _Pipeline = nullptr;
-    _VertShader = nullptr;
-    _FragShader = nullptr;
     _DepthImageView = nullptr;
     _FrameNumber = 0;
     _DescriptorPool = nullptr;
@@ -59,39 +59,37 @@ bool VulkanRenderer::Init() {
     InitDescriptors();
     return true; 
 }
+
 void VulkanRenderer::Release(){
     CHECK(_VkDevice);
     INFO("Release Renderer");
-    
-    _VkDevice.destroyImageView(_DepthImageView);
-    _VkDevice.destroyPipelineLayout(_PipelineLayout);
-    _VkDevice.destroyPipeline(_Pipeline);
 
-    for (int i = 0; i < FRAME_OVERLAP; ++i) {
-        _VkDevice.destroyFence(_Frames[i].renderFence);
-        _VkDevice.destroySemaphore(_Frames[i].renderSemaphore);
-        _VkDevice.destroySemaphore(_Frames[i].presentSemaphore);
-        _VkDevice.destroyCommandPool(_Frames[i].commandPool);
-        _VkDevice.destroyBuffer(_Frames[i].cameraBuffer.buffer);
-        _VkDevice.freeMemory(_Frames[i].cameraBuffer.memory);
+    _VkDevice.destroyDescriptorPool(_DescriptorPool);
+    _VkDevice.destroyDescriptorSetLayout(_GlobalSetLayout);
+    _VkDevice.destroyImageView(_DepthImageView);
+    _VkDevice.destroyImage(_DepthImage.image);
+    _VkDevice.free(_DepthImage.memory);
+    _VkDevice.destroyPipeline(_Pipeline);
+    _VkDevice.destroyPipelineLayout(_PipelineLayout);
+
+    for (auto& frame : _Frames){
+        _VkDevice.freeMemory(frame.cameraBuffer.memory);
+        _VkDevice.destroyBuffer(frame.cameraBuffer.buffer);
+        _VkDevice.destroyFence(frame.renderFence);
+        _VkDevice.destroySemaphore(frame.renderSemaphore);
+        _VkDevice.destroySemaphore(frame.presentSemaphore);
+        _VkDevice.destroyCommandPool(frame.commandPool);
     }
 
     _VkDevice.destroyRenderPass(_VkRenderPass);
+
     for (auto& frameBuffer : _FrameBuffers) { _VkDevice.destroyFramebuffer(frameBuffer); }
     for (auto& view : _ImageViews) { _VkDevice.destroyImageView(view); }
-    for (auto& image : _Images) { _VkDevice.destroyImage(image); }
+    
     _VkDevice.destroySwapchainKHR(_SwapchainKHR);
-    INFO("Release Swapchain");
-
     _VkDevice.destroy();
-    INFO("Release Device");
-
     _VkInstance.destroySurfaceKHR(_SurfaceKHR);
-    INFO("Destroy Instance");
-
     _VkInstance.destroy();
-    INFO("Release Renderer");
-
 }
 
 
@@ -106,14 +104,14 @@ void VulkanRenderer::InitWindow(){
 void VulkanRenderer::CreateInstance() {
     InitWindow();
 
-    // Get SDL instance extensions
+    // Get GLFW instance extensions
     unsigned int extensionsCount;
     const char** extensionNames;
     extensionNames = glfwGetRequiredInstanceExtensions(&extensionsCount);
 
 #ifdef __APPLE__
     // MacOS requirment
-    extensionNames.push_back("VK_KHR_get_physical_device_properties2");
+    extensionNames[extensionsCount] = "VK_KHR_get_physical_device_properties2";
     ++extensionsCount;
 #endif
 
@@ -408,21 +406,18 @@ void VulkanRenderer::CreateFrameBuffers() {
 
 void VulkanRenderer::InitSyncStructures() {
 
-    for (int i = 0; i < FRAME_OVERLAP; ++i) {
-        vk::Fence& renderFence = _Frames[i].renderFence;
-        vk::Semaphore& renderSemap = _Frames[i].renderSemaphore;
-        vk::Semaphore& presentSemap = _Frames[i].presentSemaphore;
-        
         vk::FenceCreateInfo FenceInfo;
         FenceInfo.setFlags(vk::FenceCreateFlagBits::eSignaled);
-        renderFence = _VkDevice.createFence(FenceInfo);
+        vk::SemaphoreCreateInfo SemapInfo;
+
+    for (int i = 0; i < FRAME_OVERLAP; ++i) {
+        _Frames[i].renderFence = _VkDevice.createFence(FenceInfo);
         CHECK(renderFence);
 
-        vk::SemaphoreCreateInfo SemapInfo;
-        renderSemap = _VkDevice.createSemaphore(SemapInfo);
+        _Frames[i].renderSemaphore = _VkDevice.createSemaphore(SemapInfo);
         CHECK(renderSemap);
 
-        presentSemap = _VkDevice.createSemaphore(SemapInfo);
+        _Frames[i].presentSemaphore = _VkDevice.createSemaphore(SemapInfo);
         CHECK(presentSemap);
     }
 }
@@ -430,10 +425,22 @@ void VulkanRenderer::InitSyncStructures() {
 void VulkanRenderer::CreatePipeline(Material& mat) {
     PipelineBuilder pipelineBuilder;
 
-    _VertShader = CreateShaderModule("../shader/triangle_vert.spv");
-    _FragShader = CreateShaderModule("../shader/triangle_frag.spv");
+    vk::ShaderModule vertShader = CreateShaderModule("../shader/triangle_vert.spv");
+    vk::ShaderModule fragShader = CreateShaderModule("../shader/triangle_frag.spv");
     CHECK(_VertShader);
     CHECK(_FragShader);
+
+    INFO("Pipeline Shader Stages");
+    pipelineBuilder._ShaderStages.clear();
+    pipelineBuilder._ShaderStages.push_back(InitShaderStageCreateInfo(vk::ShaderStageFlagBits::eVertex, vertShader));
+    pipelineBuilder._ShaderStages.push_back(InitShaderStageCreateInfo(vk::ShaderStageFlagBits::eFragment, fragShader));
+
+    INFO("Pipeline Bingding and Attribute Descroptions");
+    std::vector<vk::VertexInputBindingDescription> bindingDescription = Vertex::GetBindingDescription();
+    std::array<vk::VertexInputAttributeDescription, 3> attributeDescription = Vertex::GetAttributeDescription();
+
+    INFO("Pipeline Assembly");
+    pipelineBuilder._InputAssembly = InitAssemblyStateCreateInfo(vk::PrimitiveTopology::eTriangleList);
 
     INFO("Push constants");
     vk::PushConstantRange pushConstant;
@@ -450,15 +457,7 @@ void VulkanRenderer::CreatePipeline(Material& mat) {
         .setSetLayouts(_GlobalSetLayout);
 
     _PipelineLayout = _VkDevice.createPipelineLayout(info);
-    CHECK(_PipelineLayout);
-
-    INFO("Pipeline Shader Stages");
-    pipelineBuilder._ShaderStages.clear();
-    pipelineBuilder._ShaderStages.push_back(InitShaderStageCreateInfo(vk::ShaderStageFlagBits::eVertex, _VertShader));
-    pipelineBuilder._ShaderStages.push_back(InitShaderStageCreateInfo(vk::ShaderStageFlagBits::eFragment, _FragShader));
-
-    INFO("Pipeline Assembly");
-    pipelineBuilder._InputAssembly = InitAssemblyStateCreateInfo(vk::PrimitiveTopology::eTriangleList);
+    CHECK(pipelineLayout);
 
     INFO("Pipeline Viewport");
     pipelineBuilder._Viewport.x = 0.0f;
@@ -478,10 +477,6 @@ void VulkanRenderer::CreatePipeline(Material& mat) {
     pipelineBuilder._ColorBlendAttachment = InitColorBlendAttachmentState();
     pipelineBuilder._PipelineLayout = _PipelineLayout;
     pipelineBuilder._DepthStencilState = InitDepthStencilStateCreateInfo();
-
-    INFO("Pipeline Bingding and Attribute Descroptions");
-    std::vector<vk::VertexInputBindingDescription> bindingDescription = Vertex::GetBindingDescription();
-    std::array<vk::VertexInputAttributeDescription, 3> attributeDescription = Vertex::GetAttributeDescription();
     
     //connect the pipeline builder vertex input info to the one we get from Vertex
     pipelineBuilder._VertexInputInfo.pVertexAttributeDescriptions = attributeDescription.data();
@@ -495,6 +490,9 @@ void VulkanRenderer::CreatePipeline(Material& mat) {
 
     mat.pipeline = _Pipeline;
     mat.pipelineLayout = _PipelineLayout;
+
+    _VkDevice.destroyShaderModule(vertShader);
+    _VkDevice.destroyShaderModule(fragShader);
 }
 
 void VulkanRenderer::DrawObjects(vk::CommandBuffer& cmd, RenderObject* first, int count) {
@@ -516,7 +514,7 @@ void VulkanRenderer::DrawObjects(vk::CommandBuffer& cmd, RenderObject* first, in
         }
 
         //upload the mesh to the GPU via push constants
-        _PushConstants.model = glm::mat4{ 1 };
+        _PushConstants.model = object.transformMatrix;
         cmd.pushConstants(object.material->pipelineLayout,
             vk::ShaderStageFlagBits::eVertex, 0, sizeof(MeshPushConstants), &_PushConstants);
 
@@ -534,6 +532,13 @@ void VulkanRenderer::DrawObjects(vk::CommandBuffer& cmd, RenderObject* first, in
 }
 
 void VulkanRenderer::DrawPerFrame(RenderObject* first, int count) {
+
+    if (_VkDevice.waitForFences(GetCurrentFrame().renderFence, true, 
+        std::numeric_limits<uint64_t>::max()) != vk::Result::eSuccess) {
+        INFO("ERROR WAIT FOR FENCES");
+        return;
+    }
+
     _VkDevice.resetFences(GetCurrentFrame().renderFence);
 
     auto res = _VkDevice.acquireNextImageKHR(_SwapchainKHR, std::numeric_limits<uint64_t>::max(), 
@@ -592,13 +597,7 @@ void VulkanRenderer::DrawPerFrame(RenderObject* first, int count) {
     if (_Queue.GraphicsQueue.presentKHR(PresentInfo) != vk::Result::eSuccess) {
         return;
     }
-
-    if (_VkDevice.waitForFences(GetCurrentFrame().renderFence, true, 
-        std::numeric_limits<uint64_t>::max()) != vk::Result::eSuccess) {
-        return;
-    }
     
-    _VkDevice.waitIdle();
     _FrameNumber++;
 }
 
@@ -627,7 +626,7 @@ void VulkanRenderer::InitDescriptors() {
     CHECK(_VkDevice);
 
     //Descriptor Pool
-    std::vector<vk::DescriptorPoolSize> sizes = { {vk::DescriptorType::eUniformBuffer, 0} };
+    std::vector<vk::DescriptorPoolSize> sizes = { {vk::DescriptorType::eUniformBuffer, 10} };
 
     vk::DescriptorPoolCreateInfo descPoolInfo;
     descPoolInfo.setMaxSets(10)
@@ -637,15 +636,15 @@ void VulkanRenderer::InitDescriptors() {
     CHECK(_DescriptorPool);
 
     // DescriptorLayout
-    vk::DescriptorSetLayoutBinding layoutDinding;
-    layoutDinding.setBinding(0)
+    vk::DescriptorSetLayoutBinding layoutBinding;
+    layoutBinding.setBinding(0)
         .setDescriptorCount(1)
         .setDescriptorType(vk::DescriptorType::eUniformBuffer)
         .setStageFlags(vk::ShaderStageFlagBits::eVertex);
 
     vk::DescriptorSetLayoutCreateInfo descSetLayoutInfo;
     descSetLayoutInfo.setBindingCount(1)
-        .setBindings(layoutDinding);
+        .setBindings(layoutBinding);
     _GlobalSetLayout =  _VkDevice.createDescriptorSetLayout(descSetLayoutInfo);
     CHECK(_GlobalSetLayout);
 
@@ -670,29 +669,26 @@ void VulkanRenderer::InitDescriptors() {
         descAllocateInfo.setDescriptorPool(_DescriptorPool)
             .setDescriptorSetCount(1)
             .setSetLayouts(_GlobalSetLayout);
-       _VkDevice.allocateDescriptorSets(&descAllocateInfo, &(_Frames[i].globalDescriptor));
-        CHECK(_Frames[i].globalDescriptor);
+       if (_VkDevice.allocateDescriptorSets(&descAllocateInfo, &(_Frames[i].globalDescriptor)) != vk::Result::eSuccess){
+            CHECK(_Frames[i].globalDescriptor);
+        }
 
-        UpdateDescriptorSet(_Frames[i]);
-    }
-}
-
-void VulkanRenderer::UpdateDescriptorSet(FrameData current_frame) {
-    //  make it point into our camera buffer
-    vk::DescriptorBufferInfo descBufferInfo;
-    descBufferInfo.setBuffer(current_frame.cameraBuffer.buffer)
+        //  make it point into our camera buffer
+        vk::DescriptorBufferInfo descBufferInfo;
+        descBufferInfo.setBuffer(_Frames[i].cameraBuffer.buffer)
         .setOffset(0)
         .setRange(sizeof(CamerData));
 
-    std::array<vk::WriteDescriptorSet, 1> writeDescSets;;
-    writeDescSets[0].setDstBinding(0)
-        .setDstSet(current_frame.globalDescriptor)
-        .setDescriptorCount(1)
-        .setDescriptorType(vk::DescriptorType::eUniformBuffer)
-        .setBufferInfo(descBufferInfo)
-        .setDstArrayElement(0);
+        std::array<vk::WriteDescriptorSet, 1> writeDescSets;;
+        writeDescSets[0].setDstBinding(0)
+            .setDstSet(_Frames[i].globalDescriptor)
+            .setDescriptorCount(1)
+            .setDescriptorType(vk::DescriptorType::eUniformBuffer)
+            .setBufferInfo(descBufferInfo)
+            .setDstArrayElement(0);
 
-    _VkDevice.updateDescriptorSets(writeDescSets, nullptr);
+        _VkDevice.updateDescriptorSets(writeDescSets, nullptr);
+    }
 }
 
 /*
@@ -968,8 +964,6 @@ void VulkanRenderer::UpdateViewMat(glm::mat4 view_matrix) {
     void* data = _VkDevice.mapMemory(GetCurrentFrame().cameraBuffer.memory, 0, sizeof(CamerData));
     memcpy(data, &_Camera, sizeof(CamerData));
     _VkDevice.unmapMemory(GetCurrentFrame().cameraBuffer.memory);
-
-    UpdateDescriptorSet(GetCurrentFrame());
 }
 
 /*

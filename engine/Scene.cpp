@@ -62,6 +62,7 @@ void Scene::Update() {
 	}
 
 	_Renderer->Draw(_Renderables.data(), (int)_Renderables.size());
+  _Renderer->WaitIdel();
 	_FrameCount++;
 }
 
@@ -72,19 +73,19 @@ void Scene::UpdatePosition(GLFWwindow* window) {
 	}
 	
 	if (glfwGetKey(window, GLFW_KEY_W)) {
-		_Camera.keyBoardSpeedZ = 1;      //press-W
+		_Camera.keyBoardSpeedZ = 10;      //press-W
 	}
 	else if (glfwGetKey(window, GLFW_KEY_S)) {
-		_Camera.keyBoardSpeedZ = -1;     //press-S
+		_Camera.keyBoardSpeedZ = -10;     //press-S
 	}
 	else {
 		_Camera.keyBoardSpeedZ = 0;
 	}
 	if (glfwGetKey(window, GLFW_KEY_A)) {
-		_Camera.keyBoardSpeedX = -1;     //press-A
+		_Camera.keyBoardSpeedX = -10;     //press-A
 	}
 	else if (glfwGetKey(window, GLFW_KEY_D)) {
-		_Camera.keyBoardSpeedX = 1;      //press-D
+		_Camera.keyBoardSpeedX = 10;      //press-D
 	}
 	else {
 		_Camera.keyBoardSpeedX = 0;
@@ -183,6 +184,7 @@ Mesh* Scene::GetMesh(const std::string& name) {
 void Scene::Destroy() {
 	if (_Renderer != nullptr)
 	{
+    ((Renderer*)_Renderer)->UnloadMeshes(_Meshes);
 		_Renderer->Release();
 		free(_Renderer);
 	}
