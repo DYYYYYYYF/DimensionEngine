@@ -15,8 +15,8 @@ std::vector<vk::VertexInputBindingDescription> Vertex::GetBindingDescription() {
     return bingdings;
 }
 
-std::array<vk::VertexInputAttributeDescription, 3> Vertex::GetAttributeDescription() {
-    static std::array<vk::VertexInputAttributeDescription, 3> attributes;
+std::array<vk::VertexInputAttributeDescription, 4> Vertex::GetAttributeDescription() {
+    static std::array<vk::VertexInputAttributeDescription, 4> attributes;
     attributes[0].setBinding(0)
         .setLocation(0)      // .vert shader -- location
         .setFormat(vk::Format::eR32G32B32Sfloat)     //Same as.vert shader input type -- Vec2
@@ -29,10 +29,10 @@ std::array<vk::VertexInputAttributeDescription, 3> Vertex::GetAttributeDescripti
         .setLocation(2)
         .setFormat(vk::Format::eR32G32B32Sfloat)
         .setOffset(offsetof(Vertex, color));
-    /*attributes[3].setBinding(0)
+    attributes[3].setBinding(0)
         .setLocation(3)
         .setFormat(vk::Format::eR32G32Sfloat)
-        .setOffset(offsetof(Vertex, texCoord));*/
+        .setOffset(offsetof(Vertex, texCoord));
     return attributes;
 }
 
@@ -60,6 +60,9 @@ bool Mesh::LoadFromObj(const char* filename){
 
             // Loop over vertices in the face.
             for (size_t v = 0; v < fv; v++) {
+                //copy it into our vertex
+                Vertex new_vert;
+
                 // access to vertex
                 tinyobj::index_t idx = shapes[s].mesh.indices[index_offset + v];
 
@@ -72,8 +75,14 @@ bool Mesh::LoadFromObj(const char* filename){
                 tinyobj::real_t ny = attrib.normals[3 * idx.normal_index + 1];
                 tinyobj::real_t nz = attrib.normals[3 * idx.normal_index + 2];
 
-                //copy it into our vertex
-                Vertex new_vert;
+                //vertex uv
+                if(idx.texcoord_index >= 0){
+                    tinyobj::real_t ux = attrib.texcoords[2 * idx.texcoord_index + 0];
+                    tinyobj::real_t uy = attrib.texcoords[2 * idx.texcoord_index + 1];
+                    new_vert.texCoord.x = ux;
+                    new_vert.texCoord.y = 1-uy;
+                }
+
                 new_vert.position[0] = vx;
                 new_vert.position[1] = vy;
                 new_vert.position[2] = vz;

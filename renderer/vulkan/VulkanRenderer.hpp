@@ -75,6 +75,13 @@ namespace renderer {
         void UpdateDynamicBuffer();
 
         void InitDescriptors();
+        
+        void ImmediateSubmit(std::function<void(vk::CommandBuffer cmd)>&& function);
+
+        MemRequiredInfo QueryMemReqInfo(vk::Buffer buf, vk::MemoryPropertyFlags flag);
+        MemRequiredInfo QueryImgReqInfo(vk::Image image, vk::MemoryPropertyFlags flag);
+
+        void LoadTexture();
 
     protected:
         bool QueryQueueFamilyProp();
@@ -85,10 +92,7 @@ namespace renderer {
         void DrawObjects(vk::CommandBuffer& cmd, RenderObject* first, int count);
 
         vk::ShaderModule CreateShaderModule(const char* shader_file);
-        MemRequiredInfo QueryMemReqInfo(vk::Buffer buf, vk::MemoryPropertyFlags flag);
-        MemRequiredInfo QueryImgReqInfo(vk::Image image, vk::MemoryPropertyFlags flag);
 
-        void CopyBuffer(vk::Buffer src, vk::Buffer dst, vk::DeviceSize size);
         void TransitionImageLayout(vk::Image image, vk::Format format,
             vk::ImageLayout oldLayout, vk::ImageLayout newLayout);
 
@@ -123,12 +127,16 @@ namespace renderer {
         vk::WriteDescriptorSet InitWriteDescriptorBuffer(vk::DescriptorType type, vk::DescriptorSet dstSet, 
                                                          vk::DescriptorBufferInfo* bufferInfo, uint32_t binding);
 
+    public:
+        vk::Device _VkDevice;
+
     protected:
         QueueFamilyProperty _QueueFamilyProp;
         SwapchainSupport _SupportInfo;
         Queue _Queue;
         MeshPushConstants _PushConstants;
         CamerData _Camera;
+        UploadContext _UploadContext;
 
         // Scene dynamic buffer
         SceneData _SceneData;
@@ -138,7 +146,6 @@ namespace renderer {
         vk::Instance _VkInstance;
         vk::PhysicalDevice _VkPhyDevice;
         vk::SurfaceKHR _SurfaceKHR;
-        vk::Device _VkDevice;
         vk::SwapchainKHR _SwapchainKHR;
 
         std::vector<vk::Image> _Images;
@@ -160,6 +167,8 @@ namespace renderer {
         // Descriptor
         vk::DescriptorSetLayout _GlobalSetLayout;
         vk::DescriptorPool _DescriptorPool;
+        vk::DescriptorSetLayout _TextureSetLayout;
 
+        std::unordered_map<std::string, Texture> _LoadedTextures;
     };// class VulkanRenderer
 }// namespace renderer

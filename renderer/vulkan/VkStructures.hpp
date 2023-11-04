@@ -29,6 +29,20 @@ namespace renderer{
     };
 
     /*
+        Texture
+     */
+    struct UploadContext{
+        vk::Fence uploadFence;
+        vk::CommandPool commandPool;
+        vk::CommandBuffer commandBuffer;
+    };
+
+    struct Texture{
+        AllocatedImage image;
+        vk::ImageView imageView;
+    };
+
+    /*
         Vulkan Descriptor
     */
     // Dynamic buffer

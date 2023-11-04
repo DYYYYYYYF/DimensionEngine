@@ -1,11 +1,11 @@
 #include "VulkanRenderer.hpp"
 #include "GLFW/glfw3.h"
 #include "PipelineBuilder.hpp"
-#include "VkStructures.hpp"
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
 #include "vulkan/vulkan_core.h"
 #include "vulkan/vulkan_handles.hpp"
+#include "VkTextrue.hpp"
 
 using namespace renderer;
 
@@ -49,6 +49,7 @@ bool VulkanRenderer::Init() {
     CreateFrameBuffers();
     InitSyncStructures();
     InitDescriptors();
+    LoadTexture();
     return true; 
 }
 
@@ -56,6 +57,9 @@ void VulkanRenderer::Release(){
     CHECK(_VkDevice);
     INFO("Release Renderer");
 
+    _VkDevice.destroyDescriptorSetLayout(_TextureSetLayout);
+    _VkDevice.destroyFence(_UploadContext.uploadFence);
+    _VkDevice.destroyCommandPool(_UploadContext.commandPool);
     _VkDevice.freeMemory(_SceneParameterBuffer.memory);
     _VkDevice.destroyBuffer(_SceneParameterBuffer.buffer);
     _VkDevice.destroyDescriptorPool(_DescriptorPool);
@@ -320,16 +324,17 @@ void VulkanRenderer::CreateRenderPass() {
 void VulkanRenderer::CreateCmdPool() {
     CHECK(_VkDevice);
 
+    vk::CommandPoolCreateInfo info;
+    info.setQueueFamilyIndex(_QueueFamilyProp.graphicsIndex.value())
+        .setFlags(vk::CommandPoolCreateFlagBits::eResetCommandBuffer);
+
     for (int i = 0; i < FRAME_OVERLAP; ++i) {
-        vk::CommandPool& cmdPool = _Frames[i].commandPool;
-
-        vk::CommandPoolCreateInfo info;
-        info.setQueueFamilyIndex(_QueueFamilyProp.graphicsIndex.value())
-            .setFlags(vk::CommandPoolCreateFlagBits::eResetCommandBuffer);
-        cmdPool = _VkDevice.createCommandPool(info);
-
+        _Frames[i].commandPool = _VkDevice.createCommandPool(info);
         CHECK(cmdPool);
     }
+
+    _UploadContext.commandPool = _VkDevice.createCommandPool(info);
+    CHECK(_UploadContext.commandPool);
 }
 
 void VulkanRenderer::AllocateFrameCmdBuffer() {
@@ -345,6 +350,12 @@ void VulkanRenderer::AllocateFrameCmdBuffer() {
         cmdBuffer = _VkDevice.allocateCommandBuffers(allocte)[0];
         CHECK(cmdBuffer);
     }
+
+    vk::CommandBufferAllocateInfo uploadAlloc;
+    uploadAlloc.setCommandPool(_UploadContext.commandPool)
+            .setCommandBufferCount(1)
+            .setLevel(vk::CommandBufferLevel::ePrimary);
+    _UploadContext.commandBuffer = _VkDevice.allocateCommandBuffers(uploadAlloc)[0];
 }
 
 vk::CommandBuffer VulkanRenderer::AllocateCmdBuffer() {
@@ -400,10 +411,11 @@ void VulkanRenderer::CreateFrameBuffers() {
 
 void VulkanRenderer::InitSyncStructures() {
 
-        vk::FenceCreateInfo FenceInfo;
-        FenceInfo.setFlags(vk::FenceCreateFlagBits::eSignaled);
-        vk::SemaphoreCreateInfo SemapInfo;
+    vk::FenceCreateInfo FenceInfo;
+    FenceInfo.setFlags(vk::FenceCreateFlagBits::eSignaled);
+    vk::SemaphoreCreateInfo SemapInfo;
 
+    // Frames
     for (int i = 0; i < FRAME_OVERLAP; ++i) {
         _Frames[i].renderFence = _VkDevice.createFence(FenceInfo);
         CHECK(renderFence);
@@ -414,6 +426,11 @@ void VulkanRenderer::InitSyncStructures() {
         _Frames[i].presentSemaphore = _VkDevice.createSemaphore(SemapInfo);
         CHECK(presentSemap);
     }
+
+    // UploadContext
+    vk::FenceCreateInfo uploadFenceInfo;
+    _UploadContext.uploadFence = _VkDevice.createFence(uploadFenceInfo);
+
 }
 
 void VulkanRenderer::CreatePipeline(Material& mat) {
@@ -431,7 +448,13 @@ void VulkanRenderer::CreatePipeline(Material& mat) {
 
     INFO("Pipeline Bingding and Attribute Descroptions");
     std::vector<vk::VertexInputBindingDescription> bindingDescription = Vertex::GetBindingDescription();
-    std::array<vk::VertexInputAttributeDescription, 3> attributeDescription = Vertex::GetAttributeDescription();
+    std::array<vk::VertexInputAttributeDescription, 4> attributeDescription = Vertex::GetAttributeDescription();
+
+    //connect the pipeline builder vertex input info to the one we get from Vertex
+    pipelineBuilder._VertexInputInfo.pVertexAttributeDescriptions = attributeDescription.data();
+    pipelineBuilder._VertexInputInfo.vertexAttributeDescriptionCount = (uint32_t)attributeDescription.size();
+    pipelineBuilder._VertexInputInfo.pVertexBindingDescriptions = bindingDescription.data();
+    pipelineBuilder._VertexInputInfo.vertexBindingDescriptionCount = (uint32_t)bindingDescription.size();
 
     INFO("Pipeline Assembly");
     pipelineBuilder._InputAssembly = InitAssemblyStateCreateInfo(vk::PrimitiveTopology::eTriangleList);
@@ -444,13 +467,14 @@ void VulkanRenderer::CreatePipeline(Material& mat) {
     CHECK(pushConstant);
 
     INFO("Pipeline Layout");
-    vk::PipelineLayoutCreateInfo info = InitPipelineLayoutCreateInfo();
-    info.setPushConstantRanges(pushConstant)
+    vk::PipelineLayoutCreateInfo defaultLayoutInfo = InitPipelineLayoutCreateInfo();
+    std::vector<vk::DescriptorSetLayout> defaultSetLayouts = {_GlobalSetLayout, _TextureSetLayout};
+    defaultLayoutInfo.setPushConstantRanges(pushConstant)
         .setPushConstantRangeCount(1)
         .setSetLayoutCount(1)
-        .setSetLayouts(_GlobalSetLayout);
+        .setSetLayouts({defaultSetLayouts});
 
-    _PipelineLayout = _VkDevice.createPipelineLayout(info);
+    _PipelineLayout = _VkDevice.createPipelineLayout(defaultLayoutInfo);
     CHECK(pipelineLayout);
 
     INFO("Pipeline Viewport");
@@ -472,15 +496,23 @@ void VulkanRenderer::CreatePipeline(Material& mat) {
     pipelineBuilder._PipelineLayout = _PipelineLayout;
     pipelineBuilder._DepthStencilState = InitDepthStencilStateCreateInfo();
     
-    //connect the pipeline builder vertex input info to the one we get from Vertex
-    pipelineBuilder._VertexInputInfo.pVertexAttributeDescriptions = attributeDescription.data();
-    pipelineBuilder._VertexInputInfo.vertexAttributeDescriptionCount = (uint32_t)attributeDescription.size();
-    pipelineBuilder._VertexInputInfo.pVertexBindingDescriptions = bindingDescription.data();
-    pipelineBuilder._VertexInputInfo.vertexBindingDescriptionCount = (uint32_t)bindingDescription.size();
-
     pipelineBuilder._PipelineLayout = _PipelineLayout;
 
     _Pipeline = pipelineBuilder.BuildPipeline(_VkDevice, _VkRenderPass);
+
+    vk::PipelineLayoutCreateInfo texturedPipelineLayoutInfo = defaultLayoutInfo;
+    std::vector<vk::DescriptorSetLayout> textureSetLayouts = {_GlobalSetLayout, _TextureSetLayout};
+    texturedPipelineLayoutInfo.setSetLayoutCount(textureSetLayouts.size())
+        .setSetLayouts(textureSetLayouts);
+    vk::PipelineLayout textureLayout = _VkDevice.createPipelineLayout(texturedPipelineLayoutInfo);
+
+    pipelineBuilder._ShaderStages.clear();
+    pipelineBuilder._ShaderStages.push_back(InitShaderStageCreateInfo(vk::ShaderStageFlagBits::eVertex, vertShader));
+    pipelineBuilder._ShaderStages.push_back(InitShaderStageCreateInfo(vk::ShaderStageFlagBits::eFragment, fragShader));
+    pipelineBuilder._PipelineLayout = textureLayout;
+
+    vk::Pipeline texturedPipeline = pipelineBuilder.BuildPipeline(_VkDevice, _VkRenderPass);
+    CHECK(texturedPipeline);
 
     mat.pipeline = _Pipeline;
     mat.pipelineLayout = _PipelineLayout;
@@ -531,7 +563,7 @@ void VulkanRenderer::DrawPerFrame(RenderObject* first, int count) {
 
     if (_VkDevice.waitForFences(GetCurrentFrame().renderFence, true, 
         std::numeric_limits<uint64_t>::max()) != vk::Result::eSuccess) {
-        INFO("ERROR WAIT FOR FENCES");
+        ERROR("ERROR WAIT FOR FENCES");
         return;
     }
 
@@ -634,7 +666,8 @@ void VulkanRenderer::InitDescriptors() {
     //Descriptor Pool
     std::vector<vk::DescriptorPoolSize> sizes = { 
         {vk::DescriptorType::eUniformBuffer, 10},
-        {vk::DescriptorType::eUniformBufferDynamic, 10}};
+        {vk::DescriptorType::eUniformBufferDynamic, 10},
+        {vk::DescriptorType::eCombinedImageSampler, 10}};
 
     vk::DescriptorPoolCreateInfo descPoolInfo;
     descPoolInfo.setMaxSets(10)
@@ -649,6 +682,8 @@ void VulkanRenderer::InitDescriptors() {
     vk::DescriptorSetLayoutBinding sceneDynamicBuffer =
         InitDescriptorSetLayoutBinding(vk::DescriptorType::eUniformBufferDynamic, 
                                        vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment, 1);
+    vk::DescriptorSetLayoutBinding textureBinding = 
+        InitDescriptorSetLayoutBinding(vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eFragment, 0);
     std::vector<vk::DescriptorSetLayoutBinding> bindings = {cameraUniformBuffer, sceneDynamicBuffer};
 
     vk::DescriptorSetLayoutCreateInfo descSetLayoutInfo;
@@ -656,6 +691,12 @@ void VulkanRenderer::InitDescriptors() {
         .setBindings(bindings);
     _GlobalSetLayout =  _VkDevice.createDescriptorSetLayout(descSetLayoutInfo);
     CHECK(_GlobalSetLayout);
+
+    // single layout for texture
+    vk::DescriptorSetLayoutCreateInfo set3Info;
+    set3Info.setBindingCount(1)
+        .setBindings(textureBinding);
+    _TextureSetLayout = _VkDevice.createDescriptorSetLayout(set3Info);
     
     // Scene dynamic buffer
     const size_t sceneParamBufferSize = FRAME_OVERLAP * PadUniformBuffeSize(sizeof(SceneData));
@@ -850,20 +891,6 @@ vk::DeviceMemory VulkanRenderer::AllocateMemory(MemRequiredInfo memInfo, vk::Mem
     return _VkDevice.allocateMemory(info);
 }
 
-void VulkanRenderer::CopyBuffer(vk::Buffer src, vk::Buffer dst, vk::DeviceSize size) {
-    vk::CommandBuffer transformCmdBuffer = AllocateCmdBuffer();
-    CHECK(transformCmdBuffer);
-
-    vk::BufferCopy regin;
-    regin.setSize(size)
-        .setSrcOffset(0)
-        .setDstOffset(0);
-    transformCmdBuffer.copyBuffer(src, dst, regin);
-    transformCmdBuffer.end();
-
-    EndCmdBuffer(transformCmdBuffer);
-}
-
 void VulkanRenderer::UpLoadMeshes(Mesh& mesh) {
     CHECK(mesh);
 
@@ -895,7 +922,13 @@ void VulkanRenderer::UpLoadMeshes(Mesh& mesh) {
     memcpy(data, mesh.vertices.data(), size);
     _VkDevice.unmapMemory(tempMemory);
 
-    CopyBuffer(tempBuffer, mesh.vertexBuffer.buffer, size);
+    ImmediateSubmit([=](vk::CommandBuffer cmd){
+        vk::BufferCopy regin;
+        regin.setSize(size)
+            .setSrcOffset(0)
+            .setDstOffset(0);
+        cmd.copyBuffer(tempBuffer, mesh.vertexBuffer.buffer, regin);
+    });
     
     // Free mem
     _VkDevice.destroyBuffer(tempBuffer);
@@ -1015,6 +1048,40 @@ void VulkanRenderer::UpdateDynamicBuffer(){
     void* sceneData = _VkDevice.mapMemory(_SceneParameterBuffer.memory, memOffset, sizeof(_SceneData));
     memcpy(sceneData, &_SceneData, sizeof(SceneData));
     _VkDevice.unmapMemory(_SceneParameterBuffer.memory);
+}
+
+void VulkanRenderer::ImmediateSubmit(std::function<void(vk::CommandBuffer cmd)>&& function){
+
+    vk::CommandBuffer cmd = _UploadContext.commandBuffer;
+    vk::CommandBufferBeginInfo beginInfo;
+    beginInfo.setPInheritanceInfo(nullptr)
+        .setFlags(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
+
+    // Execute function
+    cmd.begin(beginInfo);
+    function(cmd);
+    cmd.end();
+
+    vk::SubmitInfo submit;
+    submit.setWaitSemaphoreCount(0)
+        .setWaitSemaphores(nullptr)
+        .setSignalSemaphoreCount(0)
+        .setSignalSemaphores(nullptr)
+        .setCommandBufferCount(0)
+        .setCommandBuffers(cmd)
+        .setWaitDstStageMask(nullptr);
+    if (_Queue.GraphicsQueue.submit(1, &submit, _UploadContext.uploadFence) != vk::Result::eSuccess){
+        ERROR("Submit command failed");
+    }
+
+    if (_VkDevice.waitForFences(_UploadContext.uploadFence, true, 
+        std::numeric_limits<uint64_t>::max()) != vk::Result::eSuccess) {
+        ERROR("ERROR WAIT FOR FENCES");
+        return;
+    }
+
+    _VkDevice.resetFences(_UploadContext.uploadFence);
+    _VkDevice.resetCommandPool(_UploadContext.commandPool);
 }
 
 /*
@@ -1174,4 +1241,15 @@ vk::ImageView VulkanRenderer::CreateImageView(vk::Format format, vk::Image image
         .setImage(image)
         .setSubresourceRange(subresourceRange);
     return _VkDevice.createImageView(info);
+}
+
+void VulkanRenderer::LoadTexture(){
+    Texture texture;
+
+    renderer::LoadImageFromFile(*this, "../asset/texture/room.png", texture.image);
+    CHECK(texture.image.image)
+    
+    texture.imageView = CreateImageView(vk::Format::eR8G8B8A8Srgb, texture.image.image, vk::ImageAspectFlagBits::eColor);
+
+    _LoadedTextures["default"] = texture;
 }

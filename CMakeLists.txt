@@ -8,7 +8,7 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/library)
 
 set(EIGEN_DIR ${PROJECT_SOURCE_DIR}/3rd/eigen3)
 set(TINY_OBJ_LOADER_DIR ${PROJECT_SOURCE_DIR}/3rd/tinyobjloader-master)
-set(STB_MASTER_DIR ${PROJECT_SOURCE_DIR}/3rd/stb_master)
+set(STB_MASTER_DIR ${PROJECT_SOURCE_DIR}/3rd/stb-master)
 set(UD_LOGGER_DIR ${PROJECT_SOURCE_DIR}/3rd/uncledon-logger)
 
 ## Set build type
@@ -34,7 +34,7 @@ if(${APPLE})
     pkg_search_module(SDL REQUIRED SDL2)
     
     link_directories(${GLFW_LIBRARY_DIRS} ${SDL_LIBRARY_DIRS} ${UD_LOGGER_DIR}/lib/MacOS)
-    include_directories(${EIGEN_DIR} ${GLFW_INCLUDE_DIRS} ${Vulkan_INCLUDE_DIRS} 
+    include_directories(${EIGEN_DIR} ${STB_MASTER_DIR} ${GLFW_INCLUDE_DIRS} ${Vulkan_INCLUDE_DIRS} 
         ${TINY_OBJ_LOADER_DIR} ${STB_MASTER_DIR} ${SDL_INCLUDE_DIRS} ${UD_LOGGER_DIR}/include)
 
 elseif(${WIN32})
@@ -55,7 +55,7 @@ elseif(${WIN32})
     file(COPY ${Vulkan_DIR}/bin/SDL2.dll DESTINATION ${EXECUTABLE_OUTPUT_PATH})
 
     link_directories(${Vulkan_LIBRARY_DIRS} ${UD_LOGGER_DIR}/lib/Windows/release)
-    include_directories(${EIGEN_DIR} ${Vulkan_INCLUDE_DIRS} ${TINY_OBJ_LOADER_DIR} 
+    include_directories(${EIGEN_DIR} ${STB_MASTER_DIR} ${Vulkan_INCLUDE_DIRS} ${TINY_OBJ_LOADER_DIR} 
         ${STB_MASTER_DIR} ${SDL_INCLUDE_DIRS} ${UD_LOGGER_DIR}/include)
 
 endif()
