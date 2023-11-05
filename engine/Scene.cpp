@@ -62,7 +62,7 @@ void Scene::Update() {
 	}
 
 	_Renderer->Draw(_Renderables.data(), (int)_Renderables.size());
-  _Renderer->WaitIdel();
+    _Renderer->WaitIdel();
 	_FrameCount++;
 }
 

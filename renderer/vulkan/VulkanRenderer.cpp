@@ -48,8 +48,8 @@ bool VulkanRenderer::Init() {
     CreateDepthImage();
     CreateFrameBuffers();
     InitSyncStructures();
-    InitDescriptors();
     LoadTexture();
+    InitDescriptors();
     return true; 
 }
 
@@ -500,20 +500,6 @@ void VulkanRenderer::CreatePipeline(Material& mat) {
 
     _Pipeline = pipelineBuilder.BuildPipeline(_VkDevice, _VkRenderPass);
 
-    vk::PipelineLayoutCreateInfo texturedPipelineLayoutInfo = defaultLayoutInfo;
-    std::vector<vk::DescriptorSetLayout> textureSetLayouts = {_GlobalSetLayout, _TextureSetLayout};
-    texturedPipelineLayoutInfo.setSetLayoutCount((uint32_t)textureSetLayouts.size())
-        .setSetLayouts(textureSetLayouts);
-    vk::PipelineLayout textureLayout = _VkDevice.createPipelineLayout(texturedPipelineLayoutInfo);
-
-    pipelineBuilder._ShaderStages.clear();
-    pipelineBuilder._ShaderStages.push_back(InitShaderStageCreateInfo(vk::ShaderStageFlagBits::eVertex, vertShader));
-    pipelineBuilder._ShaderStages.push_back(InitShaderStageCreateInfo(vk::ShaderStageFlagBits::eFragment, fragShader));
-    pipelineBuilder._PipelineLayout = textureLayout;
-
-    vk::Pipeline texturedPipeline = pipelineBuilder.BuildPipeline(_VkDevice, _VkRenderPass);
-    CHECK(texturedPipeline);
-
     mat.pipeline = _Pipeline;
     mat.pipelineLayout = _PipelineLayout;
 
@@ -758,6 +744,28 @@ void VulkanRenderer::InitDescriptors() {
 
         _VkDevice.updateDescriptorSets(writeDescSets, nullptr);
     }
+
+    // Sampler
+    vk::SamplerCreateInfo samplerInfo = InitSamplerCreateInfo(
+        vk::Filter::eLinear, vk::SamplerAddressMode::eRepeat);
+    vk::Sampler _TextureSampler = _VkDevice.createSampler(samplerInfo);
+
+    vk::DescriptorSetAllocateInfo samplerAllocate;
+    samplerAllocate.setDescriptorPool(_DescriptorPool)
+        .setDescriptorSetCount(1)
+        .setSetLayouts(_TextureSetLayout);
+    if (_VkDevice.allocateDescriptorSets(&samplerAllocate, &_textureSet) != vk::Result::eSuccess) {
+        CHECK(_textureSet);
+    }
+
+    vk::DescriptorImageInfo descImageInfo;
+    descImageInfo.setImageLayout(vk::ImageLayout::eShaderReadOnlyOptimal)
+        .setImageView(_LoadedTextures["default"].imageView)
+        .setSampler(_TextureSampler);
+
+    vk::WriteDescriptorSet writeSamplerSet = InitWriteDescriptorImage(vk::DescriptorType::eCombinedImageSampler,
+        _textureSet, &descImageInfo, 1);
+    _VkDevice.updateDescriptorSets(writeSamplerSet, nullptr);
 }
 
 /*
@@ -1200,9 +1208,40 @@ vk::WriteDescriptorSet VulkanRenderer::InitWriteDescriptorBuffer(vk::DescriptorT
         .setDstSet(dstSet)
         .setDescriptorCount(1)
         .setDescriptorType(type)
-        .setPBufferInfo(bufferInfo);
+        .setPBufferInfo(bufferInfo); 
 
     return writeSet;
+}
+
+vk::WriteDescriptorSet VulkanRenderer::InitWriteDescriptorImage(vk::DescriptorType type, vk::DescriptorSet dstSet,
+    vk::DescriptorImageInfo* imageInfo, uint32_t binding) {
+    vk::WriteDescriptorSet writeSet;
+    writeSet.setDstSet(dstSet)
+        .setDstBinding(binding)
+        .setPImageInfo(imageInfo)
+        .setDescriptorCount(1)
+        .setDescriptorType(type);   //vk::DescriptorType::eCombinedImageSampler
+    return writeSet;
+}
+
+vk::SamplerCreateInfo VulkanRenderer::InitSamplerCreateInfo(vk::Filter filter, vk::SamplerAddressMode samplerAddressMode) {
+    vk::SamplerCreateInfo info;
+    info.setAddressModeU(samplerAddressMode)  // vk::SamplerAddressMode::eRepeat
+        .setAddressModeV(samplerAddressMode)
+        .setAddressModeW(samplerAddressMode)
+        .setMagFilter(filter)     // vk::Filter::eLinear
+        .setMinFilter(filter)
+        .setAnisotropyEnable(VK_FALSE)
+        .setMaxAnisotropy(1)
+        .setBorderColor(vk::BorderColor::eIntOpaqueBlack)
+        .setUnnormalizedCoordinates(VK_FALSE)
+        .setCompareEnable(VK_FALSE)
+        .setCompareOp(vk::CompareOp::eAlways)
+        .setMipmapMode(vk::SamplerMipmapMode::eLinear)
+        .setMipLodBias(0.0f)
+        .setMaxLod(0.0f)
+        .setMinLod(0.0f);
+    return info;
 }
 
 /*

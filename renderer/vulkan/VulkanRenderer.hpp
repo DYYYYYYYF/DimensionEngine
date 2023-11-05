@@ -124,9 +124,13 @@ namespace renderer {
         vk::PipelineDepthStencilStateCreateInfo InitDepthStencilStateCreateInfo();
 
         vk::DescriptorSetLayoutBinding InitDescriptorSetLayoutBinding(vk::DescriptorType type, 
-                                                                      vk::ShaderStageFlags stage, uint32_t binding);
+            vk::ShaderStageFlags stage, uint32_t binding);
         vk::WriteDescriptorSet InitWriteDescriptorBuffer(vk::DescriptorType type, vk::DescriptorSet dstSet, 
-                                                         vk::DescriptorBufferInfo* bufferInfo, uint32_t binding);
+            vk::DescriptorBufferInfo* bufferInfo, uint32_t binding);
+        vk::WriteDescriptorSet InitWriteDescriptorImage(vk::DescriptorType type, vk::DescriptorSet dstSet,
+            vk::DescriptorImageInfo* imageInfo, uint32_t binding);
+        vk::SamplerCreateInfo InitSamplerCreateInfo(vk::Filter filter, vk::SamplerAddressMode samplerAddressMode);
+   
 
     public:
         vk::Device _VkDevice;
@@ -169,6 +173,7 @@ namespace renderer {
         vk::DescriptorSetLayout _GlobalSetLayout;
         vk::DescriptorPool _DescriptorPool;
         vk::DescriptorSetLayout _TextureSetLayout;
+        vk::DescriptorSet _textureSet;
 
         std::unordered_map<std::string, Texture> _LoadedTextures;
     };// class VulkanRenderer
