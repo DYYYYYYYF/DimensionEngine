@@ -1,5 +1,6 @@
 import os
 
+vulkanPath = "D:\C_Library\VulkanSDK"
 filePath = os.path.abspath(".") + "/shader/"
 print("Shader dir: " + filePath)
 
@@ -11,7 +12,7 @@ for root, dirs, files in os.walk(filePath):
         if filename[1] != ".spv":
             if filename[1] == ".vert":
                 ## Record compile command
-                cmd = "D:\Library\Vulkan\Bin\glslc.exe -c " + filePath + file + " -o " + filePath + filename[0] + "_vert.spv"
+                cmd = vulkanPath + "\Bin\glslc.exe -c " + filePath + file + " -o " + filePath + filename[0] + "_vert.spv"
 
                 print("Compiling " + filename[0] + ".vert")
                 ## Execute compile command
@@ -19,7 +20,7 @@ for root, dirs, files in os.walk(filePath):
                     failedShaders.append(file)
             elif filename[1] == ".frag":
                 ## Record compile command
-                cmd = "D:\Library\Vulkan\Bin\glslc.exe -c " + filePath + file + " -o " + filePath + filename[0] + "_frag.spv"
+                cmd = vulkanPath + "\Bin\glslc.exe -c " + filePath + file + " -o " + filePath + filename[0] + "_frag.spv"
 
                 print("Compiling " + filename[0] + ".frag")
                 ## Execute compile command
