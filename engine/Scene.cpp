@@ -19,6 +19,8 @@ void Scene::InitScene() {
 	UploadMesh("../asset/model/room.obj", "room");
 	UploadMesh("../asset/model/sponza.obj", "sponza");
 	UploadMesh("../asset/model/ball.obj", "ball");
+	UploadMesh("../asset/model/bunny.obj", "Bunny");
+	UploadMesh("../asset/model/CornellBox.obj", "CornellBox");
 	UploadTriangleMesh();
 
 	const char* defaultVertShader = "../shader/default_vert.spv";
@@ -34,10 +36,16 @@ void Scene::InitScene() {
 	_Renderer->CreatePipeline(deafaultMeshMaterial, defaultVertShader, meshFragShader);
 	_Materials["Texture"] = deafaultMeshMaterial;
 
+	Material deafaultFloorMaterial;
+	_Renderer->CreatePipeline(deafaultFloorMaterial, defaultVertShader, meshFloorFragShader);
+	_Materials["Floor"] = deafaultFloorMaterial;
+
 	RenderObject monkey;
-	monkey.mesh = GetMesh("room");
-	monkey.material = GetMaterial("Texture");
-	monkey.transformMatrix = glm::rotate(glm::mat4{1.0}, -90.0f, glm::vec3{1, 0, 0});
+	monkey.mesh = GetMesh("sponza");
+	monkey.material = GetMaterial("Default");
+
+	glm::mat4 scale = glm::scale(glm::mat4{1}, glm::vec3(0.1, 0.1, 0.1));
+	monkey.transformMatrix = glm::rotate(scale, glm::radians(90.0f), glm::vec3{0, 1, 0});
 
 	_Renderables.push_back(monkey);
 
@@ -48,7 +56,7 @@ void Scene::InitScene() {
 			tri.mesh = GetMesh("Triangle");
 			tri.material = GetMaterial("Default");
 			glm::mat4 translation = glm::translate(glm::mat4{ 1.0 }, glm::vec3(x, 0, y));
-			glm::mat4 scale = glm::scale(glm::mat4{ 1.0 }, glm::vec3(0.2, 0.2, 0.2));
+			glm::mat4 scale = glm::scale(glm::mat4{ 1.0 }, glm::vec3(1.0, 1.0, 1.0));
 			tri.transformMatrix = translation * scale;
 
 			_Renderables.push_back(tri);

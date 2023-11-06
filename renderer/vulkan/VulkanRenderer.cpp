@@ -1040,7 +1040,7 @@ void VulkanRenderer::UpdatePushConstants(glm::mat4 view_matrix) {
 
 void VulkanRenderer::UpdateUniformBuffer(){
 
-    _Camera.proj = glm::perspective(glm::radians(45.0f), _SupportInfo.GetWindowWidth() / (float)_SupportInfo.GetWindowHeight(), 0.1f, 1000.0f);
+    _Camera.proj = glm::perspective(glm::radians(30.0f), _SupportInfo.GetWindowWidth() / (float)_SupportInfo.GetWindowHeight(), 0.1f, 10000.0f);
     _Camera.proj[1][1] *= -1;
     _Camera.view = { 1,0,0,0,
                  0,1,0,0,
