@@ -441,12 +441,12 @@ void VulkanRenderer::CreatePipeline(Material& mat) {
     CHECK(_VertShader);
     CHECK(_FragShader);
 
-    INFO("Pipeline Shader Stages");
+    // INFO("Pipeline Shader Stages");
     pipelineBuilder._ShaderStages.clear();
     pipelineBuilder._ShaderStages.push_back(InitShaderStageCreateInfo(vk::ShaderStageFlagBits::eVertex, vertShader));
     pipelineBuilder._ShaderStages.push_back(InitShaderStageCreateInfo(vk::ShaderStageFlagBits::eFragment, fragShader));
 
-    INFO("Pipeline Bingding and Attribute Descroptions");
+    // INFO("Pipeline Bingding and Attribute Descroptions");
     std::vector<vk::VertexInputBindingDescription> bindingDescription = Vertex::GetBindingDescription();
     std::array<vk::VertexInputAttributeDescription, 4> attributeDescription = Vertex::GetAttributeDescription();
 
@@ -456,28 +456,29 @@ void VulkanRenderer::CreatePipeline(Material& mat) {
     pipelineBuilder._VertexInputInfo.pVertexBindingDescriptions = bindingDescription.data();
     pipelineBuilder._VertexInputInfo.vertexBindingDescriptionCount = (uint32_t)bindingDescription.size();
 
-    INFO("Pipeline Assembly");
+    // INFO("Pipeline Assembly");
     pipelineBuilder._InputAssembly = InitAssemblyStateCreateInfo(vk::PrimitiveTopology::eTriangleList);
 
-    INFO("Push constants");
+    // INFO("Push constants");
     vk::PushConstantRange pushConstant;
     pushConstant.setOffset(0);
     pushConstant.setSize(sizeof(MeshPushConstants));
     pushConstant.setStageFlags(vk::ShaderStageFlagBits::eVertex);
     CHECK(pushConstant);
 
-    INFO("Pipeline Layout");
+    // INFO("Pipeline Layout");
     vk::PipelineLayoutCreateInfo defaultLayoutInfo = InitPipelineLayoutCreateInfo();
-    std::vector<vk::DescriptorSetLayout> defaultSetLayouts = {_GlobalSetLayout, _TextureSetLayout};
+    std::vector<vk::DescriptorSetLayout> defaultSetLayouts = {_GlobalSetLayout};
     defaultLayoutInfo.setPushConstantRanges(pushConstant)
         .setPushConstantRangeCount(1)
-        .setSetLayoutCount(1)
-        .setSetLayouts({defaultSetLayouts});
+        .setSetLayoutCount((uint32_t)defaultSetLayouts.size())
+        .setSetLayouts(defaultSetLayouts);
 
     _PipelineLayout = _VkDevice.createPipelineLayout(defaultLayoutInfo);
     CHECK(pipelineLayout);
+    pipelineBuilder._PipelineLayout = _PipelineLayout;
 
-    INFO("Pipeline Viewport");
+    // INFO("Pipeline Viewport");
     pipelineBuilder._Viewport.x = 0.0f;
     pipelineBuilder._Viewport.y = 0.0f;
     pipelineBuilder._Viewport.width = (float)_SupportInfo.extent.width;
@@ -485,18 +486,15 @@ void VulkanRenderer::CreatePipeline(Material& mat) {
     pipelineBuilder._Viewport.minDepth = 0.0f;
     pipelineBuilder._Viewport.maxDepth = 1.0f;
 
-    INFO("Pipeline Scissor");
+    // INFO("Pipeline Scissor");
     pipelineBuilder._Scissor.offset = vk::Offset2D{ 0, 0 };
     pipelineBuilder._Scissor.extent = _SupportInfo.extent;
 
-    INFO("Pipeline Rasterizer");
+    // INFO("Pipeline Rasterizer");
     pipelineBuilder._Rasterizer = InitRasterizationStateCreateInfo(vk::PolygonMode::eFill);
     pipelineBuilder._Mutisampling = InitMultisampleStateCreateInfo();
     pipelineBuilder._ColorBlendAttachment = InitColorBlendAttachmentState();
-    pipelineBuilder._PipelineLayout = _PipelineLayout;
     pipelineBuilder._DepthStencilState = InitDepthStencilStateCreateInfo();
-    
-    pipelineBuilder._PipelineLayout = _PipelineLayout;
 
     _Pipeline = pipelineBuilder.BuildPipeline(_VkDevice, _VkRenderPass);
 
@@ -523,8 +521,9 @@ void VulkanRenderer::DrawObjects(vk::CommandBuffer& cmd, RenderObject* first, in
 
             int curFrame = _FrameNumber % FRAME_OVERLAP;
             uint32_t uniform_offset = PadUniformBuffeSize(sizeof(SceneData)) * curFrame;
+            // object.material->pipelineLayout
             cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, object.material->pipelineLayout, 0, 1,
-               &(GetCurrentFrame().globalDescriptor), 1, &uniform_offset);
+                &(_Frames[i].globalDescriptor), 1, &uniform_offset);
         }
 
         //upload the mesh to the GPU via push constants
@@ -669,8 +668,8 @@ void VulkanRenderer::InitDescriptors() {
         InitDescriptorSetLayoutBinding(vk::DescriptorType::eUniformBufferDynamic, 
                                        vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment, 1);
     vk::DescriptorSetLayoutBinding textureBinding = 
-        InitDescriptorSetLayoutBinding(vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eFragment, 0);
-    std::vector<vk::DescriptorSetLayoutBinding> bindings = {cameraUniformBuffer, sceneDynamicBuffer};
+        InitDescriptorSetLayoutBinding(vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eFragment, 2);
+    std::vector<vk::DescriptorSetLayoutBinding> bindings = {cameraUniformBuffer, sceneDynamicBuffer, textureBinding };
 
     vk::DescriptorSetLayoutCreateInfo descSetLayoutInfo;
     descSetLayoutInfo.setBindingCount((uint32_t)bindings.size())
@@ -680,7 +679,7 @@ void VulkanRenderer::InitDescriptors() {
 
     // single layout for texture
     vk::DescriptorSetLayoutCreateInfo set3Info;
-    set3Info.setBindingCount(1)
+    set3Info.setBindingCount(bindings.size())
         .setBindings(textureBinding);
     _TextureSetLayout = _VkDevice.createDescriptorSetLayout(set3Info);
     
@@ -696,6 +695,11 @@ void VulkanRenderer::InitDescriptors() {
         vk::MemoryPropertyFlagBits::eHostCoherent);
     CHECK(_SceneParameterBuffer.memory);
     _VkDevice.bindBufferMemory(_SceneParameterBuffer.buffer, _SceneParameterBuffer.memory, 0);
+
+    // Sampler
+    vk::SamplerCreateInfo samplerInfo = InitSamplerCreateInfo(
+        vk::Filter::eLinear, vk::SamplerAddressMode::eRepeat);
+    vk::Sampler _TextureSampler = _VkDevice.createSampler(samplerInfo);
 
     // Camera Uniform buffer
     for (int i = 0; i < FRAME_OVERLAP; i++) {
@@ -733,39 +737,27 @@ void VulkanRenderer::InitDescriptors() {
             .setOffset(0)
             .setRange(sizeof(SceneData));
 
+        vk::DescriptorImageInfo descImageInfo;
+        descImageInfo.setImageLayout(vk::ImageLayout::eShaderReadOnlyOptimal)
+            .setImageView(_LoadedTextures["default"].imageView)
+            .setSampler(_TextureSampler);
+
         vk::WriteDescriptorSet camerWriteSet = InitWriteDescriptorBuffer(vk::DescriptorType::eUniformBuffer,
             _Frames[i].globalDescriptor, &cameraBufferInfo, 0);
         CHECK(camerWriteSet);
 
         vk::WriteDescriptorSet sceneWriteSet = InitWriteDescriptorBuffer(vk::DescriptorType::eUniformBufferDynamic,
             _Frames[i].globalDescriptor, &sceneBufferInfo, 1);
-        std::vector<vk::WriteDescriptorSet> writeDescSets = {camerWriteSet, sceneWriteSet};
+
+        vk::WriteDescriptorSet writeSamplerSet = InitWriteDescriptorImage(vk::DescriptorType::eCombinedImageSampler,
+            _Frames[i].globalDescriptor, &descImageInfo, 2);
+        CHECK(writeSamplerSet);
+
+        std::vector<vk::WriteDescriptorSet> writeDescSets = {camerWriteSet, sceneWriteSet, writeSamplerSet };
         CHECK(sceneWriteSet);
 
         _VkDevice.updateDescriptorSets(writeDescSets, nullptr);
     }
-
-    // Sampler
-    vk::SamplerCreateInfo samplerInfo = InitSamplerCreateInfo(
-        vk::Filter::eLinear, vk::SamplerAddressMode::eRepeat);
-    vk::Sampler _TextureSampler = _VkDevice.createSampler(samplerInfo);
-
-    vk::DescriptorSetAllocateInfo samplerAllocate;
-    samplerAllocate.setDescriptorPool(_DescriptorPool)
-        .setDescriptorSetCount(1)
-        .setSetLayouts(_TextureSetLayout);
-    if (_VkDevice.allocateDescriptorSets(&samplerAllocate, &_textureSet) != vk::Result::eSuccess) {
-        CHECK(_textureSet);
-    }
-
-    vk::DescriptorImageInfo descImageInfo;
-    descImageInfo.setImageLayout(vk::ImageLayout::eShaderReadOnlyOptimal)
-        .setImageView(_LoadedTextures["default"].imageView)
-        .setSampler(_TextureSampler);
-
-    vk::WriteDescriptorSet writeSamplerSet = InitWriteDescriptorImage(vk::DescriptorType::eCombinedImageSampler,
-        _textureSet, &descImageInfo, 1);
-    _VkDevice.updateDescriptorSets(writeSamplerSet, nullptr);
 }
 
 /*
