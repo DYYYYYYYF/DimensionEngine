@@ -14,7 +14,7 @@ namespace renderer {
         IRenderer(){}
         virtual ~IRenderer() {}
         virtual bool Init() = 0;
-        virtual void CreatePipeline(Material& mat) = 0;
+        virtual void CreatePipeline(Material& mat, const char* vert_shader, const char* frag_shader) = 0;
         virtual void BeforeDraw() = 0;
         virtual void Draw(RenderObject* first, int count) = 0;
         virtual void AfterDraw() = 0;

@@ -433,11 +433,11 @@ void VulkanRenderer::InitSyncStructures() {
 
 }
 
-void VulkanRenderer::CreatePipeline(Material& mat) {
+void VulkanRenderer::CreatePipeline(Material& mat, const char* vert_shader, const char* frag_shader) {
     PipelineBuilder pipelineBuilder;
 
-    vk::ShaderModule vertShader = CreateShaderModule("../shader/triangle_vert.spv");
-    vk::ShaderModule fragShader = CreateShaderModule("../shader/triangle_frag.spv");
+    vk::ShaderModule vertShader = CreateShaderModule(vert_shader);
+    vk::ShaderModule fragShader = CreateShaderModule(frag_shader);
     CHECK(_VertShader);
     CHECK(_FragShader);
 
@@ -522,7 +522,7 @@ void VulkanRenderer::DrawObjects(vk::CommandBuffer& cmd, RenderObject* first, in
             int curFrame = _FrameNumber % FRAME_OVERLAP;
             uint32_t uniform_offset = PadUniformBuffeSize(sizeof(SceneData)) * curFrame;
             // object.material->pipelineLayout
-            std::vector<vk::DescriptorSet> descSets = { _Frames[i].globalDescriptor, _textureSet };
+            std::vector<vk::DescriptorSet> descSets = { _Frames[i].globalDescriptor, _TextureSet };
             cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, object.material->pipelineLayout, 0, descSets.size(),
                 descSets.data(), 1, &uniform_offset);
         }
@@ -570,7 +570,8 @@ void VulkanRenderer::DrawPerFrame(RenderObject* first, int count) {
     cmdBuffer.begin(info);
 
     std::array<vk::ClearValue, 2> ClearValues;
-    vk::ClearColorValue color = std::array<float, 4>{1.f, 1.f, 1.f, 1.0f};
+    //vk::ClearColorValue color = std::array<float, 4>{1.f, 1.f, 1.f, 1.0f};
+    vk::ClearColorValue color = std::array<float, 4>{0.f, 0.f, 0.f, 1.0f};
     ClearValues[0].setColor(color);
     ClearValues[1].setDepthStencil({ 1.0, 0 });
 
@@ -732,7 +733,7 @@ void VulkanRenderer::InitDescriptors() {
        descAllocateInfo.setDescriptorPool(_DescriptorPool)
            .setDescriptorSetCount(1)
            .setSetLayouts(_TextureSetLayout);
-       if (_VkDevice.allocateDescriptorSets(&descAllocateInfo, &_textureSet) != vk::Result::eSuccess) {
+       if (_VkDevice.allocateDescriptorSets(&descAllocateInfo, &_TextureSet) != vk::Result::eSuccess) {
            CHECK(_Frames[i].globalDescriptor);
        }
 
@@ -760,7 +761,7 @@ void VulkanRenderer::InitDescriptors() {
             _Frames[i].globalDescriptor, &sceneBufferInfo, 1);
 
         vk::WriteDescriptorSet writeSamplerSet = InitWriteDescriptorImage(vk::DescriptorType::eCombinedImageSampler,
-            _textureSet, &descImageInfo, 0);
+            _TextureSet, &descImageInfo, 0);
         CHECK(writeSamplerSet);
 
         std::vector<vk::WriteDescriptorSet> writeDescSets = {camerWriteSet, sceneWriteSet, writeSamplerSet };

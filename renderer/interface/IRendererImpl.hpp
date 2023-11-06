@@ -23,7 +23,7 @@ namespace renderer {
         virtual void CreateCmdPool() = 0;
         virtual void CreateFrameBuffers() = 0;
         virtual void InitSyncStructures() = 0;
-        virtual void CreatePipeline(Material& mat) = 0;
+        virtual void CreatePipeline(Material& mat, const char* vert_shader, const char* frag_shader) = 0;
 
         virtual void DrawPerFrame(RenderObject* first, int count) = 0;
 

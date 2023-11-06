@@ -42,7 +42,7 @@ namespace renderer {
         virtual void CreateCmdPool() override;
         virtual void CreateFrameBuffers() override;
         virtual void InitSyncStructures() override;
-        virtual void CreatePipeline(Material& mat) override;
+        virtual void CreatePipeline(Material& mat, const char* vert_shader, const char* frag_shader) override;
         virtual void DrawPerFrame(RenderObject* first, int count) override;
 
         virtual void UpLoadMeshes(Mesh& mesh) override;
@@ -173,7 +173,7 @@ namespace renderer {
         vk::DescriptorSetLayout _GlobalSetLayout;
         vk::DescriptorPool _DescriptorPool;
         vk::DescriptorSetLayout _TextureSetLayout;
-        vk::DescriptorSet _textureSet;
+        vk::DescriptorSet _TextureSet;
 
         std::unordered_map<std::string, Texture> _LoadedTextures;
     };// class VulkanRenderer

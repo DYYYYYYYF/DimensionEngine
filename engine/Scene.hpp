@@ -5,6 +5,12 @@
 #include "../renderer/Renderer.hpp"
 #include "foundation/Camera.hpp"
 
+#ifdef _WIN32
+const int moveSpeed = 1;
+#elif __APPLE__
+const int moveSpeed = 10;
+#endif
+
 using namespace renderer;
 
 namespace engine {

@@ -21,8 +21,8 @@ bool Renderer::Init(){
     return true;
 }
 
-void Renderer::CreatePipeline(Material& mat) {
-    _RendererImpl->CreatePipeline(mat);
+void Renderer::CreatePipeline(Material& mat, const char* vert_shader, const char* frag_shader) {
+    _RendererImpl->CreatePipeline(mat, vert_shader, frag_shader);
 }
 
 

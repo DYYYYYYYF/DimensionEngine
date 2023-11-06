@@ -21,13 +21,22 @@ void Scene::InitScene() {
 	UploadMesh("../asset/model/ball.obj", "ball");
 	UploadTriangleMesh();
 
+	const char* defaultVertShader = "../shader/default_vert.spv";
+	const char* defaultFragShader = "../shader/default_frag.spv";
+	const char* meshFragShader = "../shader/texture_mesh_frag.spv";;
+	const char* meshFloorFragShader = "../shader/mesh_floor_frag.spv";;
+
 	Material deafaultMaterial;
-	_Renderer->CreatePipeline(deafaultMaterial);
+	_Renderer->CreatePipeline(deafaultMaterial, defaultVertShader, defaultFragShader);
 	_Materials["Default"] = deafaultMaterial;
+
+	Material deafaultMeshMaterial;
+	_Renderer->CreatePipeline(deafaultMeshMaterial, defaultVertShader, meshFragShader);
+	_Materials["Texture"] = deafaultMeshMaterial;
 
 	RenderObject monkey;
 	monkey.mesh = GetMesh("room");
-	monkey.material = GetMaterial("Default");
+	monkey.material = GetMaterial("Texture");
 	monkey.transformMatrix = glm::rotate(glm::mat4{1.0}, -90.0f, glm::vec3{1, 0, 0});
 
 	_Renderables.push_back(monkey);
@@ -73,28 +82,28 @@ void Scene::UpdatePosition(GLFWwindow* window) {
 	}
 	
 	if (glfwGetKey(window, GLFW_KEY_W)) {
-		_Camera.keyBoardSpeedZ = 10;      //press-W
+		_Camera.keyBoardSpeedZ = moveSpeed;      //press-W
 	}
 	else if (glfwGetKey(window, GLFW_KEY_S)) {
-		_Camera.keyBoardSpeedZ = -10;     //press-S
+		_Camera.keyBoardSpeedZ = -moveSpeed;     //press-S
 	}
 	else {
 		_Camera.keyBoardSpeedZ = 0;
 	}
 	if (glfwGetKey(window, GLFW_KEY_A)) {
-		_Camera.keyBoardSpeedX = -10;     //press-A
+		_Camera.keyBoardSpeedX = -moveSpeed;     //press-A
 	}
 	else if (glfwGetKey(window, GLFW_KEY_D)) {
-		_Camera.keyBoardSpeedX = 10;      //press-D
+		_Camera.keyBoardSpeedX = moveSpeed;      //press-D
 	}
 	else {
 		_Camera.keyBoardSpeedX = 0;
 	}
 	if (glfwGetKey(window, GLFW_KEY_Q)) {
-		_Camera.keyBoardSpeedY = 5;      //press-Q
+		_Camera.keyBoardSpeedY = moveSpeed;      //press-Q
 	}
 	else if (glfwGetKey(window, GLFW_KEY_E)) {
-		_Camera.keyBoardSpeedY = -5;     //press-E
+		_Camera.keyBoardSpeedY = -moveSpeed;     //press-E
 	}
 	else {
 		_Camera.keyBoardSpeedY = 0;
