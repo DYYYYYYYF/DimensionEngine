@@ -13,3 +13,9 @@ after all, it will create a executable program named VulkanTestDemo
 
 ## Warn: Under refactory 
 By far, impl Triangle renderer.
+
+2023.11.06：Mesh、Material、Texture
+
+The foundational functions have finished.
+
+If your plants form is Windows, you could compile shaders by compile_shader.bat. (Dont forge set current VulkanSDK path)
