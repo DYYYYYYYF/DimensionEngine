@@ -57,6 +57,13 @@ void VulkanRenderer::Release(){
     CHECK(_VkDevice);
     INFO("Release Renderer");
 
+    for (auto& texture : _LoadedTextures){
+        Texture& tex = texture.second;
+        _VkDevice.destroyImage(tex.image.image);
+        _VkDevice.freeMemory(tex.image.memory);
+        _VkDevice.destroyImageView(tex.imageView);
+    }
+
     _VkDevice.destroyDescriptorSetLayout(_TextureSetLayout);
     _VkDevice.destroyFence(_UploadContext.uploadFence);
     _VkDevice.destroyCommandPool(_UploadContext.commandPool);
@@ -67,8 +74,6 @@ void VulkanRenderer::Release(){
     _VkDevice.destroyImageView(_DepthImageView);
     _VkDevice.destroyImage(_DepthImage.image);
     _VkDevice.free(_DepthImage.memory);
-    _VkDevice.destroyPipeline(_Pipeline);
-    _VkDevice.destroyPipelineLayout(_PipelineLayout);
 
     for (auto& frame : _Frames){
         _VkDevice.freeMemory(frame.cameraBuffer.memory);
@@ -769,6 +774,8 @@ void VulkanRenderer::InitDescriptors() {
 
         _VkDevice.updateDescriptorSets(writeDescSets, nullptr);
     }
+
+    _VkDevice.destroySampler(_TextureSampler);
 }
 
 /*

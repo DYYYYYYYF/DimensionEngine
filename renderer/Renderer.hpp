@@ -20,6 +20,7 @@ namespace renderer {
         void UploadMeshes(Mesh& mesh);
         void UpdateViewMat(glm::mat4 view_matrix);
         void UnloadMeshes(std::unordered_map<std::string, Mesh>& meshes){_RendererImpl->UnloadMeshes(meshes);}
+        void DestroyMaterials(std::unordered_map<std::string, Material>& materials){_RendererImpl->DestroyMaterials(materials);}
 
     protected:
 

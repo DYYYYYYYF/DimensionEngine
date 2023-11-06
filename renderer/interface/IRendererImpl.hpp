@@ -29,6 +29,7 @@ namespace renderer {
 
         virtual void UpLoadMeshes(Mesh& mesh) = 0;
         virtual void UnloadMeshes(std::unordered_map<std::string, Mesh>& meshes) = 0;
+        virtual void DestroyMaterials(std::unordered_map<std::string, Material>& materials) = 0;
 
         virtual void WaitIdel() = 0;
     };

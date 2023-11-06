@@ -51,8 +51,17 @@ namespace renderer {
                 Mesh& mesh = mesh_map.second; 
                 _VkDevice.freeMemory(mesh.vertexBuffer.memory);
                 _VkDevice.destroyBuffer(mesh.vertexBuffer.buffer);
+            }
         }
-    }
+
+        virtual void DestroyMaterials(std::unordered_map<std::string, Material>& materials) override {
+            for(auto& material_map : materials){
+                Material& mat = material_map.second;
+                _VkDevice.destroyPipeline(mat.pipeline);
+                _VkDevice.destroyPipelineLayout(mat.pipelineLayout);
+            }
+        }
+
         virtual void WaitIdel() override { _VkDevice.waitIdle(); }
 
     public:
