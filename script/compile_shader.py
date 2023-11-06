@@ -1,6 +1,6 @@
 import os
 
-filePath = os.path.abspath(".") + "/a/"
+filePath = os.path.abspath(".") + "/shader/"
 print("Shader dir: " + filePath)
 
 failedShaders = []
