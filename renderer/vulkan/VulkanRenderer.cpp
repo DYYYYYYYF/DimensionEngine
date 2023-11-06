@@ -468,7 +468,7 @@ void VulkanRenderer::CreatePipeline(Material& mat) {
 
     // INFO("Pipeline Layout");
     vk::PipelineLayoutCreateInfo defaultLayoutInfo = InitPipelineLayoutCreateInfo();
-    std::vector<vk::DescriptorSetLayout> defaultSetLayouts = {_GlobalSetLayout};
+    std::vector<vk::DescriptorSetLayout> defaultSetLayouts = {_GlobalSetLayout, _TextureSetLayout };
     defaultLayoutInfo.setPushConstantRanges(pushConstant)
         .setPushConstantRangeCount(1)
         .setSetLayoutCount((uint32_t)defaultSetLayouts.size())
@@ -522,8 +522,9 @@ void VulkanRenderer::DrawObjects(vk::CommandBuffer& cmd, RenderObject* first, in
             int curFrame = _FrameNumber % FRAME_OVERLAP;
             uint32_t uniform_offset = PadUniformBuffeSize(sizeof(SceneData)) * curFrame;
             // object.material->pipelineLayout
-            cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, object.material->pipelineLayout, 0, 1,
-                &(_Frames[i].globalDescriptor), 1, &uniform_offset);
+            std::vector<vk::DescriptorSet> descSets = { _Frames[i].globalDescriptor, _textureSet };
+            cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, object.material->pipelineLayout, 0, descSets.size(),
+                descSets.data(), 1, &uniform_offset);
         }
 
         //upload the mesh to the GPU via push constants
@@ -668,8 +669,8 @@ void VulkanRenderer::InitDescriptors() {
         InitDescriptorSetLayoutBinding(vk::DescriptorType::eUniformBufferDynamic, 
                                        vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment, 1);
     vk::DescriptorSetLayoutBinding textureBinding = 
-        InitDescriptorSetLayoutBinding(vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eFragment, 2);
-    std::vector<vk::DescriptorSetLayoutBinding> bindings = {cameraUniformBuffer, sceneDynamicBuffer, textureBinding };
+        InitDescriptorSetLayoutBinding(vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eFragment, 0);
+    std::vector<vk::DescriptorSetLayoutBinding> bindings = {cameraUniformBuffer, sceneDynamicBuffer };
 
     vk::DescriptorSetLayoutCreateInfo descSetLayoutInfo;
     descSetLayoutInfo.setBindingCount((uint32_t)bindings.size())
@@ -679,9 +680,10 @@ void VulkanRenderer::InitDescriptors() {
 
     // single layout for texture
     vk::DescriptorSetLayoutCreateInfo set3Info;
-    set3Info.setBindingCount(bindings.size())
+    set3Info.setBindingCount(1)
         .setBindings(textureBinding);
     _TextureSetLayout = _VkDevice.createDescriptorSetLayout(set3Info);
+    CHECK(_TextureSetLayout);
     
     // Scene dynamic buffer
     const size_t sceneParamBufferSize = FRAME_OVERLAP * PadUniformBuffeSize(sizeof(SceneData));
@@ -726,6 +728,14 @@ void VulkanRenderer::InitDescriptors() {
             CHECK(_Frames[i].globalDescriptor);
         }
 
+       vk::DescriptorSetAllocateInfo imageAllocateInfo;
+       descAllocateInfo.setDescriptorPool(_DescriptorPool)
+           .setDescriptorSetCount(1)
+           .setSetLayouts(_TextureSetLayout);
+       if (_VkDevice.allocateDescriptorSets(&descAllocateInfo, &_textureSet) != vk::Result::eSuccess) {
+           CHECK(_Frames[i].globalDescriptor);
+       }
+
         //  make it point into our camera buffer
         vk::DescriptorBufferInfo cameraBufferInfo;
         cameraBufferInfo.setBuffer(_Frames[i].cameraBuffer.buffer)
@@ -750,7 +760,7 @@ void VulkanRenderer::InitDescriptors() {
             _Frames[i].globalDescriptor, &sceneBufferInfo, 1);
 
         vk::WriteDescriptorSet writeSamplerSet = InitWriteDescriptorImage(vk::DescriptorType::eCombinedImageSampler,
-            _Frames[i].globalDescriptor, &descImageInfo, 2);
+            _textureSet, &descImageInfo, 0);
         CHECK(writeSamplerSet);
 
         std::vector<vk::WriteDescriptorSet> writeDescSets = {camerWriteSet, sceneWriteSet, writeSamplerSet };
@@ -1038,8 +1048,9 @@ void VulkanRenderer::UpdateUniformBuffer(){
 }
 
 void VulkanRenderer::UpdateDynamicBuffer(){
-    float framed = (_FrameNumber / 120.f);
-    _SceneData.ambientColor = { sin(framed),0,cos(framed),1 };
+    float framed = (_FrameNumber / 3600.f);
+    // _SceneData.ambientColor = { sin(framed),0,cos(framed),1 };
+    _SceneData.ambientColor = { sin(framed),sin(framed),sin(framed),1 };
     int frameIndex = _FrameNumber % FRAME_OVERLAP;
 
     // size_t memOffset = PadUniformBuffeSize(sizeof(SceneData)) * frameIndex;
