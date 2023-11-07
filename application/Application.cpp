@@ -1,5 +1,8 @@
 #include "Application.hpp"
 #include "Window.hpp"
+#include <imgui.h>
+#include <imgui_impl_glfw.h>
+#include <imgui_impl_vulkan.h>
 
 using namespace udon;
 using namespace engine;
@@ -37,8 +40,19 @@ void Engine::Run(){
 
     while (!glfwWindowShouldClose(_window)) {
         glfwPollEvents();
+
+        ImGui_ImplVulkan_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+
+        ImGui::NewFrame();
+
+        //imgui commands
+        ImGui::ShowDemoWindow();
+        ImGui::Render();
+
         _Scene->UpdatePosition(_window);
         _Scene->Update();
+        
         _FrameCount++;
     }
 }
