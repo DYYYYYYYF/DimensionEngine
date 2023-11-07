@@ -35,6 +35,7 @@ void VulkanRenderer::ResetProp() {
     _FrameNumber = 0;
     _DescriptorPool = nullptr;
     _GlobalSetLayout = nullptr;
+    _GuiRenderPass = nullptr;
 }
 
 bool VulkanRenderer::Init() { 
@@ -47,6 +48,7 @@ bool VulkanRenderer::Init() {
     GetVkImages();
     GetVkImageViews();
     CreateRenderPass();
+    CreateGuiRenderPass();
     CreateCmdPool();
     AllocateFrameCmdBuffer();
     CreateDepthImage();
@@ -69,6 +71,7 @@ void VulkanRenderer::Release(){
         _VkDevice.destroyImageView(tex.imageView);
     }
 
+    _VkDevice.destroyRenderPass(_GuiRenderPass);
     _VkDevice.destroyDescriptorSetLayout(_TextureSetLayout);
     _VkDevice.destroyFence(_UploadContext.uploadFence);
     _VkDevice.destroyCommandPool(_UploadContext.commandPool);
@@ -329,6 +332,46 @@ void VulkanRenderer::CreateRenderPass() {
 
     _VkRenderPass = _VkDevice.createRenderPass(info);
     CHECK(_VkRenderPass);
+}
+
+void VulkanRenderer::CreateGuiRenderPass() {
+    vk::AttachmentDescription attchmentDesc;
+    attchmentDesc.setSamples(vk::SampleCountFlagBits::e1)
+        .setLoadOp(vk::AttachmentLoadOp::eLoad)
+        .setStoreOp(vk::AttachmentStoreOp::eStore)
+        .setStencilLoadOp(vk::AttachmentLoadOp::eDontCare)
+        .setStencilStoreOp(vk::AttachmentStoreOp::eDontCare)
+        .setFormat(_SupportInfo.format.format)
+        .setInitialLayout(vk::ImageLayout::eColorAttachmentOptimal)
+        .setFinalLayout(vk::ImageLayout::ePresentSrcKHR);
+
+    vk::AttachmentReference colRefer;
+    colRefer.setLayout(vk::ImageLayout::eColorAttachmentOptimal);
+    colRefer.setAttachment(0);
+
+    vk::SubpassDescription subpassDesc;
+    subpassDesc.setPipelineBindPoint(vk::PipelineBindPoint::eGraphics);
+    subpassDesc.setColorAttachmentCount(1);
+    subpassDesc.setPColorAttachments(&colRefer);
+
+    vk::SubpassDependency dependency;
+    dependency.setSrcSubpass(VK_SUBPASS_EXTERNAL);
+    dependency.setSrcStageMask(vk::PipelineStageFlagBits::eColorAttachmentOutput);
+    dependency.setSrcAccessMask(vk::AccessFlagBits::eNone);
+    dependency.setDstSubpass(0);
+    dependency.setDstStageMask(vk::PipelineStageFlagBits::eColorAttachmentOutput);
+    dependency.setDstAccessMask(vk::AccessFlagBits::eColorAttachmentWrite);
+
+    vk::RenderPassCreateInfo info;
+    info.setSubpassCount(1)
+        .setSubpasses(subpassDesc)
+        .setAttachmentCount(1)
+        .setAttachments(attchmentDesc)
+        .setDependencyCount(1)
+        .setDependencies(dependency);
+
+    _GuiRenderPass = _VkDevice.createRenderPass(info);
+    CHECK(_GuiRenderPass);
 }
 
 void VulkanRenderer::CreateCmdPool() {
@@ -596,9 +639,20 @@ void VulkanRenderer::DrawPerFrame(RenderObject* first, int count) {
 
     DrawObjects(cmdBuffer, first, count);
 
-    ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), cmdBuffer);
-
     cmdBuffer.endRenderPass();
+
+    // GUI
+    vk::RenderPassBeginInfo guiRpInfo;
+    guiRpInfo.setRenderPass(_GuiRenderPass)
+        .setRenderArea(vk::Rect2D({ 0, 0 }, _SupportInfo.extent))
+        .setFramebuffer(_FrameBuffers[nSwapchainImageIndex])
+        .setClearValueCount((uint32_t)ClearValues.size())
+        .setClearValues(ClearValues);
+
+    cmdBuffer.beginRenderPass(guiRpInfo, vk::SubpassContents::eInline);
+    ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), cmdBuffer);
+    cmdBuffer.endRenderPass();
+    
     cmdBuffer.end();
 
     vk::PipelineStageFlags WaitStage = vk::PipelineStageFlagBits::eColorAttachmentOutput;
@@ -1350,7 +1404,7 @@ void VulkanRenderer::InitImgui() {
     initInfo.ImageCount = 3;
     initInfo.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
 
-    ImGui_ImplVulkan_Init(&initInfo, _VkRenderPass);
+    ImGui_ImplVulkan_Init(&initInfo, _GuiRenderPass);
 
     ImmediateSubmit([&](vk::CommandBuffer cmd) {
         ImGui_ImplVulkan_CreateFontsTexture(cmd);

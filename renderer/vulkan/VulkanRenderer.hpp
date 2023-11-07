@@ -122,6 +122,7 @@ namespace renderer {
         size_t PadUniformBuffeSize(size_t origin_size);
         vk::Format FindSupportedFormat(const std::vector<vk::Format>& candidates,
             vk::ImageTiling tiling, vk::FormatFeatureFlags features);
+        void CreateGuiRenderPass();
 
         // Pipeline stages
         vk::PipelineShaderStageCreateInfo InitShaderStageCreateInfo(vk::ShaderStageFlagBits stage, vk::ShaderModule shader_module);
@@ -168,6 +169,7 @@ namespace renderer {
         std::vector<vk::Framebuffer> _FrameBuffers;
 
         vk::RenderPass _VkRenderPass;
+        vk::RenderPass _GuiRenderPass;
         vk::Pipeline _Pipeline;
         vk::PipelineLayout _PipelineLayout;
 
