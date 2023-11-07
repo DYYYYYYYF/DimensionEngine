@@ -40,7 +40,7 @@ if(${APPLE})
 elseif(${WIN32})
     message("-- Current environment: Windows\n")
 
-    set(Vulkan_DIR "D:/C_Library/VulkanSDK")
+    set(Vulkan_DIR "D:/Library/Vulkan")
 
     if(${Vulkan_DIR} STREQUAL " ")
         message("-- Please set Vulkan direction!!!!")
@@ -58,7 +58,7 @@ elseif(${WIN32})
 
     link_directories(${Vulkan_LIBRARY_DIRS} ${GLFW_LIBRARY_DIRS}  ${UD_LOGGER_DIR}/lib/Windows/release)
     include_directories(${GLFW_INCLUDE_DIRS} ${STB_MASTER_DIR} ${Vulkan_INCLUDE_DIRS} ${TINY_OBJ_LOADER_DIR} 
-        ${STB_MASTER_DIR} ${SDL_INCLUDE_DIRS} ${UD_LOGGER_DIR}/include)
+        ${STB_MASTER_DIR} ${SDL_INCLUDE_DIRS} ${UD_LOGGER_DIR}/include ./imgui)
 
 endif()
 
@@ -75,7 +75,16 @@ add_subdirectory(renderer)
 add_subdirectory(physics)
 add_subdirectory(application)
 
-add_executable(VulkanRender Launcher.cpp)
+file(GLOB IMGUI_SRC 
+"${CMAKE_CURRENT_SOURCE_DIR}/imgui/imgui.*"
+"${CMAKE_CURRENT_SOURCE_DIR}/imgui/imgui_demo.*"
+"${CMAKE_CURRENT_SOURCE_DIR}/imgui/imgui_draw.*"
+"${CMAKE_CURRENT_SOURCE_DIR}/imgui/imgui_widgets.*"
+"${CMAKE_CURRENT_SOURCE_DIR}/imgui/imgui_tables.*"
+"${CMAKE_CURRENT_SOURCE_DIR}/imgui/backends/imgui_impl_vulkan.*"
+"${CMAKE_CURRENT_SOURCE_DIR}/imgui/backends/imgui_impl_glfw.*")
+
+add_executable(VulkanRender Launcher.cpp ${IMGUI_SRC})
 
 if(${APPLE})
     target_link_libraries(VulkanRender ${SDL_LIBRARIES} libLogger.a)

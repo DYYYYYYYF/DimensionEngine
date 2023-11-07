@@ -92,6 +92,7 @@ namespace renderer {
         MemRequiredInfo QueryImgReqInfo(vk::Image image, vk::MemoryPropertyFlags flag);
 
         void LoadTexture();
+        void InitImgui();
 
     protected:
         bool QueryQueueFamilyProp();

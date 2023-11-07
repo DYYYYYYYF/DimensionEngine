@@ -50,7 +50,7 @@ GLFWwindow* WsiWindow::GetWindow(){
 
 WsiWindow* WsiWindow::GetInstance(){
     if(!_WindowObj){
-        _WindowObj = new WsiWindow(1600, 900);
+        _WindowObj = new WsiWindow(600, 400);
         CHECK(_WindowObj);
     }
 

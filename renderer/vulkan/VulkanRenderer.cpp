@@ -7,6 +7,10 @@
 #include "vulkan/vulkan_handles.hpp"
 #include "VkTextrue.hpp"
 
+#include <imgui.h>
+#include <imgui_impl_glfw.h>
+#include <imgui_impl_vulkan.h>
+
 using namespace renderer;
 
 VulkanRenderer::VulkanRenderer() {
@@ -50,6 +54,7 @@ bool VulkanRenderer::Init() {
     InitSyncStructures();
     LoadTexture();
     InitDescriptors();
+    InitImgui();
     return true; 
 }
 
@@ -591,6 +596,8 @@ void VulkanRenderer::DrawPerFrame(RenderObject* first, int count) {
 
     DrawObjects(cmdBuffer, first, count);
 
+    ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), cmdBuffer);
+
     cmdBuffer.endRenderPass();
     cmdBuffer.end();
 
@@ -617,7 +624,7 @@ void VulkanRenderer::DrawPerFrame(RenderObject* first, int count) {
     if (_Queue.GraphicsQueue.presentKHR(PresentInfo) != vk::Result::eSuccess) {
         return;
     }
-    
+
     _FrameNumber++;
 }
 
@@ -659,7 +666,8 @@ void VulkanRenderer::InitDescriptors() {
     std::vector<vk::DescriptorPoolSize> sizes = { 
         {vk::DescriptorType::eUniformBuffer, 10},
         {vk::DescriptorType::eUniformBufferDynamic, 10},
-        {vk::DescriptorType::eCombinedImageSampler, 10}};
+        {vk::DescriptorType::eCombinedImageSampler, 10}
+    };
 
     vk::DescriptorPoolCreateInfo descPoolInfo;
     descPoolInfo.setMaxSets(10)
@@ -1302,4 +1310,51 @@ void VulkanRenderer::LoadTexture(){
     texture.imageView = CreateImageView(vk::Format::eR8G8B8A8Srgb, texture.image.image, vk::ImageAspectFlagBits::eColor);
 
     _LoadedTextures["default"] = texture;
+}
+
+void VulkanRenderer::InitImgui() {
+    std::vector<vk::DescriptorPoolSize> poolSizes = {
+        {vk::DescriptorType::eSampler, 1000},
+        {vk::DescriptorType::eCombinedImageSampler, 1000},
+        {vk::DescriptorType::eSampledImage, 1000},
+        {vk::DescriptorType::eStorageImage, 1000},
+        {vk::DescriptorType::eUniformTexelBuffer, 1000},
+        {vk::DescriptorType::eStorageTexelBuffer, 1000},
+        {vk::DescriptorType::eUniformBuffer, 1000},
+        {vk::DescriptorType::eStorageBuffer, 1000},
+        {vk::DescriptorType::eUniformBufferDynamic, 1000},
+        {vk::DescriptorType::eStorageBufferDynamic, 1000},
+        {vk::DescriptorType::eInputAttachment, 1000}
+    };
+
+    vk::DescriptorPoolCreateInfo info;
+    info.setMaxSets(1000)
+        .setPoolSizeCount((uint32_t)poolSizes.size())
+        .setFlags(vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet)
+        .setPoolSizes(poolSizes);
+
+    vk::DescriptorPool imguiPool;
+    imguiPool = _VkDevice.createDescriptorPool(info);
+    CHECK(imguiPool);
+
+    ImGui::CreateContext();
+    ImGui_ImplGlfw_InitForVulkan(_Window, true);
+
+    ImGui_ImplVulkan_InitInfo initInfo;
+    initInfo.Instance = _VkInstance;
+    initInfo.PhysicalDevice = _VkPhyDevice;
+    initInfo.Device = _VkDevice;
+    initInfo.Queue = _Queue.GraphicsQueue;
+    initInfo.DescriptorPool = imguiPool;
+    initInfo.MinImageCount = 3;
+    initInfo.ImageCount = 3;
+    initInfo.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
+
+    ImGui_ImplVulkan_Init(&initInfo, _VkRenderPass);
+
+    ImmediateSubmit([&](vk::CommandBuffer cmd) {
+        ImGui_ImplVulkan_CreateFontsTexture(cmd);
+        });
+
+    ImGui_ImplVulkan_DestroyFontUploadObjects();
 }
