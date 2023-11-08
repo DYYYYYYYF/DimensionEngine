@@ -4,6 +4,8 @@
 
 #include <iostream>
 #include <string>
+#include <glm/gtx/hash.hpp>
+
 #include "VkStructures.hpp"
 
 namespace renderer {
@@ -24,8 +26,9 @@ namespace renderer {
         static std::array<vk::VertexInputAttributeDescription, 4> GetAttributeDescription();
 
         bool operator==(const Vertex& other) const {
-            return position == other.position && color == other.color /* && texCoord == other.texCoord*/;
+            return position == other.position && color == other.color && texCoord == other.texCoord;
         }
+
     };
 
     struct Mesh {
@@ -35,4 +38,15 @@ namespace renderer {
         bool LoadFromObj(const char* filename);
     };
 
+}
+
+namespace std {
+    template<> 
+    struct hash<renderer::Vertex> {
+        size_t operator()(const renderer::Vertex& vertex) const noexcept{
+            return ((hash<glm::vec3>()(vertex.position) ^
+                (hash<glm::vec3>()(vertex.color) << 1)) >> 1) ^
+                (hash<glm::vec2>()(vertex.texCoord) << 1);
+        }
+    };
 }

@@ -43,10 +43,10 @@ bool Mesh::LoadFromObj(const char* filename){
     std::string warn, err;
 
     if(!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, filename)){
-        std::runtime_error("Error: " + err);
+        WARN("Load model failed");
+        return false;
     }
-
-    // std::unordered_map<Vertex, uint32_t> uniqueVertices;
+    std::unordered_map<Vertex, uint32_t> uniqueVertices = {};
     vertices.clear();
     
     //attrib will contain the vertex arrays of the file
@@ -61,7 +61,7 @@ bool Mesh::LoadFromObj(const char* filename){
             // Loop over vertices in the face.
             for (size_t v = 0; v < fv; v++) {
                 //copy it into our vertex
-                Vertex new_vert;
+                Vertex new_vert = {};
 
                 // access to vertex
                 tinyobj::index_t idx = shapes[s].mesh.indices[index_offset + v];
@@ -94,11 +94,16 @@ bool Mesh::LoadFromObj(const char* filename){
                 //we are setting the vertex color as the vertex normal. This is just for display purposes
                 new_vert.color = new_vert.normal;
 
-                // if(uniqueVertices.count(new_vert) == 0){
-                //     uniqueVertices[new_vert] = static_cast<uint32_t>(vertices.size());
+                bool useIndexBuffer = false;
+                if (useIndexBuffer) {
+                    if (uniqueVertices.count(new_vert) == 0) {
+                        uniqueVertices[new_vert] = static_cast<uint32_t>(vertices.size());
+                        vertices.push_back(new_vert);
+                    }
+                }
+                else {
                     vertices.push_back(new_vert);
-                //     std::cout << vertices.size() << std::endl;
-                // }
+                }
             }
         index_offset += fv;
         }
