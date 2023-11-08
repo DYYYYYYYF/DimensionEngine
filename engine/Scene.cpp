@@ -21,7 +21,9 @@ void Scene::InitScene() {
 	UploadMesh("../asset/model/ball.obj", "ball");
 	UploadMesh("../asset/model/bunny.obj", "Bunny");
 	UploadMesh("../asset/model/CornellBox.obj", "CornellBox");
+	UploadMesh("../asset/car/car.obj", "Car");
 	UploadTriangleMesh();
+	UploadRectangleMesh();
 
 	const char* defaultVertShader = "../shader/default_vert.spv";
 	const char* defaultFragShader = "../shader/default_frag.spv";
@@ -41,10 +43,10 @@ void Scene::InitScene() {
 	_Materials["Floor"] = deafaultFloorMaterial;
 
 	RenderObject monkey;
-	monkey.mesh = GetMesh("sponza");
+	monkey.mesh = GetMesh("Rectangle");
 	monkey.material = GetMaterial("Default");
 
-	glm::mat4 scale = glm::scale(glm::mat4{1}, glm::vec3(0.1, 0.1, 0.1));
+	glm::mat4 scale = glm::scale(glm::mat4{1}, glm::vec3(1,1, 1));
 	monkey.transformMatrix = glm::rotate(scale, glm::radians(90.0f), glm::vec3{0, 1, 0});
 
 	_Renderables.push_back(monkey);
@@ -157,7 +159,6 @@ void Scene::UploadMesh(const char* filename, const char* mesh_name) {
 
 void Scene::UploadTriangleMesh() {
 
-	INFO("Loading triangle");
 	Mesh tempMesh;
 	//make the array 3 vertices long
 	tempMesh.vertices.resize(3);
@@ -173,6 +174,35 @@ void Scene::UploadTriangleMesh() {
 	tempMesh.vertices[2].color = { 0.f, 0.f, 1.0f }; //pure green
 	((Renderer*)_Renderer)->UploadMeshes(tempMesh);
 	_Meshes["Triangle"] = tempMesh;
+
+	INFO("Loaded Triangle");
+}
+
+void Scene::UploadRectangleMesh() {
+	Mesh tempMesh;
+	//make the array 6 vertices long
+	tempMesh.vertices.resize(6);
+
+	//vertex positions
+	tempMesh.vertices[0].position = {  20.f, 0.f, -20.f };
+	tempMesh.vertices[1].position = {  20.f, 0.f,  20.f };
+	tempMesh.vertices[2].position = { -20.f, 0.f,  20.f };
+
+	tempMesh.vertices[3].position = { -20.f, 0.f,   20.f };
+	tempMesh.vertices[4].position = { -20.f, 0.f,  -20.f };
+	tempMesh.vertices[5].position = {  20.f, 0.0f, -20.f };
+
+	//vertex colors, all green
+	tempMesh.vertices[0].color = { 0.7f, 0.7f, 0.7f }; 
+	tempMesh.vertices[1].color = { 0.3f, 0.3f, 0.3f };
+	tempMesh.vertices[2].color = { 0.7f, 0.7f, 0.7f };
+	tempMesh.vertices[3].color = { 0.7f, 0.7f, 0.7f };
+	tempMesh.vertices[4].color = { 0.3f, 0.3f, 0.3f };
+	tempMesh.vertices[5].color = { 0.7f, 0.7f, 0.7f };
+	((Renderer*)_Renderer)->UploadMeshes(tempMesh);
+	_Meshes["Rectangle"] = tempMesh;
+	
+	INFO("Loaded Rectangle");
 }
 
 //returns nullptr if it can't be found

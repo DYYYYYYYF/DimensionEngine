@@ -25,6 +25,7 @@ public:
 
 	void UploadMesh(const char* filename, const char* mesh_name);
 	void UploadTriangleMesh();
+	void UploadRectangleMesh();
 	void UpdatePosition(GLFWwindow* window);
 
 	Material* GetMaterial(const std::string& name);
