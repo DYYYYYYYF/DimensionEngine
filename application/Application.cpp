@@ -41,15 +41,6 @@ void Engine::Run(){
     while (!glfwWindowShouldClose(_window)) {
         glfwPollEvents();
 
-        ImGui_ImplVulkan_NewFrame();
-        ImGui_ImplGlfw_NewFrame();
-
-        ImGui::NewFrame();
-
-        //imgui commands
-        ImGui::ShowDemoWindow();
-        ImGui::Render();
-
         _Scene->UpdatePosition(_window);
         _Scene->Update();
         

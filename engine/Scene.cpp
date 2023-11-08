@@ -19,6 +19,7 @@ void Scene::InitScene() {
 	UploadMesh("../asset/model/ball.obj", "ball");
 	UploadMesh("../asset/model/bunny.obj", "Bunny");
 	UploadMesh("../asset/model/CornellBox.obj", "CornellBox");
+	UploadMesh("../asset/obj/wooden_boat/Boat.obj", "Boat");
 	UploadTriangleMesh();
 	UploadRectangleMesh();
 
@@ -39,43 +40,28 @@ void Scene::InitScene() {
 	_Renderer->CreatePipeline(deafaultFloorMaterial, defaultVertShader, meshFloorFragShader);
 	_Materials["Floor"] = deafaultFloorMaterial;
 
-	RenderObject monkey;
-	monkey.mesh = GetMesh("Rectangle");
-	monkey.material = GetMaterial("Default");
-	
-	monkey.SetScale(1.0f);
-	monkey.SetRotate(glm::vec3{ 0, 1, 0 }, 90.0f);
+	RenderObject floor;
+	floor.mesh = GetMesh("Rectangle");
+	floor.material = GetMaterial("Default");
+	floor.SetScale(1.0f);
+	floor.SetRotate(glm::vec3{ 0, 1, 0 }, 90.0f);
+	_Renderables.push_back(floor);
 
-	_Renderables.push_back(monkey);
+	RenderObject boat;
+	boat.mesh = GetMesh("Boat");
+	boat.material = GetMaterial("Texture");
+	boat.SetTranslate(glm::vec3{0.0f, 1.0f, 0.0f});
+	boat.SetScale(glm::vec3{2.f, 4.f, 2.f});
+	_Renderables.push_back(boat);
 
-	for (int x = -20; x <= 20; x++) {
-		for (int y = -20; y <= 20; y++) {
-
-			RenderObject tri;
-			tri.mesh = GetMesh("Triangle");
-			tri.material = GetMaterial("Default");
-			tri.SetScale(0.2f);
-			tri.SetTranslate(glm::vec3(x, 0, y));
-
-			_Renderables.push_back(tri);
-		}
-	}
 }
 
 void Scene::Update() {
-  int count = 1;
-	for (int x = -20; x <= 20; x++) {
-		for (int y = -20; y <= 20; y++) {
-
-			RenderObject& tri = _Renderables[count++];
-			tri.SetRotate(glm::vec3{ 0, 1, 0 }, _FrameCount / 4.f);
-
-		}
-	}
 
 	_Renderer->Draw(_Renderables.data(), (int)_Renderables.size());
     _Renderer->WaitIdel();
 	_FrameCount++;
+
 }
 
 void Scene::UpdatePosition(GLFWwindow* window) {
@@ -114,7 +100,7 @@ void Scene::UpdatePosition(GLFWwindow* window) {
 
 	// Mouse
 	double posX = 0, posY;
-	if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) {
+	if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS) {
 		//press mouse-left
 		glfwGetCursorPos(window, &posX, &posY);
 		if (_Camera.mouesePos.x == 0 && _Camera.mouesePos.y == 0) {
@@ -131,7 +117,7 @@ void Scene::UpdatePosition(GLFWwindow* window) {
 			// keyBoardScoll.rotateX -= glm::dot(glm::vec3(0, 0, x), glm::vec3(0, 0, y)) * 0.01;
 		}
 	}
-	if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_RELEASE) {
+	if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_RELEASE) {
 		//release mouse-left
 		_Camera.mouesePos.x = 0;
 		_Camera.mouesePos.y = 0;

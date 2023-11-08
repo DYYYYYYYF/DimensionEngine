@@ -54,7 +54,7 @@ bool VulkanRenderer::Init() {
     InitSyncStructures();
     LoadTexture();
     InitDescriptors();
-    InitImgui();
+    // InitImgui();
     return true; 
 }
 
@@ -1322,7 +1322,7 @@ vk::ImageView VulkanRenderer::CreateImageView(vk::Format format, vk::Image image
 void VulkanRenderer::LoadTexture(){
     Texture texture;
 
-    renderer::LoadImageFromFile(*this, "../asset/car/tex2.jpg", texture.image);
+    renderer::LoadImageFromFile(*this, "../asset/obj/wooden_boat/BaseColor.png", texture.image);
     CHECK(texture.image.image)
     
     texture.imageView = CreateImageView(vk::Format::eR8G8B8A8Srgb, texture.image.image, vk::ImageAspectFlagBits::eColor);
