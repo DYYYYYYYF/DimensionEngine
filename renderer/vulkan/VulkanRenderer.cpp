@@ -274,31 +274,31 @@ void VulkanRenderer::CreateRenderPass() {
     colRefer.setAttachment(0);
 
     //深度附件
-      vk::AttachmentDescription depthAttchDesc;
-      vk::Format depthFormat = FindSupportedFormat({ vk::Format::eD32Sfloat, vk::Format::eD32SfloatS8Uint, vk::Format::eX8D24UnormPack32 },
-          vk::ImageTiling::eOptimal, vk::FormatFeatureFlagBits::eDepthStencilAttachment);
-      depthAttchDesc.setFormat(depthFormat)
-                    .setSamples(vk::SampleCountFlagBits::e1)
-                    .setLoadOp(vk::AttachmentLoadOp::eClear)
-                    .setStoreOp(vk::AttachmentStoreOp::eDontCare)
-                    .setStencilLoadOp(vk::AttachmentLoadOp::eDontCare)
-                    .setStencilStoreOp(vk::AttachmentStoreOp::eDontCare)
-                    .setInitialLayout(vk::ImageLayout::eUndefined)
-                    .setFinalLayout(vk::ImageLayout::eDepthReadOnlyStencilAttachmentOptimal);
-      vk::AttachmentReference depthRef;
-      depthRef.setAttachment(1)
-              .setLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal);
+    vk::AttachmentDescription depthAttchDesc;
+    vk::Format depthFormat = FindSupportedFormat({ vk::Format::eD32Sfloat, vk::Format::eD32SfloatS8Uint, vk::Format::eX8D24UnormPack32 },
+        vk::ImageTiling::eOptimal, vk::FormatFeatureFlagBits::eDepthStencilAttachment);
+    depthAttchDesc.setFormat(depthFormat)
+                .setSamples(vk::SampleCountFlagBits::e1)
+                .setLoadOp(vk::AttachmentLoadOp::eClear)
+                .setStoreOp(vk::AttachmentStoreOp::eDontCare)
+                .setStencilLoadOp(vk::AttachmentLoadOp::eDontCare)
+                .setStencilStoreOp(vk::AttachmentStoreOp::eDontCare)
+                .setInitialLayout(vk::ImageLayout::eUndefined)
+                .setFinalLayout(vk::ImageLayout::eDepthReadOnlyStencilAttachmentOptimal);
+    vk::AttachmentReference depthRef;
+    depthRef.setAttachment(1)
+            .setLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal);
 
-      //ImGui
-      vk::AttachmentDescription imGuiAttchmentDesc;
-      imGuiAttchmentDesc.setSamples(vk::SampleCountFlagBits::e1)
-          .setLoadOp(vk::AttachmentLoadOp::eLoad)
-          .setStoreOp(vk::AttachmentStoreOp::eStore)
-          .setStencilLoadOp(vk::AttachmentLoadOp::eDontCare)
-          .setStencilStoreOp(vk::AttachmentStoreOp::eDontCare)
-          .setFormat(_SupportInfo.format.format)
-          .setInitialLayout(vk::ImageLayout::eColorAttachmentOptimal)
-          .setFinalLayout(vk::ImageLayout::ePresentSrcKHR);
+    //ImGui
+    vk::AttachmentDescription imGuiAttchmentDesc;
+    imGuiAttchmentDesc.setSamples(vk::SampleCountFlagBits::e1)
+        .setLoadOp(vk::AttachmentLoadOp::eLoad)
+        .setStoreOp(vk::AttachmentStoreOp::eStore)
+        .setStencilLoadOp(vk::AttachmentLoadOp::eDontCare)
+        .setStencilStoreOp(vk::AttachmentStoreOp::eDontCare)
+        .setFormat(_SupportInfo.format.format)
+        .setInitialLayout(vk::ImageLayout::eColorAttachmentOptimal)
+        .setFinalLayout(vk::ImageLayout::ePresentSrcKHR);
 
  
     vk::SubpassDescription subpassDesc;
@@ -558,7 +558,7 @@ void VulkanRenderer::DrawObjects(vk::CommandBuffer& cmd, RenderObject* first, in
         }
 
         //upload the mesh to the GPU via push constants
-        _PushConstants.model = object.transformMatrix;
+        _PushConstants.model = object.GetTransform();
         cmd.pushConstants(object.material->pipelineLayout,
             vk::ShaderStageFlagBits::eVertex, 0, sizeof(MeshPushConstants), &_PushConstants);
 
@@ -615,8 +615,6 @@ void VulkanRenderer::DrawPerFrame(RenderObject* first, int count) {
     cmdBuffer.beginRenderPass(rpInfo, vk::SubpassContents::eInline);
 
     DrawObjects(cmdBuffer, first, count);
-
-    ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), cmdBuffer);
 
     cmdBuffer.endRenderPass();
     cmdBuffer.end();
@@ -1324,7 +1322,7 @@ vk::ImageView VulkanRenderer::CreateImageView(vk::Format format, vk::Image image
 void VulkanRenderer::LoadTexture(){
     Texture texture;
 
-    renderer::LoadImageFromFile(*this, "../asset/texture/room.png", texture.image);
+    renderer::LoadImageFromFile(*this, "../asset/car/tex2.jpg", texture.image);
     CHECK(texture.image.image)
     
     texture.imageView = CreateImageView(vk::Format::eR8G8B8A8Srgb, texture.image.image, vk::ImageAspectFlagBits::eColor);

@@ -1,6 +1,4 @@
 #include "Scene.hpp"
-#include "glm/glm.hpp"
-#include "glm/gtc/matrix_transform.hpp"
 
 using namespace engine;
 
@@ -21,7 +19,6 @@ void Scene::InitScene() {
 	UploadMesh("../asset/model/ball.obj", "ball");
 	UploadMesh("../asset/model/bunny.obj", "Bunny");
 	UploadMesh("../asset/model/CornellBox.obj", "CornellBox");
-	UploadMesh("../asset/car/car.obj", "Car");
 	UploadTriangleMesh();
 	UploadRectangleMesh();
 
@@ -45,9 +42,9 @@ void Scene::InitScene() {
 	RenderObject monkey;
 	monkey.mesh = GetMesh("Rectangle");
 	monkey.material = GetMaterial("Default");
-
-	glm::mat4 scale = glm::scale(glm::mat4{1}, glm::vec3(1,1, 1));
-	monkey.transformMatrix = glm::rotate(scale, glm::radians(90.0f), glm::vec3{0, 1, 0});
+	
+	monkey.SetScale(1.0f);
+	monkey.SetRotate(glm::vec3{ 0, 1, 0 }, 90.0f);
 
 	_Renderables.push_back(monkey);
 
@@ -57,9 +54,8 @@ void Scene::InitScene() {
 			RenderObject tri;
 			tri.mesh = GetMesh("Triangle");
 			tri.material = GetMaterial("Default");
-			glm::mat4 translation = glm::translate(glm::mat4{ 1.0 }, glm::vec3(x, 0, y));
-			glm::mat4 scale = glm::scale(glm::mat4{ 1.0 }, glm::vec3(1.0, 1.0, 1.0));
-			tri.transformMatrix = translation * scale;
+			tri.SetScale(0.2f);
+			tri.SetTranslate(glm::vec3(x, 0, y));
 
 			_Renderables.push_back(tri);
 		}
@@ -72,10 +68,7 @@ void Scene::Update() {
 		for (int y = -20; y <= 20; y++) {
 
 			RenderObject& tri = _Renderables[count++];
-			glm::mat4 translation = glm::translate(glm::mat4{1.0f}, glm::vec3(x, 0, y));
-			glm::mat4 rotate = glm::rotate_slow(glm::mat4{ 1.0 }, glm::radians(_FrameCount / 4.f), glm::vec3{ 0, 1, 0 });
-			glm::mat4 scale = glm::scale(glm::mat4{ 1.0 }, glm::vec3(0.2, 0.2, 0.2));
-			tri.transformMatrix = translation * rotate * scale;
+			tri.SetRotate(glm::vec3{ 0, 1, 0 }, _FrameCount / 4.f);
 
 		}
 	}
@@ -164,9 +157,9 @@ void Scene::UploadTriangleMesh() {
 	tempMesh.vertices.resize(3);
 
 	//vertex positions
-	tempMesh.vertices[0].position = { 1.f,1.f, 0.5f };
-	tempMesh.vertices[1].position = { -1.f,1.f, 0.5f };
-	tempMesh.vertices[2].position = { 0.f,-1.f, 0.5f };
+	tempMesh.vertices[0].position = { 1.f,2.f, 0.5f };
+	tempMesh.vertices[1].position = { -1.f,2.f, 0.5f };
+	tempMesh.vertices[2].position = { 0.f,0.f, 0.5f };
 
 	//vertex colors, all green
 	tempMesh.vertices[0].color = { 1.f, 0.f, 0.0f }; //pure green
