@@ -15,13 +15,13 @@ void Scene::InitScene() {
 	_Renderer->Init();
 	
 	UploadMesh("../asset/model/room.obj", "room");
-	/*
-	UploadMesh("../asset/model/sponza.obj", "sponza");
 	UploadMesh("../asset/model/ball.obj", "ball");
-	UploadMesh("../asset/model/bunny.obj", "Bunny");
 	UploadMesh("../asset/model/CornellBox.obj", "CornellBox");
+
+	// UploadMesh("../asset/model/sponza.obj", "sponza");
+	// UploadMesh("../asset/model/bunny.obj", "Bunny");
 	UploadMesh("../asset/obj/wooden_boat/Boat.obj", "Boat");
-	*/
+	
 	UploadTriangleMesh();
 	UploadRectangleMesh();
 
@@ -50,10 +50,10 @@ void Scene::InitScene() {
 	_Renderables.push_back(floor);
 
 	RenderObject boat;
-	boat.mesh = GetMesh("Triangle");
+	boat.mesh = GetMesh("Boat");
 	boat.material = GetMaterial("Texture");
 	boat.SetTranslate(glm::vec3{0.0f, 1.0f, 0.0f});
-	boat.SetScale(glm::vec3{2.f, 4.f, 2.f});
+	boat.SetScale(1.0f);
 	_Renderables.push_back(boat);
 
 	INFO("Inited Scene.");
@@ -61,7 +61,10 @@ void Scene::InitScene() {
 
 void Scene::Update() {
 
+	_Renderer->BeforeDraw();
 	_Renderer->Draw(_Renderables.data(), (int)_Renderables.size());
+	_Renderer->AfterDraw();
+
     _Renderer->WaitIdel();
 	_FrameCount++;
 
@@ -116,7 +119,7 @@ void Scene::UpdatePosition(GLFWwindow* window) {
 			_Camera.mouesePos.x = posX;
 			_Camera.mouesePos.y = posY;
 
-			_Camera.MouserMovement(-x, -y);
+			_Camera.MouserMovement((float)-x, (float)-y);
 			// keyBoardScoll.rotateX -= glm::dot(glm::vec3(0, 0, x), glm::vec3(0, 0, y)) * 0.01;
 		}
 	}
@@ -146,9 +149,9 @@ void Scene::UploadTriangleMesh() {
 	triganleMesh.vertices.resize(3);
 
 	//vertex positions
-	triganleMesh.vertices[0].position = { 1.f,2.f, 0.5f };
-	triganleMesh.vertices[1].position = { -1.f,2.f, 0.5f };
-	triganleMesh.vertices[2].position = { 0.f,1.f, 0.5f };
+	triganleMesh.vertices[0].position = { 1.f, 2.f, 0.0f };
+	triganleMesh.vertices[1].position = { -1.f,2.f, 0.0f };
+	triganleMesh.vertices[2].position = { 0.f, 1.f, 0.0f };
 
 	//vertex colors, all green
 	triganleMesh.vertices[0].color = { 1.f, 0.f, 0.0f }; //pure green

@@ -56,33 +56,37 @@ bool Mesh::LoadFromObj(const char* filename){
 	filename, shapes.size(), attrib.vertices.size() / 3, attrib.normals.size() / 3, attrib.texcoords.size() / 2, shapes.size(), materials.size());
 
 	vertices.clear();
+    indices.clear();
 
     // Loop over shapes
-    for (size_t i = 0; i < shapes.size(); ++i) {
-
+    for (const auto& shape : shapes) {
 		// Loop over faces(polygon)
-        for (const auto& index : shapes[i].mesh.indices) {
+        for (const auto& index : shape.mesh.indices) {
 
             Vertex new_vert = {};
 
             //vertex position
-            new_vert.position[0] = attrib.vertices[3 * index.vertex_index + 0];
-            new_vert.position[1] = attrib.vertices[3 * index.vertex_index + 1];
-            new_vert.position[2] = attrib.vertices[3 * index.vertex_index + 2];
+            if (index.vertex_index >= 0) {
+                new_vert.position[0] = attrib.vertices[index.vertex_index * 3 + 0];
+                new_vert.position[1] = attrib.vertices[index.vertex_index * 3 + 1];
+                new_vert.position[2] = attrib.vertices[index.vertex_index * 3 + 2];
+            }
 
             //vertex normal
-            new_vert.normal[0] = attrib.normals[3 * index.normal_index + 0];
-            new_vert.normal[1] = attrib.normals[3 * index.normal_index + 1];
-            new_vert.normal[2] = attrib.normals[3 * index.normal_index + 2];
+            if (index.normal_index >= 0) {
+                new_vert.normal[0] = attrib.normals[index.normal_index * 3 + 0];
+                new_vert.normal[1] = attrib.normals[index.normal_index * 3 + 1];
+                new_vert.normal[2] = attrib.normals[index.normal_index * 3 + 2];
+                new_vert.color = new_vert.normal;
+            }
 
             //vertex uv
             if(index.texcoord_index >= 0){
-                new_vert.texCoord.x = attrib.texcoords[2 * index.texcoord_index + 0];
-                new_vert.texCoord.y = 1.0f - attrib.texcoords[2 * index.texcoord_index + 1];
+                new_vert.texCoord.x = attrib.texcoords[index.texcoord_index * 2 + 0];
+                new_vert.texCoord.y = 1.0f - attrib.texcoords[index.texcoord_index * 2 + 1];
             }
 
             //we are setting the vertex color as the vertex normal. This is just for display purposes
-            new_vert.color = new_vert.normal;
 
             if (uniqueVertices.count(new_vert) == 0) {
                 uniqueVertices[new_vert] = static_cast<uint32_t>(vertices.size());
@@ -92,5 +96,6 @@ bool Mesh::LoadFromObj(const char* filename){
 			indices.push_back(uniqueVertices[new_vert]);
         }
     }
+
     return true;
 }

@@ -33,7 +33,7 @@ namespace renderer {
 
     struct Mesh {
         std::vector<Vertex> vertices;
-        std::vector<int> indices;
+        std::vector<uint32_t> indices;
         AllocatedBuffer vertexBuffer;
         AllocatedBuffer indexBuffer;
 

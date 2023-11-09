@@ -553,10 +553,10 @@ void VulkanRenderer::DrawObjects(vk::CommandBuffer& cmd, RenderObject* first, in
             lastMaterial = object.material;
 
             int curFrame = _FrameNumber % FRAME_OVERLAP;
-            uint32_t uniform_offset = PadUniformBuffeSize(sizeof(SceneData)) * curFrame;
+            uint32_t uniform_offset = (uint32_t)PadUniformBuffeSize(sizeof(SceneData)) * curFrame;
             // object.material->pipelineLayout
             std::vector<vk::DescriptorSet> descSets = { _Frames[i].globalDescriptor, _TextureSet };
-            cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, object.material->pipelineLayout, 0, descSets.size(),
+            cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, object.material->pipelineLayout, 0, (uint32_t)descSets.size(),
                 descSets.data(), 1, &uniform_offset);
         }
 
@@ -944,7 +944,7 @@ void VulkanRenderer::UpLoadMeshes(Mesh& mesh) {
     CHECK(mesh);
 
     //Allocate vertex buffer
-    vk::DeviceSize size = mesh.vertices.size() * sizeof(Vertex);
+    vk::DeviceSize size = (uint32_t)mesh.vertices.size() * sizeof(Vertex);
     vk::Buffer vertBuffer = CreateBuffer(size,
         vk::BufferUsageFlagBits::eTransferSrc, vk::SharingMode::eExclusive);
     MemRequiredInfo vertMemInfo = QueryMemReqInfo(vertBuffer,
@@ -984,7 +984,7 @@ void VulkanRenderer::UpLoadMeshes(Mesh& mesh) {
     _VkDevice.freeMemory(vertMemory);
 
     //Allocate index buffer
-    vk::DeviceSize indexSize = sizeof(uint64_t) * mesh.indices.size();
+    vk::DeviceSize indexSize = sizeof(uint32_t) * mesh.indices.size();
     vk::Buffer indexBuffer = CreateBuffer(indexSize, vk::BufferUsageFlagBits::eTransferSrc,
         vk::SharingMode::eExclusive);
     MemRequiredInfo indexMemInfo = QueryMemReqInfo(vertBuffer,
