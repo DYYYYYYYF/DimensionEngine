@@ -38,6 +38,7 @@ void VulkanRenderer::ResetProp() {
 }
 
 bool VulkanRenderer::Init() { 
+    INFO("Init Renderer.");
     CreateInstance();
     PickupPhyDevice();
     CreateSurface();
@@ -55,6 +56,8 @@ bool VulkanRenderer::Init() {
     LoadTexture();
     InitDescriptors();
     // InitImgui();
+
+    INFO("Inited Renderer.");
     return true; 
 }
 
@@ -567,11 +570,13 @@ void VulkanRenderer::DrawObjects(vk::CommandBuffer& cmd, RenderObject* first, in
             //bind the mesh vertex buffer with offset 0
             VkDeviceSize offset = 0;
             cmd.bindVertexBuffers(0, object.mesh->vertexBuffer.buffer, offset);
+            cmd.bindIndexBuffer(object.mesh->indexBuffer.buffer, 0, vk::IndexType::eUint32);
             lastMesh = object.mesh;
         }
 
         //we can now draw
-        cmd.draw((uint32_t)object.mesh->vertices.size(), 1, 0, 0);
+        //cmd.draw((uint32_t)object.mesh->vertices.size(), 1, 0, 0);
+        cmd.drawIndexed((uint32_t)object.mesh->indices.size(), 1, 0, 0, 0);
     }
 }
 
@@ -940,43 +945,82 @@ void VulkanRenderer::UpLoadMeshes(Mesh& mesh) {
 
     //Allocate vertex buffer
     vk::DeviceSize size = mesh.vertices.size() * sizeof(Vertex);
-    vk::Buffer tempBuffer = CreateBuffer(size,
+    vk::Buffer vertBuffer = CreateBuffer(size,
         vk::BufferUsageFlagBits::eTransferSrc, vk::SharingMode::eExclusive);
-    MemRequiredInfo tempMemInfo = QueryMemReqInfo(tempBuffer,
+    MemRequiredInfo vertMemInfo = QueryMemReqInfo(vertBuffer,
         vk::MemoryPropertyFlagBits::eHostVisible |
         vk::MemoryPropertyFlagBits::eHostCoherent);
-    vk::DeviceMemory tempMemory = AllocateMemory(tempMemInfo,
+    vk::DeviceMemory vertMemory = AllocateMemory(vertMemInfo,
         vk::MemoryPropertyFlagBits::eHostVisible |
         vk::MemoryPropertyFlagBits::eHostCoherent);
+    CHECK(vertBuffer);
+    CHECK(vertMemory);
+
+    mesh.vertexBuffer.buffer = CreateBuffer(size, vk::BufferUsageFlagBits::eTransferDst |
+        vk::BufferUsageFlagBits::eVertexBuffer, vk::SharingMode::eExclusive);
+    vertMemInfo = QueryMemReqInfo(mesh.vertexBuffer.buffer, vk::MemoryPropertyFlagBits::eDeviceLocal);
+    mesh.vertexBuffer.memory = AllocateMemory(vertMemInfo, vk::MemoryPropertyFlagBits::eDeviceLocal);
 
     CHECK(mesh.vertexBuffer.buffer);
     CHECK(mesh.vertexBuffer.memory);
 
-    mesh.vertexBuffer.buffer = CreateBuffer(size, vk::BufferUsageFlagBits::eTransferDst |
-        vk::BufferUsageFlagBits::eVertexBuffer, vk::SharingMode::eExclusive);
-    MemRequiredInfo memInfo = QueryMemReqInfo(mesh.vertexBuffer.buffer, vk::MemoryPropertyFlagBits::eDeviceLocal);
-    mesh.vertexBuffer.memory = AllocateMemory(memInfo, vk::MemoryPropertyFlagBits::eDeviceLocal);
-    CHECK(deviceBuffer);
-    CHECK(deviceMemory);
-
-    _VkDevice.bindBufferMemory(tempBuffer, tempMemory, 0);
+    _VkDevice.bindBufferMemory(vertBuffer, vertMemory, 0);
     _VkDevice.bindBufferMemory(mesh.vertexBuffer.buffer, mesh.vertexBuffer.memory, 0);
 
-    void* data = _VkDevice.mapMemory(tempMemory, 0, size);
+    void* data = _VkDevice.mapMemory(vertMemory, 0, size);
     memcpy(data, mesh.vertices.data(), size);
-    _VkDevice.unmapMemory(tempMemory);
+    _VkDevice.unmapMemory(vertMemory);
 
     ImmediateSubmit([=](vk::CommandBuffer cmd){
         vk::BufferCopy regin;
         regin.setSize(size)
             .setSrcOffset(0)
             .setDstOffset(0);
-        cmd.copyBuffer(tempBuffer, mesh.vertexBuffer.buffer, regin);
+        cmd.copyBuffer(vertBuffer, mesh.vertexBuffer.buffer, regin);
     });
     
     // Free mem
-    _VkDevice.destroyBuffer(tempBuffer);
-    _VkDevice.freeMemory(tempMemory);
+    _VkDevice.destroyBuffer(vertBuffer);
+    _VkDevice.freeMemory(vertMemory);
+
+    //Allocate index buffer
+    vk::DeviceSize indexSize = sizeof(uint64_t) * mesh.indices.size();
+    vk::Buffer indexBuffer = CreateBuffer(indexSize, vk::BufferUsageFlagBits::eTransferSrc,
+        vk::SharingMode::eExclusive);
+    MemRequiredInfo indexMemInfo = QueryMemReqInfo(vertBuffer,
+        vk::MemoryPropertyFlagBits::eHostVisible |
+        vk::MemoryPropertyFlagBits::eHostCoherent);
+    vk::DeviceMemory indexMemory = AllocateMemory(indexMemInfo, vk::MemoryPropertyFlagBits::eHostVisible |
+        vk::MemoryPropertyFlagBits::eHostCoherent);
+    CHECK(indexBuffer);
+    CHECK(indexMemory);
+
+    mesh.indexBuffer.buffer = CreateBuffer(size, vk::BufferUsageFlagBits::eTransferDst |
+        vk::BufferUsageFlagBits::eVertexBuffer, vk::SharingMode::eExclusive);
+    indexMemInfo = QueryMemReqInfo(mesh.vertexBuffer.buffer, vk::MemoryPropertyFlagBits::eDeviceLocal);
+    mesh.indexBuffer.memory = AllocateMemory(indexMemInfo, vk::MemoryPropertyFlagBits::eDeviceLocal);
+    _VkDevice.bindBufferMemory(mesh.indexBuffer.buffer, mesh.indexBuffer.memory, 0);
+    CHECK(mesh.indexBuffer.buffer);
+    CHECK(mesh.indexBuffer.memory);
+    
+    _VkDevice.bindBufferMemory(indexBuffer, indexMemory, 0);
+    _VkDevice.bindBufferMemory(mesh.indexBuffer.buffer, mesh.indexBuffer.memory, 0);
+
+    void* indexData = _VkDevice.mapMemory(indexMemory, 0, indexSize);
+    memcpy(indexData, mesh.indices.data(), indexSize);
+    _VkDevice.unmapMemory(indexMemory);
+
+    ImmediateSubmit([=](vk::CommandBuffer cmd) {
+        vk::BufferCopy regin;
+        regin.setSize(indexSize)
+            .setSrcOffset(0)
+            .setDstOffset(0);
+        cmd.copyBuffer(indexBuffer, mesh.indexBuffer.buffer, regin);
+        });
+
+    // Free mem
+    _VkDevice.destroyBuffer(indexBuffer);
+    _VkDevice.freeMemory(indexMemory);
 }
 
 vk::Format VulkanRenderer::FindSupportedFormat(const std::vector<vk::Format>& candidates,
@@ -1063,7 +1107,7 @@ void VulkanRenderer::UpdatePushConstants(glm::mat4 view_matrix) {
 
     // Uniform Buffer
     _Camera.proj = glm::perspective(glm::radians(45.f),
-        _SupportInfo.GetWindowHeight() / (float)_SupportInfo.GetWindowWidth(), 0.1f, 200.0f);
+        _SupportInfo.GetWindowWidth() / (float)_SupportInfo.GetWindowHeight(), 0.1f, 200.0f);
     _Camera.proj[1][1] *= -1;
 
     void* data = _VkDevice.mapMemory(GetCurrentFrame().cameraBuffer.memory, 0, sizeof(CamerData));
@@ -1073,7 +1117,7 @@ void VulkanRenderer::UpdatePushConstants(glm::mat4 view_matrix) {
 
 void VulkanRenderer::UpdateUniformBuffer(){
 
-    _Camera.proj = glm::perspective(glm::radians(30.0f), _SupportInfo.GetWindowWidth() / (float)_SupportInfo.GetWindowHeight(), 0.1f, 10000.0f);
+    _Camera.proj = glm::perspective(glm::radians(45.0f), 16.0f / 9.0f, 0.1f, 10000.0f);
     _Camera.proj[1][1] *= -1;
     _Camera.view = { 1,0,0,0,
                  0,1,0,0,
@@ -1083,12 +1127,11 @@ void VulkanRenderer::UpdateUniformBuffer(){
 
 void VulkanRenderer::UpdateDynamicBuffer(){
     float framed = (_FrameNumber / 3600.f);
-    // _SceneData.ambientColor = { sin(framed),0,cos(framed),1 };
-    _SceneData.ambientColor = { sin(framed),sin(framed),sin(framed),1 };
+     _SceneData.ambientColor = { sin(framed),0,cos(framed),1 };
+    // _SceneData.ambientColor = { 1,1,1,1 };
     int frameIndex = _FrameNumber % FRAME_OVERLAP;
 
-    // size_t memOffset = PadUniformBuffeSize(sizeof(SceneData)) * frameIndex;
-    size_t memOffset = 0;
+    size_t memOffset = PadUniformBuffeSize(sizeof(SceneData)) * frameIndex;
 
     void* sceneData = _VkDevice.mapMemory(_SceneParameterBuffer.memory, memOffset, sizeof(_SceneData));
     memcpy(sceneData, &_SceneData, sizeof(SceneData));

@@ -1,5 +1,5 @@
 #define TINYOBJLOADER_IMPLEMENTATION
-
+#define GLM_ENABLE_EXPERIMENTAL
 #pragma once
 
 #include <iostream>
@@ -33,7 +33,9 @@ namespace renderer {
 
     struct Mesh {
         std::vector<Vertex> vertices;
+        std::vector<int> indices;
         AllocatedBuffer vertexBuffer;
+        AllocatedBuffer indexBuffer;
 
         bool LoadFromObj(const char* filename);
     };

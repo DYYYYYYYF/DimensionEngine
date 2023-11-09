@@ -13,13 +13,15 @@ Scene::~Scene() {
 
 void Scene::InitScene() {
 	_Renderer->Init();
-
+	
 	UploadMesh("../asset/model/room.obj", "room");
+	/*
 	UploadMesh("../asset/model/sponza.obj", "sponza");
 	UploadMesh("../asset/model/ball.obj", "ball");
 	UploadMesh("../asset/model/bunny.obj", "Bunny");
 	UploadMesh("../asset/model/CornellBox.obj", "CornellBox");
 	UploadMesh("../asset/obj/wooden_boat/Boat.obj", "Boat");
+	*/
 	UploadTriangleMesh();
 	UploadRectangleMesh();
 
@@ -48,12 +50,13 @@ void Scene::InitScene() {
 	_Renderables.push_back(floor);
 
 	RenderObject boat;
-	boat.mesh = GetMesh("Boat");
+	boat.mesh = GetMesh("Triangle");
 	boat.material = GetMaterial("Texture");
 	boat.SetTranslate(glm::vec3{0.0f, 1.0f, 0.0f});
 	boat.SetScale(glm::vec3{2.f, 4.f, 2.f});
 	_Renderables.push_back(boat);
 
+	INFO("Inited Scene.");
 }
 
 void Scene::Update() {
@@ -138,48 +141,60 @@ void Scene::UploadMesh(const char* filename, const char* mesh_name) {
 
 void Scene::UploadTriangleMesh() {
 
-	Mesh tempMesh;
+	Mesh triganleMesh;
 	//make the array 3 vertices long
-	tempMesh.vertices.resize(3);
+	triganleMesh.vertices.resize(3);
 
 	//vertex positions
-	tempMesh.vertices[0].position = { 1.f,2.f, 0.5f };
-	tempMesh.vertices[1].position = { -1.f,2.f, 0.5f };
-	tempMesh.vertices[2].position = { 0.f,0.f, 0.5f };
+	triganleMesh.vertices[0].position = { 1.f,2.f, 0.5f };
+	triganleMesh.vertices[1].position = { -1.f,2.f, 0.5f };
+	triganleMesh.vertices[2].position = { 0.f,1.f, 0.5f };
 
 	//vertex colors, all green
-	tempMesh.vertices[0].color = { 1.f, 0.f, 0.0f }; //pure green
-	tempMesh.vertices[1].color = { 0.f, 1.f, 0.0f }; //pure green
-	tempMesh.vertices[2].color = { 0.f, 0.f, 1.0f }; //pure green
-	((Renderer*)_Renderer)->UploadMeshes(tempMesh);
-	_Meshes["Triangle"] = tempMesh;
+	triganleMesh.vertices[0].color = { 1.f, 0.f, 0.0f }; //pure green
+	triganleMesh.vertices[1].color = { 0.f, 1.f, 0.0f }; //pure green
+	triganleMesh.vertices[2].color = { 0.f, 0.f, 1.0f }; //pure green
+
+	//indices
+	triganleMesh.indices.resize(3);
+	triganleMesh.indices[0] = 0;
+	triganleMesh.indices[1] = 1;
+	triganleMesh.indices[2] = 2;
+
+	((Renderer*)_Renderer)->UploadMeshes(triganleMesh);
+	_Meshes["Triangle"] = triganleMesh;
 
 	INFO("Loaded Triangle");
 }
 
 void Scene::UploadRectangleMesh() {
-	Mesh tempMesh;
+	Mesh rectangleMesh;
 	//make the array 6 vertices long
-	tempMesh.vertices.resize(6);
+	rectangleMesh.vertices.resize(4);
 
 	//vertex positions
-	tempMesh.vertices[0].position = {  20.f, 0.f, -20.f };
-	tempMesh.vertices[1].position = {  20.f, 0.f,  20.f };
-	tempMesh.vertices[2].position = { -20.f, 0.f,  20.f };
-
-	tempMesh.vertices[3].position = { -20.f, 0.f,   20.f };
-	tempMesh.vertices[4].position = { -20.f, 0.f,  -20.f };
-	tempMesh.vertices[5].position = {  20.f, 0.0f, -20.f };
+	rectangleMesh.vertices[0].position = {  20.f, 0.f, -20.f };
+	rectangleMesh.vertices[1].position = {  20.f, 0.f,  20.f };
+	rectangleMesh.vertices[2].position = { -20.f, 0.f,  20.f };
+	rectangleMesh.vertices[3].position = { -20.f, 0.f,  -20.f };
 
 	//vertex colors, all green
-	tempMesh.vertices[0].color = { 0.7f, 0.7f, 0.7f }; 
-	tempMesh.vertices[1].color = { 0.3f, 0.3f, 0.3f };
-	tempMesh.vertices[2].color = { 0.7f, 0.7f, 0.7f };
-	tempMesh.vertices[3].color = { 0.7f, 0.7f, 0.7f };
-	tempMesh.vertices[4].color = { 0.3f, 0.3f, 0.3f };
-	tempMesh.vertices[5].color = { 0.7f, 0.7f, 0.7f };
-	((Renderer*)_Renderer)->UploadMeshes(tempMesh);
-	_Meshes["Rectangle"] = tempMesh;
+	rectangleMesh.vertices[0].color = { 0.7f, 0.7f, 0.7f };
+	rectangleMesh.vertices[1].color = { 0.3f, 0.3f, 0.3f };
+	rectangleMesh.vertices[2].color = { 0.7f, 0.7f, 0.7f };
+	rectangleMesh.vertices[3].color = { 0.7f, 0.7f, 0.7f };
+
+	//indices
+	rectangleMesh.indices.resize(6);
+	rectangleMesh.indices[0] = 0;
+	rectangleMesh.indices[1] = 1;
+	rectangleMesh.indices[2] = 2;
+	rectangleMesh.indices[3] = 0;
+	rectangleMesh.indices[4] = 2;
+	rectangleMesh.indices[5] = 3;
+
+	((Renderer*)_Renderer)->UploadMeshes(rectangleMesh);
+	_Meshes["Rectangle"] = rectangleMesh;
 	
 	INFO("Loaded Rectangle");
 }

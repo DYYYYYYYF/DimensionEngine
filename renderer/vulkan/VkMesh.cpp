@@ -42,70 +42,54 @@ bool Mesh::LoadFromObj(const char* filename){
     std::vector<tinyobj::material_t> materials;
     std::string warn, err;
 
+    std::unordered_map<Vertex, uint32_t> uniqueVertices;
+
     if(!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, filename)){
-        WARN("Load model failed");
+        WARN(("Load %s failed", filename));
         return false;
     }
-    std::unordered_map<Vertex, uint32_t> uniqueVertices = {};
-    vertices.clear();
-    
-    //attrib will contain the vertex arrays of the file
+
+	INFO("\n Loading %s :	\n\
+	\t Shape count : %d		\n	\t Vertex count: %d		\n\
+	\t Normal count: %d		\n	\t UV count: %d			\n\
+	\t Sub Model count: %d	\n	\t Material count: %d",
+	filename, shapes.size(), attrib.vertices.size() / 3, attrib.normals.size() / 3, attrib.texcoords.size() / 2, shapes.size(), materials.size());
+
+	vertices.clear();
+
     // Loop over shapes
-    for (size_t s = 0; s < shapes.size(); s++) {
-		    // Loop over faces(polygon)
-        size_t index_offset = 0;
-        for (size_t f = 0; f < shapes[s].mesh.num_face_vertices.size(); f++) {
-            //hardcode loading to triangles
-            int fv = 3;
+    for (size_t i = 0; i < shapes.size(); ++i) {
 
-            // Loop over vertices in the face.
-            for (size_t v = 0; v < fv; v++) {
-                //copy it into our vertex
-                Vertex new_vert = {};
+		// Loop over faces(polygon)
+        for (const auto& index : shapes[i].mesh.indices) {
 
-                // access to vertex
-                tinyobj::index_t idx = shapes[s].mesh.indices[index_offset + v];
+            Vertex new_vert = {};
 
-                //vertex position
-                tinyobj::real_t vx = attrib.vertices[3 * idx.vertex_index + 0];
-                tinyobj::real_t vy = attrib.vertices[3 * idx.vertex_index + 1];
-                tinyobj::real_t vz = attrib.vertices[3 * idx.vertex_index + 2];
-                //vertex normal
-                tinyobj::real_t nx = attrib.normals[3 * idx.normal_index + 0];
-                tinyobj::real_t ny = attrib.normals[3 * idx.normal_index + 1];
-                tinyobj::real_t nz = attrib.normals[3 * idx.normal_index + 2];
+            //vertex position
+            new_vert.position[0] = attrib.vertices[3 * index.vertex_index + 0];
+            new_vert.position[1] = attrib.vertices[3 * index.vertex_index + 1];
+            new_vert.position[2] = attrib.vertices[3 * index.vertex_index + 2];
 
-                //vertex uv
-                if(idx.texcoord_index >= 0){
-                    tinyobj::real_t ux = attrib.texcoords[2 * idx.texcoord_index + 0];
-                    tinyobj::real_t uy = attrib.texcoords[2 * idx.texcoord_index + 1];
-                    new_vert.texCoord.x = ux;
-                    new_vert.texCoord.y = 1-uy;
-                }
+            //vertex normal
+            new_vert.normal[0] = attrib.normals[3 * index.normal_index + 0];
+            new_vert.normal[1] = attrib.normals[3 * index.normal_index + 1];
+            new_vert.normal[2] = attrib.normals[3 * index.normal_index + 2];
 
-                new_vert.position[0] = vx;
-                new_vert.position[1] = vy;
-                new_vert.position[2] = vz;
-
-                new_vert.normal[0] = nx;
-                new_vert.normal[1] = ny;
-                new_vert.normal[2] = nz;
-
-                //we are setting the vertex color as the vertex normal. This is just for display purposes
-                new_vert.color = new_vert.normal;
-
-                bool useIndexBuffer = false;
-                if (useIndexBuffer) {
-                    if (uniqueVertices.count(new_vert) == 0) {
-                        uniqueVertices[new_vert] = static_cast<uint32_t>(vertices.size());
-                        vertices.push_back(new_vert);
-                    }
-                }
-                else {
-                    vertices.push_back(new_vert);
-                }
+            //vertex uv
+            if(index.texcoord_index >= 0){
+                new_vert.texCoord.x = attrib.texcoords[2 * index.texcoord_index + 0];
+                new_vert.texCoord.y = 1.0f - attrib.texcoords[2 * index.texcoord_index + 1];
             }
-        index_offset += fv;
+
+            //we are setting the vertex color as the vertex normal. This is just for display purposes
+            new_vert.color = new_vert.normal;
+
+            if (uniqueVertices.count(new_vert) == 0) {
+                uniqueVertices[new_vert] = static_cast<uint32_t>(vertices.size());
+                vertices.push_back(new_vert);
+            }
+		
+			indices.push_back(uniqueVertices[new_vert]);
         }
     }
     return true;

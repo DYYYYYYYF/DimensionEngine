@@ -17,9 +17,9 @@ EngineLogger::EngineLogger(){
     curPath.append("EngineLog");
 
 #ifdef __APPLE__
-    Log::Logger::getInstance()->open(curPath.c_str());
+    Log::Logger::getInstance()->open(curPath.c_str(), std::ios_base::ate);
 #elif _WIN32
-    Log::Logger::getInstance()->open(curPath.u8string());
+    Log::Logger::getInstance()->open(curPath.u8string(), std::ios_base::ate);
 #endif
 
     Log::Logger::getInstance()->setMaxSize(1024000);
@@ -35,9 +35,9 @@ EngineLogger::EngineLogger(){
     curPath.append("EngineLog");
 
 #ifdef __APPLE__
-    Log::Logger::getInstance()->open(curPath.c_str());
+    Log::Logger::getInstance()->open(curPath.c_str(), std::ios_base::ate);
 #elif _WIN32
-    Log::Logger::getInstance()->open(curPath.u8string());
+    Log::Logger::getInstance()->open(curPath.u8string(), std::ios_base::ate);
 #endif
 
     Log::Logger::getInstance()->setMaxSize(1024000);

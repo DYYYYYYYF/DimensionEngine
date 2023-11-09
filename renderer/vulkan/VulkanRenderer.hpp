@@ -49,8 +49,13 @@ namespace renderer {
         virtual void UnloadMeshes(std::unordered_map<std::string, Mesh>& meshes) override{
             for (auto& mesh_map : meshes){
                 Mesh& mesh = mesh_map.second; 
+                // Vertices
                 _VkDevice.freeMemory(mesh.vertexBuffer.memory);
                 _VkDevice.destroyBuffer(mesh.vertexBuffer.buffer);
+                
+                // Indices
+                _VkDevice.freeMemory(mesh.indexBuffer.memory);
+                _VkDevice.destroyBuffer(mesh.indexBuffer.buffer);
             }
         }
 
