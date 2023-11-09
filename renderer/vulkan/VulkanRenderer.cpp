@@ -72,6 +72,8 @@ void VulkanRenderer::Release(){
         _VkDevice.destroyImageView(tex.imageView);
     }
 
+
+    _VkDevice.destroySampler(_TextureSampler);
     _VkDevice.destroyDescriptorSetLayout(_TextureSetLayout);
     _VkDevice.destroyFence(_UploadContext.uploadFence);
     _VkDevice.destroyCommandPool(_UploadContext.commandPool);
@@ -480,14 +482,14 @@ void VulkanRenderer::CreatePipeline(Material& mat, const char* vert_shader, cons
     pipelineBuilder._ShaderStages.push_back(InitShaderStageCreateInfo(vk::ShaderStageFlagBits::eFragment, fragShader));
 
     // INFO("Pipeline Bingding and Attribute Descroptions");
-    std::vector<vk::VertexInputBindingDescription> bindingDescription = Vertex::GetBindingDescription();
+    vk::VertexInputBindingDescription bindingDescription = Vertex::GetBindingDescription();
     std::array<vk::VertexInputAttributeDescription, 4> attributeDescription = Vertex::GetAttributeDescription();
 
     //connect the pipeline builder vertex input info to the one we get from Vertex
-    pipelineBuilder._VertexInputInfo.pVertexAttributeDescriptions = attributeDescription.data();
-    pipelineBuilder._VertexInputInfo.vertexAttributeDescriptionCount = (uint32_t)attributeDescription.size();
-    pipelineBuilder._VertexInputInfo.pVertexBindingDescriptions = bindingDescription.data();
-    pipelineBuilder._VertexInputInfo.vertexBindingDescriptionCount = (uint32_t)bindingDescription.size();
+    pipelineBuilder._VertexInputInfo.setVertexAttributeDescriptions(attributeDescription);
+    pipelineBuilder._VertexInputInfo.setVertexAttributeDescriptionCount((uint32_t)attributeDescription.size());
+    pipelineBuilder._VertexInputInfo.setVertexBindingDescriptions(bindingDescription);
+    pipelineBuilder._VertexInputInfo.setVertexBindingDescriptionCount(1);
 
     // INFO("Pipeline Assembly");
     pipelineBuilder._InputAssembly = InitAssemblyStateCreateInfo(vk::PrimitiveTopology::eTriangleList);
@@ -570,7 +572,7 @@ void VulkanRenderer::DrawObjects(vk::CommandBuffer& cmd, RenderObject* first, in
             //bind the mesh vertex buffer with offset 0
             VkDeviceSize offset = 0;
             cmd.bindVertexBuffers(0, object.mesh->vertexBuffer.buffer, offset);
-            cmd.bindIndexBuffer(object.mesh->indexBuffer.buffer, 0, vk::IndexType::eUint32);
+            cmd.bindIndexBuffer(object.mesh->indexBuffer.buffer, offset, vk::IndexType::eUint32);
             lastMesh = object.mesh;
         }
 
@@ -738,7 +740,7 @@ void VulkanRenderer::InitDescriptors() {
     // Sampler
     vk::SamplerCreateInfo samplerInfo = InitSamplerCreateInfo(
         vk::Filter::eLinear, vk::SamplerAddressMode::eRepeat);
-    vk::Sampler _TextureSampler = _VkDevice.createSampler(samplerInfo);
+    _TextureSampler = _VkDevice.createSampler(samplerInfo);
 
     // Camera Uniform buffer
     for (int i = 0; i < FRAME_OVERLAP; i++) {
@@ -805,8 +807,6 @@ void VulkanRenderer::InitDescriptors() {
 
         _VkDevice.updateDescriptorSets(writeDescSets, nullptr);
     }
-
-    _VkDevice.destroySampler(_TextureSampler);
 }
 
 /*
@@ -947,21 +947,22 @@ void VulkanRenderer::UpLoadMeshes(Mesh& mesh) {
     vk::DeviceSize size = (uint32_t)mesh.vertices.size() * sizeof(Vertex);
     vk::Buffer vertBuffer = CreateBuffer(size,
         vk::BufferUsageFlagBits::eTransferSrc, vk::SharingMode::eExclusive);
+    CHECK(vertBuffer);
+
     MemRequiredInfo vertMemInfo = QueryMemReqInfo(vertBuffer,
         vk::MemoryPropertyFlagBits::eHostVisible |
         vk::MemoryPropertyFlagBits::eHostCoherent);
     vk::DeviceMemory vertMemory = AllocateMemory(vertMemInfo,
         vk::MemoryPropertyFlagBits::eHostVisible |
         vk::MemoryPropertyFlagBits::eHostCoherent);
-    CHECK(vertBuffer);
     CHECK(vertMemory);
 
     mesh.vertexBuffer.buffer = CreateBuffer(size, vk::BufferUsageFlagBits::eTransferDst |
         vk::BufferUsageFlagBits::eVertexBuffer, vk::SharingMode::eExclusive);
+    CHECK(mesh.vertexBuffer.buffer);
+
     vertMemInfo = QueryMemReqInfo(mesh.vertexBuffer.buffer, vk::MemoryPropertyFlagBits::eDeviceLocal);
     mesh.vertexBuffer.memory = AllocateMemory(vertMemInfo, vk::MemoryPropertyFlagBits::eDeviceLocal);
-
-    CHECK(mesh.vertexBuffer.buffer);
     CHECK(mesh.vertexBuffer.memory);
 
     _VkDevice.bindBufferMemory(vertBuffer, vertMemory, 0);
@@ -987,20 +988,21 @@ void VulkanRenderer::UpLoadMeshes(Mesh& mesh) {
     vk::DeviceSize indexSize = sizeof(uint32_t) * mesh.indices.size();
     vk::Buffer indexBuffer = CreateBuffer(indexSize, vk::BufferUsageFlagBits::eTransferSrc,
         vk::SharingMode::eExclusive);
-    MemRequiredInfo indexMemInfo = QueryMemReqInfo(vertBuffer,
+    CHECK(indexBuffer);
+
+    MemRequiredInfo indexMemInfo = QueryMemReqInfo(indexBuffer,
         vk::MemoryPropertyFlagBits::eHostVisible |
         vk::MemoryPropertyFlagBits::eHostCoherent);
     vk::DeviceMemory indexMemory = AllocateMemory(indexMemInfo, vk::MemoryPropertyFlagBits::eHostVisible |
         vk::MemoryPropertyFlagBits::eHostCoherent);
-    CHECK(indexBuffer);
     CHECK(indexMemory);
 
     mesh.indexBuffer.buffer = CreateBuffer(size, vk::BufferUsageFlagBits::eTransferDst |
-        vk::BufferUsageFlagBits::eVertexBuffer, vk::SharingMode::eExclusive);
+        vk::BufferUsageFlagBits::eIndexBuffer, vk::SharingMode::eExclusive);
+    CHECK(mesh.indexBuffer.buffer);
+
     indexMemInfo = QueryMemReqInfo(mesh.vertexBuffer.buffer, vk::MemoryPropertyFlagBits::eDeviceLocal);
     mesh.indexBuffer.memory = AllocateMemory(indexMemInfo, vk::MemoryPropertyFlagBits::eDeviceLocal);
-    _VkDevice.bindBufferMemory(mesh.indexBuffer.buffer, mesh.indexBuffer.memory, 0);
-    CHECK(mesh.indexBuffer.buffer);
     CHECK(mesh.indexBuffer.memory);
     
     _VkDevice.bindBufferMemory(indexBuffer, indexMemory, 0);

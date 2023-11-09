@@ -190,6 +190,8 @@ namespace renderer {
         vk::DescriptorSetLayout _TextureSetLayout;
         vk::DescriptorSet _TextureSet;
 
+        vk::Sampler _TextureSampler;
+
         std::unordered_map<std::string, Texture> _LoadedTextures;
     };// class VulkanRenderer
 }// namespace renderer

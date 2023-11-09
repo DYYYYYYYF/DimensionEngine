@@ -22,7 +22,7 @@ namespace renderer {
         glm::vec3 color;
         glm::vec2 texCoord;
 
-        static std::vector<vk::VertexInputBindingDescription> GetBindingDescription();
+        static vk::VertexInputBindingDescription GetBindingDescription();
         static std::array<vk::VertexInputAttributeDescription, 4> GetAttributeDescription();
 
         bool operator==(const Vertex& other) const {

@@ -51,7 +51,7 @@ void Scene::InitScene() {
 
 	RenderObject boat;
 	boat.mesh = GetMesh("Boat");
-	boat.material = GetMaterial("Texture");
+	boat.material = GetMaterial("Default");
 	boat.SetTranslate(glm::vec3{0.0f, 1.0f, 0.0f});
 	boat.SetScale(1.0f);
 	_Renderables.push_back(boat);
@@ -229,6 +229,7 @@ void Scene::Destroy() {
 	if (_Renderer != nullptr)
 	{
     ((Renderer*)_Renderer)->UnloadMeshes(_Meshes);
+    ((Renderer*)_Renderer)->DestroyMaterials(_Materials);
 		_Renderer->Release();
 		free(_Renderer);
 	}

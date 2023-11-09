@@ -5,14 +5,12 @@
 
 using namespace renderer;
 
-std::vector<vk::VertexInputBindingDescription> Vertex::GetBindingDescription() {
-    static std::vector<vk::VertexInputBindingDescription> bingdings;
-    vk::VertexInputBindingDescription binding;
+vk::VertexInputBindingDescription Vertex::GetBindingDescription() {
+    static vk::VertexInputBindingDescription binding;
     binding.setBinding(0)
         .setInputRate(vk::VertexInputRate::eVertex)
         .setStride(sizeof(Vertex));
-    bingdings.push_back(binding);
-    return bingdings;
+    return binding;
 }
 
 std::array<vk::VertexInputAttributeDescription, 4> Vertex::GetAttributeDescription() {
@@ -45,7 +43,7 @@ bool Mesh::LoadFromObj(const char* filename){
     std::unordered_map<Vertex, uint32_t> uniqueVertices;
 
     if(!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, filename)){
-        WARN(("Load %s failed", filename));
+        WARN("Load %s failed", filename);
         return false;
     }
 
