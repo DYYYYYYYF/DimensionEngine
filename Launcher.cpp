@@ -3,7 +3,6 @@
 #include "../../engine/EngineLogger.hpp"
 
 #define USE_LOGGER
-
 #ifdef USE_LOGGER
 static engine::EngineLogger* GLOBAL_LOGGER = new engine::EngineLogger();
 #endif // !USE_LOGGER

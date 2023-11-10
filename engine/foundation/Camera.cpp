@@ -52,7 +52,7 @@ void Camera::UpdateCameraVectors(){
 void Camera::UpdateCameraPosition(){
     position += forward * keyBoardSpeedZ * 0.01f 
              + right * keyBoardSpeedX * 0.01f
-             + up * keyBoardSpeedY * 0.01f;
+             + glm::vec3{0, 1, 0} *keyBoardSpeedY * 0.01f;
     keyBoardSpeedX = 0;
     keyBoardSpeedY = 0;
     keyBoardSpeedZ = 0;

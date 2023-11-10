@@ -176,16 +176,16 @@ void Scene::UploadRectangleMesh() {
 	rectangleMesh.vertices.resize(4);
 
 	//vertex positions
-	rectangleMesh.vertices[0].position = {  20.f, 0.f, -20.f };
-	rectangleMesh.vertices[1].position = {  20.f, 0.f,  20.f };
-	rectangleMesh.vertices[2].position = { -20.f, 0.f,  20.f };
-	rectangleMesh.vertices[3].position = { -20.f, 0.f,  -20.f };
+	rectangleMesh.vertices[0].position = {  50.f, 0.f,  -50.f };
+	rectangleMesh.vertices[1].position = {  50.f, 0.f,   50.f };
+	rectangleMesh.vertices[2].position = { -50.f, 0.f,   50.f };
+	rectangleMesh.vertices[3].position = { -50.f, 0.f,  -50.f };
 
 	//vertex colors, all green
-	rectangleMesh.vertices[0].color = { 0.7f, 0.7f, 0.7f };
-	rectangleMesh.vertices[1].color = { 0.3f, 0.3f, 0.3f };
-	rectangleMesh.vertices[2].color = { 0.7f, 0.7f, 0.7f };
-	rectangleMesh.vertices[3].color = { 0.7f, 0.7f, 0.7f };
+	rectangleMesh.vertices[0].color = { 0.9f, 0.9f, 0.9f };
+	rectangleMesh.vertices[1].color = { 0.1f, 0.1f, 0.1f };
+	rectangleMesh.vertices[2].color = { 0.9f, 0.9f, 0.9f };
+	rectangleMesh.vertices[3].color = { 0.1f, 0.1f, 0.1f };
 
 	//indices
 	rectangleMesh.indices.resize(6);

@@ -40,7 +40,7 @@ if(${APPLE})
 elseif(${WIN32})
     message("-- Current environment: Windows\n")
 
-    set(Vulkan_DIR "D:/Library/Vulkan")
+    set(Vulkan_DIR "D:/C_Library/VulkanSDK")
 
     if(${Vulkan_DIR} STREQUAL " ")
         message("-- Please set Vulkan direction!!!!")
