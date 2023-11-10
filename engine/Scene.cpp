@@ -42,19 +42,28 @@ void Scene::InitScene() {
 	_Renderer->CreatePipeline(deafaultFloorMaterial, defaultVertShader, meshFloorFragShader);
 	_Materials["Floor"] = deafaultFloorMaterial;
 
+	Material drawLineMaterial;
+	((Renderer*)_Renderer)->CreateDrawlinePipeline(drawLineMaterial);
+	_Materials["DrawLine"] = drawLineMaterial;
+
 	RenderObject floor;
 	floor.mesh = GetMesh("Rectangle");
 	floor.material = GetMaterial("Default");
 	floor.SetScale(1.0f);
 	floor.SetRotate(glm::vec3{ 0, 1, 0 }, 90.0f);
-	_Renderables.push_back(floor);
+	//_Renderables.push_back(floor);
 
 	RenderObject boat;
 	boat.mesh = GetMesh("Boat");
-	boat.material = GetMaterial("Default");
+	boat.material = GetMaterial("DrawLine");
 	boat.SetTranslate(glm::vec3{0.0f, 1.0f, 0.0f});
 	boat.SetScale(1.0f);
 	_Renderables.push_back(boat);
+
+	RenderObject boatBouding;
+	boatBouding = GenerateBoudingBox(*(boat.mesh));
+	boatBouding.SetTranslate(glm::vec3{0.0f, 1.0f, 0.0f});
+	_Renderables.push_back(boatBouding);
 
 	INFO("Inited Scene.");
 }
@@ -233,4 +242,76 @@ void Scene::Destroy() {
 		_Renderer->Release();
 		free(_Renderer);
 	}
+}
+
+RenderObject Scene::GenerateBoudingBox(const Mesh& mesh) {
+	
+	RenderObject obj;
+	obj.material = GetMaterial("DrawLine");
+
+	float fx = 0.0f;
+	float fy = 0.0f;
+	float fz = 0.0f;
+
+	float nx = 0.0f;
+	float ny = 0.0f;
+	float nz = 0.0f;
+
+	for (const Vertex& vert : mesh.vertices) {
+		if (fx < vert.position[0]) fx = vert.position[0];
+		if (fy < vert.position[1]) fy = vert.position[1];
+		if (fz < vert.position[2]) fz = vert.position[2];
+
+		if (nx > vert.position[0]) nx = vert.position[0];
+		if (ny > vert.position[1]) ny = vert.position[1];
+		if (nz > vert.position[2]) nz = vert.position[2];
+	}
+
+	Mesh boundingMesh;
+	boundingMesh.vertices.resize(8);
+
+	// up mesh
+	boundingMesh.vertices[0].position = { fx, fy, fz };
+	boundingMesh.vertices[1].position = { fx, fy, nz };
+	boundingMesh.vertices[2].position = { nx, fy, fz };
+	boundingMesh.vertices[3].position = { nx, fy, nz };
+	boundingMesh.vertices[4].position = { fx, ny, fz };
+	boundingMesh.vertices[5].position = { nx, ny, fz };
+	boundingMesh.vertices[6].position = { fx, ny, nz };
+	boundingMesh.vertices[7].position = { nx, ny, nz };
+
+	boundingMesh.vertices[0].color = { 0.9f, 0.9f, 0.9f };
+	boundingMesh.vertices[1].color = { 0.9f, 0.9f, 0.9f };
+	boundingMesh.vertices[2].color = { 0.9f, 0.9f, 0.9f };
+	boundingMesh.vertices[3].color = { 0.9f, 0.9f, 0.9f };
+	boundingMesh.vertices[4].color = { 0.9f, 0.9f, 0.9f };
+	boundingMesh.vertices[5].color = { 0.9f, 0.9f, 0.9f };
+	boundingMesh.vertices[6].color = { 0.9f, 0.9f, 0.9f };
+	boundingMesh.vertices[7].color = { 0.9f, 0.9f, 0.9f };
+
+	boundingMesh.indices.resize(16);
+	boundingMesh.indices[0] = 0;
+	boundingMesh.indices[1] = 1;
+	boundingMesh.indices[2] = 3;
+	boundingMesh.indices[3] = 2;
+	boundingMesh.indices[4] = 0;
+
+	boundingMesh.indices[5] = 4;
+	boundingMesh.indices[6] = 6;
+	boundingMesh.indices[7] = 7;
+	boundingMesh.indices[8] = 5;
+	boundingMesh.indices[9] = 2;
+
+	boundingMesh.indices[10] = 3;
+	boundingMesh.indices[11] = 7;
+	boundingMesh.indices[12] = 5;
+	boundingMesh.indices[13] = 4;
+	boundingMesh.indices[14] = 6;
+	boundingMesh.indices[15] = 1;
+
+	((Renderer*)_Renderer)->UploadMeshes(boundingMesh);
+	_Meshes["Bouding"] = boundingMesh;
+	obj.mesh = GetMesh("Bouding");
+
+	return obj;
 }

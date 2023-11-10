@@ -1,6 +1,6 @@
 #pragma once
 #include "interface/IRenderer.hpp"
-#include "interface/IRendererImpl.hpp"
+#include "vulkan/VulkanRenderer.hpp"
 #include "vulkan/VkMesh.hpp"
 
 namespace renderer {
@@ -21,6 +21,9 @@ namespace renderer {
         void UpdateViewMat(glm::mat4 view_matrix);
         void UnloadMeshes(std::unordered_map<std::string, Mesh>& meshes){_RendererImpl->UnloadMeshes(meshes);}
         void DestroyMaterials(std::unordered_map<std::string, Material>& materials){_RendererImpl->DestroyMaterials(materials);}
+        void CreateDrawlinePipeline(Material& mat){
+            ((VulkanRenderer*)_RendererImpl)->CreateDrawLinePipeline(mat);
+        }
 
     protected:
 

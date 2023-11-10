@@ -31,6 +31,8 @@ public:
 	Material* GetMaterial(const std::string& name);
 	Mesh* GetMesh(const std::string& name);
 
+	RenderObject GenerateBoudingBox(const Mesh& mesh);
+
 private:
 	IRenderer* _Renderer;
 

@@ -16,14 +16,14 @@ namespace engine{
 		Material* material;
 
 	public:
+		
 		void SetScale(float in_scale) {
 			scale = glm::scale(glm::mat4{ 1.0 }, glm::vec3{ in_scale, in_scale, in_scale });
 		}
-
 		void SetScale(glm::vec3 in_scale) {
 			scale = glm::scale(glm::mat4{ 1.0 }, in_scale);
 		}
-
+		
 		void SetTranslate(glm::vec3 trans) {
 			translate = glm::translate(glm::mat4{ 1.0 }, trans);
 		}

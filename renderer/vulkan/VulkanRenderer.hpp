@@ -99,6 +99,9 @@ namespace renderer {
         void LoadTexture();
         void InitImgui();
 
+        void CreateDrawLinePipeline(Material& mat);
+
+
     protected:
         bool QueryQueueFamilyProp();
         bool InitQueue();
@@ -174,6 +177,7 @@ namespace renderer {
 
         vk::RenderPass _VkRenderPass;
         vk::Pipeline _Pipeline;
+        vk::Pipeline _DrawLinePipeline;
         vk::PipelineLayout _PipelineLayout;
 
         // Depth Image

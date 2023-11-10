@@ -35,6 +35,8 @@ void VulkanRenderer::ResetProp() {
     _FrameNumber = 0;
     _DescriptorPool = nullptr;
     _GlobalSetLayout = nullptr;
+
+    _DrawLinePipeline = nullptr;
 }
 
 bool VulkanRenderer::Init() { 
@@ -72,7 +74,7 @@ void VulkanRenderer::Release(){
         _VkDevice.destroyImageView(tex.imageView);
     }
 
-
+    _VkDevice.destroyPipeline(_DrawLinePipeline);
     _VkDevice.destroySampler(_TextureSampler);
     _VkDevice.destroyDescriptorSetLayout(_TextureSetLayout);
     _VkDevice.destroyFence(_UploadContext.uploadFence);
@@ -222,6 +224,10 @@ void VulkanRenderer::CreateDevice(){
     std::array<const char*, 1> extensions{ VK_KHR_SWAPCHAIN_EXTENSION_NAME};
 #endif
     dInfo.setPEnabledExtensionNames(extensions);
+
+    vk::PhysicalDeviceFeatures deviceFeatures;
+    deviceFeatures = _VkPhyDevice.getFeatures();
+    dInfo.setPEnabledFeatures(&deviceFeatures);
 
     _VkDevice = _VkPhyDevice.createDevice(dInfo);
     CHECK(_VkDevice);
@@ -607,7 +613,6 @@ void VulkanRenderer::DrawPerFrame(RenderObject* first, int count) {
     cmdBuffer.begin(info);
 
     std::array<vk::ClearValue, 2> ClearValues;
-    //vk::ClearColorValue color = std::array<float, 4>{1.f, 1.f, 1.f, 1.0f};
     vk::ClearColorValue color = std::array<float, 4>{0.f, 0.f, 0.f, 1.0f};
     ClearValues[0].setColor(color);
     ClearValues[1].setDepthStencil({ 1.0, 0 });
@@ -1420,4 +1425,76 @@ void VulkanRenderer::InitImgui() {
         });
 
     ImGui_ImplVulkan_DestroyFontUploadObjects();
+}
+
+void VulkanRenderer::CreateDrawLinePipeline(Material& mat) {
+    PipelineBuilder pipelineBuilder;
+
+    vk::ShaderModule vertShader = CreateShaderModule("../shader/default_vert.spv");
+    vk::ShaderModule fragShader = CreateShaderModule("../shader/default_frag.spv");
+    CHECK(_VertShader);
+    CHECK(_FragShader);
+
+    // INFO("Pipeline Shader Stages");
+    pipelineBuilder._ShaderStages.clear();
+    pipelineBuilder._ShaderStages.push_back(InitShaderStageCreateInfo(vk::ShaderStageFlagBits::eVertex, vertShader));
+    pipelineBuilder._ShaderStages.push_back(InitShaderStageCreateInfo(vk::ShaderStageFlagBits::eFragment, fragShader));
+
+    // INFO("Pipeline Bingding and Attribute Descroptions");
+    vk::VertexInputBindingDescription bindingDescription = Vertex::GetBindingDescription();
+    std::array<vk::VertexInputAttributeDescription, 4> attributeDescription = Vertex::GetAttributeDescription();
+
+    //connect the pipeline builder vertex input info to the one we get from Vertex
+    pipelineBuilder._VertexInputInfo.setVertexAttributeDescriptions(attributeDescription);
+    pipelineBuilder._VertexInputInfo.setVertexAttributeDescriptionCount((uint32_t)attributeDescription.size());
+    pipelineBuilder._VertexInputInfo.setVertexBindingDescriptions(bindingDescription);
+    pipelineBuilder._VertexInputInfo.setVertexBindingDescriptionCount(1);
+
+    // INFO("Pipeline Assembly");
+    pipelineBuilder._InputAssembly = InitAssemblyStateCreateInfo(vk::PrimitiveTopology::eLineStrip);
+
+    // INFO("Push constants");
+    vk::PushConstantRange pushConstant;
+    pushConstant.setOffset(0);
+    pushConstant.setSize(sizeof(MeshPushConstants));
+    pushConstant.setStageFlags(vk::ShaderStageFlagBits::eVertex);
+    CHECK(pushConstant);
+
+    // INFO("Pipeline Layout");
+    vk::PipelineLayoutCreateInfo defaultLayoutInfo = InitPipelineLayoutCreateInfo();
+    std::vector<vk::DescriptorSetLayout> defaultSetLayouts = { _GlobalSetLayout, _TextureSetLayout };
+    defaultLayoutInfo.setPushConstantRanges(pushConstant)
+        .setPushConstantRangeCount(1)
+        .setSetLayoutCount((uint32_t)defaultSetLayouts.size())
+        .setSetLayouts(defaultSetLayouts);
+
+    _PipelineLayout = _VkDevice.createPipelineLayout(defaultLayoutInfo);
+    CHECK(pipelineLayout);
+    pipelineBuilder._PipelineLayout = _PipelineLayout;
+
+    // INFO("Pipeline Viewport");
+    pipelineBuilder._Viewport.x = 0.0f;
+    pipelineBuilder._Viewport.y = 0.0f;
+    pipelineBuilder._Viewport.width = (float)_SupportInfo.extent.width;
+    pipelineBuilder._Viewport.height = (float)_SupportInfo.extent.width;
+    pipelineBuilder._Viewport.minDepth = 0.0f;
+    pipelineBuilder._Viewport.maxDepth = 1.0f;
+
+    // INFO("Pipeline Scissor");
+    pipelineBuilder._Scissor.offset = vk::Offset2D{ 0, 0 };
+    pipelineBuilder._Scissor.extent = _SupportInfo.extent;
+
+    // INFO("Pipeline Rasterizer");
+    pipelineBuilder._Rasterizer = InitRasterizationStateCreateInfo(vk::PolygonMode::eLine);
+    pipelineBuilder._Mutisampling = InitMultisampleStateCreateInfo();
+    pipelineBuilder._ColorBlendAttachment = InitColorBlendAttachmentState();
+    pipelineBuilder._DepthStencilState = InitDepthStencilStateCreateInfo();
+
+    _DrawLinePipeline = pipelineBuilder.BuildPipeline(_VkDevice, _VkRenderPass);
+
+    mat.pipeline = _DrawLinePipeline;
+    mat.pipelineLayout = _PipelineLayout;
+
+    _VkDevice.destroyShaderModule(vertShader);
+    _VkDevice.destroyShaderModule(fragShader);
 }
