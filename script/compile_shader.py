@@ -2,7 +2,13 @@ import os
 import platform
 
 if platform.system().lower() == "windows":
-    vulkanPath = "D:\C_Library\VulkanSDK"
+    vulkanPath = "D:\Library\Vulkan"
+    if os.system("glslc -v") != 0:
+        if os.system(vulkanPath + "\Bin\glslc.exe --version") != 0:
+            os.system("cls")
+            print("Please set vulkan path!")
+            quit()
+
 filePath = os.path.abspath(".") + "/shader/"
 print("Shader dir: " + filePath)
 
