@@ -523,7 +523,7 @@ void VulkanRenderer::CreatePipeline(Material& mat, const char* vert_shader, cons
     pipelineBuilder._Viewport.x = 0.0f;
     pipelineBuilder._Viewport.y = 0.0f;
     pipelineBuilder._Viewport.width = (float)_SupportInfo.extent.width;
-    pipelineBuilder._Viewport.height = (float)_SupportInfo.extent.width;
+    pipelineBuilder._Viewport.height = (float)_SupportInfo.extent.height;
     pipelineBuilder._Viewport.minDepth = 0.0f;
     pipelineBuilder._Viewport.maxDepth = 1.0f;
 
@@ -1238,11 +1238,19 @@ vk::PipelineMultisampleStateCreateInfo VulkanRenderer::InitMultisampleStateCreat
     return info;
 }
 
-vk::PipelineColorBlendAttachmentState VulkanRenderer::InitColorBlendAttachmentState() {
+vk::PipelineColorBlendAttachmentState VulkanRenderer::InitColorBlendAttachmentState(bool isBlend) {
     vk::PipelineColorBlendAttachmentState info;
     info.setColorWriteMask(vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG |
         vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA);
-    info.setBlendEnable(VK_FALSE);
+    info.setBlendEnable(isBlend);
+
+    if (isBlend) {
+        info.setColorBlendOp(vk::BlendOp::eAdd)
+            .setSrcColorBlendFactor(vk::BlendFactor::eSrcAlpha)
+            .setDstColorBlendFactor(vk::BlendFactor::eOneMinusSrcAlpha)
+            .setSrcAlphaBlendFactor(vk::BlendFactor::eOne)
+            .setDstAlphaBlendFactor(vk::BlendFactor::eZero);
+    }
 
     return info;
 }

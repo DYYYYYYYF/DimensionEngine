@@ -137,7 +137,7 @@ namespace renderer {
         vk::PipelineInputAssemblyStateCreateInfo InitAssemblyStateCreateInfo(vk::PrimitiveTopology topology);
         vk::PipelineRasterizationStateCreateInfo InitRasterizationStateCreateInfo(vk::PolygonMode polygonMode);
         vk::PipelineMultisampleStateCreateInfo InitMultisampleStateCreateInfo();
-        vk::PipelineColorBlendAttachmentState InitColorBlendAttachmentState();
+        vk::PipelineColorBlendAttachmentState InitColorBlendAttachmentState(bool isBlend = false);
         vk::PipelineLayoutCreateInfo InitPipelineLayoutCreateInfo();
         vk::PipelineDepthStencilStateCreateInfo InitDepthStencilStateCreateInfo();
 
