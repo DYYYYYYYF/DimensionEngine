@@ -18,8 +18,8 @@ void Scene::InitScene() {
 	UploadMesh("../asset/model/ball.obj", "ball");
 	UploadMesh("../asset/model/CornellBox.obj", "CornellBox");
 
-	// UploadMesh("../asset/model/sponza.obj", "sponza");
-	// UploadMesh("../asset/model/bunny.obj", "Bunny");
+	UploadMesh("../asset/model/sponza.obj", "sponza");
+	UploadMesh("../asset/model/bunny.obj", "Bunny");
 	UploadMesh("../asset/obj/wooden_boat/Boat.obj", "Boat");
 	
 	UploadTriangleMesh();
@@ -27,8 +27,9 @@ void Scene::InitScene() {
 
 	const char* defaultVertShader = "../shader/default_vert.spv";
 	const char* defaultFragShader = "../shader/default_frag.spv";
-	const char* meshFragShader = "../shader/texture_mesh_frag.spv";;
-	const char* meshFloorFragShader = "../shader/mesh_floor_frag.spv";;
+	const char* meshFragShader = "../shader/texture_mesh_frag.spv";
+	const char* meshFloorVertShader = "../shader/mesh_floor_vert.spv";
+	const char* meshFloorFragShader = "../shader/mesh_floor_frag.spv";
 
 	Material deafaultMaterial;
 	_Renderer->CreatePipeline(deafaultMaterial, defaultVertShader, defaultFragShader);
@@ -39,31 +40,35 @@ void Scene::InitScene() {
 	_Materials["Texture"] = deafaultMeshMaterial;
 
 	Material deafaultFloorMaterial;
-	_Renderer->CreatePipeline(deafaultFloorMaterial, defaultVertShader, meshFloorFragShader);
+	_Renderer->CreatePipeline(deafaultFloorMaterial, meshFloorVertShader, meshFloorFragShader);
 	_Materials["Floor"] = deafaultFloorMaterial;
 
-	Material drawLineMaterial;
-	((Renderer*)_Renderer)->CreateDrawlinePipeline(drawLineMaterial);
-	_Materials["DrawLine"] = drawLineMaterial;
+	//Material drawLineMaterial;
+	//((Renderer*)_Renderer)->CreateDrawlinePipeline(drawLineMaterial);
+	//_Materials["DrawLine"] = drawLineMaterial;
 
 	RenderObject floor;
 	floor.mesh = GetMesh("Rectangle");
-	floor.material = GetMaterial("Default");
-	floor.SetScale(1.0f);
-	floor.SetRotate(glm::vec3{ 0, 1, 0 }, 90.0f);
-	//_Renderables.push_back(floor);
+	floor.material = GetMaterial("Floor");
+	_Renderables.push_back(floor);
+
+	RenderObject triangle;
+	triangle.mesh = GetMesh("Triangle");
+	triangle.material = GetMaterial("Texture");
+	triangle.SetTranslate(glm::vec3{ 0, -1, 0 });
+	_Renderables.push_back(triangle);
 
 	RenderObject boat;
 	boat.mesh = GetMesh("Boat");
-	boat.material = GetMaterial("DrawLine");
-	boat.SetTranslate(glm::vec3{0.0f, 1.0f, 0.0f});
-	boat.SetScale(1.0f);
-	_Renderables.push_back(boat);
+	boat.material = GetMaterial("Default");
+	boat.SetTranslate(glm::vec3{0.0f, -0.5f, 0.0f});
+	//_Renderables.push_back(boat);
 
-	RenderObject boatBouding;
-	boatBouding = GenerateBoudingBox(*(boat.mesh));
-	boatBouding.SetTranslate(glm::vec3{0.0f, 1.0f, 0.0f});
-	_Renderables.push_back(boatBouding);
+	// GenerateBoudingBox(boat.mesh);
+	//RenderObject boatBouding;
+	//boatBouding = GenerateBoudingBox(*boat.mesh);
+	//boatBouding.SetTranslate(glm::vec3{0.0f, 1.0f, 0.0f});
+	//_Renderables.push_back(boatBouding);
 
 	INFO("Inited Scene.");
 }
@@ -162,10 +167,20 @@ void Scene::UploadTriangleMesh() {
 	triganleMesh.vertices[1].position = { -1.f,2.f, 0.0f };
 	triganleMesh.vertices[2].position = { 0.f, 1.f, 0.0f };
 
-	//vertex colors, all green
-	triganleMesh.vertices[0].color = { 1.f, 0.f, 0.0f }; //pure green
-	triganleMesh.vertices[1].color = { 0.f, 1.f, 0.0f }; //pure green
-	triganleMesh.vertices[2].color = { 0.f, 0.f, 1.0f }; //pure green
+	//vertex colors
+	triganleMesh.vertices[0].color = { 1.f, 0.f, 0.0f };
+	triganleMesh.vertices[1].color = { 0.f, 1.f, 0.0f };
+	triganleMesh.vertices[2].color = { 0.f, 0.f, 1.0f };
+
+	// Normal
+	triganleMesh.vertices[0].normal = { 0.0f, 1.0f, 0.0f };
+	triganleMesh.vertices[1].normal = { 0.0f, 1.0f, 0.0f };
+	triganleMesh.vertices[2].normal = { 0.0f, 1.0f, 0.0f };
+
+	// UV
+	triganleMesh.vertices[0].texCoord = { 0.0f, 0.0f };
+	triganleMesh.vertices[1].texCoord = { 1.0f, 0.0f };
+	triganleMesh.vertices[2].texCoord = { 0.5f, 1.0f };
 
 	//indices
 	triganleMesh.indices.resize(3);
@@ -185,16 +200,28 @@ void Scene::UploadRectangleMesh() {
 	rectangleMesh.vertices.resize(4);
 
 	//vertex positions
-	rectangleMesh.vertices[0].position = {  50.f, 0.f,  -50.f };
-	rectangleMesh.vertices[1].position = {  50.f, 0.f,   50.f };
-	rectangleMesh.vertices[2].position = { -50.f, 0.f,   50.f };
-	rectangleMesh.vertices[3].position = { -50.f, 0.f,  -50.f };
+	rectangleMesh.vertices[0].position = {  50.f, 0.f,  -50.f };	//右后
+	rectangleMesh.vertices[1].position = {  50.f, 0.f,   50.f };	//右前
+	rectangleMesh.vertices[2].position = { -50.f, 0.f,   50.f };	//左前
+	rectangleMesh.vertices[3].position = { -50.f, 0.f,  -50.f };	//左后
 
 	//vertex colors, all green
 	rectangleMesh.vertices[0].color = { 0.9f, 0.9f, 0.9f };
 	rectangleMesh.vertices[1].color = { 0.1f, 0.1f, 0.1f };
 	rectangleMesh.vertices[2].color = { 0.9f, 0.9f, 0.9f };
 	rectangleMesh.vertices[3].color = { 0.1f, 0.1f, 0.1f };
+
+	// Normal
+	rectangleMesh.vertices[0].normal = { 0.0f, 1.0f, 0.0f };
+	rectangleMesh.vertices[1].normal = { 0.0f, 1.0f, 0.0f };
+	rectangleMesh.vertices[2].normal = { 0.0f, 1.0f, 0.0f };
+	rectangleMesh.vertices[3].normal = { 0.0f, 1.0f, 0.0f };
+
+	// UV
+	rectangleMesh.vertices[0].texCoord = { 0.0f, 1.0f };
+	rectangleMesh.vertices[1].texCoord = { 1.0f, 1.0f };
+	rectangleMesh.vertices[2].texCoord = { 1.0f, 0.0f };
+	rectangleMesh.vertices[3].texCoord = { 0.0f, 0.0f };
 
 	//indices
 	rectangleMesh.indices.resize(6);
@@ -244,7 +271,7 @@ void Scene::Destroy() {
 	}
 }
 
-RenderObject Scene::GenerateBoudingBox(const Mesh& mesh) {
+RenderObject Scene::GenerateBoudingBox(const Mesh* mesh) {
 	
 	RenderObject obj;
 	obj.material = GetMaterial("DrawLine");
@@ -257,7 +284,7 @@ RenderObject Scene::GenerateBoudingBox(const Mesh& mesh) {
 	float ny = 0.0f;
 	float nz = 0.0f;
 
-	for (const Vertex& vert : mesh.vertices) {
+	for (const Vertex& vert : mesh->vertices) {
 		if (fx < vert.position[0]) fx = vert.position[0];
 		if (fy < vert.position[1]) fy = vert.position[1];
 		if (fz < vert.position[2]) fz = vert.position[2];
@@ -280,14 +307,14 @@ RenderObject Scene::GenerateBoudingBox(const Mesh& mesh) {
 	boundingMesh.vertices[6].position = { fx, ny, nz };
 	boundingMesh.vertices[7].position = { nx, ny, nz };
 
-	boundingMesh.vertices[0].color = { 0.9f, 0.9f, 0.9f };
-	boundingMesh.vertices[1].color = { 0.9f, 0.9f, 0.9f };
-	boundingMesh.vertices[2].color = { 0.9f, 0.9f, 0.9f };
-	boundingMesh.vertices[3].color = { 0.9f, 0.9f, 0.9f };
-	boundingMesh.vertices[4].color = { 0.9f, 0.9f, 0.9f };
-	boundingMesh.vertices[5].color = { 0.9f, 0.9f, 0.9f };
-	boundingMesh.vertices[6].color = { 0.9f, 0.9f, 0.9f };
-	boundingMesh.vertices[7].color = { 0.9f, 0.9f, 0.9f };
+	boundingMesh.vertices[0].color = { 1.0f, 1.0f, 1.0f };
+	boundingMesh.vertices[1].color = { 1.0f, 1.0f, 1.0f };
+	boundingMesh.vertices[2].color = { 1.0f, 1.0f, 1.0f };
+	boundingMesh.vertices[3].color = { 1.0f, 1.0f, 1.0f };
+	boundingMesh.vertices[4].color = { 1.0f, 1.0f, 1.0f };
+	boundingMesh.vertices[5].color = { 1.0f, 1.0f, 1.0f };
+	boundingMesh.vertices[6].color = { 1.0f, 1.0f, 1.0f };
+	boundingMesh.vertices[7].color = { 1.0f, 1.0f, 1.0f };
 
 	boundingMesh.indices.resize(16);
 	boundingMesh.indices[0] = 0;
@@ -312,6 +339,9 @@ RenderObject Scene::GenerateBoudingBox(const Mesh& mesh) {
 	((Renderer*)_Renderer)->UploadMeshes(boundingMesh);
 	_Meshes["Bouding"] = boundingMesh;
 	obj.mesh = GetMesh("Bouding");
+	obj.SetTranslate(glm::vec3{ 0.0f, 1.0f, 0.0f });
+
+	_Renderables.push_back(obj);
 
 	return obj;
 }
