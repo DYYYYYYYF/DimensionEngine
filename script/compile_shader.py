@@ -1,7 +1,7 @@
 import os
 import platform
 
-vulkanPath = "D:\C_Library\VulkanSDK"
+vulkanPath = "D:\Library\Vulkan"
 compile_command = "glslc -c "
 test_command = compile_command + "--version"
 
@@ -49,7 +49,7 @@ for root, dirs, files in os.walk(filePath):
 
             elif filename[1] == ".hlsl":
                 ## Record compile command
-                cmd = compile_command + filePath + "hlsl/" + file + " -o " + filePath + "hlsl/" + filename[0] + "_vert.spv"
+                cmd = compile_command + " -c -fentry-point=VS -fshader-stage=vert " + filePath + "hlsl/" + file + " -o " + filePath + "hlsl/" + filename[0] + "_vert.spv"
                 print("Compiling " + filename[0] + filename[1])
 
                 ## Execute compile command
