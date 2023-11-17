@@ -1,16 +1,27 @@
 import os
 import platform
 
-if platform.system().lower() == "windows":
-    vulkanPath = "D:\Library\Vulkan"
-    if os.system("glslc -v") != 0:
-        if os.system(vulkanPath + "\Bin\glslc.exe --version") != 0:
-            os.system("cls")
-            print("Please set vulkan path!")
-            quit()
+vulkanPath = "D:\C_Library\VulkanSDK"
+compile_command = "glslc -c "
+test_command = compile_command + "--version"
 
 filePath = os.path.abspath(".") + "/shader/"
 print("Shader dir: " + filePath)
+
+# Windows platform
+# Check glslc command
+if platform.system().lower() == "windows":
+    if os.system(test_command) != 0:
+        # Not set global command
+        os.system("cls")
+        compile_command = vulkanPath + "\Bin\glslc.exe -c "
+        test_command = compile_command + "--version "
+        
+        if os.system(test_command) != 0:
+            # Not set right vulkan path
+            os.system("cls")
+            print("Please set vulkan path!")
+            quit()
 
 failedShaders = []
 
@@ -20,28 +31,30 @@ for root, dirs, files in os.walk(filePath):
         if filename[1] != ".spv":
             if filename[1] == ".vert":
                 ## Record compile command
-                cmd = ""
-                if platform.system().lower() == 'windows':
-                    cmd = vulkanPath + "\Bin\glslc.exe -c " + filePath + file + " -o " + filePath + filename[0] + "_vert.spv"
-                else:
-                    cmd = "glslc -c " + filePath + file + " -o " + filePath + filename[0] + "_vert.spv"
+                cmd = compile_command + filePath + "glsl/" + file + " -o " + filePath + "glsl/" + filename[0] + "_vert.spv"
+                print("Compiling " + filename[0] + filename[1])
 
-                print("Compiling " + filename[0] + ".vert")
                 ## Execute compile command
                 if os.system(cmd) != 0:
                     failedShaders.append(file)
+            
             elif filename[1] == ".frag":
                 ## Record compile command
-                if platform.system().lower() == 'windows':
-                    cmd = vulkanPath + "\Bin\glslc.exe -c " + filePath + file + " -o " + filePath + filename[0] + "_frag.spv"
-                else:
-                    cmd = "glslc -c " + filePath + file + " -o " + filePath + filename[0] + "_frag.spv"
+                cmd = compile_command + filePath + "glsl/" + file + " -o " + filePath + "glsl/" + filename[0] + "_frag.spv"
+                print("Compiling " + filename[0] + filename[1])
 
-                print("Compiling " + filename[0] + ".frag")
                 ## Execute compile command
                 if os.system(cmd) != 0:
                     failedShaders.append(file)
 
+            elif filename[1] == ".hlsl":
+                ## Record compile command
+                cmd = compile_command + filePath + "hlsl/" + file + " -o " + filePath + "hlsl/" + filename[0] + "_vert.spv"
+                print("Compiling " + filename[0] + filename[1])
+
+                ## Execute compile command
+                if os.system(cmd) != 0:
+                    failedShaders.append(file)
                         
 
 if len(failedShaders) == 0:
