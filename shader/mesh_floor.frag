@@ -24,19 +24,24 @@ float AlphaTest(float a, float b){
 
 void main(){
 
+    float mx = TexCoord.x * 30; // mutiple x
+    float my = TexCoord.y * 30;
+
+    vec2 derivative = fwidth(vec2(mx, my));
+
    // Rasterization
-   float x = TexCoord.x * 30 - int(TexCoord.x * 30);
-   float y = TexCoord.y * 30 - int(TexCoord.y * 30);
+   float x = mx - int(mx);
+   float y = my - int(my);
    vec2 uv = vec2(x, y);
+
    uv = abs(uv - 0.5f);
+   uv  = uv / derivative;
 
    float minVal = min(uv.x, uv.y);
-   float alpha = 1 - AlphaTest(0.01, minVal);
+   float alpha = 1 - AlphaTest(1.0, minVal);
 
    vec3 color = vec3(1.0f, 1.0f, 1.0f);
    color = color * alpha;
-
-   //
 
    outFragColor = vec4(color, alpha);
 }
