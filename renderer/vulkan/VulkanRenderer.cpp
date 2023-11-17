@@ -1380,7 +1380,7 @@ vk::ImageView VulkanRenderer::CreateImageView(vk::Format format, vk::Image image
 void VulkanRenderer::LoadTexture(){
     Texture texture;
 
-    renderer::LoadImageFromFile(*this, "../asset/obj/wooden_boat/BaseColor.png", texture.image);
+    renderer::LoadImageFromFile(*this, "../asset/texture/room.png", texture.image);
     CHECK(texture.image.image)
     
     texture.imageView = CreateImageView(vk::Format::eR8G8B8A8Srgb, texture.image.image, vk::ImageAspectFlagBits::eColor);
@@ -1438,8 +1438,8 @@ void VulkanRenderer::InitImgui() {
 void VulkanRenderer::CreateDrawLinePipeline(Material& mat) {
     PipelineBuilder pipelineBuilder;
 
-    vk::ShaderModule vertShader = CreateShaderModule("../shader/default_vert.spv");
-    vk::ShaderModule fragShader = CreateShaderModule("../shader/default_frag.spv");
+    vk::ShaderModule vertShader = CreateShaderModule("../shader/glsl/default_vert.spv");
+    vk::ShaderModule fragShader = CreateShaderModule("../shader/glsl/default_frag.spv");
     CHECK(_VertShader);
     CHECK(_FragShader);
 

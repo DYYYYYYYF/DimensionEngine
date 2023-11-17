@@ -25,11 +25,11 @@ void Scene::InitScene() {
 	UploadTriangleMesh();
 	UploadRectangleMesh();
 
-	const char* defaultVertShader = "../shader/default_vert.spv";
-	const char* defaultFragShader = "../shader/default_frag.spv";
-	const char* meshFragShader = "../shader/texture_mesh_frag.spv";
-	const char* meshFloorVertShader = "../shader/mesh_floor_vert.spv";
-	const char* meshFloorFragShader = "../shader/mesh_floor_frag.spv";
+	const char* defaultVertShader = "../shader/glsl/default_vert.spv";
+	const char* defaultFragShader = "../shader/glsl/default_frag.spv";
+	const char* meshFragShader = "../shader/glsl/texture_mesh_frag.spv";
+	const char* meshFloorVertShader = "../shader/glsl/mesh_floor_vert.spv";
+	const char* meshFloorFragShader = "../shader/glsl/mesh_floor_frag.spv";
 
 	Material deafaultMaterial;
 	_Renderer->CreatePipeline(deafaultMaterial, defaultVertShader, defaultFragShader);
@@ -43,9 +43,9 @@ void Scene::InitScene() {
 	_Renderer->CreatePipeline(deafaultFloorMaterial, meshFloorVertShader, meshFloorFragShader);
 	_Materials["Floor"] = deafaultFloorMaterial;
 
-	//Material drawLineMaterial;
-	//((Renderer*)_Renderer)->CreateDrawlinePipeline(drawLineMaterial);
-	//_Materials["DrawLine"] = drawLineMaterial;
+	Material drawLineMaterial;
+	((Renderer*)_Renderer)->CreateDrawlinePipeline(drawLineMaterial);
+	_Materials["DrawLine"] = drawLineMaterial;
 
 	RenderObject floor;
 	floor.mesh = GetMesh("Rectangle");
@@ -53,22 +53,13 @@ void Scene::InitScene() {
 	_Renderables.push_back(floor);
 
 	RenderObject triangle;
-	triangle.mesh = GetMesh("Triangle");
+	triangle.mesh = GetMesh("room");
 	triangle.material = GetMaterial("Texture");
-	triangle.SetTranslate(glm::vec3{ 0, -1, 0 });
+	triangle.SetTranslate(glm::vec3{ 0, 1, 0 });
+	triangle.SetRotate(glm::vec3{ 0, 0, 1 }, 90);
+	triangle.SetRotate(glm::vec3{ 0, 1, 0 }, 90);
+	triangle.SetRotate(glm::vec3{ 1, 0, 0 }, -90);
 	_Renderables.push_back(triangle);
-
-	RenderObject boat;
-	boat.mesh = GetMesh("Boat");
-	boat.material = GetMaterial("Default");
-	boat.SetTranslate(glm::vec3{0.0f, -0.5f, 0.0f});
-	//_Renderables.push_back(boat);
-
-	// GenerateBoudingBox(boat.mesh);
-	//RenderObject boatBouding;
-	//boatBouding = GenerateBoudingBox(*boat.mesh);
-	//boatBouding.SetTranslate(glm::vec3{0.0f, 1.0f, 0.0f});
-	//_Renderables.push_back(boatBouding);
 
 	INFO("Inited Scene.");
 }
