@@ -12,3 +12,4 @@ library/
 *.DS_Store
 .vs/
 CMakeSettings.json
+*.spv
