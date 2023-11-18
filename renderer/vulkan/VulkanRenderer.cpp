@@ -74,7 +74,6 @@ void VulkanRenderer::Release(){
         _VkDevice.destroyImageView(tex.imageView);
     }
 
-    _VkDevice.destroyPipeline(_DrawLinePipeline);
     _VkDevice.destroySampler(_TextureSampler);
     _VkDevice.destroyDescriptorSetLayout(_TextureSetLayout);
     _VkDevice.destroyFence(_UploadContext.uploadFence);
