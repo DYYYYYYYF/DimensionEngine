@@ -55,7 +55,6 @@ bool VulkanRenderer::Init() {
     CreateDepthImage();
     CreateFrameBuffers();
     InitSyncStructures();
-    LoadTexture();
     InitDescriptors();
     // InitImgui();
 
@@ -66,13 +65,6 @@ bool VulkanRenderer::Init() {
 void VulkanRenderer::Release(){
     CHECK(_VkDevice);
     INFO("Release Renderer");
-
-    for (auto& texture : _LoadedTextures){
-        Texture& tex = texture.second;
-        _VkDevice.destroyImage(tex.image.image);
-        _VkDevice.freeMemory(tex.image.memory);
-        _VkDevice.destroyImageView(tex.imageView);
-    }
 
     _VkDevice.destroySampler(_TextureSampler);
     _VkDevice.destroyDescriptorSetLayout(_TextureSetLayout);
@@ -688,6 +680,32 @@ size_t VulkanRenderer::PadUniformBuffeSize(size_t origin_size){
     return alignedSize;
 }
 
+void VulkanRenderer::BindTextureDescriptor(Texture* texture) {
+    for (int i = 0; i < FRAME_OVERLAP; i++) {
+        vk::DescriptorSetAllocateInfo imageAllocateInfo;
+        imageAllocateInfo.setDescriptorPool(_DescriptorPool)
+            .setDescriptorSetCount(1)
+            .setSetLayouts(_TextureSetLayout);
+        if (_VkDevice.allocateDescriptorSets(&imageAllocateInfo, &_TextureSet) != vk::Result::eSuccess) {
+            CHECK(_Frames[i].globalDescriptor);
+        }
+
+        vk::DescriptorImageInfo descImageInfo;
+        descImageInfo.setImageLayout(vk::ImageLayout::eShaderReadOnlyOptimal)
+            .setImageView(texture->imageView)
+            .setSampler(_TextureSampler);
+
+        vk::WriteDescriptorSet writeSamplerSet = InitWriteDescriptorImage(vk::DescriptorType::eCombinedImageSampler,
+            _TextureSet, &descImageInfo, 0);
+        CHECK(writeSamplerSet);
+
+        std::vector<vk::WriteDescriptorSet> writeDescSets = { writeSamplerSet };
+        CHECK(sceneWriteSet);
+
+        _VkDevice.updateDescriptorSets(writeDescSets, nullptr);
+    }
+}
+
 void VulkanRenderer::InitDescriptors() {
     CHECK(_VkDevice);
 
@@ -771,14 +789,6 @@ void VulkanRenderer::InitDescriptors() {
             CHECK(_Frames[i].globalDescriptor);
         }
 
-       vk::DescriptorSetAllocateInfo imageAllocateInfo;
-       descAllocateInfo.setDescriptorPool(_DescriptorPool)
-           .setDescriptorSetCount(1)
-           .setSetLayouts(_TextureSetLayout);
-       if (_VkDevice.allocateDescriptorSets(&descAllocateInfo, &_TextureSet) != vk::Result::eSuccess) {
-           CHECK(_Frames[i].globalDescriptor);
-       }
-
         //  make it point into our camera buffer
         vk::DescriptorBufferInfo cameraBufferInfo;
         cameraBufferInfo.setBuffer(_Frames[i].cameraBuffer.buffer)
@@ -790,11 +800,6 @@ void VulkanRenderer::InitDescriptors() {
             .setOffset(0)
             .setRange(sizeof(SceneData));
 
-        vk::DescriptorImageInfo descImageInfo;
-        descImageInfo.setImageLayout(vk::ImageLayout::eShaderReadOnlyOptimal)
-            .setImageView(_LoadedTextures["default"].imageView)
-            .setSampler(_TextureSampler);
-
         vk::WriteDescriptorSet camerWriteSet = InitWriteDescriptorBuffer(vk::DescriptorType::eUniformBuffer,
             _Frames[i].globalDescriptor, &cameraBufferInfo, 0);
         CHECK(camerWriteSet);
@@ -802,11 +807,7 @@ void VulkanRenderer::InitDescriptors() {
         vk::WriteDescriptorSet sceneWriteSet = InitWriteDescriptorBuffer(vk::DescriptorType::eUniformBufferDynamic,
             _Frames[i].globalDescriptor, &sceneBufferInfo, 1);
 
-        vk::WriteDescriptorSet writeSamplerSet = InitWriteDescriptorImage(vk::DescriptorType::eCombinedImageSampler,
-            _TextureSet, &descImageInfo, 0);
-        CHECK(writeSamplerSet);
-
-        std::vector<vk::WriteDescriptorSet> writeDescSets = {camerWriteSet, sceneWriteSet, writeSamplerSet };
+        std::vector<vk::WriteDescriptorSet> writeDescSets = {camerWriteSet, sceneWriteSet };
         CHECK(sceneWriteSet);
 
         _VkDevice.updateDescriptorSets(writeDescSets, nullptr);
@@ -1374,17 +1375,6 @@ vk::ImageView VulkanRenderer::CreateImageView(vk::Format format, vk::Image image
         .setImage(image)
         .setSubresourceRange(subresourceRange);
     return _VkDevice.createImageView(info);
-}
-
-void VulkanRenderer::LoadTexture(){
-    Texture texture;
-
-    renderer::LoadImageFromFile(*this, "../asset/texture/room.png", texture.image);
-    CHECK(texture.image.image)
-    
-    texture.imageView = CreateImageView(vk::Format::eR8G8B8A8Srgb, texture.image.image, vk::ImageAspectFlagBits::eColor);
-
-    _LoadedTextures["default"] = texture;
 }
 
 void VulkanRenderer::InitImgui() {

@@ -85,7 +85,6 @@ bool Mesh::LoadFromObj(const char* filename){
             }
 
             //we are setting the vertex color as the vertex normal. This is just for display purposes
-
             if (uniqueVertices.count(new_vert) == 0) {
                 uniqueVertices[new_vert] = static_cast<uint32_t>(vertices.size());
                 vertices.push_back(new_vert);

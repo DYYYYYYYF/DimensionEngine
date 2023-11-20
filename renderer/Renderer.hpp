@@ -17,16 +17,52 @@ namespace renderer {
         virtual void Release() override;
 
     public:
-        void UploadMeshes(Mesh& mesh);
         void UpdateViewMat(glm::mat4 view_matrix);
-        void UnloadMeshes(std::unordered_map<std::string, Mesh>& meshes){_RendererImpl->UnloadMeshes(meshes);}
-        void DestroyMaterials(std::unordered_map<std::string, Material>& materials){_RendererImpl->DestroyMaterials(materials);}
+
+        void LoadTexture(const char* filename, const char* texture_path);
         void CreateDrawlinePipeline(Material& mat){
             ((VulkanRenderer*)_RendererImpl)->CreateDrawLinePipeline(mat);
         }
 
-    protected:
+        void LoadMesh(const char* filename, Mesh& mesh);
+        void LoadMesh(const char* filename, const char* mesh_name);
+        void LoadTriangleMesh();
+        void LoadRectangleMesh();
 
+        Material* GetMaterial(const std::string& name);
+        Mesh* GetMesh(const std::string& name);
+        Texture* GetTexture(const std::string& name);
+
+        void ReleaseMeshes() { ((VulkanRenderer*)_RendererImpl)->ReleaseMeshes(_Meshes); }
+        void ReleaseMaterials() { ((VulkanRenderer*)_RendererImpl)->ReleaseMaterials(_Materials); }
+        void ReleaseTextures() { ((VulkanRenderer*)_RendererImpl) -> ReleaseTextures( _Textures); }
+
+    private:
+        bool AddMesh(std::string name, Mesh mesh) {
+            CHECK(mesh);
+
+            _Meshes[name] = mesh;
+            return true;
+        }
+
+        bool AddMaterial(std::string name, Material mat) {
+            CHECK(mat);
+
+            _Materials[name] = mat;
+            return true;
+        }
+
+        bool AddTexture(std::string name, Texture tex) {
+            CHECK(tex);
+
+            _Textures[name] = tex;
+            return true;
+        }
+
+    protected:
+        std::unordered_map<std::string, Mesh> _Meshes;
+        std::unordered_map<std::string, Material> _Materials;
+        std::unordered_map<std::string, Texture> _Textures;
     };
 }
 

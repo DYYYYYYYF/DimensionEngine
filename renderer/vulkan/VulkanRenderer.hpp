@@ -46,61 +46,66 @@ namespace renderer {
         virtual void DrawPerFrame(RenderObject* first, int count) override;
 
         virtual void UpLoadMeshes(Mesh& mesh) override;
-        virtual void UnloadMeshes(std::unordered_map<std::string, Mesh>& meshes) override{
-            for (auto& mesh_map : meshes){
-                Mesh& mesh = mesh_map.second; 
-                // Vertices
-                _VkDevice.freeMemory(mesh.vertexBuffer.memory);
-                _VkDevice.destroyBuffer(mesh.vertexBuffer.buffer);
-                
-                // Indices
-                _VkDevice.freeMemory(mesh.indexBuffer.memory);
-                _VkDevice.destroyBuffer(mesh.indexBuffer.buffer);
-            }
-        }
-
-        virtual void DestroyMaterials(std::unordered_map<std::string, Material>& materials) override {
-            for(auto& material_map : materials){
-                Material& mat = material_map.second;
-                _VkDevice.destroyPipeline(mat.pipeline);
-                _VkDevice.destroyPipelineLayout(mat.pipelineLayout);
-            }
-        }
-
+    
         virtual void WaitIdel() override { _VkDevice.waitIdle(); }
 
     public:
         vk::CommandBuffer AllocateCmdBuffer();
         void EndCmdBuffer(vk::CommandBuffer cmdBuf);
-
+        
         // Buffer
         vk::Buffer CreateBuffer(uint64_t size, vk::BufferUsageFlags flag,
             vk::SharingMode mode = vk::SharingMode::eExclusive);
         vk::DeviceMemory AllocateMemory(MemRequiredInfo memInfo,
             vk::MemoryPropertyFlags flag = vk::MemoryPropertyFlagBits::eHostVisible |
             vk::MemoryPropertyFlagBits::eHostCoherent);
-
+      
         // Image
         vk::Image CreateImage(vk::Format format, vk::ImageUsageFlags usage, vk::Extent3D extent);
         vk::ImageView CreateImageView(vk::Format format, vk::Image image, vk::ImageAspectFlags aspect);
-
+        
         // Uniform
         void UpdatePushConstants(glm::mat4 view_matrix);
         void UpdateUniformBuffer();
         void UpdateDynamicBuffer();
-
-        void InitDescriptors();
         
+        void InitDescriptors();
         void ImmediateSubmit(std::function<void(vk::CommandBuffer cmd)>&& function);
-
         MemRequiredInfo QueryMemReqInfo(vk::Buffer buf, vk::MemoryPropertyFlags flag);
         MemRequiredInfo QueryImgReqInfo(vk::Image image, vk::MemoryPropertyFlags flag);
-
-        void LoadTexture();
+        void BindTextureDescriptor(Texture* texture);
         void InitImgui();
-
         void CreateDrawLinePipeline(Material& mat);
 
+        void ReleaseMeshes(std::unordered_map<std::string, Mesh>& meshes) {
+            for (auto& mesh_map : meshes) {
+                Mesh& mesh = mesh_map.second;
+                // Vertices
+                _VkDevice.freeMemory(mesh.vertexBuffer.memory);
+                _VkDevice.destroyBuffer(mesh.vertexBuffer.buffer);
+
+                // Indices
+                _VkDevice.freeMemory(mesh.indexBuffer.memory);
+                _VkDevice.destroyBuffer(mesh.indexBuffer.buffer);
+            }
+        }
+
+        void ReleaseMaterials(std::unordered_map<std::string, Material>& materials) {
+            for (auto& material_map : materials) {
+                Material& mat = material_map.second;
+                _VkDevice.destroyPipeline(mat.pipeline);
+                _VkDevice.destroyPipelineLayout(mat.pipelineLayout);
+            }
+        }
+
+        void ReleaseTextures(std::unordered_map<std::string, Texture>& textures) {
+            for (auto& texture : textures) {
+                Texture& tex = texture.second;
+                _VkDevice.destroyImage(tex.image.image);
+                _VkDevice.freeMemory(tex.image.memory);
+                _VkDevice.destroyImageView(tex.imageView);
+            }
+        }
 
     protected:
         bool QueryQueueFamilyProp();
@@ -114,7 +119,6 @@ namespace renderer {
 
         void TransitionImageLayout(vk::Image image, vk::Format format,
             vk::ImageLayout oldLayout, vk::ImageLayout newLayout);
-
         bool IsContainStencilComponent(vk::Format format) {
             return format == vk::Format::eD32SfloatS8Uint || format == vk::Format::eX8D24UnormPack32;
         }
@@ -193,9 +197,9 @@ namespace renderer {
         vk::DescriptorPool _DescriptorPool;
         vk::DescriptorSetLayout _TextureSetLayout;
         vk::DescriptorSet _TextureSet;
-
+        
+        // Texture
         vk::Sampler _TextureSampler;
 
-        std::unordered_map<std::string, Texture> _LoadedTextures;
     };// class VulkanRenderer
 }// namespace renderer
