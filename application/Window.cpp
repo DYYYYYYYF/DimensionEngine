@@ -4,19 +4,43 @@ namespace udon {
     float scale_callback = 0.5;
     void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
         if (scale_callback + yoffset * 0.02 >= 0.1)
-            scale_callback += yoffset * 0.02;
+            scale_callback += static_cast<float>(yoffset * 0.02);
     }
 }
 
 using namespace udon;
 
-int WsiWindow::_Height = 800;
-int WsiWindow::_Width = 1200;
+float WsiWindow::_Aspect = 0.0f;
+int WsiWindow::_Height = 0;
+int WsiWindow::_Width = 0;
 WsiWindow* WsiWindow::_WindowObj = nullptr;
 GLFWwindow* WsiWindow::_GLFWWindow = nullptr;
 
+WsiWindow::WsiWindow() {
+
+    if (_Width == 0) {
+        _Width = 1600;
+    }
+
+    _WindowObj = nullptr;
+    _Aspect = 16.0f / 9.0f;
+    _Height = static_cast<int>(_Width / _Aspect);
+
+    InitWindow();
+}
+
+WsiWindow::WsiWindow(int width) {
+    _WindowObj = nullptr;
+    _Aspect = 16.0f / 9.0f;
+    _Height = static_cast<int>(width / _Aspect);
+    _Width = width;
+
+    InitWindow();
+}
+
 WsiWindow::WsiWindow(int width, int height){
     _WindowObj = nullptr;
+    _Aspect = 16.0f / 9.0f;
     _Height = height;
     _Width = width;
 
@@ -31,6 +55,10 @@ bool WsiWindow::InitWindow(){
     if (glfwInit() != GLFW_TRUE) {
         FATAL("Create glfw window faild.");
         return false;
+    }
+
+    if (_Width <= 0 || _Height <= 0) {
+        ERROR("Invalid with:%d or invalid height:%d !", _Width, _Height);
     }
 
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
@@ -50,9 +78,9 @@ GLFWwindow* WsiWindow::GetWindow(){
 
 WsiWindow* WsiWindow::GetInstance(){
     if(!_WindowObj){
-        _WindowObj = new WsiWindow(1600, 900);
-        CHECK(_WindowObj);
+        _WindowObj = new WsiWindow();
     }
+    CHECK(_WindowObj);
 
     return _WindowObj;
 }
