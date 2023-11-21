@@ -36,6 +36,16 @@ void Scene::InitScene() {
 		_Renderables.push_back(room);
 	}
 
+	RenderObject boat;
+	Mesh* boatMesh = ((Renderer*)_Renderer)->GetMesh("Boat");
+	Material* boatMat = ((Renderer*)_Renderer)->GetMaterial("Default");
+	if (boatMesh != nullptr && boatMat != nullptr) {
+		boat.mesh = boatMesh;
+		boat.material = boatMat;
+    boat.SetTranslate(glm::vec3{0, 0, 10});
+		_Renderables.push_back(boat);
+	}
+
 	INFO("Inited Scene.");
 }
 

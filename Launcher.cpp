@@ -1,8 +1,10 @@
+#define USE_LOGGER
+#define _DEBUG
+
 #include <iostream>
 #include "application/Application.hpp"
 #include "../../engine/EngineLogger.hpp"
 
-#define USE_LOGGER
 #ifdef USE_LOGGER
 static engine::EngineLogger* GLOBAL_LOGGER = new engine::EngineLogger();
 #endif // !USE_LOGGER

@@ -11,7 +11,7 @@
 namespace renderer {
 
     struct Material {
-        vk::DescriptorSet textureSet{VK_NULL_HANDLE}; 
+        vk::DescriptorSet textureSet; 
         vk::Pipeline pipeline;
         vk::PipelineLayout pipelineLayout;
     };

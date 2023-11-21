@@ -35,6 +35,7 @@ void VulkanRenderer::ResetProp() {
     _FrameNumber = 0;
     _DescriptorPool = nullptr;
     _GlobalSetLayout = nullptr;
+    _UseTextureSet = false;
 
     _DrawLinePipeline = nullptr;
 }
@@ -500,7 +501,11 @@ void VulkanRenderer::CreatePipeline(Material& mat, const char* vert_shader, cons
 
     // INFO("Pipeline Layout");
     vk::PipelineLayoutCreateInfo defaultLayoutInfo = InitPipelineLayoutCreateInfo();
-    std::vector<vk::DescriptorSetLayout> defaultSetLayouts = {_GlobalSetLayout, _TextureSetLayout };
+    
+    std::vector<vk::DescriptorSetLayout> defaultSetLayouts = {_GlobalSetLayout};
+    if (_UseTextureSet){
+        defaultSetLayouts.push_back(_TextureSetLayout);
+    }
     defaultLayoutInfo.setPushConstantRanges(pushConstant)
         .setPushConstantRangeCount(1)
         .setSetLayoutCount((uint32_t)defaultSetLayouts.size())
@@ -529,6 +534,7 @@ void VulkanRenderer::CreatePipeline(Material& mat, const char* vert_shader, cons
     pipelineBuilder._DepthStencilState = InitDepthStencilStateCreateInfo();
 
     _Pipeline = pipelineBuilder.BuildPipeline(_VkDevice, _VkRenderPass);
+    CHECK(_Pipeline);
 
     mat.pipeline = _Pipeline;
     mat.pipelineLayout = _PipelineLayout;
@@ -544,9 +550,8 @@ void VulkanRenderer::DrawObjects(vk::CommandBuffer& cmd, RenderObject* first, in
     Material* lastMaterial = nullptr;
     for (int i = 0; i < count; i++)
     {
-        RenderObject& object = first[i];
-
-            //only bind the pipeline if it doesn't match with the already bound one
+        const RenderObject& object = first[i];
+        //only bind the pipeline if it doesn't match with the already bound one
         if (object.material != lastMaterial) {
             cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, object.material->pipeline);
             lastMaterial = object.material;
@@ -554,9 +559,14 @@ void VulkanRenderer::DrawObjects(vk::CommandBuffer& cmd, RenderObject* first, in
             int curFrame = _FrameNumber % FRAME_OVERLAP;
             uint32_t uniform_offset = (uint32_t)PadUniformBuffeSize(sizeof(SceneData)) * curFrame;
             // object.material->pipelineLayout
-            std::vector<vk::DescriptorSet> descSets = { _Frames[i].globalDescriptor, _TextureSet };
+            std::vector<vk::DescriptorSet> descSets = { _Frames[curFrame].globalDescriptor };
             cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, object.material->pipelineLayout, 0, (uint32_t)descSets.size(),
                 descSets.data(), 1, &uniform_offset);
+
+            if (object.material->textureSet){
+                cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, object.material->pipelineLayout, 1, 1,
+                    &object.material->textureSet, 0, nullptr);
+            }
         }
 
         //upload the mesh to the GPU via push constants
@@ -680,30 +690,28 @@ size_t VulkanRenderer::PadUniformBuffeSize(size_t origin_size){
     return alignedSize;
 }
 
-void VulkanRenderer::BindTextureDescriptor(Texture* texture) {
-    for (int i = 0; i < FRAME_OVERLAP; i++) {
-        vk::DescriptorSetAllocateInfo imageAllocateInfo;
-        imageAllocateInfo.setDescriptorPool(_DescriptorPool)
-            .setDescriptorSetCount(1)
-            .setSetLayouts(_TextureSetLayout);
-        if (_VkDevice.allocateDescriptorSets(&imageAllocateInfo, &_TextureSet) != vk::Result::eSuccess) {
-            CHECK(_Frames[i].globalDescriptor);
-        }
-
-        vk::DescriptorImageInfo descImageInfo;
-        descImageInfo.setImageLayout(vk::ImageLayout::eShaderReadOnlyOptimal)
-            .setImageView(texture->imageView)
-            .setSampler(_TextureSampler);
-
-        vk::WriteDescriptorSet writeSamplerSet = InitWriteDescriptorImage(vk::DescriptorType::eCombinedImageSampler,
-            _TextureSet, &descImageInfo, 0);
-        CHECK(writeSamplerSet);
-
-        std::vector<vk::WriteDescriptorSet> writeDescSets = { writeSamplerSet };
-        CHECK(sceneWriteSet);
-
-        _VkDevice.updateDescriptorSets(writeDescSets, nullptr);
+void VulkanRenderer::BindTextureDescriptor(Material* mat, Texture* texture) {
+    vk::DescriptorSetAllocateInfo imageAllocateInfo;
+    imageAllocateInfo.setDescriptorPool(_DescriptorPool)
+        .setDescriptorSetCount(1)
+        .setSetLayouts(_TextureSetLayout);
+    if (_VkDevice.allocateDescriptorSets(&imageAllocateInfo, &mat->textureSet) != vk::Result::eSuccess) {
+        CHECK(mat->textureSet);
     }
+
+    vk::DescriptorImageInfo descImageInfo;
+    descImageInfo.setImageLayout(vk::ImageLayout::eShaderReadOnlyOptimal)
+        .setImageView(texture->imageView)
+        .setSampler(_TextureSampler);
+
+    vk::WriteDescriptorSet writeSamplerSet = InitWriteDescriptorImage(vk::DescriptorType::eCombinedImageSampler,
+        mat->textureSet, &descImageInfo, 0);
+    CHECK(writeSamplerSet);
+
+    std::vector<vk::WriteDescriptorSet> writeDescSets = { writeSamplerSet };
+    CHECK(writeDescSets );
+
+    _VkDevice.updateDescriptorSets(writeDescSets, nullptr);
 }
 
 void VulkanRenderer::InitDescriptors() {
@@ -729,8 +737,6 @@ void VulkanRenderer::InitDescriptors() {
     vk::DescriptorSetLayoutBinding sceneDynamicBuffer =
         InitDescriptorSetLayoutBinding(vk::DescriptorType::eUniformBufferDynamic, 
                                        vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment, 1);
-    vk::DescriptorSetLayoutBinding textureBinding = 
-        InitDescriptorSetLayoutBinding(vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eFragment, 0);
     std::vector<vk::DescriptorSetLayoutBinding> bindings = {cameraUniformBuffer, sceneDynamicBuffer };
 
     vk::DescriptorSetLayoutCreateInfo descSetLayoutInfo;
@@ -740,12 +746,14 @@ void VulkanRenderer::InitDescriptors() {
     CHECK(_GlobalSetLayout);
 
     // single layout for texture
+    vk::DescriptorSetLayoutBinding textureBinding = 
+        InitDescriptorSetLayoutBinding(vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eFragment, 0);
     vk::DescriptorSetLayoutCreateInfo set3Info;
     set3Info.setBindingCount(1)
         .setBindings(textureBinding);
     _TextureSetLayout = _VkDevice.createDescriptorSetLayout(set3Info);
     CHECK(_TextureSetLayout);
-    
+
     // Scene dynamic buffer
     const size_t sceneParamBufferSize = FRAME_OVERLAP * PadUniformBuffeSize(sizeof(SceneData));
     _SceneParameterBuffer.buffer = CreateBuffer(sceneParamBufferSize, vk::BufferUsageFlagBits::eUniformBuffer);
@@ -1459,7 +1467,7 @@ void VulkanRenderer::CreateDrawLinePipeline(Material& mat) {
 
     // INFO("Pipeline Layout");
     vk::PipelineLayoutCreateInfo defaultLayoutInfo = InitPipelineLayoutCreateInfo();
-    std::vector<vk::DescriptorSetLayout> defaultSetLayouts = { _GlobalSetLayout, _TextureSetLayout };
+    std::vector<vk::DescriptorSetLayout> defaultSetLayouts = { _GlobalSetLayout };
     defaultLayoutInfo.setPushConstantRanges(pushConstant)
         .setPushConstantRangeCount(1)
         .setSetLayoutCount((uint32_t)defaultSetLayouts.size())

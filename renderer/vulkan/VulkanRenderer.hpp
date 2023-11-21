@@ -73,9 +73,11 @@ namespace renderer {
         void ImmediateSubmit(std::function<void(vk::CommandBuffer cmd)>&& function);
         MemRequiredInfo QueryMemReqInfo(vk::Buffer buf, vk::MemoryPropertyFlags flag);
         MemRequiredInfo QueryImgReqInfo(vk::Image image, vk::MemoryPropertyFlags flag);
-        void BindTextureDescriptor(Texture* texture);
+        void BindTextureDescriptor(Material* mat, Texture* texture);
         void InitImgui();
         void CreateDrawLinePipeline(Material& mat);
+
+        void UseTextureSet(bool val){_UseTextureSet = val;}
 
         void ReleaseMeshes(std::unordered_map<std::string, Mesh>& meshes) {
             for (auto& mesh_map : meshes) {
@@ -200,6 +202,9 @@ namespace renderer {
         
         // Texture
         vk::Sampler _TextureSampler;
+
+    private:
+        bool _UseTextureSet;
 
     };// class VulkanRenderer
 }// namespace renderer

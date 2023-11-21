@@ -38,26 +38,9 @@ namespace renderer {
         void ReleaseTextures() { ((VulkanRenderer*)_RendererImpl) -> ReleaseTextures( _Textures); }
 
     private:
-        bool AddMesh(std::string name, Mesh mesh) {
-            CHECK(mesh);
-
-            _Meshes[name] = mesh;
-            return true;
-        }
-
-        bool AddMaterial(std::string name, Material mat) {
-            CHECK(mat);
-
-            _Materials[name] = mat;
-            return true;
-        }
-
-        bool AddTexture(std::string name, Texture tex) {
-            CHECK(tex);
-
-            _Textures[name] = tex;
-            return true;
-        }
+        void AddMesh(std::string name, Mesh mesh) { _Meshes[name] = mesh; }
+        void AddMaterial(std::string name, Material mat) { _Materials[name] = mat; }
+        void AddTexture(std::string name, Texture tex) { _Textures[name] = tex; }
 
     protected:
         std::unordered_map<std::string, Mesh> _Meshes;

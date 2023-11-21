@@ -35,7 +35,6 @@ bool Renderer::Init(){
     // Textures
     LoadTexture("room", "../asset/texture/room.png");
     LoadTexture("wooden", "../asset/obj/wooden_boat/BaseColor.png");
-    ((VulkanRenderer*)_RendererImpl)->BindTextureDescriptor(GetTexture("room"));
 
     // Materials
     const char* defaultVertShader = "../shader/glsl/default_vert.spv";
@@ -44,10 +43,12 @@ bool Renderer::Init(){
     const char* meshFloorVertShader = "../shader/glsl/mesh_floor_vert.spv";
     const char* meshFloorFragShader = "../shader/glsl/mesh_floor_frag.spv";
 
+    ((VulkanRenderer*)_RendererImpl)->UseTextureSet(false);
     Material deafaultMaterial;
     CreatePipeline(deafaultMaterial, defaultVertShader, defaultFragShader);
     AddMaterial("Default", deafaultMaterial);
 
+    ((VulkanRenderer*)_RendererImpl)->UseTextureSet(true);
     Material deafaultMeshMaterial;
     CreatePipeline(deafaultMeshMaterial, defaultVertShader, meshFragShader);
     AddMaterial("Texture", deafaultMeshMaterial);
@@ -60,6 +61,8 @@ bool Renderer::Init(){
     CreateDrawlinePipeline(drawLineMaterial);
     AddMaterial("DrawLine", drawLineMaterial);
 
+    ((VulkanRenderer*)_RendererImpl)->BindTextureDescriptor(GetMaterial("Texture"), GetTexture("room"));
+
     return true;
 }
 
@@ -68,7 +71,6 @@ void Renderer::CreatePipeline(Material& mat, const char* vert_shader, const char
 }
 
 void Renderer::BeforeDraw(){
-
 }
 
 void Renderer::Draw(RenderObject* first, int count){
@@ -191,10 +193,10 @@ void Renderer::LoadRectangleMesh() {
 	rectangleMesh.vertices.resize(4);
 
 	//vertex positions
-	rectangleMesh.vertices[0].position = { 50.f, 0.f,  -50.f };	//右后
-	rectangleMesh.vertices[1].position = { 50.f, 0.f,   50.f };	//右前
-	rectangleMesh.vertices[2].position = { -50.f, 0.f,   50.f };	//左前
-	rectangleMesh.vertices[3].position = { -50.f, 0.f,  -50.f };	//左后
+	rectangleMesh.vertices[0].position = { 50.f, 0.f,  -50.f };	//?液?
+	rectangleMesh.vertices[1].position = { 50.f, 0.f,   50.f };	//??前
+	rectangleMesh.vertices[2].position = { -50.f, 0.f,   50.f };	//??前
+	rectangleMesh.vertices[3].position = { -50.f, 0.f,  -50.f };	//????
 
 	//vertex colors, all green
 	rectangleMesh.vertices[0].color = { 0.9f, 0.9f, 0.9f };
