@@ -19,6 +19,7 @@ Engine::~Engine(){
 
 bool Engine::Init(){
 
+    WsiWindow::SetWidth(800);
     _window = WsiWindow::GetInstance()->GetWindow();
     CHECK(_window);
 
