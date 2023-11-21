@@ -2,7 +2,7 @@
 #include "Logger.hpp"
 
 namespace udon {
-#ifdef _DEBUG
+#ifdef __DEBUG__
 #define CHECK(expr) \
     if(!(expr)) { \
         FATAL(#expr "is null!"); \

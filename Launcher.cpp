@@ -1,5 +1,5 @@
 #define USE_LOGGER
-#define _DEBUG
+#define __DEBUG__
 
 #include <iostream>
 #include "application/Application.hpp"
