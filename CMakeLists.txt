@@ -70,6 +70,7 @@ message("-- TinyObjLoader Path: ${TINY_OBJ_LOADER_DIR}")
 message("-- UncleDon-Logger Path: ${UD_LOGGER_DIR}")
 message("-- Include SDL DIR: ${SDL_INCLUDE_DIRS}")
 
+add_subdirectory(audio)
 add_subdirectory(engine)
 add_subdirectory(renderer)
 add_subdirectory(physics)
@@ -94,6 +95,6 @@ elseif(${WIN32})
     target_link_libraries(VulkanRender "vulkan-1.lib" "SDL2.lib" "SDL2main.lib" "Logger.lib" "glfw3.lib")
 endif()
 
-target_link_libraries(VulkanRender engine application renderer)
+target_link_libraries(VulkanRender engine application renderer audio)
 
 message("-- Add executable program to ${PROJECT_SOURCE_DIR}/bin")
