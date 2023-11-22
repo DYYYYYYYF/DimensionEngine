@@ -10,6 +10,7 @@ set(TINY_OBJ_LOADER_DIR ${PROJECT_SOURCE_DIR}/3rd/tinyobjloader-master)
 set(STB_MASTER_DIR ${PROJECT_SOURCE_DIR}/3rd/stb-master)
 set(UD_LOGGER_DIR ${PROJECT_SOURCE_DIR}/3rd/uncledon-logger)
 set(GLFW_DIR ${PROJECT_SOURCE_DIR}/3rd/glfw3)
+set(OPENAL_DIR ${PROJECT_SOURCE_DIR}/3rd/openAL)
 
 ## Set build type
 if(${CMAKE_BUILD_TYPE})
@@ -31,11 +32,10 @@ if(${APPLE})
 
     pkg_search_module(GLFW REQUIRED GLFW3)
     pkg_search_module(GLM REQUIRED GLM)
-    pkg_search_module(SDL REQUIRED SDL2)
     
-    link_directories(${GLFW_LIBRARY_DIRS} ${SDL_LIBRARY_DIRS} ${UD_LOGGER_DIR}/lib/MacOS)
+    link_directories(${GLFW_LIBRARY_DIRS} ${UD_LOGGER_DIR}/lib/MacOS)
     include_directories(${EIGEN_DIR} ${STB_MASTER_DIR} ${GLFW_INCLUDE_DIRS} ${Vulkan_INCLUDE_DIRS} 
-        ${TINY_OBJ_LOADER_DIR} ${STB_MASTER_DIR} ${SDL_INCLUDE_DIRS} ${UD_LOGGER_DIR}/include ./imgui)
+        ${TINY_OBJ_LOADER_DIR} ${STB_MASTER_DIR} ${UD_LOGGER_DIR}/include ./imgui)
 
 elseif(${WIN32})
     message("-- Current environment: Windows\n")
@@ -49,26 +49,25 @@ elseif(${WIN32})
 
     set(Vulkan_LIBRARY_DIRS "${Vulkan_DIR}/Lib")
     set(Vulkan_INCLUDE_DIRS "${Vulkan_DIR}/Include")
-    set(SDL_INCLUDE_DIRS "${Vulkan_DIR}/Include/SDL2")
     set(GLFW_INCLUDE_DIRS "${GLFW_DIR}/include")
     set(GLFW_LIBRARY_DIRS "${GLFW_DIR}/lib/Windows/Release")
+    set(OPENAL_INCLUDE_DIRS "${OPENAL_DIR}/include")
+    set(OPENAL_LIBRARY_DIRS "${OPENAL_DIR}/libs/Win64")
 
-    # Copy SDL2.dll to output path
-    file(COPY ${Vulkan_DIR}/bin/SDL2.dll DESTINATION ${EXECUTABLE_OUTPUT_PATH})
+    file(COPY ${OPENAL_DIR}/bin/OpenAL32.dll DESTINATION ${EXECUTABLE_OUTPUT_PATH})
 
-    link_directories(${Vulkan_LIBRARY_DIRS} ${GLFW_LIBRARY_DIRS}  ${UD_LOGGER_DIR}/lib/Windows/release)
+    link_directories(${Vulkan_LIBRARY_DIRS} ${GLFW_LIBRARY_DIRS} ${OPENAL_LIBRARY_DIRS} ${UD_LOGGER_DIR}/lib/Windows/release)
     include_directories(${GLFW_INCLUDE_DIRS} ${STB_MASTER_DIR} ${Vulkan_INCLUDE_DIRS} ${TINY_OBJ_LOADER_DIR} 
-        ${STB_MASTER_DIR} ${SDL_INCLUDE_DIRS} ${UD_LOGGER_DIR}/include ./imgui)
+        ${STB_MASTER_DIR} ${GLFW_LIBRARY_DIRS} ${OPENAL_INCLUDE_DIRS} ${UD_LOGGER_DIR}/include ./imgui)
 
 endif()
 
-message("-- Include EIGEN3 DIR: ${EIGEN_DIR}")
 message("-- Include GLFW DIR: ${GLFW_INCLUDE_DIRS}")
 message("-- Include VULKAN DIR: ${Vulkan_INCLUDE_DIRS}")
 message("-- stb_master path: ${STB_MASTER_DIR}")
 message("-- TinyObjLoader Path: ${TINY_OBJ_LOADER_DIR}")
 message("-- UncleDon-Logger Path: ${UD_LOGGER_DIR}")
-message("-- Include SDL DIR: ${SDL_INCLUDE_DIRS}")
+message("-- OpenAL DIR: ${OPENAL_DIR}")
 
 add_subdirectory(audio)
 add_subdirectory(engine)
@@ -92,7 +91,7 @@ if(${APPLE})
     target_link_libraries(VulkanRender Vulkan::Vulkan)
     target_link_libraries(VulkanRender ${GLFW_LIBRARIES})   
 elseif(${WIN32})
-    target_link_libraries(VulkanRender "vulkan-1.lib" "SDL2.lib" "SDL2main.lib" "Logger.lib" "glfw3.lib")
+    target_link_libraries(VulkanRender "vulkan-1.lib" "OpenAL32.lib" "Logger.lib" "glfw3.lib")
 endif()
 
 target_link_libraries(VulkanRender engine application renderer audio)
