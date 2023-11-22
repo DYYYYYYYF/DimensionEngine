@@ -1,5 +1,4 @@
 #include "AudioContext.hpp"
-#include <OpenAL/OpenAL.h>
 
 AudioContext::AudioContext() : m_pAudioDevice(nullptr), m_pAudioContext(nullptr){
 
@@ -28,7 +27,6 @@ void AudioContext::InitAudio(){
 
     ALbyte file[] = "sound.wav";
     
-    alutLoadWAVFile(file, &format, &data, &size, &frequency);
     alBufferData(buffer, format, data, size, frequency);
 
     // Bind audio

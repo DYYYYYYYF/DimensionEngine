@@ -1,9 +1,7 @@
 #pragma once
 
-#include <OpenAL/al.h>
-#include <OpenAL/alc.h>
-#include <OpenAL/alut.h>
-#include <OpenAL/OpenAL.h>
+#include <al.h>
+#include <alc.h>
 
 class AudioContext{
 public:
