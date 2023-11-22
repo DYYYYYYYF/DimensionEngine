@@ -4,6 +4,6 @@ include_directories("../")
 
 file(GLOB AUDIO_RESOURCE_FILES *.cpp )
 
-add_library(renderer ${AUDIO_RESOURCE_FILES})
+add_library(audio ${AUDIO_RESOURCE_FILES})
 
 message("${AUDIO_RESOURCE_FILES}")
