@@ -1,7 +1,5 @@
 #include "Scene.hpp"
 
-using namespace engine;
-
 Scene::Scene() {
 	_Renderer = new Renderer();
 	CHECK(_Renderer);

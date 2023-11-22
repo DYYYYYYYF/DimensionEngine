@@ -6,17 +6,17 @@
 #include "../../engine/EngineLogger.hpp"
 
 #ifdef USE_LOGGER
-static engine::EngineLogger* GLOBAL_LOGGER = new engine::EngineLogger();
+static EngineLogger* GLOBAL_LOGGER = new EngineLogger();
 #endif // !USE_LOGGER
 
 int main(int argc, char* argv[]){
 
-    udon::Engine* Engine = new udon::Engine();
+    Engine* pEngine = new Engine();
 
     try{
-        Engine->Init();
-        Engine->Run();
-        Engine->Close();
+        pEngine->Init();
+        pEngine->Run();
+        pEngine->Close();
     } catch(const std::exception& e){
         std::cerr << e.what() << std::endl;
         return EXIT_FAILURE;

@@ -2,7 +2,6 @@
 #include <GLFW/glfw3.h>
 #include "utils/EngineUtils.hpp"
 
-namespace udon {
 class WsiWindow{
 public:
     static GLFWwindow* GetWindow();
@@ -39,4 +38,3 @@ private:
 
     static WsiWindow* _WindowObj;
 };
-}

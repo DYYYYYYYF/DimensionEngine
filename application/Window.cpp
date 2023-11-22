@@ -1,14 +1,10 @@
 #include"Window.hpp"
 
-namespace udon {
-    float scale_callback = 0.5;
-    void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
-        if (scale_callback + yoffset * 0.02 >= 0.1)
-            scale_callback += static_cast<float>(yoffset * 0.02);
-    }
+float scale_callback = 0.5;
+void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
+    if (scale_callback + yoffset * 0.02 >= 0.1)
+        scale_callback += static_cast<float>(yoffset * 0.02);
 }
-
-using namespace udon;
 
 float WsiWindow::_Aspect = 0.0f;
 int WsiWindow::_Height = 0;

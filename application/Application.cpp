@@ -4,9 +4,6 @@
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_vulkan.h>
 
-using namespace udon;
-using namespace engine;
-
 Engine::Engine(){
     _window = nullptr;
     _Scene = nullptr;

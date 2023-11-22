@@ -18,8 +18,6 @@
     Dont forget delete Init()
 */
 
-using namespace engine;
-
 namespace renderer {
 
     constexpr unsigned int FRAME_OVERLAP = 2;

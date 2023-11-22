@@ -4,9 +4,7 @@
 #include "../engine/Scene.hpp"
 
 using namespace renderer;
-using namespace engine;
 
-namespace udon{
 class Engine{
 public:
     Engine();
@@ -22,4 +20,3 @@ private:
     int _FrameCount = 0;
 
 };
-} 
