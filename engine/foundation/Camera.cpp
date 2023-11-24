@@ -1,5 +1,7 @@
 #include "Camera.hpp"
 
+using namespace engine;
+
 Camera::Camera(glm::vec3 position, glm::vec3 target, glm::vec3 worldup){
     this->position = position;
     this->worldUp = worldup;

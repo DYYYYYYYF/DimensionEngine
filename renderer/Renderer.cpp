@@ -39,6 +39,7 @@ bool Renderer::Init(){
     // Materials
     const char* defaultVertShader = "../shader/glsl/default_vert.spv";
     const char* defaultFragShader = "../shader/glsl/default_frag.spv";
+    const char* meshVertShader = "../shader/glsl/texture_mesh_vert.spv";
     const char* meshFragShader = "../shader/glsl/texture_mesh_frag.spv";
     const char* meshFloorVertShader = "../shader/glsl/mesh_floor_vert.spv";
     const char* meshFloorFragShader = "../shader/glsl/mesh_floor_frag.spv";
@@ -50,7 +51,7 @@ bool Renderer::Init(){
 
     ((VulkanRenderer*)_RendererImpl)->UseTextureSet(true);
     Material deafaultMeshMaterial;
-    CreatePipeline(deafaultMeshMaterial, defaultVertShader, meshFragShader);
+    CreatePipeline(deafaultMeshMaterial, meshVertShader, meshFragShader);
     AddMaterial("Texture", deafaultMeshMaterial);
 
     Material deafaultFloorMaterial;

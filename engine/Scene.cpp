@@ -1,5 +1,7 @@
 #include "Scene.hpp"
 
+using namespace engine;
+
 Scene::Scene() {
 	_Renderer = new Renderer();
 	CHECK(_Renderer);
@@ -12,6 +14,7 @@ Scene::~Scene() {
 void Scene::InitScene() {
 	_Renderer->Init();
 	
+	/*
 	RenderObject floor;
 	Mesh* rectMesh = ((Renderer*)_Renderer)->GetMesh("Rectangle");
 	Material* floorMat = ((Renderer*)_Renderer)->GetMaterial("Floor");
@@ -42,6 +45,21 @@ void Scene::InitScene() {
 		boat.material = boatMat;
     boat.SetTranslate(glm::vec3{0, 0, 10});
 		_Renderables.push_back(boat);
+	}
+	*/
+
+	for (int i = -10; i < 10; i+=3) {
+		for (int j = -10; j < 10; j+=3) {
+			RenderObject ball;
+			Mesh* ballMesh = ((Renderer*)_Renderer)->GetMesh("ball");
+			Material* defaultMat = ((Renderer*)_Renderer)->GetMaterial("Default");
+			if (ballMesh != nullptr && defaultMat != nullptr) {
+				ball.mesh = ballMesh;
+				ball.material = defaultMat;
+				ball.SetTranslate({ i, 0, j });
+				_Renderables.push_back(ball);
+			}
+		}
 	}
 
 	INFO("Inited Scene.");

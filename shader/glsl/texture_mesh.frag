@@ -1,7 +1,10 @@
 #version 450
 
 layout (location = 0) in vec3 inFragColor;
-layout (location = 1) in vec2 texCoord;
+layout (location = 1) in vec3 vNormal;
+layout (location = 2) in vec3 vPosition;
+layout (location = 3) in vec2 texCoord;
+
 layout (set = 1, binding = 0) uniform sampler2D tex1;
 
 layout (location = 0) out vec4 outFragColor;
@@ -9,15 +12,40 @@ layout (location = 0) out vec4 outFragColor;
 layout (set = 0, binding = 1) uniform SceneData{
     vec4 fogColor; // w is for exponent
     vec4 fogDistances; //x for min, y for max, zw unused.
-    vec4 ambientColor;
+    vec4 ambientColor;  // w is power
     vec4 sunlightDirection; //w for sun power
     vec4 sunlightColor; 
+
+    vec4 pointLightPos;
+    vec4 lightSpecular;
 } sceneData;
 
 void main(){
+    float constant = 1.0f;
+    float linear =  0.09f;
+    float quadratic = 0.032f;
 
+    // Ambient
+    vec3 ambient = sceneData.ambientColor.xyz * sceneData.ambientColor.w;
 
-     
+    // Diffuse
+    vec3 normal = normalize(vNormal);
+    vec3 lightDir = normalize(sceneData.sunlightDirection.xyz);
+    float diff = max(dot(normal, lightDir), 0.0f);
+    vec3 diffuse = diff * sceneData.ambientColor.xyz;
 
-     outFragColor = texture(tex1, texCoord);
+    // Specular
+    vec3 viewDir = normalize(sceneData.pointLightPos.xyz - vPosition);
+    vec3 reflectDir = reflect(lightDir, vNormal);
+    float spec = pow(max(dot(viewDir, reflectDir), 0.0f), 0.1f);
+    vec3 sepcular = spec * sceneData.ambientColor.xyz * sceneData.lightSpecular.xyz;
+
+    // Ligth attenuation (depend on distance)
+    float distance = length(sceneData.pointLightPos.xyz - vPosition);    
+    float attenuation = 1.0 / (constant + linear * distance +  quadratic * (distance * distance));
+
+    // Blend
+    vec3 alpha = diffuse + ambient + sepcular;
+
+    outFragColor = texture(tex1, texCoord) * vec4(alpha, 1.0f) *  attenuation;
 }

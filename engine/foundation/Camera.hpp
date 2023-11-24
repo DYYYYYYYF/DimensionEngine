@@ -3,6 +3,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc//matrix_transform.hpp>
 
+namespace engine {
 class Camera{
     private:
         struct MousePos {
@@ -39,3 +40,4 @@ class Camera{
         void UpdateCameraVectors();
 
 };
+}

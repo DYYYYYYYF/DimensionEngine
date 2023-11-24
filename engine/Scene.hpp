@@ -13,6 +13,7 @@ const int moveSpeed = 10;
 
 using namespace renderer;
 
+namespace engine {
 class Scene {
 public:
 	Scene();
@@ -36,3 +37,4 @@ public:
 	uint32_t _FrameCount = 1;
 
 };
+}

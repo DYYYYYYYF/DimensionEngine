@@ -17,10 +17,10 @@ namespace renderer {
     };
 
     struct Vertex {
-        glm::vec3 position;
-        glm::vec3 normal;
-        glm::vec3 color;
-        glm::vec2 texCoord;
+        Vector3 position;
+        Vector3 normal;
+        Vector3 color;
+        Vector2 texCoord;
 
         static vk::VertexInputBindingDescription GetBindingDescription();
         static std::array<vk::VertexInputAttributeDescription, 4> GetAttributeDescription();
@@ -38,6 +38,18 @@ namespace renderer {
         AllocatedBuffer indexBuffer;
 
         bool LoadFromObj(const char* filename);
+
+        void SetColor(float val) {
+            for (auto& vert : vertices) {
+                vert.color = { val, val, val };
+            }
+        }
+
+        void SetColor(Vector3 color) {
+            for (auto& vert : vertices) {
+                vert.color = color;
+            }
+        }
     };
 
 }

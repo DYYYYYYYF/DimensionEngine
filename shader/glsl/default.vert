@@ -5,7 +5,9 @@ layout (location = 2) in vec3 vColor;
 layout (location = 3) in vec2 vTexCoord;
 
 layout (location = 0) out vec3 outColor;
-layout (location = 1) out vec2 texCoord;
+layout (location = 1) out vec3 outNormal;
+layout (location = 2) out vec3 outPosition;
+layout (location = 3) out vec2 texCoord;
 
 layout (set = 0, binding = 0) uniform CameraBuffer{
 	mat4 view;
@@ -21,5 +23,7 @@ layout( push_constant ) uniform constants
 void main(){
     gl_Position = cameraBuf.proj * cameraBuf.view * PushConstants.model * vec4(vPosition, 1.0f);
     outColor = vColor;
+	outNormal = vNormal;
+	outPosition = vPosition;
     texCoord = vTexCoord;
 }
