@@ -18,8 +18,6 @@
     Dont forget delete Init()
 */
 
-using namespace engine;
-
 namespace renderer {
 
     constexpr unsigned int FRAME_OVERLAP = 2;
@@ -136,6 +134,7 @@ namespace renderer {
         size_t PadUniformBuffeSize(size_t origin_size);
         vk::Format FindSupportedFormat(const std::vector<vk::Format>& candidates,
             vk::ImageTiling tiling, vk::FormatFeatureFlags features);
+        void CreateImguiRenderPass();
 
         // Pipeline stages
         vk::PipelineShaderStageCreateInfo InitShaderStageCreateInfo(vk::ShaderStageFlagBits stage, vk::ShaderModule shader_module);
@@ -205,6 +204,8 @@ namespace renderer {
 
     private:
         bool _UseTextureSet;
+        vk::DescriptorPool _ImguiPool;
+        vk::RenderPass _ImguiRenderPass;
 
     };// class VulkanRenderer
 }// namespace renderer

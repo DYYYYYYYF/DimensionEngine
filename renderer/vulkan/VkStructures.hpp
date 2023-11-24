@@ -113,8 +113,8 @@ namespace renderer{
             GraphicsQueue = device.getQueue(queueFamily.graphicsIndex.value(), 0);
             PresentQueue = device.getQueue(queueFamily.presentIndex.value(), 0);
 
-            CHECK(GraphicsQueue);
-            CHECK(PresentQueue);
+            ASSERT(GraphicsQueue);
+            ASSERT(PresentQueue);
 
             return GraphicsQueue && PresentQueue;
         }
@@ -142,8 +142,8 @@ namespace renderer{
 
         bool QuerySupportInfo(const vk::PhysicalDevice& phyDevice, const vk::SurfaceKHR& surface) {
 
-            CHECK(phyDevice);
-            CHECK(surface);
+            ASSERT(phyDevice);
+            ASSERT(surface);
 
             GetWindowSize();
             capabilities = phyDevice.getSurfaceCapabilitiesKHR(surface);

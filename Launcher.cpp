@@ -1,9 +1,8 @@
 #define USE_LOGGER
-#define __DEBUG__
 
 #include <iostream>
 #include "application/Application.hpp"
-#include "../../engine/EngineLogger.hpp"
+#include "engine/EngineLogger.hpp"
 
 #ifdef USE_LOGGER
 static EngineLogger* GLOBAL_LOGGER = new EngineLogger();

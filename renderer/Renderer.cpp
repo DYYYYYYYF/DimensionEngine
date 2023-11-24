@@ -98,7 +98,7 @@ void Renderer::LoadTexture(const char* filename, const char* texture_path) {
     Texture texture;
 
     renderer::LoadImageFromFile(*((VulkanRenderer*)_RendererImpl), texture_path, texture.image);
-    CHECK(texture.image.image)
+    ASSERT(texture.image.image)
 
     texture.imageView = ((VulkanRenderer*)_RendererImpl)->CreateImageView(vk::Format::eR8G8B8A8Srgb, texture.image.image, vk::ImageAspectFlagBits::eColor);
     AddTexture(filename, texture);

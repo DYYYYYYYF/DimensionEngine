@@ -2,14 +2,19 @@
 #include "Logger.hpp"
 
 namespace udon {
-#ifdef __DEBUG__
-#define CHECK(expr) \
+#ifdef _DEBUG
+#define ASSERT(expr) \
     if(!(expr)) { \
         FATAL(#expr "is null!"); \
         exit(-1); \
 }
 #else
-#define CHECK(expr) 
+#define ASSERT(expr) \
+    if(!(expr)) { \
+        FATAL(#expr "is null!"); \
+        exit(-1); \
+}
+
 #endif //ifdef DEBUG
 }
 

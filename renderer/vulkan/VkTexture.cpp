@@ -18,12 +18,12 @@ bool renderer::LoadImageFromFile(VulkanRenderer& renderer, const char* file, All
     vk::DeviceSize imageSize = texWidth * texHeight * 4;
     vk::Buffer tempBuf = renderer.CreateBuffer(imageSize, vk::BufferUsageFlagBits::eTransferSrc,
                                 vk::SharingMode::eExclusive);
-    CHECK(tempBuf);
+    ASSERT(tempBuf);
     MemRequiredInfo memInfo = renderer.QueryMemReqInfo(tempBuf, vk::MemoryPropertyFlagBits::eHostVisible|
                                 vk::MemoryPropertyFlagBits::eHostCoherent);
     vk::DeviceMemory tempMem = renderer.AllocateMemory(memInfo, vk::MemoryPropertyFlagBits::eHostVisible|
                                 vk::MemoryPropertyFlagBits::eHostCoherent);
-    CHECK(tempMem);
+    ASSERT(tempMem);
 
     renderer._VkDevice.bindBufferMemory(tempBuf, tempMem, 0);
     void* data = renderer._VkDevice.mapMemory(tempMem, 0, imageSize);
@@ -36,11 +36,11 @@ bool renderer::LoadImageFromFile(VulkanRenderer& renderer, const char* file, All
     vk::Extent3D imageExtent = {static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight), 1};
     newImage.image = renderer.CreateImage(vk::Format::eR8G8B8A8Srgb, vk::ImageUsageFlagBits::eTransferDst |
                                           vk::ImageUsageFlagBits::eSampled, imageExtent);
-    CHECK(newImage.image);
+    ASSERT(newImage.image);
 
     memInfo = renderer.QueryImgReqInfo(newImage.image, vk::MemoryPropertyFlagBits::eDeviceLocal);
     newImage.memory = renderer.AllocateMemory(memInfo,vk::MemoryPropertyFlagBits::eDeviceLocal);
-    CHECK(newImage.memory);
+    ASSERT(newImage.memory);
     renderer._VkDevice.bindImageMemory(newImage.image, newImage.memory, 0);
 
     renderer.ImmediateSubmit([&](vk::CommandBuffer cmd){

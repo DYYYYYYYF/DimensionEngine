@@ -4,7 +4,7 @@ using namespace engine;
 
 Scene::Scene() {
 	_Renderer = new Renderer();
-	CHECK(_Renderer);
+	ASSERT(_Renderer);
 }
 
 Scene::~Scene() {
@@ -15,11 +15,12 @@ void Scene::InitScene() {
 	_Renderer->Init();
 	
 	RenderObject floor;
-	Mesh* rectMesh = ((Renderer*)_Renderer)->GetMesh("Rectangle");
+	Mesh* rectMesh = ((Renderer*)_Renderer)->GetMesh("sponza");
 	Material* floorMat = ((Renderer*)_Renderer)->GetMaterial("Floor");
 	if (rectMesh != nullptr && floorMat != nullptr) {
 		floor.mesh = rectMesh;
 		floor.material = floorMat;
+		floor.SetScale(0.1f);
 		_Renderables.push_back(floor);
 	}
 

@@ -18,12 +18,12 @@ Engine::~Engine(){
 
 bool Engine::Init(){
 
-    WsiWindow::SetWidth(800);
+    WsiWindow::SetWidth(1200);
     _window = WsiWindow::GetInstance()->GetWindow();
-    CHECK(_window);
+    ASSERT(_window);
 
     _Scene = new Scene();
-    CHECK(_Scene);
+    ASSERT(_Scene);
     _Scene->InitScene();
 
     _AudioContext = new AudioContext();
@@ -43,6 +43,14 @@ void Engine::Run(){
 
     while (!glfwWindowShouldClose(_window)) {
         glfwPollEvents();
+
+        /*
+        ImGui_ImplVulkan_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+        ImGui::ShowDemoWindow();
+        ImGui::Render();
+        */
 
         _Scene->UpdatePosition(_window);
         _Scene->Update();

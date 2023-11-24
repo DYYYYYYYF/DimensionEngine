@@ -61,7 +61,7 @@ bool WsiWindow::InitWindow(){
     glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 
     _GLFWWindow = glfwCreateWindow(_Width, _Height, "RenderEngine", nullptr, nullptr);
-    CHECK(_GLFWWindow);
+    ASSERT(_GLFWWindow);
     // Mouse Callback
      glfwSetScrollCallback(_GLFWWindow, scroll_callback);
 
@@ -76,7 +76,7 @@ WsiWindow* WsiWindow::GetInstance(){
     if(!_WindowObj){
         _WindowObj = new WsiWindow();
     }
-    CHECK(_WindowObj);
+    ASSERT(_WindowObj);
 
     return _WindowObj;
 }
