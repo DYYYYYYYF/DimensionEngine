@@ -19,11 +19,11 @@ void AudioContext::InitAudio(){
     alGenSources(1, &source);
 
     // Load audio
-    ALuint buffer;
+    ALuint buffer = -1;
     alGenBuffers(1, &buffer);
-    ALsizei size, frequency;
-    ALenum format;
-    ALvoid* data;
+    ALsizei size = 0, frequency = 0;
+    ALenum format = 0;
+    ALvoid* data = nullptr;
 
     ALbyte file[] = "sound.wav";
     

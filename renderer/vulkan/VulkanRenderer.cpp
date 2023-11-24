@@ -101,7 +101,7 @@ void VulkanRenderer::Release(){
 
 
 void VulkanRenderer::InitWindow(){
-    _Window =  udon::WsiWindow::GetInstance()->GetWindow();
+    _Window =  WsiWindow::GetInstance()->GetWindow();
     if (!_Window) {
         DEBUG("Error Window.");
         exit(-1);

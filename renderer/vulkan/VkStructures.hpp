@@ -137,7 +137,7 @@ namespace renderer{
         int GetWindowHeight() const { return window_size.height; }
 
         void GetWindowSize() {
-            udon::WsiWindow::GetInstance()->GetWindowSize(window_size.width, window_size.height);
+            WsiWindow::GetInstance()->GetWindowSize(window_size.width, window_size.height);
         }
 
         bool QuerySupportInfo(const vk::PhysicalDevice& phyDevice, const vk::SurfaceKHR& surface) {
