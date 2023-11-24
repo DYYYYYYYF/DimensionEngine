@@ -101,7 +101,7 @@ void VulkanRenderer::Release(){
 
 
 void VulkanRenderer::InitWindow(){
-    _Window = WsiWindow::GetInstance()->GetWindow();
+    _Window =  udon::WsiWindow::GetInstance()->GetWindow();
     if (!_Window) {
         DEBUG("Error Window.");
         exit(-1);
@@ -1142,8 +1142,14 @@ void VulkanRenderer::UpdateUniformBuffer(){
 
 void VulkanRenderer::UpdateDynamicBuffer(){
     float framed = (_FrameNumber / 3600.f);
-     _SceneData.ambientColor = { sin(framed),0,cos(framed),1 };
-    // _SceneData.ambientColor = { 1,1,1,1 };
+    _SceneData.ambientColor = { 1, 1, 1, 0.5 };
+    _SceneData.fogColor = { 1, 1, 1, 0 };
+    _SceneData.fogDistances = { 0, 1, 0, 0 };
+    _SceneData.sunlightColor = { 1, 1, 1, 0 };
+    //_SceneData.sunlightDirection = { sin(framed), 0, cos(framed), 0 };
+    _SceneData.sunlightDirection = { sin(framed), -1, cos(framed), 0 };
+    _SceneData.pointLightPos = { 0, 0, -1, 1 };
+    _SceneData.lightSpecular = { 0.5, 0.5, 0.5, 1 };
     int frameIndex = _FrameNumber % FRAME_OVERLAP;
 
     size_t memOffset = PadUniformBuffeSize(sizeof(SceneData)) * frameIndex;

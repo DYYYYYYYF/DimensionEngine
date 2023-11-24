@@ -75,7 +75,7 @@ bool Mesh::LoadFromObj(const char* filename){
                 new_vert.normal[0] = attrib.normals[index.normal_index * 3 + 0];
                 new_vert.normal[1] = attrib.normals[index.normal_index * 3 + 1];
                 new_vert.normal[2] = attrib.normals[index.normal_index * 3 + 2];
-                new_vert.color = new_vert.normal;
+                new_vert.color = {0.5f, 0.5f, 0.5f};
             }
 
             //vertex uv

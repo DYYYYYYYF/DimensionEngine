@@ -9,6 +9,13 @@
 
 #include <glm/glm.hpp>
 
+typedef glm::vec4 Vector4;
+typedef glm::vec3 Vector3;
+typedef glm::vec2 Vector2;
+
+typedef glm::mat4 Matrix4;
+typedef glm::mat3 Matrix3;
+
 namespace renderer{
 
     /*
@@ -48,23 +55,28 @@ namespace renderer{
     */
     // Dynamic buffer
     struct SceneData{
-        glm::vec4 fogColor; // w is for exponent
-        glm::vec4 fogDistances; // x for min, y for max
+        Vector4 fogColor; // w is for exponent
+        Vector4 fogDistances; // x for min, y for max
 
-        glm::vec4 ambientColor; // w for sun power
-        glm::vec4 sunlightDIrection;
-        glm::vec4 sunlightColor;
+        // Ambient
+        Vector4 ambientColor; // w for sun power
+        Vector4 sunlightDirection;
+        Vector4 sunlightColor;
+
+        // Point light
+        Vector4 pointLightPos;
+        Vector4 lightSpecular;
     };
 
     // Uniform buffer
     struct CamerData {
-        glm::mat4 view;
-        glm::mat4 proj;
+        Matrix4 view;
+        Matrix4 proj;
     };
 
     // Push constants
     struct MeshPushConstants {
-        glm::vec4 data;
+        Vector4 data;
         glm::mat4 model;
 
     };
@@ -125,7 +137,7 @@ namespace renderer{
         int GetWindowHeight() const { return window_size.height; }
 
         void GetWindowSize() {
-            WsiWindow::GetInstance()->GetWindowSize(window_size.width, window_size.height);
+            udon::WsiWindow::GetInstance()->GetWindowSize(window_size.width, window_size.height);
         }
 
         bool QuerySupportInfo(const vk::PhysicalDevice& phyDevice, const vk::SurfaceKHR& surface) {

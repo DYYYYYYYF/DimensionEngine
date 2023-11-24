@@ -1,7 +1,7 @@
 import os
 import platform
 
-vulkanPath = "D:\Library\Vulkan"
+vulkanPath = "D:\C_Library\VulkanSDK"
 compile_command = "glslc -c "
 test_command = compile_command + "--version"
 
@@ -48,8 +48,16 @@ for root, dirs, files in os.walk(filePath):
                     failedShaders.append(file)
 
             elif filename[1] == ".hlsl":
+                sub_filename = os.path.splitext(filename[0])
+                shader_type = ""
+                if sub_filename[1] == ".vert":
+                    shader_type = "vert"
+                elif sub_filename[1] == ".frag":
+                    shader_type = "frag"
+
                 ## Record compile command
-                cmd = compile_command + " -c -fentry-point=VS -fshader-stage=vert " + filePath + "hlsl/" + file + " -o " + filePath + "hlsl/" + filename[0] + "_vert.spv"
+                cmd = compile_command + " -c -fshader-stage=" + shader_type + " -fentry-point=main " + filePath \
+                + "hlsl/" + file + " -o " + filePath + "hlsl/" + filename[0] + ".spv"
                 print("Compiling " + filename[0] + filename[1])
 
                 ## Execute compile command

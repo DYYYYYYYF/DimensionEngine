@@ -1,8 +1,8 @@
 struct VSInput {
 	[[vk::location(0)]] float3 vPosition	: POSITION0;
-	[[vk::location(0)]] float3 vNormal		: NORMAL0;
-	[[vk::location(0)]] float3 vColor		: COLOR0;
-	[[vk::location(0)]] float2 vTexCoord	: TEXCOORD0;
+	[[vk::location(1)]] float3 vNormal		: NORMAL0;
+	[[vk::location(2)]] float3 vColor		: COLOR0;
+	[[vk::location(3)]] float2 vTexCoord	: TEXCOORD0;
 };
 
 struct VSOutput {
@@ -18,9 +18,9 @@ struct UBO {
 
 cbuffer ubo : register(b0, space0) { UBO ubo; }
 
-VSOutput main(VSInput input, uint VertexIndex : SV_VertexID) {
+VSOutput main(VSInput input) {
 	VSOutput output = (VSOutput)0;
-	output.outPosition = ubo.proj * ubo.view * float4(input.vPosition.xyz, 1.0f);
+	output.outPosition = ubo.proj * ubo.view * float4(input.vPosition, 1.0f);
 	output.outColor = input.vColor;
 	output.texCoord = input.vTexCoord;
 
