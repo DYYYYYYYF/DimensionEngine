@@ -19,9 +19,10 @@ layout (set = 0, binding = 1) uniform SceneData{
 } sceneData;
 
 void main(){
-    float constant = 1.0f;
-    float linear =  0.09f;
-    float quadratic = 0.032f;
+
+    float m_constant = float(1.0f);
+    float m_linear =  float(0.09f);
+    float m_quadratic = float(0.032f);
 
     // Ambient
     vec3 ambient = sceneData.ambientColor.xyz * sceneData.ambientColor.w;
@@ -40,7 +41,8 @@ void main(){
 
     // Ligth attenuation (depend on distance)
     float distance = length(sceneData.pointLightPos.xyz - vPosition);    
-    float attenuation = 1.0 / (constant + linear * distance +  quadratic * (distance * distance));
+
+    float attenuation = 1.0f / float((m_constant + m_linear * distance) + m_quadratic * (distance * distance));
 
     // Blend
     vec3 alpha = diffuse + ambient + sepcular;
