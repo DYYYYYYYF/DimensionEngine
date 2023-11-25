@@ -33,9 +33,9 @@ if(${APPLE})
     pkg_search_module(GLFW REQUIRED GLFW3)
     pkg_search_module(GLM REQUIRED GLM)
     
-    link_directories(${GLFW_LIBRARY_DIRS} ${UD_LOGGER_DIR}/lib/MacOS)
+    link_directories(${GLFW_LIBRARY_DIRS} ${GLM_LIBRARY_DIRS} ${UD_LOGGER_DIR}/lib/MacOS)
     include_directories(${EIGEN_DIR} ${STB_MASTER_DIR} ${GLFW_INCLUDE_DIRS} ${Vulkan_INCLUDE_DIRS} 
-        ${TINY_OBJ_LOADER_DIR} ${STB_MASTER_DIR} ${UD_LOGGER_DIR}/include ./imgui)
+        ${TINY_OBJ_LOADER_DIR} ${STB_MASTER_DIR} ${GLM_INCLUDE_DIRS} ${UD_LOGGER_DIR}/include ./imgui)
 
 elseif(${WIN32})
     message("-- Current environment: Windows\n")
@@ -60,6 +60,7 @@ elseif(${WIN32})
     include_directories(${GLFW_INCLUDE_DIRS} ${STB_MASTER_DIR} ${Vulkan_INCLUDE_DIRS} ${TINY_OBJ_LOADER_DIR} 
         ${STB_MASTER_DIR} ${GLFW_LIBRARY_DIRS} ${OPENAL_INCLUDE_DIRS} ${UD_LOGGER_DIR}/include ./imgui)
 
+    add_subdirectory(audio)
 endif()
 
 message("-- Include GLFW DIR: ${GLFW_INCLUDE_DIRS}")
@@ -69,7 +70,6 @@ message("-- TinyObjLoader Path: ${TINY_OBJ_LOADER_DIR}")
 message("-- UncleDon-Logger Path: ${UD_LOGGER_DIR}")
 message("-- OpenAL DIR: ${OPENAL_DIR}")
 
-add_subdirectory(audio)
 add_subdirectory(engine)
 add_subdirectory(renderer)
 add_subdirectory(physics)
@@ -87,13 +87,13 @@ file(GLOB IMGUI_SRC
 add_executable(VulkanRender Launcher.cpp ${IMGUI_SRC})
 
 if(${APPLE})
-    target_link_libraries(VulkanRender ${SDL_LIBRARIES} libLogger.a)
+    target_link_libraries(VulkanRender libLogger.a)
     target_link_libraries(VulkanRender Vulkan::Vulkan)
     target_link_libraries(VulkanRender ${GLFW_LIBRARIES})   
 elseif(${WIN32})
     target_link_libraries(VulkanRender "vulkan-1.lib" "OpenAL32.lib" "Logger.lib" "glfw3.lib")
 endif()
 
-target_link_libraries(VulkanRender engine application renderer audio)
+target_link_libraries(VulkanRender engine application renderer)
 
 message("-- Add executable program to ${PROJECT_SOURCE_DIR}/bin")
