@@ -7,13 +7,11 @@
 Engine::Engine(){
     _window = nullptr;
     _Scene = nullptr;
-    _AudioContext = nullptr;
 }
 
 Engine::~Engine(){
     _window = nullptr;
     _Scene = nullptr;
-    _AudioContext = nullptr;
 }
 
 bool Engine::Init(){
@@ -25,9 +23,6 @@ bool Engine::Init(){
     _Scene = new Scene();
     ASSERT(_Scene);
     _Scene->InitScene();
-
-    _AudioContext = new AudioContext();
-    _AudioContext->InitAudio();
 
     return true;
 }
