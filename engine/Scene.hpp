@@ -2,8 +2,8 @@
 
 #include <unordered_map>
 #include "EngineStructures.hpp"
-#include "../renderer/Renderer.hpp"
 #include "foundation/Camera.hpp"
+#include "renderer/Renderer.hpp"
 
 #ifdef _WIN32
 const int moveSpeed = 1;

@@ -2,6 +2,7 @@
 #include "interface/IRenderer.hpp"
 #include "vulkan/VulkanRenderer.hpp"
 #include "vulkan/VkMesh.hpp"
+#include "vulkan/VkTextrue.hpp"
 
 namespace renderer {
     class Renderer : public IRenderer{

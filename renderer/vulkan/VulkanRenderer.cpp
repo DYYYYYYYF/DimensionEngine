@@ -1,15 +1,5 @@
 #include "VulkanRenderer.hpp"
 #include "GLFW/glfw3.h"
-#include "PipelineBuilder.hpp"
-#include "glm/glm.hpp"
-#include "glm/gtc/matrix_transform.hpp"
-#include "vulkan/vulkan_core.h"
-#include "vulkan/vulkan_handles.hpp"
-#include "VkTextrue.hpp"
-
-#include <imgui.h>
-#include <imgui_impl_glfw.h>
-#include <imgui_impl_vulkan.h>
 
 using namespace renderer;
 
@@ -36,7 +26,6 @@ void VulkanRenderer::ResetProp() {
     _DescriptorPool = nullptr;
     _GlobalSetLayout = nullptr;
     _UseTextureSet = false;
-    _ImguiRenderPass = nullptr;
     _DrawLinePipeline = nullptr;
 }
 
@@ -51,14 +40,12 @@ bool VulkanRenderer::Init() {
     GetVkImages();
     GetVkImageViews();
     CreateRenderPass();
-    //CreateImguiRenderPass();
     CreateCmdPool();
     AllocateFrameCmdBuffer();
     CreateDepthImage();
     CreateFrameBuffers();
     InitSyncStructures();
     InitDescriptors();
-    //InitImgui();
 
     INFO("Inited Renderer.");
     return true; 
@@ -88,7 +75,6 @@ void VulkanRenderer::Release(){
         _VkDevice.destroyCommandPool(frame.commandPool);
     }
     
-    _VkDevice.destroyRenderPass(_ImguiRenderPass);
     _VkDevice.destroyRenderPass(_VkRenderPass);
 
     for (auto& frameBuffer : _FrameBuffers) { _VkDevice.destroyFramebuffer(frameBuffer); }
@@ -333,47 +319,6 @@ void VulkanRenderer::CreateRenderPass() {
 
     _VkRenderPass = _VkDevice.createRenderPass(info);
     ASSERT(_VkRenderPass);
-}
-
-void VulkanRenderer::CreateImguiRenderPass(){
-    //ImGui
-    vk::AttachmentReference imguiColRefer;
-    imguiColRefer.setLayout(vk::ImageLayout::eColorAttachmentOptimal)
-        .setAttachment(0);
-
-    vk::SubpassDescription imguiSubpassDesc;
-    imguiSubpassDesc.setColorAttachmentCount(1)
-        .setPColorAttachments(&imguiColRefer)
-        .setPipelineBindPoint(vk::PipelineBindPoint::eGraphics);
-
-    vk::AttachmentDescription imguiAttchmentDesc;
-    imguiAttchmentDesc.setSamples(vk::SampleCountFlagBits::e1)
-        .setLoadOp(vk::AttachmentLoadOp::eLoad)
-        .setStoreOp(vk::AttachmentStoreOp::eStore)
-        .setStencilLoadOp(vk::AttachmentLoadOp::eDontCare)
-        .setStencilStoreOp(vk::AttachmentStoreOp::eDontCare)
-        .setFormat(_SupportInfo.format.format)
-        .setInitialLayout(vk::ImageLayout::eColorAttachmentOptimal)
-        .setFinalLayout(vk::ImageLayout::ePresentSrcKHR);
-
-    vk::SubpassDependency imGuiDependency;
-    imGuiDependency.setSrcSubpass(VK_SUBPASS_EXTERNAL)
-        .setDstSubpass(0)
-        .setSrcStageMask(vk::PipelineStageFlagBits::eColorAttachmentOutput)
-        .setDstStageMask(vk::PipelineStageFlagBits::eColorAttachmentOutput)
-        .setSrcAccessMask(vk::AccessFlagBits::eNone)
-        .setDstAccessMask(vk::AccessFlagBits::eColorAttachmentWrite);
-
-    vk::RenderPassCreateInfo imguiInfo;
-    imguiInfo.setSubpassCount(1)
-        .setSubpasses(imguiSubpassDesc)
-        .setAttachmentCount(1)
-        .setAttachments(imguiAttchmentDesc)
-        .setDependencyCount(1)
-        .setDependencies(imGuiDependency);
-
-    _ImguiRenderPass = _VkDevice.createRenderPass(imguiInfo);
-    ASSERT(_ImguiRenderPass);
 }
 
 void VulkanRenderer::CreateCmdPool() {
@@ -1403,67 +1348,6 @@ vk::ImageView VulkanRenderer::CreateImageView(vk::Format format, vk::Image image
         .setImage(image)
         .setSubresourceRange(subresourceRange);
     return _VkDevice.createImageView(info);
-}
-
-void VulkanRenderer::InitImgui() {
-    std::vector<vk::DescriptorPoolSize> poolSizes = {
-        {vk::DescriptorType::eSampler, 1000},
-        {vk::DescriptorType::eCombinedImageSampler, 1000},
-        {vk::DescriptorType::eSampledImage, 1000},
-        {vk::DescriptorType::eStorageImage, 1000},
-        {vk::DescriptorType::eUniformTexelBuffer, 1000},
-        {vk::DescriptorType::eStorageTexelBuffer, 1000},
-        {vk::DescriptorType::eUniformBuffer, 1000},
-        {vk::DescriptorType::eStorageBuffer, 1000},
-        {vk::DescriptorType::eUniformBufferDynamic, 1000},
-        {vk::DescriptorType::eStorageBufferDynamic, 1000},
-        {vk::DescriptorType::eInputAttachment, 1000}
-    };
-
-    vk::DescriptorPoolCreateInfo info;
-    info.setMaxSets(1000)
-        .setPoolSizeCount((uint32_t)poolSizes.size())
-        .setFlags(vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet)
-        .setPoolSizes(poolSizes);
-
-    _ImguiPool = _VkDevice.createDescriptorPool(info);
-    ASSERT(_ImguiPool);
-
-    IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
-    ImGuiIO& io = ImGui::GetIO(); (void)io;
-    ImGui::StyleColorsDark();
-
-    ImGui_ImplGlfw_InitForVulkan(_Window, false);
-
-    ASSERT(_VkInstance);
-    ASSERT(_VkPhyDevice);
-    ASSERT(_VkDevice);
-    ASSERT(_Queue.GraphicsQueue);
-    ASSERT(_ImguiPool);
-    ASSERT(_ImguiRenderPass);
-
-    ImGui_ImplVulkan_InitInfo initInfo;
-    initInfo.Instance = _VkInstance;
-    initInfo.PhysicalDevice = _VkPhyDevice;
-    initInfo.Device = _VkDevice;
-    initInfo.Queue = _Queue.GraphicsQueue;
-    initInfo.DescriptorPool = _ImguiPool;
-    initInfo.MinImageCount = 3;
-    initInfo.ImageCount = 3;
-    initInfo.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
-    INFO("A");
-
-    if (!ImGui_ImplVulkan_Init(&initInfo, _ImguiRenderPass)) {
-        INFO("Failed");
-    }
-    
-    INFO("A");
-    ImmediateSubmit([&](vk::CommandBuffer cmd) {
-        ImGui_ImplVulkan_CreateFontsTexture(cmd);
-        });
-
-    ImGui_ImplVulkan_DestroyFontUploadObjects();
 }
 
 void VulkanRenderer::CreateDrawLinePipeline(Material& mat) {

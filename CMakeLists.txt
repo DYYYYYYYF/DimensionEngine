@@ -10,7 +10,6 @@ set(TINY_OBJ_LOADER_DIR ${PROJECT_SOURCE_DIR}/3rd/tinyobjloader-master)
 set(STB_MASTER_DIR ${PROJECT_SOURCE_DIR}/3rd/stb-master)
 set(UD_LOGGER_DIR ${PROJECT_SOURCE_DIR}/3rd/uncledon-logger)
 set(GLFW_DIR ${PROJECT_SOURCE_DIR}/3rd/glfw3)
-set(OPENAL_DIR ${PROJECT_SOURCE_DIR}/3rd/openAL)
 
 ## Set build type
 if(${CMAKE_BUILD_TYPE})
@@ -34,7 +33,7 @@ if(${APPLE})
     pkg_search_module(GLM REQUIRED GLM)
     
     link_directories(${GLFW_LIBRARY_DIRS} ${GLM_LIBRARY_DIRS} ${UD_LOGGER_DIR}/lib/MacOS)
-    include_directories(${EIGEN_DIR} ${STB_MASTER_DIR} ${GLFW_INCLUDE_DIRS} ${Vulkan_INCLUDE_DIRS} 
+    include_directories(${STB_MASTER_DIR} ${GLFW_INCLUDE_DIRS} ${Vulkan_INCLUDE_DIRS} 
         ${TINY_OBJ_LOADER_DIR} ${STB_MASTER_DIR} ${GLM_INCLUDE_DIRS} ${UD_LOGGER_DIR}/include ./imgui)
 
 elseif(${WIN32})
@@ -54,13 +53,12 @@ elseif(${WIN32})
     set(OPENAL_INCLUDE_DIRS "${OPENAL_DIR}/include")
     set(OPENAL_LIBRARY_DIRS "${OPENAL_DIR}/libs/Win64")
 
-    file(COPY ${OPENAL_DIR}/bin/OpenAL32.dll DESTINATION ${EXECUTABLE_OUTPUT_PATH})
+    # file(COPY ${OPENAL_DIR}/bin/OpenAL32.dll DESTINATION ${EXECUTABLE_OUTPUT_PATH})
 
-    link_directories(${Vulkan_LIBRARY_DIRS} ${GLFW_LIBRARY_DIRS} ${OPENAL_LIBRARY_DIRS} ${UD_LOGGER_DIR}/lib/Windows/release)
+    link_directories(${Vulkan_LIBRARY_DIRS} ${GLFW_LIBRARY_DIRS} ${UD_LOGGER_DIR}/lib/Windows/release)
     include_directories(${GLFW_INCLUDE_DIRS} ${STB_MASTER_DIR} ${Vulkan_INCLUDE_DIRS} ${TINY_OBJ_LOADER_DIR} 
-        ${STB_MASTER_DIR} ${GLFW_LIBRARY_DIRS} ${OPENAL_INCLUDE_DIRS} ${UD_LOGGER_DIR}/include ./imgui)
+        ${STB_MASTER_DIR} ${GLFW_LIBRARY_DIRS} ${UD_LOGGER_DIR}/include ./imgui)
 
-    add_subdirectory(audio)
 endif()
 
 message("-- Include GLFW DIR: ${GLFW_INCLUDE_DIRS}")
@@ -72,26 +70,18 @@ message("-- OpenAL DIR: ${OPENAL_DIR}")
 
 add_subdirectory(engine)
 add_subdirectory(renderer)
-add_subdirectory(physics)
 add_subdirectory(application)
 
-file(GLOB IMGUI_SRC 
-"${CMAKE_CURRENT_SOURCE_DIR}/imgui/imgui.*"
-"${CMAKE_CURRENT_SOURCE_DIR}/imgui/imgui_demo.*"
-"${CMAKE_CURRENT_SOURCE_DIR}/imgui/imgui_draw.*"
-"${CMAKE_CURRENT_SOURCE_DIR}/imgui/imgui_widgets.*"
-"${CMAKE_CURRENT_SOURCE_DIR}/imgui/imgui_tables.*"
-"${CMAKE_CURRENT_SOURCE_DIR}/imgui/backends/imgui_impl_vulkan.*"
-"${CMAKE_CURRENT_SOURCE_DIR}/imgui/backends/imgui_impl_glfw.*")
-
-add_executable(VulkanRender Launcher.cpp ${IMGUI_SRC})
+add_executable(VulkanRender Launcher.cpp)
 
 if(${APPLE})
     target_link_libraries(VulkanRender libLogger.a)
     target_link_libraries(VulkanRender Vulkan::Vulkan)
     target_link_libraries(VulkanRender ${GLFW_LIBRARIES})   
 elseif(${WIN32})
-    target_link_libraries(VulkanRender "vulkan-1.lib" "OpenAL32.lib" "Logger.lib" "glfw3.lib")
+    target_link_libraries(VulkanRender "vulkan-1.lib")
+    target_link_libraries(VulkanRender "Logger.lib")
+    target_link_libraries(VulkanRender "glfw3.lib")
 endif()
 
 target_link_libraries(VulkanRender engine application renderer)

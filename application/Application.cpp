@@ -1,8 +1,5 @@
 #include "Application.hpp"
 #include "Window.hpp"
-#include <imgui.h>
-#include <imgui_impl_glfw.h>
-#include <imgui_impl_vulkan.h>
 
 Engine::Engine(){
     _window = nullptr;
@@ -38,14 +35,6 @@ void Engine::Run(){
 
     while (!glfwWindowShouldClose(_window)) {
         glfwPollEvents();
-
-        /*
-        ImGui_ImplVulkan_NewFrame();
-        ImGui_ImplGlfw_NewFrame();
-        ImGui::NewFrame();
-        ImGui::ShowDemoWindow();
-        ImGui::Render();
-        */
 
         _Scene->UpdatePosition(_window);
         _Scene->Update();

@@ -7,16 +7,12 @@
 #include <vector>
 #include <vulkan/vulkan.hpp>
 #include <functional>
+#include "PipelineBuilder.hpp"
+#include "VkStructures.hpp"
 #include "../interface/IRendererImpl.hpp"
 #include "../../application/Window.hpp"
 #include "../../application/utils/EngineUtils.hpp"
 #include "../../engine/EngineStructures.hpp"
-
-#include "VkStructures.hpp"
-#include "VkMesh.hpp"
-/*
-    Dont forget delete Init()
-*/
 
 namespace renderer {
 
@@ -72,7 +68,6 @@ namespace renderer {
         MemRequiredInfo QueryMemReqInfo(vk::Buffer buf, vk::MemoryPropertyFlags flag);
         MemRequiredInfo QueryImgReqInfo(vk::Image image, vk::MemoryPropertyFlags flag);
         void BindTextureDescriptor(Material* mat, Texture* texture);
-        void InitImgui();
         void CreateDrawLinePipeline(Material& mat);
 
         void UseTextureSet(bool val){_UseTextureSet = val;}
@@ -134,7 +129,6 @@ namespace renderer {
         size_t PadUniformBuffeSize(size_t origin_size);
         vk::Format FindSupportedFormat(const std::vector<vk::Format>& candidates,
             vk::ImageTiling tiling, vk::FormatFeatureFlags features);
-        void CreateImguiRenderPass();
 
         // Pipeline stages
         vk::PipelineShaderStageCreateInfo InitShaderStageCreateInfo(vk::ShaderStageFlagBits stage, vk::ShaderModule shader_module);
@@ -204,8 +198,6 @@ namespace renderer {
 
     private:
         bool _UseTextureSet;
-        vk::DescriptorPool _ImguiPool;
-        vk::RenderPass _ImguiRenderPass;
 
     };// class VulkanRenderer
 }// namespace renderer
