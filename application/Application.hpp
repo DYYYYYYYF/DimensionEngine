@@ -1,8 +1,7 @@
 #pragma once
 #include "Window.hpp"
-#include "engine/Scene.hpp"
+#include "../engine/Scene.hpp"
 #include "utils/EngineUtils.hpp"
-
 
 using namespace renderer;
 

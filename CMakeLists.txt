@@ -68,9 +68,9 @@ message("-- TinyObjLoader Path: ${TINY_OBJ_LOADER_DIR}")
 message("-- UncleDon-Logger Path: ${UD_LOGGER_DIR}")
 message("-- OpenAL DIR: ${OPENAL_DIR}")
 
-add_subdirectory(engine)
-add_subdirectory(renderer)
 add_subdirectory(application)
+add_subdirectory(renderer)
+add_subdirectory(engine)
 
 add_executable(VulkanRender Launcher.cpp)
 
