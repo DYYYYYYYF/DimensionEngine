@@ -50,8 +50,6 @@ elseif(${WIN32})
     set(Vulkan_INCLUDE_DIRS "${Vulkan_DIR}/Include")
     set(GLFW_INCLUDE_DIRS "${GLFW_DIR}/include")
     set(GLFW_LIBRARY_DIRS "${GLFW_DIR}/lib/Windows/Release")
-    set(OPENAL_INCLUDE_DIRS "${OPENAL_DIR}/include")
-    set(OPENAL_LIBRARY_DIRS "${OPENAL_DIR}/libs/Win64")
 
     # file(COPY ${OPENAL_DIR}/bin/OpenAL32.dll DESTINATION ${EXECUTABLE_OUTPUT_PATH})
 
@@ -66,7 +64,6 @@ message("-- Include VULKAN DIR: ${Vulkan_INCLUDE_DIRS}")
 message("-- stb_master path: ${STB_MASTER_DIR}")
 message("-- TinyObjLoader Path: ${TINY_OBJ_LOADER_DIR}")
 message("-- UncleDon-Logger Path: ${UD_LOGGER_DIR}")
-message("-- OpenAL DIR: ${OPENAL_DIR}")
 
 add_subdirectory(application)
 add_subdirectory(renderer)
