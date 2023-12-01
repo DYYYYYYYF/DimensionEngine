@@ -18,4 +18,11 @@ By far, impl Triangle renderer.
 
 The foundational functions have finished.
 
-If your plants form is Windows, you could compile shaders by compile_shader.bat. (Dont forge set current VulkanSDK path)
+If your plants form is Windows, you could compile shaders by compile_shader.bat. (Dont forget set current VulkanSDK path)
+
+### Example shortcut
+
+normal_color
+
+![]("https://github.com/DYYYYYYYF/dyyyyyyyf.github.io/tree/main/asset/image/RenderEngine.png")
+
