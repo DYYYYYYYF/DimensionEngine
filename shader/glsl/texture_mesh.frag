@@ -37,7 +37,7 @@ void main(){
     // Specular
     vec3 viewDir = normalize(sceneData.pointLightPos.xyz - vPosition);
     vec3 reflectDir = reflect(lightDir, vNormal);
-    float spec = pow(max(dot(viewDir, reflectDir), 0.0f), 0.1f);
+    float spec = pow(max(dot(viewDir, reflectDir), 0.0f), 16.0f);
     vec3 sepcular = spec * sceneData.ambientColor.xyz * sceneData.lightSpecular.xyz;
 
     // Ligth attenuation (depend on distance)
