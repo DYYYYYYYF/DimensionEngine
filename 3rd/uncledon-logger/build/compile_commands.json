@@ -1,8 +1,0 @@
-[
-{
-  "directory": "/Users/uncled/Downloads/UncleDon-Logger-main/build",
-  "command": "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++  -I/Users/uncled/Downloads/UncleDon-Logger-main/./include -std=gnu++11 -arch arm64 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX13.3.sdk -mmacosx-version-min=13.2 -o CMakeFiles/Logger.dir/src/Logger.cpp.o -c /Users/uncled/Downloads/UncleDon-Logger-main/src/Logger.cpp",
-  "file": "/Users/uncled/Downloads/UncleDon-Logger-main/src/Logger.cpp",
-  "output": "CMakeFiles/Logger.dir/src/Logger.cpp.o"
-}
-]

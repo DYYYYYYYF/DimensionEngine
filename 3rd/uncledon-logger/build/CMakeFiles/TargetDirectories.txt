@@ -1,3 +1,0 @@
-/Users/uncled/Downloads/UncleDon-Logger-main/build/CMakeFiles/Logger.dir
-/Users/uncled/Downloads/UncleDon-Logger-main/build/CMakeFiles/edit_cache.dir
-/Users/uncled/Downloads/UncleDon-Logger-main/build/CMakeFiles/rebuild_cache.dir
