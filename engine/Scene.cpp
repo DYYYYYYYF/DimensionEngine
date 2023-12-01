@@ -15,12 +15,12 @@ void Scene::InitScene() {
 	_Renderer->Init();
 	
 	RenderObject floor;
-	Mesh* rectMesh = ((Renderer*)_Renderer)->GetMesh("sponza");
-	Material* floorMat = ((Renderer*)_Renderer)->GetMaterial("Floor");
+	Mesh* rectMesh = ((Renderer*)_Renderer)->GetMesh("Rectangle");
+	Material* floorMat = ((Renderer*)_Renderer)->GetMaterial("Default");
 	if (rectMesh != nullptr && floorMat != nullptr) {
 		floor.mesh = rectMesh;
 		floor.material = floorMat;
-		floor.SetScale(0.1f);
+		floor.SetTranslate(glm::vec3{ 1, 0, 0 });
 		_Renderables.push_back(floor);
 	}
 
@@ -45,6 +45,16 @@ void Scene::InitScene() {
 		boat.material = boatMat;
     boat.SetTranslate(glm::vec3{0, 0, 10});
 		_Renderables.push_back(boat);
+	}
+
+	RenderObject ball;
+	Mesh* ballMesh = ((Renderer*)_Renderer)->GetMesh("ball");
+	Material* FloorMat = ((Renderer*)_Renderer)->GetMaterial("Floor");
+	if (ballMesh != nullptr && FloorMat != nullptr) {
+		ball.mesh = ballMesh;
+		ball.material = FloorMat;
+		ball.SetTranslate(glm::vec3{ -10, 0, 0 });
+		_Renderables.push_back(ball);
 	}
 
 	INFO("Inited Scene.");
