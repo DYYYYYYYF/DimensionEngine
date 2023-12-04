@@ -514,15 +514,17 @@ void VulkanRenderer::DrawObjects(vk::CommandBuffer& cmd, RenderObject* first, in
     
     Mesh* lastMesh = nullptr;
     Material* lastMaterial = nullptr;
+
     for (int i = 0; i < count; i++)
     {
         const RenderObject& object = first[i];
+        int curFrame = _FrameNumber % FRAME_OVERLAP;
+
         //only bind the pipeline if it doesn't match with the already bound one
         if (object.material != lastMaterial) {
             cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, object.material->pipeline);
             lastMaterial = object.material;
 
-            int curFrame = _FrameNumber % FRAME_OVERLAP;
             uint32_t uniform_offset = (uint32_t)PadUniformBuffeSize(sizeof(SceneData)) * curFrame;
             // object.material->pipelineLayout
             std::vector<vk::DescriptorSet> descSets = { _Frames[curFrame].globalDescriptor };
@@ -579,11 +581,26 @@ void VulkanRenderer::DrawPerFrame(RenderObject* first, int count) {
 
     cmdBuffer.begin(info);
 
+    // Config
     std::array<vk::ClearValue, 2> ClearValues;
     vk::ClearColorValue color = std::array<float, 4>{0.f, 0.f, 0.f, 1.0f};
     ClearValues[0].setColor(color);
     ClearValues[1].setDepthStencil({ 1.0, 0 });
 
+    vk::Rect2D scissor;
+    scissor.extent = _SupportInfo.extent;
+    cmdBuffer.setScissor(1, scissor);
+
+    vk::Viewport viewport;
+    viewport.setWidth(_SupportInfo.extent.width)
+        .setHeight(_SupportInfo.extent.height)
+        .setX(0)
+        .setY(0)
+        .setMinDepth(0)
+        .setMaxDepth(1);
+    cmdBuffer.setViewport(1, viewport);
+    
+    // Renderpass
     vk::RenderPassBeginInfo rpInfo;
     rpInfo.setRenderPass(_VkRenderPass)
         .setRenderArea(vk::Rect2D({ 0, 0 }, _SupportInfo.extent))

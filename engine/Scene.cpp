@@ -47,16 +47,6 @@ void Scene::InitScene() {
 		_Renderables.push_back(boat);
 	}
 
-	RenderObject ball;
-	Mesh* ballMesh = ((Renderer*)_Renderer)->GetMesh("ball");
-	Material* FloorMat = ((Renderer*)_Renderer)->GetMaterial("Floor");
-	if (ballMesh != nullptr && FloorMat != nullptr) {
-		ball.mesh = ballMesh;
-		ball.material = FloorMat;
-		ball.SetTranslate(glm::vec3{ -10, 0, 0 });
-		_Renderables.push_back(ball);
-	}
-
 	INFO("Inited Scene.");
 }
 
@@ -212,9 +202,6 @@ RenderObject Scene::GenerateBoudingBox(const Mesh* mesh) {
 	((Renderer*)_Renderer)->LoadMesh("Bouding", boundingMesh);
 
 	obj.mesh = ((Renderer*)_Renderer)->GetMesh("Bouding");
-	obj.SetTranslate(glm::vec3{ 0.0f, 1.0f, 0.0f });
-
-	_Renderables.push_back(obj);
 
 	return obj;
 }
