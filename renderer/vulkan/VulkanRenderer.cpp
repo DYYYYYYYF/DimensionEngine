@@ -578,12 +578,11 @@ void VulkanRenderer::DrawPerFrame(RenderObject* first, int count) {
     vk::CommandBufferBeginInfo info;
     info.setPInheritanceInfo(nullptr)
         .setFlags(vk::CommandBufferUsageFlagBits::eSimultaneousUse);
-
     cmdBuffer.begin(info);
 
     // Config
     std::array<vk::ClearValue, 2> ClearValues;
-    vk::ClearColorValue color = std::array<float, 4>{0.f, 0.f, 0.f, 1.0f};
+    vk::ClearColorValue color = std::array<float, 4>{0.f, 0.f, 0.f, 0.1f};
     ClearValues[0].setColor(color);
     ClearValues[1].setDepthStencil({ 1.0, 0 });
 
@@ -592,8 +591,8 @@ void VulkanRenderer::DrawPerFrame(RenderObject* first, int count) {
     cmdBuffer.setScissor(1, scissor);
 
     vk::Viewport viewport;
-    viewport.setWidth(_SupportInfo.extent.width)
-        .setHeight(_SupportInfo.extent.height)
+    viewport.setWidth((float)_SupportInfo.extent.width)
+        .setHeight((float)_SupportInfo.extent.height)
         .setX(0)
         .setY(0)
         .setMinDepth(0)
@@ -1123,7 +1122,7 @@ void VulkanRenderer::UpdateDynamicBuffer(){
     _SceneData.fogDistances = { 0, 1, 0, 0 };
     _SceneData.sunlightColor = { 1, 1, 1, 0 };
     //_SceneData.sunlightDirection = { sin(framed), 0, cos(framed), 0 };
-    _SceneData.sunlightDirection = { sin(framed), -1, cos(framed), 0 };
+    _SceneData.sunlightDirection = { 1, -1, 1, 0 };
     _SceneData.pointLightPos = { 0, 0, -1, 1 };
     _SceneData.lightSpecular = { 0.5, 0.5, 0.5, 1 };
     int frameIndex = _FrameNumber % FRAME_OVERLAP;
