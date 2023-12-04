@@ -51,7 +51,7 @@ bool Renderer::Init(){
     AddMaterial("Texture", deafaultMeshMaterial);
 
     Material deafaultFloorMaterial;
-    CreatePipeline(deafaultFloorMaterial, meshFloorVertShader, meshFloorFragShader);
+    CreatePipeline(deafaultFloorMaterial, meshFloorVertShader, meshFloorFragShader, true);
     AddMaterial("Floor", deafaultFloorMaterial);
 
     Material drawLineMaterial;
@@ -63,8 +63,8 @@ bool Renderer::Init(){
     return true;
 }
 
-void Renderer::CreatePipeline(Material& mat, const char* vert_shader, const char* frag_shader) {
-    _RendererImpl->CreatePipeline(mat, vert_shader, frag_shader);
+void Renderer::CreatePipeline(Material& mat, const char* vert_shader, const char* frag_shader, bool alpha) {
+    _RendererImpl->CreatePipeline(mat, vert_shader, frag_shader, alpha);
 }
 
 void Renderer::BeforeDraw(){

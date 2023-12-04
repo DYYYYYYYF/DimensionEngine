@@ -433,8 +433,14 @@ void VulkanRenderer::InitSyncStructures() {
 
 }
 
-void VulkanRenderer::CreatePipeline(Material& mat, const char* vert_shader, const char* frag_shader) {
+void VulkanRenderer::CreatePipeline(Material& mat, const char* vert_shader, const char* frag_shader, bool alpha) {
     PipelineBuilder pipelineBuilder;
+
+    bool enableDepth = true, enableBlend = false;
+    if (alpha) {
+        enableDepth = !enableDepth;
+        enableBlend = !enableBlend;
+    }
 
     vk::ShaderModule vertShader = CreateShaderModule(vert_shader);
     vk::ShaderModule fragShader = CreateShaderModule(frag_shader);
@@ -496,8 +502,8 @@ void VulkanRenderer::CreatePipeline(Material& mat, const char* vert_shader, cons
     // INFO("Pipeline Rasterizer");
     pipelineBuilder._Rasterizer = InitRasterizationStateCreateInfo(vk::PolygonMode::eFill);
     pipelineBuilder._Mutisampling = InitMultisampleStateCreateInfo();
-    pipelineBuilder._ColorBlendAttachment = InitColorBlendAttachmentState();
-    pipelineBuilder._DepthStencilState = InitDepthStencilStateCreateInfo();
+    pipelineBuilder._ColorBlendAttachment = InitColorBlendAttachmentState(enableBlend);
+    pipelineBuilder._DepthStencilState = InitDepthStencilStateCreateInfo(enableDepth);
 
     _Pipeline = pipelineBuilder.BuildPipeline(_VkDevice, _VkRenderPass);
     ASSERT(_Pipeline);
@@ -1227,13 +1233,13 @@ vk::PipelineMultisampleStateCreateInfo VulkanRenderer::InitMultisampleStateCreat
     return info;
 }
 
-vk::PipelineColorBlendAttachmentState VulkanRenderer::InitColorBlendAttachmentState(bool isBlend) {
+vk::PipelineColorBlendAttachmentState VulkanRenderer::InitColorBlendAttachmentState(bool enable_Blend) {
     vk::PipelineColorBlendAttachmentState info;
     info.setColorWriteMask(vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG |
         vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA);
-    info.setBlendEnable(isBlend);
+    info.setBlendEnable(enable_Blend);
 
-    if (isBlend) {
+    if (enable_Blend) {
         info.setColorBlendOp(vk::BlendOp::eAdd)
             .setSrcColorBlendFactor(vk::BlendFactor::eSrcAlpha)
             .setDstColorBlendFactor(vk::BlendFactor::eOneMinusSrcAlpha)
@@ -1254,10 +1260,10 @@ vk::PipelineLayoutCreateInfo VulkanRenderer::InitPipelineLayoutCreateInfo() {
     return info;
 }
 
-vk::PipelineDepthStencilStateCreateInfo VulkanRenderer::InitDepthStencilStateCreateInfo() {
+vk::PipelineDepthStencilStateCreateInfo VulkanRenderer::InitDepthStencilStateCreateInfo(bool enable_depth) {
     vk::PipelineDepthStencilStateCreateInfo depthStencilInfo;
-    depthStencilInfo.setDepthTestEnable(VK_TRUE)    //将新的深度缓冲区与深度缓冲区进行比较，确定是否丢弃
-        .setDepthWriteEnable(VK_TRUE)   //测试新深度缓冲区是否应该写入
+    depthStencilInfo.setDepthTestEnable(enable_depth)    //将新的深度缓冲区与深度缓冲区进行比较，确定是否丢弃
+        .setDepthWriteEnable(enable_depth)   //测试新深度缓冲区是否应该写入
         .setDepthCompareOp(vk::CompareOp::eLess)
         .setDepthBoundsTestEnable(VK_FALSE)
         .setMinDepthBounds(0.0f)
@@ -1425,8 +1431,8 @@ void VulkanRenderer::CreateDrawLinePipeline(Material& mat) {
     // INFO("Pipeline Rasterizer");
     pipelineBuilder._Rasterizer = InitRasterizationStateCreateInfo(vk::PolygonMode::eLine);
     pipelineBuilder._Mutisampling = InitMultisampleStateCreateInfo();
-    pipelineBuilder._ColorBlendAttachment = InitColorBlendAttachmentState();
-    pipelineBuilder._DepthStencilState = InitDepthStencilStateCreateInfo();
+    pipelineBuilder._ColorBlendAttachment = InitColorBlendAttachmentState(false);
+    pipelineBuilder._DepthStencilState = InitDepthStencilStateCreateInfo(true);
 
     _DrawLinePipeline = pipelineBuilder.BuildPipeline(_VkDevice, _VkRenderPass);
     ASSERT(_DrawLinePipeline);

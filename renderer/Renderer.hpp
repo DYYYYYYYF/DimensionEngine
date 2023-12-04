@@ -10,7 +10,7 @@ namespace renderer {
         Renderer();
         virtual ~Renderer();
         virtual bool Init() override;
-        virtual void CreatePipeline(Material& mat, const char* vert_shader, const char* frag_shader) override;
+        virtual void CreatePipeline(Material& mat, const char* vert_shader, const char* frag_shader, bool alpha = false) override;
         virtual void BeforeDraw() override;
         virtual void Draw(RenderObject* first, int count) override;
         virtual void AfterDraw() override;

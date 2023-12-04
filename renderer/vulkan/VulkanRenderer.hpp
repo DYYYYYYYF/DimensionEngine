@@ -36,7 +36,7 @@ namespace renderer {
         virtual void CreateCmdPool() override;
         virtual void CreateFrameBuffers() override;
         virtual void InitSyncStructures() override;
-        virtual void CreatePipeline(Material& mat, const char* vert_shader, const char* frag_shader) override;
+        virtual void CreatePipeline(Material& mat, const char* vert_shader, const char* frag_shader, bool alpha) override;
         virtual void DrawPerFrame(RenderObject* first, int count) override;
 
         virtual void UpLoadMeshes(Mesh& mesh) override;
@@ -136,9 +136,9 @@ namespace renderer {
         vk::PipelineInputAssemblyStateCreateInfo InitAssemblyStateCreateInfo(vk::PrimitiveTopology topology);
         vk::PipelineRasterizationStateCreateInfo InitRasterizationStateCreateInfo(vk::PolygonMode polygonMode);
         vk::PipelineMultisampleStateCreateInfo InitMultisampleStateCreateInfo();
-        vk::PipelineColorBlendAttachmentState InitColorBlendAttachmentState(bool isBlend = false);
+        vk::PipelineColorBlendAttachmentState InitColorBlendAttachmentState(bool enable_Blend);
         vk::PipelineLayoutCreateInfo InitPipelineLayoutCreateInfo();
-        vk::PipelineDepthStencilStateCreateInfo InitDepthStencilStateCreateInfo();
+        vk::PipelineDepthStencilStateCreateInfo InitDepthStencilStateCreateInfo(bool enable_depth);
 
         vk::DescriptorSetLayoutBinding InitDescriptorSetLayoutBinding(vk::DescriptorType type, 
             vk::ShaderStageFlags stage, uint32_t binding);
