@@ -1,7 +1,6 @@
 #pragma once
 #include <iostream>
-#include <glm/glm.hpp>
-#include <glm/gtc//matrix_transform.hpp>
+#include "../../application/utils/GDefines.hpp"
 
 namespace engine {
 class Camera{
@@ -12,14 +11,14 @@ class Camera{
         };
 
     public:
-        Camera(glm::vec3 position, glm::vec3 target, glm::vec3 worldup);
-        Camera(glm::vec3 position, float pitch, float yaw, glm::vec3 worldup);
+        Camera(Vector3 position, Vector3 target, Vector3 worldup);
+        Camera(Vector3 position, float pitch, float yaw, Vector3 worldup);
 
-        glm::vec3 position;
-        glm::vec3 forward;
-        glm::vec3 right;
-        glm::vec3 up;
-        glm::vec3 worldUp;
+        Vector3 position;
+        Vector3 forward;
+        Vector3 right;
+        Vector3 up;
+        Vector3 worldUp;
 
         float pitch;
         float yaw;
@@ -31,7 +30,7 @@ class Camera{
         MousePos mouesePos;
 
     public:
-        glm::mat4 GetViewMatrix();
+        Matrix4 GetViewMatrix();
 
         void MouserMovement(float x, float y);
         void UpdateCameraPosition();

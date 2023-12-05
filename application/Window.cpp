@@ -65,6 +65,9 @@ bool WsiWindow::InitWindow(){
     // Mouse Callback
      glfwSetScrollCallback(_GLFWWindow, scroll_callback);
 
+     GLFWimage icon;
+     glfwSetWindowIcon(_GLFWWindow, 1, &icon);
+
     return true;
 }
 

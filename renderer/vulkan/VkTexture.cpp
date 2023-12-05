@@ -15,7 +15,7 @@ bool renderer::LoadImageFromFile(VulkanRenderer& renderer, const char* file, All
         return false;
     }
 
-    vk::DeviceSize imageSize = texWidth * texHeight * 4;
+    vk::DeviceSize imageSize = (uint64_t)texWidth * texHeight * 4;
     vk::Buffer tempBuf = renderer.CreateBuffer(imageSize, vk::BufferUsageFlagBits::eTransferSrc,
                                 vk::SharingMode::eExclusive);
     ASSERT(tempBuf);

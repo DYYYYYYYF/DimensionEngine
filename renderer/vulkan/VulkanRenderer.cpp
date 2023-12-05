@@ -565,6 +565,8 @@ void VulkanRenderer::DrawObjects(vk::CommandBuffer& cmd, RenderObject* first, in
 
 void VulkanRenderer::DrawPerFrame(RenderObject* first, int count) {
 
+    WaitIdel();
+
     if (_VkDevice.waitForFences(GetCurrentFrame().renderFence, true, 
         std::numeric_limits<uint64_t>::max()) != vk::Result::eSuccess) {
         ERROR("ERROR WAIT FOR FENCES");

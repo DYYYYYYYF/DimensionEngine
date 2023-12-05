@@ -1,6 +1,6 @@
+#pragma once
 #define TINYOBJLOADER_IMPLEMENTATION
 #define GLM_ENABLE_EXPERIMENTAL
-#pragma once
 
 #include <iostream>
 #include <string>
@@ -58,9 +58,9 @@ namespace std {
     template<> 
     struct hash<renderer::Vertex> {
         size_t operator()(const renderer::Vertex& vertex) const noexcept{
-            return ((hash<glm::vec3>()(vertex.position) ^
-                (hash<glm::vec3>()(vertex.color) << 1)) >> 1) ^
-                (hash<glm::vec2>()(vertex.texCoord) << 1);
+            return ((hash<Vector3>()(vertex.position) ^
+                (hash<Vector3>()(vertex.color) << 1)) >> 1) ^
+                (hash<Vector2>()(vertex.texCoord) << 1);
         }
     };
 }

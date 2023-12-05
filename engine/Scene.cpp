@@ -16,7 +16,7 @@ void Scene::InitScene() {
 	
 	RenderObject floor;
 	Mesh* rectMesh = ((Renderer*)_Renderer)->GetMesh("Rectangle");
-	Material* floorMat = ((Renderer*)_Renderer)->GetMaterial("Default");
+	Material* floorMat = ((Renderer*)_Renderer)->GetMaterial("Floor");
 	if (rectMesh != nullptr && floorMat != nullptr) {
 		floor.mesh = rectMesh;
 		floor.material = floorMat;
@@ -56,7 +56,6 @@ void Scene::Update() {
 	_Renderer->Draw(_Renderables.data(), (int)_Renderables.size());
 	_Renderer->AfterDraw();
 
-    _Renderer->WaitIdel();
 	_FrameCount++;
 
 }

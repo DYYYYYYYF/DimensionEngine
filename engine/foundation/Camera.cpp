@@ -2,7 +2,7 @@
 
 using namespace engine;
 
-Camera::Camera(glm::vec3 position, glm::vec3 target, glm::vec3 worldup){
+Camera::Camera(Vector3 position, Vector3 target, Vector3 worldup){
     this->position = position;
     this->worldUp = worldup;
     this->forward = glm::normalize(target-position);
@@ -12,7 +12,7 @@ Camera::Camera(glm::vec3 position, glm::vec3 target, glm::vec3 worldup){
     mouesePos.y = 0.0;
 }
 
-Camera::Camera(glm::vec3 position, float pitch, float yaw, glm::vec3 worldup){
+Camera::Camera(Vector3 position, float pitch, float yaw, Vector3 worldup){
     this->position = position;
     this->pitch = pitch;
     this->yaw = yaw;
@@ -26,7 +26,7 @@ Camera::Camera(glm::vec3 position, float pitch, float yaw, glm::vec3 worldup){
     mouesePos.y = 0.0;
 }
 
-glm::mat4 Camera::GetViewMatrix(){
+Matrix4 Camera::GetViewMatrix(){
     return glm::lookAt(position,position + forward, worldUp);
 }
 
