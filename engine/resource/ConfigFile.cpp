@@ -33,12 +33,11 @@ void ConfigFile::SaveToFile() {
 
 	std::fstream* fs = FileUtil::GetFileStream();
 	fs->open(m_pFileName, std::ios::out | std::ios::ate);
-	fs->write("", 1);
-	fs->open(m_pFileName, std::ios::out | std::ios::app);
 
-
+	std::string res;
 	for (auto& a : m_Data) {
-		std::string res = a.first + a.second;
-		fs->write(res.data(), res.length());
+		res += a.first + "=" + a.second;
 	}
+
+	fs->write(res.data(), res.length());
 }
