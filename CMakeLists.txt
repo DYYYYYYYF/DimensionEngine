@@ -69,7 +69,7 @@ add_subdirectory(application)
 add_subdirectory(renderer)
 add_subdirectory(engine)
 
-add_executable(VulkanRender Launcher.cpp)
+add_executable(VulkanRender runtime/Launcher.cpp runtime/logo.rc)
 
 if(${APPLE})
     target_link_libraries(VulkanRender libLogger.a)
