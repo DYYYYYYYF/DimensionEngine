@@ -18,44 +18,49 @@ bool Renderer::Init(){
 
     _RendererImpl->Init();
 
+    std::string prePath = "../";
+    if (_ConfigFile != nullptr) {
+        prePath = _ConfigFile->GetVal("PrePath");
+    }
+
     // Models
-    LoadMesh("../asset/model/room.obj", "room");
-    LoadMesh("../asset/model/ball.obj", "ball");
-    LoadMesh("../asset/model/CornellBox.obj", "CornellBox");
-    LoadMesh("../asset/model/sponza.obj", "sponza");
-    LoadMesh("../asset/model/bunny.obj", "Bunny");
-    LoadMesh("../asset/obj/wooden_boat/Boat.obj", "Boat");
+    LoadMesh((prePath + std::string("asset/model/room.obj")).data(), "room");
+    LoadMesh((prePath + std::string("asset/model/ball.obj")).data(), "ball");
+    LoadMesh((prePath + std::string("asset/model/CornellBox.obj")).data(), "CornellBox");
+    LoadMesh((prePath + std::string("asset/model/sponza.obj")).data(), "sponza");
+    LoadMesh((prePath + std::string("asset/model/bunny.obj")).data(), "Bunny");
+    LoadMesh((prePath + std::string("asset/obj/wooden_boat/Boat.obj")).data(), "Boat");
     LoadTriangleMesh();
     LoadRectangleMesh();
 
     // Textures
-    LoadTexture("room", "../asset/texture/room.png");
-    LoadTexture("wooden", "../asset/obj/wooden_boat/BaseColor.png");
+    LoadTexture("room", (prePath + std::string("asset/texture/room.png")).data());
+    LoadTexture("wooden", (prePath + std::string("asset/obj/wooden_boat/BaseColor.png")).data());
 
     // Materials
-    const char* defaultVertShader = "../shader/glsl/default_vert.spv";
-    const char* defaultFragShader = "../shader/glsl/default_frag.spv";
-    const char* meshVertShader = "../shader/glsl/texture_mesh_vert.spv";
-    const char* meshFragShader = "../shader/glsl/texture_mesh_frag.spv";
-    const char* meshFloorVertShader = "../shader/glsl/mesh_grid_vert.spv";
-    const char* meshFloorFragShader = "../shader/glsl/mesh_grid_frag.spv";
+    std::string defaultVertShader = (prePath + std::string("shader/glsl/default_vert.spv")).data();
+    std::string defaultFragShader = (prePath + std::string("shader/glsl/default_frag.spv")).data();
+    std::string meshVertShader = (prePath + std::string("shader/glsl/texture_mesh_vert.spv")).data();
+    std::string meshFragShader = (prePath + std::string("shader/glsl/texture_mesh_frag.spv")).data();
+    std::string meshFloorVertShader = (prePath + std::string("shader/glsl/mesh_grid_vert.spv")).data();
+    std::string meshFloorFragShader = (prePath + std::string("shader/glsl/mesh_grid_frag.spv")).data();
 
     ((VulkanRenderer*)_RendererImpl)->UseTextureSet(false);
     Material deafaultMaterial;
-    CreatePipeline(deafaultMaterial, defaultVertShader, defaultFragShader);
+    CreatePipeline(deafaultMaterial, defaultVertShader.data(), defaultFragShader.data());
     AddMaterial("Default", deafaultMaterial);
 
     ((VulkanRenderer*)_RendererImpl)->UseTextureSet(true);
     Material deafaultMeshMaterial;
-    CreatePipeline(deafaultMeshMaterial, meshVertShader, meshFragShader);
+    CreatePipeline(deafaultMeshMaterial, meshVertShader.data(), meshFragShader.data());
     AddMaterial("Texture", deafaultMeshMaterial);
 
     Material deafaultFloorMaterial;
-    CreatePipeline(deafaultFloorMaterial, meshFloorVertShader, meshFloorFragShader, true);
+    CreatePipeline(deafaultFloorMaterial, meshFloorVertShader.data(), meshFloorFragShader.data(), true);
     AddMaterial("Floor", deafaultFloorMaterial);
 
     Material drawLineMaterial;
-    CreateDrawlinePipeline(drawLineMaterial);
+    CreateDrawlinePipeline(drawLineMaterial, defaultVertShader.data(), defaultFragShader.data());
     AddMaterial("DrawLine", drawLineMaterial);
 
     ((VulkanRenderer*)_RendererImpl)->BindTextureDescriptor(GetMaterial("Texture"), GetTexture("room"));
@@ -98,6 +103,7 @@ void Renderer::LoadTexture(const char* filename, const char* texture_path) {
 
     texture.imageView = ((VulkanRenderer*)_RendererImpl)->CreateImageView(vk::Format::eR8G8B8A8Srgb, texture.image.image, vk::ImageAspectFlagBits::eColor);
     AddTexture(filename, texture);
+    INFO("Load Texture %s", filename);
 }
 
 void Renderer::UpdateViewMat(glm::mat4 view_matrix){

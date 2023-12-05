@@ -3,6 +3,7 @@
 #include "vulkan/VulkanRenderer.hpp"
 #include "vulkan/VkMesh.hpp"
 #include "vulkan/VkTextrue.hpp"
+#include "../engine/resource/ConfigFile.hpp"
 
 namespace renderer {
     class Renderer : public IRenderer{
@@ -21,8 +22,8 @@ namespace renderer {
         void UpdateViewMat(glm::mat4 view_matrix);
 
         void LoadTexture(const char* filename, const char* texture_path);
-        void CreateDrawlinePipeline(Material& mat){
-            ((VulkanRenderer*)_RendererImpl)->CreateDrawLinePipeline(mat);
+        void CreateDrawlinePipeline(Material& mat, const char* vert_shader, const char* frag_shader){
+            ((VulkanRenderer*)_RendererImpl)->CreateDrawLinePipeline(mat, vert_shader, frag_shader);
         }
 
         void LoadMesh(const char* filename, Mesh& mesh);
@@ -38,6 +39,8 @@ namespace renderer {
         void ReleaseMaterials() { ((VulkanRenderer*)_RendererImpl)->ReleaseMaterials(_Materials); }
         void ReleaseTextures() { ((VulkanRenderer*)_RendererImpl) -> ReleaseTextures( _Textures); }
 
+        void SetConfigFile(ConfigFile* config) { _ConfigFile = config; }
+
     private:
         void AddMesh(std::string name, Mesh mesh) { _Meshes[name] = mesh; }
         void AddMaterial(std::string name, Material mat) { _Materials[name] = mat; }
@@ -47,6 +50,8 @@ namespace renderer {
         std::unordered_map<std::string, Mesh> _Meshes;
         std::unordered_map<std::string, Material> _Materials;
         std::unordered_map<std::string, Texture> _Textures;
+
+        ConfigFile* _ConfigFile;
     };
 }
 

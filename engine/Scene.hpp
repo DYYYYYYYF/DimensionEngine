@@ -2,7 +2,7 @@
 
 #include <unordered_map>
 #include "EngineStructures.hpp"
-#include "foundation/Camera.hpp"
+#include "Camera.hpp"
 #include "../renderer/Renderer.hpp"
 
 #ifdef _WIN32
@@ -19,7 +19,7 @@ public:
 	Scene();
 	virtual ~Scene();
 
-	void InitScene();
+	void InitScene(ConfigFile* config = nullptr);
 	void Update();
 	void Destroy();
 	void UpdatePosition(GLFWwindow* window);

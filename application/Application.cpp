@@ -1,17 +1,24 @@
 #include "Application.hpp"
 #include "Window.hpp"
 
-Engine::Engine(){
+Application::Application(){
+    _window = nullptr;
+    _Scene = nullptr;
+    _ConfigFile = nullptr;
+}
+
+Application::Application(ConfigFile* config) {
+    _window = nullptr;
+    _Scene = nullptr;
+    _ConfigFile = config;
+}
+
+Application::~Application(){
     _window = nullptr;
     _Scene = nullptr;
 }
 
-Engine::~Engine(){
-    _window = nullptr;
-    _Scene = nullptr;
-}
-
-bool Engine::Init(){
+bool Application::Init(){
 
     WsiWindow::SetWidth(1200);
     _window = WsiWindow::GetInstance()->GetWindow();
@@ -19,13 +26,13 @@ bool Engine::Init(){
 
     _Scene = new Scene();
     ASSERT(_Scene);
-    _Scene->InitScene();
+    _Scene->InitScene(_ConfigFile);
 
     return true;
 }
 
 
-void Engine::Run(){
+void Application::Run(){
 
     if (!_window){
         DEBUG("_window is null.");
@@ -43,7 +50,7 @@ void Engine::Run(){
     }
 }
 
-void Engine::Close(){
+void Application::Close(){
     if (_Scene != nullptr) {
         _Scene->Destroy();
     }

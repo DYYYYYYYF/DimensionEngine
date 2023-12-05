@@ -1,6 +1,5 @@
 #pragma once
-#include <Logger.hpp>
-#include <filesystem>
+#include "Logger.hpp"
 
 #ifdef _DEBUG
 #define ASSERT(expr) \
@@ -14,11 +13,5 @@
         FATAL(#expr "is null!"); \
         exit(-1); \
 }
+
 #endif //ifdef DEBUG
-
-class EngineLogger{
-public:
-    EngineLogger();
-    virtual ~EngineLogger(){}
-};
-
