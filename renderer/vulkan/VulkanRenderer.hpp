@@ -1,8 +1,9 @@
 #pragma once
 
-#ifdef DEBUG
+// #define _DEBUG_
+#ifdef _DEBUG_
 #include <iostream>
-#endif // DEBUG
+#endif // _DEBUG_
 
 #include <vector>
 #include <vulkan/vulkan.hpp>

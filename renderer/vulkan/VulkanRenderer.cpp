@@ -130,9 +130,12 @@ void VulkanRenderer::CreateInstance() {
         .setEnabledExtensionCount(extensionsCount)
         .setEnabledLayerCount((uint32_t)layers.size());
 
-#ifdef __DEBUG__
+#ifdef _DEBUG_
+    std::cout << "All Layers:\n";
+    for (auto& layer : enumLayers) std::cout << layer.layerName << std::endl;
+
     std::cout << "Added Extensions:\n";
-    for (auto& extension : extensionNames) std::cout << extension << std::endl;
+    for (unsigned int i = 0; i < extensionsCount; i++) std::cout << extensionNames[i] << std::endl;
     std::cout << "Added Layers:\n";
     for (auto& layer : layers) std::cout << layer << std::endl;
 #endif
@@ -141,11 +144,16 @@ void VulkanRenderer::CreateInstance() {
 }
 
 void VulkanRenderer::PickupPhyDevice() {
+   
     std::vector<vk::PhysicalDevice> physicalDevices = _VkInstance.enumeratePhysicalDevices();
- #ifdef __DEBUG__
-    std::cout << "\nUsing GPU:  " << physicalDevices[0].getProperties().deviceName << std::endl;    //输出显卡名称
-#endif
     _VkPhyDevice = physicalDevices[0];
+
+#ifdef _DEBUG_
+    std::cout << "\nUsing GPU:  " << physicalDevices[0].getProperties().deviceName << std::endl;    //输出显卡名称
+    
+    vk::PhysicalDeviceFeatures features = physicalDevices[0].getFeatures();
+       // std::cout << features << std::endl;
+#endif
 }
 
 void VulkanRenderer::CreateSurface(){
@@ -830,7 +838,7 @@ bool VulkanRenderer::QueryQueueFamilyProp(){
         index++;
     }
 
-#ifdef __DEBUG__ 
+#ifdef _DEBUG_ 
     std::cout << "Graphics Index:" << _QueueFamilyProp.graphicsIndex.value() << 
         "\nPresent Index: " << _QueueFamilyProp.presentIndex.value() << std::endl;
 #endif
