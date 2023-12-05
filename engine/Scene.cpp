@@ -60,6 +60,8 @@ void Scene::Update() {
 	_Renderer->Draw(_Renderables.data(), (int)_Renderables.size());
 	_Renderer->AfterDraw();
 
+  _Renderer->WaitIdel();
+
 	_FrameCount++;
 
 }

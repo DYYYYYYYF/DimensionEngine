@@ -11,7 +11,7 @@
 #include "VkStructures.hpp"
 #include "../interface/IRendererImpl.hpp"
 #include "../../application/Window.hpp"
-#include "../../application/utils/EngineUtils.hpp"
+#include "../../application/EngineUtils.hpp"
 #include "../../engine/EngineStructures.hpp"
 
 namespace renderer {
@@ -68,7 +68,7 @@ namespace renderer {
         MemRequiredInfo QueryMemReqInfo(vk::Buffer buf, vk::MemoryPropertyFlags flag);
         MemRequiredInfo QueryImgReqInfo(vk::Image image, vk::MemoryPropertyFlags flag);
         void BindTextureDescriptor(Material* mat, Texture* texture);
-        void CreateDrawLinePipeline(Material& mat);
+        void CreateDrawLinePipeline(Material& mat, const char* vert_shader, const char* frag_shader);
 
         void UseTextureSet(bool val){_UseTextureSet = val;}
 

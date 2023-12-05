@@ -1,8 +1,8 @@
 #define USE_LOGGER
 
 #include <iostream>
-#include "../application/Application.hpp"
-#include "../engine/EngineLogger.hpp"
+#include "../../application/Application.hpp"
+#include "../../engine/EngineLogger.hpp"
 
 #ifdef USE_LOGGER
 static EngineLogger* GLOBAL_LOGGER = new EngineLogger();
@@ -10,9 +10,12 @@ static EngineLogger* GLOBAL_LOGGER = new EngineLogger();
 
 int main(int argc, char* argv[]){
 
-    Application* pApp = new Application();
+    ConfigFile config;
+    config.LoadFile("../default/config.txt");
 
-    try{
+    Application* pApp = new Application(&config);
+
+    try {
         pApp->Init();
         pApp->Run();
         pApp->Close();
@@ -20,6 +23,8 @@ int main(int argc, char* argv[]){
         std::cerr << e.what() << std::endl;
         return EXIT_FAILURE;
     }
+
+    config.SaveToFile();
 
     return 0;
 }

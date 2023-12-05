@@ -1,14 +1,15 @@
 #pragma once
 #include "Window.hpp"
+#include "EngineUtils.hpp"
 #include "../engine/Scene.hpp"
-#include "utils/EngineUtils.hpp"
 
 using namespace renderer;
 
-class Engine{
+class Application{
 public:
-    Engine();
-    virtual ~Engine();
+    Application();
+    Application(ConfigFile* config);
+    virtual ~Application();
 
     bool Init();
     void Run();
@@ -17,6 +18,7 @@ public:
 private:
     GLFWwindow* _window;
     Scene* _Scene;
+    ConfigFile* _ConfigFile;
     int _FrameCount = 0;
 
 };

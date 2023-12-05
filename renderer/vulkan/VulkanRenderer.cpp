@@ -565,8 +565,6 @@ void VulkanRenderer::DrawObjects(vk::CommandBuffer& cmd, RenderObject* first, in
 
 void VulkanRenderer::DrawPerFrame(RenderObject* first, int count) {
 
-    WaitIdel();
-
     if (_VkDevice.waitForFences(GetCurrentFrame().renderFence, true, 
         std::numeric_limits<uint64_t>::max()) != vk::Result::eSuccess) {
         ERROR("ERROR WAIT FOR FENCES");
@@ -1374,11 +1372,11 @@ vk::ImageView VulkanRenderer::CreateImageView(vk::Format format, vk::Image image
     return _VkDevice.createImageView(info);
 }
 
-void VulkanRenderer::CreateDrawLinePipeline(Material& mat) {
+void VulkanRenderer::CreateDrawLinePipeline(Material& mat, const char* vert_shader, const char* frag_shader) {
     PipelineBuilder pipelineBuilder;
 
-    vk::ShaderModule vertShader = CreateShaderModule("../shader/glsl/default_vert.spv");
-    vk::ShaderModule fragShader = CreateShaderModule("../shader/glsl/default_frag.spv");
+    vk::ShaderModule vertShader = CreateShaderModule(vert_shader);
+    vk::ShaderModule fragShader = CreateShaderModule(frag_shader);
     ASSERT(vertShader);
     ASSERT(fragShader);
 

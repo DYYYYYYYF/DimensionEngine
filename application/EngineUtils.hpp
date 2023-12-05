@@ -1,7 +1,6 @@
 #pragma once
 #include "Logger.hpp"
 
-namespace udon {
 #ifdef _DEBUG
 #define ASSERT(expr) \
     if(!(expr)) { \
@@ -16,5 +15,3 @@ namespace udon {
 }
 
 #endif //ifdef DEBUG
-}
-

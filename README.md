@@ -22,7 +22,10 @@ If your plants form is Windows, you could compile shaders by compile_shader.bat.
 
 ### Example shortcut
 
-normal_color
+mutiple_models
 
-![]("https://github.com/DYYYYYYYF/dyyyyyyyf.github.io/tree/main/asset/image/RenderEngine.png")
+![](examples/shortcut/RenderEngine.png)
 
+light_shader
+
+![](examples/shortcut/LightShader.png)
