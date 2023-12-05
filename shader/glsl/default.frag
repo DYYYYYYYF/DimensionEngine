@@ -41,7 +41,6 @@ void main(){
 
     // Ligth attenuation (depend on distance)
     float distance = length(sceneData.pointLightPos.xyz - vPosition);    
-
     float attenuation = 1.0f / float((m_constant + m_linear * distance) + m_quadratic * (distance * distance));
 
     // Blend
