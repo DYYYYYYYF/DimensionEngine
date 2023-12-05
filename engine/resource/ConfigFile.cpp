@@ -13,13 +13,13 @@ void ConfigFile::LoadFile(const char* file) {
 	size_t eqPos = 0;
 	while (!fs->eof()) {
 		fs->getline(data, 256);
+		if (data == nullptr || data[0] == '\0') continue;
 		
 		// Separate string
 		std::string datas = data;
 		eqPos = datas.find("=");
 		std::string fir = datas.substr(0, eqPos);
 		std::string sec = datas.substr(eqPos + 1, datas.length() - 1);
-
 		SetData(fir, sec);
 	}
 
@@ -36,7 +36,7 @@ void ConfigFile::SaveToFile() {
 
 	std::string res;
 	for (auto& a : m_Data) {
-		res += a.first + "=" + a.second;
+		res += a.first + "=" + a.second + '\n';
 	}
 
 	fs->write(res.data(), res.length());
