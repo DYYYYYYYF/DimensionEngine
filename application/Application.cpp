@@ -45,7 +45,7 @@ void Application::Run(){
 
         _Scene->UpdatePosition(_window);
         _Scene->Update();
-        
+
         _FrameCount++;
     }
 }

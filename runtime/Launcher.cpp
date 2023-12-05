@@ -10,9 +10,6 @@ static EngineLogger* GLOBAL_LOGGER = new EngineLogger();
 
 int main(int argc, char* argv[]){
 
-    ConfigFile config;
-    config.LoadFile("../runtime/config.txt");
-
     Application* pApp = new Application();
 
     try{
@@ -23,8 +20,6 @@ int main(int argc, char* argv[]){
         std::cerr << e.what() << std::endl;
         return EXIT_FAILURE;
     }
-    
-    config.SaveToFile();
 
     return 0;
 }
