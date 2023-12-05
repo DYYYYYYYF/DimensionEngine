@@ -8,8 +8,6 @@ using namespace std::filesystem;
 using namespace std::experimental::filesystem;
 #endif
 
-using namespace engine;
-
 #ifdef DEBUG
 EngineLogger::EngineLogger(){
     // Get current path

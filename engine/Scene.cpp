@@ -11,12 +11,16 @@ Scene::~Scene() {
 	_Renderer = nullptr;
 }
 
-void Scene::InitScene() {
+void Scene::InitScene(ConfigFile* config) {
+
+	if (config != nullptr) {
+		((Renderer*)_Renderer)->SetConfigFile(config);
+	}
 	_Renderer->Init();
 	
 	RenderObject floor;
 	Mesh* rectMesh = ((Renderer*)_Renderer)->GetMesh("Rectangle");
-	Material* floorMat = ((Renderer*)_Renderer)->GetMaterial("Floor");
+	Material* floorMat = ((Renderer*)_Renderer)->GetMaterial("Default");
 	if (rectMesh != nullptr && floorMat != nullptr) {
 		floor.mesh = rectMesh;
 		floor.material = floorMat;
