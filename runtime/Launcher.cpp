@@ -12,9 +12,8 @@ int main(int argc, char* argv[]){
 
     ConfigFile config;
     config.LoadFile("../runtime/config.txt");
-    config.SaveToFile();
 
-    Application* pApp = new Application(&config);
+    Application* pApp = new Application();
 
     try{
         pApp->Init();
@@ -24,5 +23,8 @@ int main(int argc, char* argv[]){
         std::cerr << e.what() << std::endl;
         return EXIT_FAILURE;
     }
+    
+    config.SaveToFile();
+
     return 0;
 }

@@ -22,10 +22,23 @@ void ConfigFile::LoadFile(const char* file) {
 
 		SetData(fir, sec);
 	}
+
+	fs->close();
 }
 
 void ConfigFile::SaveToFile() {
+	if (m_pFileName == nullptr || m_pFileName[0] == '\0') {
+		return;
+	}
+
+	std::fstream* fs = FileUtil::GetFileStream();
+	fs->open(m_pFileName, std::ios::out | std::ios::ate);
+	fs->write("", 1);
+	fs->open(m_pFileName, std::ios::out | std::ios::app);
+
+
 	for (auto& a : m_Data) {
-		std::cout << a.first << " " << a.second << std::endl;
+		std::string res = a.first + a.second;
+		fs->write(res.data(), res.length());
 	}
 }

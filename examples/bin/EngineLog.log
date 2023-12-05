@@ -1,9 +1,9 @@
-2023-12-05 16:06:12 INFO ..\..\..\engine\EngineLogger.cpp:24	Logger Init Success.
-2023-12-05 16:06:12 INFO ..\..\..\engine\EngineLogger.cpp:25	Mode: Debug.
-2023-12-05 16:06:12 INFO ..\..\..\renderer\vulkan\VulkanRenderer.cpp:7	Use Vulkan Renderer.
-2023-12-05 16:06:12 INFO ..\..\..\renderer\vulkan\VulkanRenderer.cpp:33	Init Renderer.
-2023-12-05 16:06:12 INFO ..\..\..\renderer\vulkan\VulkanRenderer.cpp:50	Inited Renderer.
-2023-12-05 16:06:12 INFO ..\..\..\renderer\vulkan\VkMesh.cpp:54	
+2023-12-05 16:27:37 INFO ..\..\..\engine\EngineLogger.cpp:24	Logger Init Success.
+2023-12-05 16:27:37 INFO ..\..\..\engine\EngineLogger.cpp:25	Mode: Debug.
+2023-12-05 16:27:38 INFO ..\..\..\renderer\vulkan\VulkanRenderer.cpp:7	Use Vulkan Renderer.
+2023-12-05 16:27:38 INFO ..\..\..\renderer\vulkan\VulkanRenderer.cpp:33	Init Renderer.
+2023-12-05 16:27:38 INFO ..\..\..\renderer\vulkan\VulkanRenderer.cpp:50	Inited Renderer.
+2023-12-05 16:27:38 INFO ..\..\..\renderer\vulkan\VkMesh.cpp:54	
  Loading ../../asset/model/room.obj :	
 		 Shape count : 1		
 		 Vertex count: 4675		
@@ -11,7 +11,7 @@
 		 UV count: 4675			
 		 Sub Model count: 1	
 		 Material count: 0
-2023-12-05 16:06:12 INFO ..\..\..\renderer\vulkan\VkMesh.cpp:54	
+2023-12-05 16:27:38 INFO ..\..\..\renderer\vulkan\VkMesh.cpp:54	
  Loading ../../asset/model/ball.obj :	
 		 Shape count : 1		
 		 Vertex count: 144		
@@ -19,7 +19,7 @@
 		 UV count: 0			
 		 Sub Model count: 1	
 		 Material count: 0
-2023-12-05 16:06:12 INFO ..\..\..\renderer\vulkan\VkMesh.cpp:54	
+2023-12-05 16:27:38 INFO ..\..\..\renderer\vulkan\VkMesh.cpp:54	
  Loading ../../asset/model/CornellBox.obj :	
 		 Shape count : 6		
 		 Vertex count: 28		
@@ -27,7 +27,7 @@
 		 UV count: 0			
 		 Sub Model count: 6	
 		 Material count: 0
-2023-12-05 16:06:17 INFO ..\..\..\renderer\vulkan\VkMesh.cpp:54	
+2023-12-05 16:27:38 INFO ..\..\..\renderer\vulkan\VkMesh.cpp:54	
  Loading ../../asset/model/sponza.obj :	
 		 Shape count : 381		
 		 Vertex count: 153635		
@@ -35,7 +35,7 @@
 		 UV count: 91964			
 		 Sub Model count: 381	
 		 Material count: 0
-2023-12-05 16:06:18 INFO ..\..\..\renderer\vulkan\VkMesh.cpp:54	
+2023-12-05 16:27:39 INFO ..\..\..\renderer\vulkan\VkMesh.cpp:54	
  Loading ../../asset/model/bunny.obj :	
 		 Shape count : 1		
 		 Vertex count: 2588		
@@ -43,7 +43,7 @@
 		 UV count: 0			
 		 Sub Model count: 1	
 		 Material count: 0
-2023-12-05 16:06:18 INFO ..\..\..\renderer\vulkan\VkMesh.cpp:54	
+2023-12-05 16:27:39 INFO ..\..\..\renderer\vulkan\VkMesh.cpp:54	
  Loading ../../asset/obj/wooden_boat/Boat.obj :	
 		 Shape count : 10		
 		 Vertex count: 21236		
@@ -51,9 +51,9 @@
 		 UV count: 26381			
 		 Sub Model count: 10	
 		 Material count: 0
-2023-12-05 16:06:18 INFO ..\..\..\renderer\Renderer.cpp:190	Loaded Triangle
-2023-12-05 16:06:18 INFO ..\..\..\renderer\Renderer.cpp:233	Loaded Rectangle
-2023-12-05 16:06:19 INFO ..\..\..\renderer\Renderer.cpp:106	Load Texture room
-2023-12-05 16:06:20 INFO ..\..\..\renderer\Renderer.cpp:106	Load Texture wooden
-2023-12-05 16:06:20 INFO ..\..\..\engine\Scene.cpp:54	Inited Scene.
-2023-12-05 16:06:27 INFO ..\..\..\renderer\vulkan\VulkanRenderer.cpp:55	Release Renderer
+2023-12-05 16:27:39 INFO ..\..\..\renderer\Renderer.cpp:190	Loaded Triangle
+2023-12-05 16:27:39 INFO ..\..\..\renderer\Renderer.cpp:233	Loaded Rectangle
+2023-12-05 16:27:39 INFO ..\..\..\renderer\Renderer.cpp:106	Load Texture room
+2023-12-05 16:27:39 INFO ..\..\..\renderer\Renderer.cpp:106	Load Texture wooden
+2023-12-05 16:27:39 INFO ..\..\..\engine\Scene.cpp:54	Inited Scene.
+2023-12-05 16:27:42 INFO ..\..\..\renderer\vulkan\VulkanRenderer.cpp:55	Release Renderer

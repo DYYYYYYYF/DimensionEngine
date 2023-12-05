@@ -8,10 +8,13 @@ Renderer::Renderer(){
     if (_RendererImpl == nullptr) {
         FATAL("Create Renderer failed.");
     }
+
+    _ConfigFile = nullptr;
 }
 
 Renderer::~Renderer(){
     _RendererImpl = nullptr;
+    _ConfigFile = nullptr;
 }
 
 bool Renderer::Init(){

@@ -12,7 +12,6 @@ int main(int argc, char* argv[]){
 
     ConfigFile config;
     config.LoadFile("../default/config.txt");
-    config.SaveToFile();
 
     Application* pApp = new Application(&config);
 
@@ -25,8 +24,7 @@ int main(int argc, char* argv[]){
         return EXIT_FAILURE;
     }
 
-    int a;
-    std::cin >> a;
+    config.SaveToFile();
 
     return 0;
 }
