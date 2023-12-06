@@ -96,15 +96,18 @@ namespace renderer{
     struct QueueFamilyProperty{
         std::optional<uint32_t> graphicsIndex = 0;
         std::optional<uint32_t> presentIndex = 0;
+        std::optional<uint32_t> computeIndex = 0;
     };
 
     struct Queue {
         vk::Queue GraphicsQueue;
         vk::Queue PresentQueue;
+        vk::Queue ComputeQueue;
 
         bool InitQueue(vk::Device device, const QueueFamilyProperty& queueFamily) {
             GraphicsQueue = device.getQueue(queueFamily.graphicsIndex.value(), 0);
             PresentQueue = device.getQueue(queueFamily.presentIndex.value(), 0);
+            ComputeQueue = device.getQueue(queueFamily.computeIndex.value(), 0);
 
             ASSERT(GraphicsQueue);
             ASSERT(PresentQueue);
