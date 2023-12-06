@@ -33,3 +33,11 @@ light_shader
 mesh_grid
 
 ![](examples/shortcut/MeshGrid.png)
+
+## 3rd-Libraries
+
+GLFW: https://github.com/glfw/glfw
+stb-master: https://github.com/nothings/stb
+tinyobjloader: https://github.com/tinyobjloader/tinyobjloader
+UncleDon-Logger: https://github.com/DYYYYYYYF/UncleDon-Logger
+ThreadPool: https://github.com/DYYYYYYYF/ThreadPool
