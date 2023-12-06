@@ -688,12 +688,6 @@ void VulkanRenderer::DrawPerFrame(RenderObject* first, int count) {
         return;
     }
 
-    const size_t computeStorageBufferSize = PadUniformBuffeSize(sizeof(_ComputeTestData));
-    Vector3* computeData = static_cast<Vector3*>(
-        _VkDevice.mapMemory(_ComputeOutStorageBuffer.memory, 0, computeStorageBufferSize));
-    std::cout << computeData[0].x << " " << computeData[0].y << " " << computeData[0].z << std::endl;
-    _VkDevice.unmapMemory(_ComputeOutStorageBuffer.memory);
-
     _FrameNumber++;
 }
 
