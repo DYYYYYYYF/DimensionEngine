@@ -51,9 +51,7 @@ namespace renderer {
         // Buffer
         vk::Buffer CreateBuffer(uint64_t size, vk::BufferUsageFlags flag,
             vk::SharingMode mode = vk::SharingMode::eExclusive);
-        vk::DeviceMemory AllocateMemory(MemRequiredInfo memInfo,
-            vk::MemoryPropertyFlags flag = vk::MemoryPropertyFlagBits::eHostVisible |
-            vk::MemoryPropertyFlagBits::eHostCoherent);
+        vk::DeviceMemory AllocateMemory(MemRequiredInfo memInfo);
       
         // Image
         vk::Image CreateImage(vk::Format format, vk::ImageUsageFlags usage, vk::Extent3D extent);
@@ -212,8 +210,8 @@ namespace renderer {
     private:
         bool _UseTextureSet;
 
-        std::vector<Vector3> _ComputeTestData;
-        std::vector<Vector3> _ComputeTestOut;
+        std::vector<Partical> _ComputeTestData;
+        std::vector<Partical> _ComputeTestOut;
 
     };// class VulkanRenderer
 }// namespace renderer

@@ -11,6 +11,12 @@
 
 namespace renderer{
 
+    struct Partical {
+        Vector4 pos;
+        Vector4 color;
+        Vector4 velocity;
+    };
+
     /*
         Vulkan Memory
     */
@@ -80,6 +86,7 @@ namespace renderer{
     struct FrameData {
         vk::Semaphore presentSemaphore;
         vk::Semaphore renderSemaphore;
+        vk::Fence computeFence;
         vk::Fence renderFence;
 
         vk::CommandPool commandPool;
