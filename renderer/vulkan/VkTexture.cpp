@@ -21,7 +21,8 @@ bool renderer::LoadImageFromFile(VulkanRenderer& renderer, const char* file, All
     ASSERT(tempBuf);
     MemRequiredInfo memInfo = renderer.QueryMemReqInfo(tempBuf, vk::MemoryPropertyFlagBits::eHostVisible|
                                 vk::MemoryPropertyFlagBits::eHostCoherent);
-    vk::DeviceMemory tempMem = renderer.AllocateMemory(memInfo);
+    vk::DeviceMemory tempMem = renderer.AllocateMemory(memInfo, vk::MemoryPropertyFlagBits::eHostVisible|
+                                vk::MemoryPropertyFlagBits::eHostCoherent);
     ASSERT(tempMem);
 
     renderer._VkDevice.bindBufferMemory(tempBuf, tempMem, 0);
@@ -38,7 +39,7 @@ bool renderer::LoadImageFromFile(VulkanRenderer& renderer, const char* file, All
     ASSERT(newImage.image);
 
     memInfo = renderer.QueryImgReqInfo(newImage.image, vk::MemoryPropertyFlagBits::eDeviceLocal);
-    newImage.memory = renderer.AllocateMemory(memInfo);
+    newImage.memory = renderer.AllocateMemory(memInfo,vk::MemoryPropertyFlagBits::eDeviceLocal);
     ASSERT(newImage.memory);
     renderer._VkDevice.bindImageMemory(newImage.image, newImage.memory, 0);
 
