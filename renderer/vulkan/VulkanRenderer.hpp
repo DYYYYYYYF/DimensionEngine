@@ -1,6 +1,6 @@
 #pragma once
 
-// #define _DEBUG_
+#define _DEBUG_
 #ifdef _DEBUG_
 #include <iostream>
 #endif // _DEBUG_
@@ -51,9 +51,7 @@ namespace renderer {
         // Buffer
         vk::Buffer CreateBuffer(uint64_t size, vk::BufferUsageFlags flag,
             vk::SharingMode mode = vk::SharingMode::eExclusive);
-        vk::DeviceMemory AllocateMemory(MemRequiredInfo memInfo,
-            vk::MemoryPropertyFlags flag = vk::MemoryPropertyFlagBits::eHostVisible |
-            vk::MemoryPropertyFlagBits::eHostCoherent);
+        vk::DeviceMemory AllocateMemory(MemRequiredInfo memInfo);
       
         // Image
         vk::Image CreateImage(vk::Format format, vk::ImageUsageFlags usage, vk::Extent3D extent);
@@ -65,11 +63,13 @@ namespace renderer {
         void UpdateDynamicBuffer();
         
         void InitDescriptors();
+        void InitComputeDescriptors();
         void ImmediateSubmit(std::function<void(vk::CommandBuffer cmd)>&& function);
         MemRequiredInfo QueryMemReqInfo(vk::Buffer buf, vk::MemoryPropertyFlags flag);
         MemRequiredInfo QueryImgReqInfo(vk::Image image, vk::MemoryPropertyFlags flag);
         void BindTextureDescriptor(Material* mat, Texture* texture);
         void CreateDrawLinePipeline(Material& mat, const char* vert_shader, const char* frag_shader);
+        void CreateComputePipeline();
 
         void UseTextureSet(bool val){_UseTextureSet = val;}
 
@@ -179,6 +179,9 @@ namespace renderer {
         vk::Pipeline _Pipeline;
         vk::Pipeline _DrawLinePipeline;
         vk::PipelineLayout _PipelineLayout;
+        
+        vk::Pipeline _ComputePipeline;
+        vk::PipelineLayout _ComputePipelineLayout;
 
         // Depth Image
         vk::ImageView _DepthImageView;
@@ -193,12 +196,22 @@ namespace renderer {
         vk::DescriptorPool _DescriptorPool;
         vk::DescriptorSetLayout _TextureSetLayout;
         vk::DescriptorSet _TextureSet;
+
+        vk::DescriptorSetLayout _ComputeSetLayout;
+        vk::DescriptorSet _ComputeSet;
         
         // Texture
         vk::Sampler _TextureSampler;
 
+        // Compute
+        AllocatedBuffer _ComputeInStorageBuffer;
+        AllocatedBuffer _ComputeOutStorageBuffer;
+
     private:
         bool _UseTextureSet;
+
+        std::vector<Partical> _ComputeTestData;
+        std::vector<Partical> _ComputeTestOut;
 
     };// class VulkanRenderer
 }// namespace renderer

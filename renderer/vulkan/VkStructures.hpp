@@ -11,6 +11,12 @@
 
 namespace renderer{
 
+    struct Partical {
+        Vector4 pos;
+        Vector4 color;
+        Vector4 velocity;
+    };
+
     /*
         Vulkan Memory
     */
@@ -80,6 +86,7 @@ namespace renderer{
     struct FrameData {
         vk::Semaphore presentSemaphore;
         vk::Semaphore renderSemaphore;
+        vk::Fence computeFence;
         vk::Fence renderFence;
 
         vk::CommandPool commandPool;
@@ -96,15 +103,18 @@ namespace renderer{
     struct QueueFamilyProperty{
         std::optional<uint32_t> graphicsIndex = 0;
         std::optional<uint32_t> presentIndex = 0;
+        std::optional<uint32_t> computeIndex = 0;
     };
 
     struct Queue {
         vk::Queue GraphicsQueue;
         vk::Queue PresentQueue;
+        vk::Queue ComputeQueue;
 
         bool InitQueue(vk::Device device, const QueueFamilyProperty& queueFamily) {
             GraphicsQueue = device.getQueue(queueFamily.graphicsIndex.value(), 0);
             PresentQueue = device.getQueue(queueFamily.presentIndex.value(), 0);
+            ComputeQueue = device.getQueue(queueFamily.computeIndex.value(), 0);
 
             ASSERT(GraphicsQueue);
             ASSERT(PresentQueue);
