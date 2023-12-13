@@ -10,13 +10,6 @@
 #include "../../application/Window.hpp"
 
 namespace renderer{
-
-    struct Partical {
-        Vector4 pos;
-        Vector4 color;
-        Vector4 velocity;
-    };
-
     /*
         Vulkan Memory
     */

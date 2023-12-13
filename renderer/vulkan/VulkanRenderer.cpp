@@ -713,12 +713,13 @@ void VulkanRenderer::DrawPerFrame(RenderObject* first, int count) {
     std::cout << "before: " << _ComputeTestData[index].pos.x << " " << _ComputeTestData[index].pos.y << " "
         << _ComputeTestData[index].pos.z << " " << _ComputeTestData[index].pos.w << std::endl;
 
-    void* computeData = _VkDevice.mapMemory(_ComputeOutStorageBuffer.memory, 0, nSize);
-    memcpy(_ComputeTestOut.data(), &computeData, nSize);
+    const void* computeData = _VkDevice.mapMemory(_ComputeOutStorageBuffer.memory, 0, nSize);
+    memcpy(_ComputeTestOut.data(), computeData, nSize);
     _VkDevice.unmapMemory(_ComputeOutStorageBuffer.memory);
 
     std::cout << "after: " << _ComputeTestOut[index].pos.x << " " << _ComputeTestOut[index].pos.y << " "
         << _ComputeTestOut[index].pos.z << " " << _ComputeTestOut[index].pos.w << std::endl;
+        
 #endif
 
     _FrameNumber++;

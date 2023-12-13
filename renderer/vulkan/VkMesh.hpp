@@ -10,6 +10,12 @@
 
 namespace renderer {
 
+    struct Partical {
+        Vector4 pos;
+        Vector4 color;
+        Vector4 velocity;
+    };
+
     struct Material {
         vk::DescriptorSet textureSet; 
         vk::Pipeline pipeline;
