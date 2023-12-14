@@ -74,6 +74,13 @@ namespace renderer {
 
         void UseTextureSet(bool val){_UseTextureSet = val;}
 
+        void ReleaseBuffer(Particals partical){
+                _VkDevice.freeMemory(partical.writeStorageBuffer.memory);
+                _VkDevice.destroyBuffer(partical.writeStorageBuffer.buffer);
+                _VkDevice.freeMemory(partical.readStorageBuffer.memory);
+                _VkDevice.destroyBuffer(partical.readStorageBuffer.buffer);
+         }
+
         void ReleaseMeshes(std::unordered_map<std::string, Mesh>& meshes) {
             for (auto& mesh_map : meshes) {
                 Mesh& mesh = mesh_map.second;
@@ -104,9 +111,9 @@ namespace renderer {
             }
         }
 
-        void MemoryMap(const AllocatedBuffer& src, void* dst, size_t length) {
-            const void* computeData = _VkDevice.mapMemory(src.memory, 0, length);
-            memcpy(dst, computeData, length);
+        void MemoryMap(const AllocatedBuffer& src, void* dst, size_t offset, size_t length) {
+            const void* data = _VkDevice.mapMemory(src.memory, offset, length);
+            memcpy(dst, data, length);
             _VkDevice.unmapMemory(src.memory);
         }
 

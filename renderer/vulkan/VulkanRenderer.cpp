@@ -1,5 +1,6 @@
 #include "VulkanRenderer.hpp"
 #include "GLFW/glfw3.h"
+#include "VkMesh.hpp"
 
 using namespace renderer;
 
@@ -62,15 +63,10 @@ bool VulkanRenderer::Init() {
 void VulkanRenderer::Release(){
     INFO("Release Renderer");
 
-    /*
     // compute
     _VkDevice.destroyDescriptorSetLayout(_ComputeSetLayout);
+    _VkDevice.destroyPipelineLayout(_ComputePipelineLayout);
     _VkDevice.destroyPipeline(_ComputePipeline);
-    _VkDevice.freeMemory(_ComputeInStorageBuffer.memory);
-    _VkDevice.destroyBuffer(_ComputeInStorageBuffer.buffer);
-    _VkDevice.freeMemory(_ComputeOutStorageBuffer.memory);
-    _VkDevice.destroyBuffer(_ComputeOutStorageBuffer.buffer);
-    */
 
     // graphics
     _VkDevice.destroySampler(_TextureSampler);
@@ -609,7 +605,7 @@ void VulkanRenderer::DrawPerFrame(RenderObject* first, int count, Particals* par
         return;
     }
 
-    _VkDevice.resetFences(GetCurrentFrame().renderFence);
+    _VkDevice.resetFences(GetCurrentFrame().computeFence);
 
     auto res = _VkDevice.acquireNextImageKHR(_SwapchainKHR, std::numeric_limits<uint64_t>::max(), 
         GetCurrentFrame().presentSemaphore, nullptr);
@@ -649,13 +645,14 @@ void VulkanRenderer::DrawPerFrame(RenderObject* first, int count, Particals* par
     cmdBuffer.dispatch(255, 1, 1);
 
     vk::BufferMemoryBarrier bufMemBarrier;
-    bufMemBarrier.setSrcAccessMask(vk::AccessFlagBits::eShaderWrite)
-        .setDstAccessMask(vk::AccessFlagBits::eShaderRead);
-    vk::MemoryBarrier memBarrier;
-    memBarrier.setSrcAccessMask(vk::AccessFlagBits::eShaderWrite)
-        .setDstAccessMask(vk::AccessFlagBits::eShaderRead);
-    cmdBuffer.pipelineBarrier(vk::PipelineStageFlagBits::eComputeShader, vk::PipelineStageFlagBits::eVertexInput,
-        vk::DependencyFlagBits::eByRegion, 1, &memBarrier, 1, &bufMemBarrier, 0, nullptr);
+    // bufMemBarrier.setSrcAccessMask(vk::AccessFlagBits::eShaderWrite)
+    //     .setDstAccessMask(vk::AccessFlagBits::eShaderRead)
+    //     .setBuffer(partical->writeStorageBuffer.buffer)
+    //     .setSize(partical->GetParticalCount() * sizeof(Particals))
+    //     .setOffset(sizeof(Particals));
+    // vk::MemoryBarrier memBarrier;
+    // cmdBuffer.pipelineBarrier(vk::PipelineStageFlagBits::eComputeShader, vk::PipelineStageFlagBits::eVertexShader,
+    //     vk::DependencyFlagBits::eByRegion, 0, nullptr, 1, &bufMemBarrier, 0, nullptr);
 
     // Renderpass
     vk::RenderPassBeginInfo rpInfo;
@@ -667,7 +664,7 @@ void VulkanRenderer::DrawPerFrame(RenderObject* first, int count, Particals* par
 
     cmdBuffer.beginRenderPass(rpInfo, vk::SubpassContents::eInline);
 
-    DrawObjects(cmdBuffer, first, count);
+    // DrawObjects(cmdBuffer, first, count);
 
     cmdBuffer.endRenderPass();
     cmdBuffer.end();
@@ -693,11 +690,13 @@ void VulkanRenderer::DrawPerFrame(RenderObject* first, int count, Particals* par
         return;
     }
 
-    _VkDevice.resetFences(GetCurrentFrame().computeFence);
+     WaitIdel();
+     _Queue.ComputeQueue.waitIdle();
 
-    if (_Queue.GraphicsQueue.submit(1, &submit, GetCurrentFrame().renderFence) != vk::Result::eSuccess) {
-        return;
-    }
+     // _VkDevice.resetFences(GetCurrentFrame().renderFence);
+     // if (_Queue.GraphicsQueue.submit(1, &submit, GetCurrentFrame().renderFence) != vk::Result::eSuccess) {
+     //     return;
+     // }
 
     vk::PresentInfoKHR PresentInfo;
     PresentInfo.setSwapchainCount(1)
@@ -1601,4 +1600,6 @@ void VulkanRenderer::CreateComputePipeline(Material& mat, const char* comp_shade
     }
 
     mat.pipeline = res.value;
+
+    _VkDevice.destroyShaderModule(computeShader);
 }

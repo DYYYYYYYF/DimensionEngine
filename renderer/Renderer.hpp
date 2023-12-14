@@ -36,7 +36,11 @@ namespace renderer {
 
         void ReleaseMeshes() { ((VulkanRenderer*)_RendererImpl)->ReleaseMeshes(_Meshes); }
         void ReleaseMaterials() { ((VulkanRenderer*)_RendererImpl)->ReleaseMaterials(_Materials); }
-        void ReleaseTextures() { ((VulkanRenderer*)_RendererImpl) -> ReleaseTextures( _Textures); }
+        void ReleaseTextures() { ((VulkanRenderer*)_RendererImpl)->ReleaseTextures( _Textures); }
+        void ReleaseParticals() { 
+            ((VulkanRenderer*)_RendererImpl)->ReleaseBuffer(_Partical);
+            _Partical.writeData.clear();
+        }
 
         void SetConfigFile(ConfigFile* config) { 
             if (config == nullptr) {

@@ -69,6 +69,7 @@ namespace renderer {
         void SetPartialCount(int size);
         size_t GetParticalCount() const { return particals.size(); }
 
+        Material* GetMaterial() const { return material; }
         void SetMaterial(Material* mat) {
             if (mat == nullptr) {
                 return;
@@ -76,7 +77,6 @@ namespace renderer {
 
             material = mat;
         }
-        Material* GetMaterial() const { return material; }
     };
 
 
