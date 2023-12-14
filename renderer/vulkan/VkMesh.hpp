@@ -10,7 +10,7 @@
 
 namespace renderer {
 
-    struct Partical {
+    struct ParticalData {
         Vector4 pos;
         Vector4 color;
         Vector4 velocity;
@@ -57,6 +57,28 @@ namespace renderer {
             }
         }
     };
+
+    struct Particals {
+        std::vector<ParticalData> particals;
+        std::vector<ParticalData> writeData;
+        AllocatedBuffer readStorageBuffer;
+        AllocatedBuffer writeStorageBuffer;
+
+        Material* material = nullptr;
+
+        void SetPartialCount(int size);
+        size_t GetParticalCount() const { return particals.size(); }
+
+        void SetMaterial(Material* mat) {
+            if (mat == nullptr) {
+                return;
+            }
+
+            material = mat;
+        }
+        Material* GetMaterial() const { return material; }
+    };
+
 
 }
 

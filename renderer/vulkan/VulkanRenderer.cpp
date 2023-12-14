@@ -54,7 +54,6 @@ bool VulkanRenderer::Init() {
 
     // Compute Pipeline
     InitComputeDescriptors();
-    CreateComputePipeline();
 
     INFO("Inited Renderer.");
     return true; 
@@ -63,6 +62,7 @@ bool VulkanRenderer::Init() {
 void VulkanRenderer::Release(){
     INFO("Release Renderer");
 
+    /*
     // compute
     _VkDevice.destroyDescriptorSetLayout(_ComputeSetLayout);
     _VkDevice.destroyPipeline(_ComputePipeline);
@@ -70,6 +70,7 @@ void VulkanRenderer::Release(){
     _VkDevice.destroyBuffer(_ComputeInStorageBuffer.buffer);
     _VkDevice.freeMemory(_ComputeOutStorageBuffer.memory);
     _VkDevice.destroyBuffer(_ComputeOutStorageBuffer.buffer);
+    */
 
     // graphics
     _VkDevice.destroySampler(_TextureSampler);
@@ -471,8 +472,8 @@ void VulkanRenderer::InitSyncStructures() {
 }
 
 void VulkanRenderer::CreatePipeline(Material& mat, const char* vert_shader, const char* frag_shader, bool alpha) {
-    PipelineBuilder pipelineBuilder;
 
+    PipelineBuilder pipelineBuilder;
     bool enableDepth = true, enableBlend = false;
     if (alpha) {
         enableDepth = !enableDepth;
@@ -600,7 +601,7 @@ void VulkanRenderer::DrawObjects(vk::CommandBuffer& cmd, RenderObject* first, in
     }
 }
 
-void VulkanRenderer::DrawPerFrame(RenderObject* first, int count) {
+void VulkanRenderer::DrawPerFrame(RenderObject* first, int count, Particals* partical, int partical_count) {
 
     if (_VkDevice.waitForFences(GetCurrentFrame().renderFence, true, 
         std::numeric_limits<uint64_t>::max()) != vk::Result::eSuccess) {
@@ -643,15 +644,18 @@ void VulkanRenderer::DrawPerFrame(RenderObject* first, int count) {
     cmdBuffer.setViewport(1, viewport);
 
     // compute pipeline
-    cmdBuffer.bindPipeline(vk::PipelineBindPoint::eCompute, _ComputePipeline);
-    cmdBuffer.bindDescriptorSets(vk::PipelineBindPoint::eCompute, _ComputePipelineLayout, 0, 1, &_ComputeSet, 0, nullptr);
-    cmdBuffer.dispatch((uint32_t)_ComputeTestData.size() / 256, 1, 1);
+    cmdBuffer.bindPipeline(vk::PipelineBindPoint::eCompute, partical->material->pipeline);
+    cmdBuffer.bindDescriptorSets(vk::PipelineBindPoint::eCompute, partical->material->pipelineLayout, 0, 1, &_ComputeSet, 0, nullptr);
+    cmdBuffer.dispatch(255, 1, 1);
 
-    vk::BufferMemoryBarrier barry;
-    barry.setSrcAccessMask(vk::AccessFlagBits::eShaderWrite)
+    vk::BufferMemoryBarrier bufMemBarrier;
+    bufMemBarrier.setSrcAccessMask(vk::AccessFlagBits::eShaderWrite)
+        .setDstAccessMask(vk::AccessFlagBits::eShaderRead);
+    vk::MemoryBarrier memBarrier;
+    memBarrier.setSrcAccessMask(vk::AccessFlagBits::eShaderWrite)
         .setDstAccessMask(vk::AccessFlagBits::eShaderRead);
     cmdBuffer.pipelineBarrier(vk::PipelineStageFlagBits::eComputeShader, vk::PipelineStageFlagBits::eVertexInput,
-        vk::DependencyFlagBits::eByRegion, 0, nullptr, 1, &barry, 0, nullptr);
+        vk::DependencyFlagBits::eByRegion, 1, &memBarrier, 1, &bufMemBarrier, 0, nullptr);
 
     // Renderpass
     vk::RenderPassBeginInfo rpInfo;
@@ -705,22 +709,6 @@ void VulkanRenderer::DrawPerFrame(RenderObject* first, int count) {
     if (_Queue.GraphicsQueue.presentKHR(PresentInfo) != vk::Result::eSuccess) {
         return;
     }
-    
-#ifdef _DEBUG_
-    int index = 3;
-    const size_t nSize = _ComputeTestData.size() * sizeof(Partical);
-    
-    std::cout << "before: " << _ComputeTestData[index].pos.x << " " << _ComputeTestData[index].pos.y << " "
-        << _ComputeTestData[index].pos.z << " " << _ComputeTestData[index].pos.w << std::endl;
-
-    const void* computeData = _VkDevice.mapMemory(_ComputeOutStorageBuffer.memory, 0, nSize);
-    memcpy(_ComputeTestOut.data(), computeData, nSize);
-    _VkDevice.unmapMemory(_ComputeOutStorageBuffer.memory);
-
-    std::cout << "after: " << _ComputeTestOut[index].pos.x << " " << _ComputeTestOut[index].pos.y << " "
-        << _ComputeTestOut[index].pos.z << " " << _ComputeTestOut[index].pos.w << std::endl;
-        
-#endif
 
     _FrameNumber++;
 }
@@ -775,6 +763,55 @@ void VulkanRenderer::BindTextureDescriptor(Material* mat, Texture* texture) {
     std::vector<vk::WriteDescriptorSet> writeDescSets = { writeSamplerSet };
 
     _VkDevice.updateDescriptorSets(writeDescSets, nullptr);
+}
+
+void VulkanRenderer::BindBufferDescriptor(Material* mat, Particals* partical) {
+    // Compute storage buffer
+    const size_t computeStorageBufferSize = partical->GetParticalCount() * sizeof(ParticalData);
+    partical->readStorageBuffer.buffer = CreateBuffer(computeStorageBufferSize, vk::BufferUsageFlagBits::eStorageBuffer);
+    ASSERT(partical->readStorageBuffer.buffer);
+    MemRequiredInfo computeInMemInfo = QueryMemReqInfo(partical->readStorageBuffer.buffer,
+        vk::MemoryPropertyFlagBits::eHostVisible |
+        vk::MemoryPropertyFlagBits::eHostCoherent);
+    partical->readStorageBuffer.memory = AllocateMemory(computeInMemInfo);
+    ASSERT(partical->readStorageBuffer.memory);
+    _VkDevice.bindBufferMemory(partical->readStorageBuffer.buffer, partical->readStorageBuffer.memory, 0);
+
+    void* computeData = _VkDevice.mapMemory(partical->readStorageBuffer.memory, 0, computeStorageBufferSize);
+    memcpy(computeData, partical->particals.data(), computeStorageBufferSize);
+    _VkDevice.unmapMemory(partical->readStorageBuffer.memory);
+
+    partical->writeStorageBuffer.buffer = CreateBuffer(computeStorageBufferSize, vk::BufferUsageFlagBits::eStorageBuffer);
+    ASSERT(partical->writeStorageBuffer.buffer);
+    MemRequiredInfo computeOutMemInfo = QueryMemReqInfo(partical->writeStorageBuffer.buffer,
+        vk::MemoryPropertyFlagBits::eHostVisible |
+        vk::MemoryPropertyFlagBits::eHostCoherent);
+    partical->writeStorageBuffer.memory = AllocateMemory(computeOutMemInfo);
+    ASSERT(partical->writeStorageBuffer.memory);
+    _VkDevice.bindBufferMemory(partical->writeStorageBuffer.buffer, partical->writeStorageBuffer.memory, 0);
+    
+    vk::DescriptorSetAllocateInfo computeDescAllocateInfo;
+    computeDescAllocateInfo.setDescriptorPool(_DescriptorPool)
+        .setDescriptorSetCount(1)
+        .setSetLayouts(_ComputeSetLayout);
+    if (_VkDevice.allocateDescriptorSets(&computeDescAllocateInfo, &_ComputeSet) != vk::Result::eSuccess) {
+        ASSERT(_ComputeSet);
+    }
+
+    vk::DescriptorBufferInfo computeInBufferInfo;
+    computeInBufferInfo.setBuffer(partical->readStorageBuffer.buffer)
+        .setOffset(0)
+        .setRange(computeStorageBufferSize);
+    vk::DescriptorBufferInfo computeOutBufferInfo;
+    computeOutBufferInfo.setBuffer(partical->writeStorageBuffer.buffer)
+        .setOffset(0)
+        .setRange(computeStorageBufferSize);
+    vk::WriteDescriptorSet computeInWriteSet = InitWriteDescriptorBuffer(vk::DescriptorType::eStorageBuffer,
+        _ComputeSet, &computeInBufferInfo, 0);
+    vk::WriteDescriptorSet computeOutWriteSet = InitWriteDescriptorBuffer(vk::DescriptorType::eStorageBuffer,
+        _ComputeSet, &computeOutBufferInfo, 1);
+    std::vector<vk::WriteDescriptorSet> computeWriteDescSets = { computeInWriteSet, computeOutWriteSet };
+    _VkDevice.updateDescriptorSets(computeWriteDescSets, nullptr);
 }
 
 void VulkanRenderer::InitDescriptors() {
@@ -893,62 +930,7 @@ void VulkanRenderer::InitComputeDescriptors() {
         .setBindings(computeBindings);
     _ComputeSetLayout = _VkDevice.createDescriptorSetLayout(computeSetLayoutInfo);
     ASSERT(_ComputeSetLayout);
-  
-    // TODO: Remove ---- Test data
-    for (float i = 0; i < 256; ++i) {
-        Partical p;
-        p.pos = { i, i + 1, i + 2, i + 3 };
-        p.color = { 1, 1, 1, 1 };
-        p.velocity = { 1, 0, 0, 0 };
-        _ComputeTestData.push_back(p);
-    }
-    _ComputeTestOut.resize(_ComputeTestData.size());
-    
-    // Compute storage buffer
-    const size_t computeStorageBufferSize = _ComputeTestData.size() * sizeof(Partical);
-    _ComputeInStorageBuffer.buffer = CreateBuffer(computeStorageBufferSize, vk::BufferUsageFlagBits::eStorageBuffer);
-    ASSERT(_ComputeInStorageBuffer.buffer);
-    MemRequiredInfo computeInMemInfo = QueryMemReqInfo(_ComputeInStorageBuffer.buffer,
-        vk::MemoryPropertyFlagBits::eHostVisible |
-        vk::MemoryPropertyFlagBits::eHostCoherent);
-    _ComputeInStorageBuffer.memory = AllocateMemory(computeInMemInfo);
-    ASSERT(_ComputeInStorageBuffer.memory);
-    _VkDevice.bindBufferMemory(_ComputeInStorageBuffer.buffer, _ComputeInStorageBuffer.memory, 0);
 
-    void* computeData = _VkDevice.mapMemory(_ComputeInStorageBuffer.memory, 0, computeStorageBufferSize);
-    memcpy(computeData, _ComputeTestData.data(), computeStorageBufferSize);
-    _VkDevice.unmapMemory(_ComputeInStorageBuffer.memory);
-
-    _ComputeOutStorageBuffer.buffer = CreateBuffer(computeStorageBufferSize, vk::BufferUsageFlagBits::eStorageBuffer);
-    ASSERT(_ComputeOutStorageBuffer.buffer);
-    MemRequiredInfo computeOutMemInfo = QueryMemReqInfo(_ComputeOutStorageBuffer.buffer,
-        vk::MemoryPropertyFlagBits::eHostVisible |
-        vk::MemoryPropertyFlagBits::eHostCoherent);
-    _ComputeOutStorageBuffer.memory = AllocateMemory(computeOutMemInfo);
-    ASSERT(_ComputeOutStorageBuffer.memory);
-    _VkDevice.bindBufferMemory(_ComputeOutStorageBuffer.buffer, _ComputeOutStorageBuffer.memory, 0);
-
-    vk::DescriptorSetAllocateInfo computeDescAllocateInfo;
-    computeDescAllocateInfo.setDescriptorPool(_DescriptorPool)
-        .setDescriptorSetCount(1)
-        .setSetLayouts(_ComputeSetLayout);
-    if (_VkDevice.allocateDescriptorSets(&computeDescAllocateInfo, &_ComputeSet) != vk::Result::eSuccess) {
-        ASSERT(_ComputeSet);
-    }
-    vk::DescriptorBufferInfo computeInBufferInfo;
-    computeInBufferInfo.setBuffer(_ComputeInStorageBuffer.buffer)
-        .setOffset(0)
-        .setRange(computeStorageBufferSize);
-    vk::DescriptorBufferInfo computeOutBufferInfo;
-    computeOutBufferInfo.setBuffer(_ComputeOutStorageBuffer.buffer)
-        .setOffset(0)
-        .setRange(computeStorageBufferSize);
-    vk::WriteDescriptorSet computeInWriteSet = InitWriteDescriptorBuffer(vk::DescriptorType::eStorageBuffer,
-        _ComputeSet, &computeInBufferInfo, 0);
-    vk::WriteDescriptorSet computeOutWriteSet = InitWriteDescriptorBuffer(vk::DescriptorType::eStorageBuffer,
-        _ComputeSet, &computeOutBufferInfo, 1);
-    std::vector<vk::WriteDescriptorSet> computeWriteDescSets = { computeInWriteSet, computeOutWriteSet };
-    _VkDevice.updateDescriptorSets(computeWriteDescSets, nullptr);
 }
 
 /*
@@ -1521,6 +1503,8 @@ vk::ImageView VulkanRenderer::CreateImageView(vk::Format format, vk::Image image
 }
 
 void VulkanRenderer::CreateDrawLinePipeline(Material& mat, const char* vert_shader, const char* frag_shader) {
+    INFO("Create Drawline Pipeline");
+
     PipelineBuilder pipelineBuilder;
 
     vk::ShaderModule vertShader = CreateShaderModule(vert_shader);
@@ -1592,9 +1576,10 @@ void VulkanRenderer::CreateDrawLinePipeline(Material& mat, const char* vert_shad
     _VkDevice.destroyShaderModule(fragShader);
 }
 
-void VulkanRenderer::CreateComputePipeline() {
-    vk::ShaderModule computeShader = CreateShaderModule("../shader/glsl/partical_solver_comp.spv");
+void VulkanRenderer::CreateComputePipeline(Material& mat, const char* comp_shader) {
+    INFO("Create Compute Pipeline.");
 
+    vk::ShaderModule computeShader = CreateShaderModule(comp_shader);
     vk::PipelineShaderStageCreateInfo shaderStageInfo =
         InitShaderStageCreateInfo(vk::ShaderStageFlagBits::eCompute, computeShader);
 
@@ -1602,16 +1587,18 @@ void VulkanRenderer::CreateComputePipeline() {
     std::vector<vk::DescriptorSetLayout> defaultSetLayouts = { _ComputeSetLayout };
     defaultLayoutInfo.setSetLayoutCount((uint32_t)defaultSetLayouts.size())
         .setSetLayouts(defaultSetLayouts);
-    _ComputePipelineLayout = _VkDevice.createPipelineLayout(defaultLayoutInfo);
+    mat.pipelineLayout = _VkDevice.createPipelineLayout(defaultLayoutInfo);
 
     vk::ComputePipelineCreateInfo info;
     info.setStage(shaderStageInfo)
-        .setLayout(_ComputePipelineLayout);
+        .setLayout(mat.pipelineLayout);
 
     auto res = _VkDevice.createComputePipeline(nullptr, info);
+    _VkDevice.destroyShaderModule(computeShader);
+
     if (res.result != vk::Result::eSuccess) {
         WARN("Create compute pipeline failed.");
     }
 
-    _ComputePipeline = res.value;
+    mat.pipeline = res.value;
 }

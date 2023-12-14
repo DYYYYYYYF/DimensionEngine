@@ -93,5 +93,6 @@ bool renderer::LoadImageFromFile(VulkanRenderer& renderer, const char* file, All
     renderer._VkDevice.destroyBuffer(tempBuf);
     renderer._VkDevice.freeMemory(tempMem);
 
+    INFO("Loaded %s", file);
     return true;
 }

@@ -38,7 +38,7 @@ namespace renderer {
         virtual void CreateFrameBuffers() override;
         virtual void InitSyncStructures() override;
         virtual void CreatePipeline(Material& mat, const char* vert_shader, const char* frag_shader, bool alpha) override;
-        virtual void DrawPerFrame(RenderObject* first, int count) override;
+        virtual void DrawPerFrame(RenderObject* first, int count, Particals* partical, int partical_count) override;
 
         virtual void UpLoadMeshes(Mesh& mesh) override;
     
@@ -68,8 +68,9 @@ namespace renderer {
         MemRequiredInfo QueryMemReqInfo(vk::Buffer buf, vk::MemoryPropertyFlags flag);
         MemRequiredInfo QueryImgReqInfo(vk::Image image, vk::MemoryPropertyFlags flag);
         void BindTextureDescriptor(Material* mat, Texture* texture);
+        void BindBufferDescriptor(Material* mat, Particals* partical);
         void CreateDrawLinePipeline(Material& mat, const char* vert_shader, const char* frag_shader);
-        void CreateComputePipeline();
+        void CreateComputePipeline(Material& mat, const char* comp_shader);
 
         void UseTextureSet(bool val){_UseTextureSet = val;}
 
@@ -101,6 +102,12 @@ namespace renderer {
                 _VkDevice.freeMemory(tex.image.memory);
                 _VkDevice.destroyImageView(tex.imageView);
             }
+        }
+
+        void MemoryMap(const AllocatedBuffer& src, void* dst, size_t length) {
+            const void* computeData = _VkDevice.mapMemory(src.memory, 0, length);
+            memcpy(dst, computeData, length);
+            _VkDevice.unmapMemory(src.memory);
         }
 
     protected:
@@ -203,15 +210,8 @@ namespace renderer {
         // Texture
         vk::Sampler _TextureSampler;
 
-        // Compute
-        AllocatedBuffer _ComputeInStorageBuffer;
-        AllocatedBuffer _ComputeOutStorageBuffer;
-
     private:
         bool _UseTextureSet;
-
-        std::vector<Partical> _ComputeTestData;
-        std::vector<Partical> _ComputeTestOut;
 
     };// class VulkanRenderer
 }// namespace renderer

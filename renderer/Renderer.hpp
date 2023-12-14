@@ -22,9 +22,8 @@ namespace renderer {
         void UpdateViewMat(glm::mat4 view_matrix);
 
         void LoadTexture(const char* filename, const char* texture_path);
-        void CreateDrawlinePipeline(Material& mat, const char* vert_shader, const char* frag_shader){
-            ((VulkanRenderer*)_RendererImpl)->CreateDrawLinePipeline(mat, vert_shader, frag_shader);
-        }
+        void CreateDrawlinePipeline(Material& mat, const char* vert_shader, const char* frag_shader);
+        void CreateComputePipeline(Material& mat, const char* comp_shader);
 
         void LoadMesh(const char* filename, Mesh& mesh);
         void LoadMesh(const char* filename, const char* mesh_name);
@@ -39,14 +38,29 @@ namespace renderer {
         void ReleaseMaterials() { ((VulkanRenderer*)_RendererImpl)->ReleaseMaterials(_Materials); }
         void ReleaseTextures() { ((VulkanRenderer*)_RendererImpl) -> ReleaseTextures( _Textures); }
 
-        void SetConfigFile(ConfigFile* config) { _ConfigFile = config; }
+        void SetConfigFile(ConfigFile* config) { 
+            if (config == nullptr) {
+                return;
+            }
+
+            _ConfigFile = config;
+            std::string strPrePath = _ConfigFile->GetVal("PrePath");
+            if (strPrePath.size() == 0) {
+                return;
+            }
+
+            _PreFilePath = strPrePath;
+        }
 
     private:
         void AddMesh(std::string name, Mesh mesh) { _Meshes[name] = mesh; }
         void AddMaterial(std::string name, Material mat) { _Materials[name] = mat; }
         void AddTexture(std::string name, Texture tex) { _Textures[name] = tex; }
 
+        std::string _PreFilePath = "../";
+
     protected:
+        Particals _Partical;
         std::unordered_map<std::string, Mesh> _Meshes;
         std::unordered_map<std::string, Material> _Materials;
         std::unordered_map<std::string, Texture> _Textures;

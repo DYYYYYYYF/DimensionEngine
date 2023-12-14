@@ -47,11 +47,13 @@ bool Mesh::LoadFromObj(const char* filename){
         return false;
     }
 
+#ifdef _DEBUG_
 	INFO("\n Loading %s :	\n\
 	\t Shape count : %d		\n	\t Vertex count: %d		\n\
 	\t Normal count: %d		\n	\t UV count: %d			\n\
 	\t Sub Model count: %d	\n	\t Material count: %d",
 	filename, shapes.size(), attrib.vertices.size() / 3, attrib.normals.size() / 3, attrib.texcoords.size() / 2, shapes.size(), materials.size());
+#endif
 
 	vertices.clear();
     indices.clear();
@@ -94,5 +96,19 @@ bool Mesh::LoadFromObj(const char* filename){
         }
     }
 
+    INFO("Loaded %s", filename);
     return true;
+}
+
+void Particals::SetPartialCount(int size) {
+    particals.resize(size);
+    writeData.resize(size);
+
+    for (int i = 0; i < size; ++i) {
+        ParticalData partical;
+        partical.pos = { i, i + 1, i + 2, i + 3 };
+        partical.color = { 1, 1, 1, 1 };
+        partical.velocity = { 1, 0, 0, 0 };
+        particals[i] = partical;
+    }
 }

@@ -21,74 +21,134 @@ bool Renderer::Init(){
 
     _RendererImpl->Init();
 
-    std::string prePath = "../";
-    if (_ConfigFile != nullptr) {
-        prePath = _ConfigFile->GetVal("PrePath");
-    }
-
     // Models
-    LoadMesh((prePath + std::string("asset/model/room.obj")).data(), "room");
-    LoadMesh((prePath + std::string("asset/model/ball.obj")).data(), "ball");
-    LoadMesh((prePath + std::string("asset/model/CornellBox.obj")).data(), "CornellBox");
-    LoadMesh((prePath + std::string("asset/model/sponza.obj")).data(), "sponza");
-    LoadMesh((prePath + std::string("asset/model/bunny.obj")).data(), "Bunny");
-    LoadMesh((prePath + std::string("asset/obj/wooden_boat/Boat.obj")).data(), "Boat");
+    LoadMesh("asset/model/room.obj", "room");
+    LoadMesh("asset/model/ball.obj", "ball");
+    LoadMesh("asset/model/CornellBox.obj", "CornellBox");
+    LoadMesh("asset/model/sponza.obj", "sponza");
+    LoadMesh("asset/model/bunny.obj", "Bunny");
+    LoadMesh("asset/obj/wooden_boat/Boat.obj", "Boat");
     LoadTriangleMesh();
     LoadRectangleMesh();
 
     // Textures
-    LoadTexture("room", (prePath + std::string("asset/texture/room.png")).data());
-    LoadTexture("wooden", (prePath + std::string("asset/obj/wooden_boat/BaseColor.png")).data());
+    LoadTexture("room", "asset/texture/room.png");
+    LoadTexture("wooden", "asset/obj/wooden_boat/BaseColor.png");
 
     // Materials
-    std::string defaultVertShader = (prePath + std::string("shader/glsl/default_vert.spv")).data();
-    std::string defaultFragShader = (prePath + std::string("shader/glsl/default_frag.spv")).data();
-    std::string meshVertShader = (prePath + std::string("shader/glsl/texture_mesh_vert.spv")).data();
-    std::string meshFragShader = (prePath + std::string("shader/glsl/texture_mesh_frag.spv")).data();
-    std::string meshFloorVertShader = (prePath + std::string("shader/glsl/mesh_grid_vert.spv")).data();
-    std::string meshFloorFragShader = (prePath + std::string("shader/glsl/mesh_grid_frag.spv")).data();
+    const char* defaultVertShader = "shader/glsl/default_vert.spv";
+    const char* defaultFragShader = "shader/glsl/default_frag.spv";
+    const char* meshVertShader = "shader/glsl/texture_mesh_vert.spv";
+    const char* meshFragShader = "shader/glsl/texture_mesh_frag.spv";
+    const char* meshFloorVertShader = "shader/glsl/mesh_grid_vert.spv";
+    const char* meshFloorFragShader = "shader/glsl/mesh_grid_frag.spv";
 
     ((VulkanRenderer*)_RendererImpl)->UseTextureSet(false);
     Material deafaultMaterial;
-    CreatePipeline(deafaultMaterial, defaultVertShader.data(), defaultFragShader.data());
+    CreatePipeline(deafaultMaterial, defaultVertShader, defaultFragShader);
     AddMaterial("Default", deafaultMaterial);
+
+    Material drawLineMaterial;
+    CreateDrawlinePipeline(drawLineMaterial, defaultVertShader, defaultFragShader);
+    AddMaterial("DrawLine", drawLineMaterial);
 
     ((VulkanRenderer*)_RendererImpl)->UseTextureSet(true);
     Material deafaultMeshMaterial;
-    CreatePipeline(deafaultMeshMaterial, meshVertShader.data(), meshFragShader.data());
+    CreatePipeline(deafaultMeshMaterial, meshVertShader, meshFragShader);
     AddMaterial("Texture", deafaultMeshMaterial);
 
     Material deafaultFloorMaterial;
-    CreatePipeline(deafaultFloorMaterial, meshFloorVertShader.data(), meshFloorFragShader.data(), true);
+    CreatePipeline(deafaultFloorMaterial, meshFloorVertShader, meshFloorFragShader, true);
     AddMaterial("Floor", deafaultFloorMaterial);
 
-    Material drawLineMaterial;
-    CreateDrawlinePipeline(drawLineMaterial, defaultVertShader.data(), defaultFragShader.data());
-    AddMaterial("DrawLine", drawLineMaterial);
 
     ((VulkanRenderer*)_RendererImpl)->BindTextureDescriptor(GetMaterial("Texture"), GetTexture("room"));
 
-    return true;
-}
+    // Compute test
+    Material computeMaterial;
+    CreateComputePipeline(computeMaterial, "shader/glsl/partical_solver_comp.spv");
+    AddMaterial("Compute", computeMaterial);
+    _Partical.SetPartialCount(256);
+    _Partical.SetMaterial(GetMaterial("Compute"));
+    ((VulkanRenderer*)_RendererImpl)->BindBufferDescriptor(GetMaterial("Compute"), &_Partical);
 
-void Renderer::CreatePipeline(Material& mat, const char* vert_shader, const char* frag_shader, bool alpha) {
-    _RendererImpl->CreatePipeline(mat, vert_shader, frag_shader, alpha);
+    return true;
 }
 
 void Renderer::BeforeDraw(){
 }
 
 void Renderer::Draw(RenderObject* first, int count){
-    _RendererImpl->DrawPerFrame(first, count);
+    _RendererImpl->DrawPerFrame(first, count, &_Partical, 1);
 }
 
 void Renderer::AfterDraw(){
 
 }
 
+void Renderer::CreatePipeline(Material& mat, const char* vert_shader, const char* frag_shader, bool alpha) {
+    if (vert_shader == nullptr || vert_shader[0] == '\0' ||
+        frag_shader == nullptr || frag_shader[0] == '\0') {
+        return;
+    }
+
+    std::string vert = _PreFilePath + std::string(vert_shader);
+    if (vert.length() == 0) {
+        return;
+    }
+
+    std::string frag = _PreFilePath + std::string(frag_shader);
+    if (frag.length() == 0) {
+        return;
+    }
+
+    _RendererImpl->CreatePipeline(mat, vert.data(), frag.data(), alpha);
+}
+
+void Renderer::CreateDrawlinePipeline(Material& mat, const char* vert_shader, const char* frag_shader) {
+    if (vert_shader == nullptr || vert_shader[0] == '\0' ||
+        frag_shader == nullptr || frag_shader[0] == '\0') {
+        return;
+    }
+
+    std::string vert = _PreFilePath + std::string(vert_shader);
+    if (vert.length() == 0) {
+        return;
+    }
+
+    std::string frag = _PreFilePath + std::string(frag_shader);
+    if (frag.length() == 0) {
+        return;
+    }
+
+    ((VulkanRenderer*)_RendererImpl)->CreateDrawLinePipeline(mat, vert.data(), frag.data());
+}
+void Renderer::CreateComputePipeline(Material& mat, const char* comp_shader) {
+    if (comp_shader == nullptr || comp_shader[0] == '\0') {
+        return;
+    }
+
+    std::string comp = _PreFilePath + std::string(comp_shader);
+    if (comp.length() == 0) {
+        return;
+    }
+
+    ((VulkanRenderer*)_RendererImpl)->CreateComputePipeline(mat, comp.data());
+}
+
 void Renderer::LoadMesh(const char* filename, const char* mesh_name) {
+
+    if (filename == nullptr || filename[0] == '\0') {
+        return;
+    }
+
+    std::string path = _PreFilePath + std::string(filename);
+    if (path.length() == 0) {
+        return;
+    }
+
     Mesh tempMesh;
-    tempMesh.LoadFromObj(filename);
+    tempMesh.LoadFromObj(path.data());
     _RendererImpl->UpLoadMeshes(tempMesh);
     AddMesh(mesh_name, tempMesh);
 }
@@ -99,14 +159,23 @@ void Renderer::LoadMesh(const char* filename, Mesh& mesh) {
 }
 
 void Renderer::LoadTexture(const char* filename, const char* texture_path) {
+
+    if (texture_path == nullptr || texture_path[0] == '\0') {
+        return;
+    }
+
+    std::string path = _PreFilePath + std::string(texture_path);
+    if (path.length() == 0) {
+        return;
+    }
+
     Texture texture;
 
-    renderer::LoadImageFromFile(*((VulkanRenderer*)_RendererImpl), texture_path, texture.image);
+    renderer::LoadImageFromFile(*((VulkanRenderer*)_RendererImpl), path.data(), texture.image);
     ASSERT(texture.image.image)
 
     texture.imageView = ((VulkanRenderer*)_RendererImpl)->CreateImageView(vk::Format::eR8G8B8A8Srgb, texture.image.image, vk::ImageAspectFlagBits::eColor);
     AddTexture(filename, texture);
-    INFO("Load Texture %s", filename);
 }
 
 void Renderer::UpdateViewMat(glm::mat4 view_matrix){
