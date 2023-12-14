@@ -1,6 +1,3 @@
 [submodule "RenderEngine/3rd/uncledon-logger"]
 	path = RenderEngine/3rd/uncledon-logger
 	url = https://github.com/DYYYYYYYF/UncleDon-Logger
-[submodule "RenderEngine/vk-bootstrap"]
-	path = RenderEngine/vk-bootstrap
-	url = https://github.com/charles-lunarg/vk-bootstrap
