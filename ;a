@@ -85,7 +85,6 @@ void VulkanRenderer::Release(){
         _VkDevice.freeMemory(frame.cameraBuffer.memory);
         _VkDevice.destroyBuffer(frame.cameraBuffer.buffer);
         _VkDevice.destroyFence(frame.renderFence);
-        _VkDevice.destroyFence(frame.computeFence);
         _VkDevice.destroySemaphore(frame.renderSemaphore);
         _VkDevice.destroySemaphore(frame.presentSemaphore);
         _VkDevice.destroyCommandPool(frame.commandPool);
