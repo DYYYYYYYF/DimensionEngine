@@ -664,7 +664,7 @@ void VulkanRenderer::DrawPerFrame(RenderObject* first, int count, Particals* par
 
     cmdBuffer.beginRenderPass(rpInfo, vk::SubpassContents::eInline);
 
-    // DrawObjects(cmdBuffer, first, count);
+    DrawObjects(cmdBuffer, first, count);
 
     cmdBuffer.endRenderPass();
     cmdBuffer.end();
@@ -767,6 +767,11 @@ void VulkanRenderer::BindTextureDescriptor(Material* mat, Texture* texture) {
 void VulkanRenderer::BindBufferDescriptor(Material* mat, Particals* partical) {
     // Compute storage buffer
     const size_t computeStorageBufferSize = partical->GetParticalCount() * sizeof(ParticalData);
+    if (computeStorageBufferSize == 0) {
+        WARN("Buffer size is 0");
+        return;
+    }
+
     partical->readStorageBuffer.buffer = CreateBuffer(computeStorageBufferSize, vk::BufferUsageFlagBits::eStorageBuffer);
     ASSERT(partical->readStorageBuffer.buffer);
     MemRequiredInfo computeInMemInfo = QueryMemReqInfo(partical->readStorageBuffer.buffer,
@@ -789,6 +794,7 @@ void VulkanRenderer::BindBufferDescriptor(Material* mat, Particals* partical) {
     ASSERT(partical->writeStorageBuffer.memory);
     _VkDevice.bindBufferMemory(partical->writeStorageBuffer.buffer, partical->writeStorageBuffer.memory, 0);
     
+    ASSERT(_ComputeSetLayout);
     vk::DescriptorSetAllocateInfo computeDescAllocateInfo;
     computeDescAllocateInfo.setDescriptorPool(_DescriptorPool)
         .setDescriptorSetCount(1)
@@ -1593,8 +1599,6 @@ void VulkanRenderer::CreateComputePipeline(Material& mat, const char* comp_shade
         .setLayout(mat.pipelineLayout);
 
     auto res = _VkDevice.createComputePipeline(nullptr, info);
-    _VkDevice.destroyShaderModule(computeShader);
-
     if (res.result != vk::Result::eSuccess) {
         WARN("Create compute pipeline failed.");
     }

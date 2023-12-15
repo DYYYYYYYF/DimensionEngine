@@ -61,7 +61,6 @@ bool Renderer::Init(){
     CreatePipeline(deafaultFloorMaterial, meshFloorVertShader, meshFloorFragShader, true);
     AddMaterial("Floor", deafaultFloorMaterial);
 
-
     ((VulkanRenderer*)_RendererImpl)->BindTextureDescriptor(GetMaterial("Texture"), GetTexture("room"));
 
     // Compute test
@@ -81,11 +80,12 @@ void Renderer::BeforeDraw(){
 void Renderer::Draw(RenderObject* first, int count){
     _RendererImpl->DrawPerFrame(first, count, &_Partical, 1);
 
+#ifdef _DEBUG_
     size_t size = _Partical.GetParticalCount() * sizeof(ParticalData);
     ((VulkanRenderer*)_RendererImpl)->MemoryMap(_Partical.writeStorageBuffer, _Partical.writeData.data(), 0, size);
-
     std::cout << "after: " << _Partical.writeData[3].pos.x << " " << _Partical.writeData[3].pos.y << " "
         << _Partical.writeData[3].pos.z << " " << _Partical.writeData[3].pos.w << std::endl;
+#endif
 }
 
 void Renderer::AfterDraw(){
