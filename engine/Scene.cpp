@@ -116,7 +116,7 @@ void Scene::UpdatePosition(GLFWwindow* window) {
 			_Camera.mouesePos.y = posY;
 
 			_Camera.MouserMovement((float)-x, (float)-y);
-			// keyBoardScoll.rotateX -= glm::dot(glm::vec3(0, 0, x), glm::vec3(0, 0, y)) * 0.01;
+			// keyBoardScroll.rotateX -= glm::dot(glm::vec3(0, 0, x), glm::vec3(0, 0, y)) * 0.01;
 		}
 	}
 	if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_RELEASE) {
@@ -139,7 +139,7 @@ void Scene::Destroy() {
 	}
 }
 
-RenderObject Scene::GenerateBoudingBox(const Mesh* mesh) {
+RenderObject Scene::GenerateBoundingBox(const Mesh* mesh) {
 	
 	RenderObject obj;
 	obj.material = ((Renderer*)_Renderer)->GetMaterial("DrawLine");

@@ -24,7 +24,7 @@ public:
 	void Destroy();
 	void UpdatePosition(GLFWwindow* window);
 
-	RenderObject GenerateBoudingBox(const Mesh* mesh);
+	RenderObject GenerateBoundingBox(const Mesh* mesh);
 
 private:
 	IRenderer* _Renderer;
