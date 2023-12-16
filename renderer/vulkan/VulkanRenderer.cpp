@@ -560,21 +560,24 @@ void VulkanRenderer::CreatePipeline(Material& mat, const char* vert_shader, cons
 
 void VulkanRenderer::DrawPerFrame(RenderObject* first, int count, Particals* partical, int partical_count) {
 
+    vk::Semaphore& renderSemaphore = GetCurrentFrame().renderSemaphore;
+    vk::Semaphore& computeSemaphore = GetCurrentFrame().computeSemaphore;
+    vk::Semaphore& presentSemaphore = GetCurrentFrame().presentSemaphore;
+
     auto res = _VkDevice.acquireNextImageKHR(_SwapchainKHR, std::numeric_limits<uint64_t>::max(), 
         GetCurrentFrame().presentSemaphore, nullptr);
     uint32_t nSwapchainImageIndex = res.value;
 
     DrawComputePipeline(partical, partical_count);
 
-    _Queue.ComputeQueue.waitIdle();
-    DrawGraphsicsPipeline(first, count, nSwapchainImageIndex);
+    vk::Semaphore& waitSemaphore = partical_count > 0 ? computeSemaphore : presentSemaphore;
+    DrawGraphsicsPipeline(first, count, nSwapchainImageIndex, waitSemaphore, renderSemaphore);
 
-    _Queue.GraphicsQueue.waitIdle();
     vk::PresentInfoKHR PresentInfo;
     PresentInfo.setSwapchainCount(1)
         .setSwapchains(_SwapchainKHR)
         .setWaitSemaphoreCount(1)
-        .setWaitSemaphores(GetCurrentFrame().renderSemaphore)
+        .setWaitSemaphores(renderSemaphore)
         .setImageIndices(nSwapchainImageIndex);
 
     if (_Queue.GraphicsQueue.presentKHR(PresentInfo) != vk::Result::eSuccess) {
@@ -584,8 +587,14 @@ void VulkanRenderer::DrawPerFrame(RenderObject* first, int count, Particals* par
     _FrameNumber++;
 }
 
-void VulkanRenderer::DrawGraphsicsPipeline(RenderObject* objects, int count, int swapchain_index){
+void VulkanRenderer::DrawGraphsicsPipeline(RenderObject* objects, int count, int swapchain_index, 
+    vk::Semaphore& wait_semapore, vk::Semaphore& signal_semaphore){
+    if (objects == nullptr || count == 0){
+        WARN("No RenderObject");
+        return;
+    }
 
+    INFO("Draw Graphsics Pipeline");
 
     vk::CommandBuffer& cmdBuffer = GetCurrentFrame().mainCommandBuffer;
     ASSERT(cmdBuffer);
@@ -630,39 +639,36 @@ void VulkanRenderer::DrawGraphsicsPipeline(RenderObject* objects, int count, int
     cmdBuffer.endRenderPass();
     cmdBuffer.end();
 
-    if (_VkDevice.waitForFences(GetCurrentFrame().computeFence, true,
-        std::numeric_limits<uint64_t>::max()) != vk::Result::eSuccess) {
-        ERROR("ERROR WAIT FOR COMPUTE FENCES");
-        return;
-    }
-
     vk::PipelineStageFlags WaitStage = vk::PipelineStageFlagBits::eColorAttachmentOutput | 
         vk::PipelineStageFlagBits::eVertexInput;
     vk::SubmitInfo graphicsSubmit;
     graphicsSubmit.setWaitSemaphoreCount(1)
-        .setWaitSemaphores(GetCurrentFrame().computeSemaphore)
+        .setWaitSemaphores(wait_semapore)
         .setSignalSemaphoreCount(1)
-        .setSignalSemaphores(GetCurrentFrame().renderSemaphore)
+        .setSignalSemaphores(signal_semaphore)
         .setCommandBufferCount(1)
         .setCommandBuffers(cmdBuffer)
         .setWaitDstStageMask(WaitStage);
 
-     WaitIdel();
-     _Queue.ComputeQueue.waitIdle();
-
-      _VkDevice.resetFences(GetCurrentFrame().renderFence);
-      if (_Queue.GraphicsQueue.submit(1, &graphicsSubmit, GetCurrentFrame().renderFence) != vk::Result::eSuccess) {
-          return;
-      }
-}
-
-void VulkanRenderer::DrawComputePipeline(Particals* particals, int partical_count){
+    _VkDevice.resetFences(GetCurrentFrame().renderFence);
+    if (_Queue.GraphicsQueue.submit(1, &graphicsSubmit, GetCurrentFrame().renderFence) != vk::Result::eSuccess) {
+        return;
+    }
 
     if (_VkDevice.waitForFences(GetCurrentFrame().renderFence, true, 
         std::numeric_limits<uint64_t>::max()) != vk::Result::eSuccess) {
         ERROR("ERROR WAIT FOR RENDER FENCES");
         return;
     }
+}
+
+void VulkanRenderer::DrawComputePipeline(Particals* particals, int partical_count){ 
+
+    if (particals == nullptr || partical_count == 0){
+        return;
+    }
+
+    INFO("Draw Compute Pipeline");
 
     vk::CommandBuffer& compCmdBuffer = GetCurrentFrame().mainCommandBuffer;
     ASSERT(compCmdBuffer);
@@ -700,10 +706,18 @@ void VulkanRenderer::DrawComputePipeline(Particals* particals, int partical_coun
     if (_Queue.ComputeQueue.submit(1, &computeSubmit, GetCurrentFrame().computeFence) != vk::Result::eSuccess) {
         return;
     }
+
+    if (_VkDevice.waitForFences(GetCurrentFrame().computeFence, true,
+        std::numeric_limits<uint64_t>::max()) != vk::Result::eSuccess) {
+        ERROR("ERROR WAIT FOR COMPUTE FENCES");
+        return;
+    }
+
+    WaitIdel();
+    _Queue.ComputeQueue.waitIdle();
 }
 
 void VulkanRenderer::DrawObjects(vk::CommandBuffer& cmd, RenderObject* first, int count) {
-    //make a model view matrix for rendering the object
     
     Mesh* lastMesh = nullptr;
     Material* lastMaterial = nullptr;
