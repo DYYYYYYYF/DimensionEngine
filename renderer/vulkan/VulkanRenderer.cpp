@@ -681,9 +681,7 @@ void VulkanRenderer::DrawComputePipeline(Particals* particals, int partical_coun
 
     // compute pipeline
     for (int i = 0; i < partical_count; ++i){
-
         const Particals& partical = particals[i];
-
         compCmdBuffer.bindPipeline(vk::PipelineBindPoint::eCompute, partical.material->pipeline);
         compCmdBuffer.bindDescriptorSets(vk::PipelineBindPoint::eCompute, partical.material->pipelineLayout, 0, 1, &_ComputeSet, 0, nullptr);
         compCmdBuffer.dispatch(partical.particals.size() / 256, 1, 1);
@@ -715,6 +713,18 @@ void VulkanRenderer::DrawComputePipeline(Particals* particals, int partical_coun
 
     WaitIdel();
     _Queue.ComputeQueue.waitIdle();
+
+    for (int i = 0; i < partical_count; ++i){
+
+        Particals& partical = particals[i];
+        size_t computeStorageBufferSize = partical.GetParticalCount() * sizeof(ParticalData);
+
+        MemoryMap(partical.writeStorageBuffer, (void*)partical.writeData.data(), 0, computeStorageBufferSize);
+
+        void* computeData = _VkDevice.mapMemory(partical.readStorageBuffer.memory, 0, computeStorageBufferSize);
+        memcpy(computeData, partical.writeData.data(), computeStorageBufferSize);
+        _VkDevice.unmapMemory(partical.readStorageBuffer.memory);
+    }
 }
 
 void VulkanRenderer::DrawObjects(vk::CommandBuffer& cmd, RenderObject* first, int count) {
