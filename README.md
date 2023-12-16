@@ -34,6 +34,10 @@ mesh_grid
 
 ![](examples/shortcut/MeshGrid.png)
 
+compute_shader-calculation
+
+![](examples/shortcut/ComputeShader.png)
+
 ## 3rd-Libraries
 
 GLFW: https://github.com/glfw/glfw
