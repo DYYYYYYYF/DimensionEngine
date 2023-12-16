@@ -51,6 +51,11 @@ void Scene::InitScene(ConfigFile* config) {
 		_Renderables.push_back(boat);
 	}
 
+  Particals partical;
+  partical.SetPartialCount(256);
+  partical.SetMaterial(((Renderer*)_Renderer)->GetMaterial("Compute"));
+  // (((Renderer*)_Renderer)->LoadPartical(partical));
+
 	INFO("Inited Scene.");
 }
 

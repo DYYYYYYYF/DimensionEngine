@@ -15,9 +15,6 @@ namespace renderer {
         Vector4 velocity;
         Vector4 color;
 
-        static vk::VertexInputBindingDescription GetBindingDescription();
-        static std::array<vk::VertexInputAttributeDescription, 4> GetAttributeDescription();
-
         bool operator==(const ParticalData& other) const {
             return position == other.position && color == other.color && velocity == other.velocity;
         }

@@ -1,6 +1,6 @@
 #pragma once
 
-// #define _DEBUG_
+#define _DEBUG_
 #ifdef _DEBUG_
 #include <iostream>
 #endif // _DEBUG_
@@ -74,11 +74,13 @@ namespace renderer {
 
         void UseTextureSet(bool val){_UseTextureSet = val;}
 
-        void ReleaseBuffer(Particals partical){
+        void ReleaseBuffer(std::vector<Particals> particals){
+            for (auto& partical : particals){
                 _VkDevice.freeMemory(partical.writeStorageBuffer.memory);
                 _VkDevice.destroyBuffer(partical.writeStorageBuffer.buffer);
                 _VkDevice.freeMemory(partical.readStorageBuffer.memory);
                 _VkDevice.destroyBuffer(partical.readStorageBuffer.buffer);
+            }
          }
 
         void ReleaseMeshes(std::unordered_map<std::string, Mesh>& meshes) {

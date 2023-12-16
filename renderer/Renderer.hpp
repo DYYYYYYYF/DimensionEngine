@@ -27,6 +27,7 @@ namespace renderer {
 
         void LoadMesh(const char* filename, Mesh& mesh);
         void LoadMesh(const char* filename, const char* mesh_name);
+        void LoadPartical(Particals partical);
         void LoadTriangleMesh();
         void LoadRectangleMesh();
 
@@ -37,10 +38,7 @@ namespace renderer {
         void ReleaseMeshes() { ((VulkanRenderer*)_RendererImpl)->ReleaseMeshes(_Meshes); }
         void ReleaseMaterials() { ((VulkanRenderer*)_RendererImpl)->ReleaseMaterials(_Materials); }
         void ReleaseTextures() { ((VulkanRenderer*)_RendererImpl)->ReleaseTextures( _Textures); }
-        void ReleaseParticals() { 
-            ((VulkanRenderer*)_RendererImpl)->ReleaseBuffer(_Partical);
-            _Partical.writeData.clear();
-        }
+        void ReleaseParticals() { ((VulkanRenderer*)_RendererImpl)->ReleaseBuffer(_Particals); }
 
         void SetConfigFile(ConfigFile* config) { 
             if (config == nullptr) {
@@ -64,7 +62,7 @@ namespace renderer {
         std::string _PreFilePath = "../";
 
     protected:
-        Particals _Partical;
+        std::vector<Particals> _Particals;
         std::unordered_map<std::string, Mesh> _Meshes;
         std::unordered_map<std::string, Material> _Materials;
         std::unordered_map<std::string, Texture> _Textures;

@@ -67,10 +67,7 @@ bool Renderer::Init(){
     Material computeMaterial;
     CreateComputePipeline(computeMaterial, "shader/glsl/partical_solver_comp.spv");
     AddMaterial("Compute", computeMaterial);
-    _Partical.SetPartialCount(256);
-    _Partical.SetMaterial(GetMaterial("Compute"));
-    ((VulkanRenderer*)_RendererImpl)->BindBufferDescriptor(GetMaterial("Compute"), &_Partical);
-
+    
     return true;
 }
 
@@ -78,13 +75,15 @@ void Renderer::BeforeDraw(){
 }
 
 void Renderer::Draw(RenderObject* first, int count){
-    _RendererImpl->DrawPerFrame(first, count, &_Partical, 1);
+    _RendererImpl->DrawPerFrame(first, count, _Particals.data(), _Particals.size());
 
 #ifdef _DEBUG_
-    size_t size = _Partical.GetParticalCount() * sizeof(ParticalData);
-    ((VulkanRenderer*)_RendererImpl)->MemoryMap(_Partical.writeStorageBuffer, _Partical.writeData.data(), 0, size);
-    std::cout << "after: " << _Partical.writeData[3].position.x << " " << _Partical.writeData[3].position.y << " "
-        << _Partical.writeData[3].position.z << " " << _Partical.writeData[3].position.w << std::endl;
+    if (_Particals.size() > 0){
+        size_t size = _Particals[0].GetParticalCount() * sizeof(ParticalData);
+        ((VulkanRenderer*)_RendererImpl)->MemoryMap(_Particals[0].writeStorageBuffer, _Particals[0].writeData.data(), 0, size);
+        std::cout << "after: " << _Particals[0].writeData[3].position.x << " " << _Particals[0].writeData[3].position.y << " "
+            << _Particals[0].writeData[3].position.z << " " << _Particals[0].writeData[3].position.w << std::endl;
+    }
 #endif
 }
 
@@ -231,6 +230,13 @@ Texture* Renderer::GetTexture(const std::string& name) {
     else {
         return &(*it).second;
     }
+}
+
+
+void Renderer::LoadPartical(Particals partical){
+
+    _Particals.push_back(partical);
+    ((VulkanRenderer*)_RendererImpl)->BindBufferDescriptor(GetMaterial("Compute"), &_Particals[0]);
 }
 
 void Renderer::LoadTriangleMesh() {
