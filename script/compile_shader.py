@@ -29,31 +29,20 @@ for root, dirs, files in os.walk(filePath):
     for file in files:
         filename = os.path.splitext(file)
         if filename[1] != ".spv":
-            if filename[1] == ".vert":
-                ## Record compile command
-                cmd = compile_command + filePath + "glsl/" + file + " -o " + filePath + "glsl/" + filename[0] + "_vert.spv"
-                print("Compiling " + filename[0] + filename[1])
+            shader_type = filename[1].split('.')[1]
 
-                ## Execute compile command
-                if os.system(cmd) != 0:
-                    failedShaders.append(file)
-            
-            elif filename[1] == ".frag":
+            if filename[1] != ".hlsl":
                 ## Record compile command
-                cmd = compile_command + filePath + "glsl/" + file + " -o " + filePath + "glsl/" + filename[0] + "_frag.spv"
+                cmd = compile_command + filePath + "glsl/" + file + " -o " + filePath + "glsl/" + filename[0] + "_" + shader_type + ".spv"
                 print("Compiling " + filename[0] + filename[1])
 
                 ## Execute compile command
                 if os.system(cmd) != 0:
                     failedShaders.append(file)
 
-            elif filename[1] == ".hlsl":
+            else:
                 sub_filename = os.path.splitext(filename[0])
-                shader_type = ""
-                if sub_filename[1] == ".vert":
-                    shader_type = "vert"
-                elif sub_filename[1] == ".frag":
-                    shader_type = "frag"
+                shader_type = sub_filename[1].split('.')[1]
 
                 ## Record compile command
                 cmd = compile_command + " -c -fshader-stage=" + shader_type + " -fentry-point=main " + filePath \

@@ -25,7 +25,7 @@ namespace renderer {
         virtual void InitSyncStructures() = 0;
         virtual void CreatePipeline(Material& mat, const char* vert_shader, const char* frag_shader, bool alpha) = 0;
 
-        virtual void DrawPerFrame(RenderObject* first, int count) = 0;
+        virtual void DrawPerFrame(RenderObject* first, int count, Particals* partical, int partical_count) = 0;
 
         virtual void UpLoadMeshes(Mesh& mesh) = 0;
 

@@ -38,7 +38,7 @@ namespace renderer {
         virtual void CreateFrameBuffers() override;
         virtual void InitSyncStructures() override;
         virtual void CreatePipeline(Material& mat, const char* vert_shader, const char* frag_shader, bool alpha) override;
-        virtual void DrawPerFrame(RenderObject* first, int count) override;
+        virtual void DrawPerFrame(RenderObject* first, int count, Particals* partical, int partical_count) override;
 
         virtual void UpLoadMeshes(Mesh& mesh) override;
     
@@ -51,9 +51,7 @@ namespace renderer {
         // Buffer
         vk::Buffer CreateBuffer(uint64_t size, vk::BufferUsageFlags flag,
             vk::SharingMode mode = vk::SharingMode::eExclusive);
-        vk::DeviceMemory AllocateMemory(MemRequiredInfo memInfo,
-            vk::MemoryPropertyFlags flag = vk::MemoryPropertyFlagBits::eHostVisible |
-            vk::MemoryPropertyFlagBits::eHostCoherent);
+        vk::DeviceMemory AllocateMemory(MemRequiredInfo memInfo);
       
         // Image
         vk::Image CreateImage(vk::Format format, vk::ImageUsageFlags usage, vk::Extent3D extent);
@@ -65,13 +63,23 @@ namespace renderer {
         void UpdateDynamicBuffer();
         
         void InitDescriptors();
+        void InitComputeDescriptors();
         void ImmediateSubmit(std::function<void(vk::CommandBuffer cmd)>&& function);
         MemRequiredInfo QueryMemReqInfo(vk::Buffer buf, vk::MemoryPropertyFlags flag);
         MemRequiredInfo QueryImgReqInfo(vk::Image image, vk::MemoryPropertyFlags flag);
         void BindTextureDescriptor(Material* mat, Texture* texture);
+        void BindBufferDescriptor(Material* mat, Particals* partical);
         void CreateDrawLinePipeline(Material& mat, const char* vert_shader, const char* frag_shader);
+        void CreateComputePipeline(Material& mat, const char* comp_shader);
 
         void UseTextureSet(bool val){_UseTextureSet = val;}
+
+        void ReleaseBuffer(Particals partical){
+                _VkDevice.freeMemory(partical.writeStorageBuffer.memory);
+                _VkDevice.destroyBuffer(partical.writeStorageBuffer.buffer);
+                _VkDevice.freeMemory(partical.readStorageBuffer.memory);
+                _VkDevice.destroyBuffer(partical.readStorageBuffer.buffer);
+         }
 
         void ReleaseMeshes(std::unordered_map<std::string, Mesh>& meshes) {
             for (auto& mesh_map : meshes) {
@@ -103,6 +111,12 @@ namespace renderer {
             }
         }
 
+        void MemoryMap(const AllocatedBuffer& src, void* dst, size_t offset, size_t length) {
+            const void* data = _VkDevice.mapMemory(src.memory, offset, length);
+            memcpy(dst, data, length);
+            _VkDevice.unmapMemory(src.memory);
+        }
+
     protected:
         bool QueryQueueFamilyProp();
         bool InitQueue();
@@ -130,6 +144,9 @@ namespace renderer {
         size_t PadUniformBuffeSize(size_t origin_size);
         vk::Format FindSupportedFormat(const std::vector<vk::Format>& candidates,
             vk::ImageTiling tiling, vk::FormatFeatureFlags features);
+
+        void DrawGraphsicsPipeline(RenderObject* drawobjects, int count, int swapchain_index);
+        void DrawComputePipeline(Particals* particals, int partical_count);
 
         // Pipeline stages
         vk::PipelineShaderStageCreateInfo InitShaderStageCreateInfo(vk::ShaderStageFlagBits stage, vk::ShaderModule shader_module);
@@ -179,6 +196,9 @@ namespace renderer {
         vk::Pipeline _Pipeline;
         vk::Pipeline _DrawLinePipeline;
         vk::PipelineLayout _PipelineLayout;
+        
+        vk::Pipeline _ComputePipeline;
+        vk::PipelineLayout _ComputePipelineLayout;
 
         // Depth Image
         vk::ImageView _DepthImageView;
@@ -193,6 +213,9 @@ namespace renderer {
         vk::DescriptorPool _DescriptorPool;
         vk::DescriptorSetLayout _TextureSetLayout;
         vk::DescriptorSet _TextureSet;
+
+        vk::DescriptorSetLayout _ComputeSetLayout;
+        vk::DescriptorSet _ComputeSet;
         
         // Texture
         vk::Sampler _TextureSampler;

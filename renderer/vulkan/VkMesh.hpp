@@ -10,6 +10,19 @@
 
 namespace renderer {
 
+    struct ParticalData {
+        Vector4 position;
+        Vector4 velocity;
+        Vector4 color;
+
+        static vk::VertexInputBindingDescription GetBindingDescription();
+        static std::array<vk::VertexInputAttributeDescription, 4> GetAttributeDescription();
+
+        bool operator==(const ParticalData& other) const {
+            return position == other.position && color == other.color && velocity == other.velocity;
+        }
+    };
+
     struct Material {
         vk::DescriptorSet textureSet; 
         vk::Pipeline pipeline;
@@ -51,6 +64,28 @@ namespace renderer {
             }
         }
     };
+
+    struct Particals {
+        std::vector<ParticalData> particals;
+        std::vector<ParticalData> writeData;
+        AllocatedBuffer readStorageBuffer;
+        AllocatedBuffer writeStorageBuffer;
+
+        Material* material = nullptr;
+
+        void SetPartialCount(int size);
+        size_t GetParticalCount() const { return particals.size(); }
+
+        Material* GetMaterial() const { return material; }
+        void SetMaterial(Material* mat) {
+            if (mat == nullptr) {
+                return;
+            }
+
+            material = mat;
+        }
+    };
+
 
 }
 
