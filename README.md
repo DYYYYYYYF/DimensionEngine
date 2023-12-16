@@ -14,7 +14,7 @@ after all, it will create a executable program named VulkanTestDemo
 ## Warn: Under refactory 
 By far, impl Triangle renderer.
 
-2023.11.06：Mesh、Material、Texture
+2023.11.06：Mesh、Material、Texture、Light、ComputeShader
 
 The foundational functions have finished.
 
@@ -22,20 +22,16 @@ If your plants form is Windows, you could compile shaders by compile_shader.bat.
 
 ## Example shortcut
 
-mutiple_models
-
+mutiple_models 
 ![](examples/shortcut/RenderEngine.png)
 
-light_shader
-
+light_shader 
 ![](examples/shortcut/LightShader.png)
 
-mesh_grid
-
+mesh_grid 
 ![](examples/shortcut/MeshGrid.png)
 
-compute_shader-calculation
-
+compute_shader-calculation 
 ![](examples/shortcut/ComputeShader.png)
 
 ## 3rd-Libraries
