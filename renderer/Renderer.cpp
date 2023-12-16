@@ -83,8 +83,8 @@ void Renderer::Draw(RenderObject* first, int count){
 #ifdef _DEBUG_
     size_t size = _Partical.GetParticalCount() * sizeof(ParticalData);
     ((VulkanRenderer*)_RendererImpl)->MemoryMap(_Partical.writeStorageBuffer, _Partical.writeData.data(), 0, size);
-    std::cout << "after: " << _Partical.writeData[3].pos.x << " " << _Partical.writeData[3].pos.y << " "
-        << _Partical.writeData[3].pos.z << " " << _Partical.writeData[3].pos.w << std::endl;
+    std::cout << "after: " << _Partical.writeData[3].position.x << " " << _Partical.writeData[3].position.y << " "
+        << _Partical.writeData[3].position.z << " " << _Partical.writeData[3].position.w << std::endl;
 #endif
 }
 

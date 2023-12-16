@@ -145,6 +145,9 @@ namespace renderer {
         vk::Format FindSupportedFormat(const std::vector<vk::Format>& candidates,
             vk::ImageTiling tiling, vk::FormatFeatureFlags features);
 
+        void DrawGraphsicsPipeline(RenderObject* drawobjects, int count, int swapchain_index);
+        void DrawComputePipeline(Particals* particals, int partical_count);
+
         // Pipeline stages
         vk::PipelineShaderStageCreateInfo InitShaderStageCreateInfo(vk::ShaderStageFlagBits stage, vk::ShaderModule shader_module);
         vk::PipelineVertexInputStateCreateInfo InitVertexInputStateCreateInfo();

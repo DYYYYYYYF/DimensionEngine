@@ -78,12 +78,14 @@ namespace renderer{
     */
     struct FrameData {
         vk::Semaphore presentSemaphore;
+        vk::Semaphore computeSemaphore;
         vk::Semaphore renderSemaphore;
         vk::Fence computeFence;
         vk::Fence renderFence;
 
         vk::CommandPool commandPool;
         vk::CommandBuffer mainCommandBuffer;
+        vk::CommandBuffer computeCommandBuffer;
 
         // Buffer contains CameraData
         AllocatedBuffer cameraBuffer;

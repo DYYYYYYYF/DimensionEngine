@@ -106,7 +106,7 @@ void Particals::SetPartialCount(int size) {
 
     for (int i = 0; i < size; ++i) {
         ParticalData partical;
-        partical.pos = { i, i + 1, i + 2, i + 3 };
+        partical.position = { i, i + 1, i + 2, i + 3 };
         partical.color = { 1, 1, 1, 1 };
         partical.velocity = { 1, 0, 0, 0 };
         particals[i] = partical;

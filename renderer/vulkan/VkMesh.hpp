@@ -11,9 +11,16 @@
 namespace renderer {
 
     struct ParticalData {
-        Vector4 pos;
-        Vector4 color;
+        Vector4 position;
         Vector4 velocity;
+        Vector4 color;
+
+        static vk::VertexInputBindingDescription GetBindingDescription();
+        static std::array<vk::VertexInputAttributeDescription, 4> GetAttributeDescription();
+
+        bool operator==(const ParticalData& other) const {
+            return position == other.position && color == other.color && velocity == other.velocity;
+        }
     };
 
     struct Material {
