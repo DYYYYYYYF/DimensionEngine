@@ -54,7 +54,7 @@ void Scene::InitScene(ConfigFile* config) {
   Particals partical;
   partical.SetPartialCount(256);
   partical.SetMaterial(((Renderer*)_Renderer)->GetMaterial("Compute"));
-  // (((Renderer*)_Renderer)->LoadPartical(partical));
+  (((Renderer*)_Renderer)->LoadPartical(partical));
 
 	INFO("Inited Scene.");
 }
