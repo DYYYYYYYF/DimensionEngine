@@ -36,6 +36,8 @@ compute_shader_calculation
 
 ## 3rd-Libraries
 
+Vulkan: https://www.vulkan.org
+
 GLFW: https://github.com/glfw/glfw
 
 stb-master: https://github.com/nothings/stb
