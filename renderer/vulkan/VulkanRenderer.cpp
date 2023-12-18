@@ -684,7 +684,7 @@ void VulkanRenderer::DrawComputePipeline(Particals* particals, size_t partical_c
         const Particals& partical = particals[i];
         compCmdBuffer.bindPipeline(vk::PipelineBindPoint::eCompute, partical.material->pipeline);
         compCmdBuffer.bindDescriptorSets(vk::PipelineBindPoint::eCompute, partical.material->pipelineLayout, 0, 1, &_ComputeSet, 0, nullptr);
-        compCmdBuffer.dispatch(partical.particals.size() / 256, 1, 1);
+        compCmdBuffer.dispatch((uint32_t)partical.particals.size() / 256, 1, 1);
     }
 
     compCmdBuffer.end();
@@ -1459,8 +1459,8 @@ vk::PipelineLayoutCreateInfo VulkanRenderer::InitPipelineLayoutCreateInfo() {
 
 vk::PipelineDepthStencilStateCreateInfo VulkanRenderer::InitDepthStencilStateCreateInfo(bool enable_depth) {
     vk::PipelineDepthStencilStateCreateInfo depthStencilInfo;
-    depthStencilInfo.setDepthTestEnable(enable_depth)    //将新的深度缓冲区与深度缓冲区进行比较，确定是否丢弃
-        .setDepthWriteEnable(enable_depth)   //测试新深度缓冲区是否应该写入
+    depthStencilInfo.setDepthTestEnable(enable_depth)    //Compare coming depth buffer, abandon it or not
+        .setDepthWriteEnable(enable_depth)   //Test write new depth buffer or not
         .setDepthCompareOp(vk::CompareOp::eLess)
         .setDepthBoundsTestEnable(VK_FALSE)
         .setMinDepthBounds(0.0f)
