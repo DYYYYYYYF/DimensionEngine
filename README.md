@@ -31,7 +31,7 @@ light_shader
 mesh_grid 
 ![](examples/shortcut/MeshGrid.png)
 
-compute_shader-calculation 
+compute_shader_calculation 
 ![](examples/shortcut/ComputeShader.png)
 
 ## 3rd-Libraries
