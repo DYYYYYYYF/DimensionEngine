@@ -1,6 +1,6 @@
 #pragma once
 
-// #define _DEBUG_
+#define _DEBUG_
 #ifdef _DEBUG_
 #include <iostream>
 #endif // _DEBUG_
@@ -38,7 +38,7 @@ namespace renderer {
         virtual void CreateFrameBuffers() override;
         virtual void InitSyncStructures() override;
         virtual void CreatePipeline(Material& mat, const char* vert_shader, const char* frag_shader, bool alpha) override;
-        virtual void DrawPerFrame(RenderObject* first, int count, Particals* partical, int partical_count) override;
+        virtual void DrawPerFrame(RenderObject* first, size_t count, Particals* partical, size_t partical_count) override;
 
         virtual void UpLoadMeshes(Mesh& mesh) override;
     
@@ -125,7 +125,7 @@ namespace renderer {
         void GetVkImages();
         void GetVkImageViews();
         void CreateDepthImage();
-        void DrawObjects(vk::CommandBuffer& cmd, RenderObject* first, int count);
+        void DrawObjects(vk::CommandBuffer& cmd, RenderObject* first, size_t count);
 
         vk::ShaderModule CreateShaderModule(const char* shader_file);
 
@@ -147,9 +147,9 @@ namespace renderer {
         vk::Format FindSupportedFormat(const std::vector<vk::Format>& candidates,
             vk::ImageTiling tiling, vk::FormatFeatureFlags features);
 
-        void DrawGraphsicsPipeline(RenderObject* drawobjects, int count, int swapchain_index,
+        void DrawGraphsicsPipeline(RenderObject* drawobjects, size_t count, int swapchain_index,
             vk::Semaphore& wait_semapore, vk::Semaphore& signal_semaphore);
-        void DrawComputePipeline(Particals* particals, int partical_count);
+        void DrawComputePipeline(Particals* particals, size_t partical_count);
 
         // Pipeline stages
         vk::PipelineShaderStageCreateInfo InitShaderStageCreateInfo(vk::ShaderStageFlagBits stage, vk::ShaderModule shader_module);

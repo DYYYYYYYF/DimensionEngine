@@ -74,7 +74,7 @@ bool Renderer::Init(){
 void Renderer::BeforeDraw(){
 }
 
-void Renderer::Draw(RenderObject* first, int count){
+void Renderer::Draw(RenderObject* first, size_t count){
     _RendererImpl->DrawPerFrame(first, count, _Particals.data(), _Particals.size());
 
 #ifdef _DEBUG_

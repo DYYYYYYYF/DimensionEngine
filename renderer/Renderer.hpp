@@ -13,7 +13,7 @@ namespace renderer {
         virtual bool Init() override;
         virtual void CreatePipeline(Material& mat, const char* vert_shader, const char* frag_shader, bool alpha = false) override;
         virtual void BeforeDraw() override;
-        virtual void Draw(RenderObject* first, int count) override;
+        virtual void Draw(RenderObject* first, size_t count) override;
         virtual void AfterDraw() override;
         virtual void WaitIdel() override {_RendererImpl->WaitIdel();}
         virtual void Release() override;

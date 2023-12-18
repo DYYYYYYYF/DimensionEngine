@@ -558,7 +558,7 @@ void VulkanRenderer::CreatePipeline(Material& mat, const char* vert_shader, cons
     _VkDevice.destroyShaderModule(fragShader);
 }
 
-void VulkanRenderer::DrawPerFrame(RenderObject* first, int count, Particals* partical, int partical_count) {
+void VulkanRenderer::DrawPerFrame(RenderObject* first, size_t count, Particals* partical, size_t partical_count) {
 
     vk::Semaphore& renderSemaphore = GetCurrentFrame().renderSemaphore;
     vk::Semaphore& computeSemaphore = GetCurrentFrame().computeSemaphore;
@@ -587,7 +587,7 @@ void VulkanRenderer::DrawPerFrame(RenderObject* first, int count, Particals* par
     _FrameNumber++;
 }
 
-void VulkanRenderer::DrawGraphsicsPipeline(RenderObject* objects, int count, int swapchain_index, 
+void VulkanRenderer::DrawGraphsicsPipeline(RenderObject* objects, size_t count, int swapchain_index, 
     vk::Semaphore& wait_semapore, vk::Semaphore& signal_semaphore){
     if (objects == nullptr || count == 0){
         WARN("No RenderObject");
@@ -662,7 +662,7 @@ void VulkanRenderer::DrawGraphsicsPipeline(RenderObject* objects, int count, int
     }
 }
 
-void VulkanRenderer::DrawComputePipeline(Particals* particals, int partical_count){ 
+void VulkanRenderer::DrawComputePipeline(Particals* particals, size_t partical_count){ 
 
     if (particals == nullptr || partical_count == 0){
         return;
@@ -680,7 +680,7 @@ void VulkanRenderer::DrawComputePipeline(Particals* particals, int partical_coun
     compCmdBuffer.begin(info);
 
     // compute pipeline
-    for (int i = 0; i < partical_count; ++i){
+    for (size_t i = 0; i < partical_count; ++i){
         const Particals& partical = particals[i];
         compCmdBuffer.bindPipeline(vk::PipelineBindPoint::eCompute, partical.material->pipeline);
         compCmdBuffer.bindDescriptorSets(vk::PipelineBindPoint::eCompute, partical.material->pipelineLayout, 0, 1, &_ComputeSet, 0, nullptr);
@@ -714,7 +714,7 @@ void VulkanRenderer::DrawComputePipeline(Particals* particals, int partical_coun
     WaitIdel();
     _Queue.ComputeQueue.waitIdle();
 
-    for (int i = 0; i < partical_count; ++i){
+    for (size_t i = 0; i < partical_count; ++i){
 
         Particals& partical = particals[i];
         size_t computeStorageBufferSize = partical.GetParticalCount() * sizeof(ParticalData);
@@ -727,12 +727,12 @@ void VulkanRenderer::DrawComputePipeline(Particals* particals, int partical_coun
     }
 }
 
-void VulkanRenderer::DrawObjects(vk::CommandBuffer& cmd, RenderObject* first, int count) {
+void VulkanRenderer::DrawObjects(vk::CommandBuffer& cmd, RenderObject* first, size_t count) {
     
     Mesh* lastMesh = nullptr;
     Material* lastMaterial = nullptr;
 
-    for (int i = 0; i < count; i++)
+    for (size_t i = 0; i < count; i++)
     {
         const RenderObject& object = first[i];
         int curFrame = _FrameNumber % FRAME_OVERLAP;
