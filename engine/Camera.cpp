@@ -1,7 +1,5 @@
 #include "Camera.hpp"
 
-using namespace engine;
-
 Camera::Camera(Vector3 position, Vector3 target, Vector3 worldup){
     this->position = position;
     this->worldUp = worldup;

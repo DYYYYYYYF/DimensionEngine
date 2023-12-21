@@ -13,7 +13,6 @@ const int moveSpeed = 10;
 
 using namespace renderer;
 
-namespace engine {
 class Scene {
 public:
 	Scene();
@@ -24,6 +23,7 @@ public:
 	void Destroy();
 	void UpdatePosition(GLFWwindow* window);
 
+	void LoadRenderObjFromConfig(ConfigFile* config);
 	RenderObject GenerateBoundingBox(const Mesh* mesh);
 
 private:
@@ -37,4 +37,3 @@ public:
 	uint32_t _FrameCount = 1;
 
 };
-}

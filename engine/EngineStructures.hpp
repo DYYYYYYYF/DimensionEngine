@@ -8,40 +8,58 @@
 
 using namespace renderer;
 
-namespace engine{
+struct RenderObject {
+public:
+	void SetMesh(Mesh* in_mesh) { mesh = in_mesh; }
+	Mesh* GetMesh() const { return mesh; }
+	const Mesh* GetMeshConst() const { return mesh; }
 
-	struct RenderObject {
-	public:
-		Mesh* mesh;
-		Material* material;
-
-	public:
+	void SetMaterial(Material* in_material) { material = in_material; }
+	Material* GetMaterial() const { return material; }
+	const Material* GetMaterialConst() const { return material; }
 		
-		void SetScale(float in_scale) {
-			scale = glm::scale(glm::mat4{ 1.0 }, glm::vec3{ in_scale, in_scale, in_scale });
-		}
-		void SetScale(glm::vec3 in_scale) {
-			scale = glm::scale(glm::mat4{ 1.0 }, in_scale);
-		}
+	void SetScale(float in_scale) { scale = Vector3{ in_scale, in_scale, in_scale }; }
+	void SetScale(Vector3 in_scale) { scale = in_scale; }
+	Vector3& GetScale() { return scale; }
+	const Vector3& GetScale() const { return scale; }
+
+	void SetTranslate(Vector3 trans) { translate = trans; }
+	Vector3& GetTranslate() { return translate; }
+	const Vector3& GetTranslate() const { return translate; }
+
+	void SetRotate(Vector3 axis, float angle) { rotateAxis = axis; rotateAngle = angle; }
 		
-		void SetTranslate(glm::vec3 trans) {
-			translate = glm::translate(glm::mat4{ 1.0 }, trans);
-		}
+	Matrix4 GetTransform() const {
+		Matrix4 mtxScale = glm::scale(Matrix4{ 1.0 }, scale);
+		Matrix4 mtxTranslate = glm::translate(glm::mat4{ 1.0 }, translate);
+		Matrix4 mtxRotate = glm::rotate_slow(glm::mat4{ 1.0 }, glm::radians(rotateAngle), rotateAxis);
 
-		void SetRotate(glm::vec3 axis, float angle) {
-			rotate = glm::rotate_slow(glm::mat4{ 1.0 }, glm::radians(angle), axis);
-		}
+		return mtxTranslate * mtxRotate * mtxScale;
+	}
 
-		glm::mat4 GetTransform() const {
-			return translate * rotate * scale;
-		}
+	void SetModelFile(const char* filename) { modelFile = filename; }
+	const char* GetModelFile() const { return modelFile; }
 
-	private:
-		glm::mat4 translate = glm::mat4{ 1 };
-		glm::mat4 scale = glm::mat4{ 1 };
-		glm::mat4 rotate = glm::mat4{ 1 };
+	void SetVertShader(const char* filename) { vertShader = filename; }
+	const char* GetVertShader() const { return vertShader; }
 
-		glm::mat4 transformMatrix;
+	void SetFragShader(const char* filename) { fragShader = filename; }
+	const char* GetFragShader() const { return fragShader; }
 
-	};
-}
+
+private:
+	Mesh* mesh;
+	Material* material;
+
+	const char* modelFile;
+	const char* vertShader;
+	const char* fragShader;
+
+	Vector3 translate = Vector3{ 1 };
+	Vector3 scale = Vector3{ 1 };
+	float rotateAngle = 0.0f;
+	Vector3 rotateAxis = Vector3{ 1 };
+
+	glm::mat4 transformMatrix;
+
+};

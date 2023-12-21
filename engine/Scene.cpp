@@ -1,7 +1,5 @@
 #include "Scene.hpp"
 
-using namespace engine;
-
 Scene::Scene() {
 	_Renderer = new Renderer();
 	ASSERT(_Renderer);
@@ -11,50 +9,66 @@ Scene::~Scene() {
 	_Renderer = nullptr;
 }
 
+void Scene::LoadRenderObjFromConfig(ConfigFile* config) {
+	if (config == nullptr) {
+		return;
+	}
+
+	const std::vector<ModelFile>& modelFiles = config->GetModelFiles();
+	for (const auto& modelfile : modelFiles) {
+		RenderObject obj;
+		
+		// Model File
+		std::string& modelFile = modelfile.GetModelFile();
+		size_t startPos = modelFile.find_last_of("/");
+		size_t endPos = modelFile.find_last_of(".") - 1;
+		std::string modelName = modelFile.substr(startPos + 1, endPos - startPos);
+		((Renderer*)_Renderer)->LoadMesh(modelFile.data(), modelName.data());
+
+		// Shader File
+		std::string& vertFile = modelfile.GetVertFile();
+		std::string& fragFile = modelfile.GetFragFile();
+
+		startPos = vertFile.find_last_of("/");
+		endPos = vertFile.find_last_of("_") - 1;
+		std::string materialName = vertFile.substr(startPos + 1, endPos - startPos);
+		((Renderer*)_Renderer)->CreateMaterial(materialName.data(), vertFile.data(), fragFile.data());
+
+		Mesh* mesh = ((Renderer*)_Renderer)->GetMesh(modelName);
+		Material* material = ((Renderer*)_Renderer)->GetMaterial(materialName);
+
+		obj.SetMesh(mesh);
+		obj.SetMaterial(material);
+		_Renderables.push_back(obj);
+	}
+}
+
 void Scene::InitScene(ConfigFile* config) {
 
 	if (config != nullptr) {
 		((Renderer*)_Renderer)->SetConfigFile(config);
 	}
 	_Renderer->Init();
-	
-	RenderObject floor;
-	Mesh* rectMesh = ((Renderer*)_Renderer)->GetMesh("Rectangle");
-	Material* floorMat = ((Renderer*)_Renderer)->GetMaterial("Default");
-	if (rectMesh != nullptr && floorMat != nullptr) {
-		floor.mesh = rectMesh;
-		floor.material = floorMat;
-		floor.SetTranslate(glm::vec3{ 1, 0, 0 });
-		_Renderables.push_back(floor);
+
+	LoadRenderObjFromConfig(config);
+
+	if (nullptr == config)
+	{
+		RenderObject floor;
+		Mesh* rectMesh = ((Renderer*)_Renderer)->GetMesh("Rectangle");
+		Material* floorMat = ((Renderer*)_Renderer)->GetMaterial("Default");
+		if (rectMesh != nullptr && floorMat != nullptr) {
+			floor.SetMesh(rectMesh);
+			floor.SetMaterial(floorMat);
+			floor.SetTranslate(glm::vec3{ 1, 0, 0 });
+			_Renderables.push_back(floor);
+		}
 	}
 
-	RenderObject room;
-	Mesh* roomMesh = ((Renderer*)_Renderer)->GetMesh("room");
-	Material* textureMat = ((Renderer*)_Renderer)->GetMaterial("Texture");
-	if (roomMesh != nullptr && textureMat != nullptr) {
-		room.mesh = roomMesh;
-		room.material = textureMat;
-		room.SetTranslate(glm::vec3{ 0, 1, 0 });
-		room.SetRotate(glm::vec3{ 0, 0, 1 }, 90);
-		room.SetRotate(glm::vec3{ 0, 1, 0 }, 90);
-		room.SetRotate(glm::vec3{ 1, 0, 0 }, -90);
-		_Renderables.push_back(room);
-	}
-
-	RenderObject boat;
-	Mesh* boatMesh = ((Renderer*)_Renderer)->GetMesh("Boat");
-	Material* boatMat = ((Renderer*)_Renderer)->GetMaterial("Default");
-	if (boatMesh != nullptr && boatMat != nullptr) {
-		boat.mesh = boatMesh;
-		boat.material = boatMat;
-    boat.SetTranslate(glm::vec3{0, 0, 10});
-		_Renderables.push_back(boat);
-	}
-
-  Particals partical;
-  partical.SetPartialCount(256);
-  partical.SetMaterial(((Renderer*)_Renderer)->GetMaterial("Compute"));
-  (((Renderer*)_Renderer)->LoadPartical(partical));
+	Particals partical;
+	partical.SetPartialCount(256);
+	partical.SetMaterial(((Renderer*)_Renderer)->GetMaterial("Compute"));
+	(((Renderer*)_Renderer)->LoadPartical(partical));
 
 	INFO("Inited Scene.");
 }
@@ -65,7 +79,7 @@ void Scene::Update() {
 	_Renderer->Draw(_Renderables.data(), (int)_Renderables.size());
 	_Renderer->AfterDraw();
 
-  _Renderer->WaitIdel();
+    _Renderer->WaitIdel();
 
 	_FrameCount++;
 
@@ -147,7 +161,7 @@ void Scene::Destroy() {
 RenderObject Scene::GenerateBoundingBox(const Mesh* mesh) {
 	
 	RenderObject obj;
-	obj.material = ((Renderer*)_Renderer)->GetMaterial("DrawLine");
+	obj.SetMaterial(((Renderer*)_Renderer)->GetMaterial("DrawLine"));
 
 	float fx = 0.0f;
 	float fy = 0.0f;
@@ -211,7 +225,7 @@ RenderObject Scene::GenerateBoundingBox(const Mesh* mesh) {
 
 	((Renderer*)_Renderer)->LoadMesh("Bouding", boundingMesh);
 
-	obj.mesh = ((Renderer*)_Renderer)->GetMesh("Bouding");
+	obj.SetMesh(((Renderer*)_Renderer)->GetMesh("Bouding"));
 
 	return obj;
 }

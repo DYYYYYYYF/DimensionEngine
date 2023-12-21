@@ -11,7 +11,7 @@ static EngineLogger* GLOBAL_LOGGER = new EngineLogger();
 int main(int argc, char* argv[]){
 
     ConfigFile config;
-    config.LoadFile("../default/config.txt");
+    config.LoadFile("../default/config.conf");
 
     Application* pApp = new Application(&config);
 

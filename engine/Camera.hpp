@@ -2,7 +2,6 @@
 #include <iostream>
 #include "../../engine/global/GDefines.hpp"
 
-namespace engine {
 class Camera{
     private:
         struct MousePos {
@@ -39,4 +38,3 @@ class Camera{
         void UpdateCameraVectors();
 
 };
-}
