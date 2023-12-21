@@ -1,6 +1,6 @@
 #pragma once
 
-#define _DEBUG_
+//#define _DEBUG_
 #ifdef _DEBUG_
 #include <iostream>
 #endif // _DEBUG_

@@ -178,7 +178,8 @@ void VulkanRenderer::PickupPhyDevice() {
     std::cout << "\nUsing GPU:  " << physicalDevices[0].getProperties().deviceName << std::endl;    //输出显卡名称
     
     vk::PhysicalDeviceFeatures features = physicalDevices[0].getFeatures();
-    std::cout << "Wide line" << features.wideLines << std::endl;
+    const char* enableWideLine = features.wideLines ? "true" : "false";
+    std::cout << "Enable Wide line: " << enableWideLine << std::endl;
 #endif
 }
 
@@ -590,11 +591,8 @@ void VulkanRenderer::DrawPerFrame(RenderObject* first, size_t count, Particals* 
 void VulkanRenderer::DrawGraphsicsPipeline(RenderObject* objects, size_t count, int swapchain_index, 
     vk::Semaphore& wait_semapore, vk::Semaphore& signal_semaphore){
     if (objects == nullptr || count == 0){
-        WARN("No RenderObject");
         return;
     }
-
-    INFO("Draw Graphsics Pipeline");
 
     vk::CommandBuffer& cmdBuffer = GetCurrentFrame().mainCommandBuffer;
     ASSERT(cmdBuffer);
@@ -667,8 +665,6 @@ void VulkanRenderer::DrawComputePipeline(Particals* particals, size_t partical_c
     if (particals == nullptr || partical_count == 0){
         return;
     }
-
-    INFO("Draw Compute Pipeline");
 
     vk::CommandBuffer& compCmdBuffer = GetCurrentFrame().mainCommandBuffer;
     ASSERT(compCmdBuffer);
