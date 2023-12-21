@@ -41,6 +41,11 @@ namespace renderer {
         void ReleaseTextures() { ((VulkanRenderer*)_RendererImpl)->ReleaseTextures( _Textures); }
         void ReleaseParticals() { ((VulkanRenderer*)_RendererImpl)->ReleaseBuffer(_Particals); }
 
+        void BindTexture(Material* material, const char* texture_name)
+        {
+            ((VulkanRenderer*)_RendererImpl)->BindTextureDescriptor(material, GetTexture(texture_name));
+        }
+
         void SetConfigFile(ConfigFile* config) { 
             if (config == nullptr) {
                 return;

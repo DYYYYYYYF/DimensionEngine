@@ -10,6 +10,7 @@ enum LOADSTATE{
 	eConfig = 0,
 	eModelFile,
 	ePipeline,
+	eTexture,
 	eMax
 };
 
@@ -24,10 +25,15 @@ public:
 	void SetFragFile(std::string filename) { fragFile = filename; }
 	std::string GetFragFile() const { return fragFile; }
 
+	void SetTextureFile(std::string filename) { textureFile = filename; }
+	std::string GetTextureFile() const { return textureFile; }
+
 private:
 	std::string modelFile;
 	std::string vertFile;
 	std::string fragFile;
+
+	std::string textureFile;
 };
 
 class ConfigFile : public Resource {

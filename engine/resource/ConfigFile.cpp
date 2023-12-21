@@ -21,9 +21,12 @@ void ConfigFile::LoadFile(const char* file) {
 		}
 		else if (datas.find("Model") != datas.npos && m_curState != LOADSTATE::eModelFile) {
 			m_curState = LOADSTATE::eModelFile;
-		}
+		} 
 		else if (datas.find("Pipeline") != datas.npos && m_curState != LOADSTATE::ePipeline) {
 			m_curState = LOADSTATE::ePipeline;
+		} 
+		else if (datas.find("Texture") != datas.npos && m_curState != LOADSTATE::eTexture) {
+			m_curState = LOADSTATE::eTexture;
 		}
 
 		// Separate string
@@ -66,6 +69,13 @@ void ConfigFile::LoadFile(const char* file) {
 				m_Models[i].SetFragFile(data);
 			}
 		}
+
+		if (m_curState == LOADSTATE::eTexture) {
+			for (int i = 0; i < (int)m_Models.size(); ++i) {
+				fs->getline(data, 256);
+				m_Models[i].SetTextureFile(data);
+			}
+		}
 	}
 
 	fs->close();
@@ -97,6 +107,10 @@ void ConfigFile::SaveToFile() {
 		res += m_Models[i].GetFragFile() + '\n';
 	}
 
+	res += "\nTexture\n";
+	for (int i = 0; i < m_Models.size(); ++i) {
+		res += m_Models[i].GetTextureFile() + '\n';
+	}
 
 	fs->write(res.data(), res.length());
 }

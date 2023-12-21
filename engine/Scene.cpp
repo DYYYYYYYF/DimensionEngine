@@ -24,6 +24,7 @@ void Scene::LoadRenderObjFromConfig(ConfigFile* config) {
 		size_t endPos = modelFile.find_last_of(".") - 1;
 		std::string modelName = modelFile.substr(startPos + 1, endPos - startPos);
 		((Renderer*)_Renderer)->LoadMesh(modelFile.data(), modelName.data());
+		Mesh* mesh = ((Renderer*)_Renderer)->GetMesh(modelName);
 
 		// Shader File
 		std::string& vertFile = modelfile.GetVertFile();
@@ -33,9 +34,17 @@ void Scene::LoadRenderObjFromConfig(ConfigFile* config) {
 		endPos = vertFile.find_last_of("_") - 1;
 		std::string materialName = vertFile.substr(startPos + 1, endPos - startPos);
 		((Renderer*)_Renderer)->CreateMaterial(materialName.data(), vertFile.data(), fragFile.data());
-
-		Mesh* mesh = ((Renderer*)_Renderer)->GetMesh(modelName);
 		Material* material = ((Renderer*)_Renderer)->GetMaterial(materialName);
+
+		//Texture
+		std::string& textureFile = modelfile.GetTextureFile();
+		if (textureFile.length() != 0) {
+			startPos = textureFile.find_last_of("/");
+			endPos = textureFile.find_last_of(".") - 1;
+			std::string textureName = textureFile.substr(startPos + 1, endPos - startPos);
+			((Renderer*)_Renderer)->LoadTexture(textureName.data(), textureFile.data());
+			((Renderer*)_Renderer)->BindTexture(material, textureName.data());
+		}
 
 		obj.SetMesh(mesh);
 		obj.SetMaterial(material);
