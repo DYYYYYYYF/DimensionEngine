@@ -15,16 +15,22 @@ void Scene::LoadRenderObjFromConfig(ConfigFile* config) {
 	}
 
 	const std::vector<ModelFile>& modelFiles = config->GetModelFiles();
+	_Renderables.resize(modelFiles.size());
+
+	int index = 0;
 	for (const auto& modelfile : modelFiles) {
-		RenderObject obj;
+		RenderObject& obj = _Renderables[index];
 		
 		// Model File
 		std::string& modelFile = modelfile.GetModelFile();
 		size_t startPos = modelFile.find_last_of("/");
 		size_t endPos = modelFile.find_last_of(".") - 1;
 		std::string modelName = modelFile.substr(startPos + 1, endPos - startPos);
-		((Renderer*)_Renderer)->LoadMesh(modelFile.data(), modelName.data());
 		Mesh* mesh = ((Renderer*)_Renderer)->GetMesh(modelName);
+		if (mesh == nullptr) {
+			((Renderer*)_Renderer)->LoadMesh(modelFile.data(), modelName.data());
+			mesh = ((Renderer*)_Renderer)->GetMesh(modelName);
+		}
 
 		// Shader File
 		std::string& vertFile = modelfile.GetVertFile();
@@ -33,8 +39,11 @@ void Scene::LoadRenderObjFromConfig(ConfigFile* config) {
 		startPos = vertFile.find_last_of("/");
 		endPos = vertFile.find_last_of("_") - 1;
 		std::string materialName = vertFile.substr(startPos + 1, endPos - startPos);
-		((Renderer*)_Renderer)->CreateMaterial(materialName.data(), vertFile.data(), fragFile.data());
 		Material* material = ((Renderer*)_Renderer)->GetMaterial(materialName);
+		if (material == nullptr) {
+			((Renderer*)_Renderer)->CreateMaterial(materialName.data(), vertFile.data(), fragFile.data());
+			material = ((Renderer*)_Renderer)->GetMaterial(materialName);
+		}
 
 		//Texture
 		std::string& textureFile = modelfile.GetTextureFile();
@@ -42,13 +51,19 @@ void Scene::LoadRenderObjFromConfig(ConfigFile* config) {
 			startPos = textureFile.find_last_of("/");
 			endPos = textureFile.find_last_of(".") - 1;
 			std::string textureName = textureFile.substr(startPos + 1, endPos - startPos);
-			((Renderer*)_Renderer)->LoadTexture(textureName.data(), textureFile.data());
+			Texture* texture = ((Renderer*)_Renderer)->GetTexture(textureName);
+			if (texture == nullptr) {
+				((Renderer*)_Renderer)->LoadTexture(textureName.data(), textureFile.data());
+				texture = ((Renderer*)_Renderer)->GetTexture(textureName);
+			}
+
 			((Renderer*)_Renderer)->BindTexture(material, textureName.data());
 		}
 
 		obj.SetMesh(mesh);
 		obj.SetMaterial(material);
-		_Renderables.push_back(obj);
+
+		++index;
 	}
 }
 
