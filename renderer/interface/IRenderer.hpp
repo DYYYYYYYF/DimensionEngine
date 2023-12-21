@@ -2,8 +2,6 @@
 
 #include "../../engine/EngineStructures.hpp"
 
-using namespace engine;
-
 namespace renderer {
       class IRendererImpl;
       struct Mesh;

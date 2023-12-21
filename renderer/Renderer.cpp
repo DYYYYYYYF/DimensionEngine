@@ -183,6 +183,12 @@ void Renderer::LoadTexture(const char* filename, const char* texture_path) {
     AddTexture(filename, texture);
 }
 
+void Renderer::CreateMaterial(const char* filename, const char* vertShader, const char* fragShader) {
+    Material Material;
+    CreatePipeline(Material, vertShader, fragShader);
+    AddMaterial(filename, Material);
+}
+
 void Renderer::UpdateViewMat(glm::mat4 view_matrix){
     ((VulkanRenderer*)_RendererImpl)->UpdatePushConstants(view_matrix);
     ((VulkanRenderer*)_RendererImpl)->UpdateUniformBuffer();

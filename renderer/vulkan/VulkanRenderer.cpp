@@ -733,40 +733,45 @@ void VulkanRenderer::DrawObjects(vk::CommandBuffer& cmd, RenderObject* first, si
         const RenderObject& object = first[i];
         int curFrame = _FrameNumber % FRAME_OVERLAP;
 
+        Material* curMaterial = object.GetMaterial();
+        Mesh* curMesh = object.GetMesh();
+        if (curMaterial == nullptr || curMesh == nullptr) {
+            continue;
+        }
+
         //only bind the pipeline if it doesn't match with the already bound one
-        if (object.material != lastMaterial) {
-            cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, object.material->pipeline);
-            lastMaterial = object.material;
+        if (curMaterial != lastMaterial) {
+            cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, curMaterial->pipeline);
+            lastMaterial = curMaterial;
 
             uint32_t uniform_offset = (uint32_t)PadUniformBuffeSize(sizeof(SceneData)) * curFrame;
             // object.material->pipelineLayout
             std::vector<vk::DescriptorSet> descSets = { _Frames[curFrame].globalDescriptor };
-            cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, object.material->pipelineLayout, 0, (uint32_t)descSets.size(),
+            cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, curMaterial->pipelineLayout, 0, (uint32_t)descSets.size(),
                 descSets.data(), 1, &uniform_offset);
 
-            if (object.material->textureSet){
-                cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, object.material->pipelineLayout, 1, 1,
-                    &object.material->textureSet, 0, nullptr);
+            if (curMaterial->textureSet){
+                cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, curMaterial->pipelineLayout, 1, 1,
+                    &curMaterial->textureSet, 0, nullptr);
             }
         }
 
         //upload the mesh to the GPU via push constants
         _PushConstants.model = object.GetTransform();
-        cmd.pushConstants(object.material->pipelineLayout,
+        cmd.pushConstants(curMaterial->pipelineLayout,
             vk::ShaderStageFlagBits::eVertex, 0, sizeof(MeshPushConstants), &_PushConstants);
 
         //only bind the mesh if it's a different one from last bind
-        if (object.mesh != lastMesh) {
+        if (curMesh != lastMesh) {
             //bind the mesh vertex buffer with offset 0
             VkDeviceSize offset = 0;
-            cmd.bindVertexBuffers(0, object.mesh->vertexBuffer.buffer, offset);
-            cmd.bindIndexBuffer(object.mesh->indexBuffer.buffer, offset, vk::IndexType::eUint32);
-            lastMesh = object.mesh;
+            cmd.bindVertexBuffers(0, curMesh->vertexBuffer.buffer, offset);
+            cmd.bindIndexBuffer(curMesh->indexBuffer.buffer, offset, vk::IndexType::eUint32);
+            lastMesh = curMesh;
         }
 
         //we can now draw
-        //cmd.draw((uint32_t)object.mesh->vertices.size(), 1, 0, 0);
-        cmd.drawIndexed((uint32_t)object.mesh->indices.size(), 1, 0, 0, 0);
+        cmd.drawIndexed((uint32_t)curMesh->indices.size(), 1, 0, 0, 0);
     }
 }
 

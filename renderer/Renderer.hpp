@@ -31,6 +31,7 @@ namespace renderer {
         void LoadTriangleMesh();
         void LoadRectangleMesh();
 
+        void CreateMaterial(const char* filename, const char* vertShader, const char* fragShader);
         Material* GetMaterial(const std::string& name);
         Mesh* GetMesh(const std::string& name);
         Texture* GetTexture(const std::string& name);
