@@ -46,7 +46,7 @@ public:
 	}
 
 	void SetData(std::string key, std::string val) {
-		m_Data.insert(std::pair<std::string, std::string>(key, val));
+		m_Data[key] = val;
 	}
 	std::string GetVal(std::string key) {
 		return m_Data[key];

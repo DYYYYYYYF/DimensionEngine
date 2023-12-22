@@ -20,7 +20,15 @@ Application::~Application(){
 
 bool Application::Init(){
 
-    WsiWindow::SetWidth(1200);
+    // Init window from config
+    if (_ConfigFile != nullptr){
+        std::string width = _ConfigFile->GetVal("WindowWidth");
+        std::string aspect = _ConfigFile->GetVal("WindowAspect");
+
+        WsiWindow::SetWidth(width.length() == 0 ? 1200 : std::stoi(width));
+        WsiWindow::SetAspect(aspect.length() == 0 ? (float)16 / 9 : std::stof(aspect));
+    }
+
     _window = WsiWindow::GetInstance()->GetWindow();
     ASSERT(_window);
 
@@ -51,6 +59,13 @@ void Application::Run(){
 }
 
 void Application::Close(){
+
+    // Save window config
+    if (_ConfigFile) {
+        _ConfigFile->SetData("WindowWidth", std::to_string(WsiWindow::GetWidth()));
+        _ConfigFile->SetData("WindowAspect", std::to_string(WsiWindow::GetAspect()));
+    }
+
     if (_Scene != nullptr) {
         _Scene->Destroy();
     }

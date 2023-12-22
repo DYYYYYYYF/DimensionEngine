@@ -13,7 +13,7 @@ void ConfigFile::LoadFile(const char* file) {
 	size_t eqPos = 0;
 	while (!fs->eof()) {
 		fs->getline(data, 256);
-		if (data == nullptr || data[0] == '\0') continue;
+		if (data[0] == '\0' || data[0] == '\n') continue;
 		
 		std::string datas = data;
 		if (datas.find("Config") != datas.npos && m_curState != LOADSTATE::eConfig) {
@@ -32,22 +32,22 @@ void ConfigFile::LoadFile(const char* file) {
 		// Separate string
 		if (m_curState == LOADSTATE::eConfig) {
 			fs->getline(data, 256);
+			while (data[0] != '\0' && data[0] != '\n') {
+				datas = data;
+				eqPos = datas.find("=");
 
-			if (data == nullptr || data[0] == '\0') continue;
+				std::string fir = datas.substr(0, eqPos);
+				std::string sec = datas.substr(eqPos + 1, datas.length() - 1);
 
-			datas = data;
-			eqPos = datas.find("=");
-
-			std::string fir = datas.substr(0, eqPos);
-			std::string sec = datas.substr(eqPos + 1, datas.length() - 1);
-
-			SetData(fir, sec);
+				SetData(fir, sec);
+				fs->getline(data, 256);
+			}
 		}
 
 		ModelFile modelFile;
 		if (m_curState == LOADSTATE::eModelFile) {
 			fs->getline(data, 256);
-			if (data == nullptr || data[0] == '\0') continue;
+			if (data[0] == '\0' || data[0] == '\n') continue;
 			
 			int nModelNum = std::stoi(data);
 			m_Models.resize(nModelNum);

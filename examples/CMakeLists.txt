@@ -3,9 +3,10 @@ project(examples)
 set(CMAKE_CXX_STANDARD 17)
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_CURRENT_SOURCE_DIR}/bin)
 
-file(GLOB_RECURSE  example_files RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}" 
+file(GLOB_RECURSE example_files RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}" 
 	"${CMAKE_CURRENT_SOURCE_DIR}/default/default.cpp",
-	"${CMAKE_CURRENT_SOURCE_DIR}/texture/texture.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/texture/texture.cpp",
+	"${CMAKE_CURRENT_SOURCE_DIR}/window_size/window_size.cpp"
 )
 
 foreach(example_file IN LISTS example_files)
