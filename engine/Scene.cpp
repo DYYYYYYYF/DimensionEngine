@@ -9,64 +9,6 @@ Scene::~Scene() {
 	_Renderer = nullptr;
 }
 
-void Scene::LoadRenderObjFromConfig(ConfigFile* config) {
-	if (config == nullptr) {
-		return;
-	}
-
-	const std::vector<ModelFile>& modelFiles = config->GetModelFiles();
-	_Renderables.resize(modelFiles.size());
-
-	int index = 0;
-	for (const auto& modelfile : modelFiles) {
-		RenderObject& obj = _Renderables[index];
-		
-		// Model File
-		std::string& modelFile = modelfile.GetModelFile();
-		size_t startPos = modelFile.find_last_of("/");
-		size_t endPos = modelFile.find_last_of(".") - 1;
-		std::string modelName = modelFile.substr(startPos + 1, endPos - startPos);
-		Mesh* mesh = ((Renderer*)_Renderer)->GetMesh(modelName);
-		if (mesh == nullptr) {
-			((Renderer*)_Renderer)->LoadMesh(modelFile.data(), modelName.data());
-			mesh = ((Renderer*)_Renderer)->GetMesh(modelName);
-		}
-
-		// Shader File
-		std::string& vertFile = modelfile.GetVertFile();
-		std::string& fragFile = modelfile.GetFragFile();
-
-		startPos = vertFile.find_last_of("/");
-		endPos = vertFile.find_last_of("_") - 1;
-		std::string materialName = vertFile.substr(startPos + 1, endPos - startPos);
-		Material* material = ((Renderer*)_Renderer)->GetMaterial(materialName);
-		if (material == nullptr) {
-			((Renderer*)_Renderer)->CreateMaterial(materialName.data(), vertFile.data(), fragFile.data());
-			material = ((Renderer*)_Renderer)->GetMaterial(materialName);
-		}
-
-		//Texture
-		std::string& textureFile = modelfile.GetTextureFile();
-		if (textureFile.length() != 0) {
-			startPos = textureFile.find_last_of("/");
-			endPos = textureFile.find_last_of(".") - 1;
-			std::string textureName = textureFile.substr(startPos + 1, endPos - startPos);
-			Texture* texture = ((Renderer*)_Renderer)->GetTexture(textureName);
-			if (texture == nullptr) {
-				((Renderer*)_Renderer)->LoadTexture(textureName.data(), textureFile.data());
-				texture = ((Renderer*)_Renderer)->GetTexture(textureName);
-			}
-
-			((Renderer*)_Renderer)->BindTexture(material, textureName.data());
-		}
-
-		obj.SetMesh(mesh);
-		obj.SetMaterial(material);
-
-		++index;
-	}
-}
-
 void Scene::InitScene(ConfigFile* config) {
 
 	if (config != nullptr) {
@@ -76,17 +18,18 @@ void Scene::InitScene(ConfigFile* config) {
 
 	LoadRenderObjFromConfig(config);
 
-	if (nullptr == config)
-	{
-		RenderObject floor;
-		Mesh* rectMesh = ((Renderer*)_Renderer)->GetMesh("Rectangle");
-		Material* floorMat = ((Renderer*)_Renderer)->GetMaterial("Default");
-		if (rectMesh != nullptr && floorMat != nullptr) {
-			floor.SetMesh(rectMesh);
-			floor.SetMaterial(floorMat);
-			floor.SetTranslate(glm::vec3{ 1, 0, 0 });
-			_Renderables.push_back(floor);
-		}
+	// Default draw floor
+	RenderObject floor;
+	Mesh* rectMesh = ((Renderer*)_Renderer)->GetMesh("Rectangle");
+	((Renderer*)_Renderer)->CreateMaterial("GridMesh", 
+		"shader/glsl/mesh_grid_vert.spv", "shader/glsl/mesh_grid_frag.spv");
+
+	Material* floorMaterial = ((Renderer*)_Renderer)->GetMaterial("GridMesh");
+	if (rectMesh != nullptr && floorMaterial != nullptr) {
+		floor.SetMesh(rectMesh);
+		floor.SetMaterial(floorMaterial);
+		floor.SetTranslate(glm::vec3{ 1, 0, 0 });
+		_Renderables.push_back(floor);
 	}
 
 	Particals partical;
@@ -179,6 +122,68 @@ void Scene::Destroy() {
 	{
 		_Renderer->Release();
 		free(_Renderer);
+	}
+}
+
+void Scene::LoadRenderObjFromConfig(ConfigFile* config) {
+	if (config == nullptr) {
+		return;
+	}
+
+	const std::vector<ModelFile>& modelFiles = config->GetModelFiles();
+	_Renderables.resize(modelFiles.size());
+
+	int index = 0;
+	for (const auto& modelfile : modelFiles) {
+		RenderObject& obj = _Renderables[index];
+		std::string modelFile = modelfile.GetModelFile();
+		std::string textureFile = modelfile.GetTextureFile();
+
+		// Model File
+		size_t startPos = modelFile.find_last_of("/");
+		size_t endPos = modelFile.find_last_of(".") - 1;
+		std::string modelName = modelFile.substr(startPos + 1, endPos - startPos);
+		Mesh* mesh = ((Renderer*)_Renderer)->GetMesh(modelName);
+		if (mesh == nullptr) {
+			((Renderer*)_Renderer)->LoadMesh(modelFile.data(), modelName.data());
+			mesh = ((Renderer*)_Renderer)->GetMesh(modelName);
+		}
+
+		// Set enable texture
+		((Renderer*)_Renderer)->SetEnableTexture(textureFile.length() != 0);
+
+		// Shader File
+		std::string vertFile = modelfile.GetVertFile();
+		std::string fragFile = modelfile.GetFragFile();
+
+		startPos = vertFile.find_last_of("/");
+		endPos = vertFile.find_last_of("_") - 1;
+		std::string materialName = vertFile.substr(startPos + 1, endPos - startPos);
+
+		Material* material = ((Renderer*)_Renderer)->GetMaterial(materialName);
+		if (material == nullptr) {
+			((Renderer*)_Renderer)->CreateMaterial(materialName.data(), vertFile.data(), fragFile.data());
+			material = ((Renderer*)_Renderer)->GetMaterial(materialName);
+		}
+
+		//Texture
+		if (textureFile.length() != 0) {
+			startPos = textureFile.find_last_of("/");
+			endPos = textureFile.find_last_of(".") - 1;
+			std::string textureName = textureFile.substr(startPos + 1, endPos - startPos);
+			Texture* texture = ((Renderer*)_Renderer)->GetTexture(textureName);
+			if (texture == nullptr) {
+				((Renderer*)_Renderer)->LoadTexture(textureName.data(), textureFile.data());
+				texture = ((Renderer*)_Renderer)->GetTexture(textureName);
+			}
+
+			((Renderer*)_Renderer)->BindTexture(material, textureName.data());
+		}
+
+		obj.SetMesh(mesh);
+		obj.SetMaterial(material);
+
+		++index;
 	}
 }
 

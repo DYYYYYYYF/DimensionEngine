@@ -42,8 +42,13 @@ bool Mesh::LoadFromObj(const char* filename){
 
     std::unordered_map<Vertex, uint32_t> uniqueVertices;
 
-    if(!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, filename)){
-        WARN("Load %s failed", filename);
+    try {
+        if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, filename)) {
+            WARN("Load %s failed, Error file path!", filename);
+            return false;
+        }
+    } catch (const std::exception& e) {
+        WARN("Load %s failed, Error file path!   %s", filename, e.what());
         return false;
     }
 

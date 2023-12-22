@@ -22,46 +22,8 @@ bool Renderer::Init(){
     _RendererImpl->Init();
 
     // Models
-    LoadMesh("asset/model/room.obj", "room");
-    LoadMesh("asset/model/ball.obj", "ball");
-    LoadMesh("asset/model/CornellBox.obj", "CornellBox");
-    LoadMesh("asset/model/sponza.obj", "sponza");
-    LoadMesh("asset/model/bunny.obj", "Bunny");
-    LoadMesh("asset/obj/wooden_boat/Boat.obj", "Boat");
     LoadTriangleMesh();
     LoadRectangleMesh();
-
-    // Textures
-    LoadTexture("room", "asset/texture/room.png");
-    LoadTexture("wooden", "asset/obj/wooden_boat/BaseColor.png");
-
-    // Materials
-    const char* defaultVertShader = "shader/glsl/default_vert.spv";
-    const char* defaultFragShader = "shader/glsl/default_frag.spv";
-    const char* meshVertShader = "shader/glsl/texture_mesh_vert.spv";
-    const char* meshFragShader = "shader/glsl/texture_mesh_frag.spv";
-    const char* meshFloorVertShader = "shader/glsl/mesh_grid_vert.spv";
-    const char* meshFloorFragShader = "shader/glsl/mesh_grid_frag.spv";
-
-    ((VulkanRenderer*)_RendererImpl)->UseTextureSet(false);
-    Material deafaultMaterial;
-    CreatePipeline(deafaultMaterial, defaultVertShader, defaultFragShader);
-    AddMaterial("Default", deafaultMaterial);
-
-    Material drawLineMaterial;
-    CreateDrawlinePipeline(drawLineMaterial, defaultVertShader, defaultFragShader);
-    AddMaterial("DrawLine", drawLineMaterial);
-
-    ((VulkanRenderer*)_RendererImpl)->UseTextureSet(true);
-    Material deafaultMeshMaterial;
-    CreatePipeline(deafaultMeshMaterial, meshVertShader, meshFragShader);
-    AddMaterial("Texture", deafaultMeshMaterial);
-
-    Material deafaultFloorMaterial;
-    CreatePipeline(deafaultFloorMaterial, meshFloorVertShader, meshFloorFragShader, true);
-    AddMaterial("Floor", deafaultFloorMaterial);
-
-    ((VulkanRenderer*)_RendererImpl)->BindTextureDescriptor(GetMaterial("Texture"), GetTexture("room"));
 
     // Compute test
     Material computeMaterial;
@@ -153,7 +115,10 @@ void Renderer::LoadMesh(const char* filename, const char* mesh_name) {
     }
 
     Mesh tempMesh;
-    tempMesh.LoadFromObj(path.data());
+    if (!tempMesh.LoadFromObj(path.data())) {
+        return;
+    }
+
     _RendererImpl->UpLoadMeshes(tempMesh);
     AddMesh(mesh_name, tempMesh);
 }

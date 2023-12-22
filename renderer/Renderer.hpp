@@ -41,6 +41,9 @@ namespace renderer {
         void ReleaseTextures() { ((VulkanRenderer*)_RendererImpl)->ReleaseTextures( _Textures); }
         void ReleaseParticals() { ((VulkanRenderer*)_RendererImpl)->ReleaseBuffer(_Particals); }
 
+        void SetEnableTexture(bool val) {
+            ((VulkanRenderer*)_RendererImpl)->UseTextureSet(val);
+        }
         void BindTexture(Material* material, const char* texture_name)
         {
             ((VulkanRenderer*)_RendererImpl)->BindTextureDescriptor(material, GetTexture(texture_name));
