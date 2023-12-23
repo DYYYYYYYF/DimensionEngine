@@ -59,12 +59,12 @@ void Renderer::CreatePipeline(Material& mat, const char* vert_shader, const char
         return;
     }
 
-    std::string vert = _PreFilePath + std::string(vert_shader);
+    std::string vert = _RootDirection + std::string(vert_shader);
     if (vert.length() == 0) {
         return;
     }
 
-    std::string frag = _PreFilePath + std::string(frag_shader);
+    std::string frag = _RootDirection + std::string(frag_shader);
     if (frag.length() == 0) {
         return;
     }
@@ -78,12 +78,12 @@ void Renderer::CreateDrawlinePipeline(Material& mat, const char* vert_shader, co
         return;
     }
 
-    std::string vert = _PreFilePath + std::string(vert_shader);
+    std::string vert = _RootDirection + std::string(vert_shader);
     if (vert.length() == 0) {
         return;
     }
 
-    std::string frag = _PreFilePath + std::string(frag_shader);
+    std::string frag = _RootDirection + std::string(frag_shader);
     if (frag.length() == 0) {
         return;
     }
@@ -95,7 +95,7 @@ void Renderer::CreateComputePipeline(Material& mat, const char* comp_shader) {
         return;
     }
 
-    std::string comp = _PreFilePath + std::string(comp_shader);
+    std::string comp = _RootDirection + std::string(comp_shader);
     if (comp.length() == 0) {
         return;
     }
@@ -109,7 +109,7 @@ void Renderer::LoadMesh(const char* filename, const char* mesh_name) {
         return;
     }
 
-    std::string path = _PreFilePath + std::string(filename);
+    std::string path = _RootDirection + std::string(filename);
     if (path.length() == 0) {
         return;
     }
@@ -134,7 +134,7 @@ void Renderer::LoadTexture(const char* filename, const char* texture_path) {
         return;
     }
 
-    std::string path = _PreFilePath + std::string(texture_path);
+    std::string path = _RootDirection + std::string(texture_path);
     if (path.length() == 0) {
         return;
     }
