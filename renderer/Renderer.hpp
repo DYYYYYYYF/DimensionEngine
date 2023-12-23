@@ -4,6 +4,7 @@
 #include "vulkan/VkMesh.hpp"
 #include "vulkan/VkTextrue.hpp"
 #include "../engine/resource/ConfigFile.hpp"
+#include <filesystem>
 
 namespace renderer {
     class Renderer : public IRenderer{
@@ -60,7 +61,8 @@ namespace renderer {
                 return;
             }
 
-            _PreFilePath = strPrePath;
+            std::filesystem::path cur_path = std::filesystem::current_path();
+            _RootDirection = std::string(cur_path) + "/" + strPrePath;
         }
 
     private:
@@ -68,7 +70,7 @@ namespace renderer {
         void AddMaterial(std::string name, Material mat) { _Materials[name] = mat; }
         void AddTexture(std::string name, Texture tex) { _Textures[name] = tex; }
 
-        std::string _PreFilePath = "../";
+        std::string _RootDirection = "../";
 
     protected:
         std::vector<Particals> _Particals;

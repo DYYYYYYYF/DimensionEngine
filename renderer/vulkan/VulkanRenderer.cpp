@@ -486,8 +486,16 @@ void VulkanRenderer::CreatePipeline(Material& mat, const char* vert_shader, cons
         enableBlend = !enableBlend;
     }
 
-    vk::ShaderModule vertShader = CreateShaderModule(vert_shader);
-    vk::ShaderModule fragShader = CreateShaderModule(frag_shader);
+    vk::ShaderModule vertShader;
+    vk::ShaderModule fragShader;
+    try{
+        vertShader = CreateShaderModule(vert_shader);
+        fragShader = CreateShaderModule(frag_shader);
+    } catch(std::exception e){
+        WARN("Create Pipeline failed! %s or %s is invalid direction!", vert_shader, frag_shader);
+        return;
+    }
+
     ASSERT(vertShader);
     ASSERT(fragShader);
 
@@ -1647,7 +1655,14 @@ void VulkanRenderer::CreateDrawLinePipeline(Material& mat, const char* vert_shad
 void VulkanRenderer::CreateComputePipeline(Material& mat, const char* comp_shader) {
     INFO("Create Compute Pipeline.");
 
-    vk::ShaderModule computeShader = CreateShaderModule(comp_shader);
+    vk::ShaderModule computeShader;
+    try{
+        computeShader = CreateShaderModule(comp_shader);
+    } catch(std::exception e){
+        WARN("Create Compute Pipeline failed!");
+        return;
+    }
+
     vk::PipelineShaderStageCreateInfo shaderStageInfo =
         InitShaderStageCreateInfo(vk::ShaderStageFlagBits::eCompute, computeShader);
 
