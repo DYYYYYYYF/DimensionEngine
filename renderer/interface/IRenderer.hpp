@@ -19,6 +19,11 @@ namespace renderer {
         virtual void WaitIdel() = 0;
         virtual void Release() = 0;
 
+        virtual void DrawPoint(Vector3 position, Vector3 color) = 0;
+        virtual void DrawLine(Vector3 p1, Vector3 p2, Vector3 color) = 0;
+        virtual void DrawRectangle(Vector3 position, Vector3 half_extent, Vector3 color, bool is_fill = true) = 0;
+        virtual void DrawCircle(Vector3 position, float radius, Vector3 color, bool is_fill = true, int side_count = 365) = 0;
+
     protected:
         IRendererImpl* _RendererImpl;
 

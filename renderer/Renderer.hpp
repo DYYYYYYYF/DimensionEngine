@@ -19,6 +19,12 @@ namespace renderer {
         virtual void WaitIdel() override {_RendererImpl->WaitIdel();}
         virtual void Release() override;
 
+        // Draw common
+        virtual void DrawPoint(Vector3 position, Vector3 color);
+        virtual void DrawLine(Vector3 p1, Vector3 p2, Vector3 color);
+        virtual void DrawRectangle(Vector3 position, Vector3 half_extent, Vector3 color, bool is_fill = true);
+        virtual void DrawCircle(Vector3 position, float radius, Vector3 color, bool is_fill = true, int side_count = 365);
+
     public:
         void UpdateViewMat(glm::mat4 view_matrix);
 
@@ -30,7 +36,6 @@ namespace renderer {
         void LoadMesh(const char* filename, const char* mesh_name);
         void LoadPartical(Particals partical);
         void LoadTriangleMesh();
-        void LoadRectangleMesh();
 
         void CreateMaterial(const char* filename, const char* vertShader, const char* fragShader);
         Material* GetMaterial(const std::string& name);
@@ -65,6 +70,10 @@ namespace renderer {
             _RootDirection = cur_path.string() + "/" + strPrePath;
         }
 
+        void SetRenderObjects(std::vector<RenderObject>* objs) {
+            _Renderables = objs;
+        }
+
     private:
         void AddMesh(std::string name, Mesh mesh) { _Meshes[name] = mesh; }
         void AddMaterial(std::string name, Material mat) { _Materials[name] = mat; }
@@ -74,6 +83,8 @@ namespace renderer {
 
     protected:
         std::vector<Particals> _Particals;
+        std::vector<RenderObject>* _Renderables;
+        
         std::unordered_map<std::string, Mesh> _Meshes;
         std::unordered_map<std::string, Material> _Materials;
         std::unordered_map<std::string, Texture> _Textures;

@@ -55,7 +55,7 @@ private:
 	const char* vertShader;
 	const char* fragShader;
 
-	Vector3 translate = Vector3{ 1 };
+	Vector3 translate = Vector3{ 0 };
 	Vector3 scale = Vector3{ 1 };
 	float rotateAngle = 0.0f;
 	Vector3 rotateAxis = Vector3{ 1 };

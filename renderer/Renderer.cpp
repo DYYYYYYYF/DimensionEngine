@@ -21,9 +21,16 @@ bool Renderer::Init(){
 
     _RendererImpl->Init();
 
+    // Default material
+    CreateMaterial("Default", "shader/glsl/default_vert.spv", "shader/glsl/default_frag.spv");
+    CreateMaterial("Grid", "shader/glsl/mesh_grid_vert.spv", "shader/glsl/mesh_grid_frag.spv");
+
+    Material mat;
+    CreateDrawlinePipeline(mat, "shader/glsl/default_vert.spv", "shader/glsl/default_frag.spv");
+    AddMaterial("Line", mat);
+
     // Models
     LoadTriangleMesh();
-    LoadRectangleMesh();
 
     // Compute test
     Material computeMaterial;
@@ -149,9 +156,10 @@ void Renderer::LoadTexture(const char* filename, const char* texture_path) {
 }
 
 void Renderer::CreateMaterial(const char* filename, const char* vertShader, const char* fragShader) {
-    Material Material;
-    CreatePipeline(Material, vertShader, fragShader);
-    AddMaterial(filename, Material);
+    Material material;
+    CreatePipeline(material, vertShader, fragShader);
+    material.material_name = filename;
+    AddMaterial(filename, material);
 }
 
 void Renderer::UpdateViewMat(glm::mat4 view_matrix){
@@ -247,45 +255,167 @@ void Renderer::LoadTriangleMesh() {
 	INFO("Loaded Triangle");
 }
 
-void Renderer::LoadRectangleMesh() {
-	Mesh rectangleMesh;
-	//make the array 6 vertices long
-	rectangleMesh.vertices.resize(4);
+void Renderer::DrawPoint(Vector3 position, Vector3 color) {
+    RenderObject point;
+    Mesh pointMesh;
 
-	//vertex positions
-	rectangleMesh.vertices[0].position = { 50.f, 0.f,  -50.f };	//?Һ?
-	rectangleMesh.vertices[1].position = { 50.f, 0.f,   50.f };	//??ǰ
-	rectangleMesh.vertices[2].position = { -50.f, 0.f,   50.f };	//??ǰ
-	rectangleMesh.vertices[3].position = { -50.f, 0.f,  -50.f };	//????
+    pointMesh.vertices.resize(1);
+    pointMesh.vertices[0].position = position;
+    pointMesh.vertices[0].normal = { 0, 1, 0 };
+    pointMesh.vertices[0].color = color;
 
-	//vertex colors, all green
-	rectangleMesh.vertices[0].color = { 0.9f, 0.9f, 0.9f };
-	rectangleMesh.vertices[1].color = { 0.1f, 0.1f, 0.1f };
-	rectangleMesh.vertices[2].color = { 0.9f, 0.9f, 0.9f };
-	rectangleMesh.vertices[3].color = { 0.1f, 0.1f, 0.1f };
+    pointMesh.vertices[0].texCoord = { 0.0f, 0.0f };
 
-	// Normal
-	rectangleMesh.vertices[0].normal = { 0.0f, 1.0f, 0.0f };
-	rectangleMesh.vertices[1].normal = { 0.0f, 1.0f, 0.0f };
-	rectangleMesh.vertices[2].normal = { 0.0f, 1.0f, 0.0f };
-	rectangleMesh.vertices[3].normal = { 0.0f, 1.0f, 0.0f };
+    pointMesh.indices.resize(1);
+    pointMesh.indices[0] = 0;
 
-	// UV
-	rectangleMesh.vertices[0].texCoord = { 0.0f, 1.0f };
-	rectangleMesh.vertices[1].texCoord = { 1.0f, 1.0f };
-	rectangleMesh.vertices[2].texCoord = { 1.0f, 0.0f };
-	rectangleMesh.vertices[3].texCoord = { 0.0f, 0.0f };
+    LoadMesh("Point", pointMesh);
+    Mesh* mesh = GetMesh("Point");
+    if (mesh == nullptr) {
+        WARN("Draw rectangle failed! Mesh %s is nullptr!", "Rectangle");
+        return;
+    }
 
-	//indices
-	rectangleMesh.indices.resize(6);
-	rectangleMesh.indices[0] = 0;
-	rectangleMesh.indices[1] = 1;
-	rectangleMesh.indices[2] = 2;
-	rectangleMesh.indices[3] = 0;
-	rectangleMesh.indices[4] = 2;
-	rectangleMesh.indices[5] = 3;
+    Material* material = GetMaterial("Point");
+    if (material == nullptr) {
+        WARN("Draw rectangle failed! Material %s is nullptr!", material->material_name.data());
+        return;
+    }
 
-	LoadMesh("Rectangle",  rectangleMesh);
+    point.SetMesh(mesh);
+    point.SetMaterial(material);
+    point.SetTranslate(position);
 
-	INFO("Loaded Rectangle");
+    _Renderables->push_back(point);
+}
+
+void Renderer::DrawLine(Vector3 p1, Vector3 p2, Vector3 color) {
+    RenderObject line;
+    Mesh lineMesh;
+    lineMesh.vertices.resize(2);
+    lineMesh.vertices[0].position = p1;
+    lineMesh.vertices[0].normal = { 0, 1, 0 };
+    lineMesh.vertices[0].color = color;
+
+    lineMesh.vertices[1].position = p2;
+    lineMesh.vertices[1].normal = { 0, 1, 0 };
+    lineMesh.vertices[1].color = color;
+
+    lineMesh.vertices[0].texCoord = { 0.0f, 0.0f };
+    lineMesh.vertices[1].texCoord = { 1.0f, 1.0f };
+
+    lineMesh.indices.resize(2);
+    lineMesh.indices[0] = 0;
+    lineMesh.indices[1] = 1;
+
+    std::string name = "Line" + std::to_string(_Renderables->size());
+    LoadMesh(name.data(), lineMesh);
+
+    Mesh* mesh = GetMesh(name.data());
+    if (mesh == nullptr) {
+        WARN("Draw Line failed! Mesh %s is nullptr!", name.data());
+        return;
+    }
+
+    Material* material = GetMaterial("Line");
+    if (material == nullptr) {
+        WARN("Draw Line failed! Material %s is nullptr!", material->material_name.data());
+        return;
+    }
+
+    line.SetMesh(mesh);
+    line.SetMaterial(material);
+    _Renderables->push_back(line);
+}
+
+void Renderer::DrawRectangle(Vector3 position, Vector3 half_extent,
+    Vector3 color, bool is_fill/* = true*/) {
+    RenderObject rectangle;
+    Mesh rectangleMesh;
+    //make the array 6 vertices long
+    rectangleMesh.vertices.resize(4);
+
+    //vertex positions
+    rectangleMesh.vertices[0].position = { half_extent.x,  0.f,  -half_extent.y };	//?Һ?
+    rectangleMesh.vertices[1].position = { half_extent.x,  0.f,   half_extent.y };	//??ǰ
+    rectangleMesh.vertices[2].position = { -half_extent.x, 0.f,   half_extent.y };	//??ǰ
+    rectangleMesh.vertices[3].position = { -half_extent.x, 0.f,  -half_extent.y };	//????
+
+    //vertex colors
+    rectangleMesh.vertices[0].color = { 0.9f, 0.9f, 0.9f };
+    rectangleMesh.vertices[1].color = { 0.1f, 0.1f, 0.1f };
+    rectangleMesh.vertices[2].color = { 0.9f, 0.9f, 0.9f };
+    rectangleMesh.vertices[3].color = { 0.1f, 0.1f, 0.1f };
+
+    // Normal
+    rectangleMesh.vertices[0].normal = { 0.0f, 1.0f, 0.0f };
+    rectangleMesh.vertices[1].normal = { 0.0f, 1.0f, 0.0f };
+    rectangleMesh.vertices[2].normal = { 0.0f, 1.0f, 0.0f };
+    rectangleMesh.vertices[3].normal = { 0.0f, 1.0f, 0.0f };
+
+    // UV
+    rectangleMesh.vertices[0].texCoord = { 0.0f, 1.0f };
+    rectangleMesh.vertices[1].texCoord = { 1.0f, 1.0f };
+    rectangleMesh.vertices[2].texCoord = { 1.0f, 0.0f };
+    rectangleMesh.vertices[3].texCoord = { 0.0f, 0.0f };
+
+    //indices
+    rectangleMesh.indices.resize(6);
+    if (is_fill) {
+        rectangleMesh.indices[0] = 0;
+        rectangleMesh.indices[1] = 1;
+        rectangleMesh.indices[2] = 2;
+        rectangleMesh.indices[3] = 0;
+        rectangleMesh.indices[4] = 2;
+        rectangleMesh.indices[5] = 3;
+    }
+    else {
+        rectangleMesh.indices[0] = 0;
+        rectangleMesh.indices[1] = 1;
+        rectangleMesh.indices[2] = 2;
+        rectangleMesh.indices[3] = 0;
+        rectangleMesh.indices[4] = 3;
+        rectangleMesh.indices[5] = 2;
+    }
+
+    std::string name = "Rectangle" + std::to_string(_Renderables->size());
+    LoadMesh(name.data(), rectangleMesh);
+
+    Mesh* mesh = GetMesh(name.data());
+    if (mesh == nullptr) {
+        WARN("Draw rectangle failed! Mesh %s is nullptr!", name.data());
+        return;
+    }
+
+    Material* material = is_fill ? GetMaterial("Default") : GetMaterial("Line");
+    if (material == nullptr) {
+        WARN("Draw rectangle failed! Material %s is nullptr!", material->material_name.data());
+        return;
+    }
+
+    rectangle.SetMesh(mesh);
+    rectangle.SetMaterial(material);
+    rectangle.SetTranslate(position);
+    _Renderables->push_back(rectangle);
+}
+
+void Renderer::DrawCircle(Vector3 position, float radius, Vector3 color,
+    bool is_fill /*= true*/, int side_count/* = 360*/) {
+    RenderObject circle;
+
+    double r = (360.0 / side_count) * 3.1415926 / 180;
+
+    Mesh circleMesh;
+    circleMesh.vertices.resize(side_count + 1);
+    for (int i = 0; i < side_count + 1; ++i) {
+        circleMesh.vertices[i].position = { cos(r * i) * radius, 0, sin(r * i) * radius };
+        circleMesh.vertices[i].normal = { 0, 1, 0 };
+        circleMesh.vertices[i].color = color;
+        circleMesh.vertices[i].texCoord = { 1.0f / cos(r) * radius, 1.0f / sin(r) * radius };
+    }
+
+    for (int i = 0; i < side_count; ++i) {
+        DrawLine(circleMesh.vertices[i].position, circleMesh.vertices[i + 1].position, color);
+    }
+
 }

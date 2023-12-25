@@ -1628,7 +1628,7 @@ void VulkanRenderer::CreateDrawLinePipeline(Material& mat, const char* vert_shad
     pipelineBuilder._Viewport.x = 0.0f;
     pipelineBuilder._Viewport.y = 0.0f;
     pipelineBuilder._Viewport.width = (float)_SupportInfo.extent.width;
-    pipelineBuilder._Viewport.height = (float)_SupportInfo.extent.width;
+    pipelineBuilder._Viewport.height = (float)_SupportInfo.extent.height;
     pipelineBuilder._Viewport.minDepth = 0.0f;
     pipelineBuilder._Viewport.maxDepth = 1.0f;
 

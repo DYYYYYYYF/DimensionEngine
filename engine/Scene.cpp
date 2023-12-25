@@ -15,21 +15,33 @@ void Scene::InitScene(ConfigFile* config) {
 		((Renderer*)_Renderer)->SetConfigFile(config);
 	}
 	_Renderer->Init();
+	((Renderer*)_Renderer)->SetRenderObjects(&_Renderables);
 
 	LoadRenderObjFromConfig(config);
 
 	// Default draw floor
-	RenderObject floor;
-	Mesh* rectMesh = ((Renderer*)_Renderer)->GetMesh("Rectangle");
-	((Renderer*)_Renderer)->CreateMaterial("GridMesh", 
-		"shader/glsl/mesh_grid_vert.spv", "shader/glsl/mesh_grid_frag.spv");
+	_Renderer->DrawRectangle({ 0, 0, 0 }, { 6, 6, 0 }, { 1, 1, 1 }, false);
 
-	Material* floorMaterial = ((Renderer*)_Renderer)->GetMaterial("GridMesh");
-	if (rectMesh != nullptr && floorMaterial != nullptr) {
-		floor.SetMesh(rectMesh);
-		floor.SetMaterial(floorMaterial);
-		floor.SetTranslate(glm::vec3{ 1, 0, 0 });
-		_Renderables.push_back(floor);
+	if (config != nullptr){
+		RenderObject floor;
+		Mesh* rectMesh = ((Renderer*)_Renderer)->GetMesh("Rectangle1");
+		Material* floorMaterial = ((Renderer*)_Renderer)->GetMaterial("Grid");
+		if (rectMesh != nullptr && floorMaterial != nullptr) {
+			floor.SetMesh(rectMesh);
+			floor.SetMaterial(floorMaterial);
+			floor.SetScale(0.9f);
+			_Renderables.push_back(floor);
+		}
+	} else {
+		_Renderer->DrawCircle({ 2, 0, 0 }, 10.0f, { 1,1,1 }, true, 360);
+		_Renderer->DrawCircle({ 2, 0, 0 }, 9.0f, { 1,1,1 }, true, 10);
+		;
+		for (int i = -1; i <= 1; ++i) {
+			for (int j = 1; j >= -1; --j) {
+				if (i == 0 || j == 0) continue;
+				_Renderer->DrawLine({ i * 6, 5, j * 6 }, { i * 6, -5, j * 6 }, { 1, 0, 1 });
+			}
+		}
 	}
 
 	Particals partical;
@@ -182,6 +194,7 @@ void Scene::LoadRenderObjFromConfig(ConfigFile* config) {
 
 		obj.SetMesh(mesh);
 		obj.SetMaterial(material);
+		obj.SetTranslate({ 0, 0, 0 });
 
 		++index;
 	}

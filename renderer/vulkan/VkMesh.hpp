@@ -24,6 +24,8 @@ namespace renderer {
         vk::DescriptorSet textureSet; 
         vk::Pipeline pipeline;
         vk::PipelineLayout pipelineLayout;
+
+        std::string material_name;
     };
 
     struct Vertex {
