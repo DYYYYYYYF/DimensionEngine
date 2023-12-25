@@ -32,7 +32,7 @@ mesh_grid
 ![](examples/shortcut/MeshGrid.png)
 
 draw_common_shape
-![](examples/shortcut/CommonShape.png)
+![](examples/shortcut/CommonShape.PNG)
 
 compute_shader_calculation 
 ![](examples/shortcut/ComputeShader.png)
