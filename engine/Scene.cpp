@@ -17,14 +17,13 @@ void Scene::InitScene(ConfigFile* config) {
 	_Renderer->Init();
 	((Renderer*)_Renderer)->SetRenderObjects(&_Renderables);
 
-	LoadRenderObjFromConfig(config);
-
 	// Default draw floor
-	_Renderer->DrawRectangle({ 0, 0, 0 }, { 6, 6, 0 }, { 1, 1, 1 }, false);
+	_Renderer->DrawRectangle({ 0, -0.5, 0 }, { 6, 6, 0 }, { 1, 1, 1 });
 
+	// Draw alpha test obj first
 	if (config != nullptr){
 		RenderObject floor;
-		Mesh* rectMesh = ((Renderer*)_Renderer)->GetMesh("Rectangle1");
+		Mesh* rectMesh = ((Renderer*)_Renderer)->GetMesh("Rectangle0");
 		Material* floorMaterial = ((Renderer*)_Renderer)->GetMaterial("Grid");
 		if (rectMesh != nullptr && floorMaterial != nullptr) {
 			floor.SetMesh(rectMesh);
@@ -43,6 +42,8 @@ void Scene::InitScene(ConfigFile* config) {
 			}
 		}
 	}
+
+	LoadRenderObjFromConfig(config);
 
 	Particals partical;
 	partical.SetPartialCount(256);
@@ -143,11 +144,8 @@ void Scene::LoadRenderObjFromConfig(ConfigFile* config) {
 	}
 
 	const std::vector<ModelFile>& modelFiles = config->GetModelFiles();
-	_Renderables.resize(modelFiles.size());
-
-	int index = 0;
 	for (const auto& modelfile : modelFiles) {
-		RenderObject& obj = _Renderables[index];
+		RenderObject obj;
 		std::string modelFile = modelfile.GetModelFile();
 		std::string textureFile = modelfile.GetTextureFile();
 
@@ -196,7 +194,7 @@ void Scene::LoadRenderObjFromConfig(ConfigFile* config) {
 		obj.SetMaterial(material);
 		obj.SetTranslate({ 0, 0, 0 });
 
-		++index;
+		_Renderables.push_back(obj);
 	}
 }
 

@@ -23,9 +23,11 @@ bool Renderer::Init(){
 
     // Default material
     CreateMaterial("Default", "shader/glsl/default_vert.spv", "shader/glsl/default_frag.spv");
-    CreateMaterial("Grid", "shader/glsl/mesh_grid_vert.spv", "shader/glsl/mesh_grid_frag.spv");
-
+   
     Material mat;
+    CreatePipeline(mat, "shader/glsl/mesh_grid_vert.spv", "shader/glsl/mesh_grid_frag.spv", true);
+    AddMaterial("Grid", mat);
+
     CreateDrawlinePipeline(mat, "shader/glsl/default_vert.spv", "shader/glsl/default_frag.spv");
     AddMaterial("Line", mat);
 
