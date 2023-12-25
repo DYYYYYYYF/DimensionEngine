@@ -62,7 +62,7 @@ namespace renderer {
             }
 
             std::filesystem::path cur_path = std::filesystem::current_path();
-            _RootDirection = std::string(cur_path) + "/" + strPrePath;
+            _RootDirection = cur_path.string() + "/" + strPrePath;
         }
 
     private:
