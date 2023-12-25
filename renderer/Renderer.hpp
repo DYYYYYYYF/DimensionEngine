@@ -20,10 +20,10 @@ namespace renderer {
         virtual void Release() override;
 
         // Draw common
-        virtual void DrawPoint(Vector3 position, Vector3 color);
-        virtual void DrawLine(Vector3 p1, Vector3 p2, Vector3 color);
-        virtual void DrawRectangle(Vector3 position, Vector3 half_extent, Vector3 color, bool is_fill = true);
-        virtual void DrawCircle(Vector3 position, float radius, Vector3 color, bool is_fill = true, int side_count = 365);
+        virtual void DrawPoint(Vector3 position, Vector3 color) override;
+        virtual void DrawLine(Vector3 p1, Vector3 p2, Vector3 color) override;
+        virtual void DrawRectangle(Vector3 position, Vector3 half_extent, Vector3 color, bool is_fill = true) override;
+        virtual void DrawCircle(Vector3 position, float radius, Vector3 color, bool is_fill = true, int side_count = 365) override;
 
     public:
         void UpdateViewMat(glm::mat4 view_matrix);
