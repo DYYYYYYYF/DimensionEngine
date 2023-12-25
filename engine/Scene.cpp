@@ -33,8 +33,8 @@ void Scene::InitScene(ConfigFile* config) {
 			_Renderables.push_back(floor);
 		}
 	} else {
-		_Renderer->DrawCircle({ 2, 0, 0 }, 10.0f, { 1,1,1 }, true, 360);
-		_Renderer->DrawCircle({ 2, 0, 0 }, 9.0f, { 1,1,1 }, true, 10);
+		_Renderer->DrawCircle({ 0, 0, 0 }, 6.0f, { 1,1,1 }, false, 360);
+		_Renderer->DrawCircle({ 0, 0, 0 }, 3.0f, { 1,1,1 }, true, 10);
 		;
 		for (int i = -1; i <= 1; ++i) {
 			for (int j = 1; j >= -1; --j) {

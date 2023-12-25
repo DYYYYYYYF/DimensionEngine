@@ -360,8 +360,8 @@ void Renderer::DrawRectangle(Vector3 position, Vector3 half_extent,
     rectangleMesh.vertices[3].texCoord = { 0.0f, 0.0f };
 
     //indices
-    rectangleMesh.indices.resize(6);
     if (is_fill) {
+        rectangleMesh.indices.resize(6);
         rectangleMesh.indices[0] = 0;
         rectangleMesh.indices[1] = 1;
         rectangleMesh.indices[2] = 2;
@@ -370,12 +370,12 @@ void Renderer::DrawRectangle(Vector3 position, Vector3 half_extent,
         rectangleMesh.indices[5] = 3;
     }
     else {
+        rectangleMesh.indices.resize(5);
         rectangleMesh.indices[0] = 0;
         rectangleMesh.indices[1] = 1;
         rectangleMesh.indices[2] = 2;
-        rectangleMesh.indices[3] = 0;
-        rectangleMesh.indices[4] = 3;
-        rectangleMesh.indices[5] = 2;
+        rectangleMesh.indices[3] = 3;
+        rectangleMesh.indices[4] = 0;
     }
 
     std::string name = "Rectangle" + std::to_string(_Renderables->size());
@@ -406,7 +406,7 @@ void Renderer::DrawCircle(Vector3 position, float radius, Vector3 color,
     double r = (360.0 / side_count) * 3.1415926 / 180;
 
     Mesh circleMesh;
-    circleMesh.vertices.resize(side_count + 1);
+    circleMesh.vertices.resize(side_count + 2);
     for (int i = 0; i < side_count + 1; ++i) {
         circleMesh.vertices[i].position = { cos(r * i) * radius, 0, sin(r * i) * radius };
         circleMesh.vertices[i].normal = { 0, 1, 0 };
@@ -414,8 +414,45 @@ void Renderer::DrawCircle(Vector3 position, float radius, Vector3 color,
         circleMesh.vertices[i].texCoord = { 1.0f / cos(r) * radius, 1.0f / sin(r) * radius };
     }
 
-    for (int i = 0; i < side_count; ++i) {
-        DrawLine(circleMesh.vertices[i].position, circleMesh.vertices[i + 1].position, color);
+    circleMesh.vertices[side_count + 1].position = { 0, 0, 0 };
+    circleMesh.vertices[side_count + 1].normal = { 0, 1, 0 };
+    circleMesh.vertices[side_count + 1].color = color;
+    circleMesh.vertices[side_count + 1].texCoord = { 0, 0 };
+
+    std::string name = "Circle" + std::to_string(_Renderables->size());
+
+    if (is_fill) {
+        circleMesh.indices.resize(side_count * 3);
+        for (int i = 0; i < 3 * side_count; ++i) {
+            int t = i / 3;
+            circleMesh.indices[i++] = t;
+            circleMesh.indices[i++] = side_count + 1;
+            circleMesh.indices[i] = t + 1;
+        }
+    } else {
+        circleMesh.indices.resize(side_count * 2);
+        for (int i = 0; i < 2 * side_count; ++i) {
+            int t = i / 2;
+            circleMesh.indices[i++] = t;
+            circleMesh.indices[i] = t + 1;
+        }
     }
 
+    LoadMesh(name.data(), circleMesh);
+    Mesh* mesh = GetMesh(name.data());
+    if (mesh == nullptr) {
+        WARN("Draw rectangle failed! Mesh %s is nullptr!", name.data());
+        return;
+    }
+
+    Material* material = is_fill ? GetMaterial("Default") : GetMaterial("Line");
+    if (material == nullptr) {
+        WARN("Draw rectangle failed! Material %s is nullptr!", material->material_name.data());
+        return;
+    }
+
+    circle.SetMesh(mesh);
+    circle.SetMaterial(material);
+    circle.SetTranslate(position);
+    _Renderables->push_back(circle);
 }
