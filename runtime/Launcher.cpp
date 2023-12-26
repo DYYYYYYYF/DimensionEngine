@@ -1,3 +1,7 @@
+#ifdef _WIN32
+#pragma comment( linker, "/subsystem:windows /entry:mainCRTStartup" )
+#endif
+
 #define USE_LOGGER
 
 #include <iostream>

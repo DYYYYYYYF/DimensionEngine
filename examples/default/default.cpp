@@ -1,5 +1,8 @@
-#define USE_LOGGER
+#ifdef _WIN32
+#pragma comment( linker, "/subsystem:windows /entry:mainCRTStartup" )
+#endif
 
+#define USE_LOGGER
 #include <iostream>
 #include "../../application/Application.hpp"
 #include "../../engine/EngineLogger.hpp"
