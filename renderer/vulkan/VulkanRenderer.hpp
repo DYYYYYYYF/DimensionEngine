@@ -72,8 +72,6 @@ namespace renderer {
         void CreateDrawLinePipeline(Material& mat, const char* vert_shader, const char* frag_shader);
         void CreateComputePipeline(Material& mat, const char* comp_shader);
 
-        void UseTextureSet(bool val){_UseTextureSet = val;}
-
         void ReleaseBuffer(std::vector<Particals> particals){
             for (auto& partical : particals){
                 _VkDevice.freeMemory(partical.writeStorageBuffer.memory);
@@ -118,6 +116,14 @@ namespace renderer {
             memcpy(dst, data, length);
             _VkDevice.unmapMemory(src.memory);
         }
+        
+    // Properties
+    public:
+        void SetEnabledTexture(bool val) { _bEnabledTexture = val; }
+        bool GetEnabledTexture() const { return _bEnabledTexture; }
+
+        void SetEnabledSampleShading(bool val) { _bEnabledSampleShading = val; }
+        bool GetEnabledSampleShading() const { return _bEnabledSampleShading; }
 
     protected:
         bool QueryQueueFamilyProp();
@@ -150,6 +156,22 @@ namespace renderer {
         void DrawGraphsicsPipeline(RenderObject* drawobjects, size_t count, int swapchain_index,
             vk::Semaphore& wait_semapore, vk::Semaphore& signal_semaphore);
         void DrawComputePipeline(Particals* particals, size_t partical_count);
+
+        vk::SampleCountFlagBits GetMaxUsableSampleCount() const {
+            ASSERT(_VkPhyDevice);
+
+            vk::PhysicalDeviceProperties properties = _VkPhyDevice.getProperties();
+            vk::SampleCountFlags counts = std::min(properties.limits.sampledImageColorSampleCounts,
+                properties.limits.sampledImageDepthSampleCounts);
+            if (counts & vk::SampleCountFlagBits::e64) { return vk::SampleCountFlagBits::e64; }
+            if (counts & vk::SampleCountFlagBits::e32) { return vk::SampleCountFlagBits::e32; }
+            if (counts & vk::SampleCountFlagBits::e16) { return vk::SampleCountFlagBits::e16; }
+            if (counts & vk::SampleCountFlagBits::e8) { return vk::SampleCountFlagBits::e8; }
+            if (counts & vk::SampleCountFlagBits::e4) { return vk::SampleCountFlagBits::e4; }
+            if (counts & vk::SampleCountFlagBits::e2) { return vk::SampleCountFlagBits::e2; }
+
+            return vk::SampleCountFlagBits::e1;
+        }
 
         // Pipeline stages
         vk::PipelineShaderStageCreateInfo InitShaderStageCreateInfo(vk::ShaderStageFlagBits stage, vk::ShaderModule shader_module);
@@ -224,7 +246,10 @@ namespace renderer {
         vk::Sampler _TextureSampler;
 
     private:
-        bool _UseTextureSet;
+        bool _bEnabledTexture;
+        bool _bEnabledSampleShading;
+
+        vk::SampleCountFlagBits _MaxSampleCount;
 
     };// class VulkanRenderer
 }// namespace renderer

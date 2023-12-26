@@ -14,25 +14,31 @@ VulkanRenderer::~VulkanRenderer() {
 }
 
 void VulkanRenderer::ResetProp() {
+    // Fundation
     _Window = nullptr;
     _VkInstance = nullptr;
     _VkPhyDevice = nullptr;
     _SurfaceKHR = nullptr;
     _VkDevice = nullptr;
     _SwapchainKHR = nullptr;
+
+    // Graphics
     _VkRenderPass = nullptr;
     _Pipeline = nullptr;
     _DepthImageView = nullptr;
     _FrameNumber = 0;
     _DescriptorPool = nullptr;
     _GlobalSetLayout = nullptr;
-    _UseTextureSet = false;
     _DrawLinePipeline = nullptr;
 
+    // Compute
     _ComputePipeline = nullptr;
     _ComputePipelineLayout = nullptr;
     _ComputeSetLayout = nullptr;
 
+    // Properties
+    _bEnabledTexture = false;
+    _bEnabledSampleShading = true;
 }
 
 bool VulkanRenderer::Init() { 
@@ -173,6 +179,8 @@ void VulkanRenderer::PickupPhyDevice() {
    
     std::vector<vk::PhysicalDevice> physicalDevices = _VkInstance.enumeratePhysicalDevices();
     _VkPhyDevice = physicalDevices[0];
+
+    _MaxSampleCount = GetMaxUsableSampleCount();
 
 #ifdef _DEBUG_
     std::cout << "\nUsing GPU:  " << physicalDevices[0].getProperties().deviceName << std::endl;    //输出显卡名称
@@ -527,7 +535,7 @@ void VulkanRenderer::CreatePipeline(Material& mat, const char* vert_shader, cons
     vk::PipelineLayoutCreateInfo defaultLayoutInfo = InitPipelineLayoutCreateInfo();
     
     std::vector<vk::DescriptorSetLayout> defaultSetLayouts = {_GlobalSetLayout};
-    if (_UseTextureSet){
+    if (GetEnabledTexture()){
         defaultSetLayouts.push_back(_TextureSetLayout);
     }
     defaultLayoutInfo.setPushConstantRanges(pushConstant)
@@ -553,8 +561,14 @@ void VulkanRenderer::CreatePipeline(Material& mat, const char* vert_shader, cons
 
     // INFO("Pipeline Rasterizer");
     pipelineBuilder._Rasterizer = InitRasterizationStateCreateInfo(vk::PolygonMode::eFill);
+
+    // INFO("Multi SmpleState")
     pipelineBuilder._Mutisampling = InitMultisampleStateCreateInfo();
+
+    // INFO("Blend")
     pipelineBuilder._ColorBlendAttachment = InitColorBlendAttachmentState(enableBlend);
+
+    // INFO("Depth Stencil")
     pipelineBuilder._DepthStencilState = InitDepthStencilStateCreateInfo(enableDepth);
 
     _Pipeline = pipelineBuilder.BuildPipeline(_VkDevice, _VkRenderPass);
@@ -1429,8 +1443,8 @@ vk::PipelineRasterizationStateCreateInfo VulkanRenderer::InitRasterizationStateC
 
 vk::PipelineMultisampleStateCreateInfo VulkanRenderer::InitMultisampleStateCreateInfo() {
     vk::PipelineMultisampleStateCreateInfo info;
-    info.setSampleShadingEnable(VK_FALSE)
-        .setMinSampleShading(1.0f)
+    info.setSampleShadingEnable(_bEnabledSampleShading)
+        .setMinSampleShading(.2f)
         .setAlphaToOneEnable(VK_FALSE)
         .setAlphaToCoverageEnable(VK_FALSE)
         .setPSampleMask(nullptr)
