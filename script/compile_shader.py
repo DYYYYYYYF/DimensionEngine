@@ -6,29 +6,33 @@ compile_command = "glslc -c "
 test_command = compile_command + "--version"
 
 filePath = os.path.abspath(".") + "/shader/"
-print("Shader dir: " + filePath)
 
 # Windows platform
 # Check glslc command
 if platform.system().lower() == "windows":
     if os.system(test_command) != 0:
-        # Not set global command
-        os.system("cls")
-        compile_command = vulkanPath + "\Bin\glslc.exe -c "
-        test_command = compile_command + "--version "
-        
-        if os.system(test_command) != 0:
-            # Not set right vulkan path
-            os.system("cls")
-            print("Please set vulkan path!")
-            quit()
 
+        test_command = filePath + "glslc.exe -c "
+        if os.system(test_command) != 0:
+
+            # Not set global command
+            os.system("cls")
+            compile_command = vulkanPath + "\Bin\glslc.exe -c "
+            test_command = compile_command + "--version "
+            
+            if os.system(test_command) != 0:
+                # Not set right vulkan path
+                os.system("cls")
+                print("Please set vulkan path!")
+                quit()
+
+print("Shader direction: " + filePath + "\n")
 failedShaders = []
 
 for root, dirs, files in os.walk(filePath):
     for file in files:
         filename = os.path.splitext(file)
-        if filename[1] != ".spv":
+        if filename[1] != ".spv" and filename[1] != ".exe":
             shader_type = filename[1].split('.')[1]
 
             if filename[1] != ".hlsl":
