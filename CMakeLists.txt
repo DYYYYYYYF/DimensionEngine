@@ -12,7 +12,16 @@ set(UD_LOGGER_DIR ${PROJECT_SOURCE_DIR}/3rd/uncledon-logger)
 set(GLFW_DIR ${PROJECT_SOURCE_DIR}/3rd/glfw3)
 
 ## Set build type
- set(CMAKE_BUILD_TYPE "Release")
+if (NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE "Release")
+    message("-- Use default build type.")
+ endif()
+
+ if (NOT LOG_LEVEL)
+    set(LOG_LEVEL "ERROR")
+    add_definitions(-DLEVEL_WARN -DLEVEL_FATAL -DLEVEL_ERROR)
+    message("-- Use default log level.")
+endif()
 
 if(${LOG_LEVEL}  STREQUAL "INFO")
     add_definitions(-DLEVEL_INFO -DLEVEL_DEBUG -DLEVEL_WARN -DLEVEL_FATAL -DLEVEL_ERROR)
@@ -24,10 +33,6 @@ elseif(${LOG_LEVEL}  STREQUAL "ERROR")
     add_definitions(-DLEVEL_ERROR  -DLEVEL_FATA)
 elseif(${LOG_LEVEL}  STREQUAL "FATAL")
     add_definitions(-DLEVEL_FATAL)
-else()
-     set(LOG_LEVEL "ERROR")
-     add_definitions(-DLEVEL_WARN -DLEVEL_FATAL -DLEVEL_ERROR)
-     message("-- Use default log level.")
 endif()
       
 message("-- Log level: ${LOG_LEVEL}")
