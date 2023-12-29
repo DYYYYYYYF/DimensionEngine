@@ -48,7 +48,7 @@ void Renderer::BeforeDraw(){
 void Renderer::Draw(RenderObject* first, size_t count){
     _RendererImpl->DrawPerFrame(first, count, _Particals.data(), _Particals.size());
 
-#ifdef _DEBUG_
+#ifdef DEBUG
     if (_Particals.size() > 0){
         size_t size = _Particals[0].GetParticalCount() * sizeof(ParticalData);
         ((VulkanRenderer*)_RendererImpl)->MemoryMap(_Particals[0].writeStorageBuffer, _Particals[0].writeData.data(), 0, size);

@@ -154,7 +154,7 @@ void VulkanRenderer::CreateInstance() {
         .setEnabledExtensionCount(extensionsCount)
         .setEnabledLayerCount((uint32_t)layers.size());
 
-#ifdef _DEBUG_
+#ifdef LEVEL_DEBUG
     std::vector<VkExtensionProperties> enumExtentions;
     uint32_t enumExtentionCount;
     vkEnumerateInstanceExtensionProperties(nullptr, &enumExtentionCount, nullptr);
@@ -182,7 +182,7 @@ void VulkanRenderer::PickupPhyDevice() {
 
     _MaxSampleCount = GetMaxUsableSampleCount();
 
-#ifdef _DEBUG_
+#ifdef LEVEL_DEBUG
     std::cout << "\nUsing GPU:  " << physicalDevices[0].getProperties().deviceName << std::endl;    //输出显卡名称
     
     vk::PhysicalDeviceFeatures features = physicalDevices[0].getFeatures();
@@ -1052,7 +1052,7 @@ bool VulkanRenderer::QueryQueueFamilyProp(){
         index++;
     }
 
-#ifdef _DEBUG_ 
+#ifdef LEVEL_DEBUG 
     std::cout << "Graphics Index:" << _QueueFamilyProp.graphicsIndex.value() << 
         "\nPresent Index: " << _QueueFamilyProp.presentIndex.value() << 
         "\nCompute Index:" << _QueueFamilyProp.computeIndex.value() << std::endl;

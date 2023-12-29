@@ -2,7 +2,7 @@
 #include <Logger.hpp>
 #include <filesystem>
 
-#ifdef _DEBUG
+#ifdef LEVEL_DEBUG
 #define ASSERT(expr) \
     if(!(expr)) { \
         FATAL(#expr "is null!"); \
