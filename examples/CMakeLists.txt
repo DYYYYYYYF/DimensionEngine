@@ -7,6 +7,7 @@ file(GLOB_RECURSE example_files RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}"
 	"${CMAKE_CURRENT_SOURCE_DIR}/default/default.cpp" 
 	"${CMAKE_CURRENT_SOURCE_DIR}/texture/texture.cpp" 
 	"${CMAKE_CURRENT_SOURCE_DIR}/window_size/window_size.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/edge/edge.cpp"
 )
 
 foreach(example_file IN LISTS example_files)
