@@ -5,7 +5,7 @@ CMake Files: (MacOS required Vulkan,GLM,GLFW)
 
 create a floder named build
 
-cd build then cmd: cmake [[Custom params]](###Cmake params) ..
+cd build then cmd: cmake [[Custom params]](### Cmake params) ..
 
 cmd 'make'
 
@@ -16,7 +16,7 @@ after all, it will create a executable program named VulkanTestDemo
 -DCMAKE_BUILD_TYPE=[CMAKE_BUILD_TYPE]
 -DLOG_LEVEL=[LOG_LEVEL]
 
-**CMAKE_BUILD_TYPE: **
+**CMAKE_BUILD_TYPE:**
 
 * <font color=#00a8ff>Release</font>
 * <font color=#00a8ff>Debug</font>
