@@ -55,14 +55,10 @@ private:
 
 		float x = std::stof(val.substr(0, sPos).c_str());
 		vec.x = x;
-
 		float y = std::stof(val.substr(sPos + 1, ePos).c_str());
 		vec.y = y;
-
 		float z = std::stof(val.substr(ePos + 1, val.npos).c_str());
 		vec.z = z;
-
-		std::cout << x << " " << y  << " " << z << std::endl;
 
 		return vec;
 	}

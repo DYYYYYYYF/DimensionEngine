@@ -198,10 +198,7 @@ void Scene::LoadRenderObjFromConfig(ConfigFile* config) {
 		obj.SetMaterial(material);
 		obj.SetTranslate(translate);
 		obj.SetScale(scale);
-
-		if (modelName.compare("room") == 0) {
-			obj.SetRotate({ 1, 0, 0 }, -90);
-		}
+    obj.SetRotate({ 1, 0, 0 }, rotate.x);
 
 		_Renderables.push_back(obj);
 	}
