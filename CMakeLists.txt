@@ -69,9 +69,15 @@ elseif(${WIN32})
 
     # file(COPY ${OPENAL_DIR}/bin/OpenAL32.dll DESTINATION ${EXECUTABLE_OUTPUT_PATH})
 
-    link_directories(${Vulkan_LIBRARY_DIRS} ${GLFW_LIBRARY_DIRS} ${UD_LOGGER_DIR}/lib/Windows/release)
+    link_directories(${Vulkan_LIBRARY_DIRS} ${GLFW_LIBRARY_DIRS})
     include_directories(${GLFW_INCLUDE_DIRS} ${STB_MASTER_DIR} ${Vulkan_INCLUDE_DIRS} ${TINY_OBJ_LOADER_DIR} 
         ${STB_MASTER_DIR} ${GLFW_LIBRARY_DIRS} ${UD_LOGGER_DIR}/include ./imgui)
+
+    if (${CMAKE_BUILD_TYPE} STREQUAL "Release")
+        link_directories( ${UD_LOGGER_DIR}/lib/Windows/release)
+    else()
+        link_directories( ${UD_LOGGER_DIR}/lib/Windows/debug)
+    endif()
 
 endif()
 
