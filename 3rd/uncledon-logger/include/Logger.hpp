@@ -8,16 +8,30 @@
 
 namespace Log{
 
+#ifndef DEBUG
 #define DEBUG(format, ...) \
     Log::Logger::getInstance()->log(Log::Logger::DEBUG, __FILE__, __LINE__, format, ##__VA_ARGS__)
+#endif
+
+#ifndef WARN
 #define WARN(format, ...) \
     Log::Logger::getInstance()->log(Log::Logger::WARN, __FILE__, __LINE__, format, ##__VA_ARGS__)
+#endif
+
+#ifndef ERROR
 #define ERROR(format, ...) \
     Log::Logger::getInstance()->log(Log::Logger::ERROR, __FILE__, __LINE__, format, ##__VA_ARGS__)
+#endif
+
+#ifndef FATAL
 #define FATAL(format, ...) \
     Log::Logger::getInstance()->log(Log::Logger::FATAL, __FILE__, __LINE__, format, ##__VA_ARGS__)
+#endif
+
+#ifndef INFO
 #define INFO(format, ...) \
     Log::Logger::getInstance()->log(Log::Logger::INFO, __FILE__, __LINE__, format, ##__VA_ARGS__)
+#endif
 
     class Logger{
         public:
