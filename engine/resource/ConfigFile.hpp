@@ -28,12 +28,54 @@ public:
 	void SetTextureFile(std::string filename) { textureFile = filename; }
 	std::string GetTextureFile() const { return textureFile; }
 
+	void SetTranslate(std::string vec_str) { 
+		Vector3 val = ConvertStrToVec3(vec_str);
+		transflate = val; 
+	}
+	Vector3 GetTranslate() const { return transflate; }
+
+	void SetRotate(std::string vec_str) {
+		Vector3 val = ConvertStrToVec3(vec_str);
+		rotate = val; 
+	}
+	Vector3 GetRotate() const { return rotate; }
+
+	void SetScale(std::string vec_str) {
+		Vector3 val = ConvertStrToVec3(vec_str);
+		scale = val; 
+	}
+	Vector3 GetScale() const { return scale; }
+
+private:
+	Vector3 ConvertStrToVec3(const std::string& val) {
+		Vector3 vec = { 1, 1, 1 };
+
+		size_t sPos = val.find_first_of(' ');
+		size_t ePos = val.find_last_of(' ');
+
+		float x = std::stof(val.substr(0, sPos).c_str());
+		vec.x = x;
+
+		float y = std::stof(val.substr(sPos + 1, ePos).c_str());
+		vec.y = y;
+
+		float z = std::stof(val.substr(ePos + 1, val.npos).c_str());
+		vec.z = z;
+
+		std::cout << x << " " << y  << " " << z << std::endl;
+
+		return vec;
+	}
+
 private:
 	std::string modelFile;
 	std::string vertFile;
 	std::string fragFile;
-
 	std::string textureFile;
+
+	Vector3 transflate;
+	Vector3 rotate;
+	Vector3 scale;
 };
 
 class ConfigFile : public Resource {

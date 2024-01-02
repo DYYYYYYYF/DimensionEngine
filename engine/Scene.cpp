@@ -190,9 +190,14 @@ void Scene::LoadRenderObjFromConfig(ConfigFile* config) {
 			((Renderer*)_Renderer)->BindTexture(material, textureName.data());
 		}
 
+		Vector3 translate = modelfile.GetTranslate();
+		Vector3 rotate = modelfile.GetRotate();
+		Vector3 scale = modelfile.GetScale();
+
 		obj.SetMesh(mesh);
 		obj.SetMaterial(material);
-		obj.SetTranslate({ 0, 0, 0 });
+		obj.SetTranslate(translate);
+		obj.SetScale(scale);
 
 		if (modelName.compare("room") == 0) {
 			obj.SetRotate({ 1, 0, 0 }, -90);

@@ -56,6 +56,13 @@ void ConfigFile::LoadFile(const char* file) {
 
 				fs->getline(data, 256);
 				m_Models[i].SetModelFile(data);
+
+				fs->getline(data, 256);
+				m_Models[i].SetTranslate(data);
+				fs->getline(data, 256);
+				m_Models[i].SetRotate(data);
+				fs->getline(data, 256);
+				m_Models[i].SetScale(data);
 			}
 		}
 
@@ -99,6 +106,23 @@ void ConfigFile::SaveToFile() {
 	res += std::to_string(m_Models.size()) + '\n';
 	for (int i = 0; i < m_Models.size(); ++i) {
 		res += m_Models[i].GetModelFile() + '\n';
+		Vector3 vec = m_Models[i].GetTranslate();
+		std::string x = std::to_string(vec.x);
+		std::string y = std::to_string(vec.y);
+		std::string z = std::to_string(vec.z);
+		res += x + ' ' + y + ' ' + z + '\n';
+		
+		vec = m_Models[i].GetRotate();
+		x = std::to_string(vec.x);
+		y = std::to_string(vec.y);
+		z = std::to_string(vec.z);
+		res += x + ' ' + y + ' ' + z + '\n';
+		
+		vec = m_Models[i].GetScale();
+		x = std::to_string(vec.x);
+		y = std::to_string(vec.y);
+		z = std::to_string(vec.z);
+		res += x + ' ' + y + ' ' + z + '\n';
 	}
 
 	res += "\nPipeline\n";
