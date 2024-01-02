@@ -49,12 +49,12 @@ void Renderer::Draw(RenderObject* first, size_t count){
     _RendererImpl->DrawPerFrame(first, count, _Particals.data(), _Particals.size());
 
 #ifdef DEBUG
-    if (_Particals.size() > 0){
-        size_t size = _Particals[0].GetParticalCount() * sizeof(ParticalData);
-        ((VulkanRenderer*)_RendererImpl)->MemoryMap(_Particals[0].writeStorageBuffer, _Particals[0].writeData.data(), 0, size);
-        std::cout << "Double: " << _Particals[0].writeData[3].position.x << " " << _Particals[0].writeData[3].position.y << " "
-            << _Particals[0].writeData[3].position.z << " " << _Particals[0].writeData[3].position.w << std::endl;
-    }
+    // if (_Particals.size() > 0){
+    //     size_t size = _Particals[0].GetParticalCount() * sizeof(ParticalData);
+    //     ((VulkanRenderer*)_RendererImpl)->MemoryMap(_Particals[0].writeStorageBuffer, _Particals[0].writeData.data(), 0, size);
+    //     std::cout << "Double: " << _Particals[0].writeData[3].position.x << " " << _Particals[0].writeData[3].position.y << " "
+    //         << _Particals[0].writeData[3].position.z << " " << _Particals[0].writeData[3].position.w << std::endl;
+    // }
 #endif
 }
 
