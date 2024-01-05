@@ -28,7 +28,7 @@ bool Application::Init(){
         aspect = _ConfigFile->GetVal("WindowAspect");
     }
 
-    WsiWindow::SetWidth(width.length() == 0 ? 800 : std::stoi(width));
+    WsiWindow::SetWidth(width.length() == 0 ? 1200 : std::stoi(width));
     WsiWindow::SetAspect(aspect.length() == 0 ? (float)16 / 9 : std::stof(aspect));
 
     _window = WsiWindow::GetInstance()->GetWindow();

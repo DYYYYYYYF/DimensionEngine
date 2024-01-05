@@ -57,7 +57,7 @@ namespace renderer {
         vk::ImageView CreateImageView(vk::Format format, vk::Image image, vk::ImageAspectFlags aspect);
         
         // Uniform
-        void UpdatePushConstants(glm::mat4 view_matrix);
+        void UpdatePushConstants(Matrix4 view_matrix, Vector3 view_pos);
         void UpdateUniformBuffer();
         void UpdateDynamicBuffer();
         

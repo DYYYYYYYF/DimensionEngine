@@ -30,6 +30,7 @@ class Camera{
 
     public:
         Matrix4 GetViewMatrix();
+        Vector3 GetPosition() const { return position; }
 
         void MouserMovement(float x, float y);
         void UpdateCameraPosition();

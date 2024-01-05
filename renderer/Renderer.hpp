@@ -26,7 +26,7 @@ namespace renderer {
         virtual void DrawCircle(Vector3 position, float radius, Vector3 color, bool is_fill = true, int side_count = 365) override;
 
     public:
-        void UpdateViewMat(glm::mat4 view_matrix);
+        void UpdateViewMat(Matrix4 view_matrix, Vector3 view_pos);
 
         void LoadTexture(const char* filename, const char* texture_path);
         void CreateDrawlinePipeline(Material& mat, const char* vert_shader, const char* frag_shader);

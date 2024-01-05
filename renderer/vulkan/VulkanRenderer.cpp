@@ -1318,12 +1318,13 @@ void VulkanRenderer::TransitionImageLayout(vk::Image image, vk::Format format,
     EndCmdBuffer(cmdBuf);
 }
 
-void VulkanRenderer::UpdatePushConstants(glm::mat4 view_matrix) {
+void VulkanRenderer::UpdatePushConstants(glm::mat4 view_matrix, Vector3 view_pos) {
     _Camera.view = view_matrix;
+    _Camera.viewPos = view_pos;
 
     // Uniform Buffer
     _Camera.proj = glm::perspective(glm::radians(45.f),
-        _SupportInfo.GetWindowWidth() / (float)_SupportInfo.GetWindowHeight(), 0.1f, 200.0f);
+        _SupportInfo.GetWindowWidth() / (float)_SupportInfo.GetWindowHeight(), 0.1f, 2000.0f);
     _Camera.proj[1][1] *= -1;
 
     void* data = _VkDevice.mapMemory(GetCurrentFrame().cameraBuffer.memory, 0, sizeof(CamerData));
@@ -1334,7 +1335,7 @@ void VulkanRenderer::UpdatePushConstants(glm::mat4 view_matrix) {
 void VulkanRenderer::UpdateUniformBuffer(){
 
     _Camera.proj = glm::perspective(glm::radians(45.0f), 16.0f / 9.0f, 0.1f, 10000.0f);
-    _Camera.proj[1][1] *= -1;
+    //_Camera.proj[1][1] *= 1;
     _Camera.view = { 1,0,0,0,
                  0,1,0,0,
                  0,0,1,0,
@@ -1342,15 +1343,13 @@ void VulkanRenderer::UpdateUniformBuffer(){
 }
 
 void VulkanRenderer::UpdateDynamicBuffer(){
-    float framed = (_FrameNumber / 3600.f);
-    _SceneData.ambientColor = { 1, 1, 1, 0.5 };
-    _SceneData.fogColor = { 1, 1, 1, 0 };
+
+    _SceneData.fogColor = { 0, 0, 1, 0.5 };
     _SceneData.fogDistances = { 0, 1, 0, 0 };
-    _SceneData.sunlightColor = { 1, 1, 1, 0 };
-    //_SceneData.sunlightDirection = { sin(framed), 0, cos(framed), 0 };
-    _SceneData.sunlightDirection = { 1, -1, 1, 0 };
-    _SceneData.pointLightPos = { 0, 0, -1, 1 };
-    _SceneData.lightSpecular = { 0.5, 0.5, 0.5, 1 };
+    _SceneData.ambientColor = { 1, 0, 0, 0.5 };
+    _SceneData.ambientDirection = { 1, 1, -1, 0 };
+    _SceneData.pointLightPos = { -1, 1, -1, 0 };
+    _SceneData.lightSpecular = { 0.5, 0.5, 0.5, 0.5 };
     int frameIndex = _FrameNumber % FRAME_OVERLAP;
 
     size_t memOffset = PadUniformBuffeSize(sizeof(SceneData)) * frameIndex;

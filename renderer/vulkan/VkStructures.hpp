@@ -52,8 +52,7 @@ namespace renderer{
 
         // Ambient
         Vector4 ambientColor; // w for sun power
-        Vector4 sunlightDirection;
-        Vector4 sunlightColor;
+        Vector4 ambientDirection;
 
         // Point light
         Vector4 pointLightPos;
@@ -64,6 +63,7 @@ namespace renderer{
     struct CamerData {
         Matrix4 view;
         Matrix4 proj;
+        Vector3 viewPos;
     };
 
     // Push constants

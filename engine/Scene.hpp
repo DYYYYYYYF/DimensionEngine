@@ -28,7 +28,7 @@ public:
 
 private:
 	IRenderer* _Renderer;
-	Camera _Camera = Camera(Vector3(0.0f, 10.0f, -10.0f), glm::radians(-20.0f), glm::radians(0.0f), Vector3(0.0f, 1.0f, 0.0f));
+	Camera _Camera = Camera(Vector3(0.0f, 10.0f, -10.0f), glm::radians(-35.0f), glm::radians(0.0f), Vector3(0.0f, 1.0f, 0.0f));
 
 	//default array of renderable objects
 	std::vector<RenderObject> _Renderables;

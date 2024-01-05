@@ -164,8 +164,8 @@ void Renderer::CreateMaterial(const char* filename, const char* vertShader, cons
     AddMaterial(filename, material);
 }
 
-void Renderer::UpdateViewMat(glm::mat4 view_matrix){
-    ((VulkanRenderer*)_RendererImpl)->UpdatePushConstants(view_matrix);
+void Renderer::UpdateViewMat(Matrix4 view_matrix, Vector3 view_pos){
+    ((VulkanRenderer*)_RendererImpl)->UpdatePushConstants(view_matrix, view_pos);
     ((VulkanRenderer*)_RendererImpl)->UpdateUniformBuffer();
     ((VulkanRenderer*)_RendererImpl)->UpdateDynamicBuffer();
 }

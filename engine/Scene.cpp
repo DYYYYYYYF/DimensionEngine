@@ -127,7 +127,7 @@ void Scene::UpdatePosition(GLFWwindow* window) {
 	// keyBoardScoll.scale = scale_callback;
        
     _Camera.UpdateCameraPosition();
-    ((Renderer*)_Renderer)->UpdateViewMat(_Camera.GetViewMatrix());
+    ((Renderer*)_Renderer)->UpdateViewMat(_Camera.GetViewMatrix(), _Camera.GetPosition());
 }
 
 void Scene::Destroy() {
