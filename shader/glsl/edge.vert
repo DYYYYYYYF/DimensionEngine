@@ -8,10 +8,12 @@ layout (location = 0) out vec3 outColor;
 layout (location = 1) out vec3 outNormal;
 layout (location = 2) out vec3 outPosition;
 layout (location = 3) out vec2 texCoord;
+layout (location = 4) out vec3 viewPos;
 
 layout (set = 0, binding = 0) uniform CameraBuffer{
 	mat4 view;
 	mat4 proj;
+	vec3 viewPos;
 } cameraBuf;
 
 layout( push_constant ) uniform constants
@@ -23,7 +25,8 @@ layout( push_constant ) uniform constants
 void main(){
     gl_Position = cameraBuf.proj * cameraBuf.view * PushConstants.model * vec4(vPosition, 1.0f);
     outColor = vColor;
-	outNormal = vNormal;
-	outPosition = vPosition;
+	outNormal = vec4(PushConstants.model * vec4(vNormal, 1.0f)).xyz;
+	outPosition = vec4(PushConstants.model * vec4(vPosition, 1.0f)).xyz;
     texCoord = vTexCoord;
+	viewPos = cameraBuf.viewPos;
 }

@@ -1323,9 +1323,6 @@ void VulkanRenderer::UpdatePushConstants(glm::mat4 view_matrix, Vector3 view_pos
     _Camera.viewPos = view_pos;
 
     // Uniform Buffer
-    _Camera.proj = glm::perspective(glm::radians(45.f),
-        _SupportInfo.GetWindowWidth() / (float)_SupportInfo.GetWindowHeight(), 0.1f, 2000.0f);
-    _Camera.proj[1][1] *= -1;
 
     void* data = _VkDevice.mapMemory(GetCurrentFrame().cameraBuffer.memory, 0, sizeof(CamerData));
     memcpy(data, &_Camera, sizeof(CamerData));
@@ -1334,8 +1331,9 @@ void VulkanRenderer::UpdatePushConstants(glm::mat4 view_matrix, Vector3 view_pos
 
 void VulkanRenderer::UpdateUniformBuffer(){
 
-    _Camera.proj = glm::perspective(glm::radians(45.0f), 16.0f / 9.0f, 0.1f, 10000.0f);
-    //_Camera.proj[1][1] *= 1;
+    _Camera.proj = glm::perspective(glm::radians(45.f),
+        _SupportInfo.GetWindowWidth() / (float)_SupportInfo.GetWindowHeight(), 0.1f, 2000.0f);
+    _Camera.proj[1][1] *= -1;
     _Camera.view = { 1,0,0,0,
                  0,1,0,0,
                  0,0,1,0,
@@ -1344,12 +1342,12 @@ void VulkanRenderer::UpdateUniformBuffer(){
 
 void VulkanRenderer::UpdateDynamicBuffer(){
 
-    _SceneData.fogColor = { 0, 0, 1, 0.5 };
-    _SceneData.fogDistances = { 0, 1, 0, 0 };
-    _SceneData.ambientColor = { 1, 0, 0, 0.5 };
-    _SceneData.ambientDirection = { 1, 1, -1, 0 };
-    _SceneData.pointLightPos = { -1, 1, -1, 0 };
-    _SceneData.lightSpecular = { 0.5, 0.5, 0.5, 0.5 };
+    _SceneData.fogColor = { 1.0f, 1.0f, 1.0f, 0.7f };
+    _SceneData.fogDistances = { 1.0f, 1.0f, 1.0f, 0.0f };
+    _SceneData.ambientColor = { 1.0f, 0.0f, 0.0f, 0.7f };
+    _SceneData.ambientDirection = { 1.0f, 1.0f, -1.0f, 0.0f };
+    _SceneData.pointLightPos = { -1.0f, 1.0f, -1.0f, 0.0f };
+    _SceneData.lightSpecular = { 0.5f, 0.5f, 0.5f, 0.5f };
     int frameIndex = _FrameNumber % FRAME_OVERLAP;
 
     size_t memOffset = PadUniformBuffeSize(sizeof(SceneData)) * frameIndex;
