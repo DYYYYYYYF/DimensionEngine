@@ -160,9 +160,8 @@ namespace renderer {
             ASSERT(_VkPhyDevice);
 
             vk::PhysicalDeviceProperties properties = _VkPhyDevice.getProperties();
-            vk::SampleCountFlags counts = 
-                properties.limits.sampledImageColorSampleCounts > properties.limits.sampledImageDepthSampleCounts ?
-                properties.limits.sampledImageColorSampleCounts : properties.limits.sampledImageDepthSampleCounts;
+            vk::SampleCountFlags counts = std::min(properties.limits.sampledImageColorSampleCounts,
+                properties.limits.sampledImageDepthSampleCounts);
             if (counts & vk::SampleCountFlagBits::e64) { return vk::SampleCountFlagBits::e64; }
             if (counts & vk::SampleCountFlagBits::e32) { return vk::SampleCountFlagBits::e32; }
             if (counts & vk::SampleCountFlagBits::e16) { return vk::SampleCountFlagBits::e16; }

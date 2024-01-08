@@ -11,7 +11,7 @@ bool renderer::LoadImageFromFile(VulkanRenderer& renderer, const char* file, All
     stbi_uc* pixels = stbi_load(file, &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
 
     if (!pixels) {
-        ERROR("Failed to load texture file");
+        FATAL("Failed to load texture file");
         return false;
     }
 

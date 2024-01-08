@@ -9,7 +9,6 @@
 #define _CRT_SECURE_NO_WARNINGS
 #include <sys/utime.h>
 #include <time.h>
-#include <Windows.h>
 #endif
 
 #ifdef __APPLE__

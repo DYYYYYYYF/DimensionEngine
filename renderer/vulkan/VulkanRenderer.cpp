@@ -677,7 +677,7 @@ void VulkanRenderer::DrawGraphsicsPipeline(RenderObject* objects, size_t count, 
 
     if (_VkDevice.waitForFences(GetCurrentFrame().renderFence, true, 
         std::numeric_limits<uint64_t>::max()) != vk::Result::eSuccess) {
-        ERROR("ERROR WAIT FOR RENDER FENCES");
+        FATAL("ERROR WAIT FOR RENDER FENCES");
         return;
     }
 }
@@ -725,7 +725,7 @@ void VulkanRenderer::DrawComputePipeline(Particals* particals, size_t partical_c
 
     if (_VkDevice.waitForFences(GetCurrentFrame().computeFence, true,
         std::numeric_limits<uint64_t>::max()) != vk::Result::eSuccess) {
-        ERROR("ERROR WAIT FOR COMPUTE FENCES");
+        FATAL("ERROR WAIT FOR COMPUTE FENCES");
         return;
     }
 
@@ -1343,8 +1343,8 @@ void VulkanRenderer::UpdateUniformBuffer(){
 void VulkanRenderer::UpdateDynamicBuffer(){
 
     _SceneData.fogColor = { 1.0f, 1.0f, 1.0f, 0.7f };
-    _SceneData.fogDistances = { 1.0f, 0.0f, 0.0f, 0.0f };
-    _SceneData.ambientColor = { 1.0f, 1.0f, 1.0f, 0.7f };
+    _SceneData.fogDistances = { 1.0f, 1.0f, 1.0f, 0.0f };
+    _SceneData.ambientColor = { 1.0f, 0.0f, 0.0f, 0.7f };
     _SceneData.ambientDirection = { 1.0f, 1.0f, -1.0f, 0.0f };
     _SceneData.pointLightPos = { -1.0f, 1.0f, -1.0f, 0.0f };
     _SceneData.lightSpecular = { 0.5f, 0.5f, 0.5f, 0.5f };
@@ -1378,12 +1378,12 @@ void VulkanRenderer::ImmediateSubmit(std::function<void(vk::CommandBuffer cmd)>&
         .setCommandBuffers(cmd)
         .setWaitDstStageMask(nullptr);
     if (_Queue.GraphicsQueue.submit(1, &submit, _UploadContext.uploadFence) != vk::Result::eSuccess){
-        ERROR("Submit command failed");
+        FATAL("Submit command failed");
     }
 
     if (_VkDevice.waitForFences(_UploadContext.uploadFence, true, 
         std::numeric_limits<uint64_t>::max()) != vk::Result::eSuccess) {
-        ERROR("ERROR WAIT FOR FENCES");
+        FATAL("ERROR WAIT FOR FENCES");
         return;
     }
 
