@@ -3,8 +3,19 @@
 #include <iostream>
 #include <fstream>
 #include <string>
-#include <time.h>
 #include <cstdarg>
+
+#ifdef _WIN32
+#define _CRT_SECURE_NO_WARNINGS
+#include <sys/utime.h>
+#include <time.h>
+#include <Windows.h>
+#endif
+
+#ifdef __APPLE__
+#include <sys/_types/_time_t.h>
+#include <xlocale/_time.h>
+#endif
 
 namespace Log{
 
@@ -16,11 +27,6 @@ namespace Log{
 #ifndef WARN
 #define WARN(format, ...) \
     Log::Logger::getInstance()->log(Log::Logger::WARN, __FILE__, __LINE__, format, ##__VA_ARGS__)
-#endif
-
-#ifndef ERROR
-#define ERROR(format, ...) \
-    Log::Logger::getInstance()->log(Log::Logger::ERROR, __FILE__, __LINE__, format, ##__VA_ARGS__)
 #endif
 
 #ifndef FATAL
@@ -39,7 +45,6 @@ namespace Log{
                 DEBUG = 0,
                 INFO,
                 WARN,
-                ERROR,
                 FATAL,
                 LEVEL_COUNT
             };
