@@ -73,6 +73,10 @@ bool VulkanRenderer::Init() {
 void VulkanRenderer::Release(){
     INFO("Release Renderer");
 
+    _VkDevice.destroyRenderPass(_ShadowRenderPass);
+    _VkDevice.destroyPipelineLayout(_ShadowPipelineLayout);
+    _VkDevice.destroyPipeline(_ShadowPipeline);
+
     // compute
     _VkDevice.destroyDescriptorSetLayout(_ComputeSetLayout);
     _VkDevice.destroyPipelineLayout(_ComputePipelineLayout);
@@ -106,6 +110,16 @@ void VulkanRenderer::Release(){
 
     for (auto& frameBuffer : _FrameBuffers) { _VkDevice.destroyFramebuffer(frameBuffer); }
     for (auto& view : _ImageViews) { _VkDevice.destroyImageView(view); }
+    for (auto& shadowImage : _ShadowImages) { 
+        _VkDevice.destroyImage(shadowImage.image); 
+        _VkDevice.free(shadowImage.memory);
+    }
+    for (auto& view : _ShadowImageViews) { _VkDevice.destroyImageView(view); }
+    for (auto& shadowDepthImage : _ShadowDepthImages) { 
+        _VkDevice.destroyImage(shadowDepthImage.image); 
+        _VkDevice.free(shadowDepthImage.memory);
+    }
+    for (auto& view : _ShadowDepthImageViews) { _VkDevice.destroyImageView(view); }
     
     _VkDevice.destroySwapchainKHR(_SwapchainKHR);
     _VkDevice.destroy();
@@ -442,7 +456,10 @@ vk::SubpassDescription VulkanRenderer::CreateShadowMapSubpass(std::vector<vk::At
 void VulkanRenderer::CreateRenderPass() {
     ASSERT(_VkDevice);
     ASSERT(_VkPhyDevice);
-    
+
+    std::vector < vk::AttachmentDescription> attachmentDescs;
+    CreateBaseGraphsicsSubpass(attachmentDescs);
+    CreateShadowMapSubpass(attachmentDescs);
    
 
 }
@@ -1075,14 +1092,6 @@ void VulkanRenderer::InitDescriptors() {
            ASSERT(_Frames[i].globalDescriptor);
         }
 
-       vk::DescriptorSetAllocateInfo imageAllocateInfo;
-       imageAllocateInfo.setDescriptorPool(_DescriptorPool)
-           .setDescriptorSetCount(1)
-           .setSetLayouts(_GlobalSetLayout);
-       if (_VkDevice.allocateDescriptorSets(&imageAllocateInfo, &(_Frames[i].globalDescriptor)) != vk::Result::eSuccess) {
-           ASSERT(&(_Frames[i].globalDescriptor));
-       }
-
        vk::DescriptorImageInfo descImageInfo;
        descImageInfo.setImageLayout(vk::ImageLayout::eColorAttachmentOptimal)
            .setImageView(_ShadowImageViews[i])
@@ -1106,7 +1115,7 @@ void VulkanRenderer::InitDescriptors() {
             _Frames[i].globalDescriptor, &sceneBufferInfo, 1);
 
         vk::WriteDescriptorSet writeSamplerSet = InitWriteDescriptorImage(vk::DescriptorType::eCombinedImageSampler,
-            _Frames[i].globalDescriptor, &descImageInfo, 0);
+            _Frames[i].globalDescriptor, &descImageInfo, 2);
 
         std::vector<vk::WriteDescriptorSet> writeDescSets = {camerWriteSet, sceneWriteSet, writeSamplerSet };
 
