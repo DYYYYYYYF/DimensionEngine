@@ -1343,8 +1343,8 @@ void VulkanRenderer::UpdateUniformBuffer(){
 void VulkanRenderer::UpdateDynamicBuffer(){
 
     _SceneData.fogColor = { 1.0f, 1.0f, 1.0f, 0.7f };
-    _SceneData.fogDistances = { 1.0f, 1.0f, 1.0f, 0.0f };
-    _SceneData.ambientColor = { 1.0f, 0.0f, 0.0f, 0.7f };
+    _SceneData.fogDistances = { 1.0f, 0.0f, 0.0f, 0.0f };
+    _SceneData.ambientColor = { 1.0f, 1.0f, 1.0f, 0.7f };
     _SceneData.ambientDirection = { 1.0f, 1.0f, -1.0f, 0.0f };
     _SceneData.pointLightPos = { -1.0f, 1.0f, -1.0f, 0.0f };
     _SceneData.lightSpecular = { 0.5f, 0.5f, 0.5f, 0.5f };

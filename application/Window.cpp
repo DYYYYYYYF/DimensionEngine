@@ -54,7 +54,7 @@ bool WsiWindow::InitWindow(){
     }
 
     if (_Width <= 0 || _Height <= 0) {
-        ERROR("Invalid with:%d or invalid height:%d !", _Width, _Height);
+        FATAL("Invalid with:%d or invalid height:%d !", _Width, _Height);
     }
 
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
