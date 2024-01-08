@@ -23,7 +23,7 @@ EngineLogger::EngineLogger(){
 #ifdef LEVEL_DEBUG
     LogLevel = Log::Logger::Level::INFO;
 #else
-    LogLevel = Log::Logger::Level::ERROR;
+    LogLevel = Log::Logger::Level::FATAL;
 #endif
 
     Log::Logger::getInstance()->setMaxSize(1024000);
