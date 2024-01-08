@@ -110,6 +110,8 @@ void VulkanRenderer::Release(){
 
     for (auto& frameBuffer : _FrameBuffers) { _VkDevice.destroyFramebuffer(frameBuffer); }
     for (auto& view : _ImageViews) { _VkDevice.destroyImageView(view); }
+
+    for (auto& shadowFrameBuffer : _ShadowFrameBuffers) { _VkDevice.destroyFramebuffer(shadowFrameBuffer); }
     for (auto& shadowImage : _ShadowImages) { 
         _VkDevice.destroyImage(shadowImage.image); 
         _VkDevice.free(shadowImage.memory);
@@ -700,7 +702,8 @@ void VulkanRenderer::DrawPerFrame(RenderObject* first, size_t count, Particals* 
     DrawComputePipeline(partical, partical_count);
 
     vk::Semaphore& waitSemaphore = partical_count > 0 ? computeSemaphore : presentSemaphore;
-    DrawGraphsicsPipeline(first, count, nSwapchainImageIndex, waitSemaphore, renderSemaphore);
+    DrawGraphsicsPipeline(_ShadowRenderPass, first, count, nSwapchainImageIndex, waitSemaphore, renderSemaphore);
+    DrawGraphsicsPipeline(_VkRenderPass, first, count, nSwapchainImageIndex, waitSemaphore, renderSemaphore);
    
     vk::PresentInfoKHR PresentInfo;
     PresentInfo.setSwapchainCount(1)
@@ -716,7 +719,7 @@ void VulkanRenderer::DrawPerFrame(RenderObject* first, size_t count, Particals* 
     _FrameNumber++;
 }
 
-void VulkanRenderer::DrawGraphsicsPipeline(RenderObject* objects, size_t count, int swapchain_index, 
+void VulkanRenderer::DrawGraphsicsPipeline(vk::RenderPass renderpass, RenderObject* objects, size_t count, int swapchain_index, 
     vk::Semaphore& wait_semapore, vk::Semaphore& signal_semaphore){
     if (objects == nullptr || count == 0){
         return;
@@ -752,7 +755,7 @@ void VulkanRenderer::DrawGraphsicsPipeline(RenderObject* objects, size_t count, 
 
     // Renderpass
     vk::RenderPassBeginInfo rpInfo;
-    rpInfo.setRenderPass(_VkRenderPass)
+    rpInfo.setRenderPass(renderpass)
         .setRenderArea(vk::Rect2D({ 0, 0 }, _SupportInfo.extent))
         .setFramebuffer(_FrameBuffers[swapchain_index])
         .setClearValueCount((uint32_t)ClearValues.size())
@@ -1032,7 +1035,7 @@ void VulkanRenderer::InitDescriptors() {
     vk::DescriptorSetLayoutBinding cameraUniformBuffer = 
         InitDescriptorSetLayoutBinding(vk::DescriptorType::eUniformBuffer, vk::ShaderStageFlagBits::eVertex, 0);
     vk::DescriptorSetLayoutBinding shadowBinding = 
-        InitDescriptorSetLayoutBinding(vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eFragment, 0);
+        InitDescriptorSetLayoutBinding(vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eFragment, 3);
     vk::DescriptorSetLayoutBinding sceneDynamicBuffer =
         InitDescriptorSetLayoutBinding(vk::DescriptorType::eUniformBufferDynamic, 
                                        vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment, 1);
@@ -1115,7 +1118,7 @@ void VulkanRenderer::InitDescriptors() {
             _Frames[i].globalDescriptor, &sceneBufferInfo, 1);
 
         vk::WriteDescriptorSet writeSamplerSet = InitWriteDescriptorImage(vk::DescriptorType::eCombinedImageSampler,
-            _Frames[i].globalDescriptor, &descImageInfo, 2);
+            _Frames[i].globalDescriptor, &descImageInfo, 3);
 
         std::vector<vk::WriteDescriptorSet> writeDescSets = {camerWriteSet, sceneWriteSet, writeSamplerSet };
 
@@ -1213,23 +1216,25 @@ void VulkanRenderer::GetVkImageViews() {
     uint32_t height = _SupportInfo.GetWindowHeight();
     vk::Extent3D imageExtent = { width, height, 1 };
 
+    vk::Format depthFormat = FindSupportedFormat({ vk::Format::eD32Sfloat, vk::Format::eD32SfloatS8Uint, vk::Format::eX8D24UnormPack32 },
+        vk::ImageTiling::eOptimal, vk::FormatFeatureFlagBits::eDepthStencilAttachment);
+
     for (size_t i = 0; i < _Images.size(); ++i) {
-        _ShadowImages[i].image = CreateImage(_SupportInfo.format.format, vk::ImageUsageFlagBits::eColorAttachment, imageExtent);
+        _ShadowImages[i].image = CreateImage(_SupportInfo.format.format, vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eColorAttachment, imageExtent);
         ASSERT(_ShadowImages[i].image);
         MemRequiredInfo memInfo = QueryImgReqInfo(_ShadowImages[i].image, vk::MemoryPropertyFlagBits::eDeviceLocal | vk::MemoryPropertyFlagBits::eHostCoherent);
         _ShadowImages[i].memory = AllocateMemory(memInfo);
         ASSERT(_ShadowImages[i].memory);
         _VkDevice.bindImageMemory(_ShadowImages[i].image, _ShadowImages[i].memory, 0);
-
         _ShadowImageViews[i] = CreateImageView(_SupportInfo.format.format, _ShadowImages[i].image, vk::ImageAspectFlagBits::eColor);
 
-        _ShadowDepthImages[i].image = CreateImage(_SupportInfo.format.format, vk::ImageUsageFlagBits::eDepthStencilAttachment, imageExtent);
+        _ShadowDepthImages[i].image = CreateImage(depthFormat, vk::ImageUsageFlagBits::eDepthStencilAttachment, imageExtent);
         ASSERT(_ShadowDepthImages[i].image);
         memInfo = QueryImgReqInfo(_ShadowDepthImages[i].image, vk::MemoryPropertyFlagBits::eDeviceLocal | vk::MemoryPropertyFlagBits::eHostCoherent);
         _ShadowDepthImages[i].memory = AllocateMemory(memInfo);
         ASSERT(_ShadowDepthImages[i].memory);
         _VkDevice.bindImageMemory(_ShadowDepthImages[i].image, _ShadowDepthImages[i].memory, 0);
-        _ShadowDepthImageViews[i] = CreateImageView(_SupportInfo.format.format, _ShadowImages[i].image, vk::ImageAspectFlagBits::eDepth);
+        _ShadowDepthImageViews[i] = CreateImageView(depthFormat, _ShadowDepthImages[i].image, vk::ImageAspectFlagBits::eDepth);
     }
 }
 
@@ -1803,6 +1808,9 @@ void VulkanRenderer::CreateDrawLinePipeline(Material& mat, const char* vert_shad
 
     mat.pipeline = _DrawLinePipeline;
     mat.pipelineLayout = _PipelineLayout;
+
+    _VkDevice.destroyShaderModule(vertShader);
+    _VkDevice.destroyShaderModule(fragShader);
 
     vertShader = CreateShaderModule("../../shader/glsl/shadow_vert.spv");
     fragShader = CreateShaderModule("../../shader/glsl/shadow_frag.spv");
