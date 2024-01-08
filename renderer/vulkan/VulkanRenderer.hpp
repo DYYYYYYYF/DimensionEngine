@@ -71,6 +71,9 @@ namespace renderer {
         void CreateDrawLinePipeline(Material& mat, const char* vert_shader, const char* frag_shader);
         void CreateComputePipeline(Material& mat, const char* comp_shader);
 
+        vk::SubpassDescription CreateBaseGraphsicsSubpass(std::vector<vk::AttachmentDescription>& attachments);
+        vk::SubpassDescription CreateShadowMapSubpass(std::vector<vk::AttachmentDescription>& attachments);
+
         void ReleaseBuffer(std::vector<Particals> particals){
             for (auto& partical : particals){
                 _VkDevice.freeMemory(partical.writeStorageBuffer.memory);
@@ -217,12 +220,16 @@ namespace renderer {
         std::vector<vk::Framebuffer> _FrameBuffers;
 
         vk::RenderPass _VkRenderPass;
+        vk::RenderPass _ShadowRenderPass;
         vk::Pipeline _Pipeline;
         vk::Pipeline _DrawLinePipeline;
         vk::PipelineLayout _PipelineLayout;
         
         vk::Pipeline _ComputePipeline;
         vk::PipelineLayout _ComputePipelineLayout;
+        
+        vk::Pipeline _ShadowPipeline;
+        vk::PipelineLayout _ShadowPipelineLayout;
 
         // Depth Image
         vk::ImageView _DepthImageView;
@@ -243,6 +250,13 @@ namespace renderer {
         
         // Texture
         vk::Sampler _TextureSampler;
+
+        // Shadow
+        std::vector <AllocatedImage> _ShadowImages;
+        std::vector<vk::ImageView> _ShadowImageViews;
+        std::vector <AllocatedImage> _ShadowDepthImages;
+        std::vector<vk::ImageView> _ShadowDepthImageViews;
+        std::vector<vk::Framebuffer> _ShadowFrameBuffers;
 
     private:
         bool _bEnabledTexture;
