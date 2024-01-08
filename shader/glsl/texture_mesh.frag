@@ -17,6 +17,7 @@ layout (set = 0, binding = 1) uniform SceneData{
     vec4 ambientDirection; //w for sun power
 
     vec4 pointLightPos;
+    vec4 pointLightCol;
     vec4 lightSpecular;
 } sceneData;
 
@@ -30,24 +31,25 @@ void main(){
     vec3 vVeiwDir = normalize(viewPos - vPosition);
     vec3 lightDir = normalize(sceneData.pointLightPos.xyz - vPosition);
     vec3 vAmbientColor = sceneData.ambientColor.xyz;
+    vec3 vPointLightCol = sceneData.pointLightCol.xyz;;
 
     // Ambient
-    vec3 ambient = sceneData.fogColor.xyz * sceneData.fogColor.w;
+    vec3 ambient = vAmbientColor * sceneData.ambientColor.w;
 
     // Diffuse
     float diff = max(dot(normal, lightDir), 0.0f);
-    vec3 diffuse = diff * vAmbientColor;
+    vec3 diffuse = diff * vPointLightCol;
 
     // Specular
-    vec3 reflectDir = reflect(-lightDir, vNormal);
-    float spec = pow(max(dot(vVeiwDir, reflectDir), 0.0f), 32.0f);
-    vec3 sepcular = spec * vAmbientColor * sceneData.lightSpecular.w;
+    vec3 halfwayDir = normalize(lightDir + vVeiwDir);   // B-Phone model
+    float spec = pow(max(dot(vNormal, halfwayDir), 0.0f), 32.0f);
+    vec3 sepcular = spec * vPointLightCol * sceneData.lightSpecular.w;
 
     // Ligth attenuation (depend on distance)
     float distance = length(sceneData.pointLightPos.xyz - vPosition);    
     float attenuation = 1.0f / float((m_constant + m_linear * distance) + m_quadratic * (distance * distance));
 
     // Blend
-    vec3 alpha = diffuse + ambient + sepcular;
-    outFragColor = texture(tex1, texCoord) * vec4(alpha, 1.0f) *  attenuation;
+    vec3 alpha = (diffuse + sepcular) * attenuation + ambient;
+    outFragColor = texture(tex1, texCoord) * vec4(alpha, 1.0f);
 }
