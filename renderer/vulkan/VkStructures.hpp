@@ -56,6 +56,7 @@ namespace renderer{
 
         // Point light
         Vector4 pointLightPos;
+        Vector4 pointLightCol;
         Vector4 lightSpecular;
     };
 
