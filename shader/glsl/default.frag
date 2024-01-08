@@ -42,7 +42,7 @@ void main(){
     // vec3 reflectDir = reflect(-lightDir, vNormal);   // Phone model
     vec3 halfwayDir = normalize(lightDir + vVeiwDir);   // B-Phone model
     // float spec = pow(max(dot(vVeiwDir, vNormal), 0.0f), 32.0f);
-    float spec = pow(max(dot(vNormal, halfwayDir), 0.0f), 32.0f);
+    float spec = pow(max(dot(vNormal, halfwayDir), 0.0f), 1.0f);
     vec3 sepcular = spec * vPointLightCol * sceneData.lightSpecular.w;
 
     // Ligth attenuation (depend on distance)
