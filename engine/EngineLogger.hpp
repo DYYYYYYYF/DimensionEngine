@@ -5,13 +5,13 @@
 #ifdef LEVEL_DEBUG
 #define ASSERT(expr) \
     if(!(expr)) { \
-        FATAL(#expr "is null!"); \
+        FATAL(#expr " is null!"); \
         exit(-1); \
 }
 #else
 #define ASSERT(expr) \
     if(!(expr)) { \
-        FATAL(#expr "is null!"); \
+        FATAL(#expr " is null!"); \
         exit(-1); \
 }
 #endif //ifdef DEBUG
