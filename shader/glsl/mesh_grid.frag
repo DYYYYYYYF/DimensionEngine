@@ -1,7 +1,9 @@
 #version 450
 
 layout (location = 0) in vec3 inFragColor;
-layout (location = 1) in vec2 TexCoord;
+layout (location = 1) in vec3 inPosition;
+layout (location = 2) in vec2 TexCoord;
+
 layout (set = 1, binding = 0) uniform sampler2D tex1;
 
 layout (location = 0) out vec4 outFragColor;
@@ -24,7 +26,7 @@ float AlphaTest(float a, float b){
 
 void main(){
 
-   vec2 uv = TexCoord * 30;
+   vec2 uv = TexCoord * 30000;
 
    vec2 derivative = fwidth(uv);
 
@@ -38,8 +40,11 @@ void main(){
    float minVal = min(uv.x, uv.y);
    float alpha = 1 - AlphaTest(1.0, minVal);
 
-   vec3 color = vec3(1.0f, 1.0f, 1.0f);
+   vec3 color = vec3(0.8f, 0.8f, 0.8f);
    color = inFragColor * alpha;
+   
+   float dis = 1 - fwidth(inPosition.z);
+   color *= dis;
 
-   outFragColor = vec4(color, alpha);
+   outFragColor = vec4(color, alpha * dis);
 }
