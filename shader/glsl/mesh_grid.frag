@@ -26,7 +26,7 @@ float AlphaTest(float a, float b){
 
 void main(){
 
-   vec2 uv = TexCoord * 30000;
+   vec2 uv = TexCoord * 30;
 
    vec2 derivative = fwidth(uv);
 
@@ -41,10 +41,11 @@ void main(){
    float alpha = 1 - AlphaTest(1.0, minVal);
 
    vec3 color = vec3(0.8f, 0.8f, 0.8f);
-   color = inFragColor * alpha;
+   color = color * alpha;
+   outFragColor = vec4(color, alpha);
    
-   float dis = 1 - fwidth(inPosition.z);
-   color *= dis;
+   // float dis = 1 - fwidth(inPosition.z);
+   // color *= dis;
 
-   outFragColor = vec4(color, alpha * dis);
+   // outFragColor = vec4(color, alpha * dis);
 }
