@@ -24,9 +24,15 @@ bool Renderer::Init(){
     // Default material
     CreateMaterial("Default", "shader/glsl/default_vert.spv", "shader/glsl/default_frag.spv");
    
+#ifdef INFINITE_GRID
+    Material mat;
+    CreatePipeline(mat, "shader/glsl/infinite_mesh_grid_vert.spv", "shader/glsl/infinite_mesh_grid_frag.spv", true);
+    AddMaterial("Grid", mat);
+#else
     Material mat;
     CreatePipeline(mat, "shader/glsl/mesh_grid_vert.spv", "shader/glsl/mesh_grid_frag.spv", true);
     AddMaterial("Grid", mat);
+#endif  //INFINITE_GRID
 
     CreateDrawlinePipeline(mat, "shader/glsl/default_vert.spv", "shader/glsl/default_frag.spv");
     AddMaterial("Line", mat);
