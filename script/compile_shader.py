@@ -33,8 +33,10 @@ for root, dirs, files in os.walk(filePath):
     for file in files:
         filename = os.path.splitext(file)
         if filename[1] != ".spv" and filename[1] != ".exe":
-            shader_type = filename[1].split('.')[1]
+            if filename[1] == '': 
+                continue
 
+            shader_type = filename[1].split('.')[1]
             if filename[1] != ".hlsl":
                 ## Record compile command
                 cmd = compile_command + filePath + "glsl/" + file + " -o " + filePath + "glsl/" + filename[0] + "_" + shader_type + ".spv"
