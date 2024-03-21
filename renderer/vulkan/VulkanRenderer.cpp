@@ -5,7 +5,7 @@
 using namespace renderer;
 
 VulkanRenderer::VulkanRenderer() {
-    INFO("Use Vulkan Renderer.");
+    CoreLog("Use Vulkan Renderer.");
     ResetProp();
 }
 
@@ -42,7 +42,7 @@ void VulkanRenderer::ResetProp() {
 }
 
 bool VulkanRenderer::Init() { 
-    INFO("Init Renderer.");
+    CoreLog("Init Renderer.");
 
     // Fundation
     CreateInstance();
@@ -68,7 +68,7 @@ bool VulkanRenderer::Init() {
 }
 
 void VulkanRenderer::Release(){
-    INFO("Release Renderer");
+    CoreLog("Release Renderer");
 
     // compute
     _VkDevice.destroyDescriptorSetLayout(_ComputeSetLayout);
@@ -114,7 +114,7 @@ void VulkanRenderer::Release(){
 void VulkanRenderer::InitWindow(){
     _Window =  WsiWindow::GetInstance()->GetWindow();
     if (!_Window) {
-        DEBUG("Error Window.");
+        CoreLog("Error Window.");
         exit(-1);
     }
 }
@@ -197,7 +197,7 @@ void VulkanRenderer::CreateSurface(){
 
     VkSurfaceKHR surface;
     if (glfwCreateWindowSurface(_VkInstance, _Window, nullptr, &surface) != VK_SUCCESS){
-        INFO("Create surface failed.");
+        CoreLog("Create surface failed.");
         return;
     }
 
@@ -207,7 +207,7 @@ void VulkanRenderer::CreateSurface(){
 
 void VulkanRenderer::CreateDevice(){
     if (!QueryQueueFamilyProp()){
-        INFO("Query Queue Family properties failed.");
+        CoreLog("Query Queue Family properties failed.");
         return;
     }
 
@@ -500,7 +500,7 @@ void VulkanRenderer::CreatePipeline(Material& mat, const char* vert_shader, cons
         vertShader = CreateShaderModule(vert_shader);
         fragShader = CreateShaderModule(frag_shader);
     } catch(std::exception e){
-        WARN("Create Pipeline failed! %s or %s is invalid direction!", vert_shader, frag_shader);
+        CoreLog("Create Pipeline failed! %s or %s is invalid direction!", vert_shader, frag_shader);
         return;
     }
 
@@ -677,7 +677,7 @@ void VulkanRenderer::DrawGraphsicsPipeline(RenderObject* objects, size_t count, 
 
     if (_VkDevice.waitForFences(GetCurrentFrame().renderFence, true, 
         std::numeric_limits<uint64_t>::max()) != vk::Result::eSuccess) {
-        FATAL("ERROR WAIT FOR RENDER FENCES");
+        CoreLog("ERROR WAIT FOR RENDER FENCES");
         return;
     }
 }
@@ -725,7 +725,7 @@ void VulkanRenderer::DrawComputePipeline(Particals* particals, size_t partical_c
 
     if (_VkDevice.waitForFences(GetCurrentFrame().computeFence, true,
         std::numeric_limits<uint64_t>::max()) != vk::Result::eSuccess) {
-        FATAL("ERROR WAIT FOR COMPUTE FENCES");
+        CoreLog("ERROR WAIT FOR COMPUTE FENCES");
         return;
     }
 
@@ -853,7 +853,7 @@ void VulkanRenderer::BindBufferDescriptor(Material* mat, Particals* partical) {
     // Compute storage buffer
     const size_t computeStorageBufferSize = partical->GetParticalCount() * sizeof(ParticalData);
     if (computeStorageBufferSize == 0) {
-        WARN("Buffer size is 0");
+        CoreLog("Buffer size is 0");
         return;
     }
 
@@ -1251,7 +1251,7 @@ vk::Format VulkanRenderer::FindSupportedFormat(const std::vector<vk::Format>& ca
             return format;
         }
         else {
-            WARN("Find Supported Format Failed...");
+            CoreLog("Find Supported Format Failed...");
         }
     }
 
@@ -1379,12 +1379,12 @@ void VulkanRenderer::ImmediateSubmit(std::function<void(vk::CommandBuffer cmd)>&
         .setCommandBuffers(cmd)
         .setWaitDstStageMask(nullptr);
     if (_Queue.GraphicsQueue.submit(1, &submit, _UploadContext.uploadFence) != vk::Result::eSuccess){
-        FATAL("Submit command failed");
+        CoreLog("Submit command failed");
     }
 
     if (_VkDevice.waitForFences(_UploadContext.uploadFence, true, 
         std::numeric_limits<uint64_t>::max()) != vk::Result::eSuccess) {
-        FATAL("ERROR WAIT FOR FENCES");
+        CoreLog("ERROR WAIT FOR FENCES");
         return;
     }
 
@@ -1591,7 +1591,7 @@ vk::ImageView VulkanRenderer::CreateImageView(vk::Format format, vk::Image image
 }
 
 void VulkanRenderer::CreateDrawLinePipeline(Material& mat, const char* vert_shader, const char* frag_shader) {
-    INFO("Create Drawline Pipeline");
+    CoreLog("Create Drawline Pipeline");
 
     PipelineBuilder pipelineBuilder;
 
@@ -1665,13 +1665,13 @@ void VulkanRenderer::CreateDrawLinePipeline(Material& mat, const char* vert_shad
 }
 
 void VulkanRenderer::CreateComputePipeline(Material& mat, const char* comp_shader) {
-    INFO("Create Compute Pipeline.");
+    CoreLog("Create Compute Pipeline.");
 
     vk::ShaderModule computeShader;
     try{
         computeShader = CreateShaderModule(comp_shader);
     } catch(std::exception e){
-        WARN("Create Compute Pipeline failed!");
+        CoreLog("Create Compute Pipeline failed!");
         return;
     }
 
@@ -1690,7 +1690,7 @@ void VulkanRenderer::CreateComputePipeline(Material& mat, const char* comp_shade
 
     auto res = _VkDevice.createComputePipeline(nullptr, info);
     if (res.result != vk::Result::eSuccess) {
-        WARN("Create compute pipeline failed.");
+        CoreLog("Create compute pipeline failed.");
     }
 
     mat.pipeline = res.value;

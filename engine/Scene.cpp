@@ -50,7 +50,7 @@ void Scene::InitScene(ConfigFile* config) {
 	partical.SetMaterial(((Renderer*)_Renderer)->GetMaterial("Compute"));
 	(((Renderer*)_Renderer)->LoadPartical(partical));
 
-	INFO("Inited Scene.");
+	CoreLog("Inited Scene.");
 }
 
 void Scene::Update() {

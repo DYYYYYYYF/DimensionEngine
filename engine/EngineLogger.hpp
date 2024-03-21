@@ -5,16 +5,18 @@
 #ifdef LEVEL_DEBUG
 #define ASSERT(expr) \
     if(!(expr)) { \
-        FATAL(#expr "is null!"); \
+        UL_DEBUG(#expr "is null!"); \
         exit(-1); \
 }
 #else
 #define ASSERT(expr) \
     if(!(expr)) { \
-        FATAL(#expr "is null!"); \
+        UL_FATAL(#expr "is null!"); \
         exit(-1); \
 }
 #endif //ifdef DEBUG
+
+#define CoreLog UL_INFO
 
 class EngineLogger{
 public:

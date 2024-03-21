@@ -11,7 +11,6 @@
 #include "VkStructures.hpp"
 #include "../interface/IRendererImpl.hpp"
 #include "../../application/Window.hpp"
-#include "../../application/EngineUtils.hpp"
 #include "../../engine/EngineStructures.hpp"
 
 namespace renderer {

@@ -49,12 +49,12 @@ WsiWindow::~WsiWindow(){
 bool WsiWindow::InitWindow(){
 
     if (glfwInit() != GLFW_TRUE) {
-        FATAL("Create glfw window faild.");
+        CoreLog("Create glfw window faild.");
         return false;
     }
 
     if (_Width <= 0 || _Height <= 0) {
-        FATAL("Invalid with:%d or invalid height:%d !", _Width, _Height);
+        CoreLog("Invalid with:%d or invalid height:%d !", _Width, _Height);
     }
 
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);

@@ -87,6 +87,7 @@ message("-- stb_master path: ${STB_MASTER_DIR}")
 message("-- TinyObjLoader Path: ${TINY_OBJ_LOADER_DIR}")
 message("-- UncleDon-Logger Path: ${UD_LOGGER_DIR}")
 
+add_subdirectory(3rd)
 add_subdirectory(application)
 add_subdirectory(renderer)
 add_subdirectory(engine)

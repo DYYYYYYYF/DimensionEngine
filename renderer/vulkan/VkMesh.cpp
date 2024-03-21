@@ -44,11 +44,11 @@ bool Mesh::LoadFromObj(const char* filename){
 
     try {
         if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, filename)) {
-            WARN("Load %s failed, Error file path!", filename);
+            CoreLog("Load %s failed, Error file path!", filename);
             return false;
         }
     } catch (const std::exception& e) {
-        WARN("Load %s failed, Error file path!   %s", filename, e.what());
+        CoreLog("Load %s failed, Error file path!   %s", filename, e.what());
         return false;
     }
 
@@ -101,7 +101,7 @@ bool Mesh::LoadFromObj(const char* filename){
         }
     }
 
-    INFO("Loaded %s", filename);
+    CoreLog("Loaded %s", filename);
     return true;
 }
 

@@ -6,7 +6,7 @@ using namespace renderer;
 Renderer::Renderer(){
     _RendererImpl = new VulkanRenderer();
     if (_RendererImpl == nullptr) {
-        FATAL("Create Renderer failed.");
+        CoreLog("Create Renderer failed.");
     }
 
     _ConfigFile = nullptr;
@@ -260,7 +260,7 @@ void Renderer::LoadTriangleMesh() {
 
 	LoadMesh("Triangle", triganleMesh);
 
-	INFO("Loaded Triangle");
+	CoreLog("Loaded Triangle");
 }
 
 void Renderer::DrawPoint(Vector3 position, Vector3 color) {
@@ -280,13 +280,13 @@ void Renderer::DrawPoint(Vector3 position, Vector3 color) {
     LoadMesh("Point", pointMesh);
     Mesh* mesh = GetMesh("Point");
     if (mesh == nullptr) {
-        WARN("Draw rectangle failed! Mesh %s is nullptr!", "Rectangle");
+        CoreLog("Draw rectangle failed! Mesh %s is nullptr!", "Rectangle");
         return;
     }
 
     Material* material = GetMaterial("Point");
     if (material == nullptr) {
-        WARN("Draw rectangle failed! Material %s is nullptr!", material->material_name.data());
+        CoreLog("Draw rectangle failed! Material %s is nullptr!", material->material_name.data());
         return;
     }
 
@@ -321,13 +321,13 @@ void Renderer::DrawLine(Vector3 p1, Vector3 p2, Vector3 color) {
 
     Mesh* mesh = GetMesh(name.data());
     if (mesh == nullptr) {
-        WARN("Draw Line failed! Mesh %s is nullptr!", name.data());
+        CoreLog("Draw Line failed! Mesh %s is nullptr!", name.data());
         return;
     }
 
     Material* material = GetMaterial("Line");
     if (material == nullptr) {
-        WARN("Draw Line failed! Material %s is nullptr!", material->material_name.data());
+        CoreLog("Draw Line failed! Material %s is nullptr!", material->material_name.data());
         return;
     }
 
@@ -391,13 +391,13 @@ void Renderer::DrawRectangle(Vector3 position, Vector3 half_extent,
 
     Mesh* mesh = GetMesh(name.data());
     if (mesh == nullptr) {
-        WARN("Draw rectangle failed! Mesh %s is nullptr!", name.data());
+        CoreLog("Draw rectangle failed! Mesh Rectangle is nullptr!");
         return;
     }
 
     Material* material = is_fill ? GetMaterial("Default") : GetMaterial("Line");
     if (material == nullptr) {
-        WARN("Draw rectangle failed! Material %s is nullptr!", material->material_name.data());
+        CoreLog("Draw rectangle failed! Material Default is nullptr!", material->material_name.data());
         return;
     }
 
@@ -449,13 +449,13 @@ void Renderer::DrawCircle(Vector3 position, float radius, Vector3 color,
     LoadMesh(name.data(), circleMesh);
     Mesh* mesh = GetMesh(name.data());
     if (mesh == nullptr) {
-        WARN("Draw rectangle failed! Mesh %s is nullptr!", name.data());
+        CoreLog("Draw rectangle failed! Mesh %s is nullptr!", name.data());
         return;
     }
 
     Material* material = is_fill ? GetMaterial("Default") : GetMaterial("Line");
     if (material == nullptr) {
-        WARN("Draw rectangle failed! Material %s is nullptr!", material->material_name.data());
+        CoreLog("Draw rectangle failed! Material %s is nullptr!", material->material_name.data());
         return;
     }
 

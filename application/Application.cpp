@@ -45,7 +45,7 @@ bool Application::Init(){
 void Application::Run(){
 
     if (!_window){
-        DEBUG("_window is null.");
+        CoreLog("_window is null.");
         Close();
         return;
     }

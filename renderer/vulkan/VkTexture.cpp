@@ -11,7 +11,7 @@ bool renderer::LoadImageFromFile(VulkanRenderer& renderer, const char* file, All
     stbi_uc* pixels = stbi_load(file, &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
 
     if (!pixels) {
-        FATAL("Failed to load texture file");
+        CoreLog("Failed to load texture file");
         return false;
     }
 
@@ -93,6 +93,6 @@ bool renderer::LoadImageFromFile(VulkanRenderer& renderer, const char* file, All
     renderer._VkDevice.destroyBuffer(tempBuf);
     renderer._VkDevice.freeMemory(tempMem);
 
-    INFO("Loaded %s", file);
+    CoreLog("Loaded %s", file);
     return true;
 }

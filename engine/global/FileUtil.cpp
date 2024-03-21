@@ -10,7 +10,7 @@ bool FileUtil::LoadFile(const char* file, std::ios::openmode mode) {
 	m_FileStream.open(file, mode);
 
 	if (!m_FileStream.is_open()) {
-		WARN("Open %s failed.", file);
+		CoreLog("Open %s failed.", file);
 		return false;
 	}
 	

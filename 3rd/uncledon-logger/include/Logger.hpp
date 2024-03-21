@@ -18,23 +18,28 @@
 
 namespace Log{
 
-#ifndef DEBUG
-#define DEBUG(format, ...) \
+#ifndef UL_DEBUG
+#define UL_DEBUG(format, ...) \
     Log::Logger::getInstance()->log(Log::Logger::DEBUG, __FILE__, __LINE__, format, ##__VA_ARGS__)
-#endif
+#endif  //UL_DEBUG
 
-#ifndef WARN
-#define WARN(format, ...) \
+#ifndef UL_WARN
+#define UL_WARN(format, ...) \
     Log::Logger::getInstance()->log(Log::Logger::WARN, __FILE__, __LINE__, format, ##__VA_ARGS__)
 #endif
 
-#ifndef FATAL
-#define FATAL(format, ...) \
+#ifndef UL_ERROR
+#define UL_ERROR(format, ...) \
+    Log::Logger::getInstance()->log(Log::Logger::ERROR, __FILE__, __LINE__, format, ##__VA_ARGS__)
+#endif
+
+#ifndef UL_FATAL
+#define UL_FATAL(format, ...) \
     Log::Logger::getInstance()->log(Log::Logger::FATAL, __FILE__, __LINE__, format, ##__VA_ARGS__)
 #endif
 
-#ifndef INFO
-#define INFO(format, ...) \
+#ifndef UL_INFO
+#define UL_INFO(format, ...) \
     Log::Logger::getInstance()->log(Log::Logger::INFO, __FILE__, __LINE__, format, ##__VA_ARGS__)
 #endif
 
@@ -44,6 +49,7 @@ namespace Log{
                 DEBUG = 0,
                 INFO,
                 WARN,
+                ERROR,
                 FATAL,
                 LEVEL_COUNT
             };
