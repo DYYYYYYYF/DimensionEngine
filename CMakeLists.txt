@@ -18,12 +18,10 @@ if (NOT CMAKE_BUILD_TYPE)
  endif()
 
 if (NOT LOG_LEVEL)
-    if (CMAKE_BUILD_TYPE STREQUAL "Release")
-        set(LOG_LEVEL "ERROR")
-        add_definitions(-DLEVEL_FATAL -DLEVEL_ERROR)
-    else()
+    if (CMAKE_BUILD_TYPE STREQUAL "DEBUG")
         set(LOG_LEVEL "INFO")
-        add_definitions(-DLEVEL_INFO -DLEVEL_DEBUG -DLEVEL_WARN -DLEVEL_FATAL -DLEVEL_ERROR)
+    else()
+        set(LOG_LEVEL "ERROR")
     endif()
 endif()
 
@@ -73,12 +71,7 @@ elseif(${WIN32})
     include_directories(${GLFW_INCLUDE_DIRS} ${STB_MASTER_DIR} ${Vulkan_INCLUDE_DIRS} ${TINY_OBJ_LOADER_DIR} 
         ${STB_MASTER_DIR} ${GLFW_LIBRARY_DIRS} ${UD_LOGGER_DIR}/include ./imgui)
 
-    if (${CMAKE_BUILD_TYPE} STREQUAL "Release")
-        link_directories( ${UD_LOGGER_DIR}/lib/Windows/release)
-    else()
-        link_directories( ${UD_LOGGER_DIR}/lib/Windows/debug)
-    endif()
-
+    link_directories(${UD_LOGGER_DIR}/lib/Windows/${CMAKE_BUILD_TYPE})
 endif()
 
 message("-- Include GLFW DIR: ${GLFW_INCLUDE_DIRS}")
