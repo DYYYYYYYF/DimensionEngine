@@ -21,15 +21,15 @@ EngineLogger::EngineLogger(){
 
     Log::Logger::Level LogLevel;
 #ifdef LEVEL_DEBUG
-    LogLevel = Log::Logger::Level::INFO;
+    LogLevel = Log::Logger::Level::DEBUG;
 #else
-    LogLevel = Log::Logger::Level::FATAL;
+    LogLevel = Log::Logger::Level::INFO;
 #endif
 
     Log::Logger::getInstance()->setMaxSize(1024000);
     Log::Logger::getInstance()->setLevel(LogLevel);
 
-    UL_INFO("Logger Init Success.");
-    UL_INFO("Mode: Debug.");
+    CoreLog("Logger Init Success.");
+    CoreLog("Mode: %s.", LogLevel == Log::Logger::Level::DEBUG ? "Debug" : "Info");
 
 }
