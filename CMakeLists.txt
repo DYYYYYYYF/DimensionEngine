@@ -18,7 +18,7 @@ if (NOT CMAKE_BUILD_TYPE)
  endif()
 
 if (NOT LOG_LEVEL)
-    if (CMAKE_BUILD_TYPE STREQUAL "DEBUG")
+    if (CMAKE_BUILD_TYPE STREQUAL "Debug")
         set(LOG_LEVEL "INFO")
     else()
         set(LOG_LEVEL "ERROR")
