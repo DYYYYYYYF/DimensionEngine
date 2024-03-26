@@ -39,6 +39,8 @@ void VulkanRenderer::ResetProp() {
     // Properties
     _bEnabledTexture = false;
     _bEnabledSampleShading = true;
+
+    _DestructionFunctions = std::vector<std::function<void()>>(0);
 }
 
 bool VulkanRenderer::Init() { 
@@ -53,7 +55,11 @@ bool VulkanRenderer::Init() {
     CreateSwapchain();
     GetVkImages();
     GetVkImageViews();
+#ifndef WITH_DELAY_RENDER
     CreateRenderPass();
+#else
+    CreateDelayRenderPass();
+#endif
     CreateCmdPool();
     AllocateFrameCmdBuffer();
     CreateDepthImage();
@@ -69,6 +75,10 @@ bool VulkanRenderer::Init() {
 
 void VulkanRenderer::Release(){
     CoreLog("Release Renderer");
+
+    for (auto& DestructionFunction : _DestructionFunctions) {
+        DestructionFunction();
+    }
 
     // compute
     _VkDevice.destroyDescriptorSetLayout(_ComputeSetLayout);
@@ -364,6 +374,135 @@ void VulkanRenderer::CreateRenderPass() {
     ASSERT(_VkRenderPass);
 }
 
+void VulkanRenderer::CreateDelayRenderPass() {
+    ASSERT(_VkDevice);
+    ASSERT(_VkPhyDevice);
+
+    //颜色附件
+    std::array<vk::AttachmentDescription, 6> attchmentDescs;
+    vk::AttachmentDescription attchmentDesc;
+    attchmentDescs[0].setSamples(vk::SampleCountFlagBits::e1)
+        .setLoadOp(vk::AttachmentLoadOp::eLoad)
+        .setStoreOp(vk::AttachmentStoreOp::eStore)
+        .setStencilLoadOp(vk::AttachmentLoadOp::eDontCare)
+        .setStencilStoreOp(vk::AttachmentStoreOp::eDontCare)
+        .setFormat(_SupportInfo.format.format)
+        .setInitialLayout(vk::ImageLayout::eUndefined)
+        .setFinalLayout(vk::ImageLayout::ePresentSrcKHR);
+
+    attchmentDescs[1].setSamples(vk::SampleCountFlagBits::e1)
+        .setLoadOp(vk::AttachmentLoadOp::eClear)
+        .setStoreOp(vk::AttachmentStoreOp::eStore)
+        .setStencilLoadOp(vk::AttachmentLoadOp::eDontCare)
+        .setStencilStoreOp(vk::AttachmentStoreOp::eDontCare)
+        .setFormat(_SupportInfo.format.format)
+        .setInitialLayout(vk::ImageLayout::eUndefined)
+        .setFinalLayout(vk::ImageLayout::eColorAttachmentOptimal);
+
+    attchmentDescs[2].setSamples(vk::SampleCountFlagBits::e1)
+        .setLoadOp(vk::AttachmentLoadOp::eClear)
+        .setStoreOp(vk::AttachmentStoreOp::eStore)
+        .setStencilLoadOp(vk::AttachmentLoadOp::eDontCare)
+        .setStencilStoreOp(vk::AttachmentStoreOp::eDontCare)
+        .setFormat(_SupportInfo.format.format)
+        .setInitialLayout(vk::ImageLayout::eUndefined)
+        .setFinalLayout(vk::ImageLayout::eColorAttachmentOptimal);
+
+    attchmentDescs[3].setSamples(vk::SampleCountFlagBits::e1)
+        .setLoadOp(vk::AttachmentLoadOp::eClear)
+        .setStoreOp(vk::AttachmentStoreOp::eStore)
+        .setStencilLoadOp(vk::AttachmentLoadOp::eDontCare)
+        .setStencilStoreOp(vk::AttachmentStoreOp::eDontCare)
+        .setFormat(_SupportInfo.format.format)
+        .setInitialLayout(vk::ImageLayout::eUndefined)
+        .setFinalLayout(vk::ImageLayout::eColorAttachmentOptimal);
+
+    attchmentDescs[4].setSamples(vk::SampleCountFlagBits::e1)
+        .setLoadOp(vk::AttachmentLoadOp::eClear)
+        .setStoreOp(vk::AttachmentStoreOp::eStore)
+        .setStencilLoadOp(vk::AttachmentLoadOp::eDontCare)
+        .setStencilStoreOp(vk::AttachmentStoreOp::eDontCare)
+        .setFormat(_SupportInfo.format.format)
+        .setInitialLayout(vk::ImageLayout::eUndefined)
+        .setFinalLayout(vk::ImageLayout::eColorAttachmentOptimal);
+
+    //深度附件
+    vk::Format depthFormat = FindSupportedFormat({ vk::Format::eD32Sfloat, vk::Format::eD32SfloatS8Uint, vk::Format::eX8D24UnormPack32 },
+        vk::ImageTiling::eOptimal, vk::FormatFeatureFlagBits::eDepthStencilAttachment);
+    attchmentDescs[5].setFormat(depthFormat)
+        .setSamples(vk::SampleCountFlagBits::e1)
+        .setLoadOp(vk::AttachmentLoadOp::eClear)
+        .setStoreOp(vk::AttachmentStoreOp::eDontCare)
+        .setStencilLoadOp(vk::AttachmentLoadOp::eDontCare)
+        .setStencilStoreOp(vk::AttachmentStoreOp::eDontCare)
+        .setInitialLayout(vk::ImageLayout::eUndefined)
+        .setFinalLayout(vk::ImageLayout::eDepthReadOnlyStencilAttachmentOptimal);
+
+    std::array<vk::AttachmentReference, 4> colorReferences;
+    colorReferences[0].setAttachment(1);
+    colorReferences[0].setLayout(vk::ImageLayout::eColorAttachmentOptimal);
+    colorReferences[1].setAttachment(2);
+    colorReferences[1].setLayout(vk::ImageLayout::eColorAttachmentOptimal);
+    colorReferences[2].setAttachment(3);
+    colorReferences[2].setLayout(vk::ImageLayout::eColorAttachmentOptimal);
+    colorReferences[3].setAttachment(4);
+    colorReferences[3].setLayout(vk::ImageLayout::eColorAttachmentOptimal);
+
+    std::array<vk::AttachmentReference, 5> inputReferences;
+    inputReferences[0].setAttachment(1);
+    inputReferences[0].setLayout(vk::ImageLayout::eShaderReadOnlyOptimal);
+    inputReferences[1].setAttachment(2);
+    inputReferences[1].setLayout(vk::ImageLayout::eShaderReadOnlyOptimal);
+    inputReferences[2].setAttachment(3);
+    inputReferences[2].setLayout(vk::ImageLayout::eShaderReadOnlyOptimal);
+    inputReferences[3].setAttachment(4);
+    inputReferences[3].setLayout(vk::ImageLayout::eShaderReadOnlyOptimal);
+    inputReferences[4].setAttachment(5);
+    inputReferences[4].setLayout(vk::ImageLayout::eShaderReadOnlyOptimal);
+
+    vk::AttachmentReference depthRef;
+    depthRef.setAttachment(5)
+        .setLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal);
+
+    vk::AttachmentReference renderTargetRef;
+    renderTargetRef.setAttachment(0)
+        .setLayout(vk::ImageLayout::eColorAttachmentOptimal);
+
+    std::array<vk::SubpassDescription, 2> subpassDesc;
+    subpassDesc[0].setColorAttachmentCount((uint32_t)colorReferences.size());
+    subpassDesc[0].setPColorAttachments(colorReferences.data());
+    subpassDesc[0].setPDepthStencilAttachment(&depthRef);
+    subpassDesc[0].setPipelineBindPoint(vk::PipelineBindPoint::eGraphics);
+
+    subpassDesc[1].setColorAttachmentCount(1);
+    subpassDesc[1].setPColorAttachments(&renderTargetRef);
+    subpassDesc[1].setInputAttachmentCount((uint32_t)inputReferences.size());
+    subpassDesc[1].setInputAttachments(inputReferences);
+    subpassDesc[1].setPipelineBindPoint(vk::PipelineBindPoint::eGraphics);
+
+    std::array<vk::SubpassDependency, 1> subpassDependecies;
+    subpassDependecies[0].setSrcSubpass(0);
+    subpassDependecies[0].setSrcStageMask(vk::PipelineStageFlagBits::eColorAttachmentOutput);
+    subpassDependecies[0].setSrcAccessMask(vk::AccessFlagBits::eColorAttachmentWrite);
+    subpassDependecies[0].setDstSubpass(1);
+    subpassDependecies[0].setDstStageMask(vk::PipelineStageFlagBits::eFragmentShader);
+    subpassDependecies[0].setDstAccessMask(vk::AccessFlagBits::eColorAttachmentRead);
+    subpassDependecies[0].setDependencyFlags(vk::DependencyFlagBits::eByRegion);
+
+    vk::RenderPassCreateInfo info;
+    info.setSubpassCount((uint32_t)subpassDesc.size())
+        .setSubpasses(subpassDesc)
+        .setAttachmentCount((uint32_t)attchmentDescs.size())
+        .setAttachments(attchmentDescs)
+        .setDependencyCount(1)
+        .setDependencies(subpassDependecies);
+
+    _VkDelayRenderPass = _VkDevice.createRenderPass(info);
+    _DestructionFunctions.push_back([&]() { _VkDevice.destroyRenderPass(_VkDelayRenderPass); });
+
+    ASSERT(_VkRenderPass);
+}
+
 void VulkanRenderer::CreateCmdPool() {
     ASSERT(_VkDevice);
 
@@ -441,6 +580,7 @@ void VulkanRenderer::CreateFrameBuffers() {
     const int nSwapchainCount = (int)_Images.size();
     _FrameBuffers = std::vector<vk::Framebuffer>(nSwapchainCount);
 
+#ifndef WITH_DELAY_RENDER
     for (int i = 0; i < nSwapchainCount; ++i) {
         std::array<vk::ImageView, 2> attchments = { _ImageViews[i], _DepthImageView };
         vk::FramebufferCreateInfo info;
@@ -453,6 +593,28 @@ void VulkanRenderer::CreateFrameBuffers() {
         _FrameBuffers[i] = _VkDevice.createFramebuffer(info);
         ASSERT(_FrameBuffers[i]);
     }
+#else
+    for (int i = 0; i < nSwapchainCount; ++i) {
+        std::array<vk::ImageView, 6> attchments = { 
+            _ImageViews[i], 
+            _GBuffer.imgViewPosition,
+            _GBuffer.imgViewNormal,
+            _GBuffer.imgViewAlbedo,
+            _GBuffer.imgViewDepth,
+            _DepthImageView
+        };
+
+        vk::FramebufferCreateInfo info;
+        info.setRenderPass(_VkDelayRenderPass)
+            .setAttachmentCount((uint32_t)attchments.size())
+            .setPAttachments(attchments.data())
+            .setWidth(_SupportInfo.GetWindowWidth())
+            .setHeight(_SupportInfo.GetWindowHeight())
+            .setLayers(1);
+        _FrameBuffers[i] = _VkDevice.createFramebuffer(info);
+        ASSERT(_FrameBuffers[i]);
+    }
+#endif  // WITH_DELAY_RENDER
 }
 
 void VulkanRenderer::InitSyncStructures() {

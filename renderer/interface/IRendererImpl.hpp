@@ -19,6 +19,7 @@ namespace renderer {
         virtual void CreateDevice() = 0;
         virtual void CreateSwapchain() = 0;
         virtual void CreateRenderPass() = 0;
+        virtual void CreateDelayRenderPass() = 0;
         virtual void CreateCmdPool() = 0;
         virtual void CreateFrameBuffers() = 0;
         virtual void InitSyncStructures() = 0;

@@ -13,6 +13,8 @@
 #include "../../application/Window.hpp"
 #include "../../engine/EngineStructures.hpp"
 
+#define WITH_DELAY_RENDER
+
 namespace renderer {
 
     constexpr unsigned int FRAME_OVERLAP = 2;
@@ -32,6 +34,7 @@ namespace renderer {
         virtual void CreateDevice() override;
         virtual void CreateSwapchain() override;
         virtual void CreateRenderPass() override;
+        virtual void CreateDelayRenderPass() override;
         virtual void CreateCmdPool() override;
         virtual void CreateFrameBuffers() override;
         virtual void InitSyncStructures() override;
@@ -69,6 +72,7 @@ namespace renderer {
         void BindBufferDescriptor(Material* mat, Particals* partical);
         void CreateDrawLinePipeline(Material& mat, const char* vert_shader, const char* frag_shader);
         void CreateComputePipeline(Material& mat, const char* comp_shader);
+        void CreateDeferredPipeline(Material& mat, const char* vert_shader, const char* frag_shader);
 
         void ReleaseBuffer(std::vector<Particals> particals){
             for (auto& partical : particals){
@@ -243,11 +247,17 @@ namespace renderer {
         // Texture
         vk::Sampler _TextureSampler;
 
+        // Muti subpasses
+        GBuffer _GBuffer;
+        vk::RenderPass _VkDelayRenderPass;
+
     private:
         bool _bEnabledTexture;
         bool _bEnabledSampleShading;
 
         vk::SampleCountFlagBits _MaxSampleCount;
+
+        std::vector<std::function<void()>> _DestructionFunctions;
 
     };// class VulkanRenderer
 }// namespace renderer

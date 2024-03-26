@@ -10,6 +10,7 @@
 #include "../../application/Window.hpp"
 
 namespace renderer{
+
     /*
         Vulkan Memory
     */
@@ -26,6 +27,18 @@ namespace renderer{
     struct AllocatedImage {
         vk::Image image;  // CPU
         vk::DeviceMemory memory;    // GPU
+    };
+
+    // G-Buffer
+    struct GBuffer {
+        AllocatedImage imgPosition;
+        vk::ImageView imgViewPosition;
+        AllocatedImage imgNormal;
+        vk::ImageView imgViewNormal;
+        AllocatedImage imgAlbedo;
+        vk::ImageView imgViewAlbedo;
+        AllocatedImage imgDepth;
+        vk::ImageView imgViewDepth;
     };
 
     /*
