@@ -33,3 +33,8 @@ EngineLogger::EngineLogger(){
     UL_INFO("Mode: Debug.");
 
 }
+
+#ifdef USE_LOGGER
+static EngineLogger* GLOBAL_LOGGER = new EngineLogger();
+#endif // !USE_LOGGER
+
