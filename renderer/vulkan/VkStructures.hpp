@@ -6,7 +6,7 @@
 #include <unordered_map>
 
 #include "../../engine/global/GDefines.hpp"
-#include "../../engine/EngineLogger.hpp"
+#include "../../engine/core/EngineLogger.hpp"
 #include "../../application/Window.hpp"
 
 namespace renderer{

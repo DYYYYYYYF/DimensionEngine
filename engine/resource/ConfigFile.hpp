@@ -3,7 +3,7 @@
 #include <unordered_map>
 #include <string>
 #include "Resource.hpp"
-#include "../global/FileUtil.hpp"
+#include "../core/FileUtil.hpp"
 #include "../EngineStructures.hpp"
 
 enum LOADSTATE{

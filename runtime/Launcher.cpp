@@ -6,7 +6,7 @@
 
 #include <iostream>
 #include "../application/Application.hpp"
-#include "../engine/EngineLogger.hpp"
+#include "../engine/core/EngineLogger.hpp"
 
 #ifdef USE_LOGGER
 static EngineLogger* GLOBAL_LOGGER = new EngineLogger();

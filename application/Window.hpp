@@ -1,6 +1,6 @@
 #pragma once
 #include <GLFW/glfw3.h>
-#include "../engine/EngineLogger.hpp"
+#include "../engine/core/EngineLogger.hpp"
 
 class WsiWindow{
 public:
