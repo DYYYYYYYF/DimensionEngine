@@ -5,7 +5,7 @@
 #include <vulkan/vulkan.hpp>
 #include <unordered_map>
 
-#include "../../engine/global/GDefines.hpp"
+#include "../../engine/Defines.hpp"
 #include "../../engine/core/EngineLogger.hpp"
 #include "../../application/Window.hpp"
 

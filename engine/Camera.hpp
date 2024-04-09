@@ -1,6 +1,6 @@
 #pragma once
 #include <iostream>
-#include "../../engine/global/GDefines.hpp"
+#include "../../engine/Defines.hpp"
 
 class Camera{
     private:

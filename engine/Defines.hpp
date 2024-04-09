@@ -2,7 +2,6 @@
 
 // Platforms
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__)
-
 #define DPLATFORM_WINDOWS 1
 #ifndef _WIN64
 #error "64-bit is required on Windows"
@@ -32,3 +31,16 @@
 #error "Unknow platform!"
 
 #endif
+
+// Math
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+
+typedef glm::vec4 Vector4;
+typedef glm::vec3 Vector3;
+typedef glm::vec2 Vector2;
+
+typedef glm::mat4 Matrix4;
+typedef glm::mat3 Matrix3;
+
+
