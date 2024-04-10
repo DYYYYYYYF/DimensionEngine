@@ -85,6 +85,7 @@ add_subdirectory(application)
 add_subdirectory(renderer)
 add_subdirectory(engine)
 add_subdirectory(examples)
+add_subdirectory(TestEditor)
 
 add_executable(VulkanRender runtime/Launcher.cpp runtime/logo.rc)
 
