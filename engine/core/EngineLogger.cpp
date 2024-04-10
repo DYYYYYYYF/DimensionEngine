@@ -34,7 +34,3 @@ EngineLogger::EngineLogger(){
 
 }
 
-#ifdef USE_LOGGER
-static EngineLogger* GLOBAL_LOGGER = new EngineLogger();
-#endif // !USE_LOGGER
-

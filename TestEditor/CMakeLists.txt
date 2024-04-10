@@ -5,7 +5,7 @@ set(EXECUTABLE_OUTPUT_PATH ${CMAKE_CURRENT_SOURCE_DIR}/bin)
 
 message("-- Generating TestEditor")
 
-add_executable(TestEditor Enter.cpp)
+add_executable(TestEditor Enter.cpp "Game.cpp")
 
 if(${APPLE})
 	target_link_libraries(TestEditor libLogger.a)

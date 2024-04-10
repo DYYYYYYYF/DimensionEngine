@@ -2,6 +2,13 @@
 #include <Logger.hpp>
 #include <filesystem>
 
+class EngineLogger{
+public:
+    EngineLogger();
+    virtual ~EngineLogger(){}
+};
+
+// Logger
 #ifdef LEVEL_DEBUG
 #define ASSERT(expr) \
     if(!(expr)) { \
@@ -17,10 +24,3 @@
 #endif //ifdef DEBUG
 
 #define CoreLog UL_INFO
-
-class EngineLogger{
-public:
-    EngineLogger();
-    virtual ~EngineLogger(){}
-};
-
