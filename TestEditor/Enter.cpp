@@ -7,7 +7,7 @@
 
 // TODO: Remove
 #include <iostream>
-#include "../engine/platform/platform.hpp"
+#include "../engine/core/DMemory.hpp"
 
 extern bool CreateGame(SGame* out_game) {
 
@@ -23,7 +23,7 @@ extern bool CreateGame(SGame* out_game) {
     out_game->on_resize = GameOnResize;
 
     // Create Game state
-    out_game->state = PlatformAllocate(sizeof(SGameState), false);
+    out_game->state = Memory::Allocate(sizeof(SGameState), MemoryType::eMemory_Type_Game);
     
     return true;
 }

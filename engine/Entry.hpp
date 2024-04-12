@@ -1,10 +1,14 @@
 #include "core/Application.hpp"
 #include "core/EngineLogger.hpp"
+#include "core/DMemory.hpp"
 #include "GameType.hpp"
 
 extern bool CreateGame(SGame* out_game);
 
 int main(void) {
+
+    Memory::Memory();
+
 	SGame GameInstance;
 	if (!CreateGame(&GameInstance)) {
 		UL_FATAL("Could not Create Game!");

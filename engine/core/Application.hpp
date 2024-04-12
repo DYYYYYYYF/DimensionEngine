@@ -2,7 +2,6 @@
 
 #include "EngineLogger.hpp"
 #include "../Defines.hpp"
-#include "../platform/platform.hpp"
 
 struct SGame;
 

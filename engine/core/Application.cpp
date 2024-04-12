@@ -1,5 +1,7 @@
 #include "Application.hpp"
 #include "../GameType.hpp"
+#include "../platform/platform.hpp"
+#include "DMemory.hpp"
 
 struct SApplicationState {
 	SGame* game_instance;
@@ -25,11 +27,17 @@ bool ApplicationCreate(SGame* game_instance){
 
 	// Init logger
 	static EngineLogger* GlobalLogger  = new EngineLogger();
+	UL_INFO("Test Info");
+	UL_DEBUG("Test Debug");
+	UL_ERROR("Test Error");
+	UL_WARN("Test Warn");
+	UL_FATAL("Test Fatal");
+
 
 	AppState.is_running = true;
 	AppState.is_suspended = false;
 
-	PlatformStartup(&AppState.platform, 
+	Platform::PlatformStartup(&AppState.platform,
 		game_instance->app_config.name, 
 		game_instance->app_config.start_x, 
 		game_instance->app_config.start_y, 
@@ -48,8 +56,9 @@ bool ApplicationCreate(SGame* game_instance){
 }
 
 bool ApplicationRun() {
+	UL_INFO(Memory::GetMemoryUsageStr());
 	while (AppState.is_running) {
-		if (!PlatformPumpMessage(&AppState.platform)) {
+		if (!Platform::PlatformPumpMessage(&AppState.platform)) {
 			AppState.is_running = false;
 		}
 
@@ -69,7 +78,7 @@ bool ApplicationRun() {
 	}
 
 	AppState.is_running = false;
-	PlatformShutdown(&AppState.platform);
+	Platform::PlatformShutdown(&AppState.platform);
 
 	return true;
 }

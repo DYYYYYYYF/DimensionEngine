@@ -20,19 +20,49 @@ enum MemoryType {
 	eMemory_Type_Entity,
 	eMemory_Type_Entity_Node,
 	eMemory_Type_Scene,
-	eMemory_Type_MAX
+	eMemory_Type_Max
+};
+
+static const char* MemoryTypeStrings[eMemory_Type_Max]{
+	"Unknow",
+	"Array",
+	"DArray",
+	"Dict",
+	"Ring_Queue",
+	"BST",
+	"String",
+	"Application",
+	"Job",
+	"Texture",
+	"Material_Instance",
+	"Renderer",
+	"Game",
+	"Transform",
+	"Entity",
+	"Entity_Node",
+	"Scene"
 };
 
 class Memory {
 public:
-	Memory() {}
-	virtual ~Memory() {}
+	struct SMemoryStats {
+		size_t total_allocated;
+		size_t tagged_allocations[eMemory_Type_Max];
+	};
 
 public:
-	void* Allocate(size_t size, MemoryType type);
-	void Free(void* block, size_t size, MemoryType);
-	void* Zero(void* block, size_t size);
-	void* Copy(void* dst, const void* src, size_t size);
-	void* Set(void* dst, int val, size_t size);
+	Memory();
+	virtual ~Memory();
+
+public:
+	static void* Allocate(size_t size, MemoryType type);
+	static void Free(void* block, size_t size, MemoryType type);
+	static void* Zero(void* block, size_t size);
+	static void* Copy(void* dst, const void* src, size_t size);
+	static void* Set(void* dst, int val, size_t size);
+	static char* GetMemoryUsageStr();
+
+public:
+	static struct SMemoryStats stats;
 
 };
