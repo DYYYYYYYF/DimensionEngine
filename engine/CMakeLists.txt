@@ -1,8 +1,8 @@
-message("\n-- Engine:\n")
+message("\n-- Engine:")
 
-include_directories("../" "global" "resource" "core" "platform")
-file(GLOB ENGINE_SOURCE_FILES *.cpp global/*.cpp resource/*.cpp core/*.cpp platform/*.cpp)
+include_directories("../" "Containers" "platform" "resource" "core" )
+file(GLOB ENGINE_SOURCE_FILES *.cpp Containers/*.cpp resource/*.cpp core/*.cpp platform/*.cpp )
 add_library(engine ${ENGINE_SOURCE_FILES})
 
-message("${RENDERER_RESOURCE_FILES}")
+message("${ENGINE_SOURCE_FILES}\n")
 
