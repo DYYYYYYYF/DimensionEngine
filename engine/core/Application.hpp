@@ -1,6 +1,5 @@
 #pragma once
 
-#include "EngineLogger.hpp"
 #include "../Defines.hpp"
 
 struct SGame;

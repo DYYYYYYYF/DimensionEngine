@@ -32,6 +32,26 @@
 
 #endif
 
+#ifdef DEXPORT
+// Export
+#ifdef _MSC_VER
+//#define DAPI __declspec(dllexport)
+#define DAPI
+#else
+#define DAPI __attribute__((visibility("default")))
+#endif
+
+// Import
+#else
+#ifdef _MSC_VER
+//#define DAPI __declspec(dllimport)
+#define DAPI
+#else
+#define DAPI
+#endif
+
+#endif	// #ifdef DEXPORT
+
 // Math
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
