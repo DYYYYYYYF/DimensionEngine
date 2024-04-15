@@ -18,7 +18,6 @@ template<typename ElementType>
 class TArray {
 public:
 	TArray() {
-
 		size_t ArrayMemSize = ARRAY_DEFAULT_CAPACITY * sizeof(ElementType);
 		ArrayMemory = Memory::Allocate(ArrayMemSize, MemoryType::eMemory_Type_Array);
 		Memory::Set(ArrayMemory, 0, ArrayMemSize);
@@ -28,13 +27,23 @@ public:
 		Length = 0;
 	}
 
+	TArray(size_t size) {
+		size_t ArrayMemSize = size * sizeof(ElementType);
+		ArrayMemory = Memory::Allocate(ArrayMemSize, MemoryType::eMemory_Type_Array);
+		Memory::Set(ArrayMemory, 0, ArrayMemSize);
+
+		Capacity = size;
+		Stride = sizeof(ElementType);
+		Length = size;
+	}
+
 	virtual ~TArray() {
-		if (ArrayMemory) {
+		/*if (ArrayMemory) {
 			size_t MemorySize = Capacity * Stride;
 			Memory::Free(ArrayMemory, MemorySize, MemoryType::eMemory_Type_Array);
 			ArrayMemory = nullptr;
 			Length = 0;
-		}
+		}*/
 	}
 
 public:
@@ -153,14 +162,7 @@ public:
 		Memory::Copy(&result, (void*)addr, Stride);
 		return result;
 	}
-	const ElementType& operator[](size_t i) const{
-		if (i > Length) return ElementType();
 
-		size_t addr = (size_t)ArrayMemory + i * Stride;
-		ElementType result;
-		Memory::Copy(&result, (void*)addr, Stride);
-		return result;
-	}
 
 private:
 	void* ArrayMemory;

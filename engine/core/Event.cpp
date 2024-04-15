@@ -50,7 +50,11 @@ bool Event::EventRegister(unsigned short code, void* listener, PFN_on_event on_e
 		return false;
 	}
 
-	if (state.registered[code].events.Data() == nullptr) {
+	if (state.registered.IsEmpty()) {
+		state.registered = TArray<SEventCodeEntry>(MAX_MESSAGE_CODES);
+	}
+
+	if (state.registered[code].events.IsEmpty()) {
 		state.registered[code].events = TArray<SRegisterEvent>();
 	}
 
@@ -63,10 +67,12 @@ bool Event::EventRegister(unsigned short code, void* listener, PFN_on_event on_e
 	}
 
 	// If at this point, no duplication was found. proceed with registration
-	SRegisterEvent event;
-	event.listener = listener;
-	event.callback = on_event;
-	state.registered[code].events.Push(event);
+	SRegisterEvent NewEvent;
+	NewEvent.listener = listener;
+	NewEvent.callback = on_event;
+
+	SEventCodeEntry Entry = state.registered[code];
+	Entry.events.Push(NewEvent);
 
 	return true;
 }

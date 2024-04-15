@@ -1,11 +1,12 @@
 #include "Application.hpp"
+
 #include "EngineLogger.hpp"
+#include "Event.hpp"
+#include "Input.hpp"
+#include "DMemory.hpp"
 
 #include "../GameType.hpp"
 #include "../platform/platform.hpp"
-#include "../core/Event.hpp"
-
-#include "DMemory.hpp"
 
 struct SApplicationState {
 	SGame* game_instance;
@@ -31,6 +32,8 @@ bool ApplicationCreate(SGame* game_instance){
 
 	// Init logger
 	static EngineLogger* GlobalLogger  = new EngineLogger();
+	Input::InputInitialize();
+
 	UL_INFO("Test Info");
 	UL_DEBUG("Test Debug");
 	UL_ERROR("Test Error");
@@ -45,6 +48,10 @@ bool ApplicationCreate(SGame* game_instance){
 		UL_ERROR("Event system init failed. Application can not start.");
 		return false;
 	}
+
+	Event::EventRegister(Event::eEvent_Code_Application_Quit, 0, ApplicationOnEvent);
+	Event::EventRegister(Event::eEvent_Code_Key_Pressed, 0, ApplicationOnKey);
+	Event::EventRegister(Event::eEvent_Code_Key_Released, 0, ApplicationOnKey);
 	
 	Platform::PlatformStartup(&AppState.platform,
 		game_instance->app_config.name, 
@@ -84,11 +91,64 @@ bool ApplicationRun() {
 			AppState.is_running = false;
 			break;
 		}
+
+		Input::InputUpdate(0);
 	}
 
 	AppState.is_running = false;
+
+	// Shutdown event system
+	Event::EventUnregister(Event::eEvent_Code_Application_Quit, 0, ApplicationOnEvent);
+	Event::EventUnregister(Event::eEvent_Code_Key_Pressed, 0, ApplicationOnKey);
+	Event::EventUnregister(Event::eEvent_Code_Key_Released, 0, ApplicationOnKey);
+
 	Event::EventShutdown();
+	Input::InputShutdown();
+
 	Platform::PlatformShutdown(&AppState.platform);
 
 	return true;
+}
+
+bool ApplicationOnEvent(unsigned short code, void* sender, void* listener_instance, SEventContext context) {
+	switch (code){
+	case Event::eEvent_Code_Application_Quit: {
+		UL_INFO("Application quit now.");
+		AppState.is_running = false;
+		return true;
+	}
+	}
+
+	return false;
+}
+
+bool ApplicationOnKey(unsigned short code, void* sender, void* listener_instance, SEventContext context) {
+	if (code == Event::eEvent_Code_Key_Pressed) {
+		unsigned short KeyCode = context.data.u16[0];
+		if (KeyCode == eKeys_Escape) {
+			// NOTE: Technically dispatch an event to itself, but there may be other listeners.
+			SEventContext data = {};
+			Event::EventFire(code, 0, data);
+
+			// Block anything else from processing this.
+			return true;
+		}
+		else if (KeyCode == eKeys_A) {
+			printf("Key 'A' pressed!");
+		}
+		else {
+			printf("%c key pressed.", KeyCode);
+		}
+	}
+	else if (code == Event::eEvent_Code_Key_Released) {
+		unsigned short KeyCode = context.data.u16[0];
+		if (KeyCode == eKeys_B) {
+			printf("B pressed!");
+		}
+		else {
+			printf("%c pressed!", KeyCode);
+		}
+	}
+
+	return false;
 }
