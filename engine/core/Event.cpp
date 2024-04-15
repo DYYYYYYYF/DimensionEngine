@@ -2,27 +2,30 @@
 #include "DMemory.hpp"
 #include "../Containers/TArray.hpp"
 
-struct SRegisterEvent {
-	void* listener;
-	PFN_on_event callback;
-};
+namespace Event {
+	struct SRegisterEvent {
+		void* listener;
+		PFN_on_event callback;
+	};
 
-struct SEventCodeEntry {
-	TArray<struct SRegisterEvent> events;
-};
+	struct SEventCodeEntry {
+		TArray<SRegisterEvent> events;
+	};
 
-// This should be more than enough coeds
+	// This should be more than enough coeds
 #define MAX_MESSAGE_CODES 16384
 
-struct EventSystemState {
-	TArray<struct SEventCodeEntry> registered;
-};
+	struct EventSystemState {
+		TArray<SEventCodeEntry> registered;
+	};
 
-// Event system internal state
-static bool IsInitialized = false;
-static EventSystemState state;
+	// Event system internal state
+	static bool IsInitialized = false;
+	static EventSystemState state;
 
-bool EventInitialize() {
+}
+
+bool Event::EventInitialize() {
 	if (IsInitialized == true) {
 		return false;
 	}
@@ -34,7 +37,7 @@ bool EventInitialize() {
 	return IsInitialized;
 }
 
-void EventShutdown() {
+void Event::EventShutdown() {
 	for (unsigned short i = 0; i < MAX_MESSAGE_CODES; ++i) {
 		if (!state.registered.IsEmpty()) {
 			state.registered.Clear();
@@ -42,13 +45,13 @@ void EventShutdown() {
 	}
 }
 
-bool EventRegister(unsigned short code, void* listener, PFN_on_event on_event) {
+bool Event::EventRegister(unsigned short code, void* listener, PFN_on_event on_event) {
 	if (IsInitialized == false) {
 		return false;
 	}
 
-	if (state.registered[code].events.IsEmpty()) {
-		state.registered[code].events = TArray<struct SRegisterEvent>();
+	if (state.registered[code].events.Data() == nullptr) {
+		state.registered[code].events = TArray<SRegisterEvent>();
 	}
 
 	size_t RegisterCount = state.registered[code].events.Size();
@@ -68,12 +71,12 @@ bool EventRegister(unsigned short code, void* listener, PFN_on_event on_event) {
 	return true;
 }
 
-bool EventUnregister(unsigned short code, void* listener, PFN_on_event on_event) {
+bool Event::EventUnregister(unsigned short code, void* listener, PFN_on_event on_event) {
 	if (IsInitialized == false) {
 		return false;
 	}
 
-	if (state.registered[code].events.IsEmpty()) {
+	if (state.registered[code].events.Data() == nullptr) {
 		// TODO: Warn
 		return false;
 	}
@@ -90,12 +93,12 @@ bool EventUnregister(unsigned short code, void* listener, PFN_on_event on_event)
 	return false;
 }
 
-bool EventFire(unsigned short code, void* sender, SEventContext context) {
+bool Event::EventFire(unsigned short code, void* sender, SEventContext context) {
 	if (IsInitialized == false) {
 		return false;
 	}
 
-	if (state.registered[code].events.IsEmpty()) {
+	if (state.registered[code].events.Data() == nullptr) {
 		// TODO: Warn
 		return false;
 	}

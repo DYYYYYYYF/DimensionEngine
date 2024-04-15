@@ -3,8 +3,8 @@
 
 #include "../GameType.hpp"
 #include "../platform/platform.hpp"
+#include "../core/Event.hpp"
 
-#include "Event.hpp"
 #include "DMemory.hpp"
 
 struct SApplicationState {
@@ -41,7 +41,7 @@ bool ApplicationCreate(SGame* game_instance){
 	AppState.is_running = true;
 	AppState.is_suspended = false;
 
-	if (!EventInitialize()) {
+	if (!Event::EventInitialize()) {
 		UL_ERROR("Event system init failed. Application can not start.");
 		return false;
 	}
@@ -87,7 +87,7 @@ bool ApplicationRun() {
 	}
 
 	AppState.is_running = false;
-	// EventShutdown();
+	Event::EventShutdown();
 	Platform::PlatformShutdown(&AppState.platform);
 
 	return true;
