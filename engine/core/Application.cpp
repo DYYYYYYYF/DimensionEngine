@@ -134,19 +134,19 @@ bool ApplicationOnKey(unsigned short code, void* sender, void* listener_instance
 			return true;
 		}
 		else if (KeyCode == eKeys_A) {
-			printf("Key 'A' pressed!");
+			//printf("Key 'A' pressed!");
 		}
 		else {
-			printf("%c key released.", KeyCode);
+			//printf("%c key released.", KeyCode);
 		}
 	}
 	else if (code == Event::eEvent_Code_Key_Released) {
 		unsigned short KeyCode = context.data.u16[0];
 		if (KeyCode == eKeys_B) {
-			printf("B pressed!");
+			//printf("B pressed!");
 		}
 		else {
-			printf("%c released!", KeyCode);
+			//printf("%c released!", KeyCode);
 		}
 	}
 
