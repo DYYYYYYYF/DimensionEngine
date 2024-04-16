@@ -4,6 +4,7 @@
 #include "Event.hpp"
 #include "Input.hpp"
 #include "DMemory.hpp"
+#include "Clock.hpp"
 
 #include "../GameType.hpp"
 #include "../platform/platform.hpp"
@@ -17,6 +18,7 @@ struct SApplicationState {
 	short width;
 	short height;
 	double last_time;
+	SClock clock;
 };
 
 static bool Initialized = false;
@@ -72,27 +74,61 @@ bool ApplicationCreate(SGame* game_instance){
 }
 
 bool ApplicationRun() {
+	Clock::Start(&AppState.clock);
+	Clock::Update(&AppState.clock);
+	AppState.last_time = AppState.clock.elapsed;
+
+	double RunningTime = 0;
+	short FrameCount = 0;
+	double TargetFrameSeconds = 1.0f / 60;
+
 	UL_DEBUG(Memory::GetMemoryUsageStr());
+
 	while (AppState.is_running) {
 		if (!Platform::PlatformPumpMessage(&AppState.platform)) {
 			AppState.is_running = false;
 		}
 
-		if (AppState.is_suspended) {
+		if (!AppState.is_suspended) {
+			Clock::Update(&AppState.clock);
+			double CurrentTime = AppState.clock.elapsed;
+			double DeltaTime = (CurrentTime - AppState.last_time);
+			double FrameStartTime = Platform::PlatformGetAbsoluteTime();
+
 			if (!AppState.game_instance->update(AppState.game_instance, (float)0)) {
 				UL_FATAL("Game update failed!");
 				AppState.is_running = false;
 				break;
 			}
-		}
 
-		if (!AppState.game_instance->render(AppState.game_instance, (float)0)) {
-			UL_FATAL("Game render failed!");
-			AppState.is_running = false;
-			break;
-		}
+			if (!AppState.game_instance->render(AppState.game_instance, (float)0)) {
+				UL_FATAL("Game render failed!");
+				AppState.is_running = false;
+				break;
+			}
 
-		Input::InputUpdate(0);
+			// Figure FPS
+			double FrameEndTime = Platform::PlatformGetAbsoluteTime();
+			double FrameEsapsedTime = FrameEndTime - FrameStartTime;
+			RunningTime += FrameEsapsedTime;
+			double RemainingSceonds = TargetFrameSeconds - FrameEsapsedTime;
+
+			// Limit FPS
+			if (RemainingSceonds > 0) {
+				int RemainingMS = static_cast<int>(RemainingSceonds * 1000);
+				bool LimitFrames = false;
+				if (RemainingMS > 0 && LimitFrames) {
+					Platform::PlatformSleep(RemainingMS - 1);
+				}
+
+				FrameCount++;
+			}
+
+			Input::InputUpdate(DeltaTime);
+
+			// Update time
+			AppState.last_time = CurrentTime;
+		}
 	}
 
 	AppState.is_running = false;
