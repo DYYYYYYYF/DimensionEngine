@@ -154,13 +154,9 @@ public:
 	ElementType* Data() { return (ElementType*)ArrayMemory; }
 	const ElementType* Data() const { return (ElementType*)ArrayMemory; }
 
-	ElementType operator[](size_t i) { 
-		if (i > Length) return ElementType();
-
-		size_t addr = (size_t)ArrayMemory + i * Stride;
-		ElementType result;
-		Memory::Copy(&result, (void*)addr, Stride);
-		return result;
+	ElementType* operator[](size_t i) { 
+		if (i > Length || ArrayMemory == nullptr) return nullptr;
+		return (ElementType*)((size_t)ArrayMemory + i * Stride);
 	}
 
 

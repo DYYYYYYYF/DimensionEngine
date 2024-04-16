@@ -20,7 +20,7 @@ enum Keys {
 
 	DEFINE_KEY(Pause, 0x13),
 	DEFINE_KEY(Capital, 0x14),
-	DEFINE_KEY(Escape, 0x18),
+	DEFINE_KEY(Escape, 0x1B),
 
 	DEFINE_KEY(Convert, 0x1C),
 	DEFINE_KEY(Nonconvert, 0x1D),

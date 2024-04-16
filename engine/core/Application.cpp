@@ -72,7 +72,7 @@ bool ApplicationCreate(SGame* game_instance){
 }
 
 bool ApplicationRun() {
-	UL_INFO(Memory::GetMemoryUsageStr());
+	UL_DEBUG(Memory::GetMemoryUsageStr());
 	while (AppState.is_running) {
 		if (!Platform::PlatformPumpMessage(&AppState.platform)) {
 			AppState.is_running = false;
@@ -128,7 +128,7 @@ bool ApplicationOnKey(unsigned short code, void* sender, void* listener_instance
 		if (KeyCode == eKeys_Escape) {
 			// NOTE: Technically dispatch an event to itself, but there may be other listeners.
 			SEventContext data = {};
-			Event::EventFire(code, 0, data);
+			Event::EventFire(Event::eEvent_Code_Application_Quit, 0, data);
 
 			// Block anything else from processing this.
 			return true;
@@ -137,7 +137,7 @@ bool ApplicationOnKey(unsigned short code, void* sender, void* listener_instance
 			printf("Key 'A' pressed!");
 		}
 		else {
-			printf("%c key pressed.", KeyCode);
+			printf("%c key released.", KeyCode);
 		}
 	}
 	else if (code == Event::eEvent_Code_Key_Released) {
@@ -146,7 +146,7 @@ bool ApplicationOnKey(unsigned short code, void* sender, void* listener_instance
 			printf("B pressed!");
 		}
 		else {
-			printf("%c pressed!", KeyCode);
+			printf("%c released!", KeyCode);
 		}
 	}
 
