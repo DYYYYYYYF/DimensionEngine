@@ -1,7 +1,7 @@
 #pragma once
 
-#include <../engine/Defines.hpp>
-#include <../engine/GameType.hpp>
+#include <Defines.hpp>
+#include <GameType.hpp>
 
 struct SGameState {
 	float delta_time;

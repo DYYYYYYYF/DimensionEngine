@@ -1,60 +1,49 @@
-cmake_minimum_required(VERSION 3.0.0)
-project(VulkanRender VERSION 0.1.0)
+message("-- Generating Engine Library")
 
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+include_directories(
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${UD_LOGGER_DIR}/include
+)
 
-set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/library)
-
-set(UD_LOGGER_DIR ${PROJECT_SOURCE_DIR}/3rd/uncledon-logger)
-
-## Set build type
-if (NOT CMAKE_BUILD_TYPE)
-    set(CMAKE_BUILD_TYPE "Release")
-    message("-- Use default build type.")
- endif()
-
-if (NOT LOG_LEVEL)
-    if (CMAKE_BUILD_TYPE STREQUAL "Debug")
-        set(LOG_LEVEL "DEBUG")
-    else()
-        set(LOG_LEVEL "ERROR")
-    endif()
+if(${LOG_LEVEL} STREQUAL "INFO")
+    add_definitions(-DLEVEL_INFO -DLEVEL_DEBUG -DLEVEL_WARN -DLEVEL_FATAL -DLEVEL_ERROR)
+elseif(${LOG_LEVEL}  STREQUAL "DEBUG")
+    add_definitions(-DLEVEL_DEBUG -DLEVEL_WARN -DLEVEL_FATAL -DLEVEL_ERROR)
+elseif(${LOG_LEVEL}  STREQUAL "WARN")
+    add_definitions(-DLEVEL_WARN -DLEVEL_FATAL -DLEVEL_ERROR)
+elseif(${LOG_LEVEL}  STREQUAL "ERROR")
+    add_definitions(-DLEVEL_ERROR  -DLEVEL_FATA)
+elseif(${LOG_LEVEL}  STREQUAL "FATAL")
+    add_definitions(-DLEVEL_FATAL)
 endif()
+
+file(GLOB ENGINE_SOURCE_FILES *.cpp */*.cpp */*/*.cpp)
+add_library(engine SHARED ${ENGINE_SOURCE_FILES})
+
+# Output .dll to bin directly.
+set_target_properties(engine PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${EXECUTABLE_OUTPUT_PATH}
+)
+
+target_compile_definitions(engine PUBLIC -DDEXPORT) 
+message("-- UncleDon-Logger Path: ${UD_LOGGER_DIR}")
+
+target_include_directories(
+    engine 
+    PUBLIC 
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${UD_LOGGER_DIR}/include
+)
 
 if(${APPLE})
-    message("-- Current environment: MacOS")
-
-    find_package(Vulkan QUIET)
-    find_package(PkgConfig REQUIRED)
-
-    pkg_search_module(GLFW REQUIRED GLFW3)
-    pkg_search_module(GLM REQUIRED GLM)
-    
-    include_directories(${Vulkan_INCLUDE_DIRS})
+    target_link_libraries(engine PUBLIC libLogger.a)
+    target_link_libraries(engine PUBLIC Vulkan::Vulkan)
 
 elseif(${WIN32})
-    message("-- Current environment: Windows")
-
-    set(Vulkan_DIR "D:/C_Library/VulkanSDK")
-
-    if(${Vulkan_DIR} STREQUAL " ")
-        message("-- Please set Vulkan direction!!!!")
-        return()
-    endif()
-
-    set(Vulkan_LIBRARY_DIRS "${Vulkan_DIR}/Lib")
-    set(Vulkan_INCLUDE_DIRS "${Vulkan_DIR}/Include")
-
-    link_directories(${Vulkan_LIBRARY_DIRS} ${UD_LOGGER_DIR}/lib/Windows/${CMAKE_BUILD_TYPE})
+    target_link_libraries(engine PUBLIC "Logger.lib")
+    target_link_libraries(engine PUBLIC "vulkan-1.lib")
 endif()
 
-add_subdirectory(3rd)
-add_subdirectory(engine)
-add_subdirectory(TestEditor)
-    
-message("\n-- Log level: ${LOG_LEVEL}")
-message("-- Build target mode: ${CMAKE_BUILD_TYPE}")
-message("-- Add executable program to ${EXECUTABLE_OUTPUT_PATH}")
-message("-- Generate project successful.\n")
+#file(COPY ${OPENAL_DIR}/bin/OpenAL32.dll DESTINATION ${EXECUTABLE_OUTPUT_PATH})
+
+message("-- Generated Engine Library\n")

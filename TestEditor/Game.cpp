@@ -1,5 +1,5 @@
 #include "Game.hpp"
-#include <../engine/core/EngineLogger.hpp>
+#include <core/EngineLogger.hpp>
 
 bool GameInitialize(SGame* game_instance) {
 	UL_DEBUG("GameInitialize() called.");

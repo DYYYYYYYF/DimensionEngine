@@ -3,11 +3,10 @@
 #endif
 
 #include "Game.hpp"
-#include "../engine/Entry.hpp"
+#include "Entry.hpp"
 
 // TODO: Remove
-#include <iostream>
-#include "../engine/core/DMemory.hpp"
+#include "core/DMemory.hpp"
 
 extern bool CreateGame(SGame* out_game) {
 
