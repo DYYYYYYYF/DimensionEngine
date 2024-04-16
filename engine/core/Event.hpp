@@ -2,27 +2,28 @@
 
 #include "../Defines.hpp"
 
+struct SEventContext {
+	// 128 Bytes
+	union {
+		long long i64[64];
+		size_t u64[2];
+		double f64[2];
+
+		int i32[4];
+		unsigned int u32[4];
+		float f32[4];
+
+		short i16[8];
+		unsigned short u16[8];
+
+		signed char i8[16];
+		unsigned char u8[16];
+
+		char c[16];
+	}data;
+};
+
 namespace Event {
-	struct SEventContext {
-		// 128 Bytes
-		union {
-			long long i64[64];
-			size_t u64[2];
-			double f64[2];
-
-			int i32[4];
-			unsigned int u32[4];
-			float f32[4];
-
-			short i16[8];
-			unsigned short u16[8];
-
-			signed char i8[16];
-			unsigned char u8[16];
-
-			char c[16];
-		};
-	};
 
 	typedef bool (*PFN_on_event)(unsigned short code, void* sender, void* listener_instance, SEventContext data);
 

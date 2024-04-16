@@ -1,5 +1,7 @@
 #include "Platform.hpp"
 
+#include "../core/Input.hpp"
+
 #if DPLATFORM_WINDOWS
 #include <windows.h>
 #include <windowsx.h>
@@ -183,17 +185,26 @@ LRESULT CALLBACK win32_process_message(HWND hwnd, UINT32 msg, WPARAM w_param, LP
 		case WM_SYSKEYDOWN:
 		case WM_KEYUP:
 		case WM_SYSKEYUP: {
+			// Key pressed/released
+			bool pressed = (msg == WM_KEYDOWN || msg == WM_SYSKEYDOWN);
+			Keys key = Keys(w_param);
 
+			// Pass to the input subsystem for processing.
+			Input::InputProcessKey(key, pressed);
 		} break;
 		case WM_MOUSEMOVE: {
-			//int PositionX = GET_X_LPARAM(l_param);
-			//int PositionY = GET_Y_LPARAM(l_param);
+			int PositionX = GET_X_LPARAM(l_param);
+			int PositionY = GET_Y_LPARAM(l_param);
+
+			// Pass over to the input subsystem
+			Input::InputProcessMouseMove(PositionX, PositionY);
 		}break;
 		case WM_MOUSEWHEEL: {
-			//int DeltaZ = GET_WHEEL_DELTA_WPARAM(w_param);
-			//if (DeltaZ != 0) {
-			//	DeltaZ = (DeltaZ < 0) ? -1 : 1;
-			//}
+			int DeltaZ = GET_WHEEL_DELTA_WPARAM(w_param);
+			if (DeltaZ != 0) {
+				DeltaZ = (DeltaZ < 0) ? -1 : 1;
+				Input::InputProcessMouseWheel(DeltaZ);
+			}
 		}break;
 		case WM_LBUTTONDOWN:
 		case WM_MBUTTONDOWN:
@@ -201,7 +212,28 @@ LRESULT CALLBACK win32_process_message(HWND hwnd, UINT32 msg, WPARAM w_param, LP
 		case WM_LBUTTONUP:
 		case WM_MBUTTONUP:
 		case WM_RBUTTONUP: {
-			//bool pressed = msg == WM_LBUTTONDOWN || WM_RBUTTONDOWN || WM_MBUTTONDOWN;
+			bool pressed = msg == WM_LBUTTONDOWN || WM_RBUTTONDOWN || WM_MBUTTONDOWN;
+			Buttons MouseButton = eButton_Max;
+			switch (msg) {
+			case WM_LBUTTONDOWN:
+			case WM_LBUTTONUP:
+				MouseButton = eButton_Left;
+				break;
+			case WM_MBUTTONDOWN:
+			case WM_MBUTTONUP:
+				MouseButton = eButton_Middle;
+				break;
+			case WM_RBUTTONDOWN:
+			case WM_RBUTTONUP:
+				MouseButton = eButton_Right;
+				break;
+			}
+
+			// Pass over mouse button to input subsystem.
+			if (MouseButton != eButton_Max) {
+				Input::InputProcessButton(MouseButton, pressed);
+			}
+
 		}break;
 	} 
 
