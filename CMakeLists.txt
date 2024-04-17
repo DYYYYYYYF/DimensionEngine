@@ -23,6 +23,18 @@ if (NOT LOG_LEVEL)
     endif()
 endif()
 
+if(${LOG_LEVEL} STREQUAL "INFO")
+    add_definitions(-DLEVEL_INFO -DLEVEL_DEBUG -DLEVEL_WARN -DLEVEL_FATAL -DLEVEL_ERROR)
+elseif(${LOG_LEVEL}  STREQUAL "DEBUG")
+    add_definitions(-DLEVEL_DEBUG -DLEVEL_WARN -DLEVEL_FATAL -DLEVEL_ERROR)
+elseif(${LOG_LEVEL}  STREQUAL "WARN")
+    add_definitions(-DLEVEL_WARN -DLEVEL_FATAL -DLEVEL_ERROR)
+elseif(${LOG_LEVEL}  STREQUAL "ERROR")
+    add_definitions(-DLEVEL_ERROR  -DLEVEL_FATA)
+elseif(${LOG_LEVEL}  STREQUAL "FATAL")
+    add_definitions(-DLEVEL_FATAL)
+endif()
+
 if(${APPLE})
     message("-- Current environment: MacOS")
 
@@ -47,6 +59,7 @@ elseif(${WIN32})
     set(Vulkan_LIBRARY_DIRS "${Vulkan_DIR}/Lib")
     set(Vulkan_INCLUDE_DIRS "${Vulkan_DIR}/Include")
 
+    include_directories(${Vulkan_INCLUDE_DIRS})
     link_directories(${Vulkan_LIBRARY_DIRS} ${UD_LOGGER_DIR}/lib/Windows/${CMAKE_BUILD_TYPE})
 endif()
 
