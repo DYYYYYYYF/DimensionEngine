@@ -1,8 +1,10 @@
 #include "Platform.hpp"
 
-#include "core/Input.hpp"
-
 #if DPLATFORM_WINDOWS
+
+#include "core/Input.hpp"
+#include "Renderer/Vulkan/VulkanPlatform.hpp"
+
 #include <windows.h>
 #include <windowsx.h>
 
@@ -238,6 +240,14 @@ LRESULT CALLBACK win32_process_message(HWND hwnd, UINT32 msg, WPARAM w_param, LP
 	} 
 
 	return DefWindowProc(hwnd, msg, w_param, l_param);
+}
+
+
+/*
+	Vulkan platform
+*/
+void GetPlatformRequiredExtensionNames(std::vector<const char*>& array) {
+	array.push_back("VK_KHR_win32_surface");
 }
 
 #endif	//DPLATFORM_WINDOWS

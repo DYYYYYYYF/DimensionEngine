@@ -9,6 +9,8 @@
 #include "GameType.hpp"
 #include "Platform/Platform.hpp"
 
+#include "Renderer/RendererFrontend.hpp"
+
 struct SApplicationState {
 	SGame* game_instance;
 	SPlatformState platform;
@@ -23,6 +25,7 @@ struct SApplicationState {
 
 static bool Initialized = false;
 static SApplicationState AppState;
+static IRenderer* Renderer = nullptr;
 
 bool ApplicationCreate(SGame* game_instance){
 	if (Initialized) {
@@ -61,6 +64,18 @@ bool ApplicationCreate(SGame* game_instance){
 		game_instance->app_config.start_y, 
 		game_instance->app_config.start_width, 
 		game_instance->app_config.start_height);
+
+	// Init Renderer
+	if (Renderer == nullptr) {
+		void* TempRenderer = (IRenderer*)Memory::Allocate(sizeof(IRenderer), MemoryType::eMemory_Type_Renderer);
+		Renderer = new(TempRenderer)IRenderer(eRenderer_Backend_Type_Vulkan, &AppState.platform);
+		ASSERT(Renderer);
+	}
+
+	if (!Renderer->Initialize(game_instance->app_config.name, &AppState.platform)) {
+		UL_FATAL("Renderer failed to initialize!");
+		return false;
+	}
 
 	// Init Game
 	if (!AppState.game_instance->initialize(AppState.game_instance)) {
@@ -108,6 +123,11 @@ bool ApplicationRun() {
 				break;
 			}
 
+			// TODO: Refactor packet
+			SRenderPacket Packet;
+			Packet.delta_time = DeltaTime;
+			Renderer->DrawFrame(&Packet);
+
 			// Figure FPS
 			double FrameEndTime = Platform::PlatformGetAbsoluteTime();
 			double FrameEsapsedTime = FrameEndTime - FrameStartTime;
@@ -141,6 +161,9 @@ bool ApplicationRun() {
 
 	Core::EventShutdown();
 	Core::InputShutdown();
+
+	Renderer->Shutdown();
+	Memory::Free(Renderer, sizeof(IRenderer), MemoryType::eMemory_Type_Renderer);
 
 	Platform::PlatformShutdown(&AppState.platform);
 
