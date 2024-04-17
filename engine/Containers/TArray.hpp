@@ -44,17 +44,17 @@ public:
 	void SetField(size_t field, size_t val){}
 
 	void Resize() {
-		Capacity *= ARRAY_DEFAULT_RESIZE_FACTOR;
-		void* TempMemory = Memory::Allocate(Capacity, MemoryType::eMemory_Type_Array);
+		void* TempMemory = Memory::Allocate(Capacity * ARRAY_DEFAULT_RESIZE_FACTOR * Stride, MemoryType::eMemory_Type_Array);
 
 		Memory::Copy(TempMemory, ArrayMemory, Length * Stride);
 		Memory::Free(ArrayMemory, Capacity * Stride, MemoryType::eMemory_Type_Array);
 
+		Capacity = Capacity * ARRAY_DEFAULT_RESIZE_FACTOR;
 		ArrayMemory = TempMemory;
 	}
 
 	void Push(const ElementType& value) {
-		if (Length > Capacity) {
+		if (Length >= Capacity) {
 			Resize();
 		}
 
@@ -147,9 +147,9 @@ public:
 	ElementType* Data() { return (ElementType*)ArrayMemory; }
 	const ElementType* Data() const { return (ElementType*)ArrayMemory; }
 
-	ElementType* operator[](size_t i) { 
-		if (i > Length || ArrayMemory == nullptr) return nullptr;
-		return (ElementType*)((size_t)ArrayMemory + i * Stride);
+	ElementType& operator[](size_t i) { 
+		//if (i > Length || ArrayMemory == nullptr) return ElementType();
+		return *((ElementType*)ArrayMemory + i * Stride);
 	}
 
 
