@@ -56,13 +56,13 @@ bool Core::EventRegister(unsigned short code, void* listener, PFN_on_event on_ev
 		state.registered = TArray<SEventCodeEntry>(MAX_MESSAGE_CODES);
 	}
 
-	if (state.registered[code]->events.Data() == nullptr) {
-		state.registered[code]->events = TArray<SRegisterEvent>();
+	if (state.registered[code].events.Data() == nullptr) {
+		state.registered[code].events = TArray<SRegisterEvent>();
 	}
 
-	size_t RegisterCount = state.registered[code]->events.Size();
+	size_t RegisterCount = state.registered[code].events.Size();
 	for (size_t i = 0; i < RegisterCount; ++i) {
-		if (state.registered[code]->events[i]->listener == listener) {
+		if (state.registered[code].events[i].listener == listener) {
 			// TODO: Warn
 			return false;
 		}
@@ -73,8 +73,7 @@ bool Core::EventRegister(unsigned short code, void* listener, PFN_on_event on_ev
 	NewEvent.listener = listener;
 	NewEvent.callback = on_event;
 
-	SEventCodeEntry* Entry = state.registered[code];
-	Entry->events.Push(NewEvent);
+	state.registered[code].events.Push(NewEvent);
 
 	return true;
 }
@@ -84,15 +83,15 @@ bool Core::EventUnregister(unsigned short code, void* listener, PFN_on_event on_
 		return false;
 	}
 
-	if (state.registered[code]->events.Data() == nullptr) {
+	if (state.registered[code].events.Data() == nullptr) {
 		// TODO: Warn
 		return false;
 	}
 
-	size_t RegisterCount = state.registered[code]->events.Size();
+	size_t RegisterCount = state.registered[code].events.Size();
 	for (size_t i = 0; i < RegisterCount; ++i) {
-		const SRegisterEvent* event = state.registered[code]->events[i];
-		if (event->listener == listener && event->callback == on_event) {
+		const SRegisterEvent& event = state.registered[code].events[i];
+		if (event.listener == listener && event.callback == on_event) {
 			state.registered.PopAt(i);
 			return true;
 		}
@@ -106,15 +105,15 @@ bool Core::EventFire(unsigned short code, void* sender, SEventContext context) {
 		return false;
 	}
 
-	if (state.registered[code]->events.Data() == nullptr) {
+	if (state.registered[code].events.Data() == nullptr) {
 		// TODO: Warn
 		return false;
 	}
 
-	size_t RegisterCount = state.registered[code]->events.Size();
+	size_t RegisterCount = state.registered[code].events.Size();
 	for (size_t i = 0; i < RegisterCount; ++i) {
-		const SRegisterEvent* event = state.registered[code]->events[i];
-		if (event->callback(code, sender, event->listener, context)) {
+		const SRegisterEvent& event = state.registered[code].events[i];
+		if (event.callback(code, sender, event.listener, context)) {
 			// Message has been handled, do not send to other listeners.
 			return true;
 		}
