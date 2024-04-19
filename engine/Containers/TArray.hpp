@@ -47,10 +47,10 @@ public:
 
 	void Resize(size_t size = 0) {
 		size_t NewCapacity = size > 0 ? size : Capacity * ARRAY_DEFAULT_RESIZE_FACTOR;
-		void* TempMemory = Memory::Allocate(NewCapacity * Stride, MemoryType::eMemory_Type_Array);
+		void* TempMemory = Memory::Allocate(NewCapacity * Stride, UsedMemoryType);
 
 		Memory::Copy(TempMemory, ArrayMemory, Length * Stride);
-		Memory::Free(ArrayMemory, Capacity * Stride, MemoryType::eMemory_Type_Array);
+		Memory::Free(ArrayMemory, Capacity * Stride, UsedMemoryType);
 
 		Capacity = NewCapacity;
 		ArrayMemory = TempMemory;
@@ -61,8 +61,7 @@ public:
 			Resize();
 		}
 
-		size_t addr = (size_t)ArrayMemory;
-		addr += (Length * Stride);
+		size_t addr = (size_t)ArrayMemory + (Length * Stride);
 		Memory::Copy((void*)addr, &value, Stride);
 
 		Length++;

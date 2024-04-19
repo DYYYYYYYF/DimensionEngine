@@ -4,13 +4,16 @@
 
 #include "core/Input.hpp"
 #include "Renderer/Vulkan/VulkanPlatform.hpp"
+#include "Renderer/Vulkan/VulkanContext.hpp"
 
 #include <windows.h>
 #include <windowsx.h>
+#include <vulkan/vulkan_win32.h>
 
 struct SInternalState {
 	HINSTANCE h_instance;
 	HWND hwnd;
+	vk::SurfaceKHR surface;
 };
 
 static double ClockFrequency;
@@ -248,6 +251,26 @@ LRESULT CALLBACK win32_process_message(HWND hwnd, UINT32 msg, WPARAM w_param, LP
 */
 void GetPlatformRequiredExtensionNames(std::vector<const char*>& array) {
 	array.push_back("VK_KHR_win32_surface");
+}
+
+bool PlatformCreateVulkanSurface(SPlatformState* plat_state, VulkanContext* context) {
+	// Simple cold-cast to then know type
+	SInternalState* state = (SInternalState*)plat_state->internalState;
+
+	VkWin32SurfaceCreateInfoKHR info = { VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR };
+	info.hinstance = state->h_instance;
+	info.hwnd = state->hwnd;
+
+	VkSurfaceKHR Win32Surface;
+	if (vkCreateWin32SurfaceKHR(context->Instance, &info, nullptr, &Win32Surface) != VK_SUCCESS) {
+		UL_FATAL("Create surface failed.");
+		return false;
+	}
+
+	state->surface = vk::SurfaceKHR(Win32Surface);
+	context->Surface = state->surface;
+
+	return true;
 }
 
 #endif	//DPLATFORM_WINDOWS

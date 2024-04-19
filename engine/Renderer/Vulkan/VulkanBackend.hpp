@@ -1,9 +1,7 @@
 #pragma once
 
 #include "Renderer/RendererBackend.hpp"
-#include "VulkanTypes.hpp"
-
-struct SVulkanContext;
+#include "VulkanContext.hpp"
 
 class VulkanBackend : public IRendererBackend {
 public:
@@ -19,6 +17,6 @@ public:
 	virtual void Resize(unsigned short width, unsigned short height) override;
 
 protected:
-	struct SVulkanContext Context;
+	VulkanContext Context;
 
 };

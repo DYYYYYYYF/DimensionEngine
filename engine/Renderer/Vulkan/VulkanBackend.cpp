@@ -1,5 +1,6 @@
 #include "VulkanBackend.hpp"
 #include "VulkanPlatform.hpp"
+#include "VulkanDevice.hpp"
 
 #include "Core/EngineLogger.hpp"
 #include "Containers/TArray.hpp"
@@ -40,7 +41,7 @@ bool VulkanBackend::Initialize(const char* application_name, struct SPlatformSta
 
 	std::string output = "\nRequeired extensions : \n";
 	for (int i = 0; i < RequiredExtensions.size(); i++) {
-		auto temp = RequiredExtensions[i];
+		const char* temp = RequiredExtensions[i];
 		output.append("\t");
 		output.append(temp);
 		output.append("\n");
@@ -98,14 +99,14 @@ bool VulkanBackend::Initialize(const char* application_name, struct SPlatformSta
 
 	try
 	{
-		Context.instance = vk::createInstance(InstanceInfo, Context.allocator);
+		Context.Instance = vk::createInstance(InstanceInfo, Context.Allocator);
 	}
 	catch (const std::exception&)
 	{
 		UL_ERROR("Create vulkan instance failed.");
 		return false;
 	}
-	ASSERT(Context.instance);
+	ASSERT(Context.Instance);
 
 #ifdef LEVEL_DEBUG
 	UL_DEBUG("Create vulkan debugger...");
@@ -128,9 +129,9 @@ bool VulkanBackend::Initialize(const char* application_name, struct SPlatformSta
 		.setPUserData(nullptr)
 		.setPfnUserCallback(VulkanDebugCallback);
 
-	auto dispatcher = vk::DispatchLoaderDynamic(Context.instance, vkGetInstanceProcAddr);
-	if (Context.instance.createDebugUtilsMessengerEXT(&DebugCreateInfo,
-		Context.allocator, &Context.debug_messenger, dispatcher) != vk::Result::eSuccess) {
+	auto dispatcher = vk::DispatchLoaderDynamic(Context.Instance, vkGetInstanceProcAddr);
+	if (Context.Instance.createDebugUtilsMessengerEXT(&DebugCreateInfo,
+		Context.Allocator, &Context.DebugMessenger, dispatcher) != vk::Result::eSuccess) {
 		UL_FATAL("Create debug utils messenger failed.");
 		return false;
 	}
@@ -138,19 +139,45 @@ bool VulkanBackend::Initialize(const char* application_name, struct SPlatformSta
 	UL_DEBUG("Vulkan debugger created.");
 #endif
 
+	// Surface
+	UL_DEBUG("Creating vulkan surface...");
+	if (!PlatformCreateVulkanSurface(plat_state, &Context)) {
+		UL_ERROR("Create platform surface failed.");
+		return false;
+	}
+	UL_DEBUG("Vulkan surface created.");
+
+	// Device
+	UL_DEBUG("Creating vulkan device...");
+	if (!Context.Device.Create(&Context.Instance, Context.Allocator, Context.Surface)) {
+		UL_ERROR("Create vulkan device failed.");
+		return false;
+	}
+	UL_INFO("Vulkan device created.");
+
 	UL_INFO("Create vulkan instance succeed.");
 	return true;
 }
 
 void VulkanBackend::Shutdown() {
-	UL_DEBUG("Destroying vulkan debugger...");
-	auto dispatcher = vk::DispatchLoaderDynamic(Context.instance, vkGetInstanceProcAddr);
-	if (Context.debug_messenger) {
-		Context.instance.destroyDebugUtilsMessengerEXT(Context.debug_messenger, Context.allocator, dispatcher);
+	UL_DEBUG("Destroying vulkan device.");
+	Context.Device.Destroy(&Context.Instance);
+
+	UL_DEBUG("Destroying vulkan surface.");
+	if (Context.Surface) {
+		Context.Instance.destroy(Context.Surface, Context.Allocator);
 	}
 
+#ifdef LEVEL_DEBUG
+	UL_DEBUG("Destroying vulkan debugger...");
+	auto dispatcher = vk::DispatchLoaderDynamic(Context.Instance, vkGetInstanceProcAddr);
+	if (Context.DebugMessenger) {
+		Context.Instance.destroyDebugUtilsMessengerEXT(Context.DebugMessenger, Context.Allocator, dispatcher);
+	}
+#endif
+
 	UL_DEBUG("Destroying vulkan instance...");
-	Context.instance.destroy();
+	Context.Instance.destroy(Context.Allocator);
 
 }
 
