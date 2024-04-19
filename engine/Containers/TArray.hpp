@@ -151,7 +151,7 @@ public:
 
 	ElementType& operator[](size_t i) { 
 		//if (i > Length || ArrayMemory == nullptr) return ElementType();
-		return *((ElementType*)ArrayMemory + i * Stride);
+		return *((ElementType*)((size_t)ArrayMemory + i * Stride));
 	}
 
 
