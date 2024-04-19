@@ -17,21 +17,23 @@ void* elements
 template<typename ElementType>
 class TArray {
 public:
-	TArray() {
+	TArray(MemoryType memory_type = MemoryType::eMemory_Type_Array) {
 		size_t ArrayMemSize = ARRAY_DEFAULT_CAPACITY * sizeof(ElementType);
-		ArrayMemory = Memory::Allocate(ArrayMemSize, MemoryType::eMemory_Type_Array);
+		ArrayMemory = Memory::Allocate(ArrayMemSize, memory_type);
 		Memory::Set(ArrayMemory, 0, ArrayMemSize);
 
+		UsedMemoryType = memory_type;
 		Capacity = ARRAY_DEFAULT_CAPACITY;
 		Stride = sizeof(ElementType);
 		Length = 0;
 	}
 
-	TArray(size_t size) {
+	TArray(size_t size, MemoryType memory_type = MemoryType::eMemory_Type_Array) {
 		size_t ArrayMemSize = size * sizeof(ElementType);
-		ArrayMemory = Memory::Allocate(ArrayMemSize, MemoryType::eMemory_Type_Array);
+		ArrayMemory = Memory::Allocate(ArrayMemSize, memory_type);
 		Memory::Set(ArrayMemory, 0, ArrayMemSize);
 
+		UsedMemoryType = memory_type;
 		Capacity = size;
 		Stride = sizeof(ElementType);
 		Length = size;
@@ -43,13 +45,14 @@ public:
 	size_t GetField(size_t field) {}
 	void SetField(size_t field, size_t val){}
 
-	void Resize() {
-		void* TempMemory = Memory::Allocate(Capacity * ARRAY_DEFAULT_RESIZE_FACTOR * Stride, MemoryType::eMemory_Type_Array);
+	void Resize(size_t size = 0) {
+		size_t NewCapacity = size > 0 ? size : Capacity * ARRAY_DEFAULT_RESIZE_FACTOR;
+		void* TempMemory = Memory::Allocate(NewCapacity * Stride, MemoryType::eMemory_Type_Array);
 
 		Memory::Copy(TempMemory, ArrayMemory, Length * Stride);
 		Memory::Free(ArrayMemory, Capacity * Stride, MemoryType::eMemory_Type_Array);
 
-		Capacity = Capacity * ARRAY_DEFAULT_RESIZE_FACTOR;
+		Capacity = NewCapacity;
 		ArrayMemory = TempMemory;
 	}
 
@@ -129,7 +132,7 @@ public:
 	void Clear() {
 		if (ArrayMemory != nullptr) {
 			size_t MemorySize = Capacity * Stride;
-			Memory::Free(ArrayMemory, MemorySize, MemoryType::eMemory_Type_Array);
+			Memory::Free(ArrayMemory, MemorySize, UsedMemoryType);
 
 			ArrayMemory = nullptr;
 			Length = 0;
@@ -159,5 +162,7 @@ private:
 	size_t Capacity;		
 	size_t Stride;
 	size_t Length;
+
+	MemoryType UsedMemoryType;
 };
 
