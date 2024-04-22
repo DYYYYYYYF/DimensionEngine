@@ -1,4 +1,4 @@
-# VulkanRenderDemo
+# Dimension Engine
 3D-Rendering of Vulkan 
 
 CMake Files: (MacOS required Vulkan,GLM,GLFW)
@@ -10,6 +10,8 @@ cd build then cmd: cmake [[Custom params]](### Cmake params) ..
 cmd 'make'
 
 after all, it will create a executable program named VulkanTestDemo
+
+Windows: Visual Studio 2022
 
 ### Cmake params
 
@@ -32,38 +34,15 @@ after all, it will create a executable program named VulkanTestDemo
 ## Warn: Under refactory 
 By far, impl Triangle renderer.
 
-2023.11.06：Mesh、Material、Texture、Light、ComputeShader
+Renderer: Instance Device Swapchain FrameBuffer RenderPass CommandBuffer
 
 The foundational functions have finished.
 
 If your plants form is Windows, you could compile shaders by compile_shader.bat. (Dont forget set current VulkanSDK path)
 
-## Example shortcut
-
-mutiple_models 
-![](examples/shortcut/RenderEngine.png)
-
-light_shader 
-![](examples/shortcut/LightShader.png)
-
-mesh_grid 
-![](examples/shortcut/MeshGrid.png)
-
-draw_common_shape
-![](examples/shortcut/CommonShape.PNG)
-
-compute_shader_calculation 
-![](examples/shortcut/ComputeShader.png)
-
 ## 3rd-Libraries
 
 Vulkan: https://www.vulkan.org
-
-GLFW: https://github.com/glfw/glfw
-
-stb-master: https://github.com/nothings/stb
-
-tinyobjloader: https://github.com/tinyobjloader/tinyobjloader
 
 UncleDon-Logger: https://github.com/DYYYYYYYF/UncleDon-Logger
 
