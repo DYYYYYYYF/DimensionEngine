@@ -50,4 +50,6 @@
 
 #endif	// #ifdef DEXPORT
 
-
+#ifndef CLAMP
+#define CLAMP(value, min, max) (value <= min) ? min : (value >= max) ? max : value;
+#endif

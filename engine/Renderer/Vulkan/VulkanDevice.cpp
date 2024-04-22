@@ -268,14 +268,14 @@ bool VulkanDevice::MeetsRequirements(vk::PhysicalDevice device, vk::SurfaceKHR s
 		}
 
 		// Present queue
-		vk::Bool32 SupportedPresent = VK_FALSE;
-		if (device.getSurfaceSupportKHR(i, surface, &SupportedPresent) != vk::Result::eSuccess) {
-			UL_ERROR("Get surface support failed.");
-			return false;
-		}
-		if (SupportedPresent) {
-			QueueFamilyInfo.present_index = i;
-		}
+vk::Bool32 SupportedPresent = VK_FALSE;
+if (device.getSurfaceSupportKHR(i, surface, &SupportedPresent) != vk::Result::eSuccess) {
+	UL_ERROR("Get surface support failed.");
+	return false;
+}
+if (SupportedPresent) {
+	QueueFamilyInfo.present_index = i;
+}
 	}
 
 	UL_INFO("        %d |        %d |       %d |        %d | %s",
@@ -348,6 +348,33 @@ bool VulkanDevice::MeetsRequirements(vk::PhysicalDevice device, vk::SurfaceKHR s
 		}
 
 		return true;
+	}
+
+	return false;
+}
+
+bool VulkanDevice::DetectDepthFormat() {
+	// Format candidates
+	const size_t CandidateCount = 3;
+	vk::Format Candidates[3] = {
+		vk::Format::eD32Sfloat,
+		vk::Format::eD32SfloatS8Uint,
+		vk::Format::eD24UnormS8Uint
+	};
+
+	vk::FormatFeatureFlags Flags = vk::FormatFeatureFlagBits::eDepthStencilAttachment;
+	for (uint32_t i = 0; i < CandidateCount; ++i) {
+		vk::FormatProperties Properties;
+		Properties = PhysicalDevice.getFormatProperties(Candidates[i]);
+
+		if ((Properties.linearTilingFeatures & Flags) == Flags){
+			DepthFormat = Candidates[i];
+			return true;
+		}
+		else if ((Properties.optimalTilingFeatures & Flags) == Flags) {
+			DepthFormat = Candidates[i];
+			return true;
+		}
 	}
 
 	return false;

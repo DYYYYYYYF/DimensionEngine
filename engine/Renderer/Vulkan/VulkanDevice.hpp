@@ -49,12 +49,18 @@ public:
 	SSwapchainSupportInfo* GetSwapchainSupportInfo() { return &SwapchainSupport; }
 	const SSwapchainSupportInfo* GetSwapchainSupportInfo() const { return &SwapchainSupport; }
 
+	void QuerySwapchainSupport(vk::PhysicalDevice device, vk::SurfaceKHR surface, SSwapchainSupportInfo* support_info);
+
+	bool DetectDepthFormat();
+
+	void SetDepthFormat(vk::Format format) { DepthFormat = format; }
+	vk::Format GetDepthFormat() { return DepthFormat; }
+
 private:
 	bool SelectPhysicalDevice(vk::Instance* instance, vk::SurfaceKHR surface);
 	bool MeetsRequirements(vk::PhysicalDevice device, vk::SurfaceKHR surface, const vk::PhysicalDeviceProperties* properties,
 		const vk::PhysicalDeviceFeatures* features);
 
-	void QuerySwapchainSupport(vk::PhysicalDevice device, vk::SurfaceKHR surface, SSwapchainSupportInfo* support_info);
 
 private:
 	vk::PhysicalDevice PhysicalDevice;
@@ -66,4 +72,6 @@ private:
 	SVulkanPhysicalDeviceRequirements DeviceRequirements;
 	SVulkanPhysicalDeviceQueueFamilyInfo QueueFamilyInfo;
 	SSwapchainSupportInfo SwapchainSupport;
+
+	vk::Format DepthFormat;
 };

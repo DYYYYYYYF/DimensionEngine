@@ -109,7 +109,7 @@ bool VulkanBackend::Initialize(const char* application_name, struct SPlatformSta
 	ASSERT(Context.Instance);
 
 #ifdef LEVEL_DEBUG
-	UL_DEBUG("Create vulkan debugger...");
+	UL_INFO("Create vulkan debugger...");
 	
 	vk::DebugUtilsMessageSeverityFlagsEXT LogServerity = 
 		vk::DebugUtilsMessageSeverityFlagBitsEXT::eError |
@@ -136,30 +136,36 @@ bool VulkanBackend::Initialize(const char* application_name, struct SPlatformSta
 		return false;
 	}
 
-	UL_DEBUG("Vulkan debugger created.");
+	UL_INFO("Vulkan debugger created.");
 #endif
 
 	// Surface
-	UL_DEBUG("Creating vulkan surface...");
+	UL_INFO("Creating vulkan surface...");
 	if (!PlatformCreateVulkanSurface(plat_state, &Context)) {
 		UL_ERROR("Create platform surface failed.");
 		return false;
 	}
-	UL_DEBUG("Vulkan surface created.");
+	UL_INFO("Vulkan surface created.");
 
 	// Device
-	UL_DEBUG("Creating vulkan device...");
+	UL_INFO("Creating vulkan device...");
 	if (!Context.Device.Create(&Context.Instance, Context.Allocator, Context.Surface)) {
 		UL_ERROR("Create vulkan device failed.");
 		return false;
 	}
 	UL_INFO("Vulkan device created.");
 
+	// Swapchain
+	Context.Swapchain.Create(&Context, Context.FrameBufferWidth, Context.FrameBufferHeight);
+
 	UL_INFO("Create vulkan instance succeed.");
 	return true;
 }
 
 void VulkanBackend::Shutdown() {
+	UL_DEBUG("Destroying swapchain.");
+	Context.Swapchain.Destroy(&Context);
+
 	UL_DEBUG("Destroying vulkan device.");
 	Context.Device.Destroy(&Context.Instance);
 
