@@ -158,11 +158,17 @@ bool VulkanBackend::Initialize(const char* application_name, struct SPlatformSta
 	// Swapchain
 	Context.Swapchain.Create(&Context, Context.FrameBufferWidth, Context.FrameBufferHeight);
 
+	Context.MainRenderPass.Create(&Context, 0, 0, Context.FrameBufferWidth, Context.FrameBufferHeight, 0.0f, 0.0f, 0.2f, 1.0f, 1.0f, 0);
+
+
 	UL_INFO("Create vulkan instance succeed.");
 	return true;
 }
 
 void VulkanBackend::Shutdown() {
+	UL_DEBUG("Destroying render pass.");
+	Context.MainRenderPass.Destroy(&Context);
+
 	UL_DEBUG("Destroying swapchain.");
 	Context.Swapchain.Destroy(&Context);
 

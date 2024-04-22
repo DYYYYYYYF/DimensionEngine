@@ -4,6 +4,7 @@
 #include "Defines.hpp"
 #include "VulkanDevice.hpp"
 #include "VulkanSwapchain.hpp"
+#include "VulkanRenderpass.hpp"
 
 class VulkanContext {
 public:
@@ -43,4 +44,5 @@ public:
 
 	VulkanDevice Device;
 	VulkanSwapchain Swapchain;
+	VulkanRenderPass MainRenderPass;
 };
