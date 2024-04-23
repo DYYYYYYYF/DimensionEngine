@@ -3,6 +3,7 @@
 #if DPLATFORM_WINDOWS
 
 #include "core/Input.hpp"
+#include "Core/Event.hpp"
 #include "Renderer/Vulkan/VulkanPlatform.hpp"
 #include "Renderer/Vulkan/VulkanContext.hpp"
 
@@ -175,7 +176,9 @@ LRESULT CALLBACK win32_process_message(HWND hwnd, UINT32 msg, WPARAM w_param, LP
 		case WM_ERASEBKGND:
 			return 1;
 		case WM_CLOSE:
-			return 0;
+			SEventContext Context = SEventContext();
+			Core::EventFire(Core::SystemEventCode::eEvent_Code_Application_Quit, 0, Context);
+			return 1;
 		case WM_DESTROY:
 			PostQuitMessage(0);
 			return 0;
