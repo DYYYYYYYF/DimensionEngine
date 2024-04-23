@@ -19,6 +19,7 @@ public:
 
 	virtual void CreateCommandBuffer();
 	virtual void RegenerateFrameBuffers();
+	virtual bool RecreateSwapchain();
 
 protected:
 	VulkanContext Context;

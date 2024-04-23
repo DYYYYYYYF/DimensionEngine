@@ -22,7 +22,7 @@ public:
 	void Allocate(VulkanContext* context, vk::CommandPool pool, bool is_primary);
 	void Free(VulkanContext* context, vk::CommandPool pool);
 
-	void BeginCommand(VulkanContext* context, bool is_single_use, bool is_renderpass_continue, bool is_synchronized);
+	void BeginCommand(bool is_single_use, bool is_renderpass_continue, bool is_synchronized);
 	void EndCommand();
 
 	void UpdateSubmitted();

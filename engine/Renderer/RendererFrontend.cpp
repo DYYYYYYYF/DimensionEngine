@@ -48,7 +48,12 @@ void IRenderer::Shutdown() {
 }
 
 void IRenderer::OnResize(unsigned short width, unsigned short height) {
-	
+	if (Backend != nullptr) {
+		Backend->Resize(width, height);
+	}
+	else {
+		UL_WARN("Renderer backend does not exist to accept resize: %i %i", width, height);
+	}
 }
 
 bool IRenderer::BeginFrame(double delta_time) {

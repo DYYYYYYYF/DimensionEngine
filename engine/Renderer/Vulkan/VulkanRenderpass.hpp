@@ -26,10 +26,17 @@ public:
 		float depth, uint32_t stencil);
 	void Destroy(VulkanContext* context);
 
-	void Begin(VulkanCommandBuffer* command_buffer, vk::Framebuffer* frame_buffer);
+	void Begin(VulkanCommandBuffer* command_buffer, vk::Framebuffer frame_buffer);
 	void End(VulkanCommandBuffer* command_buffer);
 
 	vk::RenderPass GetRenderPass() { return RenderPass; }
+
+public:
+	void SetW(float w) { W = w; }
+	void SetH(float h) { H = h; }
+
+	void SetX(float x) { X = x; }
+	void SetY(float y) { Y = y; }
 
 private:
 	vk::RenderPass RenderPass;

@@ -187,6 +187,13 @@ LRESULT CALLBACK win32_process_message(HWND hwnd, UINT32 msg, WPARAM w_param, LP
 			GetClientRect(hwnd, &Rect);
 			unsigned int Width = Rect.right - Rect.left;
 			unsigned int Height = Rect.bottom - Rect.top;
+
+			// Fire the event. The application layer should pick this up, but not handle it
+			// as it should not be visible to other parts of the application.
+			SEventContext Context = SEventContext();
+			Context.data.u16[0] = (unsigned short)Width;
+			Context.data.u16[1] = (unsigned short)Height;
+			Core::EventFire(Core::SystemEventCode::eEvent_Code_Resize, 0, Context);
 			break;
 		}
 		case WM_KEYDOWN:

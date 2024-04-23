@@ -171,7 +171,7 @@ bool VulkanBackend::Initialize(const char* application_name, struct SPlatformSta
 	// Swapchain
 	Context.Swapchain.Create(&Context, Context.FrameBufferWidth, Context.FrameBufferHeight);
 
-	Context.MainRenderPass.Create(&Context, 0.0f, 0.0f, (float)Context.FrameBufferWidth, (float)Context.FrameBufferHeight, 0.0f, 0.0f, 0.2f, 1.0f, 1.0f, 0);
+	Context.MainRenderPass.Create(&Context, 0.0f, 0.0f, (float)Context.FrameBufferWidth, (float)Context.FrameBufferHeight, 0.5f, 0.5f, 0.5f, 1.0f, 1.0f, 0);
 	
 	// Swapchain framebuffers.
 	Context.Swapchain.Framebuffers.resize(Context.Swapchain.ImageCount);
@@ -236,7 +236,7 @@ void VulkanBackend::Shutdown() {
 		}
 	}
 
-	UL_DEBUG("Destroying command buffers.");
+	UL_DEBUG("Destroying frame buffers.");
 	for (uint32_t i = 0; i < Context.Swapchain.ImageCount; ++i) {
 		Context.Swapchain.Framebuffers[i].Destroy(&Context);
 	}
@@ -269,17 +269,138 @@ void VulkanBackend::Shutdown() {
 }
 
 bool VulkanBackend::BeginFrame(double delta_time){
+	VulkanDevice* Device = &Context.Device;
+
+	// Check if recreating swap chain and boot out
+	if (Context.RecreatingSwapchain) {
+		Device->GetLogicalDevice().waitIdle();
+		UL_INFO("Recreating swapchain, booting.");
+		return false;
+	}
+
+	// Check if the framebuffer has been resized. If so, a new swapchain must be created.
+	if (Context.FramebufferSizeGenerate != Context.FramebufferSizeGenerateLast) {
+		Device->GetLogicalDevice().waitIdle();
+
+		// If the swap chain recreation failed
+		// boot out before unsetting the flag
+		if (!RecreateSwapchain()) {
+			UL_INFO("Recreating swapchain, booting.");
+			return false;
+		}
+
+		UL_INFO("Resized, booting.");
+		return false;
+	}
+
+	// Wait for the execution of the current frame to complete. The fence being free will allow this one to move on
+	if (!Context.InFlightFences[Context.CurrentFrame].Wait(&Context, UINT64_MAX)) {
+		UL_WARN("In flight fence wait failure!");
+		return false;
+	}
+
+	// Acquire the next image from the swap chain. Pass along the semaphore that should signaled when this completes.
+	// This same semaphore will later be waited on by the queue submission to ensure this image is available.
+	Context.ImageIndex = Context.Swapchain.AcquireNextImageIndex(&Context, UINT64_MAX, Context.ImageAvailableSemaphores[Context.CurrentFrame], nullptr);
+	if (Context.ImageIndex == -1) {
+		return false;
+	}
+
+	// Begin recording commands
+	VulkanCommandBuffer* CommandBuffer = &Context.GraphicsCommandBuffers[Context.ImageIndex];
+	CommandBuffer->Reset();
+	CommandBuffer->BeginCommand(false, false, false);
+
+	// Dynamic state
+	vk::Viewport Viewport;
+	Viewport.setX(0.0f)
+		.setY(0.0f)
+		.setWidth((float)Context.FrameBufferWidth)
+		.setHeight(-(float)Context.FrameBufferHeight)
+		.setMinDepth(0.0f)
+		.setMaxDepth(1.0f);
+
+	// Scissor
+	vk::Rect2D Scissor;
+	Scissor.setOffset({ 0, 0 })
+		.setExtent({ Context.FrameBufferWidth, Context.FrameBufferHeight });
+
+	CommandBuffer->CommandBuffer.setViewport(0, 1, &Viewport);
+	CommandBuffer->CommandBuffer.setScissor(0, 1, &Scissor);
+
+	Context.MainRenderPass.SetW((float)Context.FrameBufferWidth);
+	Context.MainRenderPass.SetH((float)Context.FrameBufferHeight);
+
+	// Begin the render pass
+	Context.MainRenderPass.Begin(CommandBuffer, Context.Swapchain.Framebuffers[Context.ImageIndex].FrameBuffer);
 
 	return true;
 }
 
 bool VulkanBackend::EndFrame(double delta_time) {
 
+	VulkanCommandBuffer* CommandBuffer = &Context.GraphicsCommandBuffers[Context.ImageIndex];
+
+	// End renderpass
+	Context.MainRenderPass.End(CommandBuffer);
+	
+	CommandBuffer->EndCommand();
+
+	// Make sure the previous frame is not using this image
+	if (Context.ImagesInFilght[Context.ImageIndex] != VK_NULL_HANDLE) {
+		Context.ImagesInFilght[Context.ImageIndex]->Wait(&Context, UINT64_MAX);
+	}
+
+	// Make sure image fence as in use by this frame
+	Context.ImagesInFilght[Context.ImageIndex] = &Context.InFlightFences[Context.CurrentFrame];
+
+	// Reset the fence for use on the next frame
+	Context.InFlightFences[Context.CurrentFrame].Reset(&Context);
+
+	// Submit the queue and wait for the operation to complete
+	// Regin queue submission
+	vk::SubmitInfo SubmitInfo;
+	
+	// Command buffer(s) to be executed
+	SubmitInfo.setCommandBufferCount(1);
+	SubmitInfo.setCommandBuffers(CommandBuffer->CommandBuffer);
+
+	// The semaphore(s) to be signaled then the queue is complete
+	SubmitInfo.setSignalSemaphoreCount(1);
+	SubmitInfo.setSignalSemaphores(Context.QueueCompleteSemaphores[Context.CurrentFrame]);
+
+	// Wait semaphore ensures that the operation cannot begin until the image is available
+	SubmitInfo.setWaitSemaphoreCount(1);
+	SubmitInfo.setWaitSemaphores(Context.ImageAvailableSemaphores[Context.CurrentFrame]);
+
+	// Each semaphore waits on the corresponding pipeline stage to complete. 1:1 ratio.
+	// vk::PipelineStageFlagBits::eColor_Attachment_Ouput prevents subsequent color attachment.
+	// Writes from executing until the semaphore signals
+	vk::PipelineStageFlags Flags[1] = { vk::PipelineStageFlagBits::eColorAttachmentOutput };
+	SubmitInfo.setWaitDstStageMask(Flags);
+
+	if (Context.Device.GetGraphicsQueue().submit(1, &SubmitInfo, Context.InFlightFences[Context.CurrentFrame].fence) != vk::Result::eSuccess) {
+		UL_ERROR("Queue submit failed.");
+		return false;
+	}
+
+	CommandBuffer->UpdateSubmitted();
+
+	// End queue submission
+	Context.Swapchain.Presnet(&Context, Context.Device.GetGraphicsQueue(), Context.Device.GetPresentQueue(),
+		Context.QueueCompleteSemaphores[Context.CurrentFrame], Context.ImageIndex);
+
 	return true;
 }
 
 void VulkanBackend::Resize(unsigned short width, unsigned short height) {
+	// Update the "Framebuffer size generate", a counter which indicates when the
+	// framebuffer size has been updated
+	CachedFramebufferWidth = width;
+	CachedFramebufferHeight = height;
+	Context.FramebufferSizeGenerate++;
 
+	UL_INFO("Vulkan renderer backend resize: width/height/generation: %i/%i/%llu", width, height, Context.FramebufferSizeGenerate);
 }
 
 void VulkanBackend::CreateCommandBuffer() {
@@ -315,6 +436,71 @@ void VulkanBackend::RegenerateFrameBuffers() {
 		Context.Swapchain.Framebuffers[i].Create(&Context, &Context.MainRenderPass, 
 			Context.FrameBufferWidth, Context.FrameBufferHeight, AttachmentCount, Attachments);
 	}
+}
+
+bool VulkanBackend::RecreateSwapchain() {
+	// If already being recreated, do not try again.
+	if (Context.RecreatingSwapchain) {
+		UL_DEBUG("Already called recreate swapchain. Booting.");
+		return false;
+	}
+	
+	// Detect if the windows is too small to be drawn to
+	if (Context.FrameBufferWidth == 0 || Context.FrameBufferHeight == 0) {
+		UL_DEBUG("Recreate swapchain called when windows is < 1px. Booting.");
+		return false;
+	}
+
+	// Mark as recreatring if the dimensions are valid.
+	Context.RecreatingSwapchain = true;
+
+	// Wait for any operation to complete
+	Context.Device.GetLogicalDevice().waitIdle();
+
+	// Clear these out just in case
+	for (uint32_t i = 0; i < Context.Swapchain.ImageCount; ++i) {
+		Context.ImagesInFilght[i] = nullptr;
+	}
+
+	// Requery support
+	Context.Device.QuerySwapchainSupport(Context.Device.GetPhysicalDevice(), Context.Surface, Context.Device.GetSwapchainSupportInfo());
+	Context.Device.DetectDepthFormat();
+
+	Context.Swapchain.Recreate(&Context, CachedFramebufferWidth, CachedFramebufferHeight);
+
+	// Sync the framebuffer size with the cached sizes.
+	Context.FrameBufferWidth = CachedFramebufferWidth;
+	Context.FrameBufferHeight = CachedFramebufferHeight;
+	Context.MainRenderPass.SetW((float)Context.FrameBufferWidth);
+	Context.MainRenderPass.SetH((float)Context.FrameBufferHeight);
+	CachedFramebufferWidth = 0;
+	CachedFramebufferHeight = 0;
+
+	// Update framebuffer size generation.
+	Context.FramebufferSizeGenerateLast = Context.FramebufferSizeGenerate;
+
+	// Cleanup swapcahin
+	for (uint32_t i = 0; i < Context.Swapchain.ImageCount; ++i) {
+		Context.GraphicsCommandBuffers[i].Free(&Context, Context.Device.GetGraphicsCommandPool());
+	}
+
+	// Framebuffers
+	for (uint32_t i = 0; i < Context.Swapchain.ImageCount; ++i) {
+		Context.Swapchain.Framebuffers[i].Destroy(&Context);
+	}
+
+	Context.MainRenderPass.SetX(0);
+	Context.MainRenderPass.SetY(0);
+	Context.MainRenderPass.SetW((float)Context.FrameBufferWidth);
+	Context.MainRenderPass.SetH((float)Context.FrameBufferHeight);
+
+	RegenerateFrameBuffers();
+	CreateCommandBuffer();
+
+	// Clear the recreating flag.
+	Context.RecreatingSwapchain = false;
+
+	return true;
 }
 
 /*

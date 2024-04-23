@@ -33,6 +33,11 @@ public:
 	uint32_t FrameBufferWidth;
 	uint32_t FrameBufferHeight;
 
+	// Current generation of framebuffer size. If it does not match framebuffer_size_last_generation then should be generated
+	size_t FramebufferSizeGenerate;
+	// The generation of the framebuffer when it was last created. Set to framebuffer_size_generation when updated.
+	size_t FramebufferSizeGenerateLast;
+
 	uint32_t ImageIndex;
 	uint32_t CurrentFrame;
 	bool RecreatingSwapchain;

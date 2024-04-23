@@ -21,7 +21,7 @@ void VulkanCommandBuffer::Free(VulkanContext* context, vk::CommandPool pool) {
 	State = eCommand_Buffer_State_Not_Allocated;
 }
 
-void VulkanCommandBuffer::BeginCommand(VulkanContext* context, bool is_single_use, bool is_renderpass_continue, bool is_synchronized) {
+void VulkanCommandBuffer::BeginCommand(bool is_single_use, bool is_renderpass_continue, bool is_synchronized) {
 	vk::CommandBufferBeginInfo BeginInfo;
 	if (is_single_use) {
 		BeginInfo.flags |= vk::CommandBufferUsageFlagBits::eOneTimeSubmit;
@@ -52,7 +52,7 @@ void VulkanCommandBuffer::Reset() {
 
 void VulkanCommandBuffer::AllocateAndBeginSingleUse(VulkanContext* context, vk::CommandPool pool) {
 	Allocate(context, pool, true);
-	BeginCommand(context, true, false, false);
+	BeginCommand(true, false, false);
 }
 
 void VulkanCommandBuffer::EndSingleUse(VulkanContext* context, vk::CommandPool pool, vk::Queue queue) {

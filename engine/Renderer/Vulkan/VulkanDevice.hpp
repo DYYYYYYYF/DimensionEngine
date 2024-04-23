@@ -58,6 +58,10 @@ public:
 
 	vk::CommandPool GetGraphicsCommandPool() { return GraphicsCommandPool; }
 
+	vk::Queue GetGraphicsQueue() { return GraphicsQueue; }
+	vk::Queue GetPresentQueue() { return PresentQueue; }
+	vk::Queue GetTransferQueue() { return TransferQueue; }
+
 private:
 	bool SelectPhysicalDevice(vk::Instance* instance, vk::SurfaceKHR surface);
 	bool MeetsRequirements(vk::PhysicalDevice device, vk::SurfaceKHR surface, const vk::PhysicalDeviceProperties* properties,

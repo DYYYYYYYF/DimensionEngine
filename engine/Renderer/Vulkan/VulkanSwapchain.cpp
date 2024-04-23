@@ -149,6 +149,7 @@ void VulkanSwapchain::Recreate(VulkanContext* context, unsigned int width, unsig
 }
 
 bool VulkanSwapchain::Destroy(VulkanContext* context) {
+	context->Device.GetLogicalDevice().waitIdle();
 	DepthAttachment.Destroy(context);
 
 	// Only destroy views, not the images, since those are owned by swapchain and are thus destroyed when it is.

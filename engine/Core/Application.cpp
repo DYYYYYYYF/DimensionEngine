@@ -57,13 +57,17 @@ bool ApplicationCreate(SGame* game_instance){
 	Core::EventRegister(Core::eEvent_Code_Application_Quit, 0, ApplicationOnEvent);
 	Core::EventRegister(Core::eEvent_Code_Key_Pressed, 0, ApplicationOnKey);
 	Core::EventRegister(Core::eEvent_Code_Key_Released, 0, ApplicationOnKey);
-	
+	Core::EventRegister(Core::eEvent_Code_Resize, 0, ApplicationOnResized);
+
 	Platform::PlatformStartup(&AppState.platform,
 		game_instance->app_config.name, 
 		game_instance->app_config.start_x, 
 		game_instance->app_config.start_y, 
 		game_instance->app_config.start_width, 
 		game_instance->app_config.start_height);
+
+	AppState.width = game_instance->app_config.start_width;
+	AppState.height = game_instance->app_config.start_height;
 
 	// Init Renderer
 	if (Renderer == nullptr) {
@@ -84,6 +88,7 @@ bool ApplicationCreate(SGame* game_instance){
 	}
 
 	AppState.game_instance->on_resize(AppState.game_instance, AppState.width, AppState.height);
+	Renderer->OnResize(AppState.width, AppState.height);
 
 	Initialized = true;
 	return true;
@@ -207,6 +212,42 @@ bool ApplicationOnKey(unsigned short code, void* sender, void* listener_instance
 		}
 		else {
 			//printf("%c released!", KeyCode);
+		}
+	}
+
+	return false;
+}
+
+bool ApplicationOnResized(unsigned short code, void* sender, void* listener_instance, SEventContext context) {
+	if (Renderer == nullptr) {
+		return false;
+	}
+
+	if (code == Core::eEvent_Code_Resize) {
+		unsigned short Width = context.data.u16[0];
+		unsigned short Height = context.data.u16[1];
+
+		//Check if different. If so, trigger a resize event.
+		if (Width != AppState.width || Height != AppState.height) {
+			AppState.width = Width;
+			AppState.height = Height;
+			UL_DEBUG("Window resize: %i %i", Width, Height);
+
+			// Handle minimization
+			if (Width == 0 || Height == 0) {
+				UL_INFO("Window minimized, suspending application.");
+				AppState.is_suspended = true;
+				return true;
+			}
+			else {
+				if (AppState.is_suspended) {
+					UL_INFO("Window restored, resuming application.");
+					AppState.is_suspended = false;
+				}
+
+				AppState.game_instance->on_resize(AppState.game_instance, Width, Height);
+				Renderer->OnResize(Width, Height);
+			}
 		}
 	}
 
