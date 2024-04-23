@@ -212,3 +212,8 @@ bool ApplicationOnKey(unsigned short code, void* sender, void* listener_instance
 
 	return false;
 }
+
+void GetFramebufferSize(unsigned int* width, unsigned int* height) {
+	*width = AppState.width;
+	*height = AppState.height;
+}

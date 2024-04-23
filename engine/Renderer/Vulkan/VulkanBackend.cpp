@@ -2,9 +2,13 @@
 #include "VulkanPlatform.hpp"
 #include "VulkanDevice.hpp"
 
+#include "Core/Application.hpp"
 #include "Core/EngineLogger.hpp"
 #include "Containers/TArray.hpp"
 #include "Platform/Platform.hpp"
+
+static uint32_t CachedFramebufferWidth = 0;
+static uint32_t CachedFramebufferHeight = 0;
 
 VKAPI_ATTR VkBool32 VKAPI_CALL VulkanDebugCallback(
 	VkDebugUtilsMessageSeverityFlagBitsEXT message_servity,
@@ -21,6 +25,15 @@ VulkanBackend::~VulkanBackend() {
 }
 
 bool VulkanBackend::Initialize(const char* application_name, struct SPlatformState* plat_state) {
+
+	// TODO: Custom allocator;
+	Context.Allocator = nullptr;
+
+	GetFramebufferSize(&CachedFramebufferWidth, &CachedFramebufferHeight);
+	Context.FrameBufferWidth = (CachedFramebufferWidth > 0) ? CachedFramebufferWidth : 800;
+	Context.FrameBufferHeight = (CachedFramebufferHeight > 0) ? CachedFramebufferHeight : 600;
+	CachedFramebufferWidth = 0;
+	CachedFramebufferHeight = 0;
 
 	vk::ApplicationInfo ApplicationInfo;
 	vk::InstanceCreateInfo InstanceInfo;
@@ -160,18 +173,72 @@ bool VulkanBackend::Initialize(const char* application_name, struct SPlatformSta
 
 	Context.MainRenderPass.Create(&Context, 0.0f, 0.0f, (float)Context.FrameBufferWidth, (float)Context.FrameBufferHeight, 0.0f, 0.0f, 0.2f, 1.0f, 1.0f, 0);
 	
+	// Swapchain framebuffers.
+	Context.Swapchain.Framebuffers.resize(Context.Swapchain.ImageCount);
+	RegenerateFrameBuffers();
+
 	// Command buffers
 	CreateCommandBuffer();
+
+	// Sync objects
+	Context.ImageAvailableSemaphores.resize(Context.Swapchain.MaxFramesInFlight);
+	Context.QueueCompleteSemaphores.resize(Context.Swapchain.MaxFramesInFlight);
+	Context.InFlightFences.resize(Context.Swapchain.MaxFramesInFlight);
+
+	for (uint32_t i = 0; i < Context.Swapchain.MaxFramesInFlight; ++i) {
+		vk::SemaphoreCreateInfo SeamphoreCreateInfo;
+		Context.ImageAvailableSemaphores[i] = Context.Device.GetLogicalDevice().createSemaphore(SeamphoreCreateInfo, Context.Allocator);
+		Context.QueueCompleteSemaphores[i] = Context.Device.GetLogicalDevice().createSemaphore(SeamphoreCreateInfo, Context.Allocator);
+
+		// Create the fence in a signaled state, indicating that the first frame has already been rendered
+		// This will prevent the application from waiting indefinitely for the first frame to render since it 
+		// cannot be rendered until a frame is rendered before it.
+		Context.InFlightFences[i].Create(&Context, true);
+	}
+
+	// In flight fences should not yet exist at this point, so clear the list. These are stored in pointers
+	// because the initial state should be 0, and will be 0 when not in use. Actual fences are not owned by this list
+	Context.ImagesInFilght.resize(Context.Swapchain.ImageCount);
+	for (uint32_t i = 0; i < Context.Swapchain.ImageCount; ++i) {
+		Context.ImagesInFilght[i] = nullptr;
+	}
+
 
 	UL_INFO("Create vulkan instance succeed.");
 	return true;
 }
 
 void VulkanBackend::Shutdown() {
+	vk::Device LogicalDevice = Context.Device.GetLogicalDevice();
+	LogicalDevice.waitIdle();
+
+	UL_DEBUG("Destroying sync objects.");
+	for (uint32_t i = 0; i < Context.Swapchain.MaxFramesInFlight; ++i) {
+		if (Context.ImageAvailableSemaphores[i]) {
+			LogicalDevice.destroySemaphore(Context.ImageAvailableSemaphores[i], Context.Allocator);
+		}
+		if (Context.QueueCompleteSemaphores[i]) {
+			LogicalDevice.destroySemaphore(Context.QueueCompleteSemaphores[i], Context.Allocator);
+		}
+
+		Context.InFlightFences[i].Destroy(&Context);
+	}
+
+	Context.ImageAvailableSemaphores.clear();
+	Context.QueueCompleteSemaphores.clear();
+	Context.InFlightFences.clear();
+	Context.ImagesInFilght.clear();
+
+	UL_DEBUG("Destroying command buffers.");
 	for (uint32_t i = 0; i < Context.Swapchain.ImageCount; ++i) {
 		if (Context.GraphicsCommandBuffers[i].CommandBuffer) {
 			Context.GraphicsCommandBuffers[i].Free(&Context, Context.Device.GetGraphicsCommandPool());
 		}
+	}
+
+	UL_DEBUG("Destroying command buffers.");
+	for (uint32_t i = 0; i < Context.Swapchain.ImageCount; ++i) {
+		Context.Swapchain.Framebuffers[i].Destroy(&Context);
 	}
 
 	UL_DEBUG("Destroying render pass.");
@@ -235,6 +302,24 @@ void VulkanBackend::CreateCommandBuffer() {
 
 	UL_INFO("Vulkan command buffers created.");
 }
+
+void VulkanBackend::RegenerateFrameBuffers() {
+	for (uint32_t i = 0; i < Context.Swapchain.ImageCount; ++i) {
+		// TODO: Make this dynamic based on the currently configured attachments
+		uint32_t AttachmentCount = 2;
+		vk::ImageView Attachments[] = {
+			Context.Swapchain.ImageViews[i],
+			Context.Swapchain.DepthAttachment.ImageView
+		};
+
+		Context.Swapchain.Framebuffers[i].Create(&Context, &Context.MainRenderPass, 
+			Context.FrameBufferWidth, Context.FrameBufferHeight, AttachmentCount, Attachments);
+	}
+}
+
+/*
+* Vulkan debug callback
+*/
 
 VKAPI_ATTR VkBool32 VKAPI_CALL VulkanDebugCallback(
 	VkDebugUtilsMessageSeverityFlagBitsEXT message_servity,

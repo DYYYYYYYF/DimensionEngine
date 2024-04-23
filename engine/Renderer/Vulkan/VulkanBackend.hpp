@@ -18,6 +18,7 @@ public:
 	virtual void Resize(unsigned short width, unsigned short height) override;
 
 	virtual void CreateCommandBuffer();
+	virtual void RegenerateFrameBuffers();
 
 protected:
 	VulkanContext Context;

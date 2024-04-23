@@ -2,8 +2,10 @@
 
 #include "vulkan/vulkan.hpp"
 #include "VulkanImage.hpp"
+#include "VulkanFrameBuffer.hpp"
 
 class VulkanContext;
+class VulkanFrameBuffer;
 
 class VulkanSwapchain {
 public:
@@ -28,4 +30,8 @@ public:
 	vk::ImageView* ImageViews;
 
 	VulkanImage DepthAttachment;
+	
+	// Framebuffers used for on-screen rendering
+	std::vector<VulkanFrameBuffer> Framebuffers;
+
 };

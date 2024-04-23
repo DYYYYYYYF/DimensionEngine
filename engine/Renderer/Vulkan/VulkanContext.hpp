@@ -6,6 +6,7 @@
 #include "VulkanSwapchain.hpp"
 #include "VulkanRenderpass.hpp"
 #include "VulkanCommandBuffer.hpp"
+#include "VulkanFence.hpp"
 
 class VulkanContext {
 public:
@@ -45,6 +46,15 @@ public:
 #endif
 
 	std::vector<VulkanCommandBuffer> GraphicsCommandBuffers;
+
+	std::vector<vk::Semaphore> ImageAvailableSemaphores;
+	std::vector<vk::Semaphore> QueueCompleteSemaphores;
+
+	uint32_t InFlightFenceCount;
+	std::vector<VulkanFence> InFlightFences;
+
+	// Holds pointers to Fences which exist and are owned elsewhere
+	std::vector<VulkanFence*> ImagesInFilght;
 
 	VulkanDevice Device;
 	VulkanSwapchain Swapchain;

@@ -177,6 +177,9 @@ void VulkanSwapchain::Presnet(VulkanContext* context, vk::Queue graphics_queue, 
 	else if (Result != vk::Result::eSuccess) {
 		UL_FATAL("Failed to present swapchain image.");
 	}
+
+	// Increment (and loop) the index;
+	context->CurrentFrame = (context->CurrentFrame + 1) % context->Swapchain.MaxFramesInFlight;
 }
 
 uint32_t VulkanSwapchain::AcquireNextImageIndex(VulkanContext* context, size_t timeout_ns, vk::Semaphore image_available_semaphore, vk::Fence fence) {

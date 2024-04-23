@@ -16,7 +16,7 @@ public:
 	void CreateImageView(VulkanContext* context, vk::Format format, vk::ImageAspectFlags view_aspect_flags);
 	void Destroy(VulkanContext* context);
 
-private:
+public:
 	vk::Image Image;
 	vk::DeviceMemory DeviceMemory;
 	vk::ImageView ImageView;
