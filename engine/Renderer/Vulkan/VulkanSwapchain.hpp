@@ -9,7 +9,7 @@ class VulkanFrameBuffer;
 
 class VulkanSwapchain {
 public:
-	VulkanSwapchain() {}
+	VulkanSwapchain() : MaxFramesInFlight(0), ImageCount(0), Images(nullptr), ImageViews(nullptr) {}
 	virtual ~VulkanSwapchain() {}
 
 public:

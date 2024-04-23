@@ -99,10 +99,11 @@ void VulkanSwapchain::Create(VulkanContext* context, unsigned int width, unsigne
 		return;
 	}
 
-	if (!Images) {
+	if (Images == nullptr) {
 		Images = (vk::Image*)Memory::Allocate(sizeof(vk::Image) * ImageCount, MemoryType::eMemory_Type_Renderer);
 	}
-	if (!ImageViews) {
+
+	if (ImageViews == nullptr) {
 		ImageViews = (vk::ImageView*)Memory::Allocate(sizeof(vk::ImageView) * ImageCount, MemoryType::eMemory_Type_Renderer);
 	}
 

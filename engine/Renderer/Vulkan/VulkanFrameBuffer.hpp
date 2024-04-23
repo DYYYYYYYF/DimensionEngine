@@ -7,7 +7,7 @@ class VulkanRenderPass;
 
 class VulkanFrameBuffer {
 public:
-	VulkanFrameBuffer() {}
+	VulkanFrameBuffer() : Attachments(nullptr), RenderPass(nullptr) {}
 	virtual ~VulkanFrameBuffer() {}
 
 public:
