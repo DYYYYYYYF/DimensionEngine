@@ -5,6 +5,7 @@
 #include "VulkanDevice.hpp"
 #include "VulkanSwapchain.hpp"
 #include "VulkanRenderpass.hpp"
+#include "VulkanCommandBuffer.hpp"
 
 class VulkanContext {
 public:
@@ -26,6 +27,7 @@ public:
 		return -1;
 	}
 
+
 public:
 	uint32_t FrameBufferWidth;
 	uint32_t FrameBufferHeight;
@@ -41,6 +43,8 @@ public:
 #ifdef LEVEL_DEBUG
 	vk::DebugUtilsMessengerEXT DebugMessenger;
 #endif
+
+	std::vector<VulkanCommandBuffer> GraphicsCommandBuffers;
 
 	VulkanDevice Device;
 	VulkanSwapchain Swapchain;

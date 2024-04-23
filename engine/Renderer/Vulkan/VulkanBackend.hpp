@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Renderer/RendererBackend.hpp"
+#include "Core/DMemory.hpp"
 #include "VulkanContext.hpp"
 
 class VulkanBackend : public IRendererBackend {
@@ -15,6 +16,8 @@ public:
 	virtual bool BeginFrame(double delta_time) override;
 	virtual bool EndFrame(double delta_time) override;
 	virtual void Resize(unsigned short width, unsigned short height) override;
+
+	virtual void CreateCommandBuffer();
 
 protected:
 	VulkanContext Context;

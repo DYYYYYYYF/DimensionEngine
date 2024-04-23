@@ -11,22 +11,8 @@ enum VulkanRenderPassState {
 	eRenderPass_State_Not_Allocated
 };
 
-enum VulkanCommandBufferState {
-	eCommand_Buffer_State_Ready,
-	eCommand_Buffer_State_Recording,
-	eCommand_Buffer_State_In_Renderpass,
-	eCommand_Buffer_State_Recording_Ended,
-	eCommand_Buffer_State_Submited,
-	eCommand_Buffer_State_Not_Allocated
-};
-
-struct VulkanCommandBuffer {
-	vk::CommandBuffer CommandBuffer;
-
-	VulkanCommandBufferState State;
-};
-
 class VulkanContext;
+class VulkanCommandBuffer;
 
 class VulkanRenderPass {
 public:
@@ -42,6 +28,8 @@ public:
 
 	void Begin(VulkanCommandBuffer* command_buffer, vk::Framebuffer* frame_buffer);
 	void End(VulkanCommandBuffer* command_buffer);
+
+	vk::RenderPass GetRenderPass() { return RenderPass; }
 
 private:
 	vk::RenderPass RenderPass;

@@ -56,6 +56,8 @@ public:
 	void SetDepthFormat(vk::Format format) { DepthFormat = format; }
 	vk::Format GetDepthFormat() { return DepthFormat; }
 
+	vk::CommandPool GetGraphicsCommandPool() { return GraphicsCommandPool; }
+
 private:
 	bool SelectPhysicalDevice(vk::Instance* instance, vk::SurfaceKHR surface);
 	bool MeetsRequirements(vk::PhysicalDevice device, vk::SurfaceKHR surface, const vk::PhysicalDeviceProperties* properties,
@@ -68,6 +70,8 @@ private:
 	vk::Queue GraphicsQueue;
 	vk::Queue PresentQueue;
 	vk::Queue TransferQueue;
+
+	vk::CommandPool GraphicsCommandPool;
 
 	SVulkanPhysicalDeviceRequirements DeviceRequirements;
 	SVulkanPhysicalDeviceQueueFamilyInfo QueueFamilyInfo;

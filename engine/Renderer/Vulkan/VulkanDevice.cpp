@@ -63,12 +63,19 @@ bool VulkanDevice::Create(vk::Instance* context, vk::AllocationCallbacks* alloca
 	TransferQueue = LogicalDevice.getQueue(QueueFamilyInfo.transfer_index, 0);
 	UL_INFO("Queues obtained.");
 
+	// Create command pool for graphics queue
+	vk::CommandPoolCreateInfo PoolCreateInfo;
+	PoolCreateInfo.setQueueFamilyIndex(QueueFamilyInfo.graphics_index);
+	GraphicsCommandPool = LogicalDevice.createCommandPool(PoolCreateInfo, allocator);
+	ASSERT(GraphicsCommandPool);
+	UL_INFO("Created graphics command pool.");
+
 	return true;
 }
 
 void VulkanDevice::Destroy(vk::Instance* context) {
 
-	UL_INFO("Releaseing physical device resources...");
+	UL_INFO("Releasing physical device resources...");
 	if (!SwapchainSupport.formats.empty()) {
 		SwapchainSupport.formats.clear();
 		SwapchainSupport.format_count = 0;

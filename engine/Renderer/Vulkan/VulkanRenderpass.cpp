@@ -1,6 +1,8 @@
 #include "VulkanRenderpass.hpp"
 
 #include "VulkanContext.hpp"
+#include "VulkanCommandBuffer.hpp"
+
 #include "Core/DMemory.hpp"
 #include "Core/EngineLogger.hpp"
 

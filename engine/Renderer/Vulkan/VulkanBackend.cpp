@@ -159,13 +159,21 @@ bool VulkanBackend::Initialize(const char* application_name, struct SPlatformSta
 	Context.Swapchain.Create(&Context, Context.FrameBufferWidth, Context.FrameBufferHeight);
 
 	Context.MainRenderPass.Create(&Context, 0.0f, 0.0f, (float)Context.FrameBufferWidth, (float)Context.FrameBufferHeight, 0.0f, 0.0f, 0.2f, 1.0f, 1.0f, 0);
-
+	
+	// Command buffers
+	CreateCommandBuffer();
 
 	UL_INFO("Create vulkan instance succeed.");
 	return true;
 }
 
 void VulkanBackend::Shutdown() {
+	for (uint32_t i = 0; i < Context.Swapchain.ImageCount; ++i) {
+		if (Context.GraphicsCommandBuffers[i].CommandBuffer) {
+			Context.GraphicsCommandBuffers[i].Free(&Context, Context.Device.GetGraphicsCommandPool());
+		}
+	}
+
 	UL_DEBUG("Destroying render pass.");
 	Context.MainRenderPass.Destroy(&Context);
 
@@ -205,6 +213,27 @@ bool VulkanBackend::EndFrame(double delta_time) {
 
 void VulkanBackend::Resize(unsigned short width, unsigned short height) {
 
+}
+
+void VulkanBackend::CreateCommandBuffer() {
+	if (Context.GraphicsCommandBuffers.empty()) {
+		Context.GraphicsCommandBuffers.resize(Context.Swapchain.ImageCount);
+		for (uint32_t i = 0; i < Context.Swapchain.ImageCount; ++i) {
+			Memory::Zero(&(Context.GraphicsCommandBuffers[i]), sizeof(vk::CommandBuffer));
+		}
+	}
+
+	ASSERT(Context.Swapchain.ImageCount == Context.GraphicsCommandBuffers.size());
+	for (uint32_t i = 0; i < Context.Swapchain.ImageCount; ++i) {
+		if (Context.GraphicsCommandBuffers[i].CommandBuffer) {
+			Context.GraphicsCommandBuffers[i].Free(&Context, Context.Device.GetGraphicsCommandPool());
+		}
+
+		Memory::Zero(&Context.GraphicsCommandBuffers[i], sizeof(vk::CommandBuffer));
+		Context.GraphicsCommandBuffers[i].Allocate(&Context, Context.Device.GetGraphicsCommandPool(), true);
+	}
+
+	UL_INFO("Vulkan command buffers created.");
 }
 
 VKAPI_ATTR VkBool32 VKAPI_CALL VulkanDebugCallback(
