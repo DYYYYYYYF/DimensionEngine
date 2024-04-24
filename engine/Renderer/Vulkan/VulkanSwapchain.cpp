@@ -74,9 +74,9 @@ void VulkanSwapchain::Create(VulkanContext* context, unsigned int width, unsigne
 			.setQueueFamilyIndices(QueueFamilyIndices);
 	}
 	else {
-		SwapchainCreateInfo.setImageSharingMode(vk::SharingMode::eConcurrent)
-			.setQueueFamilyIndexCount(0)
-			.setQueueFamilyIndices({});
+		SwapchainCreateInfo.setImageSharingMode(vk::SharingMode::eExclusive)
+			.setQueueFamilyIndexCount(1)
+			.setQueueFamilyIndices(QueueFamilyInfo->graphics_index);
 	}
 
 	SwapchainCreateInfo.setPreTransform(SupportInfo->capabilities.currentTransform)
@@ -157,9 +157,12 @@ bool VulkanSwapchain::Destroy(VulkanContext* context) {
 	vk::Device LogicalDevice = context->Device.GetLogicalDevice();
 	for (uint32_t i = 0; i < ImageCount; ++i) {
 		LogicalDevice.destroyImageView(ImageViews[i], context->Allocator);
+		ImageViews[i] = nullptr;
 	}
 
 	LogicalDevice.destroySwapchainKHR(Handle, context->Allocator);
+	Handle = nullptr;
+
 	return false;
 }
 

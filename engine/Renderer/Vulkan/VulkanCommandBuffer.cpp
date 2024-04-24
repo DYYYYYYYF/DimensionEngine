@@ -18,6 +18,7 @@ void VulkanCommandBuffer::Allocate(VulkanContext* context, vk::CommandPool pool,
 
 void VulkanCommandBuffer::Free(VulkanContext* context, vk::CommandPool pool) {
 	context->Device.GetLogicalDevice().freeCommandBuffers(pool, CommandBuffer);
+	CommandBuffer = nullptr;
 	State = eCommand_Buffer_State_Not_Allocated;
 }
 

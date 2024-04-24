@@ -81,11 +81,14 @@ void VulkanImage::Destroy(VulkanContext* context) {
 	vk::Device LogicalDevice = context->Device.GetLogicalDevice();
 	if (ImageView) {
 		LogicalDevice.destroyImageView(ImageView, context->Allocator);
+		ImageView = nullptr;
 	}
 	if (DeviceMemory) {
 		LogicalDevice.freeMemory(DeviceMemory, context->Allocator);
+		DeviceMemory = nullptr;
 	}
 	if (Image) {
 		LogicalDevice.destroyImage(Image, context->Allocator);
+		Image = nullptr;
 	}
 }

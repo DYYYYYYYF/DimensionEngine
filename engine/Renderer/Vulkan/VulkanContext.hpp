@@ -50,7 +50,7 @@ public:
 	vk::DebugUtilsMessengerEXT DebugMessenger;
 #endif
 
-	std::vector<VulkanCommandBuffer> GraphicsCommandBuffers;
+	VulkanCommandBuffer* GraphicsCommandBuffers;
 
 	std::vector<vk::Semaphore> ImageAvailableSemaphores;
 	std::vector<vk::Semaphore> QueueCompleteSemaphores;

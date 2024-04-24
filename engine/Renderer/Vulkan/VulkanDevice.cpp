@@ -29,7 +29,7 @@ bool VulkanDevice::Create(vk::Instance* context, vk::AllocationCallbacks* alloca
 		Indices[Index++] = QueueFamilyInfo.transfer_index;
 	}
 
-	TArray<vk::DeviceQueueCreateInfo> QueueCreateInfos(IndexCount, MemoryType::eMemory_Type_Renderer);
+	std::vector<vk::DeviceQueueCreateInfo> QueueCreateInfos(IndexCount);
 	for (unsigned int i = 0; i < IndexCount; ++i) {
 		QueueCreateInfos[i].setQueueCount(1)
 			.setQueueFamilyIndex(Indices[i]);
@@ -49,7 +49,7 @@ bool VulkanDevice::Create(vk::Instance* context, vk::AllocationCallbacks* alloca
 	const char* ExtensionName = VK_KHR_SWAPCHAIN_EXTENSION_NAME;
 	vk::DeviceCreateInfo DeviceCreateInfo;
 	DeviceCreateInfo.setQueueCreateInfoCount(IndexCount)
-		.setPQueueCreateInfos(QueueCreateInfos.Data())
+		.setPQueueCreateInfos(QueueCreateInfos.data())
 		.setPEnabledFeatures(&DeviceFeatures)
 		.setEnabledExtensionCount(1)
 		.setPEnabledExtensionNames(ExtensionName);
@@ -65,7 +65,8 @@ bool VulkanDevice::Create(vk::Instance* context, vk::AllocationCallbacks* alloca
 
 	// Create command pool for graphics queue
 	vk::CommandPoolCreateInfo PoolCreateInfo;
-	PoolCreateInfo.setQueueFamilyIndex(QueueFamilyInfo.graphics_index);
+	PoolCreateInfo.setQueueFamilyIndex(QueueFamilyInfo.graphics_index)
+		.setFlags(vk::CommandPoolCreateFlagBits::eResetCommandBuffer);
 	GraphicsCommandPool = LogicalDevice.createCommandPool(PoolCreateInfo, allocator);
 	ASSERT(GraphicsCommandPool);
 	UL_INFO("Created graphics command pool.");
@@ -90,6 +91,9 @@ void VulkanDevice::Destroy(vk::Instance* context) {
 	QueueFamilyInfo.compute_index = -1;
 	QueueFamilyInfo.transfer_index = -1;
 	QueueFamilyInfo.present_index = -1;
+
+	LogicalDevice.destroyCommandPool(GraphicsCommandPool);
+	LogicalDevice.destroy();
 }
 
 void VulkanDevice::QuerySwapchainSupport(vk::PhysicalDevice device, vk::SurfaceKHR surface, SSwapchainSupportInfo* support_info) {

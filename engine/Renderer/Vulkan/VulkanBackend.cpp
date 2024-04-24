@@ -92,7 +92,7 @@ bool VulkanBackend::Initialize(const char* application_name, struct SPlatformSta
 		
 		bool IsFound = false;
 		for (uint32_t j = 0; j < AvailableLayersCount; j++) {
-			if (strcmp(RequiredValidationLayerName[i], AvailableLayers[j].layerName)) {
+			if (strcmp(RequiredValidationLayerName[i], AvailableLayers[j].layerName.data()) == 0) {
 				IsFound = true;
 				UL_INFO("Found.");
 				break;
@@ -404,14 +404,13 @@ void VulkanBackend::Resize(unsigned short width, unsigned short height) {
 }
 
 void VulkanBackend::CreateCommandBuffer() {
-	if (Context.GraphicsCommandBuffers.empty()) {
-		Context.GraphicsCommandBuffers.resize(Context.Swapchain.ImageCount);
+	if (Context.GraphicsCommandBuffers == nullptr) {
+		Context.GraphicsCommandBuffers = (VulkanCommandBuffer*)Memory::Allocate(sizeof(VulkanCommandBuffer) * Context.Swapchain.ImageCount, MemoryType::eMemory_Type_Renderer);
 		for (uint32_t i = 0; i < Context.Swapchain.ImageCount; ++i) {
 			Memory::Zero(&(Context.GraphicsCommandBuffers[i]), sizeof(vk::CommandBuffer));
 		}
 	}
 
-	ASSERT(Context.Swapchain.ImageCount == Context.GraphicsCommandBuffers.size());
 	for (uint32_t i = 0; i < Context.Swapchain.ImageCount; ++i) {
 		if (Context.GraphicsCommandBuffers[i].CommandBuffer) {
 			Context.GraphicsCommandBuffers[i].Free(&Context, Context.Device.GetGraphicsCommandPool());
