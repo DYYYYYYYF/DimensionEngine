@@ -203,6 +203,11 @@ bool VulkanBackend::Initialize(const char* application_name, struct SPlatformSta
 		Context.ImagesInFilght[i] = nullptr;
 	}
 
+	// Create shaders
+	if (!Context.ShaderModule.Create(&Context)) {
+		UL_ERROR("Loadding basic_lighting shader failed.");
+		return false;
+	}
 
 	UL_INFO("Create vulkan instance succeed.");
 	return true;

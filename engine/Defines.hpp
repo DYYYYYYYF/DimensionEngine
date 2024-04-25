@@ -3,6 +3,7 @@
 // Platforms
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__)
 #define DPLATFORM_WINDOWS 1
+#define _CRT_SECURE_NO_WARNINGS
 #ifndef _WIN64
 #error "64-bit is required on Windows"
 #endif

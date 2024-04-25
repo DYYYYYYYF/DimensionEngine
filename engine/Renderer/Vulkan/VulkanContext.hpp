@@ -8,6 +8,8 @@
 #include "VulkanCommandBuffer.hpp"
 #include "VulkanFence.hpp"
 
+#include "Renderer/Vulkan/Shaders/VulkanShader.hpp"
+
 class VulkanContext {
 public:
 	VulkanContext(): Allocator(nullptr) {}
@@ -64,4 +66,7 @@ public:
 	VulkanDevice Device;
 	VulkanSwapchain Swapchain;
 	VulkanRenderPass MainRenderPass;
+
+	// Shaders
+	VulkanShaderModule ShaderModule;
 };

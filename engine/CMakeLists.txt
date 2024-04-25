@@ -5,7 +5,7 @@ include_directories(
     ${UD_LOGGER_DIR}/include
 )
 
-file(GLOB ENGINE_SOURCE_FILES *.cpp */*.cpp */*/*.cpp)
+file(GLOB ENGINE_SOURCE_FILES *.cpp */*.cpp */*/*.cpp */*/*/*.cpp)
 add_library(engine SHARED ${ENGINE_SOURCE_FILES})
 
 # Output .dll to bin directly.
