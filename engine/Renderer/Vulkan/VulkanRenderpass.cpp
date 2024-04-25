@@ -78,14 +78,14 @@ void VulkanRenderPass::Create(VulkanContext* context,
 
 	// Input from a shader
 	Subpass.setInputAttachmentCount(0);
-	Subpass.setInputAttachments(nullptr);
+	Subpass.setPInputAttachments(nullptr);
 
 	// Attachments used for mutisampling color attachments
-	Subpass.setResolveAttachments(nullptr);
+	Subpass.setPResolveAttachments(nullptr);
 
 	// Attachments not used for in this subpass, but must be preserved for the next
 	Subpass.setPreserveAttachmentCount(0);
-	Subpass.setPreserveAttachments(nullptr);
+	Subpass.setPPreserveAttachments(nullptr);
 
 	// Render pass dependencies. TODO: make this configurable
 	vk::SubpassDependency Dependency;
