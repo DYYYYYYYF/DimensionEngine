@@ -171,7 +171,7 @@ bool VulkanBackend::Initialize(const char* application_name, struct SPlatformSta
 	// Swapchain
 	Context.Swapchain.Create(&Context, Context.FrameBufferWidth, Context.FrameBufferHeight);
 
-	Context.MainRenderPass.Create(&Context, 0.0f, 0.0f, (float)Context.FrameBufferWidth, (float)Context.FrameBufferHeight, 0.5f, 0.5f, 0.5f, 1.0f, 1.0f, 0);
+	Context.MainRenderPass.Create(&Context, 0.0f, 0.0f, (float)Context.FrameBufferWidth, (float)Context.FrameBufferHeight, 1.0f, 0.5f, 0.5f, 1.0f, 1.0f, 0);
 	
 	// Swapchain framebuffers.
 	Context.Swapchain.Framebuffers.resize(Context.Swapchain.ImageCount);

@@ -10,6 +10,7 @@
 #include "Platform/Platform.hpp"
 
 #include "Renderer/RendererFrontend.hpp"
+#include "Math/MathTypes.hpp"
 
 struct SApplicationState {
 	SGame* game_instance;
