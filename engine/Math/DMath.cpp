@@ -48,6 +48,6 @@ int DRandom(int min, int max) {
 
 float DRandom(float min, float max) {
 	std::uniform_real_distribution<float> distribution(min, max);
-	return static_cast<int>(distribution(m_mt19937));
+	return static_cast<float>(distribution(m_mt19937));
 }
 
