@@ -49,6 +49,8 @@ if(${APPLE})
 elseif(${WIN32})
     message("-- Current environment: Windows")
 
+    add_definitions(-D_CRT_SECURE_NO_WARNINGS)
+
     set(Vulkan_DIR "D:/C_Library/VulkanSDK")
 
     if(${Vulkan_DIR} STREQUAL " ")

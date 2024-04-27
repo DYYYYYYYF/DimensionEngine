@@ -3,7 +3,6 @@
 // Platforms
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__)
 #define DPLATFORM_WINDOWS 1
-#define _CRT_SECURE_NO_WARNINGS
 #ifndef _WIN64
 #error "64-bit is required on Windows"
 #endif
@@ -26,8 +25,6 @@
 #elif TARGET_OS_IPHONE
 #define DPLATFORM_IOS 1
 #elif TARGET_OS_MAC
-#define DPLATFORM_MACOS 1
-#include <stddef.h>
 #endif
 
 #else

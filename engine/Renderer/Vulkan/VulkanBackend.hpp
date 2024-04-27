@@ -21,6 +21,8 @@ public:
 	virtual void RegenerateFrameBuffers();
 	virtual bool RecreateSwapchain();
 
+	virtual bool CreateBuffers();
+
 protected:
 	VulkanContext Context;
 

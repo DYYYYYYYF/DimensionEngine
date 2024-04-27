@@ -1032,3 +1032,7 @@ inline Quaternion QuaternionSlerp(Quaternion q0, Quaternion q1, float percentage
 		(v0.w * s0) + (v1.w * s1)
 	};
 }
+
+struct Vertex {
+	Vec3 position;
+};

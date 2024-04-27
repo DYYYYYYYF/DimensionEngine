@@ -6,6 +6,7 @@
 #include "Core/EngineLogger.hpp"
 #include "Containers/TArray.hpp"
 #include "Platform/Platform.hpp"
+#include "Math/MathTypes.hpp"
 
 static uint32_t CachedFramebufferWidth = 0;
 static uint32_t CachedFramebufferHeight = 0;
@@ -209,6 +210,8 @@ bool VulkanBackend::Initialize(const char* application_name, struct SPlatformSta
 		return false;
 	}
 
+	CreateBuffers();
+
 	UL_INFO("Create vulkan instance succeed.");
 	return true;
 }
@@ -216,6 +219,13 @@ bool VulkanBackend::Initialize(const char* application_name, struct SPlatformSta
 void VulkanBackend::Shutdown() {
 	vk::Device LogicalDevice = Context.Device.GetLogicalDevice();
 	LogicalDevice.waitIdle();
+
+	UL_DEBUG("Destroying Buffers");
+	Context.ObjectVertexBuffer.Destroy(&Context);
+	Context.ObjectIndexBuffer.Destroy(&Context);
+
+	UL_DEBUG("Destroying shader modules.");
+	Context.ShaderModule.Destroy(&Context);
 
 	UL_DEBUG("Destroying sync objects.");
 	for (uint32_t i = 0; i < Context.Swapchain.MaxFramesInFlight; ++i) {
@@ -503,6 +513,32 @@ bool VulkanBackend::RecreateSwapchain() {
 
 	// Clear the recreating flag.
 	Context.RecreatingSwapchain = false;
+
+	return true;
+}
+
+bool VulkanBackend::CreateBuffers() {
+	vk::MemoryPropertyFlagBits MemoryPropertyFlags = vk::MemoryPropertyFlagBits::eDeviceLocal;
+
+	const size_t VertexBufferSize = sizeof(Vertex) * 1024 * 1024;
+	if (!Context.ObjectVertexBuffer.Create(&Context, VertexBufferSize, 
+		vk::BufferUsageFlagBits::eVertexBuffer | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eTransferSrc,
+		MemoryPropertyFlags, true)) {
+		UL_ERROR("Error creating vertex buffer.");
+		return false;
+	}
+
+	Context.GeometryVertexOffset = 0;
+
+	const size_t IndexBufferSize = sizeof(uint32_t) * 1024 * 1024;
+	if (!Context.ObjectIndexBuffer.Create(&Context, IndexBufferSize,
+		vk::BufferUsageFlagBits::eIndexBuffer | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eTransferSrc,
+		MemoryPropertyFlags, true)) {
+		UL_ERROR("Error creating index buffer.");
+		return false;
+	}
+
+	Context.GeometryIndexOffset = 0;
 
 	return true;
 }

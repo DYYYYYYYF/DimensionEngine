@@ -1,8 +1,8 @@
 #pragma once
 
 #include "Defines.hpp"
-#include "Core/EngineLogger.hpp"
-#include "Core/DMemory.hpp"
+#include "core/EngineLogger.hpp"
+#include "core/DMemory.hpp"
 
 #define ARRAY_DEFAULT_CAPACITY 1
 #define ARRAY_DEFAULT_RESIZE_FACTOR 2
@@ -70,7 +70,7 @@ public:
 	void InsertAt(size_t index, ElementType val) {
 		if (index > Length - 1) {
 			UL_ERROR("Index Out of length! Length: %i, Index: %i", Length, index);
-			return;
+			return nullptr;
 		}
 
 		if (Length >= Capacity) {
@@ -82,8 +82,8 @@ public:
 			Memory::Copy(
 				(void*)(addr + (index + 1) * Stride),
 				(void*)(addr + (index * Stride)),
-				Stride * (Length - index)
-			);
+				Stride * (Length - index);
+			)
 		}
 
 		Memory::Copy((void*)(addr + (index * Stride)), val, Stride);
@@ -91,6 +91,11 @@ public:
 	}
 
 	ElementType Pop() {
+		if (index > Length - 1) {
+			UL_ERROR("Index Out of length! Length: %i, Index: %i", Length, index);
+			return nullptr;
+		}
+
 		size_t addr = (size_t)ArrayMemory;
 		addr += ((Length - 1) * Stride);
 

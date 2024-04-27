@@ -2,21 +2,9 @@
 
 #include <vulkan/vulkan.hpp>
 
-class VulkanShaderStage{
-public:
-	vk::ShaderModuleCreateInfo create_info;
-	vk::ShaderModule shader_module;
-	vk::PipelineShaderStageCreateInfo shader_stage_create_info;
-};
-
-class VulkanPipeline {
-public:
-	vk::Pipeline Handle;
-	vk::PipelineLayout PipelineLayout;
-};
+#include "Renderer/Vulkan/VulkanPipeline.hpp"
 
 #define OBJECT_SHADER_STAGE_COUNT 2
-
 class VulkanContext;
 
 class VulkanShaderModule {
