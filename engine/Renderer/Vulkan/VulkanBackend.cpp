@@ -6,6 +6,7 @@
 #include "Core/EngineLogger.hpp"
 #include "Containers/TArray.hpp"
 #include "Platform/Platform.hpp"
+#include "Math/MathTypes.hpp"
 
 static uint32_t CachedFramebufferWidth = 0;
 static uint32_t CachedFramebufferHeight = 0;
@@ -209,6 +210,31 @@ bool VulkanBackend::Initialize(const char* application_name, struct SPlatformSta
 		return false;
 	}
 
+	CreateBuffers();
+
+	// Temp
+	const uint32_t VertCount = 3;
+	Vertex Verts[VertCount];
+	Memory::Zero(Verts, sizeof(Vertex) * VertCount);
+
+	Verts[0].position.x =  0.0f;
+	Verts[0].position.y = -0.5f;
+	Verts[0].position.z = 0.0f;
+
+	Verts[1].position.x = 0.5f;
+	Verts[1].position.y = 0.5f;
+	Verts[1].position.z = 0.0f;
+
+	Verts[2].position.x = 0.0f;
+	Verts[2].position.y = 0.5f;
+	Verts[2].position.z = 0.0f;
+
+	const uint32_t IndexCount = 3;
+	uint32_t Indices[IndexCount] = { 0, 1, 2 };
+
+	UploadDataRange(&Context.ObjectVertexBuffer, 0, sizeof(Vertex) * VertCount, Verts);
+	UploadDataRange(&Context.ObjectIndexBuffer, 0, sizeof(uint32_t) * IndexCount, Indices);
+
 	UL_INFO("Create vulkan instance succeed.");
 	return true;
 }
@@ -216,6 +242,10 @@ bool VulkanBackend::Initialize(const char* application_name, struct SPlatformSta
 void VulkanBackend::Shutdown() {
 	vk::Device LogicalDevice = Context.Device.GetLogicalDevice();
 	LogicalDevice.waitIdle();
+
+	UL_DEBUG("Destroying Buffers");
+	Context.ObjectVertexBuffer.Destroy(&Context);
+	Context.ObjectIndexBuffer.Destroy(&Context);
 
 	UL_DEBUG("Destroying shader modules.");
 	Context.ShaderModule.Destroy(&Context);
@@ -324,7 +354,7 @@ bool VulkanBackend::BeginFrame(double delta_time){
 	Viewport.setX(0.0f)
 		.setY(0.0f)
 		.setWidth((float)Context.FrameBufferWidth)
-		.setHeight(-(float)Context.FrameBufferHeight)
+		.setHeight((float)Context.FrameBufferHeight)
 		.setMinDepth(0.0f)
 		.setMaxDepth(1.0f);
 
@@ -341,6 +371,19 @@ bool VulkanBackend::BeginFrame(double delta_time){
 
 	// Begin the render pass
 	Context.MainRenderPass.Begin(CommandBuffer, Context.Swapchain.Framebuffers[Context.ImageIndex].FrameBuffer);
+
+	// Temp test
+	Context.ShaderModule.Use(&Context);
+
+	// Bind vertex buffer at offset
+	vk::DeviceSize offset[1] = { 0 };
+	CommandBuffer->CommandBuffer.bindVertexBuffers(0, 1, &Context.ObjectVertexBuffer.Buffer, (vk::DeviceSize*)offset);
+
+	// Bind index buffer at offset
+	CommandBuffer->CommandBuffer.bindIndexBuffer(Context.ObjectIndexBuffer.Buffer, 0, vk::IndexType::eUint32);
+
+	// Issue the draw
+	CommandBuffer->CommandBuffer.drawIndexed(3, 1, 0, 0, 0);
 
 	return true;
 }
@@ -508,6 +551,49 @@ bool VulkanBackend::RecreateSwapchain() {
 	Context.RecreatingSwapchain = false;
 
 	return true;
+}
+
+bool VulkanBackend::CreateBuffers() {
+	vk::MemoryPropertyFlagBits MemoryPropertyFlags = vk::MemoryPropertyFlagBits::eDeviceLocal;
+
+	const size_t VertexBufferSize = sizeof(Vertex) * 1024 * 1024;
+	if (!Context.ObjectVertexBuffer.Create(&Context, VertexBufferSize, 
+		vk::BufferUsageFlagBits::eVertexBuffer | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eTransferSrc,
+		MemoryPropertyFlags, true)) {
+		UL_ERROR("Error creating vertex buffer.");
+		return false;
+	}
+
+	Context.GeometryVertexOffset = 0;
+
+	const size_t IndexBufferSize = sizeof(uint32_t) * 1024 * 1024;
+	if (!Context.ObjectIndexBuffer.Create(&Context, IndexBufferSize,
+		vk::BufferUsageFlagBits::eIndexBuffer | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eTransferSrc,
+		MemoryPropertyFlags, true)) {
+		UL_ERROR("Error creating index buffer.");
+		return false;
+	}
+
+	Context.GeometryIndexOffset = 0;
+
+	return true;
+}
+
+void VulkanBackend::UploadDataRange(VulkanBuffer* buffer, size_t offset, size_t size, void* data) {
+	// Create a host-visible staging buffer to upload to. Mark it as the source of the transfer.
+	vk::MemoryPropertyFlags Flags = vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent;
+	VulkanBuffer Staging;
+	Staging.Create(&Context, size, vk::BufferUsageFlagBits::eTransferSrc, Flags, true);
+
+	// Load the data into the staging buffer.
+	Staging.LoadData(&Context, 0, size, vk::MemoryMapFlags(), data);
+
+	// Perform the copy from staging to the device local buffer.
+	Staging.CopyTo(&Context, Context.Device.GetGraphicsCommandPool(), nullptr, Context.Device.GetGraphicsQueue(), 
+		Staging.Buffer, 0 , buffer->Buffer, offset, size);
+
+	// Clean up the staging buffer.
+	Staging.Destroy(&Context);
 }
 
 /*

@@ -16,10 +16,10 @@ public:
 
 	bool Resize(VulkanContext* context, size_t size, vk::Queue queue, vk::CommandPool pool);
 
-	void* LockMemory(VulkanContext* context, vk::DeviceSize offset, vk::DeviceSize size, vk::MemoryMapFlagBits flags);
+	void* LockMemory(VulkanContext* context, vk::DeviceSize offset, vk::DeviceSize size, vk::MemoryMapFlags flags);
 	void UnlockMemory(VulkanContext* context);
 
-	void LoadData(VulkanContext* context, size_t offset, size_t size, vk::MemoryMapFlagBits flags, const void* data);
+	void LoadData(VulkanContext* context, size_t offset, size_t size, vk::MemoryMapFlags flags, const void* data);
 
 	void Bind(VulkanContext* context, vk::Buffer buf, vk::DeviceMemory mem, size_t offset);
 	void CopyTo(VulkanContext* context, vk::CommandPool pool, vk::Fence fence, vk::Queue queue, vk::Buffer src, size_t src_offset,

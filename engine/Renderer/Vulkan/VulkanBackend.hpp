@@ -4,6 +4,8 @@
 #include "Core/DMemory.hpp"
 #include "VulkanContext.hpp"
 
+class VulkanBuffer;
+
 class VulkanBackend : public IRendererBackend {
 public:
 	VulkanBackend();
@@ -20,6 +22,10 @@ public:
 	virtual void CreateCommandBuffer();
 	virtual void RegenerateFrameBuffers();
 	virtual bool RecreateSwapchain();
+
+	virtual bool CreateBuffers();
+
+	virtual void UploadDataRange(VulkanBuffer* buffer, size_t offset, size_t size, void* data);
 
 protected:
 	VulkanContext Context;

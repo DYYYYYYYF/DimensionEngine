@@ -110,7 +110,7 @@ bool VulkanBuffer::Resize(VulkanContext* context, size_t size, vk::Queue queue, 
 	return true;
 }
 
-void* VulkanBuffer::LockMemory(VulkanContext* context, vk::DeviceSize offset, vk::DeviceSize size, vk::MemoryMapFlagBits flags) {
+void* VulkanBuffer::LockMemory(VulkanContext* context, vk::DeviceSize offset, vk::DeviceSize size, vk::MemoryMapFlags flags) {
 	void* data = context->Device.GetLogicalDevice().mapMemory(Memory, offset, size, flags);
 	return data;
 }
@@ -119,7 +119,7 @@ void VulkanBuffer::UnlockMemory(VulkanContext* context) {
 	context->Device.GetLogicalDevice().unmapMemory(Memory);
 }
 
-void VulkanBuffer::LoadData(VulkanContext* context, size_t offset, size_t size, vk::MemoryMapFlagBits flags, const void* data) {
+void VulkanBuffer::LoadData(VulkanContext* context, size_t offset, size_t size, vk::MemoryMapFlags flags, const void* data) {
 	void* DataPtr = context->Device.GetLogicalDevice().mapMemory(Memory, offset, size, flags);
 	Memory::Copy(DataPtr, data, size);
 	context->Device.GetLogicalDevice().unmapMemory(Memory);

@@ -83,5 +83,6 @@ void VulkanShaderModule::Destroy(VulkanContext* context) {
 }
 
 void VulkanShaderModule::Use(VulkanContext* context) {
-
+	uint32_t ImageIndex = context->ImageIndex;
+	Pipeline.Bind(&context->GraphicsCommandBuffers[ImageIndex], vk::PipelineBindPoint::eGraphics);
 }

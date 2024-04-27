@@ -22,7 +22,7 @@ bool VulkanPipeline::Create(VulkanContext* context, VulkanRenderPass* renderpass
 		.setRasterizerDiscardEnable(VK_FALSE)
 		.setPolygonMode(is_wireframe ? vk::PolygonMode::eLine : vk::PolygonMode::eFill)
 		.setLineWidth(1.0f)
-		.setCullMode(vk::CullModeFlagBits::eBack)
+		.setCullMode(vk::CullModeFlagBits::eNone)
 		.setFrontFace(vk::FrontFace::eCounterClockwise)
 		.setDepthBiasEnable(VK_FALSE)
 		.setDepthBiasConstantFactor(0.0f)
@@ -53,7 +53,13 @@ bool VulkanPipeline::Create(VulkanContext* context, VulkanRenderPass* renderpass
 		.setColorBlendOp(vk::BlendOp::eAdd)
 		.setSrcAlphaBlendFactor(vk::BlendFactor::eSrcAlpha)
 		.setDstAlphaBlendFactor(vk::BlendFactor::eOneMinusSrcAlpha)
-		.setAlphaBlendOp(vk::BlendOp::eAdd);
+		.setAlphaBlendOp(vk::BlendOp::eAdd)
+		.setColorWriteMask(
+			vk::ColorComponentFlagBits::eR | 
+			vk::ColorComponentFlagBits::eG | 
+			vk::ColorComponentFlagBits::eB | 
+			vk::ColorComponentFlagBits::eA
+		);
 
 	vk::PipelineColorBlendStateCreateInfo ColorBlendStateCreateInfo;
 	ColorBlendStateCreateInfo.setLogicOpEnable(VK_FALSE)
