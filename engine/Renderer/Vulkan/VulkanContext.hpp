@@ -6,7 +6,6 @@
 #include "VulkanSwapchain.hpp"
 #include "VulkanRenderpass.hpp"
 #include "VulkanCommandBuffer.hpp"
-#include "VulkanBuffer.hpp"
 #include "VulkanFence.hpp"
 
 #include "Renderer/Vulkan/Shaders/VulkanShader.hpp"
@@ -70,10 +69,4 @@ public:
 
 	// Shaders
 	VulkanShaderModule ShaderModule;
-
-	// Geometry
-	size_t GeometryVertexOffset;
-	size_t GeometryIndexOffset;
-	VulkanBuffer ObjectVertexBuffer;
-	VulkanBuffer ObjectIndexBuffer;
 };
