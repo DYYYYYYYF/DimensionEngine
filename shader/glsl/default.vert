@@ -1,21 +1,13 @@
 #version 450
-layout (location = 0) in vec3 vPosition;
 
+layout (location = 0) in vec3 vPosition;
 layout (location = 0) out vec4 vColor;
 
-void main(){
-	vec4 vScreenPos = vec4(vPosition, 1.0f);
-	//if (gl_VertexIndex == 0){
-	//	vScreenPos = vec4(1.0f, -1.0f, 0.0f, 1.0f);
-	//}
-	//
-	//if (gl_VertexIndex == 1){
-	//	vScreenPos = vec4(1.0f, 1.0f, 0.0f, 1.0f);
-	//} 
-	//
-	//if (gl_VertexIndex == 2){
-	//	vScreenPos = vec4(-1.0f, 1.0f, 0.0f, 1.0f);
-	//}
+layout (set = 0, binding = 0, std140) uniform GlobalUniformObject{
+	mat4 projection;
+	mat4 view;
+}GlobalUBO;
 
-    gl_Position = vScreenPos;
+void main(){
+	gl_Position = GlobalUBO.projection * GlobalUBO.view * vec4(vPosition, 1.0f);
 }

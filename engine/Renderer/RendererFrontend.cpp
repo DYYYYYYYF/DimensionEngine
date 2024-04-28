@@ -4,6 +4,8 @@
 #include "Core/EngineLogger.hpp"
 #include "Core/DMemory.hpp"
 
+#include "Math/MathTypes.hpp"
+
 IRenderer::IRenderer() : Backend(nullptr) {}
 
 IRenderer::IRenderer(RendererBackendType type, struct SPlatformState* plat_state) : Backend(nullptr){
@@ -66,8 +68,22 @@ bool IRenderer::EndFrame(double delta_time) {
 	return result;
 }
 
+static float r = -10.0;
+
 bool IRenderer::DrawFrame(SRenderPacket* packet) {
 	if (BeginFrame(packet->delta_time)) {
+
+		Matrix4 Projection = Matrix4::Perspective(Deg2Rad(45.0f), 1280.0f / 720.0f, 0.1f, 1000.0f);
+		Matrix4 View = Matrix4::Identity();
+		View.SetTranslation(Vec3{ 0, 0, -10.f });
+
+		r += 0.1f;
+		Quaternion Quat = GenerateFromAxisAngle(Vec3{ 0, 0, 1.0f }, r, false);
+		Matrix4 Model = QuatToMatrix(Quat);
+
+		// Update UBO buffer
+		Backend->UpdateGlobalState(Projection, View, Vec3(), Vec4(1.0f, 1.0f, 1.0f, 1.0f), 0);
+
 		bool result = EndFrame(packet->delta_time);
 
 		if (!result) {

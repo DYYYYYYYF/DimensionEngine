@@ -217,20 +217,22 @@ bool VulkanBackend::Initialize(const char* application_name, struct SPlatformSta
 	Vertex Verts[VertCount];
 	Memory::Zero(Verts, sizeof(Vertex) * VertCount);
 
-	Verts[0].position.x =  0.0f;
-	Verts[0].position.y = -0.5f;
-	Verts[0].position.z = 0.0f;
+	const float f = 1.0f;
 
-	Verts[1].position.x = 0.5f;
-	Verts[1].position.y = 0.5f;
-	Verts[1].position.z = 0.0f;
+	Verts[0].position.x = 0.0f * f;
+	Verts[0].position.y = -0.5f * f;
+	Verts[0].position.z = 0.0f * f;
 
-	Verts[2].position.x = 0.0f;
-	Verts[2].position.y = 0.5f;
-	Verts[2].position.z = 0.0f;
+	Verts[1].position.x = -0.5f * f;
+	Verts[1].position.y = 0.5f * f;
+	Verts[1].position.z = 0.0f * f;
+
+	Verts[2].position.x = 0.5f * f;
+	Verts[2].position.y = 0.5f * f;
+	Verts[2].position.z = 0.0f * f;
 
 	const uint32_t IndexCount = 3;
-	uint32_t Indices[IndexCount] = { 0, 1, 2 };
+	uint32_t Indices[IndexCount] = { 0, 2, 1 };
 
 	UploadDataRange(&Context.ObjectVertexBuffer, 0, sizeof(Vertex) * VertCount, Verts);
 	UploadDataRange(&Context.ObjectIndexBuffer, 0, sizeof(uint32_t) * IndexCount, Indices);
@@ -372,20 +374,35 @@ bool VulkanBackend::BeginFrame(double delta_time){
 	// Begin the render pass
 	Context.MainRenderPass.Begin(CommandBuffer, Context.Swapchain.Framebuffers[Context.ImageIndex].FrameBuffer);
 
+	return true;
+}
+
+void VulkanBackend::UpdateGlobalState(Matrix4 projection, Matrix4 view, Vec3 view_position, Vec4 ambient_color, int mode) {
+	VulkanCommandBuffer* CmdBuffer = &Context.GraphicsCommandBuffers[Context.ImageIndex];
+
+	Context.ShaderModule.Use(&Context);
+
+	Context.ShaderModule.GlobalUBO.projection = projection;
+	Context.ShaderModule.GlobalUBO.view = view;
+
+	// TODO: other ubo props
+
+	Context.ShaderModule.UpdateGlobalState(&Context);
+
+
 	// Temp test
 	Context.ShaderModule.Use(&Context);
 
 	// Bind vertex buffer at offset
 	vk::DeviceSize offset[1] = { 0 };
-	CommandBuffer->CommandBuffer.bindVertexBuffers(0, 1, &Context.ObjectVertexBuffer.Buffer, (vk::DeviceSize*)offset);
+	CmdBuffer->CommandBuffer.bindVertexBuffers(0, 1, &Context.ObjectVertexBuffer.Buffer, (vk::DeviceSize*)offset);
 
 	// Bind index buffer at offset
-	CommandBuffer->CommandBuffer.bindIndexBuffer(Context.ObjectIndexBuffer.Buffer, 0, vk::IndexType::eUint32);
+	CmdBuffer->CommandBuffer.bindIndexBuffer(Context.ObjectIndexBuffer.Buffer, 0, vk::IndexType::eUint32);
 
 	// Issue the draw
-	CommandBuffer->CommandBuffer.drawIndexed(3, 1, 0, 0, 0);
+	CmdBuffer->CommandBuffer.drawIndexed(3, 1, 0, 0, 0);
 
-	return true;
 }
 
 bool VulkanBackend::EndFrame(double delta_time) {

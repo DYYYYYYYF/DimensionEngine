@@ -25,8 +25,8 @@ public:
 public:
 	Vec2() { Zero(); }
 	Vec2(float x, float y) {
-		x = x;
-		y = y;
+		r = x;
+		g = y;
 	}
 
 	void Zero() {
@@ -149,9 +149,9 @@ public:
 	Vec3() { Zero(); }
 
 	Vec3(float x, float y, float z) {
-		x = x;
-		y = y;
-		z = z;
+		r = x;
+		g = y;
+		b = z;
 	}
 
 	void Zero() {
@@ -330,18 +330,18 @@ public:
 #if defined(DUSE_SIMD)
 		data = _mm_setr_ps(x, y, z, w);
 #else
-		x = vec.x;
-		y = vec.y;
-		z = vec.z;
-		w = w;
+		r = vec.x;
+		g = vec.y;
+		b = vec.z;
+		a = w;
 #endif
 	}
 
 	Vec4(float x, float y, float z, float w) {
-		x = x;
-		y = y;
-		z = z;
-		w = w;
+		r = x;
+		g = y;
+		b = z;
+		a = w;
 	}
 
 	void Zero() {
@@ -540,12 +540,10 @@ inline Vec4 ToVec4(const Vec3& vec, float w) {
 
 struct Matrix4 {
 public:
-	union {
-		alignas(16) float* data;
-	};
+	alignas(16) float data[16];
 
 	Matrix4() {
-		data = (float*)Memory::Allocate(sizeof(float) * 16, MemoryType::eMemory_Type_Transform);
+		Memory::Zero(data, sizeof(float) * 16);
 	}
 
 	/*
@@ -921,6 +919,22 @@ public:
 
 		return *this;
 	}
+
+	float& operator[](int i) {
+		return data[i];
+	}
+
+	const float& operator[](int i) const {
+		return data[i];
+	}
+
+	friend std::ostream& operator<<(std::ostream& os, const Matrix4& mat) {
+		return os
+			<< mat[0] << " " << mat[4] << " " << mat[8] << " " << mat[12] << "\n"
+			<< mat[1] << " " << mat[5] << " " << mat[9] << " " << mat[13] << "\n"
+			<< mat[2] << " " << mat[6] << " " << mat[10] << " " << mat[14] << "\n"
+			<< mat[3] << " " << mat[7] << " " << mat[11] << " " << mat[15] << "\n";
+	}
 };
 
 inline Matrix4 QuatToMatrix(Quaternion q) {
@@ -1031,6 +1045,7 @@ inline Quaternion QuaternionSlerp(Quaternion q0, Quaternion q1, float percentage
 		(v0.z * s0) + (v1.z * s1),
 		(v0.w * s0) + (v1.w * s1)
 	};
+
 }
 
 struct Vertex {
