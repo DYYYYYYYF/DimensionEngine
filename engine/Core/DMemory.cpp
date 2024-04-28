@@ -75,6 +75,10 @@ char* Memory::GetMemoryUsageStr() {
 		offset += length;
 	}
 
+#if defined(DPLATFORM_WINDOWS)
 	char* outString = _strdup(buffer);
+#elif defined(DPLATFORM_MACOS)
+	char* outString = strdup(buffer);
+#endif
 	return outString;
 }

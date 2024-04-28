@@ -2,7 +2,7 @@
 
 #if DPLATFORM_WINDOWS
 
-#include "core/Input.hpp"
+#include "Core/Input.hpp"
 #include "Core/Event.hpp"
 #include "Renderer/Vulkan/VulkanPlatform.hpp"
 #include "Renderer/Vulkan/VulkanContext.hpp"

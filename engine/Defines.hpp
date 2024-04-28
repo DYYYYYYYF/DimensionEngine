@@ -31,6 +31,7 @@
 #elif TARGET_OS_IPHONE
 #define DPLATFORM_IOS 1
 #elif TARGET_OS_MAC
+#define DPLATFORM_MACOS 1
 #endif
 
 #else
