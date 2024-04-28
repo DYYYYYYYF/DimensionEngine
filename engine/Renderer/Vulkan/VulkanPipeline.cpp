@@ -97,8 +97,16 @@ bool VulkanPipeline::Create(VulkanContext* context, VulkanRenderPass* renderpass
 	InputAssembly.setPrimitiveRestartEnable(VK_FALSE)
 		.setTopology(vk::PrimitiveTopology::eTriangleList);
 
-	// Pipeline layout
+	//Push constants
 	vk::PipelineLayoutCreateInfo LayoutCreateInfo;
+	vk::PushConstantRange PushConstant;
+	PushConstant.setStageFlags(vk::ShaderStageFlagBits::eVertex)
+		.setOffset(sizeof(Matrix4) * 0)
+		.setSize(sizeof(Matrix4) * 2);
+	LayoutCreateInfo.setPushConstantRangeCount(1)
+		.setPPushConstantRanges(&PushConstant);
+
+	// Pipeline layout
 	LayoutCreateInfo.setSetLayoutCount(descriptor_set_layout_count)
 		.setPSetLayouts(descriptor_set_layout);
 

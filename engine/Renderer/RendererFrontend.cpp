@@ -68,21 +68,26 @@ bool IRenderer::EndFrame(double delta_time) {
 	return result;
 }
 
-static float r = -10.0;
+static float x = 0.0f;
+static float z = -10.0;
 
 bool IRenderer::DrawFrame(SRenderPacket* packet) {
 	if (BeginFrame(packet->delta_time)) {
 
 		Matrix4 Projection = Matrix4::Perspective(Deg2Rad(45.0f), 1280.0f / 720.0f, 0.1f, 1000.0f);
 		Matrix4 View = Matrix4::Identity();
-		View.SetTranslation(Vec3{ 0, 0, -10.f });
-
-		r += 0.1f;
-		Quaternion Quat = GenerateFromAxisAngle(Vec3{ 0, 0, 1.0f }, r, false);
-		Matrix4 Model = QuatToMatrix(Quat);
+		View.SetTranslation(Vec3{ 0.0f, 0.0f, z });
 
 		// Update UBO buffer
-		Backend->UpdateGlobalState(Projection, View, Vec3(), Vec4(1.0f, 1.0f, 1.0f, 1.0f), 0);
+		Backend->UpdateGlobalState(Projection, View, Vec3(0.0f, 0.0f, 0.0f), Vec4(1.0f, 1.0f, 1.0f, 1.0f), 0);
+
+		Matrix4 Model = Matrix4::Identity();
+		Quaternion Quat = QuaternionFromAxisAngle(Vec3{ 0.0f, 0.0f, 1.0f }, x, false);
+		Matrix4 Rotation = QuatToRotationMatrix(Quat, Vec3());
+
+		Backend->UpdateObject(Rotation);
+
+		x += 0.001f;
 
 		bool result = EndFrame(packet->delta_time);
 

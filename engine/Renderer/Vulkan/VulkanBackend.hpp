@@ -17,7 +17,9 @@ public:
 
 	virtual bool BeginFrame(double delta_time) override;
 	virtual void UpdateGlobalState(Matrix4 projection, Matrix4 view, Vec3 view_position, Vec4 ambient_color, int mode) override;
+	virtual void UpdateObject(Matrix4 model_trans) override;
 	virtual bool EndFrame(double delta_time) override;
+
 
 	virtual void Resize(unsigned short width, unsigned short height) override;
 

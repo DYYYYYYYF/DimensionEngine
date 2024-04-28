@@ -20,6 +20,7 @@ public:
 	void Use(VulkanContext* context);
 	
 	void UpdateGlobalState(VulkanContext* context);
+	void UpdateObject(VulkanContext* context, Matrix4 model_trans);
 
 public:
 	// vertex, fragment

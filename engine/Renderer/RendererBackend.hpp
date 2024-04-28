@@ -18,6 +18,8 @@ public:
 	virtual bool EndFrame(double delta_time) = 0;
 	virtual void Resize(unsigned short width, unsigned short height) = 0;
 
+	virtual void UpdateObject(Matrix4 model_trans) = 0;
+
 public:
 	SPlatformState* GetPlatformState() { return PlatformState; }
 

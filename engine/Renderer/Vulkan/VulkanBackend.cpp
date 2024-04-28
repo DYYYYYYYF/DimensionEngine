@@ -388,11 +388,15 @@ void VulkanBackend::UpdateGlobalState(Matrix4 projection, Matrix4 view, Vec3 vie
 	// TODO: other ubo props
 
 	Context.ShaderModule.UpdateGlobalState(&Context);
+}
 
+void VulkanBackend::UpdateObject(Matrix4 model_trans) {
+	VulkanCommandBuffer* CmdBuffer = &Context.GraphicsCommandBuffers[Context.ImageIndex];
+
+	Context.ShaderModule.UpdateObject(&Context, model_trans);
 
 	// Temp test
 	Context.ShaderModule.Use(&Context);
-
 	// Bind vertex buffer at offset
 	vk::DeviceSize offset[1] = { 0 };
 	CmdBuffer->CommandBuffer.bindVertexBuffers(0, 1, &Context.ObjectVertexBuffer.Buffer, (vk::DeviceSize*)offset);

@@ -540,7 +540,9 @@ inline Vec4 ToVec4(const Vec3& vec, float w) {
 
 struct Matrix4 {
 public:
-	alignas(16) float data[16];
+	union {
+		alignas(16) float data[16];
+	};
 
 	Matrix4() {
 		Memory::Zero(data, sizeof(float) * 16);
@@ -984,7 +986,7 @@ inline Matrix4 QuatToRotationMatrix(const Quaternion& q, const Vec3& center) {
 	return Matrix;
 }
 
-inline Quaternion GenerateFromAxisAngle(const Vec3& axis, float angle, bool normalize) {
+inline Quaternion QuaternionFromAxisAngle(const Vec3& axis, float angle, bool normalize) {
 	const float HalfAngle = 0.5f * angle;
 	float s = DSin(HalfAngle);
 	float c = DCos(HalfAngle);

@@ -175,7 +175,7 @@ void VulkanShaderModule::UpdateGlobalState(VulkanContext* context) {
 		vk::DeviceSize Offset = DynamicAlignment * ImageIndex;
 
 		// Copy data to buffer
-		GlobalUniformBuffer.LoadData(context, Offset, Range, vk::MemoryMapFlags(), &GlobalUBO);
+		GlobalUniformBuffer.LoadData(context, Offset, Range, {}, &GlobalUBO);
 
 		vk::DescriptorBufferInfo BufferInfo;
 		BufferInfo.setBuffer(GlobalUniformBuffer.Buffer)
@@ -198,3 +198,9 @@ void VulkanShaderModule::UpdateGlobalState(VulkanContext* context) {
 	CmdBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, Pipeline.PipelineLayout, 0, 1, &GlobalDescriptor, 0, 0);
 }
 	
+void VulkanShaderModule::UpdateObject(VulkanContext* context, Matrix4 model_trans) {
+	uint32_t ImageIndex = context->ImageIndex;
+	vk::CommandBuffer CmdBuffer = context->GraphicsCommandBuffers[ImageIndex].CommandBuffer;
+
+	CmdBuffer.pushConstants(Pipeline.PipelineLayout, vk::ShaderStageFlagBits::eVertex, 0, sizeof(Matrix4), &model_trans);
+}
