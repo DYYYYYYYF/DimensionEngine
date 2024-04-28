@@ -1,6 +1,6 @@
 #version 450
 
-layout (location = 0) in vec3 vPosition;
+layout (location = 0) in vec4 vColor;
 layout (location = 0) out vec4 FragColor;
 
 layout (set = 1, binding = 0) uniform LocalUniformObject{

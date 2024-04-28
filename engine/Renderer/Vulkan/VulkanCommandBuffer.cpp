@@ -28,10 +28,10 @@ void VulkanCommandBuffer::BeginCommand(bool is_single_use, bool is_renderpass_co
 		BeginInfo.flags |= vk::CommandBufferUsageFlagBits::eOneTimeSubmit;
 	}
 	if (is_renderpass_continue) {
-		BeginInfo.flags |= vk::CommandBufferUsageFlagBits::eOneTimeSubmit;
+		BeginInfo.flags |= vk::CommandBufferUsageFlagBits::eRenderPassContinue;
 	}
 	if (is_synchronized) {
-		BeginInfo.flags |= vk::CommandBufferUsageFlagBits::eOneTimeSubmit;
+		BeginInfo.flags |= vk::CommandBufferUsageFlagBits::eSimultaneousUse;
 	}
 
 	CommandBuffer.begin(BeginInfo);

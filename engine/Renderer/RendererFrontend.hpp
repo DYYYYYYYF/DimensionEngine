@@ -1,6 +1,7 @@
 #pragma once
 
 #include "RendererTypes.hpp"
+#include "Resources/Texture.hpp"
 
 struct SStaticMeshData;
 struct SPlatformState;
@@ -22,8 +23,24 @@ public:
 
 	virtual void OnResize(unsigned short width, unsigned short height);
 	virtual bool DrawFrame(SRenderPacket* packet);
+	
+	virtual void SetViewTransform(Matrix4 view) { View = view; }
 
-public:
+
+	virtual void CreateTexture(const char* name, bool auto_release, int width, int height, int channel_count,
+		const char* pixels, bool has_transparency, Texture* texture);
+	virtual void DestroyTexture(Texture* txture);
+
+
+protected:
 	RendererBackendType BackendType;
 	class IRendererBackend* Backend;
+
+	// Projection perspective
+	Matrix4 Projection;
+	Matrix4 View;
+	float NearClip;
+	float FarClip;
+
+	Texture DefaultTexture;
 };

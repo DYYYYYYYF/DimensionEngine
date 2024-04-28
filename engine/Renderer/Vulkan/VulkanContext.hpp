@@ -33,6 +33,8 @@ public:
 
 
 public:
+	double FrameDeltaTime;
+
 	uint32_t FrameBufferWidth;
 	uint32_t FrameBufferHeight;
 

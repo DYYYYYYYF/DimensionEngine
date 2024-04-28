@@ -17,7 +17,7 @@ public:
 
 	virtual bool BeginFrame(double delta_time) override;
 	virtual void UpdateGlobalState(Matrix4 projection, Matrix4 view, Vec3 view_position, Vec4 ambient_color, int mode) override;
-	virtual void UpdateObject(Matrix4 model_trans) override;
+	virtual void UpdateObject(GeometryRenderData geometry) override;
 	virtual bool EndFrame(double delta_time) override;
 
 
@@ -30,6 +30,10 @@ public:
 	virtual bool CreateBuffers();
 
 	virtual void UploadDataRange(VulkanBuffer* buffer, size_t offset, size_t size, void* data);
+
+	virtual void CreateTexture(const char* name, bool auto_release, int width, int height, int channel_count,
+		const char* pixels, bool has_transparency, Texture* texture) override;
+	virtual void DestroyTexture(Texture* texture) override;
 
 protected:
 	VulkanContext Context;

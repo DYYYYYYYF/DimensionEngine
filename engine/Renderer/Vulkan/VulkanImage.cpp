@@ -92,3 +92,78 @@ void VulkanImage::Destroy(VulkanContext* context) {
 		Image = nullptr;
 	}
 }
+
+void VulkanImage::TransitionLayout(VulkanContext* context, VulkanCommandBuffer* command_buffer, vk::Format, vk::ImageLayout old_layout, vk::ImageLayout new_layout) {
+	vk::ImageMemoryBarrier Barrier;
+	Barrier.setOldLayout(old_layout)
+		.setNewLayout(new_layout)
+		.setSrcQueueFamilyIndex(context->Device.GetQueueFamilyInfo()->graphics_index)
+		.setDstQueueFamilyIndex(context->Device.GetQueueFamilyInfo()->graphics_index)
+		.setImage(Image);
+
+	vk::ImageSubresourceRange Range;
+	Range.setAspectMask(vk::ImageAspectFlagBits::eColor)
+		.setBaseMipLevel(0)
+		.setLevelCount(1)
+		.setBaseArrayLayer(0)
+		.setLayerCount(1);
+	Barrier.setSubresourceRange(Range);
+
+	vk::PipelineStageFlags SrcStage;
+	vk::PipelineStageFlags DstStage;
+
+	// Dont't care about the old layout - transition to optimal layout
+	if (old_layout == vk::ImageLayout::eUndefined && new_layout == vk::ImageLayout::eTransferDstOptimal) {
+		Barrier.setSrcAccessMask(vk::AccessFlagBits::eNone)
+			.setDstAccessMask(vk::AccessFlagBits::eTransferWrite);
+
+		// Dont't care what stage the pipeline is in at the start.
+		SrcStage = vk::PipelineStageFlagBits::eTopOfPipe;
+
+		// Used for copying
+		DstStage = vk::PipelineStageFlagBits::eTransfer;
+	}
+	else if (old_layout == vk::ImageLayout::eTransferDstOptimal && new_layout == vk::ImageLayout::eShaderReadOnlyOptimal) {
+		// Transition from a transfer destination layout to a shader-readonly layout
+		Barrier.setSrcAccessMask(vk::AccessFlagBits::eTransferWrite)
+			.setDstAccessMask(vk::AccessFlagBits::eShaderRead);
+
+		// From a copying stage to.
+		SrcStage = vk::PipelineStageFlagBits::eTransfer;
+
+		// The fragment stage.
+		DstStage = vk::PipelineStageFlagBits::eFragmentShader;
+	}
+	else {
+		UL_FATAL("Unsupported layout transition!");
+		return;
+	}
+
+	command_buffer->CommandBuffer.pipelineBarrier(SrcStage, DstStage, vk::DependencyFlagBits::eByRegion, 0, nullptr, 0, nullptr, 1, &Barrier);
+}
+
+void VulkanImage::CopyFromBuffer(VulkanContext* context, vk::Buffer buffer, VulkanCommandBuffer* command_buffer) {
+	// Region to copy
+	vk::BufferImageCopy Region;
+	Memory::Zero(&Region, sizeof(vk::BufferImageCopy));
+	Region.setBufferOffset(0)
+		.setBufferImageHeight(0)
+		.setBufferRowLength(0);
+
+	// Subresouce
+	vk::ImageSubresourceLayers Subresource;
+	Subresource.setAspectMask(vk::ImageAspectFlagBits::eColor)
+		.setMipLevel(0)
+		.setLayerCount(1)
+		.setBaseArrayLayer(0);
+	Region.setImageSubresource(Subresource);
+
+	// Extent
+	vk::Extent3D Extent;
+	Extent.setWidth(Width)
+		.setHeight(Height)
+		.setDepth(1);
+	Region.setImageExtent(Extent);
+
+	command_buffer->CommandBuffer.copyBufferToImage(buffer, Image, vk::ImageLayout::eTransferDstOptimal, 1, &Region);
+}

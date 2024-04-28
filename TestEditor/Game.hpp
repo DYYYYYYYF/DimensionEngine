@@ -2,9 +2,15 @@
 
 #include <Defines.hpp>
 #include <GameType.hpp>
+#include "Math/MathTypes.hpp"
 
 struct SGameState {
 	float delta_time;
+
+	Matrix4 view;
+	Vec3 camera_position;
+	Vec3 camera_euler;
+	bool camera_view_dirty;
 };
 
 bool GameInitialize(SGame* game_instance);

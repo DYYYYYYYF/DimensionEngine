@@ -8,6 +8,8 @@
 #include "Platform/Platform.hpp"
 #include "Math/MathTypes.hpp"
 
+#include "Resources/Texture.hpp"
+
 static uint32_t CachedFramebufferWidth = 0;
 static uint32_t CachedFramebufferHeight = 0;
 
@@ -222,20 +224,32 @@ bool VulkanBackend::Initialize(const char* application_name, struct SPlatformSta
 	Verts[0].position.x = 0.0f * f;
 	Verts[0].position.y = -0.5f * f;
 	Verts[0].position.z = 0.0f * f;
+	Verts[0].texcoord.x = 0.0f;
+	Verts[0].texcoord.y = 0.0f;
 
 	Verts[1].position.x = -0.5f * f;
 	Verts[1].position.y = 0.5f * f;
 	Verts[1].position.z = 0.0f * f;
+	Verts[1].texcoord.x = 1.0f;
+	Verts[1].texcoord.y = 1.0f;
 
 	Verts[2].position.x = 0.5f * f;
 	Verts[2].position.y = 0.5f * f;
 	Verts[2].position.z = 0.0f * f;
+	Verts[2].texcoord.x = -1.0f;
+	Verts[2].texcoord.y = -1.0f;
 
 	const uint32_t IndexCount = 3;
 	uint32_t Indices[IndexCount] = { 0, 2, 1 };
 
 	UploadDataRange(&Context.ObjectVertexBuffer, 0, sizeof(Vertex) * VertCount, Verts);
 	UploadDataRange(&Context.ObjectIndexBuffer, 0, sizeof(uint32_t) * IndexCount, Indices);
+
+	uint32_t ObjectID = 0;
+	if (!Context.ShaderModule.AcquireResources(&Context, &ObjectID)) {
+		UL_ERROR("Acquire shader resource failed.");
+		return false;
+	}
 
 	UL_INFO("Create vulkan instance succeed.");
 	return true;
@@ -309,6 +323,7 @@ void VulkanBackend::Shutdown() {
 }
 
 bool VulkanBackend::BeginFrame(double delta_time){
+	Context.FrameDeltaTime = delta_time;
 	VulkanDevice* Device = &Context.Device;
 
 	// Check if recreating swap chain and boot out
@@ -387,13 +402,13 @@ void VulkanBackend::UpdateGlobalState(Matrix4 projection, Matrix4 view, Vec3 vie
 
 	// TODO: other ubo props
 
-	Context.ShaderModule.UpdateGlobalState(&Context);
+	Context.ShaderModule.UpdateGlobalState(&Context, Context.FrameDeltaTime);
 }
 
-void VulkanBackend::UpdateObject(Matrix4 model_trans) {
+void VulkanBackend::UpdateObject(GeometryRenderData geometry) {
 	VulkanCommandBuffer* CmdBuffer = &Context.GraphicsCommandBuffers[Context.ImageIndex];
 
-	Context.ShaderModule.UpdateObject(&Context, model_trans);
+	Context.ShaderModule.UpdateObject(&Context, geometry);
 
 	// Temp test
 	Context.ShaderModule.Use(&Context);
@@ -615,6 +630,95 @@ void VulkanBackend::UploadDataRange(VulkanBuffer* buffer, size_t offset, size_t 
 
 	// Clean up the staging buffer.
 	Staging.Destroy(&Context);
+}
+
+void VulkanBackend::CreateTexture(const char* name, bool auto_release, int width, int height, int channel_count,
+	const char* pixels, bool has_transparency, Texture* texture) {
+	texture->Width = width;
+	texture->Height = height;
+	texture->ChannelCount = channel_count;
+	texture->Generation = 0;
+
+	// Internal data creation.
+	// TODO: Use an allocator for this.
+	texture->InternalData = (VulkanTexture*)Memory::Allocate(sizeof(VulkanTexture), MemoryType::eMemory_Type_Texture);
+	VulkanTexture* Data = (VulkanTexture*)texture->InternalData;
+	vk::DeviceSize ImageSize = width * height * channel_count;
+
+	// NOTE: Assumes 8 bits per channel.
+	vk::Format ImageFormat = vk::Format::eR8G8B8A8Unorm;
+
+	// Create a staging buffer and load data into it.
+	vk::BufferUsageFlags Usage = vk::BufferUsageFlagBits::eTransferSrc;
+	vk::MemoryPropertyFlags MemoryPropFlags = vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent;
+	VulkanBuffer Staging;
+	Staging.Create(&Context, ImageSize, Usage, MemoryPropFlags, true);
+
+	Staging.LoadData(&Context, 0, ImageSize, {}, pixels);
+
+	// NOTE: Lots of assumptions here, different texture types will require.
+	// different options here.
+	Data->Image.CreateImage(&Context, vk::ImageType::e2D, width, height, ImageFormat,
+		vk::ImageTiling::eOptimal,
+		vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst |
+		vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eColorAttachment,
+		vk::MemoryPropertyFlagBits::eDeviceLocal,
+		true, vk::ImageAspectFlagBits::eColor);
+
+	VulkanCommandBuffer TempBuffer;
+	vk::CommandPool Pool = Context.Device.GetGraphicsCommandPool();
+	vk::Queue Queue = Context.Device.GetGraphicsQueue();
+	TempBuffer.AllocateAndBeginSingleUse(&Context, Pool);
+
+	// Transition the layout from whatever it is currently to optimal for receiving data.
+	Data->Image.TransitionLayout(&Context, &TempBuffer, ImageFormat, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal);
+
+	// Copy the data from buffer.
+	Data->Image.CopyFromBuffer(&Context, Staging.Buffer, &TempBuffer);
+
+	// Transition from optimal for data receipt to shader-read-only optimal layout.
+	Data->Image.TransitionLayout(&Context, &TempBuffer, ImageFormat, vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal);
+
+	TempBuffer.EndSingleUse(&Context, Pool, Queue);
+	Staging.Destroy(&Context);
+
+	// Create a sampler for the texture.
+	vk::SamplerCreateInfo SamplerInfo;
+	SamplerInfo.setMagFilter(vk::Filter::eLinear)
+		.setMinFilter(vk::Filter::eLinear)
+		.setAddressModeU(vk::SamplerAddressMode::eRepeat)
+		.setAddressModeV(vk::SamplerAddressMode::eRepeat)
+		.setAddressModeW(vk::SamplerAddressMode::eRepeat)
+		.setAnisotropyEnable(VK_TRUE)
+		.setMaxAnisotropy(16)
+		.setBorderColor(vk::BorderColor::eIntOpaqueBlack)
+		.setUnnormalizedCoordinates(VK_FALSE)
+		.setCompareEnable(VK_FALSE)
+		.setCompareOp(vk::CompareOp::eAlways)
+		.setMipLodBias(0.0f)
+		.setMipmapMode(vk::SamplerMipmapMode::eLinear)
+		.setMinLod(0.0f)
+		.setMaxLod(0.0f);
+
+	Data->sampler = Context.Device.GetLogicalDevice().createSampler(SamplerInfo, Context.Allocator);
+	ASSERT(Data->sampler);
+
+	texture->HasTransparency = has_transparency;
+	texture->Generation++;
+}
+
+void VulkanBackend::DestroyTexture(Texture* texture) {
+	Context.Device.GetLogicalDevice().waitIdle();
+
+	VulkanTexture* Data = (VulkanTexture*)texture->InternalData;
+
+	Data->Image.Destroy(&Context);
+	Memory::Zero(&Data->Image, sizeof(VulkanImage));
+	Context.Device.GetLogicalDevice().destroySampler(Data->sampler, Context.Allocator);
+	Data->sampler = nullptr;
+
+	Memory::Free(texture->InternalData, sizeof(VulkanTexture), MemoryType::eMemory_Type_Texture);
+	Memory::Zero(texture, sizeof(Texture));
 }
 
 /*

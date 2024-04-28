@@ -1,5 +1,11 @@
 #pragma once
 
+/*
+* @brief Any id set to this should be considered invalid,
+* and not actually pointing to a real object.
+*/
+#define INVALID_ID 4294967295U
+
 // Platforms
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__)
 #define DPLATFORM_WINDOWS 1

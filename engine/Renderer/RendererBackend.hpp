@@ -3,6 +3,7 @@
 #include "RendererTypes.hpp"
 
 struct SPlatformState;
+class Texture;
 
 class IRendererBackend {
 public:
@@ -18,7 +19,11 @@ public:
 	virtual bool EndFrame(double delta_time) = 0;
 	virtual void Resize(unsigned short width, unsigned short height) = 0;
 
-	virtual void UpdateObject(Matrix4 model_trans) = 0;
+	virtual void UpdateObject(GeometryRenderData geometry) = 0;
+
+	virtual void CreateTexture(const char* name, bool auto_release, int width, int height, int channel_count,
+		const char* pixels, bool has_transparency, Texture* texture) = 0;
+	virtual void DestroyTexture(Texture* txture) = 0;
 
 public:
 	SPlatformState* GetPlatformState() { return PlatformState; }
