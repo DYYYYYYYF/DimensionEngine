@@ -3,6 +3,7 @@ message("-- Generating Engine Library")
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${UD_LOGGER_DIR}/include
+    ${STB_DIR}
 )
 
 file(GLOB ENGINE_SOURCE_FILES *.cpp */*.cpp */*/*.cpp */*/*/*.cpp)
@@ -15,12 +16,14 @@ set_target_properties(engine PROPERTIES
 
 target_compile_definitions(engine PUBLIC -DDEXPORT) 
 message("-- UncleDon-Logger Path: ${UD_LOGGER_DIR}")
+message("-- STB Image Path: ${STB_DIR}")
 
 target_include_directories(
     engine 
     PUBLIC 
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${UD_LOGGER_DIR}/include
+    ${STB_DIR}
 )
 
 if(${APPLE})

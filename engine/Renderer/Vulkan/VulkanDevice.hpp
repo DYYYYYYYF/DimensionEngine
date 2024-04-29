@@ -62,6 +62,8 @@ public:
 	vk::Queue GetPresentQueue() { return PresentQueue; }
 	vk::Queue GetTransferQueue() { return TransferQueue; }
 
+	bool GetIsSupportDeviceLocalHostVisible() const { return IsSupportDeviceLocalHostVisible; }
+
 private:
 	bool SelectPhysicalDevice(vk::Instance* instance, vk::SurfaceKHR surface);
 	bool MeetsRequirements(vk::PhysicalDevice device, vk::SurfaceKHR surface, const vk::PhysicalDeviceProperties* properties,
@@ -69,6 +71,8 @@ private:
 
 
 private:
+	bool IsSupportDeviceLocalHostVisible;
+
 	vk::PhysicalDevice PhysicalDevice;
 	vk::Device LogicalDevice;
 	vk::Queue GraphicsQueue;

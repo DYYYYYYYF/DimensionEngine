@@ -207,7 +207,7 @@ bool VulkanBackend::Initialize(const char* application_name, struct SPlatformSta
 	}
 
 	// Create shaders
-	if (!Context.ShaderModule.Create(&Context)) {
+	if (!Context.ShaderModule.Create(&Context, DefaultDiffuse)) {
 		UL_ERROR("Loadding basic_lighting shader failed.");
 		return false;
 	}
@@ -215,32 +215,34 @@ bool VulkanBackend::Initialize(const char* application_name, struct SPlatformSta
 	CreateBuffers();
 
 	// Temp
-	const uint32_t VertCount = 3;
+	const uint32_t VertCount = 4;
 	Vertex Verts[VertCount];
 	Memory::Zero(Verts, sizeof(Vertex) * VertCount);
 
 	const float f = 1.0f;
 
-	Verts[0].position.x = 0.0f * f;
+	Verts[0].position.x = -0.5f * f;
 	Verts[0].position.y = -0.5f * f;
-	Verts[0].position.z = 0.0f * f;
 	Verts[0].texcoord.x = 0.0f;
 	Verts[0].texcoord.y = 0.0f;
 
-	Verts[1].position.x = -0.5f * f;
-	Verts[1].position.y = 0.5f * f;
-	Verts[1].position.z = 0.0f * f;
+	Verts[1].position.x = 0.5f * f;
+	Verts[1].position.y = -0.5f * f;
 	Verts[1].texcoord.x = 1.0f;
-	Verts[1].texcoord.y = 1.0f;
+	Verts[1].texcoord.y = 0.0f;
 
-	Verts[2].position.x = 0.5f * f;
+	Verts[2].position.x = -0.5f * f;
 	Verts[2].position.y = 0.5f * f;
-	Verts[2].position.z = 0.0f * f;
-	Verts[2].texcoord.x = -1.0f;
-	Verts[2].texcoord.y = -1.0f;
+	Verts[2].texcoord.x = 0.0f;
+	Verts[2].texcoord.y = 1.0f;
 
-	const uint32_t IndexCount = 3;
-	uint32_t Indices[IndexCount] = { 0, 2, 1 };
+	Verts[3].position.x = 0.5f * f;
+	Verts[3].position.y = 0.5f * f;
+	Verts[3].texcoord.x = 1.0f;
+	Verts[3].texcoord.y = 1.0f;
+
+	const uint32_t IndexCount = 6;
+	uint32_t Indices[IndexCount] = { 0, 1, 2, 3, 2, 1 };
 
 	UploadDataRange(&Context.ObjectVertexBuffer, 0, sizeof(Vertex) * VertCount, Verts);
 	UploadDataRange(&Context.ObjectIndexBuffer, 0, sizeof(uint32_t) * IndexCount, Indices);
@@ -420,7 +422,7 @@ void VulkanBackend::UpdateObject(GeometryRenderData geometry) {
 	CmdBuffer->CommandBuffer.bindIndexBuffer(Context.ObjectIndexBuffer.Buffer, 0, vk::IndexType::eUint32);
 
 	// Issue the draw
-	CmdBuffer->CommandBuffer.drawIndexed(3, 1, 0, 0, 0);
+	CmdBuffer->CommandBuffer.drawIndexed(6, 1, 0, 0, 0);
 
 }
 
@@ -633,7 +635,7 @@ void VulkanBackend::UploadDataRange(VulkanBuffer* buffer, size_t offset, size_t 
 }
 
 void VulkanBackend::CreateTexture(const char* name, bool auto_release, int width, int height, int channel_count,
-	const char* pixels, bool has_transparency, Texture* texture) {
+	const unsigned char* pixels, bool has_transparency, Texture* texture) {
 	texture->Width = width;
 	texture->Height = height;
 	texture->ChannelCount = channel_count;
@@ -712,12 +714,15 @@ void VulkanBackend::DestroyTexture(Texture* texture) {
 
 	VulkanTexture* Data = (VulkanTexture*)texture->InternalData;
 
-	Data->Image.Destroy(&Context);
-	Memory::Zero(&Data->Image, sizeof(VulkanImage));
-	Context.Device.GetLogicalDevice().destroySampler(Data->sampler, Context.Allocator);
-	Data->sampler = nullptr;
+	if (Data != nullptr) {
+		Data->Image.Destroy(&Context);
+		Memory::Zero(&Data->Image, sizeof(VulkanImage));
+		Context.Device.GetLogicalDevice().destroySampler(Data->sampler, Context.Allocator);
+		Data->sampler = nullptr;
 
-	Memory::Free(texture->InternalData, sizeof(VulkanTexture), MemoryType::eMemory_Type_Texture);
+		Memory::Free(texture->InternalData, sizeof(VulkanTexture), MemoryType::eMemory_Type_Texture);
+	}
+
 	Memory::Zero(texture, sizeof(Texture));
 }
 

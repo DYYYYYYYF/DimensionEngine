@@ -12,7 +12,7 @@ public:
 	uint32_t Width;
 	uint32_t Height;
 
-	bool ChannelCount;
+	int ChannelCount;
 	bool HasTransparency;
 
 	uint32_t Generation;

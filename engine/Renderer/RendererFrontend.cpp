@@ -6,6 +6,14 @@
 
 #include "Math/MathTypes.hpp"
 
+// TODO: temp
+#include "Core/Event.hpp"
+
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
+
+// TODO: temp
+
 IRenderer::IRenderer() : Backend(nullptr) {}
 
 IRenderer::IRenderer(RendererBackendType type, struct SPlatformState* plat_state) : Backend(nullptr){
@@ -41,6 +49,8 @@ bool IRenderer::Initialize(const char* application_name, struct SPlatformState* 
 		return false;
 	}
 
+	Backend->DefaultDiffuse = &DefaultTexture;
+
 	NearClip = 0.01f;
 	FarClip = 1000.0f;
 	Projection = Matrix4::Perspective(Deg2Rad(45.0f), 1280.0f / 720.0f, 0.1f, 1000.0f);
@@ -55,9 +65,9 @@ bool IRenderer::Initialize(const char* application_name, struct SPlatformState* 
 	const uint32_t TexDimension = 256;
 	const uint32_t bpp = 4;
 	const uint32_t PixelCount = TexDimension * TexDimension;
-	char Pixels[PixelCount * bpp];
+	unsigned char Pixels[PixelCount * bpp];
 
-	Memory::Set(Pixels, 255, sizeof(char) * PixelCount * bpp);
+	Memory::Set(Pixels, 255, sizeof(unsigned char) * PixelCount * bpp);
 
 	// Each pixel.
 	for (size_t row = 0; row < TexDimension; row++) {
@@ -82,12 +92,22 @@ bool IRenderer::Initialize(const char* application_name, struct SPlatformState* 
 	CreateTexture("Default", false, TexDimension, TexDimension, 4, Pixels, false, &DefaultTexture);
 	UL_INFO("Default texture created.");
 
+	// Manually set the texture generation to invalid since this is a default texture.
+	DefaultTexture.Generation = INVALID_ID;
+
+	// TODO: Load other texture.
+	CreateTexture(&TestDiffuse);
+
+	// Temp
+	LoadTexture("Wood", &TestDiffuse);
+
 	return true;
 }
 
 void IRenderer::Shutdown() {
 	if (Backend != nullptr) {
 		DestroyTexture(&DefaultTexture);
+		DestroyTexture(&TestDiffuse);
 
 		Backend->Shutdown();
 		Memory::Free(Backend, sizeof(IRendererBackend), eMemory_Type_Renderer);
@@ -123,15 +143,15 @@ bool IRenderer::DrawFrame(SRenderPacket* packet) {
 		// Update UBO buffer
 		Backend->UpdateGlobalState(Projection, View, Vec3(0.0f, 0.0f, 0.0f), Vec4(1.0f, 1.0f, 1.0f, 1.0f), 0);
 
-		Quaternion Quat = QuaternionFromAxisAngle(Vec3{ 0.0f, 0.0f, 1.0f }, x, false);
+		Quaternion Quat = QuaternionFromAxisAngle(Vec3{ 0.0f, 0.0f, 1.0f }, x, true);
 		//Matrix4 Model = QuatToRotationMatrix(Quat, Vec3());
 		Matrix4 Model = Matrix4::Identity();
 
 		GeometryRenderData RenderData = {};
 		RenderData.object_id = 0;
 		RenderData.model = Model;
-		RenderData.textures[0] = &DefaultTexture;
-		x += 0.01f;
+		RenderData.textures[0] = &TestDiffuse;
+		x += 0.001f;
 		Backend->UpdateObject(RenderData);
 
 		bool result = EndFrame(packet->delta_time);
@@ -146,8 +166,82 @@ bool IRenderer::DrawFrame(SRenderPacket* packet) {
 	return true;
 }
 
+void IRenderer::CreateTexture(Texture* texture) {
+	Memory::Zero(texture, sizeof(Texture));
+	texture->Generation = INVALID_ID;
+}
+
+bool IRenderer::LoadTexture(const char* name, Texture* texture) {
+	// TODO: Should be able to be located anywhere.
+	char* FormatStr = "../Asset/Textures/%s.%s";
+	const int RequiredChannelCount = 4;
+	stbi_set_flip_vertically_on_load(true);
+	char FullFilePath[512];
+
+	// TODO: Try different extensions.
+	sprintf_s(FullFilePath, FormatStr, name, "png");
+
+	// Use a temporary texture to load into.
+	Texture TempTexture;
+
+	unsigned char* data = stbi_load(FullFilePath, (int*)&TempTexture.Width, (int*)&TempTexture.Height,
+		(int*)&TempTexture.ChannelCount, RequiredChannelCount);
+
+	TempTexture.ChannelCount = RequiredChannelCount;
+
+	if (data != nullptr) {
+		uint32_t CurrentGeneration = texture->Generation;
+		texture->Generation = INVALID_ID;
+
+		size_t TotalSize = TempTexture.Width * TempTexture.Height * RequiredChannelCount;
+		// Check for transparency.
+		bool HasTransparency = false;
+		for (size_t i = 0; i < TotalSize; ++i) {
+			unsigned char a = data[i + 3];
+			if (a < 255) {
+				HasTransparency = true;
+				break;
+			}
+		}
+
+		if (stbi_failure_reason() != nullptr) {
+			UL_WARN("Load texture failed to load file %s : %s", FullFilePath, stbi_failure_reason());
+		}
+
+		//Acquire internal texture resources and upload to GPU.
+		CreateTexture(name, true, TempTexture.Width, TempTexture.Height, TempTexture.ChannelCount, data, HasTransparency, &TempTexture);
+
+		// Take a copy of the old texture.
+		Texture Old = *texture;
+
+		// Assign the temp texture to the pointer.
+		*texture = TempTexture;
+
+		// Destroy the old texture.
+		DestroyTexture(&Old);
+
+		if (CurrentGeneration == INVALID_ID) {
+			texture->Generation = 0;
+		}
+		else {
+			texture->Generation = CurrentGeneration + 1;
+		}
+
+		// Clean up data.
+		stbi_image_free(data);
+		return true;
+	}
+	else {
+		if (stbi_failure_reason() != nullptr) {
+			UL_WARN("Load texture failed to load file %s : %s", FullFilePath, stbi_failure_reason());
+		}
+
+		return false;
+	}
+}
+
 void IRenderer::CreateTexture(const char* name, bool auto_release, int width, int height, int channel_count,
-	const char* pixels, bool has_transparency, Texture* texture) {
+	const unsigned char* pixels, bool has_transparency, Texture* texture) {
 	Backend->CreateTexture(name, auto_release, width, height, channel_count, pixels, has_transparency, texture);
 }
 

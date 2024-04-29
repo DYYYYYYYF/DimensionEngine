@@ -159,6 +159,19 @@ bool VulkanDevice::SelectPhysicalDevice(vk::Instance* instance, vk::SurfaceKHR s
 		vk::PhysicalDeviceMemoryProperties memory;
 		PhysicalDevices[i].getMemoryProperties(&memory);
 
+		// Check if device supports local/host visible combo
+		bool bSupportDeviceLocalHostVisible = false;
+		for (uint32_t i = 0; i < memory.memoryTypeCount; ++i) {
+			// Check each memory type to see if its bit is set to one.
+			if (
+				((memory.memoryTypes[i].propertyFlags & vk::MemoryPropertyFlagBits::eHostVisible)) &&
+				((memory.memoryTypes[i].propertyFlags & vk::MemoryPropertyFlagBits::eDeviceLocal)) 
+			){
+				bSupportDeviceLocalHostVisible = true;
+				break;
+			}
+		}
+
 		// TODO: these requirements should probably be driven by engine
 		// configuration
 		DeviceRequirements.graphics = true;
@@ -216,6 +229,8 @@ bool VulkanDevice::SelectPhysicalDevice(vk::Instance* instance, vk::SurfaceKHR s
 			}
 
 			PhysicalDevice = PhysicalDevices[i];
+
+			IsSupportDeviceLocalHostVisible = bSupportDeviceLocalHostVisible;
 
 			break;
 		}

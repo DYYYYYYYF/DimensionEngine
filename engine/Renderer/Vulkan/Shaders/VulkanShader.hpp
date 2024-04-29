@@ -10,6 +10,7 @@
 #define VULKAN_OBJECT_SHADER_DESCRIPTOR_COUNT 2
 
 class VulkanContext;
+class Texture;
 
 struct VulkanDescriptorState {
 	// One per frame
@@ -32,7 +33,7 @@ public:
 	virtual ~VulkanShaderModule() {}
 
 public:
-	bool Create(VulkanContext* context);
+	bool Create(VulkanContext* context, Texture* default_diffuse);
 	void Destroy(VulkanContext* context);
 	void Use(VulkanContext* context);
 	
@@ -73,4 +74,7 @@ public:
 
 	// TODO: Make dynamic.
 	VulkanObjectShaderObjectState ObjectStates[VULKAN_OBJECT_MAX_OBJECT_COUNT];
+
+	// Points to default textures.
+	Texture* DefaultDiffuse;
 };

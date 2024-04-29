@@ -11,6 +11,8 @@
 
 #include "Renderer/Vulkan/Shaders/VulkanShader.hpp"
 
+class Texture;
+
 class VulkanContext {
 public:
 	VulkanContext(): Allocator(nullptr) {}
@@ -78,4 +80,5 @@ public:
 	size_t GeometryIndexOffset;
 	VulkanBuffer ObjectVertexBuffer;
 	VulkanBuffer ObjectIndexBuffer;
+
 };

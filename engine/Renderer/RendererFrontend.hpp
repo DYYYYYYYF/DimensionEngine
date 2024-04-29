@@ -7,6 +7,9 @@ struct SStaticMeshData;
 struct SPlatformState;
 class IRendererBackend;
 
+// Temp
+struct SEventContext;
+
 class IRenderer {
 public:
 	IRenderer();
@@ -28,9 +31,14 @@ public:
 
 
 	virtual void CreateTexture(const char* name, bool auto_release, int width, int height, int channel_count,
-		const char* pixels, bool has_transparency, Texture* texture);
+		const unsigned char* pixels, bool has_transparency, Texture* texture);
 	virtual void DestroyTexture(Texture* txture);
 
+	virtual void CreateTexture(Texture* texture);
+	virtual bool LoadTexture(const char* name, Texture* texture);
+
+public:
+	Texture TestDiffuse;
 
 protected:
 	RendererBackendType BackendType;

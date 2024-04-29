@@ -6,7 +6,9 @@
 #include "Renderer/RendererTypes.hpp"
 #include "Resources/Texture.hpp"
 
-bool VulkanShaderModule::Create(VulkanContext* context) {
+bool VulkanShaderModule::Create(VulkanContext* context, Texture* default_diffuse) {
+	DefaultDiffuse = default_diffuse;
+
 	// Shader module init per stage
 	char StageTypeStrs[OBJECT_SHADER_STAGE_COUNT][5] = { "vert", "frag" };
 	vk::ShaderStageFlagBits StageTypes[OBJECT_SHADER_STAGE_COUNT] = { vk::ShaderStageFlagBits::eVertex, vk::ShaderStageFlagBits::eFragment };
@@ -140,6 +142,8 @@ bool VulkanShaderModule::Create(VulkanContext* context) {
 	}
 
 	// Create uniform buffer
+	vk::MemoryPropertyFlags DeviceLocalBits = 
+		context->Device.GetIsSupportDeviceLocalHostVisible() ? vk::MemoryPropertyFlagBits::eDeviceLocal : vk::MemoryPropertyFlags(0);
 	vk::DeviceSize DynamicAlignment = sizeof(SGlobalUBO);
 	vk::PhysicalDeviceProperties properties = context->Device.GetPhysicalDevice().getProperties();
 	size_t minUboAlignment = properties.limits.minUniformBufferOffsetAlignment;
@@ -318,6 +322,15 @@ void VulkanShaderModule::UpdateObject(VulkanContext* context, GeometryRenderData
 	for (uint32_t SamplerIndex = 0; SamplerIndex < SamplerCount; SamplerIndex++) {
 		Texture* t = geometry.textures[SamplerIndex];
 		uint32_t* DescriptorGeneration = &ObjectState->descriptor_states[DescriptorIndex].generations[ImageIndex];
+
+		// If the texture hasn't been loaded yet, use the default.
+		// TODO: Determine which use the texture has and pull appropriate based on that.
+		if (t->Generation == INVALID_ID) {
+			t = DefaultDiffuse;
+
+			// Reset the descriptor generation if using the default texture.
+			*DescriptorGeneration = INVALID_ID;
+		}
 
 		// Check if the descriptor needs updating first.
 		if (t && (*DescriptorGeneration != t->Generation || *DescriptorGeneration == INVALID_ID)) {

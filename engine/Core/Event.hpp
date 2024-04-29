@@ -84,6 +84,8 @@ namespace Core {
 		 */
 		eEvent_Code_Resize = 0x00,
 
+		eEvent_Code_Debug_0 = 0x08,
+
 		eEvent_Code_Max = 0xFF
 	};
 }

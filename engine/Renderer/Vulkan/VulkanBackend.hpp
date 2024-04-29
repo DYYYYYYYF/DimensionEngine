@@ -32,7 +32,7 @@ public:
 	virtual void UploadDataRange(VulkanBuffer* buffer, size_t offset, size_t size, void* data);
 
 	virtual void CreateTexture(const char* name, bool auto_release, int width, int height, int channel_count,
-		const char* pixels, bool has_transparency, Texture* texture) override;
+		const unsigned char* pixels, bool has_transparency, Texture* texture) override;
 	virtual void DestroyTexture(Texture* texture) override;
 
 protected:
