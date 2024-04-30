@@ -1,7 +1,6 @@
 [submodule "3rd/UncleDon-Logger"]
-path = 3rd/UncleDon-Logger
-url = https://github.com/DYYYYYYYF/UncleDon-Logger
-
+	path = 3rd/UncleDon-Logger
+	url = https://github.com/DYYYYYYYF/UncleDon-Logger
 [submodule "3rd/stb"]
-path = 3rd/stb
-url = https://github.com/nothings/stb
+	path = 3rd/stb
+	url = git@github.com:nothings/stb.git
