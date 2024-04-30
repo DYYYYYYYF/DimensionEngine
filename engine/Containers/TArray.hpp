@@ -61,7 +61,7 @@ public:
 			Resize();
 		}
 
-		size_t addr = (size_t)ArrayMemory + (Length * Stride);
+		char* addr = (char*)ArrayMemory + (Length * Stride);
 		Memory::Copy((void*)addr, &value, Stride);
 
 		Length++;
@@ -77,7 +77,7 @@ public:
 			Resize();
 		}
 
-		size_t addr = (size_t)ArrayMemory;
+		char* addr = (char*)ArrayMemory + (Length * Stride);
 		if (index != Length - 1) {
 			Memory::Copy(
 				(void*)(addr + (index + 1) * Stride),
@@ -91,7 +91,7 @@ public:
 	}
 
 	ElementType Pop() {
-		size_t addr = (size_t)ArrayMemory;
+		char* addr = (char*)ArrayMemory + (Length * Stride);
 		addr += ((Length - 1) * Stride);
 
 		ElementType result;
@@ -107,7 +107,7 @@ public:
 			return ElementType();
 		}
 
-		size_t addr = (size_t)ArrayMemory;
+		char* addr = (char*)ArrayMemory + (index * Stride);
 		ElementType result;
 		Memory::Copy(&result, (void*)addr, Stride);
 
@@ -146,7 +146,7 @@ public:
 
 	ElementType& operator[](size_t i) { 
 		//if (i > Length || ArrayMemory == nullptr) return ElementType();
-		return *((ElementType*)((size_t)ArrayMemory + i * Stride));
+		return *((ElementType*)((char*)ArrayMemory + i * Stride));
 	}
 
 
@@ -160,3 +160,16 @@ private:
 	MemoryType UsedMemoryType;
 };
 
+
+//bool StringsEqual(const char* str0, const char* str1) {
+//	return strcmp(str0, str1) == 0;
+//}
+//
+//// Case-insensitive
+//bool StringsEqualCaseInsensitive(const char* str0, const char* str1) {
+//#if defined(__GUNC__)
+//	return strcasecmp(str0, str1);
+//#elif defined(_MSC_VER)
+//	return _strcmpi(str0, str1);
+//#endif
+//}

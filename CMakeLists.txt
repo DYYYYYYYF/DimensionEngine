@@ -69,7 +69,15 @@ endif()
 add_subdirectory(3rd)
 add_subdirectory(engine)
 add_subdirectory(TestEditor)
-    
+
+# Unit test
+add_subdirectory(Tests)
+
+# Copy necessary dll
+if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/../bin/engine.dll)
+	file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/../bin/engine.dll DESTINATION ${EXECUTABLE_OUTPUT_PATH})
+endif()
+
 message("\n-- Log level: ${LOG_LEVEL}")
 message("-- Build target mode: ${CMAKE_BUILD_TYPE}")
 message("-- Add executable program to ${EXECUTABLE_OUTPUT_PATH}")

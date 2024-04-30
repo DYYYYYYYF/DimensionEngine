@@ -9,7 +9,7 @@
 #include "VulkanBuffer.hpp"
 #include "VulkanFence.hpp"
 
-#include "Renderer/Vulkan/Shaders/VulkanShader.hpp"
+#include "Renderer/Vulkan/Shaders/VulkanMaterialShader.hpp"
 
 class Texture;
 
@@ -73,7 +73,7 @@ public:
 	VulkanRenderPass MainRenderPass;
 
 	// Shaders
-	VulkanShaderModule ShaderModule;
+	VulkanMaterialShader MaterialShader;
 
 	// Geometry
 	size_t GeometryVertexOffset;

@@ -1,6 +1,6 @@
 #include "VulkanShaderUtils.hpp"
 #include "VulkanContext.hpp"
-#include "Shaders/VulkanShader.hpp"
+#include "Shaders/VulkanMaterialShader.hpp"
 
 #include "Core/EngineLogger.hpp"
 #include "Core/DMemory.hpp"
@@ -11,7 +11,7 @@ bool VulkanShaderUtils::CreateShaderModule(VulkanContext* context, const char* n
 	vk::ShaderStageFlagBits stage_flag, uint32_t stage_index, VulkanShaderStage* shader_stage) {
 	// Build file name
 	char FileName[512];
-	sprintf(FileName, "../shader/glsl/%s_%s.spv", name, type_str);
+	sprintf(FileName, "../shader/glsl/%s.%s.spv", name, type_str);
 
 	Memory::Zero(&shader_stage[stage_index].create_info, sizeof(vk::ShaderModuleCreateInfo));
 	shader_stage[stage_index].create_info.sType = vk::StructureType::eShaderModuleCreateInfo;

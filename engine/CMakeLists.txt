@@ -35,6 +35,4 @@ elseif(${WIN32})
     target_link_libraries(engine PUBLIC "vulkan-1.lib")
 endif()
 
-#file(COPY ${OPENAL_DIR}/bin/OpenAL32.dll DESTINATION ${EXECUTABLE_OUTPUT_PATH})
-
 message("-- Generated Engine Library\n")

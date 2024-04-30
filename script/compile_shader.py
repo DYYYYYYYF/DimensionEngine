@@ -34,7 +34,7 @@ def Compile(sub_file_path, file, filename):
     shader_type = filename[1].split('.')[1]
     if filename[1] != ".hlsl":
         ## Record compile command
-        cmd = compile_command + sub_file_path + "/" + file + " -o " + sub_file_path + "/" + filename[0] + "_" + shader_type + ".spv"
+        cmd = compile_command + sub_file_path + "/" + file + " -o " + sub_file_path + "/" + filename[0] + "." + shader_type + ".spv"
         print("Compiling " + sub_file_path + "/" + filename[0] + filename[1])
 
         ## Execute compile command

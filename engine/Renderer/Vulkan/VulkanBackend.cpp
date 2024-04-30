@@ -207,7 +207,7 @@ bool VulkanBackend::Initialize(const char* application_name, struct SPlatformSta
 	}
 
 	// Create shaders
-	if (!Context.ShaderModule.Create(&Context, DefaultDiffuse)) {
+	if (!Context.MaterialShader.Create(&Context, DefaultDiffuse)) {
 		UL_ERROR("Loadding basic_lighting shader failed.");
 		return false;
 	}
@@ -248,7 +248,7 @@ bool VulkanBackend::Initialize(const char* application_name, struct SPlatformSta
 	UploadDataRange(&Context.ObjectIndexBuffer, 0, sizeof(uint32_t) * IndexCount, Indices);
 
 	uint32_t ObjectID = 0;
-	if (!Context.ShaderModule.AcquireResources(&Context, &ObjectID)) {
+	if (!Context.MaterialShader.AcquireResources(&Context, &ObjectID)) {
 		UL_ERROR("Acquire shader resource failed.");
 		return false;
 	}
@@ -266,7 +266,7 @@ void VulkanBackend::Shutdown() {
 	Context.ObjectIndexBuffer.Destroy(&Context);
 
 	UL_DEBUG("Destroying shader modules.");
-	Context.ShaderModule.Destroy(&Context);
+	Context.MaterialShader.Destroy(&Context);
 
 	UL_DEBUG("Destroying sync objects.");
 	for (uint32_t i = 0; i < Context.Swapchain.MaxFramesInFlight; ++i) {
@@ -397,23 +397,23 @@ bool VulkanBackend::BeginFrame(double delta_time){
 void VulkanBackend::UpdateGlobalState(Matrix4 projection, Matrix4 view, Vec3 view_position, Vec4 ambient_color, int mode) {
 	VulkanCommandBuffer* CmdBuffer = &Context.GraphicsCommandBuffers[Context.ImageIndex];
 
-	Context.ShaderModule.Use(&Context);
+	Context.MaterialShader.Use(&Context);
 
-	Context.ShaderModule.GlobalUBO.projection = projection;
-	Context.ShaderModule.GlobalUBO.view = view;
+	Context.MaterialShader.GlobalUBO.projection = projection;
+	Context.MaterialShader.GlobalUBO.view = view;
 
 	// TODO: other ubo props
 
-	Context.ShaderModule.UpdateGlobalState(&Context, Context.FrameDeltaTime);
+	Context.MaterialShader.UpdateGlobalState(&Context, Context.FrameDeltaTime);
 }
 
 void VulkanBackend::UpdateObject(GeometryRenderData geometry) {
 	VulkanCommandBuffer* CmdBuffer = &Context.GraphicsCommandBuffers[Context.ImageIndex];
 
-	Context.ShaderModule.UpdateObject(&Context, geometry);
+	Context.MaterialShader.UpdateObject(&Context, geometry);
 
 	// Temp test
-	Context.ShaderModule.Use(&Context);
+	Context.MaterialShader.Use(&Context);
 	// Bind vertex buffer at offset
 	vk::DeviceSize offset[1] = { 0 };
 	CmdBuffer->CommandBuffer.bindVertexBuffers(0, 1, &Context.ObjectVertexBuffer.Buffer, (vk::DeviceSize*)offset);
@@ -634,7 +634,7 @@ void VulkanBackend::UploadDataRange(VulkanBuffer* buffer, size_t offset, size_t 
 	Staging.Destroy(&Context);
 }
 
-void VulkanBackend::CreateTexture(const char* name, bool auto_release, int width, int height, int channel_count,
+void VulkanBackend::CreateTexture(const char* name, int width, int height, int channel_count,
 	const unsigned char* pixels, bool has_transparency, Texture* texture) {
 	texture->Width = width;
 	texture->Height = height;

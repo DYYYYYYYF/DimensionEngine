@@ -21,7 +21,7 @@ public:
 
 	virtual void UpdateObject(GeometryRenderData geometry) = 0;
 
-	virtual void CreateTexture(const char* name, bool auto_release, int width, int height, int channel_count,
+	virtual void CreateTexture(const char* name, int width, int height, int channel_count,
 		const unsigned char* pixels, bool has_transparency, Texture* texture) = 0;
 	virtual void DestroyTexture(Texture* txture) = 0;
 

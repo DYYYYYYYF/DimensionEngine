@@ -11,6 +11,7 @@
 
 #include "Renderer/RendererFrontend.hpp"
 #include "Math/MathTypes.hpp"
+#include "Systems/TextureSystem.h"
 
 struct SApplicationState {
 	SGame* game_instance;
@@ -27,6 +28,7 @@ struct SApplicationState {
 static bool Initialized = false;
 static SApplicationState AppState;
 static IRenderer* Renderer = nullptr;
+static TextureSystem TextureManager;
 
 bool ApplicationCreate(SGame* game_instance){
 	if (Initialized) {
@@ -79,6 +81,14 @@ bool ApplicationCreate(SGame* game_instance){
 
 	if (!Renderer->Initialize(game_instance->app_config.name, &AppState.platform)) {
 		UL_FATAL("Renderer failed to initialize!");
+		return false;
+	}
+
+	// Init Texture system
+	STextureSystemConfig TextureSystemConfig;
+	TextureSystemConfig.max_texture_count = 10;
+	if (!TextureSystem::Initialize(Renderer, TextureSystemConfig)) {
+		UL_FATAL("Texture system failed to initialize!");
 		return false;
 	}
 
@@ -167,6 +177,8 @@ bool ApplicationRun() {
 
 	Core::EventShutdown();
 	Core::InputShutdown();
+
+	TextureSystem::Shutdown();
 
 	Renderer->Shutdown();
 	Memory::Free(Renderer, sizeof(IRenderer), MemoryType::eMemory_Type_Renderer);

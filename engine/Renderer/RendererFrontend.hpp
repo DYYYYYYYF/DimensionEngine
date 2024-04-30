@@ -30,15 +30,14 @@ public:
 	virtual void SetViewTransform(Matrix4 view) { View = view; }
 
 
-	virtual void CreateTexture(const char* name, bool auto_release, int width, int height, int channel_count,
+	virtual void CreateTexture(const char* name, int width, int height, int channel_count,
 		const unsigned char* pixels, bool has_transparency, Texture* texture);
 	virtual void DestroyTexture(Texture* txture);
 
 	virtual void CreateTexture(Texture* texture);
-	virtual bool LoadTexture(const char* name, Texture* texture);
 
 public:
-	Texture TestDiffuse;
+	Texture* TestDiffuse;
 
 protected:
 	RendererBackendType BackendType;
@@ -49,6 +48,4 @@ protected:
 	Matrix4 View;
 	float NearClip;
 	float FarClip;
-
-	Texture DefaultTexture;
 };
