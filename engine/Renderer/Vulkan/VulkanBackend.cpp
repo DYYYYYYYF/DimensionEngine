@@ -9,6 +9,7 @@
 #include "Math/MathTypes.hpp"
 
 #include "Resources/Texture.hpp"
+#include "Systems/MaterialSystem.h"
 
 static uint32_t CachedFramebufferWidth = 0;
 static uint32_t CachedFramebufferHeight = 0;
@@ -246,12 +247,6 @@ bool VulkanBackend::Initialize(const char* application_name, struct SPlatformSta
 
 	UploadDataRange(&Context.ObjectVertexBuffer, 0, sizeof(Vertex) * VertCount, Verts);
 	UploadDataRange(&Context.ObjectIndexBuffer, 0, sizeof(uint32_t) * IndexCount, Indices);
-
-	uint32_t ObjectID = 0;
-	if (!Context.MaterialShader.AcquireResources(&Context, &ObjectID)) {
-		UL_ERROR("Acquire shader resource failed.");
-		return false;
-	}
 
 	UL_INFO("Create vulkan instance succeed.");
 	return true;
@@ -634,18 +629,12 @@ void VulkanBackend::UploadDataRange(VulkanBuffer* buffer, size_t offset, size_t 
 	Staging.Destroy(&Context);
 }
 
-void VulkanBackend::CreateTexture(const char* name, int width, int height, int channel_count,
-	const unsigned char* pixels, bool has_transparency, Texture* texture) {
-	texture->Width = width;
-	texture->Height = height;
-	texture->ChannelCount = channel_count;
-	texture->Generation = 0;
-
+void VulkanBackend::CreateTexture(const unsigned char* pixels, Texture* texture) {
 	// Internal data creation.
 	// TODO: Use an allocator for this.
 	texture->InternalData = (VulkanTexture*)Memory::Allocate(sizeof(VulkanTexture), MemoryType::eMemory_Type_Texture);
 	VulkanTexture* Data = (VulkanTexture*)texture->InternalData;
-	vk::DeviceSize ImageSize = width * height * channel_count;
+	vk::DeviceSize ImageSize = texture->Width * texture->Height * texture->ChannelCount;
 
 	// NOTE: Assumes 8 bits per channel.
 	vk::Format ImageFormat = vk::Format::eR8G8B8A8Unorm;
@@ -660,7 +649,7 @@ void VulkanBackend::CreateTexture(const char* name, int width, int height, int c
 
 	// NOTE: Lots of assumptions here, different texture types will require.
 	// different options here.
-	Data->Image.CreateImage(&Context, vk::ImageType::e2D, width, height, ImageFormat,
+	Data->Image.CreateImage(&Context, vk::ImageType::e2D, texture->Width, texture->Height, ImageFormat,
 		vk::ImageTiling::eOptimal,
 		vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst |
 		vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eColorAttachment,
@@ -705,7 +694,6 @@ void VulkanBackend::CreateTexture(const char* name, int width, int height, int c
 	Data->sampler = Context.Device.GetLogicalDevice().createSampler(SamplerInfo, Context.Allocator);
 	ASSERT(Data->sampler);
 
-	texture->HasTransparency = has_transparency;
 	texture->Generation++;
 }
 
@@ -724,6 +712,36 @@ void VulkanBackend::DestroyTexture(Texture* texture) {
 	}
 
 	Memory::Zero(texture, sizeof(Texture));
+}
+
+
+bool VulkanBackend::CreateMaterial(Material* material) {
+	if (material) {
+		if (!Context.MaterialShader.AcquireResources(&Context, material)) {
+			UL_ERROR("Vulkan renderer create material - Failed to acquire shader resource.");
+			return false;
+		}
+
+		UL_INFO("Renderer: Material created.");
+		return true;
+	}
+
+	UL_ERROR("Vulkan renderer create material - material is nullptr.");
+	return false;
+}
+
+void VulkanBackend::DestroyMaterial(Material* material) {
+	if (material) {
+		if (material->InternalId != INVALID_ID) {
+			Context.MaterialShader.ReleaseResources(&Context, material);
+		}
+		else {
+			UL_WARN("Vulkan renderer destroy material called with InternalId = INVALID_ID. Nothing was done.");
+		}
+	}
+	else {
+		UL_WARN("Vulkan renderer destroy material called with nullptr = INVALID_ID. Nothing was done.");
+	}
 }
 
 /*

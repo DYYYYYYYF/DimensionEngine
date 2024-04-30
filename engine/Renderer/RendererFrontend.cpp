@@ -5,11 +5,11 @@
 #include "Core/DMemory.hpp"
 
 #include "Math/MathTypes.hpp"
+#include "Systems/MaterialSystem.h"
 #include "Systems/TextureSystem.h"
 
 // TODO: temp
 #include "Core/Event.hpp"
-
 // TODO: temp
 
 IRenderer::IRenderer() : Backend(nullptr) {}
@@ -55,7 +55,7 @@ bool IRenderer::Initialize(const char* application_name, struct SPlatformState* 
 	View = Matrix4::Identity();
 	View.SetTranslation(Vec3{ 0.0f, 0.0f, -5.0f });
 
-	TestDiffuse = nullptr;
+	TestMaterial = nullptr;
 
 	return true;
 }
@@ -98,23 +98,34 @@ bool IRenderer::DrawFrame(SRenderPacket* packet) {
 		Backend->UpdateGlobalState(Projection, View, Vec3(0.0f, 0.0f, 0.0f), Vec4(1.0f, 1.0f, 1.0f, 1.0f), 0);
 
 		Quaternion Quat = QuaternionFromAxisAngle(Vec3{ 0.0f, 0.0f, 1.0f }, x, true);
+		x += 0.001f;
+
 		//Matrix4 Model = QuatToRotationMatrix(Quat, Vec3());
 		Matrix4 Model = Matrix4::Identity();
 
 		GeometryRenderData RenderData = {};
-		RenderData.object_id = 0;
+		RenderData.material = MaterialSystem::GetDefaultMaterial();
 		RenderData.model = Model;
 
 		// TODO: Temp
 		// Grab the default if does not exist.
-		if (TestDiffuse == nullptr) {
-			TestDiffuse = TextureSystem::GetDefaultTexture();
-			//TestDiffuse = TextureSystem::Acquire("Wood", true);
+		if (TestMaterial == nullptr) {
+			// Automatic config
+			TestMaterial = MaterialSystem::Acquire("TestMaterial");
+			if (TestMaterial == nullptr) {
+				UL_WARN("Automatic material load failed. falling back to manual default material.");
 
+				// Manual config
+				SMaterialConfig Config;
+				strncpy(Config.name, "TestMaterial", MATERIAL_NAME_MAX_LENGTH);
+				Config.auto_release = false;
+				Config.diffuse_color = Vec4(1.0f, 1.0f, 1.0f, 1.0f);
+				strncpy(Config.diffuse_map_name, DEFAULT_TEXTURE_NAME, TEXTURE_NAME_MAX_LENGTH);
+				TestMaterial = MaterialSystem::AcquireFromConfig(Config);
+			}
 		}
-		RenderData.textures[0] = TestDiffuse;
 
-		x += 0.001f;
+		RenderData.material = TestMaterial;
 		Backend->UpdateObject(RenderData);
 
 		bool result = EndFrame(packet->delta_time);
@@ -133,11 +144,19 @@ void IRenderer::CreateTexture(Texture* texture) {
 	texture->Generation = INVALID_ID;
 }
 
-void IRenderer::CreateTexture(const char* name, int width, int height, int channel_count,
-	const unsigned char* pixels, bool has_transparency, Texture* texture) {
-	Backend->CreateTexture(name, width, height, channel_count, pixels, has_transparency, texture);
+void IRenderer::CreateTexture(const unsigned char* pixels, Texture* texture) {
+	Backend->CreateTexture(pixels, texture);
 }
 
 void IRenderer::DestroyTexture(Texture* txture) {
 	Backend->DestroyTexture(txture);
+}
+
+
+bool IRenderer::CreateMaterial(Material* material) {
+	return Backend->CreateMaterial(material);
+}
+
+void IRenderer::DestroyMaterial(Material* material) {
+	Backend->DestroyMaterial(material);
 }

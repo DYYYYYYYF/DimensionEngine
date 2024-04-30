@@ -2,6 +2,13 @@
 
 #include "Math/MathTypes.hpp"
 
+#define TEXTURE_NAME_MAX_LENGTH 512
+
+enum TextureUsage {
+	eTexture_Usage_Unknown = 0x00,
+	eTexture_Usage_Map_Diffuse = 0x01
+};
+
 class Texture {
 public:
 	Texture() {}
@@ -16,5 +23,6 @@ public:
 	bool HasTransparency;
 
 	uint32_t Generation;
+	char Name[TEXTURE_NAME_MAX_LENGTH];
 	void* InternalData;
 };

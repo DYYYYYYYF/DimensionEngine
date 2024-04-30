@@ -1,7 +1,7 @@
 #pragma once
 
 #include "RendererTypes.hpp"
-#include "Resources/Texture.hpp"
+#include "Resources/ResourceTypes.hpp"
 
 struct SStaticMeshData;
 struct SPlatformState;
@@ -29,15 +29,16 @@ public:
 	
 	virtual void SetViewTransform(Matrix4 view) { View = view; }
 
-
-	virtual void CreateTexture(const char* name, int width, int height, int channel_count,
-		const unsigned char* pixels, bool has_transparency, Texture* texture);
+	virtual void CreateTexture(const unsigned char* pixels, Texture* texture);
+	virtual void CreateTexture(Texture* texture);
 	virtual void DestroyTexture(Texture* txture);
 
-	virtual void CreateTexture(Texture* texture);
+	virtual bool CreateMaterial(Material* material);
+	virtual void DestroyMaterial(Material* material);
+
 
 public:
-	Texture* TestDiffuse;
+	Material* TestMaterial = nullptr;
 
 protected:
 	RendererBackendType BackendType;

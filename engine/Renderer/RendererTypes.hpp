@@ -22,7 +22,7 @@ struct SGlobalUBO {
 };
 
 // Object Material
-struct ObjectUniformObject {
+struct MaterialUniformObject {
 	Vec4 diffuse_color;	// 16 Bytes
 	Vec4 v_reserved0;	// 16 Bytes,reserved for future use
 	Vec4 v_reserved1;	// 16 Bytes,reserved for future use
@@ -30,7 +30,6 @@ struct ObjectUniformObject {
 };
 
 struct GeometryRenderData {
-	uint32_t object_id;
 	Matrix4 model;
-	class Texture* textures[16];
+	class Material* material;
 };

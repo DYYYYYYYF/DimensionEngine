@@ -29,7 +29,7 @@ public:
 	static Texture* GetDefaultTexture();
 
 	static bool LoadTexture(const char* name, Texture* texture);
-
+	static void DestroyTexture(Texture* t);
 
 private:
 	static bool CreateDefaultTexture();

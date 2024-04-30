@@ -434,6 +434,16 @@ public:
 		return d.Length();
 	}
 
+	static Vec4 StringToVec4(const char* str) {
+		if (str == nullptr) {
+			return Vec4{ 1.0f, 1.0f, 1.0f, 1.0f };
+		}
+
+		Vec4 Result;
+		sscanf(str, "%f %f %f %f", &Result.x, &Result.y, &Result.z, &Result.w);
+		return Result;
+	}
+
 	//-----------------------------------------------
 	// Quaternion
 	//-----------------------------------------------

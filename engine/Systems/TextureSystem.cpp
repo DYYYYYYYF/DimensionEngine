@@ -39,13 +39,10 @@ bool TextureSystem::Initialize(IRenderer* renderer, STextureSystemConfig config)
 	size_t HashtableRequirement = sizeof(STextureReference) * TextureSystemConfig.max_texture_count;
 
 	// The array block is after the state. Already allocated, so just set the pointer.
-	RegisteredTextures = (Texture*)Memory::Allocate(ArraryRequirement, MemoryType::eMemory_Type_Array);
-
-	// Hashtable block is after array.
-	void* HashtableBlock = (size_t*)ArraryRequirement;
+	RegisteredTextures = (Texture*)Memory::Allocate(ArraryRequirement, MemoryType::eMemory_Type_Texture);
 
 	// Create a hashtable for texture lookups.
-	TableMemory = (STextureReference*)Memory::Allocate(HashtableRequirement, MemoryType::eMemory_Type_Array);
+	TableMemory = (STextureReference*)Memory::Allocate(HashtableRequirement, MemoryType::eMemory_Type_DArray);
 	RegisteredTextureTable.Create(sizeof(STextureReference), TextureSystemConfig.max_texture_count, TableMemory, false);
 
 	// Fill the hashtable with invalid references to use as a default.
@@ -63,7 +60,10 @@ bool TextureSystem::Initialize(IRenderer* renderer, STextureSystemConfig config)
 	}
 
 	// Create default textures for use in the system.
-	CreateDefaultTexture();
+	if (!CreateDefaultTexture()) {
+		UL_FATAL("Create default texture failed. Application quit now!");
+		return false;
+	}
 
 	Initilized = true;
 	return true;
@@ -105,8 +105,8 @@ Texture* TextureSystem::Acquire(const char* name, bool auto_release) {
 					// A free slot has been found. Use it index as the handle.
 					Ref.handle = i;
 					t = &RegisteredTextures[i];
+					break;
 				}
-				break;
 			}
 
 			// Make sure an empty slot was actually found.
@@ -152,6 +152,11 @@ void TextureSystem::Release(const char* name) {
 			return;
 		}
 
+		// Take a copy of the name since it will be wiped out by destroy.
+		// (as passed in name is generally a pointer to the actual texture's name).
+		char NameCopy[TEXTURE_NAME_MAX_LENGTH];
+		strncpy(NameCopy, name, TEXTURE_NAME_MAX_LENGTH);
+
 		Ref.reference_count--;
 		if (Ref.reference_count == 0 && Ref.auto_release) {
 			Texture* t = &RegisteredTextures[Ref.handle];
@@ -167,19 +172,29 @@ void TextureSystem::Release(const char* name) {
 			// Reset the reference.
 			Ref.handle = INVALID_ID;
 			Ref.auto_release = false;
-			UL_INFO("Released texture '%s'. Texture unloaded.", name);
+			UL_INFO("Released texture '%s'. Texture unloaded.", NameCopy);
 		}
 		else {
-			UL_INFO("Release texture '%s'. Now has a reference count of '%i' (auto release = %s)", name,
+			UL_INFO("Release texture '%s'. Now has a reference count of '%i' (auto release = %s)", NameCopy,
 				Ref.reference_count, Ref.auto_release ? "True" : "False");
 		}
 
 		// Update the entry.
-		RegisteredTextureTable.Set(name, &Ref);
+		RegisteredTextureTable.Set(NameCopy, &Ref);
 	}
 	else {
 		UL_ERROR("Texture release failed to release texture '%s'.", name);
 	}
+}
+
+void TextureSystem::DestroyTexture(Texture* t) {
+	// Release texture.
+	Renderer->DestroyTexture(t);
+
+	Memory::Zero(t->Name, sizeof(char) * TEXTURE_NAME_MAX_LENGTH);
+	Memory::Zero(t, sizeof(Texture));
+	t->Id = INVALID_ID;
+	t->Generation = INVALID_ID;
 }
 
 Texture* TextureSystem::GetDefaultTexture() {
@@ -222,7 +237,14 @@ bool TextureSystem::CreateDefaultTexture() {
 		}
 	}
 
-	Renderer->CreateTexture(DEFAULT_TEXTURE_NAME, TexDimension, TexDimension, 4, Pixels, false, &DefaultTexture);
+	strncpy(DefaultTexture.Name, DEFAULT_TEXTURE_NAME, TEXTURE_NAME_MAX_LENGTH);
+	DefaultTexture.Width = TexDimension;
+	DefaultTexture.Height = TexDimension;
+	DefaultTexture.ChannelCount = 4;
+	DefaultTexture.Generation = INVALID_ID;
+	DefaultTexture.HasTransparency = false;
+
+	Renderer->CreateTexture(Pixels, &DefaultTexture);
 	UL_INFO("Default texture created.");
 
 	// Manually set the texture generation to invalid since this is a default texture.
@@ -232,7 +254,7 @@ bool TextureSystem::CreateDefaultTexture() {
 }
 
 void TextureSystem::DestroyDefaultTexture() {
-	Renderer->DestroyTexture(&DefaultTexture);
+	DestroyTexture(&DefaultTexture);
 }
 
 
@@ -271,10 +293,19 @@ bool TextureSystem::LoadTexture(const char* name, Texture* texture) {
 
 		if (stbi_failure_reason() != nullptr) {
 			UL_WARN("Load texture failed to load file %s : %s", FullFilePath, stbi_failure_reason());
+
+			// Clear errors so the next load doesn't fail.
+			stbi__err(0, 0);
+			return false;
 		}
 
+		// Take a copy of the name
+		strncpy(TempTexture.Name, name, TEXTURE_NAME_MAX_LENGTH);
+		TempTexture.Generation = INVALID_ID;
+		TempTexture.HasTransparency = HasTransparency;
+
 		//Acquire internal texture resources and upload to GPU.
-		Renderer->CreateTexture(name, TempTexture.Width, TempTexture.Height, TempTexture.ChannelCount, data, HasTransparency, &TempTexture);
+		Renderer->CreateTexture(data, &TempTexture);
 
 		// Take a copy of the old texture.
 		Texture Old = *texture;
@@ -299,6 +330,8 @@ bool TextureSystem::LoadTexture(const char* name, Texture* texture) {
 	else {
 		if (stbi_failure_reason() != nullptr) {
 			UL_WARN("Load texture failed to load file %s : %s", FullFilePath, stbi_failure_reason());
+			// Clear errors so the next load doesn't fail.
+			stbi__err(0, 0);
 		}
 
 		return false;

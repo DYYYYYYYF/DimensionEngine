@@ -31,9 +31,11 @@ public:
 
 	virtual void UploadDataRange(VulkanBuffer* buffer, size_t offset, size_t size, void* data);
 
-	virtual void CreateTexture(const char* name, int width, int height, int channel_count,
-		const unsigned char* pixels, bool has_transparency, Texture* texture) override;
+	virtual void CreateTexture(const unsigned char* pixels, Texture* texture) override;
 	virtual void DestroyTexture(Texture* texture) override;
+
+	virtual bool VulkanBackend::CreateMaterial(Material* material) override;
+	virtual void VulkanBackend::DestroyMaterial(Material * material) override;
 
 protected:
 	VulkanContext Context;

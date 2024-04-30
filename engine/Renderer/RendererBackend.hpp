@@ -21,10 +21,11 @@ public:
 
 	virtual void UpdateObject(GeometryRenderData geometry) = 0;
 
-	virtual void CreateTexture(const char* name, int width, int height, int channel_count,
-		const unsigned char* pixels, bool has_transparency, Texture* texture) = 0;
+	virtual void CreateTexture(const unsigned char* pixels, Texture* texture) = 0;
 	virtual void DestroyTexture(Texture* txture) = 0;
 
+	virtual bool CreateMaterial(Material* material) = 0;
+	virtual void DestroyMaterial(Material* material) = 0;
 public:
 	SPlatformState* GetPlatformState() { return PlatformState; }
 

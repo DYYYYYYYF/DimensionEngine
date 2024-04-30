@@ -9,8 +9,13 @@
 
 
 bool FileSystemExists(const char* path) {
+#ifdef _MSC_VER
+	struct _stat buffer;
+	return _stat(path, &buffer) == 0;
+#else
 	struct stat buffer;
 	return stat(path, &buffer) == 0;
+#endif
 }
 
 bool FileSystemOpen(const char* path, FileMode mode, bool binary, FileHandle* handle) {
@@ -53,17 +58,15 @@ void FileSystemClose(FileHandle* handle) {
 	}
 }
 
-bool FileSystemReadLine(FileHandle* handle, char** line_buf) {
-	if (handle->handle) {
-		char buffer[32000];
-		if (fgets(buffer, 32000, (FILE*)handle->handle) != 0) {
-			size_t length = strlen(buffer);
-			*line_buf = (char*)Memory::Allocate((sizeof(char) * length) + 1, MemoryType::eMemory_Type_String);
-			strcpy(*line_buf, buffer);
+bool FileSystemReadLine(FileHandle* handle, int max_length, char** line_buf, size_t* length) {
+	if (handle->handle && line_buf && length && max_length > 0) {
+		char* buffer = *line_buf;
+		if (fgets(buffer, max_length, (FILE*)handle->handle) != 0) {
+			*length = strlen(*line_buf);
+			//buffer[*length - 1] = '\0';
 			return true;
 		}
 	}
-
 	return false;
 }
 
@@ -77,7 +80,6 @@ bool FileSystemWriteLine(FileHandle* handle, const char* text) {
 		fflush((FILE*)handle->handle);
 		return result != EOF;
 	}
-
 	return false;
 }
 

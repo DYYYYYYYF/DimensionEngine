@@ -5,27 +5,31 @@
 #include "Renderer/RendererTypes.hpp"
 #include "Renderer/Vulkan/VulkanBuffer.hpp"
 #include "Renderer/Vulkan/VulkanPipeline.hpp"
+#include "Resources/Texture.hpp"
 
-#define OBJECT_SHADER_STAGE_COUNT 2
-#define VULKAN_OBJECT_SHADER_DESCRIPTOR_COUNT 2
+#define MATERIAL_SHADER_STAGE_COUNT 2
+#define VULKAN_MATERIAL_SHADER_DESCRIPTOR_COUNT 2
+#define VULKAN_MATERIAL_SHADER_SAMPLER_COUNT 1
 
 class VulkanContext;
 class Texture;
+class Material;
 
 struct VulkanDescriptorState {
 	// One per frame
 	uint32_t generations[3];
+	uint32_t ids[3];
 };
 
-struct VulkanObjectShaderObjectState {
+struct VulkanMaterialShaderInstanceState {
 	// Per frame
 	vk::DescriptorSet descriptor_Sets[3];
 
 	// per descriptor
-	VulkanDescriptorState descriptor_states[VULKAN_OBJECT_SHADER_DESCRIPTOR_COUNT];
+	VulkanDescriptorState descriptor_states[VULKAN_MATERIAL_SHADER_DESCRIPTOR_COUNT];
 };
 
-#define VULKAN_OBJECT_MAX_OBJECT_COUNT 1024
+#define VULKAN_MAX_MATERIAL_COUNT 1024
 
 class VulkanMaterialShader {
 public:
@@ -40,12 +44,12 @@ public:
 	void UpdateGlobalState(VulkanContext* context, double delta_time);
 	void UpdateObject(VulkanContext* context, GeometryRenderData geometry);
 
-	bool AcquireResources(VulkanContext* context, uint32_t* id);
-	void ReleaseResources(VulkanContext* context, uint32_t id);
+	bool AcquireResources(VulkanContext* context, Material* material);
+	void ReleaseResources(VulkanContext* context, Material* material);
 
 public:
 	// vertex, fragment
-	VulkanShaderStage Stages[OBJECT_SHADER_STAGE_COUNT];
+	VulkanShaderStage Stages[MATERIAL_SHADER_STAGE_COUNT];
 	VulkanPipeline Pipeline;
 
 	// Descriptors
@@ -72,6 +76,8 @@ public:
 	// TODO: manage a free list of some kind here instead.
 	uint32_t ObjectUniformBufferIndex;
 
+	TextureUsage SamplerUsage[VULKAN_MATERIAL_SHADER_SAMPLER_COUNT];
+
 	// TODO: Make dynamic.
-	VulkanObjectShaderObjectState ObjectStates[VULKAN_OBJECT_MAX_OBJECT_COUNT];
+	VulkanMaterialShaderInstanceState InstanceStates[VULKAN_MAX_MATERIAL_COUNT];
 };

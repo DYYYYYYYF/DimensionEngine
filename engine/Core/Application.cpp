@@ -12,6 +12,7 @@
 #include "Renderer/RendererFrontend.hpp"
 #include "Math/MathTypes.hpp"
 #include "Systems/TextureSystem.h"
+#include "Systems/MaterialSystem.h"
 
 struct SApplicationState {
 	SGame* game_instance;
@@ -84,11 +85,19 @@ bool ApplicationCreate(SGame* game_instance){
 		return false;
 	}
 
-	// Init Texture system
+	// Init texture system
 	STextureSystemConfig TextureSystemConfig;
-	TextureSystemConfig.max_texture_count = 10;
+	TextureSystemConfig.max_texture_count = 65536;
 	if (!TextureSystem::Initialize(Renderer, TextureSystemConfig)) {
 		UL_FATAL("Texture system failed to initialize!");
+		return false;
+	}
+
+	// Init material system
+	SMaterialSystemConfig MaterialSystemConfig;
+	MaterialSystemConfig.max_material_count = 4096;
+	if (!MaterialSystem::Initialize(Renderer, MaterialSystemConfig)) {
+		UL_FATAL("Material system failed to initialize!");
 		return false;
 	}
 
@@ -179,6 +188,7 @@ bool ApplicationRun() {
 	Core::InputShutdown();
 
 	TextureSystem::Shutdown();
+	MaterialSystem::Shutdown();
 
 	Renderer->Shutdown();
 	Memory::Free(Renderer, sizeof(IRenderer), MemoryType::eMemory_Type_Renderer);
