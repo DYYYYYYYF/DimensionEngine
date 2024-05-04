@@ -6,6 +6,7 @@
 struct SStaticMeshData;
 struct SPlatformState;
 class IRendererBackend;
+class Geometry;
 
 // Temp
 struct SEventContext;
@@ -36,9 +37,10 @@ public:
 	virtual bool CreateMaterial(Material* material);
 	virtual void DestroyMaterial(Material* material);
 
+	virtual bool IRenderer::CreateGeometry(Geometry* geometry, uint32_t vertex_count,
+		const Vertex* vertices, uint32_t index_count, const uint32_t* indices);
 
-public:
-	Material* TestMaterial = nullptr;
+	virtual void IRenderer::DestroyGeometry(Geometry* geometry);
 
 protected:
 	RendererBackendType BackendType;

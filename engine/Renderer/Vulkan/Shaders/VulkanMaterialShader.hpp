@@ -6,6 +6,7 @@
 #include "Renderer/Vulkan/VulkanBuffer.hpp"
 #include "Renderer/Vulkan/VulkanPipeline.hpp"
 #include "Resources/Texture.hpp"
+#include "Resources/Material.hpp"
 
 #define MATERIAL_SHADER_STAGE_COUNT 2
 #define VULKAN_MATERIAL_SHADER_DESCRIPTOR_COUNT 2
@@ -42,7 +43,8 @@ public:
 	void Use(VulkanContext* context);
 	
 	void UpdateGlobalState(VulkanContext* context, double delta_time);
-	void UpdateObject(VulkanContext* context, GeometryRenderData geometry);
+	void SetModelMat(VulkanContext* context, Matrix4 model);
+	void ApplyMaterial(VulkanContext* context, Material* material);
 
 	bool AcquireResources(VulkanContext* context, Material* material);
 	void ReleaseResources(VulkanContext* context, Material* material);

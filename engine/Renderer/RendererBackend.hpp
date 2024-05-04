@@ -4,6 +4,7 @@
 
 struct SPlatformState;
 class Texture;
+class Material;
 
 class IRendererBackend {
 public:
@@ -19,13 +20,17 @@ public:
 	virtual bool EndFrame(double delta_time) = 0;
 	virtual void Resize(unsigned short width, unsigned short height) = 0;
 
-	virtual void UpdateObject(GeometryRenderData geometry) = 0;
+	virtual void DrawGeometry(GeometryRenderData geometry) = 0;
 
 	virtual void CreateTexture(const unsigned char* pixels, Texture* texture) = 0;
 	virtual void DestroyTexture(Texture* txture) = 0;
 
 	virtual bool CreateMaterial(Material* material) = 0;
 	virtual void DestroyMaterial(Material* material) = 0;
+
+	virtual bool CreateGeometry(Geometry* geometry, uint32_t vertex_count, const Vertex* vertices, uint32_t index_count, const uint32_t* indices) = 0;
+	virtual void DestroyGeometry(Geometry* geometry) = 0;
+
 public:
 	SPlatformState* GetPlatformState() { return PlatformState; }
 

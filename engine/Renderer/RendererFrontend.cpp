@@ -53,9 +53,7 @@ bool IRenderer::Initialize(const char* application_name, struct SPlatformState* 
 
 
 	View = Matrix4::Identity();
-	View.SetTranslation(Vec3{ 0.0f, 0.0f, -5.0f });
-
-	TestMaterial = nullptr;
+	View.SetTranslation(Vec3{ 0.0f, 0.0f, -2.0f });
 
 	return true;
 }
@@ -90,44 +88,15 @@ bool IRenderer::EndFrame(double delta_time) {
 	return result;
 }
 
-static float x = 0.0f;
-
 bool IRenderer::DrawFrame(SRenderPacket* packet) {
 	if (BeginFrame(packet->delta_time)) {
 		// Update UBO buffer
 		Backend->UpdateGlobalState(Projection, View, Vec3(0.0f, 0.0f, 0.0f), Vec4(1.0f, 1.0f, 1.0f, 1.0f), 0);
 
-		Quaternion Quat = QuaternionFromAxisAngle(Vec3{ 0.0f, 0.0f, 1.0f }, x, true);
-		x += 0.001f;
-
-		//Matrix4 Model = QuatToRotationMatrix(Quat, Vec3());
-		Matrix4 Model = Matrix4::Identity();
-
-		GeometryRenderData RenderData = {};
-		RenderData.material = MaterialSystem::GetDefaultMaterial();
-		RenderData.model = Model;
-
-		// TODO: Temp
-		// Grab the default if does not exist.
-		if (TestMaterial == nullptr) {
-			// Automatic config
-			TestMaterial = MaterialSystem::Acquire("TestMaterial");
-			if (TestMaterial == nullptr) {
-				UL_WARN("Automatic material load failed. falling back to manual default material.");
-
-				// Manual config
-				SMaterialConfig Config;
-				strncpy(Config.name, "TestMaterial", MATERIAL_NAME_MAX_LENGTH);
-				Config.auto_release = false;
-				Config.diffuse_color = Vec4(1.0f, 1.0f, 1.0f, 1.0f);
-				strncpy(Config.diffuse_map_name, DEFAULT_TEXTURE_NAME, TEXTURE_NAME_MAX_LENGTH);
-				TestMaterial = MaterialSystem::AcquireFromConfig(Config);
-			}
+		for (uint32_t i = 0; i < packet->geometry_count; ++i) {
+			Backend->DrawGeometry(packet->geometries[i]);
 		}
-
-		RenderData.material = TestMaterial;
-		Backend->UpdateObject(RenderData);
-
+		
 		bool result = EndFrame(packet->delta_time);
 		if (!result) {
 			UL_ERROR("Renderer end frame failed.");
@@ -159,4 +128,13 @@ bool IRenderer::CreateMaterial(Material* material) {
 
 void IRenderer::DestroyMaterial(Material* material) {
 	Backend->DestroyMaterial(material);
+}
+
+bool IRenderer::CreateGeometry(Geometry* geometry, uint32_t vertex_count,
+	const Vertex* vertices, uint32_t index_count, const uint32_t* indices) {
+	return Backend->CreateGeometry(geometry, vertex_count, vertices, index_count, indices);
+}
+
+void IRenderer::DestroyGeometry(Geometry* geometry) {
+	Backend->DestroyGeometry(geometry);
 }

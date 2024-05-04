@@ -8,7 +8,7 @@ bool Memory::Initialize() {
 	return true;
 }
 
-void* Memory::Allocate(size_t size, MemoryType type) {
+void* Memory::Allocate(size_t size, MemoryType type = MemoryType::eMemory_Type_Array) {
 	if (type == eMemory_Type_Unknow) {
 		UL_WARN("Called allocate using eMemory_Type_Unknow. Re-class this allocation.");
 	}

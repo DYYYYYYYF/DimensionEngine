@@ -10,6 +10,7 @@
 #include "VulkanFence.hpp"
 
 #include "Renderer/Vulkan/Shaders/VulkanMaterialShader.hpp"
+#include "Systems/GeometrySystem.h"
 
 class Texture;
 
@@ -80,5 +81,8 @@ public:
 	size_t GeometryIndexOffset;
 	VulkanBuffer ObjectVertexBuffer;
 	VulkanBuffer ObjectIndexBuffer;
+
+	// TODO: Make dynamic
+	GeometryData Geometries[GEOMETRY_MAX_COUNT];
 
 };

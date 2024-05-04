@@ -11,6 +11,9 @@ enum RendererBackendType {
 
 struct SRenderPacket {
 	double delta_time;
+
+	uint32_t geometry_count;
+	struct GeometryRenderData* geometries;
 };
 
 // Uniform Buffer Object
@@ -31,5 +34,5 @@ struct MaterialUniformObject {
 
 struct GeometryRenderData {
 	Matrix4 model;
-	class Material* material;
+	class Geometry* geometry;
 };

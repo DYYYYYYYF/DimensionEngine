@@ -262,127 +262,129 @@ void VulkanMaterialShader::UpdateGlobalState(VulkanContext* context, double delt
 
 	CmdBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, Pipeline.PipelineLayout, 0, 1, &GlobalDescriptor, 0, 0);
 }
-	
-void VulkanMaterialShader::UpdateObject(VulkanContext* context, GeometryRenderData geometry) {
-	uint32_t ImageIndex = context->ImageIndex;
-	vk::CommandBuffer CmdBuffer = context->GraphicsCommandBuffers[ImageIndex].CommandBuffer;
 
-	CmdBuffer.pushConstants(Pipeline.PipelineLayout, vk::ShaderStageFlagBits::eVertex, 0, sizeof(Matrix4), &geometry.model);
+void VulkanMaterialShader::SetModelMat(VulkanContext* context, Matrix4 model) {
+	if (context != nullptr) {
+		uint32_t ImageIndex = context->ImageIndex;
+		vk::CommandBuffer CmdBuffer = context->GraphicsCommandBuffers[ImageIndex].CommandBuffer;
+		CmdBuffer.pushConstants(Pipeline.PipelineLayout, vk::ShaderStageFlagBits::eVertex, 0, sizeof(Matrix4), &model);
+	}
+}
 
-	// Obtain material data.
-	VulkanMaterialShaderInstanceState* ObjectState = &InstanceStates[geometry.material->InternalId];
-	vk::DescriptorSet ObjectDescriptorSet = ObjectState->descriptor_Sets[ImageIndex];
+void VulkanMaterialShader::ApplyMaterial(VulkanContext* context, Material* material) {
+	if (context != nullptr) {
+		uint32_t ImageIndex = context->ImageIndex;
+		vk::CommandBuffer CmdBuffer = context->GraphicsCommandBuffers[ImageIndex].CommandBuffer;
 
-	// TODO: if needs update
-	vk::WriteDescriptorSet DescriptorWrites[VULKAN_MATERIAL_SHADER_DESCRIPTOR_COUNT];
-	Memory::Zero(DescriptorWrites, sizeof(vk::WriteDescriptorSet) * VULKAN_MATERIAL_SHADER_DESCRIPTOR_COUNT);
-	uint32_t DescriptorCount = 0;
-	uint32_t DescriptorIndex = 0;
+		// Obtain material data.
+		VulkanMaterialShaderInstanceState* ObjectState = &InstanceStates[material->InternalId];
+		vk::DescriptorSet ObjectDescriptorSet = ObjectState->descriptor_Sets[ImageIndex];
 
-	// Descriptor 0 - uniform buffer
-	uint32_t Range = sizeof(MaterialUniformObject);
-	size_t Offset = sizeof(MaterialUniformObject) * geometry.material->InternalId;
-	MaterialUniformObject obo;
+		// TODO: if needs update
+		vk::WriteDescriptorSet DescriptorWrites[VULKAN_MATERIAL_SHADER_DESCRIPTOR_COUNT];
+		Memory::Zero(DescriptorWrites, sizeof(vk::WriteDescriptorSet) * VULKAN_MATERIAL_SHADER_DESCRIPTOR_COUNT);
+		uint32_t DescriptorCount = 0;
+		uint32_t DescriptorIndex = 0;
 
-	// TODO: get diffuse color from a material.
-	//static double Accumulator = 0.0f;
-	//Accumulator += context->FrameDeltaTime;
-	//float s = (DSin((float)Accumulator) + 1.0f) / 2.0f;
-	//obo.diffuse_color = Vec4{ s, s, s, 1.0f };
+		// Descriptor 0 - uniform buffer
+		uint32_t Range = sizeof(MaterialUniformObject);
+		size_t Offset = sizeof(MaterialUniformObject) * material->InternalId;
+		MaterialUniformObject obo;
 
-	obo.diffuse_color = geometry.material->DiffuseColor;
+		obo.diffuse_color = material->DiffuseColor;
 
-	// Load the data into the buffer
-	ObjectUniformBuffer.LoadData(context, Offset, Range, {}, &obo);
+		// Load the data into the buffer
+		ObjectUniformBuffer.LoadData(context, Offset, Range, {}, &obo);
 
-	// Only do this if the descriptor has not yet been updated.
-	uint32_t* GlobalUboGeneration = &ObjectState->descriptor_states[DescriptorIndex].generations[ImageIndex];
-	if (*GlobalUboGeneration == INVALID_ID || *GlobalUboGeneration != geometry.material->Generation) {
-		vk::DescriptorBufferInfo BufferInfo;
-		BufferInfo.setBuffer(ObjectUniformBuffer.Buffer)
-			.setOffset(Offset)
-			.setRange(Range);
+		// Only do this if the descriptor has not yet been updated.
+		uint32_t* GlobalUboGeneration = &ObjectState->descriptor_states[DescriptorIndex].generations[ImageIndex];
+		if (*GlobalUboGeneration == INVALID_ID || *GlobalUboGeneration != material->Generation) {
+			vk::DescriptorBufferInfo BufferInfo;
+			BufferInfo.setBuffer(ObjectUniformBuffer.Buffer)
+				.setOffset(Offset)
+				.setRange(Range);
 
-		vk::WriteDescriptorSet Descriptor;
-		Descriptor.setDstSet(ObjectDescriptorSet)
-			.setDstBinding(DescriptorIndex)
-			.setDescriptorType(vk::DescriptorType::eUniformBuffer)
-			.setDescriptorCount(1)
-			.setPBufferInfo(&BufferInfo);
+			vk::WriteDescriptorSet Descriptor;
+			Descriptor.setDstSet(ObjectDescriptorSet)
+				.setDstBinding(DescriptorIndex)
+				.setDescriptorType(vk::DescriptorType::eUniformBuffer)
+				.setDescriptorCount(1)
+				.setPBufferInfo(&BufferInfo);
 
-		DescriptorWrites[DescriptorCount] = Descriptor;
-		DescriptorCount++;
+			DescriptorWrites[DescriptorCount] = Descriptor;
+			DescriptorCount++;
+
+			if (DescriptorCount > 0) {
+				context->Device.GetLogicalDevice().updateDescriptorSets(DescriptorCount, DescriptorWrites, 0, nullptr);
+			}
+
+			// update the frame generation. In this case it is only needed once since this is a buffer.
+			*GlobalUboGeneration = material->Generation;
+		}
+
+		DescriptorIndex++;
+
+		// Sampler.
+		const uint32_t SamplerCount = 1;
+		vk::DescriptorImageInfo ImageInfos[1];
+		for (uint32_t SamplerIndex = 0; SamplerIndex < SamplerCount; SamplerIndex++) {
+			TextureUsage Usage = SamplerUsage[SamplerIndex];
+			Texture* t = nullptr;
+			switch (Usage)
+			{
+			case eTexture_Usage_Map_Diffuse:
+				t = material->DiffuseMap.texture;
+				break;
+			default:
+				UL_FATAL("Unable to bind sampler to unknown usage.");
+				return;
+			}
+
+			uint32_t* DescriptorGeneration = &ObjectState->descriptor_states[DescriptorIndex].generations[ImageIndex];
+			uint32_t* DescriptorId = &ObjectState->descriptor_states[DescriptorIndex].ids[ImageIndex];
+
+			// If the texture hasn't been loaded yet, use the default.
+			if (t->Generation == INVALID_ID) {
+				t = TextureSystem::GetDefaultTexture();
+
+				// Reset the descriptor generation if using the default texture.
+				*DescriptorGeneration = INVALID_ID;
+			}
+
+			// Check if the descriptor needs updating first.
+			if (t && (*DescriptorGeneration != t->Generation || *DescriptorGeneration == INVALID_ID)) {
+				VulkanTexture* InternalData = (VulkanTexture*)t->InternalData;
+
+				// Assign view and sampler.
+				ImageInfos[SamplerIndex].setImageLayout(vk::ImageLayout::eShaderReadOnlyOptimal)
+					.setImageView(InternalData->Image.ImageView)
+					.setSampler(InternalData->sampler);
+
+				vk::WriteDescriptorSet ObjectDescriptor;
+				ObjectDescriptor.setDstSet(ObjectDescriptorSet)
+					.setDstBinding(DescriptorIndex)
+					.setDescriptorType(vk::DescriptorType::eCombinedImageSampler)
+					.setDescriptorCount(1)
+					.setPImageInfo(&ImageInfos[SamplerIndex]);
+
+				DescriptorWrites[DescriptorCount] = ObjectDescriptor;
+				DescriptorCount++;
+
+				// Sync frame generation if not using a default texture.
+				if (t->Generation != INVALID_ID) {
+					*DescriptorGeneration = t->Generation;
+				}
+				DescriptorIndex++;
+			}
+		}
 
 		if (DescriptorCount > 0) {
 			context->Device.GetLogicalDevice().updateDescriptorSets(DescriptorCount, DescriptorWrites, 0, nullptr);
 		}
 
-		// update the frame generation. In this case it is only needed once since this is a buffer.
-		*GlobalUboGeneration = geometry.material->Generation;
+		// Bind the descriptor set to be updated, or in case the shader changed.
+		CmdBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, Pipeline.PipelineLayout, 1, 1, &ObjectDescriptorSet, 0, nullptr);
 	}
-
-	DescriptorIndex++;
-
-	// Sampler.
-	const uint32_t SamplerCount = 1;
-	vk::DescriptorImageInfo ImageInfos[1];
-	for (uint32_t SamplerIndex = 0; SamplerIndex < SamplerCount; SamplerIndex++) {
-		TextureUsage Usage = SamplerUsage[SamplerIndex];
-		Texture* t = nullptr;
-		switch (Usage) 
-		{
-		case eTexture_Usage_Map_Diffuse:
-			t = geometry.material->DiffuseMap.texture;
-			break;
-		default:
-			UL_FATAL("Unable to bind sampler to unknown usage.");
-			return;
-		}
-
-		uint32_t* DescriptorGeneration = &ObjectState->descriptor_states[DescriptorIndex].generations[ImageIndex];
-		uint32_t* DescriptorId = &ObjectState->descriptor_states[DescriptorIndex].ids[ImageIndex];
-
-		// If the texture hasn't been loaded yet, use the default.
-		if (t->Generation == INVALID_ID) {
-			t = TextureSystem::GetDefaultTexture();
-
-			// Reset the descriptor generation if using the default texture.
-			*DescriptorGeneration = INVALID_ID;
-		}
-
-		// Check if the descriptor needs updating first.
-		if (t && (*DescriptorGeneration != t->Generation || *DescriptorGeneration == INVALID_ID)) {
-			VulkanTexture* InternalData = (VulkanTexture*)t->InternalData;
-
-			// Assign view and sampler.
-			ImageInfos[SamplerIndex].setImageLayout(vk::ImageLayout::eShaderReadOnlyOptimal)
-				.setImageView(InternalData->Image.ImageView)
-				.setSampler(InternalData->sampler);
-
-			vk::WriteDescriptorSet ObjectDescriptor;
-			ObjectDescriptor.setDstSet(ObjectDescriptorSet)
-				.setDstBinding(DescriptorIndex)
-				.setDescriptorType(vk::DescriptorType::eCombinedImageSampler)
-				.setDescriptorCount(1)
-				.setPImageInfo(&ImageInfos[SamplerIndex]);
-
-			DescriptorWrites[DescriptorCount] = ObjectDescriptor;
-			DescriptorCount++;
-
-			// Sync frame generation if not using a default texture.
-			if (t->Generation != INVALID_ID) {
-				*DescriptorGeneration = t->Generation;
-			}
-			DescriptorIndex++;
-		}
-	}
-
-	if (DescriptorCount > 0) {
-		context->Device.GetLogicalDevice().updateDescriptorSets(DescriptorCount, DescriptorWrites, 0, nullptr);
-	}
-
-	// Bind the descriptor set to be updated, or in case the shader changed.
-	CmdBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, Pipeline.PipelineLayout, 1, 1, &ObjectDescriptorSet, 0, nullptr);
 }
 
 bool VulkanMaterialShader::AcquireResources(VulkanContext* context, Material* material) {
@@ -421,6 +423,10 @@ void VulkanMaterialShader::ReleaseResources(VulkanContext* context, Material* ma
 	VulkanMaterialShaderInstanceState* InstanceState = &InstanceStates[material->InternalId];
 
 	const uint32_t DescriptorCount = 3;
+
+	// Wait for any pending operations using the descriptor set to finish.
+	context->Device.GetLogicalDevice().waitIdle();
+
 	// Release object descriptor sets.
 	context->Device.GetLogicalDevice().freeDescriptorSets(ObjectDescriptorPool, InstanceState->descriptor_Sets);
 

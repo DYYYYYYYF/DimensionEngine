@@ -13,6 +13,7 @@
 #include "Math/MathTypes.hpp"
 #include "Systems/TextureSystem.h"
 #include "Systems/MaterialSystem.h"
+#include "Systems/GeometrySystem.h"
 
 struct SApplicationState {
 	SGame* game_instance;
@@ -24,6 +25,8 @@ struct SApplicationState {
 	short height;
 	double last_time;
 	SClock clock;
+
+	Geometry* TestGeometry;
 };
 
 static bool Initialized = false;
@@ -101,6 +104,21 @@ bool ApplicationCreate(SGame* game_instance){
 		return false;
 	}
 
+	// Init geometry system
+	SGeometrySystemConfig GeometrySystemConfig;
+	GeometrySystemConfig.max_geometry_count = 4096;
+	if (!GeometrySystem::Initialize(Renderer, GeometrySystemConfig)) {
+		UL_FATAL("Geometry system failed to initialize!");
+		return false;
+	}
+
+	// TODO: Temp
+	AppState.TestGeometry = GeometrySystem::GetDefaultGeometry();
+	/*SGeometryConfig GeoConfig = GeometrySystem::GeneratePlaneConfig(4.0f, 2.0f, 5, 5, 5.0f, 2.0f, "TestGeometry", "TestMaterial");
+	AppState.TestGeometry = GeometrySystem::AcquireFromConfig(GeoConfig, true);
+	Memory::Free(GeoConfig.vertices, sizeof(Vertex) * GeoConfig.vertex_count, MemoryType::eMemory_Type_Array);
+	Memory::Free(GeoConfig.indices, sizeof(uint32_t) * GeoConfig.index_count, MemoryType::eMemory_Type_Array);*/
+
 	// Init Game
 	if (!AppState.game_instance->initialize(AppState.game_instance)) {
 		UL_FATAL("Game failed to initialize!");
@@ -151,6 +169,14 @@ bool ApplicationRun() {
 			// TODO: Refactor packet
 			SRenderPacket Packet;
 			Packet.delta_time = DeltaTime;
+
+			// TODO: Temp
+			GeometryRenderData TestRender;
+			TestRender.geometry = AppState.TestGeometry;
+			TestRender.model = Matrix4::Identity();
+			Packet.geometries = &TestRender;
+			Packet.geometry_count = 1;
+
 			Renderer->DrawFrame(&Packet);
 
 			// Figure FPS
@@ -187,8 +213,9 @@ bool ApplicationRun() {
 	Core::EventShutdown();
 	Core::InputShutdown();
 
-	TextureSystem::Shutdown();
+	GeometrySystem::Shutdown();
 	MaterialSystem::Shutdown();
+	TextureSystem::Shutdown();
 
 	Renderer->Shutdown();
 	Memory::Free(Renderer, sizeof(IRenderer), MemoryType::eMemory_Type_Renderer);
