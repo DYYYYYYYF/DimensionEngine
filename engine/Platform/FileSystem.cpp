@@ -20,7 +20,7 @@ bool FileSystemExists(const char* path) {
 
 bool FileSystemOpen(const char* path, FileMode mode, bool binary, FileHandle* handle) {
 	handle->is_valid = false;
-	handle->handle = 0;
+	handle->handle = nullptr;
 	const char* ModeStr;
 
 	if ((mode & eFile_Mode_Read) != 0 && (mode & eFile_Mode_Write) != 0) {
@@ -56,6 +56,17 @@ void FileSystemClose(FileHandle* handle) {
 		handle->handle = nullptr;
 		handle->is_valid = false;
 	}
+}
+
+bool FileSystemSize(FileHandle* handle, size_t* size) {
+	if (handle->handle) {
+		fseek((FILE*)handle->handle, 0, SEEK_END);
+		*size = ftell((FILE*)handle->handle);
+		rewind((FILE*)handle->handle);
+		return true;
+	}
+
+	return false;
 }
 
 bool FileSystemReadLine(FileHandle* handle, int max_length, char** line_buf, size_t* length) {
@@ -96,20 +107,31 @@ bool FileSystemRead(FileHandle* handle, size_t data_size, void* out_data, size_t
 	return false;
 }
 
-bool FileSystemReadAllBytes(FileHandle* handle, char** out_bytes, size_t* out_bytes_read) {
+bool FileSystemReadAllBytes(FileHandle* handle, unsigned char* out_bytes, size_t* out_bytes_read) {
 	if (handle->handle) {
 		// File size
-		fseek((FILE*)handle->handle, 0, SEEK_END);
-		size_t size = ftell((FILE*)handle->handle);
-		rewind((FILE*)handle->handle);
-
-		*out_bytes = (char*)Memory::Allocate(sizeof(char) * size, MemoryType::eMemory_Type_String);
-		*out_bytes_read = fread(*out_bytes, 1, size, (FILE*)handle->handle);
-		if (*out_bytes_read != size) {
+		size_t size = 0;
+		if (!FileSystemSize(handle, &size)) {
 			return false;
 		}
 
-		return true;
+		*out_bytes_read = fread(out_bytes, 1, size, (FILE*)handle->handle);
+		return *out_bytes_read == size;
+	}
+
+	return false;
+}
+
+bool FileSystemReadAllText(FileHandle* handle, char* out_text, size_t* out_bytes_read) {
+	if (handle->handle) {
+		// File size
+		size_t size = 0;
+		if (!FileSystemSize(handle, &size)) {
+			return false;
+		}
+
+		*out_bytes_read = fread(out_text, 1, size, (FILE*)handle->handle);
+		return *out_bytes_read == size;
 	}
 
 	return false;

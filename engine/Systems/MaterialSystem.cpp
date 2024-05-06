@@ -1,13 +1,11 @@
 #include "MaterialSystem.h"
 
 #include "Core/EngineLogger.hpp"
-#include "Containers/TString.hpp"
 #include "Math/MathTypes.hpp"
 #include "Renderer/RendererFrontend.hpp"
-#include "Systems/TextureSystem.h"
 
-// TODO: temp
-#include "Platform/FileSystem.hpp"
+#include "Systems/TextureSystem.h"
+#include "Systems/ResourceSystem.h"
 
 SMaterialSystemConfig MaterialSystem::MaterialSystemConfig;
 Material MaterialSystem::DefaultMaterial;
@@ -86,24 +84,27 @@ void MaterialSystem::Shutdown() {
 
 Material* MaterialSystem::Acquire(const char* name) {
 	// Load the given material configuration from disk.
-	SMaterialConfig MaterialConfig;
-	Memory::Zero(MaterialConfig.name, sizeof(char) * MATERIAL_NAME_MAX_LENGTH);
-	Memory::Zero(MaterialConfig.diffuse_map_name, sizeof(char) * TEXTURE_NAME_MAX_LENGTH);
-
-	// Load file from disk.
-	// TODO: Should be able to be located anywhere.
-	char* FormatStr = "../Asset/Materials/%s.%s";
-	char FullFilePath[512];
-
-	// TODO: Try different extensions.
-	sprintf_s(FullFilePath, FormatStr, name, "dmt");
-	if (!LoadConfigurationFile(FullFilePath, &MaterialConfig)) {
-		UL_ERROR("Failed to load material file: '%s'. nullptr will be returned.", FullFilePath);
+	Resource MatResource;
+	if (!ResourceSystem::Load(name, eResource_type_Material, &MatResource)) {
+		UL_ERROR("Failed to load material resource, returning nullptr.");
 		return nullptr;
 	}
 
 	// Now acquire from loaded config.
-	return AcquireFromConfig(MaterialConfig);
+	Material* Mat;
+	if (MatResource.Data) {
+		Mat = AcquireFromConfig(*(SMaterialConfig*)MatResource.Data);
+	}
+
+	// Clean up
+	ResourceSystem::Unload(&MatResource);
+
+	if (Mat == nullptr) {
+		UL_ERROR("Failed to load material resource, returning nullptr.");
+		return nullptr;
+	}
+
+	return Mat;
 }
 
 Material* MaterialSystem::AcquireFromConfig(SMaterialConfig config) {
@@ -288,76 +289,4 @@ bool MaterialSystem::CreateDefaultMaterial() {
 
 void MaterialSystem::DestroyDefaultMaterial() {
 
-}
-
-bool MaterialSystem::LoadConfigurationFile(const char* path, SMaterialConfig* config) {
-	FileHandle f;
-	if (!FileSystemOpen(path, FileMode::eFile_Mode_Read, false, &f)) {
-		UL_ERROR("Load configuration file - unable to open material file for reading: '%s'.", path);
-		return false;
-	}
-
-	// Read each line of the file.
-	char LineBuffer[512] = "";
-	char* p = &LineBuffer[0];
-	size_t LineLength = 0;
-	uint32_t LineNumber = 1;
-	while (FileSystemReadLine(&f, 511, &p, &LineLength)) {
-		// Trim the string.
-		char* Trimmed = Strtrim(LineBuffer);
-
-		// Get the trimmed length.
-		LineLength = strlen(Trimmed);
-
-		// Skip blank lines and comments.
-		if (LineLength < 1 || Trimmed[0] == '#') {
-			LineNumber++;
-			continue;
-		}
-
-		// Split into var-value
-		int EqualIndex = StringIndexOf(Trimmed, '=');
-		if (EqualIndex == -1) {
-			UL_WARN("Potential formatting issue found in file '%s': '=' token not found. Skiping line %ui.", path, LineNumber);
-			LineNumber++;
-			continue;
-		}
-
-		// Assume a max of 64 characters for the variable name.
-		char RawVarName[64];
-		Memory::Zero(RawVarName, sizeof(char) * 64);
-		StringMid(RawVarName, Trimmed, 0, EqualIndex);
-		char* TrimmedVarName = Strtrim(RawVarName);
-
-		// Assume a max of 511-64(446) characters for the max length of the value to account for the variable name and the '='.
-		char RawValue[446];
-		Memory::Zero(RawValue, sizeof(char) * 446);
-		StringMid(RawValue, Trimmed, EqualIndex + 1);
-		char* TrimmedValue = Strtrim(RawValue);
-
-		// Process the variable.
-		if (strcmp(TrimmedVarName, "version") == 0) {
-			//TODO: version
-
-		}
-		else if (strcmp(TrimmedVarName, "name") == 0) {
-			strncpy(config->name, TrimmedValue, MATERIAL_NAME_MAX_LENGTH);
-		}
-		else if (strcmp(TrimmedVarName, "diffuse_map_name") == 0) {
-			strncpy(config->diffuse_map_name, TrimmedValue, TEXTURE_NAME_MAX_LENGTH);
-		}
-		else if (strcmp(TrimmedVarName, "diffuse_color") == 0) {
-			// Parse the color
-			config->diffuse_color = Vec4::StringToVec4(TrimmedValue);
-		}
-
-		// TODO: more fields.
-
-		// Clear the line buffer.
-		Memory::Zero(LineBuffer, sizeof(char) * 512);
-		LineNumber++;
-	}
-
-	FileSystemClose(&f);
-	return true;
 }

@@ -12,13 +12,6 @@ struct SMaterialSystemConfig {
 	uint32_t max_material_count;
 };
 
-struct SMaterialConfig {
-	char name[MATERIAL_NAME_MAX_LENGTH];
-	bool auto_release;
-	Vec4 diffuse_color;
-	char diffuse_map_name[TEXTURE_NAME_MAX_LENGTH];
-};
-
 struct SMaterialReference {
 	size_t reference_count;
 	uint32_t handle;
@@ -43,7 +36,6 @@ public:
 private:
 	static bool CreateDefaultMaterial();
 	static void DestroyDefaultMaterial();
-	static bool LoadConfigurationFile(const char* path, SMaterialConfig* config);
 
 public:
 	static SMaterialSystemConfig MaterialSystemConfig;

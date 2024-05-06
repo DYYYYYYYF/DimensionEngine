@@ -337,6 +337,13 @@ public:
 #endif
 	}
 
+	Vec4(float x) {
+		r = x;
+		g = x;
+		b = x;
+		a = x;
+	}
+
 	Vec4(float x, float y, float z, float w) {
 		r = x;
 		g = y;

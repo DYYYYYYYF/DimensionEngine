@@ -35,6 +35,14 @@ DAPI bool FileSystemOpen(const char* path, FileMode mode, bool binary, FileHandl
 DAPI void FileSystemClose(FileHandle* handle);
 
 /*
+* @brief Attempts to read the size of the file to which handle is attached.
+* 
+* @param handle The file handle.
+* @param size A point to hold the file size.
+*/
+DAPI bool FileSystemSize(FileHandle* handle, size_t* size);
+
+/*
 * Reads up to a newline or EOF. Allocates *line_buf, which must be freed by the caller.
 * @param handle A pointer to a FileHandle structure.
 * @param max_length The maximum length to be read from the line.
@@ -52,8 +60,30 @@ DAPI bool FileSystemReadLine(FileHandle* handle, int max_length, char** line_buf
 */
 DAPI bool FileSystemWriteLine(FileHandle* handle, const char* text);
 
+/*
+* Reads up to data_size bytes of data into out_bytes_read.
+* Allocates *out_data, which must be freed by the caller.
+* @param handle A pointer to a FileHandle structure.
+* @param data_size The number of bytes to read.
+* @param out_data A pointer to a block of memory to be populated by this method.
+* @param out_bytes_read A pointer to a number which will be populated with the number of bytes actually read from the file.
+*/
 DAPI bool FileSystemRead(FileHandle* handle, size_t data_size, void* out_data, size_t* out_bytes_read);
 
-DAPI bool FileSystemReadAllBytes(FileHandle* handle, char** out_bytes, size_t* out_bytes_read);
+/*
+* Reads all bytes of data into ou_bytes.
+* @param handle A pointer to a FileHandle structure.
+* @param out_data A pointer to a block of memory to be populated by this method.
+* @param out_bytes_read A pointer to a number which will be populated with the number of bytes actually read from the file.
+*/
+DAPI bool FileSystemReadAllBytes(FileHandle* handle, unsigned char* out_bytes, size_t* out_bytes_read);
+
+/*
+* Reads all characters of data into out_text.
+* @param handle A pointer to a FileHandle structure.
+* @param out_text A character array which will be populated by this method.
+* @param out_bytes_read A pointer to a number which will be populated with the number of bytes actually read from the file.
+*/
+DAPI bool FileSystemReadAllText(FileHandle* handle,char* out_text, size_t* out_bytes_read);
 
 DAPI bool FileSystemWrite(FileHandle* handle, size_t data_size, void* data, size_t* out_bytes_written);

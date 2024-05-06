@@ -6,6 +6,13 @@
 
 class Texture;
 
+struct SMaterialConfig {
+	char name[MATERIAL_NAME_MAX_LENGTH];
+	bool auto_release;
+	Vec4 diffuse_color;
+	char diffuse_map_name[TEXTURE_NAME_MAX_LENGTH];
+};
+
 struct TextureMap {
 	Texture* texture;
 	TextureUsage usage;

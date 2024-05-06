@@ -11,9 +11,12 @@
 
 #include "Renderer/RendererFrontend.hpp"
 #include "Math/MathTypes.hpp"
+
+// Systems
 #include "Systems/TextureSystem.h"
 #include "Systems/MaterialSystem.h"
 #include "Systems/GeometrySystem.h"
+#include "Systems/ResourceSystem.h"
 
 struct SApplicationState {
 	SGame* game_instance;
@@ -76,6 +79,15 @@ bool ApplicationCreate(SGame* game_instance){
 	AppState.width = game_instance->app_config.start_width;
 	AppState.height = game_instance->app_config.start_height;
 
+	// Init texture system
+	SResourceSystemConfig ResourceSystemConfig;
+	ResourceSystemConfig.max_loader_count = 32;
+	ResourceSystemConfig.asset_base_path = "../Asset";
+	if (!ResourceSystem::Initialize(ResourceSystemConfig)) {
+		UL_FATAL("Resource system failed to initialize!");
+		return false;
+	}
+
 	// Init Renderer
 	if (Renderer == nullptr) {
 		void* TempRenderer = (IRenderer*)Memory::Allocate(sizeof(IRenderer), MemoryType::eMemory_Type_Renderer);
@@ -114,7 +126,7 @@ bool ApplicationCreate(SGame* game_instance){
 
 	// TODO: Temp
 	// AppState.TestGeometry = GeometrySystem::GetDefaultGeometry();
-	SGeometryConfig GeoConfig = GeometrySystem::GeneratePlaneConfig(4.0f, 2.0f, 5, 5, 5.0f, 2.0f, "TestGeometry", "TestMaterial");
+	SGeometryConfig GeoConfig = GeometrySystem::GeneratePlaneConfig(5.0f, 2.0f, 5, 2, 5.0f, 2.0f, "TestGeometry", "TestMaterial");
 	AppState.TestGeometry = GeometrySystem::AcquireFromConfig(GeoConfig, true);
 	Memory::Free(GeoConfig.vertices, sizeof(Vertex) * GeoConfig.vertex_count, MemoryType::eMemory_Type_Array);
 	Memory::Free(GeoConfig.indices, sizeof(uint32_t) * GeoConfig.index_count, MemoryType::eMemory_Type_Array);
@@ -213,6 +225,7 @@ bool ApplicationRun() {
 	Core::EventShutdown();
 	Core::InputShutdown();
 
+	ResourceSystem::Shutdown();
 	GeometrySystem::Shutdown();
 	MaterialSystem::Shutdown();
 	TextureSystem::Shutdown();

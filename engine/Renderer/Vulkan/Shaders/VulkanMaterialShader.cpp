@@ -296,6 +296,7 @@ void VulkanMaterialShader::ApplyMaterial(VulkanContext* context, Material* mater
 		}
 
 		MaterialUniformObject obo;
+
 		obo.diffuse_color = material->DiffuseColor;
 
 		// Load the data into the buffer

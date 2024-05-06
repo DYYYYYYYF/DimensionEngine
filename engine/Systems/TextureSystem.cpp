@@ -3,9 +3,7 @@
 #include "Core/EngineLogger.hpp"
 #include "Core/Application.hpp"
 
-// TODO: resource loader.
-#define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
+#include "Systems/ResourceSystem.h"
 #include "Renderer/RendererFrontend.hpp"
 
 STextureSystemConfig TextureSystem::TextureSystemConfig;
@@ -259,44 +257,32 @@ void TextureSystem::DestroyDefaultTexture() {
 
 
 bool TextureSystem::LoadTexture(const char* name, Texture* texture) {
-	// TODO: Should be able to be located anywhere.
-	char* FormatStr = "../Asset/Textures/%s.%s";
-	const int RequiredChannelCount = 4;
-	stbi_set_flip_vertically_on_load(true);
-	char FullFilePath[512];
+	Resource ImgResource;
+	if (!ResourceSystem::Load(name, ResourceType::eResource_type_Image, &ImgResource)) {
+		UL_ERROR("Failed to load image resource for texture '%s'.", name);
+		return false;
+	}
 
-	// TODO: Try different extensions.
-	sprintf_s(FullFilePath, FormatStr, name, "png");
+	ImageResourceData* ResourceData = (ImageResourceData*)ImgResource.Data;
 
 	// Use a temporary texture to load into.
 	Texture TempTexture;
+	TempTexture.Width = ResourceData->width;
+	TempTexture.Height= ResourceData->height;
+	TempTexture.ChannelCount = ResourceData->channel_count;
 
-	unsigned char* data = stbi_load(FullFilePath, (int*)&TempTexture.Width, (int*)&TempTexture.Height,
-		(int*)&TempTexture.ChannelCount, RequiredChannelCount);
-
-	TempTexture.ChannelCount = RequiredChannelCount;
-
-	if (data != nullptr) {
 		uint32_t CurrentGeneration = texture->Generation;
 		texture->Generation = INVALID_ID;
 
-		size_t TotalSize = TempTexture.Width * TempTexture.Height * RequiredChannelCount;
+		size_t TotalSize = TempTexture.Width * TempTexture.Height * TempTexture.ChannelCount;
 		// Check for transparency.
 		bool HasTransparency = false;
-		for (size_t i = 0; i < TotalSize; ++i) {
-			unsigned char a = data[i + 3];
+		for (size_t i = 0; i < TotalSize; i += TempTexture.ChannelCount) {
+			unsigned char a = ResourceData->pixels[i + 3];
 			if (a < 255) {
 				HasTransparency = true;
 				break;
 			}
-		}
-
-		if (stbi_failure_reason() != nullptr) {
-			UL_WARN("Load texture failed to load file %s : %s", FullFilePath, stbi_failure_reason());
-
-			// Clear errors so the next load doesn't fail.
-			stbi__err(0, 0);
-			return false;
 		}
 
 		// Take a copy of the name
@@ -305,7 +291,7 @@ bool TextureSystem::LoadTexture(const char* name, Texture* texture) {
 		TempTexture.HasTransparency = HasTransparency;
 
 		//Acquire internal texture resources and upload to GPU.
-		Renderer->CreateTexture(data, &TempTexture);
+		Renderer->CreateTexture(ResourceData->pixels, &TempTexture);
 
 		// Take a copy of the old texture.
 		Texture Old = *texture;
@@ -324,16 +310,6 @@ bool TextureSystem::LoadTexture(const char* name, Texture* texture) {
 		}
 
 		// Clean up data.
-		stbi_image_free(data);
+		ResourceSystem::Unload(&ImgResource);
 		return true;
-	}
-	else {
-		if (stbi_failure_reason() != nullptr) {
-			UL_WARN("Load texture failed to load file %s : %s", FullFilePath, stbi_failure_reason());
-			// Clear errors so the next load doesn't fail.
-			stbi__err(0, 0);
-		}
-
-		return false;
-	}
 }

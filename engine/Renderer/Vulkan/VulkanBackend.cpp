@@ -218,8 +218,8 @@ bool VulkanBackend::Initialize(const char* application_name, struct SPlatformSta
 	CreateBuffers();
 
 	// Mark all geometry as invalid.
-	for (uint32_t i = 0; i < Context.Swapchain.ImageCount; ++i) {
-		Context.ImagesInFilght[i] = nullptr;
+	for (uint32_t i = 0; i < GEOMETRY_MAX_COUNT; ++i) {
+		Context.Geometries[i].id = INVALID_ID;
 	}
 
 	UL_INFO("Create vulkan instance succeed.");
@@ -836,8 +836,8 @@ void VulkanBackend::DrawGeometry(GeometryRenderData geometry) {
 	Context.MaterialShader.ApplyMaterial(&Context, mat);
 
 	// Bind vertex buffer at offset
-	vk::DeviceSize offset[1] = { BufferData->vertext_buffer_offset };
-	CmdBuffer->CommandBuffer.bindVertexBuffers(0, 1, &Context.ObjectVertexBuffer.Buffer, (vk::DeviceSize*)offset);
+	vk::DeviceSize offsets[1] = { BufferData->vertext_buffer_offset };
+	CmdBuffer->CommandBuffer.bindVertexBuffers(0, Context.ObjectVertexBuffer.Buffer, offsets);
 
 	// Draw index or non-index
 	if (BufferData->index_size > 0) {

@@ -243,8 +243,8 @@ SGeometryConfig GeometrySystem::GeneratePlaneConfig(float width, float height, u
 	// TODO: This generates extra vertices, but we can always de-duplicate them later.
 	float seg_width = width / x_segment_count;
 	float seg_height = height / y_segment_count;
-	float half_width = width / 2.0f;
-	float half_height = height / 2.0f;
+	float half_width = width * 0.5f;
+	float half_height = height * 0.5f;
 	for (uint32_t y = 0; y < y_segment_count; ++y) {
 		for (uint32_t x = 0; x < x_segment_count; ++x) {
 			// Generate vertices.
