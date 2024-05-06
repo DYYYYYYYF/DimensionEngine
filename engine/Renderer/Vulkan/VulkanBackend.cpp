@@ -835,9 +835,8 @@ void VulkanBackend::DrawGeometry(GeometryRenderData geometry) {
 	}
 	Context.MaterialShader.ApplyMaterial(&Context, mat);
 
-	// Temp test
 	// Bind vertex buffer at offset
-	vk::DeviceSize offset[1] = { 0 };
+	vk::DeviceSize offset[1] = { BufferData->vertext_buffer_offset };
 	CmdBuffer->CommandBuffer.bindVertexBuffers(0, 1, &Context.ObjectVertexBuffer.Buffer, (vk::DeviceSize*)offset);
 
 	// Draw index or non-index

@@ -113,11 +113,11 @@ bool ApplicationCreate(SGame* game_instance){
 	}
 
 	// TODO: Temp
-	AppState.TestGeometry = GeometrySystem::GetDefaultGeometry();
-	/*SGeometryConfig GeoConfig = GeometrySystem::GeneratePlaneConfig(4.0f, 2.0f, 5, 5, 5.0f, 2.0f, "TestGeometry", "TestMaterial");
+	// AppState.TestGeometry = GeometrySystem::GetDefaultGeometry();
+	SGeometryConfig GeoConfig = GeometrySystem::GeneratePlaneConfig(4.0f, 2.0f, 5, 5, 5.0f, 2.0f, "TestGeometry", "TestMaterial");
 	AppState.TestGeometry = GeometrySystem::AcquireFromConfig(GeoConfig, true);
 	Memory::Free(GeoConfig.vertices, sizeof(Vertex) * GeoConfig.vertex_count, MemoryType::eMemory_Type_Array);
-	Memory::Free(GeoConfig.indices, sizeof(uint32_t) * GeoConfig.index_count, MemoryType::eMemory_Type_Array);*/
+	Memory::Free(GeoConfig.indices, sizeof(uint32_t) * GeoConfig.index_count, MemoryType::eMemory_Type_Array);
 
 	// Init Game
 	if (!AppState.game_instance->initialize(AppState.game_instance)) {

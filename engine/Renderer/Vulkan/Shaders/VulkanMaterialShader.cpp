@@ -289,8 +289,13 @@ void VulkanMaterialShader::ApplyMaterial(VulkanContext* context, Material* mater
 		// Descriptor 0 - uniform buffer
 		uint32_t Range = sizeof(MaterialUniformObject);
 		size_t Offset = sizeof(MaterialUniformObject) * material->InternalId;
-		MaterialUniformObject obo;
+		vk::PhysicalDeviceProperties properties = context->Device.GetPhysicalDevice().getProperties();
+		size_t minUboAlignment = properties.limits.minUniformBufferOffsetAlignment;
+		if (minUboAlignment > 0) {
+			Offset = (Offset + minUboAlignment - 1) & ~(minUboAlignment - 1);
+		}
 
+		MaterialUniformObject obo;
 		obo.diffuse_color = material->DiffuseColor;
 
 		// Load the data into the buffer

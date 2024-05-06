@@ -53,7 +53,7 @@ bool IRenderer::Initialize(const char* application_name, struct SPlatformState* 
 
 
 	View = Matrix4::Identity();
-	View.SetTranslation(Vec3{ 0.0f, 0.0f, -2.0f });
+	View.SetTranslation(Vec3{ 0.0f, 0.0f, -10.0f });
 
 	return true;
 }
