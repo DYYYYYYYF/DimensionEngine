@@ -10,6 +10,7 @@ target_path      = os.path.abspath(".") + "/Asset/Shaders/"
 
 # compile failed files
 failed_shaders = []
+glsl_list = [".vert", ".frag", "geom", "tesc", "tese", "comp"]
 
 def CheckGlslc():
     # global value will be changed, so we need define the value inside func
@@ -34,7 +35,7 @@ def CheckGlslc():
 
 def Compile(sub_file_path, file, filename, shader_language):
     shader_type = filename[1].split('.')[1]
-    if filename[1] != ".hlsl" and shader_language == "glsl":
+    if filename[1] in glsl_list and shader_language == "glsl":
         ## Record compile command
         cmd = compile_command + sub_file_path + "/" + file + " -o " + target_path + filename[0] + "." + shader_type + ".spv"
         print("Compiling " + sub_file_path + "/" + filename[0] + filename[1])
@@ -43,7 +44,10 @@ def Compile(sub_file_path, file, filename, shader_language):
         if os.system(cmd) != 0:
             failed_shaders.append(file)
 
-    elif shader_language == "hlsl":
+    elif filename[1] == ".hlsl" and shader_language == "hlsl":
+        sub_filename = os.path.splitext(filename[0])
+        shader_type = sub_filename[1].split('.')[1]
+
         ## Record compile command
         cmd = compile_command + " -c -fshader-stage=" + shader_type + " -fentry-point=main " + sub_file_path \
         + "/" + file + " -o " + target_path + filename[0] + ".spv"
