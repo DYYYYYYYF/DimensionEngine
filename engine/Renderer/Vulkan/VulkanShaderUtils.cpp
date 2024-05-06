@@ -11,7 +11,7 @@ bool VulkanShaderUtils::CreateShaderModule(VulkanContext* context, const char* n
 	vk::ShaderStageFlagBits stage_flag, uint32_t stage_index, VulkanShaderStage* shader_stage) {
 	// Build file name, which will also be used as the resource name.
 	char FileName[512];
-	sprintf(FileName, "shader/glsl/%s.%s.spv", name, type_str);
+	sprintf(FileName, "Shaders/%s.%s.spv", name, type_str);
 
 	// Read binary resource.
 	Resource BinaryResource;
