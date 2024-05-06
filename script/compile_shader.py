@@ -102,12 +102,15 @@ def LogCompileResult():
 if __name__ == '__main__':
     try:
         opts, args = getopt.getopt(sys.argv[1:], "hl:", ["help", "language="])
+        default_shader_language = "glsl"
         for opt, arg in opts:
             if opt in ("-h", "--help"):
                 print('-l [glsl/hlsl]: shader language')
                 sys.exit()
             elif opt in ("-l", "--language"):
-                CompileShaders(arg)
+                default_shader_language = arg
+
+        CompileShaders(arg)
 
     except getopt.GetoptError:
         print('compile_shader.py -l <language>')
