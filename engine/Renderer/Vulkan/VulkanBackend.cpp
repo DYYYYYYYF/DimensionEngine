@@ -106,15 +106,15 @@ bool VulkanBackend::Initialize(const char* application_name, struct SPlatformSta
 		}
 
 		if (!IsFound) {
-			UL_FATAL("Required validation layer is missing: %s", RequiredValidationLayerName[i]);
-			return false;
+			UL_WARN("Required validation layer is missing: '%s'!", RequiredValidationLayerName[i]);
+			RequiredValidationLayerName.clear();
 		}
 	}
 
 	UL_INFO("All required validation layers are present.");
 #endif
-	InstanceInfo.setEnabledLayerCount(0)
-		.setPEnabledLayerNames(nullptr);
+	InstanceInfo.setEnabledLayerCount((uint32_t)RequiredValidationLayerName.size())
+		.setPEnabledLayerNames(RequiredValidationLayerName);
 
 	try
 	{
