@@ -22,7 +22,7 @@ bool ResourceSystem::Initialize(SResourceSystemConfig config) {
 	// Invalidate all loaders.
 	RegisteredLoaders.Resize(config.max_loader_count);
 	for (uint32_t i = 0; i < config.max_loader_count; ++i) {
-		RegisteredLoaders[i] = (IResourceLoader*)Memory::Allocate(sizeof(IResourceLoader*), MemoryType::eMemory_Type_Array);
+		RegisteredLoaders[i] = (IResourceLoader*)Memory::Allocate(sizeof(IResourceLoader), MemoryType::eMemory_Type_Array);
 		RegisteredLoaders[i]->Id = INVALID_ID;
 	}
 

@@ -5,11 +5,11 @@
 struct SPlatformState;
 class Texture;
 class Material;
+class Geometry;
 
 class IRendererBackend {
 public:
-	IRendererBackend();
-	virtual ~IRendererBackend();
+	IRendererBackend() {};
 
 public:
 	virtual bool Initialize(const char* application_name, struct SPlatformState* plat_state) = 0;
