@@ -178,10 +178,21 @@ bool VulkanBackend::Initialize(const char* application_name, struct SPlatformSta
 	// Swapchain
 	Context.Swapchain.Create(&Context, Context.FrameBufferWidth, Context.FrameBufferHeight);
 
-	Context.MainRenderPass.Create(&Context, 0.0f, 0.0f, (float)Context.FrameBufferWidth, (float)Context.FrameBufferHeight, 1.0f, 0.5f, 0.5f, 1.0f, 1.0f, 0);
+	// World renderpass
+	Context.MainRenderPass.Create(&Context, 
+		Vec4(0.0f, 0.0f, (float)Context.FrameBufferWidth, (float)Context.FrameBufferHeight), 
+		Vec4(1.0f, 0.5f, 0.5f, 1.0f), 1.0f, 0, 
+		eRenderpass_Clear_Color_Buffer | eRenderpass_Clear_Depth_Buffer | eRenderpass_Clear_Stencil_Buffer,
+		false, true);
 	
+	// UI renderpass
+	Context.UIRenderPass.Create(&Context,
+		Vec4(0.0f, 0.0f, (float)Context.FrameBufferWidth, (float)Context.FrameBufferHeight),
+		Vec4(0.0f, 0.0f, 0.0f, 0.0f), 1.0f, 0,
+		eRenderpass_Clear_None,
+		true, false);
+
 	// Swapchain framebuffers.
-	Context.Swapchain.Framebuffers.resize(Context.Swapchain.ImageCount);
 	RegenerateFrameBuffers();
 
 	// Command buffers
@@ -200,7 +211,9 @@ bool VulkanBackend::Initialize(const char* application_name, struct SPlatformSta
 		// Create the fence in a signaled state, indicating that the first frame has already been rendered
 		// This will prevent the application from waiting indefinitely for the first frame to render since it 
 		// cannot be rendered until a frame is rendered before it.
-		Context.InFlightFences[i].Create(&Context, true);
+		vk::FenceCreateInfo FenceCreateInfo;
+		FenceCreateInfo.setFlags(vk::FenceCreateFlagBits::eSignaled);
+		Context.InFlightFences[i] = Context.Device.GetLogicalDevice().createFence(FenceCreateInfo, Context.Allocator);
 	}
 
 	// In flight fences should not yet exist at this point, so clear the list. These are stored in pointers
@@ -211,8 +224,12 @@ bool VulkanBackend::Initialize(const char* application_name, struct SPlatformSta
 	}
 
 	// Create shaders
-	if (!Context.MaterialShader.Create(&Context, DefaultDiffuse)) {
+	if (!Context.MaterialShader.Create(&Context)) {
 		UL_ERROR("Loadding basic_lighting shader failed.");
+		return false;
+	}
+	if (!Context.UIShader.Create(&Context)) {
+		UL_ERROR("Loadding ui shader failed.");
 		return false;
 	}
 
@@ -236,6 +253,7 @@ void VulkanBackend::Shutdown() {
 	Context.ObjectIndexBuffer.Destroy(&Context);
 
 	UL_DEBUG("Destroying shader modules.");
+	Context.UIShader.Destroy(&Context);
 	Context.MaterialShader.Destroy(&Context);
 
 	UL_DEBUG("Destroying sync objects.");
@@ -247,13 +265,14 @@ void VulkanBackend::Shutdown() {
 			LogicalDevice.destroySemaphore(Context.QueueCompleteSemaphores[i], Context.Allocator);
 		}
 
-		Context.InFlightFences[i].Destroy(&Context);
+		if (Context.InFlightFences[i]) {
+			LogicalDevice.destroyFence(Context.InFlightFences[i], Context.Allocator);
+		}
 	}
 
 	Context.ImageAvailableSemaphores.clear();
 	Context.QueueCompleteSemaphores.clear();
 	Context.InFlightFences.clear();
-	Context.ImagesInFilght.clear();
 
 	UL_DEBUG("Destroying command buffers.");
 	for (uint32_t i = 0; i < Context.Swapchain.ImageCount; ++i) {
@@ -264,10 +283,13 @@ void VulkanBackend::Shutdown() {
 
 	UL_DEBUG("Destroying frame buffers.");
 	for (uint32_t i = 0; i < Context.Swapchain.ImageCount; ++i) {
-		Context.Swapchain.Framebuffers[i].Destroy(&Context);
+		Context.Device.GetLogicalDevice().destroyFramebuffer(Context.WorldFramebuffers[i], Context.Allocator);
+		Context.Device.GetLogicalDevice().destroyFramebuffer(Context.Swapchain.Framebuffers[i], Context.Allocator);
 	}
 
-	UL_DEBUG("Destroying render pass.");
+	UL_DEBUG("Destroying render pass ui.");
+	Context.UIRenderPass.Destroy(&Context);
+	UL_DEBUG("Destroying render pass world.");
 	Context.MainRenderPass.Destroy(&Context);
 
 	UL_DEBUG("Destroying swapchain.");
@@ -321,7 +343,8 @@ bool VulkanBackend::BeginFrame(double delta_time){
 	}
 
 	// Wait for the execution of the current frame to complete. The fence being free will allow this one to move on
-	if (!Context.InFlightFences[Context.CurrentFrame].Wait(&Context, UINT64_MAX)) {
+	if (Context.Device.GetLogicalDevice().waitForFences(1, &Context.InFlightFences[Context.CurrentFrame], true, UINT64_MAX)
+		!= vk::Result::eSuccess) {
 		UL_WARN("In flight fence wait failure!");
 		return false;
 	}
@@ -358,13 +381,10 @@ bool VulkanBackend::BeginFrame(double delta_time){
 	Context.MainRenderPass.SetW((float)Context.FrameBufferWidth);
 	Context.MainRenderPass.SetH((float)Context.FrameBufferHeight);
 
-	// Begin the render pass
-	Context.MainRenderPass.Begin(CommandBuffer, Context.Swapchain.Framebuffers[Context.ImageIndex].FrameBuffer);
-
 	return true;
 }
 
-void VulkanBackend::UpdateGlobalState(Matrix4 projection, Matrix4 view, Vec3 view_position, Vec4 ambient_color, int mode) {
+void VulkanBackend::UpdateGlobalWorldState(Matrix4 projection, Matrix4 view, Vec3 view_position, Vec4 ambient_color, int mode) {
 	VulkanCommandBuffer* CmdBuffer = &Context.GraphicsCommandBuffers[Context.ImageIndex];
 
 	Context.MaterialShader.Use(&Context);
@@ -377,28 +397,42 @@ void VulkanBackend::UpdateGlobalState(Matrix4 projection, Matrix4 view, Vec3 vie
 	Context.MaterialShader.UpdateGlobalState(&Context, Context.FrameDeltaTime);
 }
 
+void VulkanBackend::UpdateGlobalUIState(Matrix4 projection, Matrix4 view, int mode) {
+	VulkanCommandBuffer* CmdBuffer = &Context.GraphicsCommandBuffers[Context.ImageIndex];
+
+	Context.UIShader.Use(&Context);
+
+	Context.UIShader.GlobalUBO.projection = projection;
+	Context.UIShader.GlobalUBO.view = view;
+
+	// TODO: other ubo props
+
+	Context.UIShader.UpdateGlobalState(&Context, Context.FrameDeltaTime);
+}
+
 bool VulkanBackend::EndFrame(double delta_time) {
 
 	VulkanCommandBuffer* CommandBuffer = &Context.GraphicsCommandBuffers[Context.ImageIndex];
-
-	// End renderpass
-	Context.MainRenderPass.End(CommandBuffer);
 	
 	CommandBuffer->EndCommand();
 
 	// Make sure the previous frame is not using this image
 	if (Context.ImagesInFilght[Context.ImageIndex] != VK_NULL_HANDLE) {
-		Context.ImagesInFilght[Context.ImageIndex]->Wait(&Context, UINT64_MAX);
+		if (Context.Device.GetLogicalDevice().waitForFences(1, Context.ImagesInFilght[Context.ImageIndex], true, UINT64_MAX)
+			!= vk::Result::eSuccess) {
+			UL_WARN("In flight fence wait failure!");
+			return false;
+		}
 	}
 
 	// Make sure image fence as in use by this frame
 	Context.ImagesInFilght[Context.ImageIndex] = &Context.InFlightFences[Context.CurrentFrame];
 
 	// Reset the fence for use on the next frame
-	Context.InFlightFences[Context.CurrentFrame].Reset(&Context);
+	Context.Device.GetLogicalDevice().resetFences(1, &Context.InFlightFences[Context.CurrentFrame]);
 
 	// Submit the queue and wait for the operation to complete
-	// Regin queue submission
+	// Begin queue submission
 	vk::SubmitInfo SubmitInfo;
 	
 	// Command buffer(s) to be executed
@@ -419,7 +453,7 @@ bool VulkanBackend::EndFrame(double delta_time) {
 	vk::PipelineStageFlags Flags[1] = { vk::PipelineStageFlagBits::eColorAttachmentOutput };
 	SubmitInfo.setWaitDstStageMask(Flags);
 
-	if (Context.Device.GetGraphicsQueue().submit(1, &SubmitInfo, Context.InFlightFences[Context.CurrentFrame].fence) != vk::Result::eSuccess) {
+	if (Context.Device.GetGraphicsQueue().submit(1, &SubmitInfo, Context.InFlightFences[Context.CurrentFrame]) != vk::Result::eSuccess) {
 		UL_ERROR("Queue submit failed.");
 		return false;
 	}
@@ -464,16 +498,41 @@ void VulkanBackend::CreateCommandBuffer() {
 }
 
 void VulkanBackend::RegenerateFrameBuffers() {
-	for (uint32_t i = 0; i < Context.Swapchain.ImageCount; ++i) {
-		// TODO: Make this dynamic based on the currently configured attachments
+	uint32_t ImageCount = Context.Swapchain.ImageCount;
+	for (uint32_t i = 0; i < ImageCount; ++i) {
 		uint32_t AttachmentCount = 2;
-		vk::ImageView Attachments[] = {
+		vk::ImageView WorldAttachments[2] = {
 			Context.Swapchain.ImageViews[i],
 			Context.Swapchain.DepthAttachment.ImageView
 		};
 
-		Context.Swapchain.Framebuffers[i].Create(&Context, &Context.MainRenderPass, 
-			Context.FrameBufferWidth, Context.FrameBufferHeight, AttachmentCount, Attachments);
+		vk::FramebufferCreateInfo FramebufferCreateInfo;
+		FramebufferCreateInfo.setRenderPass(Context.MainRenderPass.GetRenderPass())
+			.setAttachmentCount(AttachmentCount)
+			.setPAttachments(WorldAttachments)
+			.setWidth(Context.FrameBufferWidth)
+			.setHeight(Context.FrameBufferHeight)
+			.setLayers(1);
+
+		Context.WorldFramebuffers[i] = Context.Device.GetLogicalDevice().createFramebuffer(FramebufferCreateInfo, Context.Allocator);
+		ASSERT(Context.WorldFramebuffers[i]);
+
+		// Swapchain framebuffers (UI pass). Outputs to swapchain image.
+		uint32_t UIAttachmentCount = 1;
+		vk::ImageView UIAttachments[1] = {
+			Context.Swapchain.ImageViews[i],
+		};
+
+		vk::FramebufferCreateInfo SCFramebufferCreateInfo;
+		SCFramebufferCreateInfo.setRenderPass(Context.UIRenderPass.GetRenderPass())
+			.setAttachmentCount(UIAttachmentCount)
+			.setPAttachments(UIAttachments)
+			.setWidth(Context.FrameBufferWidth)
+			.setHeight(Context.FrameBufferHeight)
+			.setLayers(1);
+
+		Context.Swapchain.Framebuffers[i] = Context.Device.GetLogicalDevice().createFramebuffer(SCFramebufferCreateInfo, Context.Allocator);
+		ASSERT(Context.Swapchain.Framebuffers[i]);
 	}
 }
 
@@ -525,7 +584,8 @@ bool VulkanBackend::RecreateSwapchain() {
 
 	// Framebuffers
 	for (uint32_t i = 0; i < Context.Swapchain.ImageCount; ++i) {
-		Context.Swapchain.Framebuffers[i].Destroy(&Context);
+		Context.Device.GetLogicalDevice().destroyFramebuffer(Context.WorldFramebuffers[i], Context.Allocator);
+		Context.Device.GetLogicalDevice().destroyFramebuffer(Context.Swapchain.Framebuffers[i], Context.Allocator);
 	}
 
 	Context.MainRenderPass.SetX(0);
@@ -545,6 +605,7 @@ bool VulkanBackend::RecreateSwapchain() {
 bool VulkanBackend::CreateBuffers() {
 	vk::MemoryPropertyFlagBits MemoryPropertyFlags = vk::MemoryPropertyFlagBits::eDeviceLocal;
 
+	// Geometry vertex buffer
 	const size_t VertexBufferSize = sizeof(Vertex) * 1024 * 1024;
 	if (!Context.ObjectVertexBuffer.Create(&Context, VertexBufferSize, 
 		vk::BufferUsageFlagBits::eVertexBuffer | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eTransferSrc,
@@ -552,9 +613,9 @@ bool VulkanBackend::CreateBuffers() {
 		UL_ERROR("Error creating vertex buffer.");
 		return false;
 	}
-
 	Context.GeometryVertexOffset = 0;
 
+	// Geometry index buffer
 	const size_t IndexBufferSize = sizeof(uint32_t) * 1024 * 1024;
 	if (!Context.ObjectIndexBuffer.Create(&Context, IndexBufferSize,
 		vk::BufferUsageFlagBits::eIndexBuffer | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eTransferSrc,
@@ -562,7 +623,6 @@ bool VulkanBackend::CreateBuffers() {
 		UL_ERROR("Error creating index buffer.");
 		return false;
 	}
-
 	Context.GeometryIndexOffset = 0;
 
 	return true;
@@ -850,6 +910,67 @@ void VulkanBackend::DrawGeometry(GeometryRenderData geometry) {
 		CmdBuffer->CommandBuffer.draw(BufferData->vertex_count, 1, 0, 0);
 	}
 }
+
+bool VulkanBackend::BeginRenderpass(unsigned char renderpass_id) {
+	VulkanRenderPass* Renderpass = nullptr;
+	VulkanCommandBuffer* CmdBuffer = &Context.GraphicsCommandBuffers[Context.ImageIndex];
+	vk::Framebuffer Framebuffer;
+
+	// Choose a renderpass based on ID.
+	switch (renderpass_id)
+	{
+	case eButilin_Renderpass_World:
+		Renderpass = &Context.MainRenderPass;
+		Framebuffer = Context.WorldFramebuffers[Context.ImageIndex];
+		break;
+	case eButilin_Renderpass_UI:
+		Renderpass = &Context.UIRenderPass;
+		Framebuffer = Context.Swapchain.Framebuffers[Context.ImageIndex];
+		break;
+	default:
+		UL_ERROR("Renderer backend begin renderpass called on unrecognized renderpass id: %#02x", renderpass_id);
+		return false;
+	}
+
+	// Begin renderpass.
+	Renderpass->Begin(CmdBuffer, Framebuffer);
+
+	// Use the appropriate shader.
+	switch (renderpass_id)
+	{
+	case eButilin_Renderpass_World:
+		Context.MaterialShader.Use(&Context);
+		break;
+	case eButilin_Renderpass_UI:
+		Context.UIShader.Use(&Context);
+		break;
+	}
+
+	return true;
+}
+
+bool VulkanBackend::EndRenderpass(unsigned char renderpass_id) {
+	VulkanRenderPass* Renderpass = nullptr;
+	VulkanCommandBuffer* CmdBuffer = &Context.GraphicsCommandBuffers[Context.ImageIndex];
+
+	// Choose a renderpass based on ID.
+	switch (renderpass_id)
+	{
+	case eButilin_Renderpass_World:
+		Renderpass = &Context.MainRenderPass;
+		break;
+	case eButilin_Renderpass_UI:
+		Renderpass = &Context.UIRenderPass;
+		break;
+	default:
+		UL_ERROR("Renderer backend begin renderpass called on unrecognized renderpass id: %#02x", renderpass_id);
+		return false;
+	}
+
+	Renderpass->End(CmdBuffer);
+	return true;
+}
+
 
 /*
 * Vulkan debug callback

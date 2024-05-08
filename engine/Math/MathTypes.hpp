@@ -797,6 +797,8 @@ public:
 		Matrix.data[12] = (left + right) * lr;
 		Matrix.data[13] = (top + bottom) * bt;
 		Matrix.data[14] = (far_clip + near_clip) * nf;
+
+		return Matrix;
 	}
 
 	/*
@@ -1069,5 +1071,10 @@ inline Quaternion QuaternionSlerp(Quaternion q0, Quaternion q1, float percentage
 
 struct Vertex {
 	Vec3 position;
+	Vec2 texcoord;
+};
+
+struct Vertex2D {
+	Vec2 position;
 	Vec2 texcoord;
 };

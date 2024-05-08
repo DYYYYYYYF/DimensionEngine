@@ -18,10 +18,6 @@ public:
 	virtual ~IRenderer();
 
 public:
-	bool BeginFrame(double delta_time);
-	bool EndFrame(double delta_time);
-
-public:
 	virtual bool Initialize(const char* application_name, struct SPlatformState* plat_state);
 	virtual void Shutdown();
 
@@ -51,4 +47,8 @@ protected:
 	Matrix4 View;
 	float NearClip;
 	float FarClip;
+
+	Matrix4 UIProjection;
+	Matrix4 UIView;
+
 };

@@ -16,20 +16,11 @@ public:
 	virtual void Shutdown() override;
 
 	virtual bool BeginFrame(double delta_time) override;
-	virtual void UpdateGlobalState(Matrix4 projection, Matrix4 view, Vec3 view_position, Vec4 ambient_color, int mode) override;
+	virtual void UpdateGlobalWorldState(Matrix4 projection, Matrix4 view, Vec3 view_position, Vec4 ambient_color, int mode) override;
+	virtual void UpdateGlobalUIState(Matrix4 projection, Matrix4 view, int mode) override;
 	virtual void DrawGeometry(GeometryRenderData geometry) override;
 	virtual bool EndFrame(double delta_time) override;
-
-
 	virtual void Resize(unsigned short width, unsigned short height) override;
-
-	virtual void CreateCommandBuffer();
-	virtual void RegenerateFrameBuffers();
-	virtual bool RecreateSwapchain();
-
-	virtual bool CreateBuffers();
-
-	virtual void UploadDataRange(vk::CommandPool pool, vk::Fence fence, vk::Queue queue, VulkanBuffer* buffer, size_t offset, size_t size, const void* data);
 
 	virtual void CreateTexture(const unsigned char* pixels, Texture* texture) override;
 	virtual void DestroyTexture(Texture* texture) override;
@@ -39,6 +30,17 @@ public:
 
 	virtual bool CreateGeometry(Geometry* geometry, uint32_t vertex_count, const Vertex* vertices, uint32_t index_count, const uint32_t* indices) override;
 	virtual void DestroyGeometry(Geometry* geometry) override;
+
+	virtual bool BeginRenderpass(unsigned char renderpass_id) override;
+	virtual bool EndRenderpass(unsigned char renderpass_id) override;
+
+public:
+	virtual bool CreateBuffers();
+	virtual void UploadDataRange(vk::CommandPool pool, vk::Fence fence, vk::Queue queue, VulkanBuffer* buffer, size_t offset, size_t size, const void* data);
+
+	virtual void CreateCommandBuffer();
+	virtual void RegenerateFrameBuffers();
+	virtual bool RecreateSwapchain();
 
 protected:
 	VulkanContext Context;

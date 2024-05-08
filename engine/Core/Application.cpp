@@ -188,6 +188,8 @@ bool ApplicationRun() {
 			TestRender.model = Matrix4::Identity();
 			Packet.geometries = &TestRender;
 			Packet.geometry_count = 1;
+			Packet.ui_geometries = nullptr;
+			Packet.ui_geometry_count = 0;
 
 			Renderer->DrawFrame(&Packet);
 

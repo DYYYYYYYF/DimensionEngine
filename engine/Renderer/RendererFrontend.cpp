@@ -47,13 +47,16 @@ bool IRenderer::Initialize(const char* application_name, struct SPlatformState* 
 		return false;
 	}
 
+	// World projection/view
 	NearClip = 0.01f;
 	FarClip = 1000.0f;
 	Projection = Matrix4::Perspective(Deg2Rad(45.0f), 1280.0f / 720.0f, 0.1f, 1000.0f);
-
-
 	View = Matrix4::Identity();
 	View.SetTranslation(Vec3{ 0.0f, 0.0f, -10.0f });
+
+	// UI projection/view
+	UIProjection = Matrix4::Orthographic(0, 1280.0f, 720.0f, 0, -100.f, 100.f);
+	UIView = Matrix4::Identity().Inverse();
 
 	return true;
 }
@@ -71,6 +74,7 @@ void IRenderer::Shutdown() {
 void IRenderer::OnResize(unsigned short width, unsigned short height) {
 	if (Backend != nullptr) {
 		Projection = Matrix4::Perspective(Deg2Rad(45.0f), (float)width / (float)height, NearClip, FarClip);
+		UIProjection = Matrix4::Orthographic(0, (float)width, (float)height, 0, -100.f, 100.f);
 		Backend->Resize(width, height);
 	}
 	else {
@@ -78,26 +82,52 @@ void IRenderer::OnResize(unsigned short width, unsigned short height) {
 	}
 }
 
-bool IRenderer::BeginFrame(double delta_time) {
-	return Backend->BeginFrame(delta_time);
-}
-
-bool IRenderer::EndFrame(double delta_time) {
-	bool result = Backend->EndFrame(delta_time);
-	Backend->SetFrameNum(Backend->GetFrameNum() + 1);
-	return result;
-}
-
 bool IRenderer::DrawFrame(SRenderPacket* packet) {
-	if (BeginFrame(packet->delta_time)) {
-		// Update UBO buffer
-		Backend->UpdateGlobalState(Projection, View, Vec3(0.0f, 0.0f, 0.0f), Vec4(1.0f, 1.0f, 1.0f, 1.0f), 0);
+	if (Backend->BeginFrame(packet->delta_time)) {
+		// World render pass.
+		if (!Backend->BeginRenderpass(eButilin_Renderpass_World)) {
+			UL_ERROR("Backend begin eButilin_Renderpass_World renderpass failed. Application quit now.");
+			return false;
+		}
+		
+		// Update UBO buffer.
+		Backend->UpdateGlobalWorldState(Projection, View, Vec3(0.0f, 0.0f, 0.0f), Vec4(1.0f, 1.0f, 1.0f, 1.0f), 0);
 
+		// Draw geometries.
 		for (uint32_t i = 0; i < packet->geometry_count; ++i) {
 			Backend->DrawGeometry(packet->geometries[i]);
 		}
 		
-		bool result = EndFrame(packet->delta_time);
+		if (!Backend->EndRenderpass(eButilin_Renderpass_World)) {
+			UL_ERROR("Backend end eButilin_Renderpass_World renderpass failed. Application quit now.");
+			return false;
+		}
+		// End world renderpass
+
+		// UI renderpass
+		if (!Backend->BeginRenderpass(eButilin_Renderpass_UI)) {
+			UL_ERROR("Backend begin eButilin_Renderpass_UI renderpass failed. Application quit now.");
+			return false;
+		}
+
+		// Update UI buffer.
+		Backend->UpdateGlobalUIState(UIProjection, UIView, 0);
+
+		// Draw geometries.
+		for (uint32_t i = 0; i < packet->ui_geometry_count; ++i) {
+			Backend->DrawGeometry(packet->ui_geometries[i]);
+		}
+
+		if (!Backend->EndRenderpass(eButilin_Renderpass_UI)) {
+			UL_ERROR("Backend end eButilin_Renderpass_UI renderpass failed. Application quit now.");
+			return false;
+		}
+		// End UI renderpass
+
+		// End frame
+		bool result = Backend->EndFrame(packet->delta_time);
+		Backend->IncreaseFrameNum();
+
 		if (!result) {
 			UL_ERROR("Renderer end frame failed.");
 			return false;

@@ -7,6 +7,11 @@ class Texture;
 class Material;
 class Geometry;
 
+enum BuiltinRenderpass : unsigned char{
+	eButilin_Renderpass_World = 0x01,
+	eButilin_Renderpass_UI = 0x02
+};
+
 class IRendererBackend {
 public:
 	IRendererBackend() {};
@@ -16,7 +21,8 @@ public:
 	virtual void Shutdown() = 0;
 
 	virtual bool BeginFrame(double delta_time) = 0;
-	virtual void UpdateGlobalState(Matrix4 projection, Matrix4 view, Vec3 view_position, Vec4 ambient_color, int mode) = 0;
+	virtual void UpdateGlobalWorldState(Matrix4 projection, Matrix4 view, Vec3 view_position, Vec4 ambient_color, int mode) = 0;
+	virtual void UpdateGlobalUIState(Matrix4 projection, Matrix4 view, int mode) = 0;
 	virtual bool EndFrame(double delta_time) = 0;
 	virtual void Resize(unsigned short width, unsigned short height) = 0;
 
@@ -30,12 +36,16 @@ public:
 
 	virtual bool CreateGeometry(Geometry* geometry, uint32_t vertex_count, const Vertex* vertices, uint32_t index_count, const uint32_t* indices) = 0;
 	virtual void DestroyGeometry(Geometry* geometry) = 0;
+	
+	virtual bool BeginRenderpass(unsigned char renderpass_id) = 0;
+	virtual bool EndRenderpass(unsigned char renderpass_id) = 0;
 
 public:
 	SPlatformState* GetPlatformState() { return PlatformState; }
 
 	size_t GetFrameNum() const { return FrameNum; }
 	void SetFrameNum(size_t num) { FrameNum = num; }
+	void IncreaseFrameNum() { FrameNum++; }
 
 public:
 	// Points to default textures.

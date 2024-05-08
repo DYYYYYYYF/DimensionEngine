@@ -19,11 +19,11 @@ public:
 	virtual ~VulkanPipeline() {}
 
 public:
-	bool Create(VulkanContext* context, VulkanRenderPass* renderpass,
+	bool Create(VulkanContext* context, VulkanRenderPass* renderpass, uint32_t stride,
 		uint32_t attribute_count, vk::VertexInputAttributeDescription* attributes,
 		uint32_t descriptor_set_layout_count, vk::DescriptorSetLayout* descriptor_set_layout,
 		uint32_t stage_count, vk::PipelineShaderStageCreateInfo* stages,
-		vk::Viewport viewport, vk::Rect2D scissor, bool is_wireframe);
+		vk::Viewport viewport, vk::Rect2D scissor, bool is_wireframe, bool depth_test_enabled);
 
 	void Destroy(VulkanContext* context);
 	void Bind(VulkanCommandBuffer* command_buffer, vk::PipelineBindPoint bind_point);

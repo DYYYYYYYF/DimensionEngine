@@ -7,9 +7,9 @@
 #include "VulkanRenderpass.hpp"
 #include "VulkanCommandBuffer.hpp"
 #include "VulkanBuffer.hpp"
-#include "VulkanFence.hpp"
 
 #include "Renderer/Vulkan/Shaders/VulkanMaterialShader.hpp"
+#include "Renderer/Vulkan/Shaders/VulkanUIShader.hpp"
 #include "Systems/GeometrySystem.h"
 
 class Texture;
@@ -64,23 +64,28 @@ public:
 	std::vector<vk::Semaphore> QueueCompleteSemaphores;
 
 	uint32_t InFlightFenceCount;
-	std::vector<VulkanFence> InFlightFences;
+	std::vector <vk::Fence> InFlightFences;
 
 	// Holds pointers to Fences which exist and are owned elsewhere
-	std::vector<VulkanFence*> ImagesInFilght;
+	std::vector <vk::Fence*> ImagesInFilght;
 
 	VulkanDevice Device;
 	VulkanSwapchain Swapchain;
 	VulkanRenderPass MainRenderPass;
+	VulkanRenderPass UIRenderPass;
 
 	// Shaders
 	VulkanMaterialShader MaterialShader;
+	VulkanUIShader UIShader;
 
 	// Geometry
 	size_t GeometryVertexOffset;
 	size_t GeometryIndexOffset;
 	VulkanBuffer ObjectVertexBuffer;
 	VulkanBuffer ObjectIndexBuffer;
+
+	// Framebuffers used for world rendering, one per frame.
+	vk::Framebuffer WorldFramebuffers[3];
 
 	// TODO: Make dynamic
 	GeometryData Geometries[GEOMETRY_MAX_COUNT];

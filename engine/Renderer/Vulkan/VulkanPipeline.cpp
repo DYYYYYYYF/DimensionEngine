@@ -4,11 +4,11 @@
 #include "Core/EngineLogger.hpp"
 #include "Math/MathTypes.hpp"
 
-bool VulkanPipeline::Create(VulkanContext* context, VulkanRenderPass* renderpass,
+bool VulkanPipeline::Create(VulkanContext* context, VulkanRenderPass* renderpass, uint32_t stride,
 	uint32_t attribute_count, vk::VertexInputAttributeDescription* attributes,
 	uint32_t descriptor_set_layout_count, vk::DescriptorSetLayout* descriptor_set_layout,
 	uint32_t stage_count, vk::PipelineShaderStageCreateInfo* stages,
-	vk::Viewport viewport, vk::Rect2D scissor, bool is_wireframe) {
+	vk::Viewport viewport, vk::Rect2D scissor, bool is_wireframe, bool depth_test_enabled) {
 	// Viewport state
 	vk::PipelineViewportStateCreateInfo ViewportState;
 	ViewportState.setViewportCount(1)
@@ -40,11 +40,13 @@ bool VulkanPipeline::Create(VulkanContext* context, VulkanRenderPass* renderpass
 
 	// Depth and stencil testing
 	vk::PipelineDepthStencilStateCreateInfo DepthStencil;
-	DepthStencil.setDepthTestEnable(VK_TRUE)
-		.setDepthWriteEnable(VK_TRUE)
-		.setDepthCompareOp(vk::CompareOp::eLess)
-		.setDepthBoundsTestEnable(VK_FALSE)
-		.setStencilTestEnable(VK_FALSE);
+	if (depth_test_enabled) {
+		DepthStencil.setDepthTestEnable(VK_TRUE)
+			.setDepthWriteEnable(VK_TRUE)
+			.setDepthCompareOp(vk::CompareOp::eLess)
+			.setDepthBoundsTestEnable(VK_FALSE)
+			.setStencilTestEnable(VK_FALSE);
+	}
 
 	vk::PipelineColorBlendAttachmentState ColorBlendAttachmentState;
 	ColorBlendAttachmentState.setBlendEnable(VK_TRUE)
@@ -82,7 +84,7 @@ bool VulkanPipeline::Create(VulkanContext* context, VulkanRenderPass* renderpass
 	// Vertex input
 	vk::VertexInputBindingDescription BindingDescription;
 	BindingDescription.setBinding(0)
-		.setStride(sizeof(Vertex))
+		.setStride(stride)
 		.setInputRate(vk::VertexInputRate::eVertex);
 
 	// Attributes
@@ -124,7 +126,7 @@ bool VulkanPipeline::Create(VulkanContext* context, VulkanRenderPass* renderpass
 		.setPViewportState(&ViewportState)
 		.setPRasterizationState(&RasterizerCreateInfo)
 		.setPMultisampleState(&MultisamplingCreateInfo)
-		.setPDepthStencilState(&DepthStencil)
+		.setPDepthStencilState(depth_test_enabled ? &DepthStencil : nullptr)
 		.setPColorBlendState(&ColorBlendStateCreateInfo)
 		.setPDynamicState(&DynamicStateCreateInfo)
 		.setPTessellationState(nullptr)

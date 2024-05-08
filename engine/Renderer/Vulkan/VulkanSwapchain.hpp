@@ -2,7 +2,6 @@
 
 #include "vulkan/vulkan.hpp"
 #include "VulkanImage.hpp"
-#include "VulkanFrameBuffer.hpp"
 
 class VulkanContext;
 class VulkanFrameBuffer;
@@ -32,6 +31,6 @@ public:
 	VulkanImage DepthAttachment;
 	
 	// Framebuffers used for on-screen rendering
-	std::vector<VulkanFrameBuffer> Framebuffers;
+	vk::Framebuffer Framebuffers[3];
 
 };
