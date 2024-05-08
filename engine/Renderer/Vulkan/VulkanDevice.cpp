@@ -33,7 +33,7 @@ bool VulkanDevice::Create(vk::Instance* context, vk::AllocationCallbacks* alloca
 	for (unsigned int i = 0; i < IndexCount; ++i) {
 		QueueCreateInfos[i].setQueueCount(1)
 			.setQueueFamilyIndex(Indices[i]);
-		//if (Indices[i] == queue_info.graphics_index) {
+		//if (Indices[i] == QueueFamilyInfo.graphics_index) {
 		//	QueueCreateInfos[i].setQueueCount(2);
 		//}
 
