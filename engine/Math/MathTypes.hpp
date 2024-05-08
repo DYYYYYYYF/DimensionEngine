@@ -792,7 +792,7 @@ public:
 
 		Matrix.data[0] = -2.0f * lr;
 		Matrix.data[5] = -2.0f * bt;
-		Matrix.data[10] = -2.0f * nf;
+		Matrix.data[10] = 2.0f * nf;
 
 		Matrix.data[12] = (left + right) * lr;
 		Matrix.data[13] = (top + bottom) * bt;
