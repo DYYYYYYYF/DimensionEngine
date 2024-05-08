@@ -56,8 +56,12 @@ void VulkanRenderPass::Create(VulkanContext* context,
 
 	// Depth attachment, if there is one
 	bool IsNeedClearDepth = (ClearFlags & eRenderpass_Clear_Depth_Buffer) != 0;
+	
+	// NOTE: Put out of block, it will release memory when release mode and cause unknown break!
+	vk::AttachmentDescription DepthAttachment;
+	vk::AttachmentReference DepthAttachmentReference;
+
 	if (IsNeedClearDepth) {
-		vk::AttachmentDescription DepthAttachment;
 		DepthAttachment.setFormat(context->Device.GetDepthFormat())
 			.setSamples(vk::SampleCountFlagBits::e1)
 			.setLoadOp(IsNeedClearDepth ? vk::AttachmentLoadOp::eClear : vk::AttachmentLoadOp::eLoad)
@@ -71,7 +75,6 @@ void VulkanRenderPass::Create(VulkanContext* context,
 		AttachmentDescriptionCount++;
 
 		// Depth attachment reference
-		vk::AttachmentReference DepthAttachmentReference;
 		DepthAttachmentReference.setAttachment(1);
 		DepthAttachmentReference.setLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal);
 
