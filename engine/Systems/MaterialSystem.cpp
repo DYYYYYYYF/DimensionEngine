@@ -223,6 +223,9 @@ bool MaterialSystem::LoadMaterial(SMaterialConfig config, Material* mat) {
 	// name
 	strncpy(mat->Name, config.name, MATERIAL_NAME_MAX_LENGTH);
 
+	// Type
+	mat->Type = config.Type;
+
 	// Diffuse color
 	mat->DiffuseColor = config.diffuse_color;
 

@@ -30,6 +30,7 @@ struct SApplicationState {
 	SClock clock;
 
 	Geometry* TestGeometry;
+	Geometry* TestUIGeometry;
 };
 
 static bool Initialized = false;
@@ -125,11 +126,54 @@ bool ApplicationCreate(SGame* game_instance){
 	}
 
 	// TODO: Temp
-	// AppState.TestGeometry = GeometrySystem::GetDefaultGeometry();
+	//AppState.TestGeometry = GeometrySystem::GetDefaultGeometry();
 	SGeometryConfig GeoConfig = GeometrySystem::GeneratePlaneConfig(5.0f, 2.0f, 5, 2, 5.0f, 2.0f, "TestGeometry", "TestMaterial");
 	AppState.TestGeometry = GeometrySystem::AcquireFromConfig(GeoConfig, true);
+
+	// Clean up the allocations for the geometry config.
 	Memory::Free(GeoConfig.vertices, sizeof(Vertex) * GeoConfig.vertex_count, MemoryType::eMemory_Type_Array);
 	Memory::Free(GeoConfig.indices, sizeof(uint32_t) * GeoConfig.index_count, MemoryType::eMemory_Type_Array);
+
+	// Load up some test UI geometry.
+	SGeometryConfig UIConfig;
+	UIConfig.vertex_size = sizeof(Vertex2D);
+	UIConfig.vertex_count = 4;
+	UIConfig.index_size = sizeof(uint32_t);
+	UIConfig.index_count = 6;
+	strncpy(UIConfig.material_name, "TestUIMaterial", MATERIAL_NAME_MAX_LENGTH);
+	strncpy(UIConfig.name, "TestUIMaterial", MATERIAL_NAME_MAX_LENGTH);
+
+	const float f = 512.0f;
+	Vertex2D UIVerts[4];
+	UIVerts[0].position.x = 0.0f;
+	UIVerts[0].position.y = 0.0f;
+	UIVerts[0].texcoord.x = 0.0f;
+	UIVerts[0].texcoord.y = 0.0f;
+
+	UIVerts[1].position.x = f;
+	UIVerts[1].position.y = f;
+	UIVerts[1].texcoord.x = 1.0f;
+	UIVerts[1].texcoord.y = 1.0f;
+
+	UIVerts[2].position.x = 0.0f;
+	UIVerts[2].position.y = f;
+	UIVerts[2].texcoord.x = 0.0f;
+	UIVerts[2].texcoord.y = 1.0f;
+
+	UIVerts[3].position.x = f;
+	UIVerts[3].position.y = 0.0f;
+	UIVerts[3].texcoord.x = 1.0f;
+	UIVerts[3].texcoord.y = 0.0f;
+
+	UIConfig.vertices = UIVerts;
+
+	// Indices
+	uint32_t UIIndices[6] = { 2, 1, 0, 1, 3, 0 };
+	UIConfig.indices = UIIndices;
+
+	// Get UI geometry from config.
+	AppState.TestUIGeometry = GeometrySystem::AcquireFromConfig(UIConfig, true);
+	// AppState.TestUIGeometry = GeometrySystem::GetDefaultGeometry2D();
 
 	// Init Game
 	if (!AppState.game_instance->initialize(AppState.game_instance)) {
@@ -188,8 +232,12 @@ bool ApplicationRun() {
 			TestRender.model = Matrix4::Identity();
 			Packet.geometries = &TestRender;
 			Packet.geometry_count = 1;
-			Packet.ui_geometries = nullptr;
-			Packet.ui_geometry_count = 0;
+
+			GeometryRenderData TestUIRender;
+			TestUIRender.geometry = AppState.TestUIGeometry;
+			TestUIRender.model = Matrix4::Identity();
+			Packet.ui_geometries = &TestUIRender;
+			Packet.ui_geometry_count = 1;
 
 			Renderer->DrawFrame(&Packet);
 

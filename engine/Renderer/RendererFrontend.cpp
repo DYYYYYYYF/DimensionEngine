@@ -160,9 +160,9 @@ void IRenderer::DestroyMaterial(Material* material) {
 	Backend->DestroyMaterial(material);
 }
 
-bool IRenderer::CreateGeometry(Geometry* geometry, uint32_t vertex_count,
-	const Vertex* vertices, uint32_t index_count, const uint32_t* indices) {
-	return Backend->CreateGeometry(geometry, vertex_count, vertices, index_count, indices);
+bool IRenderer::CreateGeometry(Geometry* geometry, uint32_t vertex_size, uint32_t vertex_count,
+	const void* vertices, uint32_t index_size, uint32_t index_count, const void* indices) {
+	return Backend->CreateGeometry(geometry, vertex_size, vertex_count, vertices, index_size, index_count, indices);
 }
 
 void IRenderer::DestroyGeometry(Geometry* geometry) {

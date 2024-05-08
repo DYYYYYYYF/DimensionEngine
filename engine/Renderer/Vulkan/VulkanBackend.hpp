@@ -28,7 +28,8 @@ public:
 	virtual bool CreateMaterial(Material* material) override;
 	virtual void DestroyMaterial(Material* material) override;
 
-	virtual bool CreateGeometry(Geometry* geometry, uint32_t vertex_count, const Vertex* vertices, uint32_t index_count, const uint32_t* indices) override;
+	virtual bool CreateGeometry(Geometry* geometry, uint32_t vertex_size, uint32_t vertex_count, 
+		const void* vertices, uint32_t index_size, uint32_t index_count, const void* indices) override;
 	virtual void DestroyGeometry(Geometry* geometry) override;
 
 	virtual bool BeginRenderpass(unsigned char renderpass_id) override;

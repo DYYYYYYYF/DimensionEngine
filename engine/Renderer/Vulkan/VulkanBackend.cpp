@@ -429,7 +429,11 @@ bool VulkanBackend::EndFrame(double delta_time) {
 	Context.ImagesInFilght[Context.ImageIndex] = &Context.InFlightFences[Context.CurrentFrame];
 
 	// Reset the fence for use on the next frame
-	Context.Device.GetLogicalDevice().resetFences(1, &Context.InFlightFences[Context.CurrentFrame]);
+	if (Context.Device.GetLogicalDevice().resetFences(1, &Context.InFlightFences[Context.CurrentFrame])
+		!= vk::Result::eSuccess) {
+		UL_WARN("In flight fence wait failure!");
+		return false;
+	}
 
 	// Submit the queue and wait for the operation to complete
 	// Begin queue submission
@@ -738,8 +742,22 @@ void VulkanBackend::DestroyTexture(Texture* texture) {
 
 bool VulkanBackend::CreateMaterial(Material* material) {
 	if (material) {
-		if (!Context.MaterialShader.AcquireResources(&Context, material)) {
-			UL_ERROR("Vulkan renderer create material - Failed to acquire shader resource.");
+		switch (material->Type)
+		{
+		case eMaterial_Type_World:
+			if (!Context.MaterialShader.AcquireResources(&Context, material)) {
+				UL_INFO("Renderer create material failed to acquire world shader resources.");
+				return false;
+			}
+			break;
+		case eMaterial_Type_UI:
+			if (!Context.UIShader.AcquireResources(&Context, material)) {
+				UL_INFO("Renderer create material failed to acquire ui shader resources.");
+				return false;
+			}
+			break;
+		default:
+			UL_INFO("Renderer create material failed: Unknown material type.");
 			return false;
 		}
 
@@ -754,7 +772,18 @@ bool VulkanBackend::CreateMaterial(Material* material) {
 void VulkanBackend::DestroyMaterial(Material* material) {
 	if (material) {
 		if (material->InternalId != INVALID_ID) {
-			Context.MaterialShader.ReleaseResources(&Context, material);
+			switch (material->Type)
+			{
+			case eMaterial_Type_World:
+				Context.MaterialShader.ReleaseResources(&Context, material);
+				break;
+			case eMaterial_Type_UI:
+				Context.UIShader.ReleaseResources(&Context, material);
+				break;
+			default:
+				UL_ERROR("Destroy material failed: Unknown material type.");
+				break;
+			}
 		}
 		else {
 			UL_WARN("Vulkan renderer destroy material called with InternalId = INVALID_ID. Nothing was done.");
@@ -765,8 +794,8 @@ void VulkanBackend::DestroyMaterial(Material* material) {
 	}
 }
 
-bool VulkanBackend::CreateGeometry(Geometry* geometry, uint32_t vertex_count,
-	const Vertex* vertices, uint32_t index_count, const uint32_t* indices) {
+bool VulkanBackend::CreateGeometry(Geometry* geometry, uint32_t vertex_size, uint32_t vertex_count, 
+	const void* vertices, uint32_t index_size, uint32_t index_count, const void* indices) {
 	if (vertex_count == 0 || index_count == 0) {
 		UL_ERROR("Vulkan renderer create geometry requires vertex data, and none was supplied. vertex_count=%d, vertices=%p", vertex_count, vertices);
 		return false;
@@ -783,10 +812,10 @@ bool VulkanBackend::CreateGeometry(Geometry* geometry, uint32_t vertex_count,
 		// Take a copy of the old range.
 		OldRange.index_buffer_offset = InternalData->index_buffer_offset;
 		OldRange.index_count = InternalData->index_count;
-		OldRange.index_size = InternalData->index_size;
+		OldRange.index_element_size = InternalData->index_element_size;
 		OldRange.vertext_buffer_offset = InternalData->vertext_buffer_offset;
 		OldRange.vertex_count = InternalData->vertex_count;
-		OldRange.vertex_size = InternalData->vertex_size;
+		OldRange.vertex_element_size = InternalData->vertex_element_size;
 	}
 	else {
 		for (uint32_t i = 0; i < GEOMETRY_MAX_COUNT; ++i) {
@@ -811,23 +840,25 @@ bool VulkanBackend::CreateGeometry(Geometry* geometry, uint32_t vertex_count,
 	// Vertex data.
 	InternalData->vertext_buffer_offset = (uint32_t)Context.GeometryVertexOffset;
 	InternalData->vertex_count = vertex_count;
-	InternalData->vertex_size = sizeof(Vertex) * vertex_count;
+	InternalData->vertex_element_size = sizeof(Vertex);
+	uint32_t VertexTotalSize = vertex_size * vertex_count;
 	UploadDataRange(Pool, nullptr, Queue, &Context.ObjectVertexBuffer, 
-		InternalData->vertext_buffer_offset, InternalData->vertex_size, vertices);
+		InternalData->vertext_buffer_offset, VertexTotalSize, vertices);
 
 	// TODO: Should maintain a free list instead of this.
-	Context.GeometryVertexOffset += InternalData->vertex_size;
+	Context.GeometryVertexOffset += VertexTotalSize;
 
 	// Index data. If Applicable.
 	if (index_count != 0 && indices != nullptr) {
 		InternalData->index_buffer_offset = (uint32_t)Context.GeometryIndexOffset;
 		InternalData->index_count = index_count;
-		InternalData->index_size = sizeof(uint32_t) * index_count;
+		InternalData->index_element_size = sizeof(uint32_t);
+		uint32_t IndexTotalSize = index_size * index_count;
 		UploadDataRange(Pool, nullptr, Queue, &Context.ObjectIndexBuffer, 
-			InternalData->index_buffer_offset, InternalData->index_size, indices);
+			InternalData->index_buffer_offset, IndexTotalSize, indices);
 
 		// TODO: Should maintain a free list instead of this.
-		Context.GeometryIndexOffset += InternalData->index_size;
+		Context.GeometryIndexOffset += IndexTotalSize;
 	}
 
 	if (InternalData->generation == INVALID_ID) {
@@ -839,11 +870,11 @@ bool VulkanBackend::CreateGeometry(Geometry* geometry, uint32_t vertex_count,
 
 	if (IsReupload) {
 		// Free vertex data.
-		FreeDataRange(&Context.ObjectVertexBuffer, OldRange.vertext_buffer_offset, OldRange.vertex_size);
+		FreeDataRange(&Context.ObjectVertexBuffer, OldRange.vertext_buffer_offset, OldRange.vertex_element_size * OldRange.vertex_count);
 
 		// Free index data.
-		if (OldRange.index_size > 0) {
-			FreeDataRange(&Context.ObjectIndexBuffer, OldRange.index_buffer_offset, OldRange.index_size);
+		if (OldRange.index_element_size > 0) {
+			FreeDataRange(&Context.ObjectIndexBuffer, OldRange.index_buffer_offset, OldRange.index_element_size * OldRange.index_count);
 		}
 	}
 
@@ -856,11 +887,11 @@ void VulkanBackend::DestroyGeometry(Geometry* geometry) {
 		GeometryData* InternalData = &Context.Geometries[geometry->InternalID];
 
 		// Free vertex data.
-		FreeDataRange(&Context.ObjectVertexBuffer, InternalData->vertext_buffer_offset, InternalData->vertex_size);
+		FreeDataRange(&Context.ObjectVertexBuffer, InternalData->vertext_buffer_offset, InternalData->vertex_element_size * InternalData->vertex_count);
 
 		// Free index data.
-		if (InternalData->index_size > 0) {
-			FreeDataRange(&Context.ObjectIndexBuffer, InternalData->index_buffer_offset, InternalData->index_size);
+		if (InternalData->index_element_size > 0) {
+			FreeDataRange(&Context.ObjectIndexBuffer, InternalData->index_buffer_offset, InternalData->index_element_size * InternalData->index_count);
 		}
 
 		// Clean up date.
@@ -883,10 +914,6 @@ void VulkanBackend::DrawGeometry(GeometryRenderData geometry) {
 	GeometryData* BufferData = &Context.Geometries[geometry.geometry->InternalID];
 	VulkanCommandBuffer* CmdBuffer = &Context.GraphicsCommandBuffers[Context.ImageIndex];
 
-	// TODO: Check if this is actually needed.
-	Context.MaterialShader.Use(&Context);
-
-	Context.MaterialShader.SetModelMat(&Context, geometry.model);
 	Material* mat = nullptr;
 	if (geometry.geometry->Material) {
 		mat = geometry.geometry->Material;
@@ -894,14 +921,29 @@ void VulkanBackend::DrawGeometry(GeometryRenderData geometry) {
 	else {
 		mat = MaterialSystem::GetDefaultMaterial();
 	}
-	Context.MaterialShader.ApplyMaterial(&Context, mat);
+	
+
+	switch (mat->Type)
+	{
+	case eMaterial_Type_World:
+		Context.MaterialShader.SetModelMat(&Context, geometry.model);
+		Context.MaterialShader.ApplyMaterial(&Context, mat);
+		break;
+	case eMaterial_Type_UI:
+		Context.UIShader.SetModelMat(&Context, geometry.model);
+		Context.UIShader.ApplyMaterial(&Context, mat);
+		break;
+	default:
+		UL_ERROR("Draw geometry error: Unknown material type.");
+		return;
+	}
 
 	// Bind vertex buffer at offset
 	vk::DeviceSize offsets[1] = { BufferData->vertext_buffer_offset };
 	CmdBuffer->CommandBuffer.bindVertexBuffers(0, Context.ObjectVertexBuffer.Buffer, offsets);
 
 	// Draw index or non-index
-	if (BufferData->index_size > 0) {
+	if (BufferData->index_element_size > 0) {
 		// Bind index buffer at offset
 		CmdBuffer->CommandBuffer.bindIndexBuffer(Context.ObjectIndexBuffer.Buffer, BufferData->index_buffer_offset, vk::IndexType::eUint32);
 		CmdBuffer->CommandBuffer.drawIndexed(BufferData->index_count, 1, 0, 0, 0);

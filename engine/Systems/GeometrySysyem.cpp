@@ -6,6 +6,7 @@
 
 SGeometrySystemConfig GeometrySystem::GeometrySystemConfig;
 Geometry GeometrySystem::DefaultGeometry;
+Geometry GeometrySystem::Default2DGeometry;
 SGeometryReference* GeometrySystem::RegisteredGeometries = nullptr;
 bool GeometrySystem::Initilized = false;
 IRenderer* GeometrySystem::Renderer = nullptr;
@@ -32,8 +33,8 @@ bool GeometrySystem::Initialize(IRenderer* renderer, SGeometrySystemConfig confi
 		RegisteredGeometries[i].geometry.Generation = INVALID_ID;
 	}
 
-	if (!CreateDefaultGeometry()) {
-		UL_FATAL("Failed to create default geometry. Application quit now!");
+	if (!CreateDefaultGeometries()) {
+		UL_FATAL("Failed to create default geometries. Application quit now!");
 		return false;
 	}
 
@@ -111,7 +112,7 @@ void GeometrySystem::Release(Geometry* geometry) {
 		return;
 	}
 
-	UL_WARN("Geometry system acquire by id can not release invalid geometry id. Nothing was donw.");
+	UL_WARN("Geometry system release by id can not release invalid geometry id. Nothing was down.");
 }
 
 Geometry* GeometrySystem::GetDefaultGeometry() {
@@ -123,7 +124,16 @@ Geometry* GeometrySystem::GetDefaultGeometry() {
 	return nullptr;
 }
 
-bool GeometrySystem::CreateDefaultGeometry() {
+Geometry* GeometrySystem::GetDefaultGeometry2D() {
+	if (Initilized) {
+		return &Default2DGeometry;
+	}
+
+	UL_FATAL("Get default 2D Geometry called before system initialize. Returning nullptr");
+	return nullptr;
+}
+
+bool GeometrySystem::CreateDefaultGeometries() {
 	const float f = 1.0f;
 	Vertex Verts[4];
 	Memory::Zero(Verts, sizeof(Vertex) * 4);
@@ -151,7 +161,7 @@ bool GeometrySystem::CreateDefaultGeometry() {
 	uint32_t Indices[6] = { 0, 1, 2, 0, 3, 1 };
 
 	// Send the geometry off to the renderer to be uploaded to the GPU.
-	if (!Renderer->CreateGeometry(&DefaultGeometry, 4, Verts, 6, Indices)) {
+	if (!Renderer->CreateGeometry(&DefaultGeometry, sizeof(Vertex), 4, Verts, sizeof(uint32_t), 6, Indices)) {
 		UL_FATAL("Failed to create default geometry. Application quit now!");
 		return false;
 	}
@@ -159,12 +169,47 @@ bool GeometrySystem::CreateDefaultGeometry() {
 	// Acquire the default material.
 	DefaultGeometry.Material = MaterialSystem::GetDefaultMaterial();
 
+	// Create default 2d geometry.
+	Vertex2D Verts2D[4];
+	Memory::Zero(Verts2D, sizeof(Vertex2D) * 4);
+	Verts2D[0].position.x = -0.5f * f;	// 0    3
+	Verts2D[0].position.y = -0.5f * f;	//
+	Verts2D[0].texcoord.x = 0.0f;		//
+	Verts2D[0].texcoord.y = 0.0f;		// 2    1
+
+	Verts2D[1].position.x = 0.5f * f;
+	Verts2D[1].position.y = 0.5f * f;
+	Verts2D[1].texcoord.x = 1.0f;
+	Verts2D[1].texcoord.y = 1.0f;
+
+	Verts2D[2].position.x = -0.5f * f;
+	Verts2D[2].position.y = 0.5f * f;
+	Verts2D[2].texcoord.x = 0.0f;
+	Verts2D[2].texcoord.y = 1.0f;
+
+	Verts2D[3].position.x = 0.5f * f;
+	Verts2D[3].position.y = -0.5f * f;
+	Verts2D[3].texcoord.x = 1.0f;
+	Verts2D[3].texcoord.y = 0.0f;
+
+	// Indices NOTO: counter-clockwise.
+	uint32_t Indices2D[6] = { 0, 1, 2, 0, 3, 1 };
+
+	// Send the geometry off to the renderer to be uploaded to the GPU.
+	if (!Renderer->CreateGeometry(&Default2DGeometry, sizeof(Vertex2D), 4, Verts2D, sizeof(uint32_t), 6, Indices2D)) {
+		UL_FATAL("Failed to create default 2d geometry. Application quit now!");
+		return false;
+	}
+
+	// Acquire the default material.
+	Default2DGeometry.Material = MaterialSystem::GetDefaultMaterial();
+
 	return true;
 }
 
 bool GeometrySystem::CreateGeometry(SGeometryConfig config, Geometry* geometry) {
 	// Send the geometry off to the renderer to be uploaded to the GPU.
-	if (!Renderer->CreateGeometry(geometry, config.vertex_count, config.vertices, config.index_count, config.indices)) {
+	if (!Renderer->CreateGeometry(geometry, config.vertex_size, config.vertex_count, config.vertices, config.index_size, config.index_count, config.indices)) {
 		// Invalidate the entry.
 		RegisteredGeometries[geometry->ID].reference_count = 0;
 		RegisteredGeometries[geometry->ID].auto_release = false;
@@ -235,8 +280,10 @@ SGeometryConfig GeometrySystem::GeneratePlaneConfig(float width, float height, u
 	}
 
 	SGeometryConfig Config;
+	Config.vertex_size = sizeof(Vertex);
 	Config.vertex_count = x_segment_count * y_segment_count * 4; // 4 vertex per segment.
 	Config.vertices = (Vertex*)Memory::Allocate(sizeof(Vertex) * Config.vertex_count, MemoryType::eMemory_Type_Array);
+	Config.index_size = sizeof(uint32_t);
 	Config.index_count = x_segment_count * y_segment_count * 6; // 6 index per segment.
 	Config.indices = (uint32_t*)Memory::Allocate(sizeof(uint32_t) * Config.index_count, MemoryType::eMemory_Type_Array);
 
@@ -258,10 +305,10 @@ SGeometryConfig GeometrySystem::GeneratePlaneConfig(float width, float height, u
 			float max_uvy = ((y + 1) / (float)y_segment_count) * tile_y;
 
 			uint32_t v_offset = ((y * x_segment_count) + x) * 4;
-			Vertex* v0 = &Config.vertices[v_offset + 0];
-			Vertex* v1 = &Config.vertices[v_offset + 1];
-			Vertex* v2 = &Config.vertices[v_offset + 2];
-			Vertex* v3 = &Config.vertices[v_offset + 3];
+			Vertex* v0 = &((Vertex*)Config.vertices)[v_offset + 0];
+			Vertex* v1 = &((Vertex*)Config.vertices)[v_offset + 1];
+			Vertex* v2 = &((Vertex*)Config.vertices)[v_offset + 2];
+			Vertex* v3 = &((Vertex*)Config.vertices)[v_offset + 3];
 
 			v0->position.x = min_x;
 			v0->position.y = min_y;
@@ -285,12 +332,12 @@ SGeometryConfig GeometrySystem::GeneratePlaneConfig(float width, float height, u
 
 			// Generate indices.
 			uint32_t i_offset = ((y * x_segment_count) + x) * 6;
-			Config.indices[i_offset + 0] = v_offset + 0;
-			Config.indices[i_offset + 1] = v_offset + 1;
-			Config.indices[i_offset + 2] = v_offset + 2;
-			Config.indices[i_offset + 3] = v_offset + 0;
-			Config.indices[i_offset + 4] = v_offset + 3;
-			Config.indices[i_offset + 5] = v_offset + 1;
+			((uint32_t*)Config.indices)[i_offset + 0] = v_offset + 0;
+			((uint32_t*)Config.indices)[i_offset + 1] = v_offset + 1;
+			((uint32_t*)Config.indices)[i_offset + 2] = v_offset + 2;
+			((uint32_t*)Config.indices)[i_offset + 3] = v_offset + 0;
+			((uint32_t*)Config.indices)[i_offset + 4] = v_offset + 3;
+			((uint32_t*)Config.indices)[i_offset + 5] = v_offset + 1;
 		}
 	}
 

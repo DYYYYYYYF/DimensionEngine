@@ -12,19 +12,25 @@ struct GeometryData {
 	uint32_t generation = INVALID_ID;
 	// Vertices
 	uint32_t vertex_count;
-	uint32_t vertex_size;
+	uint32_t vertex_element_size;
 	uint32_t vertext_buffer_offset;
 	// Indices
 	uint32_t index_count;
-	uint32_t index_size;
+	uint32_t index_element_size;
 	uint32_t index_buffer_offset;
 };
 
 struct SGeometryConfig {
+	// Vertices
+	uint32_t vertex_size;
 	uint32_t vertex_count;
-	Vertex* vertices;
+	void* vertices;
+
+	// Indices
+	uint32_t index_size;
 	uint32_t index_count;
-	uint32_t* indices;
+	void* indices;
+
 	char name[GEOMETRY_NAME_MAX_LENGTH];
 	char material_name[MATERIAL_NAME_MAX_LENGTH];
 };
@@ -80,6 +86,13 @@ public:
 	static Geometry* GetDefaultGeometry();
 
 	/*
+	*@brief Obtains a pointer to the default 2D geometry.
+	*
+	* @returns A pointer to the default 2D geometry.
+	*/
+	static Geometry* GetDefaultGeometry2D();
+
+	/*
 	* @brief Generates configuration for plane geometries given the provided parameters.
 	* NOTO: vertex and index arrays are dynamically allocated and should be feed upon object disposal.
 	* Thus, this should not be considered production code.
@@ -98,17 +111,18 @@ public:
 		float tile_x, float tile_y, const char* name, const char* material_name);
 
 private:
-	static bool CreateDefaultGeometry();
+	static bool CreateDefaultGeometries();
 	static bool CreateGeometry(SGeometryConfig config, Geometry* geometry);
 	static void DestroyGeometry(Geometry* geometry);
 
 public:
 	static SGeometrySystemConfig GeometrySystemConfig;
+
 	static Geometry DefaultGeometry;
+	static Geometry Default2DGeometry;
+
 	static SGeometryReference* RegisteredGeometries;
-
-	static bool Initilized;
-
 	static IRenderer* Renderer;
 
+	static bool Initilized;
 };

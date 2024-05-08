@@ -34,7 +34,7 @@ public:
 	virtual bool CreateMaterial(Material* material) = 0;
 	virtual void DestroyMaterial(Material* material) = 0;
 
-	virtual bool CreateGeometry(Geometry* geometry, uint32_t vertex_count, const Vertex* vertices, uint32_t index_count, const uint32_t* indices) = 0;
+	virtual bool CreateGeometry(Geometry* geometry, uint32_t vertex_size, uint32_t vertex_count, const void* vertices, uint32_t index_size, uint32_t index_count, const void* indices) = 0;
 	virtual void DestroyGeometry(Geometry* geometry) = 0;
 	
 	virtual bool BeginRenderpass(unsigned char renderpass_id) = 0;

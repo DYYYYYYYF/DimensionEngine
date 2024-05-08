@@ -33,8 +33,8 @@ public:
 	virtual bool CreateMaterial(Material* material);
 	virtual void DestroyMaterial(Material* material);
 
-	virtual bool IRenderer::CreateGeometry(Geometry* geometry, uint32_t vertex_count,
-		const Vertex* vertices, uint32_t index_count, const uint32_t* indices);
+	virtual bool IRenderer::CreateGeometry(Geometry* geometry, uint32_t vertex_size, uint32_t vertex_count, 
+		const void* vertices, uint32_t index_size, uint32_t index_count, const void* indices);
 
 	virtual void IRenderer::DestroyGeometry(Geometry* geometry);
 
