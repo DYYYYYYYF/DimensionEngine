@@ -58,7 +58,8 @@ bool DynamicAllocator::Free(void* block, unsigned long long size) {
 		return false;
 	}
 
-	if (MemoryBlock && (char*)block - (char*)MemoryBlock > TotalSize) {
+	bool IsOut = (size_t)((char*)block - (char*)MemoryBlock) > TotalSize;
+	if (MemoryBlock && IsOut) {
 		void* EndOfBlock = (char*)MemoryBlock + TotalSize;
 		UL_ERROR("Dynamic allocator trying to release block (0x%p) outside of allocator range (0x%p)-(0x%p). Sub size: %uul, Total size: %uul.",
 			block, MemoryBlock, EndOfBlock, (char*)block - (char*)MemoryBlock, TotalSize);

@@ -79,8 +79,6 @@ public:
 	VulkanUIShader UIShader;
 
 	// Geometry
-	size_t GeometryVertexOffset;
-	size_t GeometryIndexOffset;
 	VulkanBuffer ObjectVertexBuffer;
 	VulkanBuffer ObjectIndexBuffer;
 

@@ -44,6 +44,13 @@ public:
 	*/
 	DAPI bool FreeBlock(unsigned long long size, unsigned long long offset);
 
+	/**
+	 * @brief Attempts to resize the freelist
+	 * 
+	 * @param new_size The new size of memory the freelist could hold.
+	 */
+	DAPI bool Resize(unsigned long long new_size);
+
 	/*
 	* @brief Clears the free list.
 	*/

@@ -13,11 +13,11 @@ struct GeometryData {
 	// Vertices
 	uint32_t vertex_count;
 	uint32_t vertex_element_size;
-	uint32_t vertext_buffer_offset;
+	size_t vertext_buffer_offset;
 	// Indices
 	uint32_t index_count;
 	uint32_t index_element_size;
-	uint32_t index_buffer_offset;
+	size_t index_buffer_offset;
 };
 
 struct SGeometryConfig {

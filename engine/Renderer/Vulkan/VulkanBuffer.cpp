@@ -12,6 +12,9 @@ bool VulkanBuffer::Create(VulkanContext* context, size_t size, vk::BufferUsageFl
 	Usage = usage;
 	MemoryPropertyFlags = memory_property_flags;
 
+	// Create a new freelist.
+	BufferFreelist.Create(size);
+
 	vk::BufferCreateInfo BufferInfo;
 	BufferInfo.setSize(size)
 		.setUsage(usage)
@@ -26,6 +29,8 @@ bool VulkanBuffer::Create(VulkanContext* context, size_t size, vk::BufferUsageFl
 	MemoryIndex = context->FindMemoryIndex(MemRequirements.memoryTypeBits, MemoryPropertyFlags);
 	if (MemoryIndex == -1) {
 		UL_ERROR("Unable to create vulkan buffer because the required memory type index was not found.");
+
+		CleanupFreelist();
 		return false;
 	}
 
@@ -45,6 +50,8 @@ bool VulkanBuffer::Create(VulkanContext* context, size_t size, vk::BufferUsageFl
 }
 
 void VulkanBuffer::Destroy(VulkanContext* context) {
+	CleanupFreelist();
+
 	if (Memory) {
 		context->Device.GetLogicalDevice().freeMemory(Memory, context->Allocator);
 		Memory = nullptr;
@@ -60,6 +67,20 @@ void VulkanBuffer::Destroy(VulkanContext* context) {
 }
 
 bool VulkanBuffer::Resize(VulkanContext* context, size_t size, vk::Queue queue, vk::CommandPool pool) {
+
+	// Sanity check
+	if (size < TotalSize) {
+		UL_ERROR("Vulkan buffer resize requires that new size larger than the old. Nothing will doing.");
+		return false;
+	}
+
+	// Resize the freelist first.
+	if (!BufferFreelist.Resize(size)) {
+		UL_ERROR("Vulkan buffer resize failed to resize freelist.");
+		return false;
+	}
+
+	TotalSize = size;
 
 	// Create new buffer
 	vk::BufferCreateInfo BufferInfo;
@@ -117,6 +138,24 @@ void* VulkanBuffer::LockMemory(VulkanContext* context, vk::DeviceSize offset, vk
 
 void VulkanBuffer::UnlockMemory(VulkanContext* context) {
 	context->Device.GetLogicalDevice().unmapMemory(Memory);
+}
+
+bool VulkanBuffer::Allocate(size_t size, size_t* offset) {
+	if (offset == nullptr) {
+		UL_ERROR("Vulkan buffer allocate requires a valid point offset.");
+		return false;
+	}
+
+	return BufferFreelist.AllocateBlock(size, offset);
+}
+
+bool VulkanBuffer::Free(size_t size, size_t offset) {
+	if (offset == 0) {
+		UL_ERROR("Vulkan buffer allocate requires a non-zero offset.");
+		return false;
+	}
+
+	return BufferFreelist.FreeBlock(size, offset);
 }
 
 void VulkanBuffer::LoadData(VulkanContext* context, size_t offset, size_t size, vk::MemoryMapFlags flags, const void* data) {

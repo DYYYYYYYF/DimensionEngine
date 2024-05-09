@@ -623,7 +623,6 @@ bool VulkanBackend::CreateBuffers() {
 		UL_ERROR("Error creating vertex buffer.");
 		return false;
 	}
-	Context.GeometryVertexOffset = 0;
 
 	// Geometry index buffer
 	const size_t IndexBufferSize = sizeof(uint32_t) * 1024 * 1024;
@@ -633,12 +632,17 @@ bool VulkanBackend::CreateBuffers() {
 		UL_ERROR("Error creating index buffer.");
 		return false;
 	}
-	Context.GeometryIndexOffset = 0;
 
 	return true;
 }
 
-void VulkanBackend::UploadDataRange(vk::CommandPool pool, vk::Fence fence, vk::Queue queue, VulkanBuffer* buffer, size_t offset, size_t size, const void* data) {
+bool VulkanBackend::UploadDataRange(vk::CommandPool pool, vk::Fence fence, vk::Queue queue, VulkanBuffer* buffer, size_t* offset, size_t size, const void* data) {
+	// Allocate space in the buffer.
+	if (!buffer->Allocate(size, offset)) {
+		UL_ERROR("Upload data range failed to allocate from the buffer.");
+		return false;
+	}
+
 	// Create a host-visible staging buffer to upload to. Mark it as the source of the transfer.
 	vk::MemoryPropertyFlags Flags = vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent;
 	VulkanBuffer Staging;
@@ -649,15 +653,18 @@ void VulkanBackend::UploadDataRange(vk::CommandPool pool, vk::Fence fence, vk::Q
 
 	// Perform the copy from staging to the device local buffer.
 	Staging.CopyTo(&Context, pool, fence, queue, 
-		Staging.Buffer, 0 , buffer->Buffer, offset, size);
+		Staging.Buffer, 0 , buffer->Buffer, *offset, size);
 
 	// Clean up the staging buffer.
 	Staging.Destroy(&Context);
+
+	return true;
 }
 
-void FreeDataRange(VulkanBuffer* buffer, size_t offset, size_t size) {
-	// TODO: Free this in the buffer.
-	// TODO: Update free list with this range being free.
+void VulkanBackend::FreeDataRange(VulkanBuffer* buffer, size_t offset, size_t size) {
+	if (buffer) {
+		buffer->Free(size, offset);
+	}
 }
 
 void VulkanBackend::CreateTexture(const unsigned char* pixels, Texture* texture) {
@@ -844,27 +851,25 @@ bool VulkanBackend::CreateGeometry(Geometry* geometry, uint32_t vertex_size, uin
 	vk::Queue Queue = Context.Device.GetGraphicsQueue();
 
 	// Vertex data.
-	InternalData->vertext_buffer_offset = (uint32_t)Context.GeometryVertexOffset;
 	InternalData->vertex_count = vertex_count;
 	InternalData->vertex_element_size = sizeof(Vertex);
 	uint32_t VertexTotalSize = vertex_size * vertex_count;
-	UploadDataRange(Pool, nullptr, Queue, &Context.ObjectVertexBuffer, 
-		InternalData->vertext_buffer_offset, VertexTotalSize, vertices);
-
-	// TODO: Should maintain a free list instead of this.
-	Context.GeometryVertexOffset += VertexTotalSize;
+	if (!UploadDataRange(Pool, nullptr, Queue, &Context.ObjectVertexBuffer,
+		&InternalData->vertext_buffer_offset, VertexTotalSize, vertices)) {
+		UL_ERROR("Vulkan renderer create geometry failed to upload vertex data.");
+		return false;
+	}
 
 	// Index data. If Applicable.
 	if (index_count != 0 && indices != nullptr) {
-		InternalData->index_buffer_offset = (uint32_t)Context.GeometryIndexOffset;
 		InternalData->index_count = index_count;
 		InternalData->index_element_size = sizeof(uint32_t);
 		uint32_t IndexTotalSize = index_size * index_count;
-		UploadDataRange(Pool, nullptr, Queue, &Context.ObjectIndexBuffer, 
-			InternalData->index_buffer_offset, IndexTotalSize, indices);
-
-		// TODO: Should maintain a free list instead of this.
-		Context.GeometryIndexOffset += IndexTotalSize;
+		if (!UploadDataRange(Pool, nullptr, Queue, &Context.ObjectIndexBuffer,
+			&InternalData->index_buffer_offset, IndexTotalSize, indices)) {
+			UL_ERROR("Vulkan renderer create geometry failed to upload index data.");
+			return false;
+		}
 	}
 
 	if (InternalData->generation == INVALID_ID) {

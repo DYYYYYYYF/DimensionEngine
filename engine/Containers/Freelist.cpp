@@ -89,17 +89,17 @@ bool Freelist::FreeBlock(unsigned long long size, unsigned long long offset) {
 
 	FreelistNode* Node = Head;
 	FreelistNode* Prev = nullptr;
-	//if (Node == nullptr) {
-	//	// Check for the case where the entire thing is allocated.
-	//	// In this case a new node is needed at the head.
-	//	FreelistNode* NewNode = AcquireFreeNode();
-	//	NewNode->offset = offset;
-	//	NewNode->size = size;
-	//	NewNode->next = nullptr;
-	//	Head = NewNode;
-	//	return true;
-	//}
-	//else 
+	if (Node == nullptr) {
+		// Check for the case where the entire thing is allocated.
+		// In this case a new node is needed at the head.
+		FreelistNode* NewNode = AcquireFreeNode();
+		NewNode->offset = offset;
+		NewNode->size = size;
+		NewNode->next = nullptr;
+		Head = NewNode;
+		return true;
+	}
+	else 
 		{
 		while (Node != nullptr) {
 			if (Node->offset == offset) {
@@ -159,6 +159,83 @@ bool Freelist::FreeBlock(unsigned long long size, unsigned long long offset) {
 
 	UL_WARN("Unable to find block to be freed. Corruption possible?");
 	return false;
+}
+
+bool Freelist::Resize(unsigned long long new_size) {
+	if (ListMemory == nullptr || new_size < TotalSize) {
+		return false;
+	}
+
+	size_t OldSize = TotalSize;
+
+	// Enough space to hold state.
+	size_t SizeDiff = new_size - TotalSize;
+	MaxEntries = (new_size / sizeof(void*));
+	TotalSize = new_size;
+
+	void* NewMemory = Platform::PlatformAllocate(sizeof(FreelistNode) * MaxEntries, false);
+	Memory::Zero(NewMemory, sizeof(FreelistNode) * MaxEntries);
+
+	// Invalidate the offset and size for all but the first node. The invalid value
+	// will be checked for when seeking a new node from the list.
+	for (size_t i = 1; i < MaxEntries; ++i) {
+		Nodes[i].offset = INVALID_ID;
+		Nodes[i].size = INVALID_ID;
+	}
+
+	// Copy over the nodes.
+	FreelistNode* NewListNode = &((FreelistNode*)NewMemory)[0];
+	FreelistNode* OldListNode = Head;
+
+	Nodes = (FreelistNode*)ListMemory;
+	Head = &Nodes[0];
+
+	if (OldListNode == nullptr) {
+		// If there is no head, then the entire list is allocated. In this case
+		// the head should be set to the difference of the space now available, and
+		// at the end of the list.
+		Head->offset = OldSize;
+		Head->size = SizeDiff;
+		Head->next = nullptr;
+	}
+	else {
+		while (OldListNode) {
+			// Get a new node, copy the offset/size, and set next to it.
+			FreelistNode* NewNode = AcquireFreeNode();
+			NewNode->offset = OldListNode->offset;
+			NewNode->size = OldListNode->size;
+			NewNode->next = nullptr;
+			NewListNode->next = NewNode;
+			// Move to the next entry.
+			NewListNode = NewListNode->next;
+
+			if (OldListNode->next) {
+				// If there is another node, move on.
+				OldListNode = OldListNode->next;
+			}
+			else {
+				// Reached the end of the list.
+				// Check if it extends to the end of the block. If so, just append
+				// to the size. Otherwise, create a new node and attach to it.
+				if (OldListNode->offset + OldListNode->size == OldSize) {
+					NewNode->size += SizeDiff;
+				}
+				else {
+					FreelistNode* NewNodeEnd = AcquireFreeNode();
+					NewNodeEnd->offset = OldSize;
+					NewNodeEnd->size = SizeDiff;
+					NewNodeEnd->next = nullptr;
+					NewNode->next = NewNodeEnd;
+				}
+				break;
+			}
+		}
+	}
+
+	Platform::PlatformFree(ListMemory, false);
+	ListMemory = NewMemory;
+
+	return true;
 }
 
 void Freelist::Clear() {

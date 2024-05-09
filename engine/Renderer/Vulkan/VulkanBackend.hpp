@@ -37,7 +37,8 @@ public:
 
 public:
 	virtual bool CreateBuffers();
-	virtual void UploadDataRange(vk::CommandPool pool, vk::Fence fence, vk::Queue queue, VulkanBuffer* buffer, size_t offset, size_t size, const void* data);
+	virtual bool UploadDataRange(vk::CommandPool pool, vk::Fence fence, vk::Queue queue, VulkanBuffer* buffer, size_t* offset, size_t size, const void* data);
+	virtual void FreeDataRange(VulkanBuffer* buffer, size_t offset, size_t size);
 
 	virtual void CreateCommandBuffer();
 	virtual void RegenerateFrameBuffers();
