@@ -63,9 +63,9 @@ void BinaryLoader::Unload(Resource* resource) {
 		return;
 	}
 
-	uint32_t PathLength = (uint32_t)strlen(resource->FullPath);
+	size_t PathLength = strlen(resource->FullPath);
 	if (PathLength > 0) {
-		Memory::Free(resource->FullPath, sizeof(char) * PathLength, MemoryType::eMemory_Type_String);
+		Memory::Free(resource->FullPath, PathLength, MemoryType::eMemory_Type_String);
 	}
 
 	if (resource->Data) {

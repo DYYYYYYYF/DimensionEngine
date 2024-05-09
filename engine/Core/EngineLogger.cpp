@@ -22,8 +22,10 @@ EngineLogger::EngineLogger(){
     Log::Logger::Level LogLevel;
 #ifdef LEVEL_DEBUG
     LogLevel = Log::Logger::Level::DEBUG;
+    Log::Logger::getInstance()->SetMode(Log::Logger::eMode_Complex);
 #else
     LogLevel = Log::Logger::Level::INFO;
+	Log::Logger::getInstance()->SetMode(Log::Logger::eMode_Simple);
 #endif
 
     Log::Logger::getInstance()->setMaxSize(1024000);

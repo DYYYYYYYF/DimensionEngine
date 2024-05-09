@@ -2,7 +2,7 @@
 
 #include "Defines.hpp"
 #include "core/EngineLogger.hpp"
-#include "core/DMemory.hpp"
+#include "Platform/Platform.hpp"
 
 #define ARRAY_DEFAULT_CAPACITY 1
 #define ARRAY_DEFAULT_RESIZE_FACTOR 2
@@ -17,23 +17,21 @@ void* elements
 template<typename ElementType>
 class TArray {
 public:
-	TArray(MemoryType memory_type = MemoryType::eMemory_Type_Array) {
+	TArray() {
 		size_t ArrayMemSize = ARRAY_DEFAULT_CAPACITY * sizeof(ElementType);
-		ArrayMemory = Memory::Allocate(ArrayMemSize, memory_type);
-		Memory::Set(ArrayMemory, 0, ArrayMemSize);
+		ArrayMemory = Platform::PlatformAllocate(ArrayMemSize, false);
+		Platform::PlatformSetMemory(ArrayMemory, 0, ArrayMemSize);
 
-		UsedMemoryType = memory_type;
 		Capacity = ARRAY_DEFAULT_CAPACITY;
 		Stride = sizeof(ElementType);
 		Length = 0;
 	}
 
-	TArray(size_t size, MemoryType memory_type = MemoryType::eMemory_Type_Array) {
+	TArray(size_t size) {
 		size_t ArrayMemSize = size * sizeof(ElementType);
-		ArrayMemory = Memory::Allocate(ArrayMemSize, memory_type);
-		Memory::Set(ArrayMemory, 0, ArrayMemSize);
+		ArrayMemory = Platform::PlatformAllocate(ArrayMemSize, false);
+		Platform::PlatformSetMemory(ArrayMemory, 0, ArrayMemSize);
 
-		UsedMemoryType = memory_type;
 		Capacity = size;
 		Stride = sizeof(ElementType);
 		Length = size;
@@ -47,10 +45,10 @@ public:
 
 	void Resize(size_t size = 0) {
 		size_t NewCapacity = size > 0 ? size : Capacity * ARRAY_DEFAULT_RESIZE_FACTOR;
-		void* TempMemory = Memory::Allocate(NewCapacity * Stride, UsedMemoryType);
+		void* TempMemory = Platform::PlatformAllocate(NewCapacity * Stride, false);
 
-		Memory::Copy(TempMemory, ArrayMemory, Length * Stride);
-		Memory::Free(ArrayMemory, Capacity * Stride, UsedMemoryType);
+		Platform::PlatformCopyMemory(TempMemory, ArrayMemory, Length * Stride);
+		Platform::PlatformFree(ArrayMemory, false);
 
 		Capacity = NewCapacity;
 		ArrayMemory = TempMemory;
@@ -62,7 +60,7 @@ public:
 		}
 
 		char* addr = (char*)ArrayMemory + (Length * Stride);
-		Memory::Copy((void*)addr, &value, Stride);
+		Platform::PlatformCopyMemory((void*)addr, &value, Stride);
 
 		Length++;
 	}
@@ -79,14 +77,14 @@ public:
 
 		char* addr = (char*)ArrayMemory + (Length * Stride);
 		if (index != Length - 1) {
-			Memory::Copy(
+			Platform::PlatformCopyMemory(
 				(void*)(addr + (index + 1) * Stride),
 				(void*)(addr + (index * Stride)),
 				Stride * (Length - index)
 			);
 		}
 
-		Memory::Copy((void*)(addr + (index * Stride)), val, Stride);
+		Platform::PlatformCopyMemory((void*)(addr + (index * Stride)), val, Stride);
 		Length++;
 	}
 
@@ -95,7 +93,7 @@ public:
 		addr += ((Length - 1) * Stride);
 
 		ElementType result;
-		Memory::Copy(&result, (void*)addr, Stride);
+		Platform::PlatformCopyMemory(&result, (void*)addr, Stride);
 		Length--;
 
 		return result;
@@ -109,10 +107,10 @@ public:
 
 		char* addr = (char*)ArrayMemory + (index * Stride);
 		ElementType result;
-		Memory::Copy(&result, (void*)addr, Stride);
+		Platform::PlatformCopyMemory(&result, (void*)addr, Stride);
 
 		if (index != Length - 1) {
-			Memory::Copy(
+			Platform::PlatformCopyMemory(
 				(void*)(addr + (index * Stride)),
 				(void*)(addr + (index + 1) * Stride),
 				Stride * (Length - index)
@@ -126,7 +124,7 @@ public:
 	void Clear() {
 		if (ArrayMemory != nullptr) {
 			size_t MemorySize = Capacity * Stride;
-			Memory::Free(ArrayMemory, MemorySize, UsedMemoryType);
+			Platform::PlatformFree(ArrayMemory, false);
 
 			ArrayMemory = nullptr;
 			Length = 0;
@@ -156,8 +154,6 @@ private:
 	size_t Capacity;		
 	size_t Stride;
 	size_t Length;
-
-	MemoryType UsedMemoryType;
 };
 
 

@@ -64,5 +64,6 @@ namespace Memory {
 	static struct SMemoryStats stats;
 	static size_t TotalAllocateSize;
 	static DynamicAllocator DynamicAlloc;
-	static void* AllocatorBlock;
+	static size_t AllocateCount;
+	
 };

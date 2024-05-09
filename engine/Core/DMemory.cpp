@@ -4,13 +4,25 @@
 #include "Platform/Platform.hpp"
 
 bool Memory::Initialize(size_t size) {
-
 	Platform::PlatformZeroMemory(&stats, sizeof(stats));
+	if (!DynamicAlloc.Create(size)) {
+		UL_FATAL("Memory system is unable to setup internal allocator. Application can not continue.");
+		return false;
+	}
+
+	AllocateCount = 0;
+	TotalAllocateSize = size;
+	UL_DEBUG("Memory system successfully allocated %llu bytes.", TotalAllocateSize);
+
 	return true;
 }
 
 void Memory::Shutdown() {
+	DynamicAlloc.Destroy();
+	AllocateCount = 0;
+	TotalAllocateSize = 0;
 
+	UL_INFO("Shutdown memory system, left memory: %llu.", DynamicAlloc.GetFreeSpace());
 }
 
 void* Memory::Allocate(size_t size, MemoryType type = MemoryType::eMemory_Type_Array) {
@@ -18,13 +30,25 @@ void* Memory::Allocate(size_t size, MemoryType type = MemoryType::eMemory_Type_A
 		UL_WARN("Called allocate using eMemory_Type_Unknow. Re-class this allocation.");
 	}
 
+	void* Block = nullptr;
 	stats.total_allocated += size;
 	stats.tagged_allocations[type] += size;
+	AllocateCount++;
 
-	// TODO: Memory alignment
-	void* block = Platform::PlatformAllocate(size, false);
-	Platform::PlatformZeroMemory(block, size);
-	return block;
+	Block = DynamicAlloc.Allocate(size);
+	if (Block) {
+		Platform::PlatformZeroMemory(Block, size);
+		return Block;
+	}
+	else {
+		Block = Platform::PlatformAllocate(size, false);
+	}
+
+	if (Block == nullptr) {
+		UL_FATAL("Allocate failed.");
+	}
+
+	return Block;
 }
 
 void  Memory::Free(void* block, size_t size, MemoryType type) {
@@ -34,9 +58,13 @@ void  Memory::Free(void* block, size_t size, MemoryType type) {
 
 	stats.total_allocated -= size;
 	stats.tagged_allocations[type] -= size;
+	bool Result = DynamicAlloc.Free(block, size);
 
-	// TODO: Memory alignment
-	Platform::PlatformFree(block, false);
+	if (!Result) {
+		Platform::PlatformFree(block, false);
+	}
+
+	block = nullptr;
 }
 
 void* Memory::Zero(void* block, size_t size) {

@@ -135,7 +135,7 @@ void VulkanDevice::QuerySwapchainSupport(vk::PhysicalDevice device, vk::SurfaceK
 
 bool VulkanDevice::SelectPhysicalDevice(vk::Instance* instance, vk::SurfaceKHR surface) {
 	unsigned int PhysicalDeviceCount;
-	TArray<vk::PhysicalDevice> PhysicalDevices(MemoryType::eMemory_Type_Renderer);
+	TArray<vk::PhysicalDevice> PhysicalDevices;
 
 	if (instance->enumeratePhysicalDevices(&PhysicalDeviceCount, nullptr) != vk::Result::eSuccess) {
 		UL_ERROR("Enumerate physical devices failed.");
@@ -261,7 +261,7 @@ bool VulkanDevice::MeetsRequirements(vk::PhysicalDevice device, vk::SurfaceKHR s
 	}
 
 	unsigned int QueueFamilyCount;
-	TArray<vk::QueueFamilyProperties> QueueFamilies(MemoryType::eMemory_Type_Renderer);
+	TArray<vk::QueueFamilyProperties> QueueFamilies;
 	device.getQueueFamilyProperties(&QueueFamilyCount, nullptr);
 	QueueFamilies.Resize(QueueFamilyCount);
 	device.getQueueFamilyProperties(&QueueFamilyCount, QueueFamilies.Data());

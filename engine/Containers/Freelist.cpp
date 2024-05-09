@@ -2,6 +2,7 @@
 
 #include "Core/DMemory.hpp"
 #include "Core/EngineLogger.hpp"
+#include "Platform/Platform.hpp"
 
 void Freelist::Create(unsigned long long total_size) {
 	// Enough space to hold state, plus array for all nodes.
@@ -15,7 +16,7 @@ void Freelist::Create(unsigned long long total_size) {
 	}
 
 	size_t UesdSize = sizeof(FreelistNode) * MaxEntries;
-	ListMemory = Memory::Allocate(UesdSize, MemoryType::eMemory_Type_Array);
+	ListMemory = Platform::PlatformAllocate(UesdSize, 0);
 	Memory::Zero(ListMemory, UesdSize);
 
 	Nodes = (FreelistNode*)ListMemory;
@@ -88,17 +89,18 @@ bool Freelist::FreeBlock(unsigned long long size, unsigned long long offset) {
 
 	FreelistNode* Node = Head;
 	FreelistNode* Prev = nullptr;
-	if (Node == nullptr) {
-		// Check for the case where the entire thing is allocated.
-		// In this case a new node is needed at the head.
-		FreelistNode* NewNode = AcquireFreeNode();
-		NewNode->offset = offset;
-		NewNode->size = size;
-		NewNode->next = nullptr;
-		Head = NewNode;
-		return true;
-	}
-	else {
+	//if (Node == nullptr) {
+	//	// Check for the case where the entire thing is allocated.
+	//	// In this case a new node is needed at the head.
+	//	FreelistNode* NewNode = AcquireFreeNode();
+	//	NewNode->offset = offset;
+	//	NewNode->size = size;
+	//	NewNode->next = nullptr;
+	//	Head = NewNode;
+	//	return true;
+	//}
+	//else 
+		{
 		while (Node != nullptr) {
 			if (Node->offset == offset) {
 				// Can just be appended to this node.
@@ -110,7 +112,7 @@ bool Freelist::FreeBlock(unsigned long long size, unsigned long long offset) {
 					Node->size += Node->next->size;
 					FreelistNode* Next = Node->next;
 					Node->next = Node->next->next;
-					ResetNode(Node);
+					ResetNode(Next);
 				}
 				return true;
 			}
@@ -121,9 +123,9 @@ bool Freelist::FreeBlock(unsigned long long size, unsigned long long offset) {
 				NewNode->size = size;
 
 				// If there is a previous node, the new node should be inserted between this and it.
-				if (Prev != nullptr) {
+				if (Prev) {
 					Prev->next = NewNode;
-					NewNode->next = Prev->next;
+					NewNode->next = Node;
 				}
 				else {
 					// Otherwise, the new node becomes the head.

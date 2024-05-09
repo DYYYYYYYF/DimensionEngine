@@ -2,6 +2,7 @@
 
 #include "Core/DMemory.hpp"
 #include "Core/EngineLogger.hpp"
+#include "Platform/Platform.hpp"
 
 bool DynamicAllocator::Create(unsigned long long total_size) {
 	if (total_size < 1) {
@@ -11,7 +12,7 @@ bool DynamicAllocator::Create(unsigned long long total_size) {
 
 	List.Create(total_size);
 	TotalSize = total_size;
-	MemoryBlock = Memory::Allocate(total_size, MemoryType::eMemory_Type_Array);
+	MemoryBlock = Platform::PlatformAllocate(total_size,false);
 	Memory::Zero(MemoryBlock, total_size);
 	ASSERT(MemoryBlock);
 
@@ -57,9 +58,10 @@ bool DynamicAllocator::Free(void* block, unsigned long long size) {
 		return false;
 	}
 
-	if (MemoryBlock || block > (char*)MemoryBlock + TotalSize) {
+	if (MemoryBlock && (char*)block - (char*)MemoryBlock > TotalSize) {
 		void* EndOfBlock = (char*)MemoryBlock + TotalSize;
-		UL_ERROR("Dynamic allocator trying to release block (0x%p) outside of allocator range (0x%p)-(0x%p).", block, MemoryBlock, EndOfBlock);
+		UL_ERROR("Dynamic allocator trying to release block (0x%p) outside of allocator range (0x%p)-(0x%p). Sub size: %uul, Total size: %uul.",
+			block, MemoryBlock, EndOfBlock, (char*)block - (char*)MemoryBlock, TotalSize);
 		return false;
 	}
 
