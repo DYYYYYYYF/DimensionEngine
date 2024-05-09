@@ -8,7 +8,7 @@ set(EXECUTABLE_OUTPUT_PATH ${CMAKE_CURRENT_SOURCE_DIR}/bin)
 link_directories(${LIBRARY_OUTPUT_PATH})
 
 file(GLOB_RECURSE example_files RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}"
-	"${CMAKE_CURRENT_SOURCE_DIR}/HashTable/TestHashTable.cpp" 
+	"${CMAKE_CURRENT_SOURCE_DIR}/Test.cpp" 
 )
 
 foreach(example_file IN LISTS example_files)

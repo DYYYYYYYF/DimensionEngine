@@ -8,8 +8,8 @@ struct TestHash {
 	bool c;
 };
 
-int main() {
-
+int TestHashTable() {
+	printf("Test hash table...\n");
 	HashTable Hashtable;
 
 #define NUM_MAX 100
@@ -54,8 +54,6 @@ int main() {
 		std::cout << "not c : \n";
 	}
 
-	char a;
-	std::cin >> a;
-
+	printf("\n");
 	return 0;
 }

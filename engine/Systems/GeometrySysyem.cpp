@@ -134,7 +134,7 @@ Geometry* GeometrySystem::GetDefaultGeometry2D() {
 }
 
 bool GeometrySystem::CreateDefaultGeometries() {
-	const float f = 1.0f;
+	const float f = 5.0f;
 	Vertex Verts[4];
 	Memory::Zero(Verts, sizeof(Vertex) * 4);
 
@@ -170,30 +170,31 @@ bool GeometrySystem::CreateDefaultGeometries() {
 	DefaultGeometry.Material = MaterialSystem::GetDefaultMaterial();
 
 	// Create default 2d geometry.
+	const float uf = 100.0f;
 	Vertex2D Verts2D[4];
 	Memory::Zero(Verts2D, sizeof(Vertex2D) * 4);
-	Verts2D[0].position.x = -0.5f * f;	// 0    3
-	Verts2D[0].position.y = -0.5f * f;	//
+	Verts2D[0].position.x = -0.5f * uf;	// 0    3
+	Verts2D[0].position.y = -0.5f * uf;	//
 	Verts2D[0].texcoord.x = 0.0f;		//
 	Verts2D[0].texcoord.y = 0.0f;		// 2    1
 
-	Verts2D[1].position.x = 0.5f * f;
-	Verts2D[1].position.y = 0.5f * f;
+	Verts2D[1].position.x = 0.5f * uf;
+	Verts2D[1].position.y = 0.5f * uf;
 	Verts2D[1].texcoord.x = 1.0f;
 	Verts2D[1].texcoord.y = 1.0f;
 
-	Verts2D[2].position.x = -0.5f * f;
-	Verts2D[2].position.y = 0.5f * f;
+	Verts2D[2].position.x = -0.5f * uf;
+	Verts2D[2].position.y = 0.5f * uf;
 	Verts2D[2].texcoord.x = 0.0f;
 	Verts2D[2].texcoord.y = 1.0f;
 
-	Verts2D[3].position.x = 0.5f * f;
-	Verts2D[3].position.y = -0.5f * f;
+	Verts2D[3].position.x = 0.5f * uf;
+	Verts2D[3].position.y = -0.5f * uf;
 	Verts2D[3].texcoord.x = 1.0f;
 	Verts2D[3].texcoord.y = 0.0f;
 
 	// Indices NOTO: counter-clockwise.
-	uint32_t Indices2D[6] = { 0, 1, 2, 0, 3, 1 };
+	uint32_t Indices2D[6] = { 2, 1, 0, 3, 0, 1 };
 
 	// Send the geometry off to the renderer to be uploaded to the GPU.
 	if (!Renderer->CreateGeometry(&Default2DGeometry, sizeof(Vertex2D), 4, Verts2D, sizeof(uint32_t), 6, Indices2D)) {

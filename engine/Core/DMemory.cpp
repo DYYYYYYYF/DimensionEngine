@@ -3,9 +3,14 @@
 #include "EngineLogger.hpp"
 #include "Platform/Platform.hpp"
 
-bool Memory::Initialize() {
+bool Memory::Initialize(size_t size) {
+
 	Platform::PlatformZeroMemory(&stats, sizeof(stats));
 	return true;
+}
+
+void Memory::Shutdown() {
+
 }
 
 void* Memory::Allocate(size_t size, MemoryType type = MemoryType::eMemory_Type_Array) {

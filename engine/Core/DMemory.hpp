@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Defines.hpp"
+#include "Memory/DynamicAllocator.h"
 
 enum MemoryType {
 	eMemory_Type_Unknow,
@@ -43,13 +44,15 @@ static const char* MemoryTypeStrings[eMemory_Type_Max]{
 	"Scene"
 };
 
-namespace Memory {
-	struct SMemoryStats {
-		size_t total_allocated;
-		size_t tagged_allocations[eMemory_Type_Max];
-	};
+struct SMemoryStats {
+	size_t total_allocated;
+	size_t tagged_allocations[eMemory_Type_Max];
+};
 
-	DAPI bool Initialize();
+namespace Memory {
+
+	DAPI bool Initialize(size_t size);
+	DAPI void Shutdown();
 
 	DAPI void* Allocate(size_t size, MemoryType type);
 	DAPI void Free(void* block, size_t size, MemoryType type);
@@ -59,5 +62,7 @@ namespace Memory {
 	DAPI char* GetMemoryUsageStr();
 
 	static struct SMemoryStats stats;
-
+	static size_t TotalAllocateSize;
+	static DynamicAllocator DynamicAlloc;
+	static void* AllocatorBlock;
 };

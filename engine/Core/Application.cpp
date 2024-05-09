@@ -126,13 +126,13 @@ bool ApplicationCreate(SGame* game_instance){
 	}
 
 	// TODO: Temp
-	//AppState.TestGeometry = GeometrySystem::GetDefaultGeometry();
-	SGeometryConfig GeoConfig = GeometrySystem::GeneratePlaneConfig(5.0f, 2.0f, 5, 2, 5.0f, 2.0f, "TestGeometry", "TestMaterial");
-	AppState.TestGeometry = GeometrySystem::AcquireFromConfig(GeoConfig, true);
+	AppState.TestGeometry = GeometrySystem::GetDefaultGeometry();
+	/*SGeometryConfig GeoConfig = GeometrySystem::GeneratePlaneConfig(5.0f, 2.0f, 5, 2, 5.0f, 2.0f, "TestGeometry", "TestMaterial");
+	AppState.TestGeometry = GeometrySystem::AcquireFromConfig(GeoConfig, true);*/
 
 	// Clean up the allocations for the geometry config.
-	Memory::Free(GeoConfig.vertices, sizeof(Vertex) * GeoConfig.vertex_count, MemoryType::eMemory_Type_Array);
-	Memory::Free(GeoConfig.indices, sizeof(uint32_t) * GeoConfig.index_count, MemoryType::eMemory_Type_Array);
+	/*Memory::Free(GeoConfig.vertices, sizeof(Vertex) * GeoConfig.vertex_count, MemoryType::eMemory_Type_Array);
+	Memory::Free(GeoConfig.indices, sizeof(uint32_t) * GeoConfig.index_count, MemoryType::eMemory_Type_Array);*/
 
 	// Load up some test UI geometry.
 	SGeometryConfig UIConfig;
@@ -173,7 +173,6 @@ bool ApplicationCreate(SGame* game_instance){
 
 	// Get UI geometry from config.
 	AppState.TestUIGeometry = GeometrySystem::AcquireFromConfig(UIConfig, true);
-	// AppState.TestUIGeometry = GeometrySystem::GetDefaultGeometry2D();
 
 	// Init Game
 	if (!AppState.game_instance->initialize(AppState.game_instance)) {
@@ -236,6 +235,7 @@ bool ApplicationRun() {
 			GeometryRenderData TestUIRender;
 			TestUIRender.geometry = AppState.TestUIGeometry;
 			TestUIRender.model = Matrix4::Identity();
+			TestUIRender.model.SetTranslation(Vec3(0, 0, 0));
 			Packet.ui_geometries = &TestUIRender;
 			Packet.ui_geometry_count = 1;
 

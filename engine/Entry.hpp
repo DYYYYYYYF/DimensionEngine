@@ -7,7 +7,7 @@ extern bool CreateGame(SGame* out_game);
 
 int main(void) {
 
-    Memory::Initialize();
+    Memory::Initialize(UINT64_MAX);
 
 	SGame GameInstance;
 	if (!CreateGame(&GameInstance)) {
