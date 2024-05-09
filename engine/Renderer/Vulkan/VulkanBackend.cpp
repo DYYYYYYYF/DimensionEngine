@@ -575,6 +575,8 @@ bool VulkanBackend::RecreateSwapchain() {
 	Context.FrameBufferHeight = CachedFramebufferHeight;
 	Context.MainRenderPass.SetW((float)Context.FrameBufferWidth);
 	Context.MainRenderPass.SetH((float)Context.FrameBufferHeight);
+	Context.UIRenderPass.SetW((float)Context.FrameBufferWidth);
+	Context.UIRenderPass.SetH((float)Context.FrameBufferHeight);
 	CachedFramebufferWidth = 0;
 	CachedFramebufferHeight = 0;
 
@@ -596,6 +598,10 @@ bool VulkanBackend::RecreateSwapchain() {
 	Context.MainRenderPass.SetY(0);
 	Context.MainRenderPass.SetW((float)Context.FrameBufferWidth);
 	Context.MainRenderPass.SetH((float)Context.FrameBufferHeight);
+	Context.UIRenderPass.SetX(0);
+	Context.UIRenderPass.SetY(0);
+	Context.UIRenderPass.SetW((float)Context.FrameBufferWidth);
+	Context.UIRenderPass.SetH((float)Context.FrameBufferHeight);
 
 	RegenerateFrameBuffers();
 	CreateCommandBuffer();
