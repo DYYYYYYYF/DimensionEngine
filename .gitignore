@@ -13,3 +13,4 @@ library/
 .vs/
 CMakeSettings.json
 *.spv
+Documents
