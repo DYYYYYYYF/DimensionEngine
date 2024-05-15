@@ -5,6 +5,7 @@
 
 #include "Core/DMemory.hpp"
 #include "Core/EngineLogger.hpp"
+#include "Containers/TString.hpp"
 
 IRenderer* ShaderSystem::Renderer = nullptr;
 SShaderSystemConfig ShaderSystem::Config;
@@ -81,14 +82,14 @@ bool ShaderSystem::Create(ShaderConfig* config) {
 	Shader* OutShader = &Shaders[ID];
 	Memory::Zero(OutShader, sizeof(Shader));
 	OutShader->ID = ID;
-	if (OutShader->ID = INVALID_ID) {
+	if (OutShader->ID == INVALID_ID) {
 		UL_ERROR("Unable to find free slot to create new shader. Aborting.");
 		return false;
 	}
 	
 	size_t NameLen = strlen(config->name);
 	OutShader->Name = (char*)Memory::Allocate(NameLen, MemoryType::eMemory_Type_String);
-	strcpy(OutShader->Name, config->name);
+	strncpy(OutShader->Name, config->name, NameLen);
 
 	OutShader->State = eShader_State_Not_Created;
 	OutShader->UseInstances = config->use_instances;
@@ -182,7 +183,7 @@ Shader* ShaderSystem::GetByID(uint32_t shader_id) {
 
 Shader* ShaderSystem::Get(const char* shader_name) {
 	uint32_t ShaderID = GetShaderID(shader_name);
-	if (ShaderID == INVALID_ID) {
+	if (ShaderID != INVALID_ID) {
 		return GetByID(ShaderID);
 	}
 
@@ -247,10 +248,16 @@ unsigned short ShaderSystem::GetUniformIndex(Shader* shader, const char* uniform
 	}
 
 	unsigned short Index = INVALID_ID_U16;
-	if (!Lookup.Get(uniform_name, &Index) || Index == INVALID_ID_U16) {
+	if (!shader->UniformLookup.Get(uniform_name, &Index)) {
 		UL_ERROR("Shader '%s' does not have a registered uniform named '%s'", shader->Name, uniform_name);
 		return INVALID_ID_U16;
 	}
+
+	if ( Index == INVALID_ID_U16) {
+		UL_ERROR("Shader '%s' does not have a registered uniform named '%s'", shader->Name, uniform_name);
+		return INVALID_ID_U16;
+	}
+
 	return shader->Uniforms[Index].index;
 }
 
@@ -339,8 +346,7 @@ bool ShaderSystem::AddAttribute(Shader* shader, const ShaderAttributeConfig& con
 
 	// Create/push the attribute.
 	ShaderAttribute Attrib = {};
-	Attrib.name = (char*)Memory::Allocate(sizeof(char) * strlen(config.name), MemoryType::eMemory_Type_String);
-	strcpy(Attrib.name, config.name);
+	Attrib.name = StringCopy(config.name);
 	Attrib.size = Size;
 	Attrib.type = config.type;
 

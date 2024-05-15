@@ -12,7 +12,7 @@ struct VulkanShaderStageConfig{
 };
 
 struct VulkanDescriptorSetConfig {
-	unsigned short binding_count;
+	unsigned short binding_count = 0;
 	vk::DescriptorSetLayoutBinding bindings[VULKAN_SHADER_MAX_BINDINGS];
 };
 

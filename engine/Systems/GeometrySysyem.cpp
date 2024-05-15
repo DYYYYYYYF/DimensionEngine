@@ -198,6 +198,7 @@ bool GeometrySystem::CreateDefaultGeometries() {
 	uint32_t Indices2D[6] = { 2, 1, 0, 3, 0, 1 };
 
 	// Send the geometry off to the renderer to be uploaded to the GPU.
+	Default2DGeometry.InternalID = INVALID_ID;
 	if (!Renderer->CreateGeometry(&Default2DGeometry, sizeof(Vertex2D), 4, Verts2D, sizeof(uint32_t), 6, Indices2D)) {
 		UL_FATAL("Failed to create default 2d geometry. Application quit now!");
 		return false;

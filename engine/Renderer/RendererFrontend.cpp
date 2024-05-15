@@ -6,6 +6,8 @@
 
 #include "Math/MathTypes.hpp"
 #include "Systems/MaterialSystem.h"
+#include "Systems/ResourceSystem.h"
+#include "Systems/ShaderSystem.h"
 #include "Systems/TextureSystem.h"
 
 // TODO: temp
@@ -47,6 +49,24 @@ bool IRenderer::Initialize(const char* application_name, struct SPlatformState* 
 		return false;
 	}
 
+	// Shaders
+	Resource ConfigResource;
+	ShaderConfig* Config = nullptr;
+
+	// Builtin material shader.
+	ResourceSystem::Load(BUILTIN_SHADER_NAME_MATERIAL, ResourceType::eResource_Type_Shader, &ConfigResource);
+	Config = (ShaderConfig*)ConfigResource.Data;
+	ShaderSystem::Create(Config);
+	ResourceSystem::Unload(&ConfigResource);
+	MaterialShaderID = ShaderSystem::GetID(BUILTIN_SHADER_NAME_MATERIAL);
+
+	// Builtin ui shader.
+	ResourceSystem::Load(BUILTIN_SHADER_NAME_UI, ResourceType::eResource_Type_Shader, &ConfigResource);
+	Config = (ShaderConfig*)ConfigResource.Data;
+	ShaderSystem::Create(Config);
+	ResourceSystem::Unload(&ConfigResource);
+	UISHaderID = ShaderSystem::GetID(BUILTIN_SHADER_NAME_UI);
+
 	// World projection/view
 	NearClip = 0.01f;
 	FarClip = 1000.0f;
@@ -55,8 +75,8 @@ bool IRenderer::Initialize(const char* application_name, struct SPlatformState* 
 	View.SetTranslation(Vec3{ 0.0f, 0.0f, -10.0f });
 
 	// UI projection/view
-	/*UIProjection = Matrix4::Orthographic(0, 1280.0f, 720.0f, 0, -100.f, 100.f);
-	UIView = Matrix4::Identity().Inverse();*/
+	UIProjection = Matrix4::Orthographic(0, 1280.0f, 720.0f, 0, -100.f, 100.f);
+	UIView = Matrix4::Identity().Inverse();
 
 	return true;
 }
@@ -74,7 +94,7 @@ void IRenderer::Shutdown() {
 void IRenderer::OnResize(unsigned short width, unsigned short height) {
 	if (Backend != nullptr) {
 		Projection = Matrix4::Perspective(Deg2Rad(45.0f), (float)width / (float)height, NearClip, FarClip);
-		// UIProjection = Matrix4::Orthographic(0, (float)width, (float)height, 0, -100.f, 100.f);
+		UIProjection = Matrix4::Orthographic(0, (float)width, (float)height, 0, -100.f, 100.f);
 		Backend->Resize(width, height);
 	}
 	else {
@@ -91,10 +111,36 @@ bool IRenderer::DrawFrame(SRenderPacket* packet) {
 		}
 		
 		// Update UBO buffer.
-		// Backend->UpdateGlobalWorldState(Projection, View, Vec3(0.0f, 0.0f, 0.0f), Vec4(1.0f, 1.0f, 1.0f, 1.0f), 0);
+		if (!ShaderSystem::UseByID(MaterialShaderID)) {
+			UL_ERROR("Failed to use material shader. Render frame failed.");
+			return false;
+		}
+
+		// Apply globals.
+		if (!MaterialSystem::ApplyGlobal(MaterialShaderID, Projection, View)) {
+			UL_ERROR("Failed to apply globals to material shader. Render frame failed.");
+			return false;
+		}
 
 		// Draw geometries.
 		for (uint32_t i = 0; i < packet->geometry_count; ++i) {
+			Material* mat = nullptr;
+			if (packet->geometries[i].geometry->Material) {
+				mat = packet->geometries[i].geometry->Material;
+			}
+			else {
+				mat = MaterialSystem::GetDefaultMaterial();
+			}
+
+			// Apply the material
+			if (!MaterialSystem::ApplyInstance(mat)) {
+				UL_ERROR("Failed to apply material '%s'. Skipping draw.", mat->Name);
+				continue;
+			}
+
+			// Apply the locals.
+			MaterialSystem::ApplyLocal(mat, packet->geometries[i].model);
+
 			Backend->DrawGeometry(packet->geometries[i]);
 		}
 		
@@ -111,10 +157,36 @@ bool IRenderer::DrawFrame(SRenderPacket* packet) {
 		}
 
 		// Update UI buffer.
-		// Backend->UpdateGlobalUIState(UIProjection, UIView, 0);
+		if (!ShaderSystem::UseByID(UISHaderID)) {
+			UL_ERROR("Failed to use ui shader. Render frame failed.");
+			return false;
+		}
 
-		// Draw geometries.
+		// Apply globals.
+		if (!MaterialSystem::ApplyGlobal(UISHaderID, UIProjection, UIView)) {
+			UL_ERROR("Failed to apply globals to ui shader. Render frame failed.");
+			return false;
+		}
+
+		// Draw ui geometries.
 		for (uint32_t i = 0; i < packet->ui_geometry_count; ++i) {
+			Material* Mat = nullptr;
+			if (packet->ui_geometries[i].geometry->Material) {
+				Mat = packet->ui_geometries[i].geometry->Material;
+			}
+			else {
+				Mat = MaterialSystem::GetDefaultMaterial();
+			}
+
+			// Apply the material
+			if (!MaterialSystem::ApplyInstance(Mat)) {
+				UL_ERROR("Failed to apply ui '%s'. Skipping draw.", Mat->Name);
+				continue;
+			}
+
+			// Apply the locals.
+			MaterialSystem::ApplyLocal(Mat, packet->ui_geometries[i].model);
+
 			Backend->DrawGeometry(packet->ui_geometries[i]);
 		}
 
@@ -162,10 +234,10 @@ void IRenderer::DestroyGeometry(Geometry* geometry) {
 
 unsigned short IRenderer::GetRenderpassID(const char* name) {
 	// TODO: HACK: Need dynamic renderpasses instead of hardcoding them.
-	if (strcmp("Renderpass.World", name) == 0) {
+	if (strcmp("Renderpass.Builtin.World", name) == 0) {
 		return eButilin_Renderpass_World;
 	}
-	else if (strcmp("Renderpass.UI", name) == 0) {
+	else if (strcmp("Renderpass.Builtin.UI", name) == 0) {
 		return eButilin_Renderpass_UI;
 	}
 

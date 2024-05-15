@@ -150,20 +150,9 @@ protected:
 	float NearClip;
 	float FarClip;
 
-	// Material Shader
+	Matrix4 UIProjection;
+	Matrix4 UIView;
+
 	uint32_t MaterialShaderID;
-	uint32_t MaterialShaderProjectionLocation;
-	uint32_t MaterialShaderViewLocation;
-	uint32_t MaterialShaderDiffuseColorLocation;
-	uint32_t MaterialShaderDiffuseTextureLocation;
-	uint32_t MaterialShaderModelLocation;
-
-	// UI Shader
-	uint32_t UIShaderID;
-	uint32_t UIShaderProjectionLocation;
-	uint32_t UIShaderViewLocation;
-	uint32_t UIShaderDiffuseColorLocation;
-	uint32_t UIShaderDiffuseTextureLocation;
-	uint32_t UIShaderModelLocation;
-
+	uint32_t UISHaderID;
 };

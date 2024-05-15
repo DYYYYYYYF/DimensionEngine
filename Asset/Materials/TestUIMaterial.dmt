@@ -1,7 +1,7 @@
 #material file
 
 version=0.1
-name=test_ui_material
+name=TestUIMaterial
 diffuse_color=1.0 1.0 1.0 1.0
 diffuse_map_name=Wood
-material_type=UI
+shader=Shader.Builtin.UI

@@ -9,9 +9,9 @@
 #include "Containers/TString.hpp"
 
 ShaderLoader::ShaderLoader() {
-	Type = eResource_type_Binary;
+	Type = eResource_Type_Shader;
 	CustomType = nullptr;
-	TypePath = "";
+	TypePath = "Shaders";
 }
 
 bool ShaderLoader::Load(const char* name, Resource* resource) {
@@ -23,16 +23,13 @@ bool ShaderLoader::Load(const char* name, Resource* resource) {
 	char FullFilePath[512];
 	sprintf(FullFilePath, FormatStr, ResourceSystem::GetRootPath(), TypePath, name, ".scfg");	// shader config
 
-	// TODO: Should be using an allocator here.
-	size_t FullPathLength = sizeof(char) * strlen(FullFilePath);
-	resource->FullPath = (char*)Memory::Allocate(FullPathLength, MemoryType::eMemory_Type_String);
-	strncpy(resource->FullPath, FullFilePath, FullPathLength);
 
 	FileHandle File;
-	if (!FileSystemOpen(FullFilePath, eFile_Mode_Read, true, &File)) {
+	if (!FileSystemOpen(FullFilePath, eFile_Mode_Read, false, &File)) {
 		UL_ERROR("Shader loader load. Unable to open file for binary reading: '%s'.", FullFilePath);
 		return false;
 	}
+	resource->FullPath = StringCopy(FullFilePath);
 
 	// Set some defaults, create arrays.
 	ShaderConfig* ResourceData = (ShaderConfig*)Memory::Allocate(sizeof(ShaderConfig), MemoryType::eMemory_Type_Resource);
@@ -48,7 +45,7 @@ bool ShaderLoader::Load(const char* name, Resource* resource) {
 	char* p = &LineBuf[0];
 	size_t LineLength = 0;
 	uint32_t LineNumber = 1;
-	while (FileSystemRead(&File, 511, &p, &LineLength)) {
+	while (FileSystemReadLine(&File, 511, &p, &LineLength)) {
 		// Trim the string.
 		char* Trimmed = Strtrim(LineBuf);
 
@@ -86,10 +83,12 @@ bool ShaderLoader::Load(const char* name, Resource* resource) {
 			// TODO: version.
 		}
 		else if (strcmp(RawVarName, "name") == 0) {
-			strcpy(ResourceData->name, TrimmedValue);
+			size_t StrLen = strlen(TrimmedValue);
+			ResourceData->name = StringCopy(TrimmedValue);
 		}
 		else if (strcmp(RawVarName, "renderpass") == 0) {
-			strcpy(ResourceData->renderpass_name, TrimmedValue);
+			size_t StrLen = strlen(TrimmedValue);
+			ResourceData->renderpass_name = StringCopy(TrimmedValue);
 		}
 		else if (strcmp(RawVarName, "stages") == 0) {
 			// Parse the stages.
@@ -195,14 +194,17 @@ bool ShaderLoader::Load(const char* name, Resource* resource) {
 				}
 
 				// Take a copy of the attribute name.
-				Attribute.name_length = (unsigned short)strlen(Fields[1]);
-				strcpy(Attribute.name, Fields[1]);
+				Attribute.name = StringCopy(Fields[1]);
 
 				// Add the attribute.
 				ResourceData->attributes.push_back(Attribute);
 				ResourceData->attribute_count++;
 			}
 
+			for (uint32_t i = 0; i < Fields.size(); ++i) {
+				size_t len = strlen(Fields[i]);
+				Memory::Free(Fields[i], sizeof(char) * (len + 1), MemoryType::eMemory_Type_String);
+			}
 			Fields.clear();
 			// TODO: Free Memory in fields.
 		}
@@ -256,11 +258,11 @@ bool ShaderLoader::Load(const char* name, Resource* resource) {
 				}
 				else if (strcmp(Fields[0], "mat4") == 0 || strcmp(Fields[0], "matrix") == 0) {
 					Uniform.type = ShaderUniformType::eShader_Uniform_Type_Matrix;
-					Uniform.size = 4;
+					Uniform.size = 64;
 				}
 				else if (strcmp(Fields[0], "samp") == 0 || strcmp(Fields[0], "sampler") == 0) {
 					Uniform.type = ShaderUniformType::eShader_Uniform_Type_Sampler;
-					Uniform.size = 4;
+					Uniform.size = 0;
 				}
 				else {
 					UL_ERROR("shader_loader_load: Invalid file layout. Uniform type must be f32, vec2, vec3, vec4, i8, i16, i32, u8, u16, u32 or mat4.");
@@ -287,20 +289,24 @@ bool ShaderLoader::Load(const char* name, Resource* resource) {
 
 				// Take a copy of the attribute name.
 				Uniform.name_length = (unsigned short)strlen(Fields[2]);
-				strcpy(Uniform.name, Fields[2]);
+				Uniform.name = StringCopy(Fields[2]);
 
 				// Add the attribute.
 				ResourceData->uniforms.push_back(Uniform);
 				ResourceData->uniform_count++;
 			}
 
+			for (uint32_t i = 0; i < Fields.size(); ++i) {
+				size_t len = strlen(Fields[i]);
+				Memory::Free(Fields[i], sizeof(char) * (len + 1), MemoryType::eMemory_Type_String);
+			}
 			Fields.clear();
 		}
 
 		// TODO: more fields.
 
 		// Clear the line buffer.
-		Memory::Free(LineBuf, sizeof(char) * 512, MemoryType::eMemory_Type_String);
+		Memory::Zero(LineBuf, sizeof(char) * 512);
 		LineNumber++;
 	}
 
@@ -309,7 +315,7 @@ bool ShaderLoader::Load(const char* name, Resource* resource) {
 	resource->Data = ResourceData;
 	resource->DataSize = sizeof(ShaderConfig);
 
-	return false;
+	return true;
 }
 
 void ShaderLoader::Unload(Resource* resource) {

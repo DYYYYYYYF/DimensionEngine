@@ -1,7 +1,7 @@
 #material file
 
 version=0.1
-name=test_material
+name=TestMaterial
 diffuse_color=1.0 1.0 1.0 1.0
 diffuse_map_name=Room
-material_type=World
+shader=Shader.Builtin.Material

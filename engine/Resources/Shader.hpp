@@ -160,7 +160,7 @@ struct VulkanDescriptorState {
 };
 
 struct ShaderConfig {
-	char* name;
+	char* name = nullptr;
 	bool use_instances;
 	bool use_local;
 
@@ -170,7 +170,7 @@ struct ShaderConfig {
 	unsigned short uniform_count;
 	std::vector<ShaderUniformConfig> uniforms;
 
-	char* renderpass_name;
+	char* renderpass_name = nullptr;
 
 	unsigned short stage_cout;
 	std::vector<ShaderStage> stages;
@@ -182,7 +182,7 @@ struct ShaderConfig {
 class Shader {
 public:
 	uint32_t ID;
-	char* Name;
+	char* Name = nullptr;
 	bool UseInstances;
 	bool UseLocals;
 

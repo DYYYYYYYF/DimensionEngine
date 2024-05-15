@@ -96,8 +96,7 @@ bool MaterialLoader::Load(const char* name, Resource* resource) {
 		else if (strcmp(TrimmedVarName, "shader") == 0) {
 			// Take a copy of the material name.
 			size_t StrLen = strlen(TrimmedValue);
-			ResourceData->shader_name = (char*)Memory::Allocate(StrLen, MemoryType::eMemory_Type_String);
-			strcpy(ResourceData->shader_name, TrimmedValue);
+			ResourceData->shader_name = StringCopy(TrimmedValue);
 		}
 
 		// TODO: more fields.

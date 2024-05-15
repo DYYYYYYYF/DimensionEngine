@@ -732,7 +732,7 @@ void VulkanBackend::DestroyTexture(Texture* texture) {
 
 bool VulkanBackend::CreateGeometry(Geometry* geometry, uint32_t vertex_size, uint32_t vertex_count, 
 	const void* vertices, uint32_t index_size, uint32_t index_count, const void* indices) {
-	if (vertex_count == 0 || index_count == 0) {
+	if (vertex_count == 0 || vertices == nullptr) {
 		UL_ERROR("Vulkan renderer create geometry requires vertex data, and none was supplied. vertex_count=%d, vertices=%p", vertex_count, vertices);
 		return false;
 	}
@@ -942,7 +942,7 @@ const uint32_t BINDING_INDEX_SAMPLER = 1;
 
 bool VulkanBackend::CreateShader(Shader* shader, unsigned short renderpass_id, unsigned short stage_count,
 	const std::vector<char*>& stage_filenames, std::vector<ShaderStage>& stages) {
-	shader->InternalData = Memory::Allocate(sizeof(Shader), MemoryType::eMemory_Type_Renderer);
+	shader->InternalData = Memory::Allocate(sizeof(VulkanShader), MemoryType::eMemory_Type_Renderer);
 
 	// TODO: Dynamic renderpass.
 	VulkanRenderPass* Renderpass = renderpass_id ? &Context.MainRenderPass : &Context.UIRenderPass;
@@ -977,6 +977,8 @@ bool VulkanBackend::CreateShader(Shader* shader, unsigned short renderpass_id, u
 
 	// Take a copy of the pointer to the context.
 	VulkanShader* OutShader = (VulkanShader*)shader->InternalData;
+	OutShader->Renderpass = Renderpass;
+	OutShader->Config.max_descriptor_set_count = MaxDescriptorAllocateCount;
 
 	// Shader stages. Parse out the flags.
 	Memory::Zero(OutShader->Config.stages, sizeof(VulkanShaderStageConfig) * VULKAN_SHADER_MAX_STAGES);
@@ -1019,7 +1021,7 @@ bool VulkanBackend::CreateShader(Shader* shader, unsigned short renderpass_id, u
 
 	// For now, shaders will only ever have these 2 types of descriptor pools.
 	OutShader->Config.pool_sizes[0] = vk::DescriptorPoolSize{ vk::DescriptorType::eUniformBuffer, 1024 };
-	OutShader->Config.pool_sizes[1] = vk::DescriptorPoolSize{ vk::DescriptorType::eCombinedImageSampler, 2048 };
+	OutShader->Config.pool_sizes[1] = vk::DescriptorPoolSize{ vk::DescriptorType::eCombinedImageSampler, 4096 };
 
 	// Global descriptor set config.
 	VulkanDescriptorSetConfig GlobalDescriptorSetConfig;
@@ -1223,7 +1225,7 @@ bool VulkanBackend::InitializeShader(Shader* shader) {
 		StageCreateInfos[i] = Shader->Stages[i].shader_stage_create_info;
 	}
 
-	if (!Shader->Pipeline.Create(&Context, Shader->Renderpass, shader->AttributeStride, (uint32_t)shader->Attributes.size(), Shader->Config.attributes, Shader->Config.max_descriptor_set_count,
+	if (!Shader->Pipeline.Create(&Context, Shader->Renderpass, shader->AttributeStride, (uint32_t)shader->Attributes.size(), Shader->Config.attributes, Shader->Config.descriptor_set_count,
 		Shader->DescriptorSetLayouts, Shader->Config.stage_count, StageCreateInfos, Viewport, Scissor, false, true, shader->PushConstantsRangeCount, shader->PushConstantsRanges)){
 		UL_ERROR("Failed to load graphics pipeline for object shader.");
 		return false;
@@ -1308,7 +1310,7 @@ bool VulkanBackend::BindInstanceShader(Shader* shader, uint32_t instance_id) {
 	shader->BoundInstanceId = instance_id;
 	VulkanShaderInstanceState* ObjectState = &Internal->InstanceStates[instance_id];
 	shader->BoundUboOffset = (uint32_t)ObjectState->offset;
-	return false;
+	return true;
 }
 
 bool VulkanBackend::ApplyGlobalShader(Shader* shader) {
@@ -1390,6 +1392,7 @@ bool VulkanBackend::ApplyInstanceShader(Shader* shader) {
 		UboDescriptor.setDstSet(ObjectDescriptorSet)
 			.setDstBinding(DescriptorIndex)
 			.setDescriptorType(vk::DescriptorType::eUniformBuffer)
+			.setDescriptorCount(1)
 			.setPBufferInfo(&BufferInfo);
 
 		DescriptorWrites[DescriptorCount] = UboDescriptor;
@@ -1457,7 +1460,7 @@ uint32_t VulkanBackend::AcquireInstanceResource(Shader* shader) {
 
 	if (OutInstanceID == INVALID_ID) {
 		UL_ERROR("vulkan_shader_acquire_instance_resources failed to acquire new id");
-		return false;
+		return INVALID_ID;
 	}
 
 	VulkanShaderInstanceState* InstanceState = &Internal->InstanceStates[OutInstanceID];
@@ -1474,7 +1477,7 @@ uint32_t VulkanBackend::AcquireInstanceResource(Shader* shader) {
 	uint32_t Size = (uint32_t)shader->UboStride;
 	if (!Internal->UniformBuffer.Allocate(Size, &InstanceState->offset)) {
 		UL_ERROR("vulkan_material_shader_acquire_resources failed to acquire ubo space");
-		return false;
+		return INVALID_ID;
 	}
 
 	VulkanShaderDescriptorSetState* SetState = &InstanceState->descriptor_set_state;
@@ -1503,7 +1506,7 @@ uint32_t VulkanBackend::AcquireInstanceResource(Shader* shader) {
 	if(Context.Device.GetLogicalDevice().allocateDescriptorSets(&AllocInfo, InstanceState->descriptor_set_state.descriptorSets)
 		!= vk::Result::eSuccess) {
 			UL_ERROR("Allocate descriptor sets failed.");
-			return false;
+			return INVALID_ID;
 	}
 
 	return OutInstanceID;
@@ -1594,7 +1597,7 @@ bool VulkanBackend::CreateModule(VulkanShader* Shader, VulkanShaderStageConfig c
 
 	// Shader stage info.
 	Memory::Zero(&shader_stage->shader_stage_create_info, sizeof(vk::ShaderModuleCreateInfo));
-	shader_stage->shader_stage_create_info.sType = vk::StructureType::eShaderModuleCreateInfo;
+	shader_stage->shader_stage_create_info.sType = vk::StructureType::ePipelineShaderStageCreateInfo;
 	shader_stage->shader_stage_create_info.stage = config.stage;
 	shader_stage->shader_stage_create_info.module = shader_stage->shader_module;
 	shader_stage->shader_stage_create_info.pName = "main";

@@ -17,6 +17,7 @@
 #include "Systems/MaterialSystem.h"
 #include "Systems/GeometrySystem.h"
 #include "Systems/ResourceSystem.h"
+#include "Systems/ShaderSystem.h"
 
 struct SApplicationState {
 	SGame* game_instance;
@@ -94,6 +95,17 @@ bool ApplicationCreate(SGame* game_instance){
 		void* TempRenderer = (IRenderer*)Memory::Allocate(sizeof(IRenderer), MemoryType::eMemory_Type_Renderer);
 		Renderer = new(TempRenderer)IRenderer(eRenderer_Backend_Type_Vulkan, &AppState.platform);
 		ASSERT(Renderer);
+	}
+
+	// Init shader system
+	SShaderSystemConfig ShaderSystemConfig;
+	ShaderSystemConfig.max_shader_count = 1024;
+	ShaderSystemConfig.max_uniform_count = 128;
+	ShaderSystemConfig.max_global_textures = 31;
+	ShaderSystemConfig.max_instance_textures = 31;
+	if (!ShaderSystem::Initialize(Renderer, ShaderSystemConfig)) {
+		UL_FATAL("Shader system failed to initialize!");
+		return false;
 	}
 
 	if (!Renderer->Initialize(game_instance->app_config.name, &AppState.platform)) {
@@ -275,10 +287,12 @@ bool ApplicationRun() {
 	Core::EventShutdown();
 	Core::InputShutdown();
 
-	ResourceSystem::Shutdown();
+
 	GeometrySystem::Shutdown();
 	MaterialSystem::Shutdown();
 	TextureSystem::Shutdown();
+	ShaderSystem::Shutdown();
+	ResourceSystem::Shutdown();
 
 	Renderer->Shutdown();
 	Memory::Free(Renderer, sizeof(IRenderer), MemoryType::eMemory_Type_Renderer);

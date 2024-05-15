@@ -148,3 +148,11 @@ inline bool StringToBool(const char* str) {
 	if (str == nullptr) {return false;}
 	return (strcmp(str, "1") == 0) || (strcmp(str, "true") == 0);
 }
+
+inline char* StringCopy(const char* str) {
+	size_t Length = strlen(str);
+	char* Copy = (char*)Memory::Allocate(Length + 1, MemoryType::eMemory_Type_String);
+	Memory::Copy(Copy, str, Length);
+	Copy[Length] = '\0';
+	return Copy;
+}

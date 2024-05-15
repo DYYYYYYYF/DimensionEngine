@@ -163,13 +163,13 @@ bool VulkanBuffer::Allocate(size_t size, size_t* offset) {
 }
 
 bool VulkanBuffer::Free(size_t size, size_t offset) {
-	if (offset == 0) {
-		UL_ERROR("Vulkan buffer allocate requires a non-zero offset.");
+	if (size == 0) {
+		UL_ERROR("Vulkan buffer free requires a non-zero size.");
 		return false;
 	}
 
 	if (!UseFreelist) {
-		UL_WARN("vulkan_buffer_allocate called on a buffer not using freelists. Nothing was done.");
+		UL_WARN("vulkan_buffer_free called on a buffer not using freelists. Nothing was done.");
 		return true;
 	}
 
