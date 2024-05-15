@@ -6,14 +6,17 @@
 #include "Core/EngineLogger.hpp"
 
 bool VulkanBuffer::Create(VulkanContext* context, size_t size, vk::BufferUsageFlags usage,
-	vk::MemoryPropertyFlags memory_property_flags, bool bind_on_create) {
+	vk::MemoryPropertyFlags memory_property_flags, bool bind_on_create, bool use_freelist) {
 
 	TotalSize = size;
 	Usage = usage;
+	UseFreelist = use_freelist;
 	MemoryPropertyFlags = memory_property_flags;
 
 	// Create a new freelist.
-	BufferFreelist.Create(size);
+	if (UseFreelist) {
+		BufferFreelist.Create(size);
+	}
 
 	vk::BufferCreateInfo BufferInfo;
 	BufferInfo.setSize(size)
@@ -50,7 +53,9 @@ bool VulkanBuffer::Create(VulkanContext* context, size_t size, vk::BufferUsageFl
 }
 
 void VulkanBuffer::Destroy(VulkanContext* context) {
-	CleanupFreelist();
+	if (UseFreelist) {
+		CleanupFreelist();
+	}
 
 	if (Memory) {
 		context->Device.GetLogicalDevice().freeMemory(Memory, context->Allocator);
@@ -75,9 +80,11 @@ bool VulkanBuffer::Resize(VulkanContext* context, size_t size, vk::Queue queue, 
 	}
 
 	// Resize the freelist first.
-	if (!BufferFreelist.Resize(size)) {
-		UL_ERROR("Vulkan buffer resize failed to resize freelist.");
-		return false;
+	if (UseFreelist) {
+		if (!BufferFreelist.Resize(size)) {
+			UL_ERROR("Vulkan buffer resize failed to resize freelist.");
+			return false;
+		}
 	}
 
 	TotalSize = size;
@@ -146,6 +153,12 @@ bool VulkanBuffer::Allocate(size_t size, size_t* offset) {
 		return false;
 	}
 
+	if (!UseFreelist) {
+		UL_WARN("Vulkan buffer allocate called on a buffer not using freelists. Offset will not be valid. Call vulkan_buffer_load_data instead.");
+		*offset = 0;
+		return true;
+	}
+
 	return BufferFreelist.AllocateBlock(size, offset);
 }
 
@@ -153,6 +166,11 @@ bool VulkanBuffer::Free(size_t size, size_t offset) {
 	if (offset == 0) {
 		UL_ERROR("Vulkan buffer allocate requires a non-zero offset.");
 		return false;
+	}
+
+	if (!UseFreelist) {
+		UL_WARN("vulkan_buffer_allocate called on a buffer not using freelists. Nothing was done.");
+		return true;
 	}
 
 	return BufferFreelist.FreeBlock(size, offset);

@@ -4,7 +4,7 @@
 #include "Defines.hpp"
 
 class VulkanContext;
-class VulkanShaderStage;
+struct VulkanShaderStage;
 
 class VulkanShaderUtils {
 public:

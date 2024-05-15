@@ -161,6 +161,7 @@ bool GeometrySystem::CreateDefaultGeometries() {
 	uint32_t Indices[6] = { 0, 1, 2, 0, 3, 1 };
 
 	// Send the geometry off to the renderer to be uploaded to the GPU.
+	DefaultGeometry.InternalID = INVALID_ID;
 	if (!Renderer->CreateGeometry(&DefaultGeometry, sizeof(Vertex), 4, Verts, sizeof(uint32_t), 6, Indices)) {
 		UL_FATAL("Failed to create default geometry. Application quit now!");
 		return false;

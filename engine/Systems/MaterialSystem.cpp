@@ -6,6 +6,7 @@
 
 #include "Systems/TextureSystem.h"
 #include "Systems/ResourceSystem.h"
+#include "Systems/ShaderSystem.h"
 
 SMaterialSystemConfig MaterialSystem::MaterialSystemConfig;
 Material MaterialSystem::DefaultMaterial;
@@ -14,6 +15,10 @@ SMaterialReference* MaterialSystem::TableMemory = nullptr;
 HashTable MaterialSystem::RegisteredMaterialTable;
 bool MaterialSystem::Initilized = false;
 IRenderer* MaterialSystem::Renderer = nullptr;
+MaterialShaderUniformLocations MaterialSystem::MaterialLocations;
+uint32_t MaterialSystem::MaterialShaderID;
+UIShaderUniformLocations MaterialSystem::UILocations;
+uint32_t MaterialSystem::UIShaderID;
 
 bool MaterialSystem::Initialize(IRenderer* renderer, SMaterialSystemConfig config) {
 	if (config.max_material_count == 0) {
@@ -32,6 +37,14 @@ bool MaterialSystem::Initialize(IRenderer* renderer, SMaterialSystemConfig confi
 
 	MaterialSystemConfig = config;
 	Renderer = renderer;
+
+	MaterialShaderID = INVALID_ID;
+	MaterialLocations.diffuse_color = INVALID_ID_U16;
+	MaterialLocations.diffuse_texture = INVALID_ID_U16;
+
+	UIShaderID = INVALID_ID;
+	UILocations.diffuse_color = INVALID_ID_U16;
+	UILocations.diffuse_texture = INVALID_ID_U16;
 
 	// Block of memory will block for array, then block for hashtable.
 	size_t ArraryRequirement = sizeof(Material) * MaterialSystemConfig.max_material_count;
@@ -146,6 +159,10 @@ Material* MaterialSystem::AcquireFromConfig(SMaterialConfig config) {
 				return nullptr;
 			}
 
+			// Get the uniform indices.
+			Shader* s = ShaderSystem::GetByID(m->ShaderID);
+
+
 			if (m->Generation == INVALID_ID) {
 				m->Generation = 0;
 			}
@@ -223,8 +240,7 @@ bool MaterialSystem::LoadMaterial(SMaterialConfig config, Material* mat) {
 	// name
 	strncpy(mat->Name, config.name, MATERIAL_NAME_MAX_LENGTH);
 
-	// Type
-	mat->Type = config.Type;
+	mat->ShaderID = ShaderSystem::GetID(config.shader_name);
 
 	// Diffuse color
 	mat->DiffuseColor = config.diffuse_color;
@@ -247,7 +263,14 @@ bool MaterialSystem::LoadMaterial(SMaterialConfig config, Material* mat) {
 	// TODO: other maps.
 
 	// Send it off to the renderer to acquire resources.
-	if (!Renderer->CreateMaterial(mat)) {
+	Shader* s = ShaderSystem::Get(config.shader_name);
+	if (s == nullptr) {
+		UL_ERROR("Unable to load material because its shader was not found: '%s'. This is likely a problem with the material asset.", config.shader_name);
+		return false;
+	}
+
+	mat->InternalId = Renderer->AcquireInstanceResource(s);
+	if (mat->InternalId == INVALID_ID) {
 		UL_ERROR("Failed to acquire renderer resources for material '%s'.", mat->Name);
 		return false;
 	}
@@ -264,7 +287,7 @@ void MaterialSystem::DestroyMaterial(Material* mat) {
 	}
 
 	//Release renderer resources.
-	Renderer->DestroyMaterial(mat);
+	// Renderer->DestroyMaterial(mat);
 
 	// Zero it out, invalidate Ids.
 	Memory::Zero(mat, sizeof(Material));
@@ -282,10 +305,10 @@ bool MaterialSystem::CreateDefaultMaterial() {
 	DefaultMaterial.DiffuseMap.usage = TextureUsage::eTexture_Usage_Map_Diffuse;
 	DefaultMaterial.DiffuseMap.texture = TextureSystem::GetDefaultTexture();
 
-	if (!Renderer->CreateMaterial(&DefaultMaterial)) {
+	/*if (!Renderer->CreateMaterial(&DefaultMaterial)) {
 		UL_ERROR("Create default material failed. Application quit now!");
 		return false;
-	}
+	}*/
 
 	return true;
 }

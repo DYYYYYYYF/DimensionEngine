@@ -4,8 +4,6 @@
 #include "Resources/ResourceTypes.hpp"
 #include "Containers/THashTable.hpp"
 
-#define DEFAULT_MATERIAL_NAME "default"
-
 class IRenderer;
 
 struct SMaterialSystemConfig {
@@ -47,6 +45,14 @@ public:
 	// Hashtable for material lookups.
 	static SMaterialReference* TableMemory;
 	static HashTable RegisteredMaterialTable;
+
+	// Know locations for the material shader.
+	static MaterialShaderUniformLocations MaterialLocations;
+	static uint32_t MaterialShaderID;
+
+	// Know locations for the ui shader.
+	static UIShaderUniformLocations UILocations;
+	static uint32_t UIShaderID;
 
 	static bool Initilized;
 

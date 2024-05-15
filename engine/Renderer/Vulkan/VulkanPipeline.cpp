@@ -8,7 +8,8 @@ bool VulkanPipeline::Create(VulkanContext* context, VulkanRenderPass* renderpass
 	uint32_t attribute_count, vk::VertexInputAttributeDescription* attributes,
 	uint32_t descriptor_set_layout_count, vk::DescriptorSetLayout* descriptor_set_layout,
 	uint32_t stage_count, vk::PipelineShaderStageCreateInfo* stages,
-	vk::Viewport viewport, vk::Rect2D scissor, bool is_wireframe, bool depth_test_enabled) {
+	vk::Viewport viewport, vk::Rect2D scissor, bool is_wireframe, bool depth_test_enabled,
+	uint32_t push_constant_range_count, Range* push_constant_ranges){
 	// Viewport state
 	vk::PipelineViewportStateCreateInfo ViewportState;
 	ViewportState.setViewportCount(1)
@@ -101,12 +102,28 @@ bool VulkanPipeline::Create(VulkanContext* context, VulkanRenderPass* renderpass
 
 	//Push constants
 	vk::PipelineLayoutCreateInfo LayoutCreateInfo;
-	vk::PushConstantRange PushConstant;
-	PushConstant.setStageFlags(vk::ShaderStageFlagBits::eVertex)
-		.setOffset(sizeof(Matrix4) * 0)
-		.setSize(sizeof(Matrix4) * 2);
-	LayoutCreateInfo.setPushConstantRangeCount(1)
-		.setPPushConstantRanges(&PushConstant);
+	if (push_constant_range_count > 0) {
+		if (push_constant_range_count > 32) {
+			UL_ERROR("Vulkan graphics pipeline create: can not have more push constants.");
+			return false;
+		}
+
+		// NOTE: 32 is the max number of ranges we can ever have.
+		vk::PushConstantRange Ranges[32];
+		Memory::Zero(Ranges, sizeof(vk::PushConstantRange) * 32);
+		for(uint32_t i = 0; i < push_constant_range_count; ++i) {
+			Ranges[i].setStageFlags(vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment)
+				.setOffset((uint32_t)push_constant_ranges[i].offset)
+				.setSize((uint32_t)push_constant_ranges[i].size);
+		}
+
+		LayoutCreateInfo.setPushConstantRangeCount(push_constant_range_count)
+			.setPPushConstantRanges(Ranges);
+	}
+	else {
+		LayoutCreateInfo.setPushConstantRangeCount(0)
+			.setPPushConstantRanges(nullptr);
+	}
 
 	// Pipeline layout
 	LayoutCreateInfo.setSetLayoutCount(descriptor_set_layout_count)

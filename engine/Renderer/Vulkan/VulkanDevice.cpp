@@ -19,7 +19,7 @@ bool VulkanDevice::Create(vk::Instance* context, vk::AllocationCallbacks* alloca
 	}
 
 	TArray<unsigned int> Indices(IndexCount);
-	short Index = 0;
+	unsigned short Index = 0;
 	Indices[Index++] = QueueFamilyInfo.graphics_index;
 	if (!PresentSharesGraphicsQueue) {
 		Indices[Index++] = QueueFamilyInfo.present_index;

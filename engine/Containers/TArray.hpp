@@ -142,7 +142,8 @@ public:
 	ElementType* Data() { return (ElementType*)ArrayMemory; }
 	const ElementType* Data() const { return (ElementType*)ArrayMemory; }
 
-	ElementType& operator[](size_t i) { 
+	template<typename IntegerType>
+	ElementType& operator[](const IntegerType& i) {
 		//if (i > Length || ArrayMemory == nullptr) return ElementType();
 		return *((ElementType*)((char*)ArrayMemory + i * Stride));
 	}

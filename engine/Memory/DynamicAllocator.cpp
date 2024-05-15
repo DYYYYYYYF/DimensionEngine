@@ -13,8 +13,9 @@ bool DynamicAllocator::Create(unsigned long long total_size) {
 	List.Create(total_size);
 	TotalSize = total_size;
 	MemoryBlock = Platform::PlatformAllocate(total_size,false);
-	Memory::Zero(MemoryBlock, total_size);
 	ASSERT(MemoryBlock);
+
+	Memory::Zero(MemoryBlock, total_size);
 
 	return true;
 }

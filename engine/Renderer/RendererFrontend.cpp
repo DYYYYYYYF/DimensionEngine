@@ -55,8 +55,8 @@ bool IRenderer::Initialize(const char* application_name, struct SPlatformState* 
 	View.SetTranslation(Vec3{ 0.0f, 0.0f, -10.0f });
 
 	// UI projection/view
-	UIProjection = Matrix4::Orthographic(0, 1280.0f, 720.0f, 0, -100.f, 100.f);
-	UIView = Matrix4::Identity().Inverse();
+	/*UIProjection = Matrix4::Orthographic(0, 1280.0f, 720.0f, 0, -100.f, 100.f);
+	UIView = Matrix4::Identity().Inverse();*/
 
 	return true;
 }
@@ -74,7 +74,7 @@ void IRenderer::Shutdown() {
 void IRenderer::OnResize(unsigned short width, unsigned short height) {
 	if (Backend != nullptr) {
 		Projection = Matrix4::Perspective(Deg2Rad(45.0f), (float)width / (float)height, NearClip, FarClip);
-		UIProjection = Matrix4::Orthographic(0, (float)width, (float)height, 0, -100.f, 100.f);
+		// UIProjection = Matrix4::Orthographic(0, (float)width, (float)height, 0, -100.f, 100.f);
 		Backend->Resize(width, height);
 	}
 	else {
@@ -91,7 +91,7 @@ bool IRenderer::DrawFrame(SRenderPacket* packet) {
 		}
 		
 		// Update UBO buffer.
-		Backend->UpdateGlobalWorldState(Projection, View, Vec3(0.0f, 0.0f, 0.0f), Vec4(1.0f, 1.0f, 1.0f, 1.0f), 0);
+		// Backend->UpdateGlobalWorldState(Projection, View, Vec3(0.0f, 0.0f, 0.0f), Vec4(1.0f, 1.0f, 1.0f, 1.0f), 0);
 
 		// Draw geometries.
 		for (uint32_t i = 0; i < packet->geometry_count; ++i) {
@@ -111,7 +111,7 @@ bool IRenderer::DrawFrame(SRenderPacket* packet) {
 		}
 
 		// Update UI buffer.
-		Backend->UpdateGlobalUIState(UIProjection, UIView, 0);
+		// Backend->UpdateGlobalUIState(UIProjection, UIView, 0);
 
 		// Draw geometries.
 		for (uint32_t i = 0; i < packet->ui_geometry_count; ++i) {
@@ -151,15 +151,6 @@ void IRenderer::DestroyTexture(Texture* txture) {
 	Backend->DestroyTexture(txture);
 }
 
-
-bool IRenderer::CreateMaterial(Material* material) {
-	return Backend->CreateMaterial(material);
-}
-
-void IRenderer::DestroyMaterial(Material* material) {
-	Backend->DestroyMaterial(material);
-}
-
 bool IRenderer::CreateGeometry(Geometry* geometry, uint32_t vertex_size, uint32_t vertex_count,
 	const void* vertices, uint32_t index_size, uint32_t index_count, const void* indices) {
 	return Backend->CreateGeometry(geometry, vertex_size, vertex_count, vertices, index_size, index_count, indices);
@@ -167,4 +158,61 @@ bool IRenderer::CreateGeometry(Geometry* geometry, uint32_t vertex_size, uint32_
 
 void IRenderer::DestroyGeometry(Geometry* geometry) {
 	Backend->DestroyGeometry(geometry);
+}
+
+unsigned short IRenderer::GetRenderpassID(const char* name) {
+	// TODO: HACK: Need dynamic renderpasses instead of hardcoding them.
+	if (strcmp("Renderpass.World", name) == 0) {
+		return eButilin_Renderpass_World;
+	}
+	else if (strcmp("Renderpass.UI", name) == 0) {
+		return eButilin_Renderpass_UI;
+	}
+
+	UL_ERROR("renderer_renderpass_id: No renderpass named '%s'.", name);
+	return INVALID_ID_U8;
+}
+
+bool IRenderer::CreateRenderShader(Shader* shader, unsigned short renderpass_id, unsigned short stage_count, std::vector<char*> stage_filenames, std::vector<ShaderStage> stages) {
+	return Backend->CreateShader(shader, renderpass_id, stage_count, stage_filenames, stages);
+}
+
+bool IRenderer::DestroyRenderShader(Shader* shader) {
+	return Backend->DestroyShader(shader);
+}
+
+bool IRenderer::InitializeRenderShader(Shader* shader) {
+	return Backend->InitializeShader(shader);
+}
+
+bool IRenderer::UseRenderShader(Shader* shader) {
+	return Backend->UseShader(shader);
+}
+
+bool IRenderer::BindGlobalsRenderShader(Shader* shader) {
+	return Backend->BindGlobalsShader(shader);
+}
+
+bool IRenderer::BindInstanceRenderShader(Shader* shader, uint32_t instance_id) {
+	return Backend->BindInstanceShader(shader, instance_id);
+}
+
+bool IRenderer::ApplyGlobalRenderShader(Shader* shader) {
+	return Backend->ApplyGlobalShader(shader);
+}
+
+bool IRenderer::ApplyInstanceRenderShader(Shader* shader) {
+	return Backend->ApplyInstanceShader(shader);
+}
+
+uint32_t IRenderer::AcquireInstanceResource(Shader* shader) {
+	return Backend->AcquireInstanceResource(shader);
+}
+
+bool IRenderer::ReleaseInstanceResource(Shader* shader, uint32_t instance_id) {
+	return Backend->ReleaseInstanceResource(shader, instance_id);
+}
+
+bool IRenderer::SetUniform(Shader* shader, ShaderUniform* uniform, const void* value) {
+	return Backend->SetUniform(shader, uniform, value);
 }

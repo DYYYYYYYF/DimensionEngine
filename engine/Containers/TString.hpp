@@ -1,6 +1,6 @@
 #include "string.h"
 
-char* Strtrim(char* str) {
+inline char* Strtrim(char* str) {
 
 	while (isspace((unsigned char)*str)) {
 		str++;
@@ -20,7 +20,7 @@ char* Strtrim(char* str) {
 	return str;
 }
 
-int StringIndexOf(char* str, char c) {
+inline int StringIndexOf(char* str, char c) {
 	if (!str) {
 		return -1;
 	}
@@ -37,7 +37,7 @@ int StringIndexOf(char* str, char c) {
 	return -1;
 }
 
-void StringMid(char* dst, const char* src, size_t start, int length = -1) {
+inline void StringMid(char* dst, const char* src, size_t start, int length = -1) {
 	if (length == 0) {
 		return;
 	}
@@ -63,4 +63,88 @@ void StringMid(char* dst, const char* src, size_t start, int length = -1) {
 
 		dst[start + j] = 0;
 	}
+}
+
+inline std::vector<char*> StringSplit(const char* str, char delimiter, bool trim_entries, bool include_empty) {
+	std::vector<char*> Vector;
+
+	if (str == nullptr) {
+		return Vector;
+	}
+
+	char* Result = nullptr;
+	uint32_t TrimmedLength = 0;
+	uint32_t Length = (uint32_t)strlen(str);
+	char Buffer[16384];
+	uint32_t CurrentLength = 0;
+
+	// Iterate each character until a delimiter is reached.
+	for (uint32_t i = 0; i < Length; ++i) {
+		char c = str[i];
+
+		// Found delimiter, finalize string.
+		if (c == delimiter) {
+			Buffer[CurrentLength] = '\0';
+			Result = Buffer;
+			TrimmedLength = CurrentLength;
+
+			//Trim if applicable.
+			if (trim_entries && CurrentLength > 0) {
+				Result = Strtrim(Result);
+				TrimmedLength = (uint32_t)strlen(Result);
+			}
+
+			// Add new entry.
+			if (TrimmedLength > 0 || include_empty) {
+				char* Entry = (char*)Memory::Allocate(sizeof(char) * (TrimmedLength + 1), MemoryType::eMemory_Type_String);
+				if (TrimmedLength == 0) {
+					Entry[0] = '\0';
+				}
+				else {
+					strncpy(Entry, Result, TrimmedLength);
+					Entry[TrimmedLength] = '\0';
+				}
+
+				Vector.push_back(Entry);
+			}
+
+			// Clear the buffer.
+			Memory::Zero(Buffer, sizeof(char) * 16384);
+			CurrentLength = 0;
+			continue;
+		}
+
+		Buffer[CurrentLength] = c;
+		CurrentLength++;
+	}
+
+	// At the end of the string. If any chars are queued up, read them.
+	Result = Buffer;
+	TrimmedLength = CurrentLength;
+	// Trim if applicable
+	if (trim_entries && CurrentLength > 0) {
+		Result = Strtrim(Result);
+		TrimmedLength = (uint32_t)strlen(Result);
+	}
+
+	// Add new entry.
+	if (TrimmedLength > 0 || include_empty) {
+		char* Entry = (char*)Memory::Allocate(sizeof(char) * (TrimmedLength + 1), MemoryType::eMemory_Type_String);
+		if (TrimmedLength == 0) {
+			Entry[0] = '\0';
+		}
+		else {
+			strncpy(Entry, Result, TrimmedLength);
+			Entry[TrimmedLength] = '\0';
+		}
+
+		Vector.push_back(Entry);
+	}
+
+	return Vector;
+}
+
+inline bool StringToBool(const char* str) {
+	if (str == nullptr) {return false;}
+	return (strcmp(str, "1") == 0) || (strcmp(str, "true") == 0);
 }

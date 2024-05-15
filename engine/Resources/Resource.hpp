@@ -8,6 +8,7 @@ enum ResourceType {
 	eResource_type_Image,
 	eResource_type_Material,
 	eResource_type_Static_Mesh,
+	eResource_Type_Shader,
 	eResource_type_Custom,
 };
 

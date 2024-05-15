@@ -1,11 +1,11 @@
 #include "VulkanShaderUtils.hpp"
 #include "VulkanContext.hpp"
-#include "Shaders/VulkanMaterialShader.hpp"
 
 #include "Core/EngineLogger.hpp"
 #include "Core/DMemory.hpp"
 
 #include "Systems/ResourceSystem.h"
+#include "VulkanShader.hpp"
 
 bool VulkanShaderUtils::CreateShaderModule(VulkanContext* context, const char* name, const char* type_str,
 	vk::ShaderStageFlagBits stage_flag, uint32_t stage_index, VulkanShaderStage* shader_stage) {

@@ -20,6 +20,7 @@ enum MemoryType {
 	eMemory_Type_Transform,
 	eMemory_Type_Entity,
 	eMemory_Type_Entity_Node,
+	eMemory_Type_Resource,
 	eMemory_Type_Scene,
 	eMemory_Type_Max
 };
@@ -41,6 +42,7 @@ static const char* MemoryTypeStrings[eMemory_Type_Max]{
 	"Transform",
 	"Entity",
 	"Entity_Node",
+	"Resource",
 	"Scene"
 };
 

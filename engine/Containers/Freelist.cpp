@@ -9,10 +9,9 @@ void Freelist::Create(unsigned long long total_size) {
 	MaxEntries = (total_size / sizeof(void*));	// NOTO: This might have a remainder, but ok.
 	TotalSize = total_size;
 	
-	size_t MemoryMin = (sizeof(FreelistNode) * 8);
-	if (total_size < MemoryMin) {
+	if (MaxEntries == 0) {
 		UL_WARN("Freelists are very inefficient with  amouts of memory less than %iB; it is recommended to not use freelist in this case.", 
-			MemoryMin);
+			total_size);
 	}
 
 	size_t UesdSize = sizeof(FreelistNode) * MaxEntries;

@@ -36,7 +36,7 @@ bool MaterialLoader::Load(const char* name, Resource* resource) {
 	SMaterialConfig* ResourceData = (SMaterialConfig*)Memory::Allocate(sizeof(SMaterialConfig), MemoryType::eMemory_Type_Material_Instance);
 	// Set defaults.
 	ResourceData->auto_release = true;
-	ResourceData->Type = MaterialType::eMaterial_Type_World;
+	ResourceData->shader_name = "Builtin.Material";
 	ResourceData->diffuse_color = Vec4(1.0f);	// White
 	ResourceData->diffuse_map_name[0] = '\0';
 	strncpy(ResourceData->name, name, MATERIAL_NAME_MAX_LENGTH);
@@ -93,11 +93,11 @@ bool MaterialLoader::Load(const char* name, Resource* resource) {
 			// Parse the color
 			ResourceData->diffuse_color = Vec4::StringToVec4(TrimmedValue);
 		}
-		else if (strcmp(TrimmedVarName, "material_type") == 0) {
-			// TODO: Other material types.
-			if (strcmp(TrimmedVarName, "UI") == 0) {
-				ResourceData->Type = MaterialType::eMaterial_Type_UI;
-			}
+		else if (strcmp(TrimmedVarName, "shader") == 0) {
+			// Take a copy of the material name.
+			size_t StrLen = strlen(TrimmedValue);
+			ResourceData->shader_name = (char*)Memory::Allocate(StrLen, MemoryType::eMemory_Type_String);
+			strcpy(ResourceData->shader_name, TrimmedValue);
 		}
 
 		// TODO: more fields.

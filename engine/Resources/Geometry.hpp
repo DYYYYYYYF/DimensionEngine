@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Math/MathTypes.hpp"
+
 #define GEOMETRY_NAME_MAX_LENGTH 256
 
 class Material;
@@ -10,10 +12,10 @@ public:
 	virtual ~Geometry(){}
 
 public:
-	uint32_t ID = INVALID_ID;
-	uint32_t InternalID = INVALID_ID;
-	uint32_t Generation = INVALID_ID;
+	uint32_t ID;
+	uint32_t InternalID;
+	uint32_t Generation;
 	char name[GEOMETRY_NAME_MAX_LENGTH];
-	Material* Material = nullptr;
+	Material* Material;
 
 };
