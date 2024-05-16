@@ -8,8 +8,6 @@ layout (location = 0) out vec4 vColor;
 layout (set = 0, binding = 0, std140) uniform GlobalUniformObject{
 	mat4 projection;
 	mat4 view;
-	mat4 data1;
-	mat4 data2;
 }GlobalUBO;
 
 layout (push_constant) uniform PushConstants{
