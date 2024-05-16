@@ -35,7 +35,7 @@ bool ShaderSystem::Initialize(IRenderer* renderer, SShaderSystemConfig config) {
 	
 	// Figure out how large of a hashtable is needed.
 	// Block of memory will contain state structure then the block for the hashtable.
-	LookupMemory = Memory::Allocate(sizeof(uint32_t) * config.max_shader_count, MemoryType::eMemory_Type_Array);
+	LookupMemory = Memory::Allocate(sizeof(uint32_t) * config.max_shader_count, MemoryType::eMemory_Type_Hashtable);
 	Shaders = (Shader*)Memory::Allocate(sizeof(Shader) * config.max_shader_count, MemoryType::eMemory_Type_Array);
 	Config = config;
 	CurrentShaderID = INVALID_ID;
@@ -72,7 +72,6 @@ void ShaderSystem::Shutdown() {
 		}
 
 		Lookup.Destroy();
-		Memory::Free(LookupMemory, sizeof(uint32_t) * Config.max_shader_count, MemoryType::eMemory_Type_Array);
 		Memory::Free(Shaders, sizeof(Shader) * Config.max_shader_count, MemoryType::eMemory_Type_Array);
 	}
 }
@@ -87,10 +86,7 @@ bool ShaderSystem::Create(ShaderConfig* config) {
 		return false;
 	}
 	
-	size_t NameLen = strlen(config->name);
-	OutShader->Name = (char*)Memory::Allocate(NameLen, MemoryType::eMemory_Type_String);
-	strncpy(OutShader->Name, config->name, NameLen);
-
+	OutShader->Name = StringCopy(config->name);
 	OutShader->State = eShader_State_Not_Created;
 	OutShader->UseInstances = config->use_instances;
 	OutShader->UseLocals = config->use_local;
@@ -103,7 +99,7 @@ bool ShaderSystem::Create(ShaderConfig* config) {
 	// 'uniforms' array stored in the shader for quick lookups by name.
 	size_t ElementSize = sizeof(unsigned short);
 	size_t ElementCount = 1024;
-	OutShader->HashtableBlock = Memory::Allocate(ElementCount * ElementSize, MemoryType::eMemory_Type_Unknow);
+	OutShader->HashtableBlock = Memory::Allocate(ElementCount * ElementSize, MemoryType::eMemory_Type_Hashtable);
 	OutShader->UniformLookup.Create(ElementSize, (uint32_t)ElementCount, OutShader->HashtableBlock, false);
 
 	// Invalidate all spots in the hashtable.
@@ -147,7 +143,7 @@ bool ShaderSystem::Create(ShaderConfig* config) {
 			AddSampler(OutShader, config->uniforms[i]);
 		}
 		else {
-			AddUniform(OutShader,  config->uniforms[i]);
+			AddUniform(OutShader, config->uniforms[i]);
 		}
 	}
 
@@ -465,7 +461,7 @@ bool ShaderSystem::AddUniform(Shader* shader, const char* uniform_name, uint32_t
 		}
 
 		// Push a new aligned range (align to 4, as required by Vulkan spec)
-		Entry.set_index = INVALID_ID_U8;
+		Entry.set_index = INVALID_ID_U16;
 		Range r = PaddingAligned(shader->PushConstantsSize, size, 4);
 		// utilize the aligned offset/range
 		Entry.offset = r.offset;

@@ -23,7 +23,7 @@ void HashTable::Create(size_t element_size, unsigned int element_count, void* me
 }
 
 void HashTable::Destroy() {
-	
+	Memory::Free(Memory, ElementCount * ElementSize, MemoryType::eMemory_Type_Hashtable);
 }
 
 bool HashTable::Set(const char* name, void* value) {

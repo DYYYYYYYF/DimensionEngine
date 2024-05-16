@@ -6,6 +6,16 @@
 
 class VulkanRenderPass;
 
+#define VULKAN_SHADER_MAX_STAGES 8
+#define VULKAN_SHADER_MAX_GLOBAL_TEXTURES 31
+#define VULKAN_SHADER_MAX_INSTANCE_TEXTURES 31
+
+#define VULKAN_SHADER_MAX_ATTRIBUTES 16
+#define VULKAN_SHADER_MAX_UNIFORMS 128
+
+#define VULKAN_SHADER_MAX_BINDINGS 32
+#define VULKAN_SHADER_MAX_PUSH_CONST_RANGES 32
+
 struct VulkanShaderStageConfig{
 	vk::ShaderStageFlagBits stage;
 	char filename[255];
@@ -25,6 +35,12 @@ struct VulkanShaderConfig {
 	unsigned short descriptor_set_count;
 	VulkanDescriptorSetConfig descriptor_sets[2];
 	vk::VertexInputAttributeDescription attributes[VULKAN_SHADER_MAX_ATTRIBUTES];
+};
+
+struct VulkanDescriptorState {
+	// One per frame
+	uint32_t generations[3];
+	uint32_t ids[3];
 };
 
 struct VulkanShaderDescriptorSetState {
@@ -50,7 +66,7 @@ public:
 	void* MappedUniformBufferBlock;
 	uint32_t ID;
 	VulkanShaderConfig Config;
-	VulkanRenderPass* Renderpass;
+	VulkanRenderPass* Renderpass = nullptr;
 	VulkanShaderStage Stages[VULKAN_SHADER_MAX_STAGES];
 
 	vk::DescriptorPool DescriptorPool;

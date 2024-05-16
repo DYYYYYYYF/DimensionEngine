@@ -16,6 +16,6 @@ public:
 	uint32_t InternalID;
 	uint32_t Generation;
 	char name[GEOMETRY_NAME_MAX_LENGTH];
-	Material* Material;
+	Material* Material = nullptr;
 
 };

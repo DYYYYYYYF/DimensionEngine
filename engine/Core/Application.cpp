@@ -139,7 +139,7 @@ bool ApplicationCreate(SGame* game_instance){
 
 	// TODO: Temp
 	// AppState.TestGeometry = GeometrySystem::GetDefaultGeometry();
-	SGeometryConfig GeoConfig = GeometrySystem::GeneratePlaneConfig(5.0f, 2.0f, 5, 2, 5.0f, 2.0f, "TestGeometry", "TestMaterial");
+	SGeometryConfig GeoConfig = GeometrySystem::GeneratePlaneConfig(5.0f, 2.0f, 5, 2, 5.0f, 2.0f, "TestGeometry", "Material.World");
 	AppState.TestGeometry = GeometrySystem::AcquireFromConfig(GeoConfig, true);
 
 	// Clean up the allocations for the geometry config.
@@ -152,8 +152,8 @@ bool ApplicationCreate(SGame* game_instance){
 	UIConfig.vertex_count = 4;
 	UIConfig.index_size = sizeof(uint32_t);
 	UIConfig.index_count = 6;
-	strncpy(UIConfig.material_name, "TestUIMaterial", MATERIAL_NAME_MAX_LENGTH);
-	strncpy(UIConfig.name, "TestUIMaterial", MATERIAL_NAME_MAX_LENGTH);
+	strncpy(UIConfig.material_name, "Material.UI", MATERIAL_NAME_MAX_LENGTH);
+	strncpy(UIConfig.name, "Material.UI", MATERIAL_NAME_MAX_LENGTH);
 
 	const float f = 512.0f;
 	Vertex2D UIVerts[4];

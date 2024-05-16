@@ -7,14 +7,8 @@
 
 class Texture;
 
-#define VULKAN_SHADER_MAX_STAGES 8
-#define VULKAN_SHADER_MAX_GLOBAL_TEXTURES 31
-#define VULKAN_SHADER_MAX_INSTANCE_TEXTURES 31
-#define VULKAN_SHADER_MAX_ATTRIBUTES 16
-
-#define VULKAN_SHADER_MAX_UNIFORMS 128
-#define VULKAN_SHADER_MAX_BINDINGS 32
-#define VULKAN_SHADER_MAX_PUSH_CONST_RANGES 32
+#define BUILTIN_SHADER_NAME_MATERIAL "Shader.Builtin.Material"
+#define BUILTIN_SHADER_NAME_UI "Shader.Builtin.UI"
 
 enum ShaderState {
 	eShader_State_Not_Created,
@@ -153,12 +147,6 @@ struct MaterialShaderInstanceUbo {
 	Vec4 v_reserved2;	// 16 Bytes,reserved for future use
 };
 
-struct VulkanDescriptorState {
-	// One per frame
-	uint32_t generations[3];
-	uint32_t ids[3];
-};
-
 struct ShaderConfig {
 	char* name = nullptr;
 	bool use_instances;
@@ -198,13 +186,13 @@ public:
 	ShaderScope BoundScope;
 	uint32_t BoundInstanceId;
 	uint32_t BoundUboOffset;
-	void* HashtableBlock;
+	void* HashtableBlock = nullptr;
 	HashTable UniformLookup;
 	ShaderState State;
 	unsigned short PushConstantsRangeCount;
 	Range PushConstantsRanges[32];
 	unsigned short AttributeStride;
-	void* InternalData;
+	void* InternalData = nullptr;
 
 	std::vector<ShaderUniform> Uniforms;
 	std::vector<ShaderAttribute> Attributes;

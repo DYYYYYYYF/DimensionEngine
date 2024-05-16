@@ -15,7 +15,7 @@ class Texture;
 
 class VulkanContext {
 public:
-	VulkanContext(): Allocator(nullptr) {}
+	VulkanContext(): Allocator(nullptr), Shaders(nullptr){}
 	virtual ~VulkanContext() {}
 
 public:

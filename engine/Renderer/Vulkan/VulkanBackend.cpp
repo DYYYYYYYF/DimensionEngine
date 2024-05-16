@@ -853,7 +853,7 @@ void VulkanBackend::DrawGeometry(GeometryRenderData geometry) {
 	CmdBuffer->CommandBuffer.bindVertexBuffers(0, Context.ObjectVertexBuffer.Buffer, offsets);
 
 	// Draw index or non-index
-	if (BufferData->index_element_size > 0) {
+	if (BufferData->index_count > 0) {
 		// Bind index buffer at offset
 		CmdBuffer->CommandBuffer.bindIndexBuffer(Context.ObjectIndexBuffer.Buffer, BufferData->index_buffer_offset, vk::IndexType::eUint32);
 		CmdBuffer->CommandBuffer.drawIndexed(BufferData->index_count, 1, 0, 0, 0);
@@ -945,7 +945,8 @@ bool VulkanBackend::CreateShader(Shader* shader, unsigned short renderpass_id, u
 	shader->InternalData = Memory::Allocate(sizeof(VulkanShader), MemoryType::eMemory_Type_Renderer);
 
 	// TODO: Dynamic renderpass.
-	VulkanRenderPass* Renderpass = renderpass_id ? &Context.MainRenderPass : &Context.UIRenderPass;
+	VulkanRenderPass* Renderpass = renderpass_id == BuiltinRenderpass::eButilin_Renderpass_World
+		? &Context.MainRenderPass : &Context.UIRenderPass;
 
 	// Translate stages.
 	vk::ShaderStageFlags VkStages[VULKAN_SHADER_MAX_STAGES];
@@ -1047,7 +1048,7 @@ bool VulkanBackend::CreateShader(Shader* shader, unsigned short renderpass_id, u
 			.setDescriptorCount(1)
 			.setDescriptorType(vk::DescriptorType::eUniformBuffer)
 			.setStageFlags(vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment);
-		GlobalDescriptorSetConfig.binding_count++;
+		InstanceDescriptorSetConfig.binding_count++;
 
 		OutShader->Config.descriptor_sets[DESC_SET_INDEX_INSTANCE] = InstanceDescriptorSetConfig;
 		OutShader->Config.descriptor_set_count++;
@@ -1057,6 +1058,7 @@ bool VulkanBackend::CreateShader(Shader* shader, unsigned short renderpass_id, u
 	// TODO: Dynamic
 	for (uint32_t i = 0; i < 1024; ++i) {
 		OutShader->InstanceStates[i].id = INVALID_ID;
+		OutShader->InstanceStates[i].offset	= 0;
 	}
 
 	return true;
@@ -1095,7 +1097,7 @@ bool VulkanBackend::DestroyShader(Shader* shader) {
 		// Pipeline
 		Shader->Pipeline.Destroy(&Context);
 
-		// SHader modules.
+		// Shader modules.
 		for (uint32_t i = 0; i < Shader->Config.stage_count; ++i) {
 			LogicalDevice.destroyShaderModule(Shader->Stages[i].shader_module, VkAllocator);
 		}
@@ -1106,6 +1108,9 @@ bool VulkanBackend::DestroyShader(Shader* shader) {
 		// Free the internal data memory;
 		Memory::Free(shader->InternalData, sizeof(VulkanShader), MemoryType::eMemory_Type_Renderer);
 		shader->InternalData = nullptr;
+
+		// Free hash mem.
+		shader->UniformLookup.Destroy();
 	}
 
 	return true;
@@ -1196,6 +1201,7 @@ bool VulkanBackend::InitializeShader(Shader* shader) {
 	// Create descriptor set layouts.
 	Memory::Zero(Shader->DescriptorSetLayouts, sizeof(vk::DescriptorSetLayout) * Shader->Config.descriptor_set_count);
 	for (uint32_t i = 0; i < Shader->Config.descriptor_set_count; ++i) {
+
 		vk::DescriptorSetLayoutCreateInfo LayoutInfo;
 		LayoutInfo.setBindingCount(Shader->Config.descriptor_sets[i].binding_count)
 			.setPBindings(Shader->Config.descriptor_sets[i].bindings);
@@ -1257,7 +1263,7 @@ bool VulkanBackend::InitializeShader(Shader* shader) {
 	}
 
 	// Map the entire buffer's memory.
-	Shader->MappedUniformBufferBlock = Shader->UniformBuffer.LockMemory(&Context, 0, VK_WHOLE_SIZE/**/, vk::MemoryMapFlags());
+	Shader->MappedUniformBufferBlock = Shader->UniformBuffer.LockMemory(&Context, 0, TotalBufferSize/*TotalBufferSize*/, vk::MemoryMapFlags());
 
 	// Allocate global descriptor sets, one per frame. Global is always the first set.
 	vk::DescriptorSetLayout GlobalLayouts[3] = {
@@ -1382,18 +1388,18 @@ bool VulkanBackend::ApplyInstanceShader(Shader* shader) {
 	// Only do this if the descriptor has not yet been updated.
 	uint32_t* InstanceUboGeneration = &(ObjectState->descriptor_set_state.descriptor_states[DescriptorIndex].generations[ImageIndex]);
 	// TODO: determine if update is required.
+	vk::DescriptorBufferInfo BufferInfo;
+	vk::WriteDescriptorSet UboDescriptor;
 	if (*InstanceUboGeneration == INVALID_ID/* || *GlobalUboGeneration != Material->Generation*/) {
-		vk::DescriptorBufferInfo BufferInfo;
 		BufferInfo.setBuffer(Internal->UniformBuffer.Buffer)
 			.setOffset(ObjectState->offset)
 			.setRange(shader->UboStride);
 
-		vk::WriteDescriptorSet UboDescriptor;
 		UboDescriptor.setDstSet(ObjectDescriptorSet)
 			.setDstBinding(DescriptorIndex)
 			.setDescriptorType(vk::DescriptorType::eUniformBuffer)
 			.setDescriptorCount(1)
-			.setPBufferInfo(&BufferInfo);
+			.setBufferInfo(BufferInfo);
 
 		DescriptorWrites[DescriptorCount] = UboDescriptor;
 		DescriptorCount++;
@@ -1404,11 +1410,12 @@ bool VulkanBackend::ApplyInstanceShader(Shader* shader) {
 	DescriptorIndex++;
 
 	// Samplers will always be in the binding. If the binding count is less than 2, there are no samplers.
+	vk::DescriptorImageInfo ImageInfos[VULKAN_SHADER_MAX_GLOBAL_TEXTURES];
+	vk::WriteDescriptorSet SamplerDescriptor;
 	if (Internal->Config.descriptor_sets[DESC_SET_INDEX_INSTANCE].binding_count > 1) {
 		// Iterate samplers.
 		uint32_t TotalSamplerCount = Internal->Config.descriptor_sets[DESC_SET_INDEX_INSTANCE].bindings[BINDING_INDEX_SAMPLER].descriptorCount;
 		uint32_t UpdateSamplerCount = 0;
-		vk::DescriptorImageInfo ImageInfos[VULKAN_SHADER_MAX_GLOBAL_TEXTURES];
 		for (uint32_t i = 0; i < TotalSamplerCount; ++i) {
 			// TODO: only update in the list if actually needing an update.
 			Texture* t = Internal->InstanceStates[shader->BoundInstanceId].instance_textures[i];
@@ -1426,7 +1433,6 @@ bool VulkanBackend::ApplyInstanceShader(Shader* shader) {
 			UpdateSamplerCount++;
 		}
 
-		vk::WriteDescriptorSet SamplerDescriptor;
 		SamplerDescriptor.setDstSet(ObjectDescriptorSet)
 			.setDstBinding(DescriptorIndex)
 			.setDescriptorType(vk::DescriptorType::eCombinedImageSampler)
@@ -1530,6 +1536,9 @@ bool VulkanBackend::ReleaseInstanceResource(Shader* shader, uint32_t instance_id
 	Memory::Zero(InstanceState->descriptor_set_state.descriptor_states, sizeof(VulkanDescriptorState) * VULKAN_SHADER_MAX_BINDINGS);
 
 	if (InstanceState->instance_textures.size() > 0) {
+		for (uint32_t i = 0; i < InstanceState->instance_textures.size(); ++i) {
+			InstanceState->instance_textures[i] = nullptr;
+		}
 		InstanceState->instance_textures.clear();
 	}
 
@@ -1537,7 +1546,7 @@ bool VulkanBackend::ReleaseInstanceResource(Shader* shader, uint32_t instance_id
 	InstanceState->offset = INVALID_ID;
 	InstanceState->id = INVALID_ID;
 
-	return false;
+	return true;
 }
 
 bool VulkanBackend::SetUniform(Shader* shader, ShaderUniform* uniform, const void* value) {

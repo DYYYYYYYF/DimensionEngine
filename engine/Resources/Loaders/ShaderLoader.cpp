@@ -83,11 +83,9 @@ bool ShaderLoader::Load(const char* name, Resource* resource) {
 			// TODO: version.
 		}
 		else if (strcmp(RawVarName, "name") == 0) {
-			size_t StrLen = strlen(TrimmedValue);
 			ResourceData->name = StringCopy(TrimmedValue);
 		}
 		else if (strcmp(RawVarName, "renderpass") == 0) {
-			size_t StrLen = strlen(TrimmedValue);
 			ResourceData->renderpass_name = StringCopy(TrimmedValue);
 		}
 		else if (strcmp(RawVarName, "stages") == 0) {
@@ -194,6 +192,7 @@ bool ShaderLoader::Load(const char* name, Resource* resource) {
 				}
 
 				// Take a copy of the attribute name.
+				Attribute.name_length = (unsigned short)strlen(Fields[1]);
 				Attribute.name = StringCopy(Fields[1]);
 
 				// Add the attribute.
@@ -287,11 +286,11 @@ bool ShaderLoader::Load(const char* name, Resource* resource) {
 					Uniform.scope = ShaderScope::eShader_Scope_Global;
 				}
 
-				// Take a copy of the attribute name.
+				// Take a copy of the uniform name.
 				Uniform.name_length = (unsigned short)strlen(Fields[2]);
 				Uniform.name = StringCopy(Fields[2]);
 
-				// Add the attribute.
+				// Add the uniform.
 				ResourceData->uniforms.push_back(Uniform);
 				ResourceData->uniform_count++;
 			}

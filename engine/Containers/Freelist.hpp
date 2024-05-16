@@ -5,7 +5,7 @@
 struct FreelistNode {
 	unsigned long long offset;
 	unsigned long long size;
-	struct FreelistNode* next;
+	struct FreelistNode* next = nullptr;
 };
 
 class Freelist {

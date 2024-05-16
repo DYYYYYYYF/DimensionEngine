@@ -29,7 +29,7 @@ struct SGeometryConfig {
 	// Indices
 	uint32_t index_size;
 	uint32_t index_count;
-	void* indices;
+	void* indices = nullptr;
 
 	char name[GEOMETRY_NAME_MAX_LENGTH];
 	char material_name[MATERIAL_NAME_MAX_LENGTH];

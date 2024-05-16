@@ -52,6 +52,8 @@ bool IRenderer::Initialize(const char* application_name, struct SPlatformState* 
 	// Shaders
 	Resource ConfigResource;
 	ShaderConfig* Config = nullptr;
+	Resource UIConfigResource;
+	ShaderConfig* UIConfig = nullptr;
 
 	// Builtin material shader.
 	ResourceSystem::Load(BUILTIN_SHADER_NAME_MATERIAL, ResourceType::eResource_Type_Shader, &ConfigResource);
@@ -61,10 +63,10 @@ bool IRenderer::Initialize(const char* application_name, struct SPlatformState* 
 	MaterialShaderID = ShaderSystem::GetID(BUILTIN_SHADER_NAME_MATERIAL);
 
 	// Builtin ui shader.
-	ResourceSystem::Load(BUILTIN_SHADER_NAME_UI, ResourceType::eResource_Type_Shader, &ConfigResource);
-	Config = (ShaderConfig*)ConfigResource.Data;
-	ShaderSystem::Create(Config);
-	ResourceSystem::Unload(&ConfigResource);
+	ResourceSystem::Load(BUILTIN_SHADER_NAME_UI, ResourceType::eResource_Type_Shader, &UIConfigResource);
+	UIConfig = (ShaderConfig*)UIConfigResource.Data;
+	ShaderSystem::Create(UIConfig);
+	ResourceSystem::Unload(&UIConfigResource);
 	UISHaderID = ShaderSystem::GetID(BUILTIN_SHADER_NAME_UI);
 
 	// World projection/view

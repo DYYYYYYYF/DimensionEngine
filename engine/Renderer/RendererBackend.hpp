@@ -62,7 +62,7 @@ public:
 
 public:
 	// Points to default textures.
-	Texture* DefaultDiffuse;
+	Texture* DefaultDiffuse = nullptr;
 
 protected:
 	RendererBackendType BackendType;

@@ -362,11 +362,11 @@ bool MaterialSystem::ApplyInstance(Material* mat) {
 	MATERIAL_APPLY_OR_FAIL(ShaderSystem::BindInstance(mat->InternalId));
 	if (mat->ShaderID == MaterialShaderID) {
 		MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(MaterialLocations.diffuse_color, &mat->DiffuseColor));
-		MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(MaterialLocations.diffuse_texture, &mat->DiffuseMap.texture));
+		MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(MaterialLocations.diffuse_texture, mat->DiffuseMap.texture));
 	}
 	else if (mat->ShaderID == UIShaderID) {
 		MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(UILocations.diffuse_color, &mat->DiffuseColor));
-		MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(UILocations.diffuse_texture, &mat->DiffuseMap.texture));
+		MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(UILocations.diffuse_texture, mat->DiffuseMap.texture));
 	}
 	else {
 		UL_ERROR("material_system_apply_instance(): Unrecognized shader id '%d' on shader '%s'.", mat->ShaderID, mat->Name);

@@ -24,5 +24,5 @@ public:
 
 	uint32_t Generation;
 	char Name[TEXTURE_NAME_MAX_LENGTH];
-	void* InternalData;
+	void* InternalData = nullptr;
 };

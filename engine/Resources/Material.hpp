@@ -2,15 +2,15 @@
 
 #include "Math/MathTypes.hpp"
 
+#define DEFAULT_MATERIAL_NAME "default"
+#define VULKAN_MAX_MATERIAL_COUNT 1024
 #define MATERIAL_NAME_MAX_LENGTH 256
-#define BUILTIN_SHADER_NAME_MATERIAL "Shader.Builtin.Material"
-#define BUILTIN_SHADER_NAME_UI "Shader.Builtin.UI"
 
 class Texture;
 
 struct SMaterialConfig {
 	char name[MATERIAL_NAME_MAX_LENGTH];
-	char* shader_name;
+	char* shader_name = nullptr;
 	bool auto_release;
 	Vec4 diffuse_color;
 	char diffuse_map_name[TEXTURE_NAME_MAX_LENGTH];
@@ -33,7 +33,7 @@ struct UIShaderUniformLocations {
 };
 
 struct TextureMap {
-	Texture* texture;
+	Texture* texture = nullptr;
 	TextureUsage usage;
 };
 
