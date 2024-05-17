@@ -23,8 +23,6 @@ public:
 
 	virtual void OnResize(unsigned short width, unsigned short height);
 	virtual bool DrawFrame(SRenderPacket* packet);
-	
-	virtual void SetViewTransform(Matrix4 view) { View = view; }
 
 	virtual void CreateTexture(const unsigned char* pixels, Texture* texture);
 	virtual void CreateTexture(Texture* texture);
@@ -139,6 +137,13 @@ public:
 	 * @return b8 True on success; otherwise false.
 	 */
 	virtual bool SetUniform(Shader* shader, ShaderUniform* uniform, const void* value);
+
+	public:
+		virtual void SetViewTransform(Matrix4 view, Vec3 view_pos) { View = view; ViewPosition = view_pos; }
+		virtual const Matrix4& GetViewTransform() const { return View; }
+		virtual Matrix4 GetViewTransform() { return View; }
+		virtual const Vec3& GetViewPosition() const { return ViewPosition; }
+		virtual Vec3 GetViewPosition() { return ViewPosition; }
 
 protected:
 	RendererBackendType BackendType;

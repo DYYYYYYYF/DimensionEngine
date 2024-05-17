@@ -339,7 +339,58 @@ bool ApplicationOnKey(unsigned short code, void* sender, void* listener_instance
 			return true;
 		}
 		else if (KeyCode == eKeys_A) {
-			//printf("Key 'A' pressed!");
+			Vec3 ViewPos = Renderer->GetViewPosition();
+			ViewPos = ViewPos + Vec3(0.1, 0, 0);
+			Matrix4 ViewMat = Matrix4::Identity();
+			ViewMat.SetTranslation(ViewPos);
+
+			Renderer->SetViewTransform(ViewMat, ViewPos);
+			return true;
+		}
+		else if (KeyCode == eKeys_D) {
+			Vec3 ViewPos = Renderer->GetViewPosition();
+			ViewPos = ViewPos + Vec3(-0.1, 0, 0);
+			Matrix4 ViewMat = Matrix4::Identity();
+			ViewMat.SetTranslation(ViewPos);
+
+			Renderer->SetViewTransform(ViewMat, ViewPos);
+			return true;
+		}
+		else if (KeyCode == eKeys_W) {
+			Vec3 ViewPos = Renderer->GetViewPosition();
+			ViewPos = ViewPos + Vec3(0, 0, 0.1);
+			Matrix4 ViewMat = Matrix4::Identity();
+			ViewMat.SetTranslation(ViewPos);
+
+			Renderer->SetViewTransform(ViewMat, ViewPos);
+			return true;
+		}
+		else if (KeyCode == eKeys_S) {
+			Vec3 ViewPos = Renderer->GetViewPosition();
+			ViewPos = ViewPos + Vec3(0, 0, -0.1);
+			Matrix4 ViewMat = Matrix4::Identity();
+			ViewMat.SetTranslation(ViewPos);
+
+			Renderer->SetViewTransform(ViewMat, ViewPos);
+			return true;
+		}
+		else if (KeyCode == eKeys_Q) {
+			Vec3 ViewPos = Renderer->GetViewPosition();
+			ViewPos = ViewPos + Vec3(0, -0.1, 0);
+			Matrix4 ViewMat = Matrix4::Identity();
+			ViewMat.SetTranslation(ViewPos);
+
+			Renderer->SetViewTransform(ViewMat, ViewPos);
+			return true;
+		}
+		else if (KeyCode == eKeys_E) {
+			Vec3 ViewPos = Renderer->GetViewPosition();
+			ViewPos = ViewPos + Vec3(0, 0.1, 0);
+			Matrix4 ViewMat = Matrix4::Identity();
+			ViewMat.SetTranslation(ViewPos);
+
+			Renderer->SetViewTransform(ViewMat, ViewPos);
+			return true;
 		}
 		else {
 			//printf("%c key released.", KeyCode);
