@@ -8,7 +8,8 @@ layout (set = 1, binding = 0) uniform LocalUniformObject{
 }ObjectUbo;
 
 // Samplers
-layout (set = 1, binding = 1) uniform sampler2D DiffuseSampler;
+const int SAMP_DIFFUSE = 0;
+layout (set = 1, binding = 1) uniform sampler2D Samplers[1];
 
 layout (location = 1) in struct dto{
 	vec2 tex_coord;
@@ -25,5 +26,5 @@ float AlphaTest(float a, float b){
 void main(){
     
 
-   FragColor = ObjectUbo.diffuse_color * texture(DiffuseSampler, in_dto.tex_coord);
+   FragColor = ObjectUbo.diffuse_color * texture(Samplers[SAMP_DIFFUSE], in_dto.tex_coord);
 }

@@ -80,6 +80,8 @@ bool ShaderSystem::Create(ShaderConfig* config) {
 	uint32_t ID = NewShaderID();
 	Shader* OutShader = &Shaders[ID];
 	Memory::Zero(OutShader, sizeof(Shader));
+	OutShader = new (OutShader)Shader();
+
 	OutShader->ID = ID;
 	if (OutShader->ID == INVALID_ID) {
 		UL_ERROR("Unable to find free slot to create new shader. Aborting.");

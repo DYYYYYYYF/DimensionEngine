@@ -33,17 +33,15 @@ bool ShaderLoader::Load(const char* name, Resource* resource) {
 
 	// Set some defaults, create arrays.
 	ShaderConfig* ResourceData = (ShaderConfig*)Memory::Allocate(sizeof(ShaderConfig), MemoryType::eMemory_Type_Resource);
+	ResourceData = new(ResourceData)ShaderConfig();
+	ASSERT(ResourceData);
+
 	ResourceData->attribute_count = 0;
 	ResourceData->uniform_count = 0;
 	ResourceData->use_instances = false;
 	ResourceData->use_local = false;
 	ResourceData->renderpass_name = nullptr;
 	ResourceData->name = nullptr;
-	ResourceData->attributes.clear();
-	ResourceData->uniforms.clear();
-	ResourceData->stages.clear();
-	ResourceData->stage_names.clear();
-	ResourceData->stage_filenames.clear();
 
 	// Read each line of the file.
 	char LineBuf[512] = "";

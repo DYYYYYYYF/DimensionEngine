@@ -155,4 +155,7 @@ protected:
 
 	uint32_t MaterialShaderID;
 	uint32_t UISHaderID;
+
+	Vec4 AmbientColor;
+	Vec3 ViewPosition;
 };

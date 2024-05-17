@@ -156,3 +156,8 @@ inline char* StringCopy(const char* str) {
 	Copy[Length] = '\0';
 	return Copy;
 }
+
+inline bool StringToFloat(const char* str, float* f) {
+	*f = (float)atof(str);
+	return true;
+}

@@ -13,23 +13,9 @@ struct SMaterialConfig {
 	char* shader_name = nullptr;
 	bool auto_release;
 	Vec4 diffuse_color;
+	float shininess;
 	char diffuse_map_name[TEXTURE_NAME_MAX_LENGTH];
-};
-
-struct MaterialShaderUniformLocations {
-	unsigned short projection;
-	unsigned short view;
-	unsigned short diffuse_color;
-	unsigned short diffuse_texture;
-	unsigned short model;
-};
-
-struct UIShaderUniformLocations {
-	unsigned short projection;
-	unsigned short view;
-	unsigned short diffuse_color;
-	unsigned short diffuse_texture;
-	unsigned short model;
+	char specular_map_name[TEXTURE_NAME_MAX_LENGTH];
 };
 
 struct TextureMap {
@@ -48,6 +34,8 @@ public:
 	char Name[MATERIAL_NAME_MAX_LENGTH];
 	Vec4 DiffuseColor;
 	TextureMap DiffuseMap;
+	TextureMap SpecularMap;
+	float Shininess;
 
 	uint32_t ShaderID;
 };

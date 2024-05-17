@@ -163,8 +163,12 @@ Material* MaterialSystem::AcquireFromConfig(SMaterialConfig config) {
 				MaterialShaderID = s->ID;
 				MaterialLocations.projection = ShaderSystem::GetUniformIndex(s, "projection");
 				MaterialLocations.view = ShaderSystem::GetUniformIndex(s, "view");
+				MaterialLocations.ambient_color = ShaderSystem::GetUniformIndex(s, "ambient_color");
 				MaterialLocations.diffuse_color = ShaderSystem::GetUniformIndex(s, "diffuse_color");
 				MaterialLocations.diffuse_texture = ShaderSystem::GetUniformIndex(s, "diffuse_texture");
+				MaterialLocations.specular_texture = ShaderSystem::GetUniformIndex(s, "specular_texture");
+				MaterialLocations.view_position = ShaderSystem::GetUniformIndex(s, "view_position");
+				MaterialLocations.shininess = ShaderSystem::GetUniformIndex(s, "shininess");
 				MaterialLocations.model = ShaderSystem::GetUniformIndex(s, "model");
 			}
 			else if (UIShaderID == INVALID_ID && strcmp(config.shader_name, BUILTIN_SHADER_NAME_UI) == 0) {
@@ -258,6 +262,7 @@ bool MaterialSystem::LoadMaterial(SMaterialConfig config, Material* mat) {
 
 	// Diffuse color
 	mat->DiffuseColor = config.diffuse_color;
+	mat->Shininess = config.shininess;
 
 	// Diffuse map
 	if (strlen(config.diffuse_map_name) > 0) {
@@ -272,6 +277,21 @@ bool MaterialSystem::LoadMaterial(SMaterialConfig config, Material* mat) {
 		// NOTE: Only set for clarity, as call to Memory::Zero above does this already.
 		mat->DiffuseMap.usage = TextureUsage::eTexture_Usage_Unknown;
 		mat->DiffuseMap.texture = nullptr;
+	}
+
+	// Specular map
+	if (strlen(config.specular_map_name) > 0) {
+		mat->SpecularMap.usage = TextureUsage::eTexture_Usage_Map_Specular;
+		mat->SpecularMap.texture = TextureSystem::Acquire(config.specular_map_name, true);
+		if (mat->SpecularMap.texture == nullptr) {
+			UL_WARN("Unable to load texture '%s' for material '%s', using default.", config.specular_map_name, mat->Name);
+			mat->SpecularMap.texture = TextureSystem::GetDefaultSpecularTexture();
+		}
+	}
+	else {
+		// NOTE: Only set for clarity, as call to Memory::Zero above does this already.
+		mat->SpecularMap.usage = TextureUsage::eTexture_Usage_Unknown;
+		mat->SpecularMap.texture = nullptr;
 	}
 
 	// TODO: other maps.
@@ -300,6 +320,11 @@ void MaterialSystem::DestroyMaterial(Material* mat) {
 		TextureSystem::Release(mat->DiffuseMap.texture->Name);
 	}
 
+	// Release texture references.
+	if (mat->SpecularMap.texture != nullptr) {
+		TextureSystem::Release(mat->SpecularMap.texture->Name);
+	}
+
 	//Release renderer resources.
 	if (mat->ShaderID != INVALID_ID && mat->InternalId != INVALID_ID) {
 		Shader* s = ShaderSystem::GetByID(mat->ShaderID);
@@ -323,12 +348,18 @@ bool MaterialSystem::CreateDefaultMaterial() {
 	DefaultMaterial.DiffuseMap.usage = TextureUsage::eTexture_Usage_Map_Diffuse;
 	DefaultMaterial.DiffuseMap.texture = TextureSystem::GetDefaultTexture();
 
+	DefaultMaterial.SpecularMap.usage = TextureUsage::eTexture_Usage_Map_Specular;
+	DefaultMaterial.SpecularMap.texture = TextureSystem::GetDefaultSpecularTexture();
+
 	Shader* s = ShaderSystem::Get(BUILTIN_SHADER_NAME_MATERIAL);
 	DefaultMaterial.InternalId = Renderer->AcquireInstanceResource(s);
 	if (DefaultMaterial.InternalId == INVALID_ID) {
 		UL_ERROR("Create default material failed. Application quit now!");
 		return false;
 	}
+
+	// Make sure to assign the shader id.
+	DefaultMaterial.ShaderID = s->ID;
 
 	return true;
 }
@@ -339,10 +370,12 @@ bool MaterialSystem::CreateDefaultMaterial() {
         return false;                                 \
     }
 
-bool MaterialSystem::ApplyGlobal(uint32_t shader_id, const Matrix4& projection, const Matrix4& view) {
+bool MaterialSystem::ApplyGlobal(uint32_t shader_id, const Matrix4& projection, const Matrix4& view, const Vec4& ambient_color, const Vec3& view_position) {
 	if (shader_id == MaterialShaderID) {
 		MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(MaterialLocations.projection, &projection));
 		MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(MaterialLocations.view, &view));
+		MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(MaterialLocations.ambient_color, &ambient_color));
+		MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(MaterialLocations.view_position, &view_position));
 	}
 	else if (shader_id == UIShaderID) {
 		MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(UILocations.projection, &projection));
@@ -363,6 +396,8 @@ bool MaterialSystem::ApplyInstance(Material* mat) {
 	if (mat->ShaderID == MaterialShaderID) {
 		MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(MaterialLocations.diffuse_color, &mat->DiffuseColor));
 		MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(MaterialLocations.diffuse_texture, mat->DiffuseMap.texture));
+		MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(MaterialLocations.specular_texture, mat->SpecularMap.texture));
+		MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(MaterialLocations.shininess, &mat->Shininess));
 	}
 	else if (mat->ShaderID == UIShaderID) {
 		MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(UILocations.diffuse_color, &mat->DiffuseColor));

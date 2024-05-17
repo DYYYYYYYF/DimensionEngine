@@ -139,7 +139,8 @@ bool ApplicationCreate(SGame* game_instance){
 
 	// TODO: Temp
 	// AppState.TestGeometry = GeometrySystem::GetDefaultGeometry();
-	SGeometryConfig GeoConfig = GeometrySystem::GeneratePlaneConfig(5.0f, 2.0f, 5, 2, 5.0f, 2.0f, "TestGeometry", "Material.World");
+	//SGeometryConfig GeoConfig = GeometrySystem::GeneratePlaneConfig(5.0f, 2.0f, 5, 2, 5.0f, 2.0f, "TestGeometry", "Material.World");
+	SGeometryConfig GeoConfig = GeometrySystem::GenerateCubeConfig(5.0f, 5.0f, 5.0f, 1.0f, 1.0f, "TestCube", "Material.World");
 	AppState.TestGeometry = GeometrySystem::AcquireFromConfig(GeoConfig, true);
 
 	// Clean up the allocations for the geometry config.
@@ -155,32 +156,36 @@ bool ApplicationCreate(SGame* game_instance){
 	strncpy(UIConfig.material_name, "Material.UI", MATERIAL_NAME_MAX_LENGTH);
 	strncpy(UIConfig.name, "Material.UI", MATERIAL_NAME_MAX_LENGTH);
 
-	const float f = 512.0f;
+	const float h = 256.0f;
+	const float w = 64.0f;
+	const float x = 0.0f;
+	const float y = game_instance->app_config.start_height;
+
 	Vertex2D UIVerts[4];
-	UIVerts[0].position.x = 0.0f;
-	UIVerts[0].position.y = 0.0f;
+	UIVerts[0].position.x = x;
+	UIVerts[0].position.y = y;
 	UIVerts[0].texcoord.x = 0.0f;
 	UIVerts[0].texcoord.y = 0.0f;
 
-	UIVerts[1].position.x = f;
-	UIVerts[1].position.y = f;
+	UIVerts[1].position.x = x + h;
+	UIVerts[1].position.y = y - w;
 	UIVerts[1].texcoord.x = 1.0f;
 	UIVerts[1].texcoord.y = 1.0f;
 
-	UIVerts[2].position.x = 0.0f;
-	UIVerts[2].position.y = f;
+	UIVerts[2].position.x = x;
+	UIVerts[2].position.y = y - w;
 	UIVerts[2].texcoord.x = 0.0f;
 	UIVerts[2].texcoord.y = 1.0f;
 
-	UIVerts[3].position.x = f;
-	UIVerts[3].position.y = 0.0f;
+	UIVerts[3].position.x = x + h;
+	UIVerts[3].position.y = y;
 	UIVerts[3].texcoord.x = 1.0f;
 	UIVerts[3].texcoord.y = 0.0f;
 
 	UIConfig.vertices = UIVerts;
 
 	// Indices
-	uint32_t UIIndices[6] = { 2, 1, 0, 1, 3, 0 };
+	uint32_t UIIndices[6] = { 0, 1, 2, 0, 3, 1 };
 	UIConfig.indices = UIIndices;
 
 	// Get UI geometry from config.
@@ -240,7 +245,12 @@ bool ApplicationRun() {
 			// TODO: Temp
 			GeometryRenderData TestRender;
 			TestRender.geometry = AppState.TestGeometry;
-			TestRender.model = Matrix4::Identity();
+			//TestRender.model = Matrix4::Identity();
+			static float Angle = 0.0f;
+			Angle += (float)(1.0f * DeltaTime);
+			Quaternion Rotation = QuaternionFromAxisAngle(Vec3(0, 1, 0), Angle, true);
+			TestRender.model = QuatToMatrix(Rotation);
+			
 			Packet.geometries = &TestRender;
 			Packet.geometry_count = 1;
 

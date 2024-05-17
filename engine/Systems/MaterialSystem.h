@@ -40,7 +40,7 @@ public:
 	 * @param view A constant pointer to a view matrix.
 	 * @return True on success; otherwise false.
 	 */
-	static bool ApplyGlobal(uint32_t shader_id, const Matrix4& projection, const Matrix4& view);
+	static bool ApplyGlobal(uint32_t shader_id, const Matrix4& projection, const Matrix4& view, const Vec4& ambient_color, const Vec3& view_position);
 
 	/**
 	 * @brief Applies instance-level material data for the given material.

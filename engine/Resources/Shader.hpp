@@ -23,40 +23,6 @@ enum ShaderStage {
 	eShader_Stage_Compute = 0x00000008
 };
 
-/*
-enum ShaderAttributeType {
-	eShader_Attribute_Type_Float,
-	eShader_Attribute_Type_Float_2,
-	eShader_Attribute_Type_Float_3,
-	eShader_Attribute_Type_Float_4,
-	eShader_Attribute_Type_Matrix,
-	eShader_Attribute_Type_Int8,
-	eShader_Attribute_Type_Int8_2,
-	eShader_Attribute_Type_Int8_3,
-	eShader_Attribute_Type_Int8_4,
-	eShader_Attribute_Type_UInt8,
-	eShader_Attribute_Type_UInt8_2,
-	eShader_Attribute_Type_UInt8_3,
-	eShader_Attribute_Type_UInt8_4,
-	eShader_Attribute_Type_Int16,
-	eShader_Attribute_Type_Int16_2,
-	eShader_Attribute_Type_Int16_3,
-	eShader_Attribute_Type_Int16_4,
-	eShader_Attribute_Type_UInt16,
-	eShader_Attribute_Type_UInt16_2,
-	eShader_Attribute_Type_UInt16_3,
-	eShader_Attribute_Type_UInt16_4,
-	eShader_Attribute_Type_Int32,
-	eShader_Attribute_Type_Int32_2,
-	eShader_Attribute_Type_Int32_3,
-	eShader_Attribute_Type_Int32_4,
-	eShader_Attribute_Type_UInt32,
-	eShader_Attribute_Type_UInt32_2,
-	eShader_Attribute_Type_UInt32_3,
-	eShader_Attribute_Type_UInt32_4,
-};
-*/
-
 enum ShaderAttributeType {
 	eShader_Attribute_Type_Float	= 0U,
 	eShader_Attribute_Type_Float_2	= 1U,
@@ -85,6 +51,26 @@ enum ShaderUniformType {
 	eShader_Uniform_Type_UInt32		= 10U,
 	eShader_Uniform_Type_Sampler	= 11U,
 	eShader_Uniform_Type_Custom		= 12U
+};
+
+struct MaterialShaderUniformLocations {
+	unsigned short projection;
+	unsigned short view;
+	unsigned short ambient_color;
+	unsigned short diffuse_color;
+	unsigned short diffuse_texture;
+	unsigned short shininess;
+	unsigned short specular_texture;
+	unsigned short view_position;
+	unsigned short model;
+};
+
+struct UIShaderUniformLocations {
+	unsigned short projection;
+	unsigned short view;
+	unsigned short diffuse_color;
+	unsigned short diffuse_texture;
+	unsigned short model;
 };
 
 /**

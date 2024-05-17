@@ -9,12 +9,17 @@ use_local=1
 
 # Attributes: type,name
 attribute=vec3,in_position
+attribute=vec3,in_normal
 attribute=vec2,in_texcoord
 
 # Uniforms: type,scope,name
 # NOTE: For scope: 0=global, 1=instance, 2=local
 uniform=mat4,0,projection
 uniform=mat4,0,view
+uniform=vec4,0,ambient_color
+uniform=vec3,0,view_position
 uniform=vec4,1,diffuse_color
 uniform=samp,1,diffuse_texture
+uniform=samp,1,specular_texture
+uniform=float,1,shininess
 uniform=mat4,2,model
