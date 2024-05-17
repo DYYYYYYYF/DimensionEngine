@@ -161,6 +161,7 @@ bool GeometrySystem::CreateDefaultGeometries() {
 	uint32_t Indices[6] = { 0, 1, 2, 0, 3, 1 };
 
 	// Send the geometry off to the renderer to be uploaded to the GPU.
+	DefaultGeometry.InternalID = INVALID_ID;
 	if (!Renderer->CreateGeometry(&DefaultGeometry, sizeof(Vertex), 4, Verts, sizeof(uint32_t), 6, Indices)) {
 		UL_FATAL("Failed to create default geometry. Application quit now!");
 		return false;
@@ -197,6 +198,7 @@ bool GeometrySystem::CreateDefaultGeometries() {
 	uint32_t Indices2D[6] = { 2, 1, 0, 3, 0, 1 };
 
 	// Send the geometry off to the renderer to be uploaded to the GPU.
+	Default2DGeometry.InternalID = INVALID_ID;
 	if (!Renderer->CreateGeometry(&Default2DGeometry, sizeof(Vertex2D), 4, Verts2D, sizeof(uint32_t), 6, Indices2D)) {
 		UL_FATAL("Failed to create default 2d geometry. Application quit now!");
 		return false;
@@ -357,4 +359,169 @@ SGeometryConfig GeometrySystem::GeneratePlaneConfig(float width, float height, u
 	}
 
 	return Config;
+}
+
+SGeometryConfig GeometrySystem::GenerateCubeConfig(float width, float height,
+	float depth, float tile_x, float tile_y, const char* name, const char* material_name) {
+		if (width == 0) {
+			UL_WARN("width must be non-zero. Defauting to one.");
+			width = 1.0f;
+		}
+
+		if (height == 0) {
+			UL_WARN("height must be non-zero. Defauting to one.");
+			height = 1.0f;
+		}
+
+		if (depth == 0) {
+			UL_WARN("height must be non-zero. Defauting to one.");
+			height = 1.0f;
+		}
+
+		if (tile_x == 0) {
+			UL_WARN("width must be non-zero. Defauting to one.");
+			tile_x = 1.0f;
+		}
+
+		if (tile_y == 0) {
+			UL_WARN("width must be non-zero. Defauting to one.");
+			tile_y = 1.0f;
+		}
+
+		SGeometryConfig Config;
+		Config.vertex_size = sizeof(Vertex);
+		Config.vertex_count = 6 * 4; // 4 vertex per segment.
+		Config.vertices = (Vertex*)Memory::Allocate(sizeof(Vertex) * Config.vertex_count, MemoryType::eMemory_Type_Array);
+		Config.index_size = sizeof(uint32_t);
+		Config.index_count = 6 * 6; // 6 index per segment.
+		Config.indices = (uint32_t*)Memory::Allocate(sizeof(uint32_t) * Config.index_count, MemoryType::eMemory_Type_Array);
+
+		float HalfWidth = width * 0.5f;
+		float HalfHeight = height * 0.5f;
+		float HalfDepth = depth * 0.5f;
+		float MinX = -HalfWidth;
+		float MinY = -HalfHeight;
+		float MinZ = -HalfDepth;
+		float MaxX = HalfWidth;
+		float MaxY = HalfHeight;
+		float MaxZ = HalfDepth;
+		float MinUVX = 0.0f;
+		float MinUVY = 0.0f;
+		float MaxUVX = tile_x;
+		float MaxUVY = tile_y;
+
+		Vertex Verts[24];
+
+		// Front face
+		Verts[(0 * 4) + 0].position = Vec3(MinX, MinY, MaxZ);
+		Verts[(0 * 4) + 1].position = Vec3(MaxX, MaxY, MaxZ);
+		Verts[(0 * 4) + 2].position = Vec3(MinX, MaxY, MaxZ);
+		Verts[(0 * 4) + 3].position = Vec3(MaxX, MinY, MaxZ);
+		Verts[(0 * 4) + 0].texcoord = Vec2(MinUVX, MinUVY);
+		Verts[(0 * 4) + 1].texcoord = Vec2(MaxUVX, MaxUVY);
+		Verts[(0 * 4) + 2].texcoord = Vec2(MinUVX, MaxUVY);
+		Verts[(0 * 4) + 3].texcoord = Vec2(MaxUVX, MinUVY);
+		Verts[(0 * 4) + 0].normal = Vec3(0.0f, 0.0f, 1.0f);
+		Verts[(0 * 4) + 1].normal = Vec3(0.0f, 0.0f, 1.0f);
+		Verts[(0 * 4) + 2].normal = Vec3(0.0f, 0.0f, 1.0f);
+		Verts[(0 * 4) + 3].normal = Vec3(0.0f, 0.0f, 1.0f);
+
+		// Back face
+		Verts[(1 * 4) + 0].position = Vec3(MaxX, MinY, MinZ);
+		Verts[(1 * 4) + 1].position = Vec3(MinX, MaxY, MinZ);
+		Verts[(1 * 4) + 2].position = Vec3(MaxX, MaxY, MinZ);
+		Verts[(1 * 4) + 3].position = Vec3(MinX, MinY, MinZ);
+		Verts[(1 * 4) + 0].texcoord = Vec2(MinUVX, MinUVY);
+		Verts[(1 * 4) + 1].texcoord = Vec2(MaxUVX, MaxUVY);
+		Verts[(1 * 4) + 2].texcoord = Vec2(MinUVX, MaxUVY);
+		Verts[(1 * 4) + 3].texcoord = Vec2(MaxUVX, MinUVY);
+		Verts[(1 * 4) + 0].normal = Vec3(0.0f, 0.0f, -1.0f);
+		Verts[(1 * 4) + 1].normal = Vec3(0.0f, 0.0f, -1.0f);
+		Verts[(1 * 4) + 2].normal = Vec3(0.0f, 0.0f, -1.0f);
+		Verts[(1 * 4) + 3].normal = Vec3(0.0f, 0.0f, -1.0f);
+
+		// Left face
+		Verts[(2 * 4) + 0].position = Vec3(MinX, MinY, MinZ);
+		Verts[(2 * 4) + 1].position = Vec3(MinX, MaxY, MaxZ);
+		Verts[(2 * 4) + 2].position = Vec3(MinX, MaxY, MinZ);
+		Verts[(2 * 4) + 3].position = Vec3(MinX, MinY, MaxZ);
+		Verts[(2 * 4) + 0].texcoord = Vec2(MinUVX, MinUVY);
+		Verts[(2 * 4) + 1].texcoord = Vec2(MaxUVX, MaxUVY);
+		Verts[(2 * 4) + 2].texcoord = Vec2(MinUVX, MaxUVY);
+		Verts[(2 * 4) + 3].texcoord = Vec2(MaxUVX, MinUVY);
+		Verts[(2 * 4) + 0].normal = Vec3(-1.0f, 0.0f, 0.0f);
+		Verts[(2 * 4) + 1].normal = Vec3(-1.0f, 0.0f, 0.0f);
+		Verts[(2 * 4) + 2].normal = Vec3(-1.0f, 0.0f, 0.0f);
+		Verts[(2 * 4) + 3].normal = Vec3(-1.0f, 0.0f, 0.0f);
+
+		// Right face
+		Verts[(3 * 4) + 0].position = Vec3(MaxX, MinY, MaxZ);
+		Verts[(3 * 4) + 1].position = Vec3(MaxX, MaxY, MinZ);
+		Verts[(3 * 4) + 2].position = Vec3(MaxX, MaxY, MaxZ);
+		Verts[(3 * 4) + 3].position = Vec3(MaxX, MinY, MinZ);
+		Verts[(3 * 4) + 0].texcoord = Vec2(MinUVX, MinUVY);
+		Verts[(3 * 4) + 1].texcoord = Vec2(MaxUVX, MaxUVY);
+		Verts[(3 * 4) + 2].texcoord = Vec2(MinUVX, MaxUVY);
+		Verts[(3 * 4) + 3].texcoord = Vec2(MaxUVX, MinUVY);
+		Verts[(3 * 4) + 0].normal = Vec3(1.0f, 0.0f, 0.0f);
+		Verts[(3 * 4) + 1].normal = Vec3(1.0f, 0.0f, 0.0f);
+		Verts[(3 * 4) + 2].normal = Vec3(1.0f, 0.0f, 0.0f);
+		Verts[(3 * 4) + 3].normal = Vec3(1.0f, 0.0f, 0.0f);
+
+		// Bottom face
+		Verts[(4 * 4) + 0].position = Vec3(MaxX, MinY, MaxZ);
+		Verts[(4 * 4) + 1].position = Vec3(MinX, MinY, MinZ);
+		Verts[(4 * 4) + 2].position = Vec3(MaxX, MinY, MinZ);
+		Verts[(4 * 4) + 3].position = Vec3(MinX, MinY, MaxZ);
+		Verts[(4 * 4) + 0].texcoord = Vec2(MinUVX, MinUVY);
+		Verts[(4 * 4) + 1].texcoord = Vec2(MaxUVX, MaxUVY);
+		Verts[(4 * 4) + 2].texcoord = Vec2(MinUVX, MaxUVY);
+		Verts[(4 * 4) + 3].texcoord = Vec2(MaxUVX, MinUVY);
+		Verts[(4 * 4) + 0].normal = Vec3(0.0f, -1.0f, 0.0f);
+		Verts[(4 * 4) + 1].normal = Vec3(0.0f, -1.0f, 0.0f);
+		Verts[(4 * 4) + 2].normal = Vec3(0.0f, -1.0f, 0.0f);
+		Verts[(4 * 4) + 3].normal = Vec3(0.0f, -1.0f, 0.0f);
+
+		// Top face
+		Verts[(5 * 4) + 0].position = Vec3(MinX, MaxY, MaxZ);
+		Verts[(5 * 4) + 1].position = Vec3(MaxX, MaxY, MinZ);
+		Verts[(5 * 4) + 2].position = Vec3(MinX, MaxY, MinZ);
+		Verts[(5 * 4) + 3].position = Vec3(MaxX, MaxY, MaxZ);
+		Verts[(5 * 4) + 0].texcoord = Vec2(MinUVX, MinUVY);
+		Verts[(5 * 4) + 1].texcoord = Vec2(MaxUVX, MaxUVY);
+		Verts[(5 * 4) + 2].texcoord = Vec2(MinUVX, MaxUVY);
+		Verts[(5 * 4) + 3].texcoord = Vec2(MaxUVX, MinUVY);
+		Verts[(5 * 4) + 0].normal = Vec3(0.0f, 1.0f, 0.0f);
+		Verts[(5 * 4) + 1].normal = Vec3(0.0f, 1.0f, 0.0f);
+		Verts[(5 * 4) + 2].normal = Vec3(0.0f, 1.0f, 0.0f);
+		Verts[(5 * 4) + 3].normal = Vec3(0.0f, 1.0f, 0.0f);
+
+		Memory::Copy(Config.vertices, Verts, Config.vertex_size* Config.vertex_count);
+
+		for (uint32_t i = 0; i < 6; ++i) {
+			uint32_t OffsetV = i * 4;
+			uint32_t OffsetI = i * 6;
+			((uint32_t*)Config.indices)[OffsetI + 0] = OffsetV + 0;
+			((uint32_t*)Config.indices)[OffsetI + 1] = OffsetV + 1;
+			((uint32_t*)Config.indices)[OffsetI + 2] = OffsetV + 2;
+			((uint32_t*)Config.indices)[OffsetI + 3] = OffsetV + 0;
+			((uint32_t*)Config.indices)[OffsetI + 4] = OffsetV + 3;
+			((uint32_t*)Config.indices)[OffsetI + 5] = OffsetV + 1;
+		}
+
+		if (name && strlen(name) > 0) {
+			strncpy(Config.name, name, GEOMETRY_NAME_MAX_LENGTH);
+		}
+		else {
+			strncpy(Config.name, DEFAULT_GEOMETRY_NAME, GEOMETRY_NAME_MAX_LENGTH);
+		}
+
+		if (material_name && material_name > 0) {
+			strncpy(Config.material_name, material_name, MATERIAL_NAME_MAX_LENGTH);
+		}
+		else {
+			strncpy(Config.material_name, DEFAULT_MATERIAL_NAME, MATERIAL_NAME_MAX_LENGTH);
+		}
+
+		return Config;
 }

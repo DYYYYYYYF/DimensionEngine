@@ -17,6 +17,9 @@
 #include "Systems/MaterialSystem.h"
 #include "Systems/GeometrySystem.h"
 #include "Systems/ResourceSystem.h"
+#include "Systems/ShaderSystem.h"
+
+#include "Math/GeometryUtils.hpp"
 
 struct SApplicationState {
 	SGame* game_instance;
@@ -96,6 +99,17 @@ bool ApplicationCreate(SGame* game_instance){
 		ASSERT(Renderer);
 	}
 
+	// Init shader system
+	SShaderSystemConfig ShaderSystemConfig;
+	ShaderSystemConfig.max_shader_count = 1024;
+	ShaderSystemConfig.max_uniform_count = 128;
+	ShaderSystemConfig.max_global_textures = 31;
+	ShaderSystemConfig.max_instance_textures = 31;
+	if (!ShaderSystem::Initialize(Renderer, ShaderSystemConfig)) {
+		UL_FATAL("Shader system failed to initialize!");
+		return false;
+	}
+
 	if (!Renderer->Initialize(game_instance->app_config.name, &AppState.platform)) {
 		UL_FATAL("Renderer failed to initialize!");
 		return false;
@@ -127,7 +141,9 @@ bool ApplicationCreate(SGame* game_instance){
 
 	// TODO: Temp
 	// AppState.TestGeometry = GeometrySystem::GetDefaultGeometry();
-	SGeometryConfig GeoConfig = GeometrySystem::GeneratePlaneConfig(5.0f, 2.0f, 5, 2, 5.0f, 2.0f, "TestGeometry", "TestMaterial");
+	//SGeometryConfig GeoConfig = GeometrySystem::GeneratePlaneConfig(5.0f, 2.0f, 5, 2, 5.0f, 2.0f, "TestGeometry", "Material.World");
+	SGeometryConfig GeoConfig = GeometrySystem::GenerateCubeConfig(5.0f, 5.0f, 5.0f, 1.0f, 1.0f, "TestCube", "Material.World");
+	GeometryUtils::GenerateTangents(GeoConfig.vertex_count, (Vertex*)GeoConfig.vertices, GeoConfig.index_count, (uint32_t*)GeoConfig.indices);
 	AppState.TestGeometry = GeometrySystem::AcquireFromConfig(GeoConfig, true);
 
 	// Clean up the allocations for the geometry config.
@@ -140,35 +156,39 @@ bool ApplicationCreate(SGame* game_instance){
 	UIConfig.vertex_count = 4;
 	UIConfig.index_size = sizeof(uint32_t);
 	UIConfig.index_count = 6;
-	strncpy(UIConfig.material_name, "TestUIMaterial", MATERIAL_NAME_MAX_LENGTH);
-	strncpy(UIConfig.name, "TestUIMaterial", MATERIAL_NAME_MAX_LENGTH);
+	strncpy(UIConfig.material_name, "Material.UI", MATERIAL_NAME_MAX_LENGTH);
+	strncpy(UIConfig.name, "Material.UI", MATERIAL_NAME_MAX_LENGTH);
 
-	const float f = 512.0f;
+	const float h = 256.0f;
+	const float w = 64.0f;
+	const float x = 0.0f;
+	const float y = game_instance->app_config.start_height;
+
 	Vertex2D UIVerts[4];
-	UIVerts[0].position.x = 0.0f;
-	UIVerts[0].position.y = 0.0f;
+	UIVerts[0].position.x = x;
+	UIVerts[0].position.y = y;
 	UIVerts[0].texcoord.x = 0.0f;
 	UIVerts[0].texcoord.y = 0.0f;
 
-	UIVerts[1].position.x = f;
-	UIVerts[1].position.y = f;
+	UIVerts[1].position.x = x + h;
+	UIVerts[1].position.y = y - w;
 	UIVerts[1].texcoord.x = 1.0f;
 	UIVerts[1].texcoord.y = 1.0f;
 
-	UIVerts[2].position.x = 0.0f;
-	UIVerts[2].position.y = f;
+	UIVerts[2].position.x = x;
+	UIVerts[2].position.y = y - w;
 	UIVerts[2].texcoord.x = 0.0f;
 	UIVerts[2].texcoord.y = 1.0f;
 
-	UIVerts[3].position.x = f;
-	UIVerts[3].position.y = 0.0f;
+	UIVerts[3].position.x = x + h;
+	UIVerts[3].position.y = y;
 	UIVerts[3].texcoord.x = 1.0f;
 	UIVerts[3].texcoord.y = 0.0f;
 
 	UIConfig.vertices = UIVerts;
 
 	// Indices
-	uint32_t UIIndices[6] = { 2, 1, 0, 1, 3, 0 };
+	uint32_t UIIndices[6] = { 0, 1, 2, 0, 3, 1 };
 	UIConfig.indices = UIIndices;
 
 	// Get UI geometry from config.
@@ -228,7 +248,12 @@ bool ApplicationRun() {
 			// TODO: Temp
 			GeometryRenderData TestRender;
 			TestRender.geometry = AppState.TestGeometry;
-			TestRender.model = Matrix4::Identity();
+			//TestRender.model = Matrix4::Identity();
+			static float Angle = 0.0f;
+			Angle += (float)(1.0f * DeltaTime);
+			Quaternion Rotation = QuaternionFromAxisAngle(Vec3(0, 1, 0), Angle, true);
+			TestRender.model = QuatToMatrix(Rotation);
+			
 			Packet.geometries = &TestRender;
 			Packet.geometry_count = 1;
 
@@ -275,10 +300,12 @@ bool ApplicationRun() {
 	Core::EventShutdown();
 	Core::InputShutdown();
 
-	ResourceSystem::Shutdown();
+
 	GeometrySystem::Shutdown();
 	MaterialSystem::Shutdown();
 	TextureSystem::Shutdown();
+	ShaderSystem::Shutdown();
+	ResourceSystem::Shutdown();
 
 	Renderer->Shutdown();
 	Memory::Free(Renderer, sizeof(IRenderer), MemoryType::eMemory_Type_Renderer);

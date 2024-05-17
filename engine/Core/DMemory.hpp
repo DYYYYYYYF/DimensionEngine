@@ -7,6 +7,7 @@ enum MemoryType {
 	eMemory_Type_Unknow,
 	eMemory_Type_Array,
 	eMemory_Type_DArray,
+	eMemory_Type_Hashtable,
 	eMemory_Type_Dict,
 	eMemory_Type_Ring_Queue,
 	eMemory_Type_BST,
@@ -20,6 +21,7 @@ enum MemoryType {
 	eMemory_Type_Transform,
 	eMemory_Type_Entity,
 	eMemory_Type_Entity_Node,
+	eMemory_Type_Resource,
 	eMemory_Type_Scene,
 	eMemory_Type_Max
 };
@@ -28,6 +30,7 @@ static const char* MemoryTypeStrings[eMemory_Type_Max]{
 	"Unknow",
 	"Array",
 	"DArray",
+	"Hashtable",
 	"Dict",
 	"Ring_Queue",
 	"BST",
@@ -41,6 +44,7 @@ static const char* MemoryTypeStrings[eMemory_Type_Max]{
 	"Transform",
 	"Entity",
 	"Entity_Node",
+	"Resource",
 	"Scene"
 };
 

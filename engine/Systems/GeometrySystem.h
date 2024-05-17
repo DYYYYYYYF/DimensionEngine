@@ -29,7 +29,7 @@ struct SGeometryConfig {
 	// Indices
 	uint32_t index_size;
 	uint32_t index_count;
-	void* indices;
+	void* indices = nullptr;
 
 	char name[GEOMETRY_NAME_MAX_LENGTH];
 	char material_name[MATERIAL_NAME_MAX_LENGTH];
@@ -109,6 +109,20 @@ public:
 	*/
 	static SGeometryConfig GeneratePlaneConfig(float width, float height, uint32_t x_segment_count, uint32_t y_segment_count,
 		float tile_x, float tile_y, const char* name, const char* material_name);
+
+	/*
+	* @brief Generates configuration for cube geometries given the provided parameters.
+	*
+	* @param width The overall width of the plane. Must be non-zero.
+	* @param height The overall height of the plane. Must be non-zero.
+	* @param tile_x The number of times the texture should tile across the plane on the x-axis.
+	* @param tile_y The number of times the texture should tile across the plane on the y-axis.
+	* @param name The name of the generated geometry.
+	* @param material_name The name of the material to be used.
+	* @returns A geometry configuration which can then be fed into AcquireFromConfig().
+	*/
+	static SGeometryConfig GenerateCubeConfig(float width, float height, 
+		float depth, float tile_x, float tile_y, const char* name, const char* material_name);
 
 private:
 	static bool CreateDefaultGeometries();

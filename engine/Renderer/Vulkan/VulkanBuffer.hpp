@@ -12,7 +12,7 @@ public:
 
 public:
 	bool Create(VulkanContext* context, size_t size, vk::BufferUsageFlags usage,
-		vk::MemoryPropertyFlags memory_property_flags, bool bind_on_create);
+		vk::MemoryPropertyFlags memory_property_flags, bool bind_on_create, bool use_freelist);
 	void Destroy(VulkanContext* context);
 
 	bool Resize(VulkanContext* context, size_t size, vk::Queue queue, vk::CommandPool pool);
@@ -42,6 +42,7 @@ public:
 	vk::DeviceMemory Memory;
 	int MemoryIndex;
 	vk::MemoryPropertyFlags MemoryPropertyFlags;
+	bool UseFreelist;
 
 	Freelist BufferFreelist;
 };

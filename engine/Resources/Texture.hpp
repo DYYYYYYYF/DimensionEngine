@@ -6,7 +6,9 @@
 
 enum TextureUsage {
 	eTexture_Usage_Unknown = 0x00,
-	eTexture_Usage_Map_Diffuse = 0x01
+	eTexture_Usage_Map_Diffuse = 0x01,
+	eTexture_Usage_Map_Specular = 0x02,
+	eTexture_Usage_Map_Normal = 0x03
 };
 
 class Texture {
@@ -24,5 +26,5 @@ public:
 
 	uint32_t Generation;
 	char Name[TEXTURE_NAME_MAX_LENGTH];
-	void* InternalData;
+	void* InternalData = nullptr;
 };

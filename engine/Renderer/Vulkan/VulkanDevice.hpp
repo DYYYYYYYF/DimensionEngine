@@ -45,6 +45,10 @@ public:
 	const SVulkanPhysicalDeviceRequirements* GetDeviceRequirements() const { return &DeviceRequirements; }
 	const SVulkanPhysicalDeviceQueueFamilyInfo* GetQueueFamilyInfo() const { return &QueueFamilyInfo; }
 
+	vk::PhysicalDeviceProperties GetDeviceProperties() const {
+		return PhysicalDevice.getProperties();
+	}
+
 	// Swapchain support
 	SSwapchainSupportInfo* GetSwapchainSupportInfo() { return &SwapchainSupport; }
 	const SSwapchainSupportInfo* GetSwapchainSupportInfo() const { return &SwapchainSupport; }

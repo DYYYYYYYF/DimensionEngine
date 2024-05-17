@@ -4,8 +4,6 @@
 #include "Resources/ResourceTypes.hpp"
 #include "Containers/THashTable.hpp"
 
-#define DEFAULT_MATERIAL_NAME "default"
-
 class IRenderer;
 
 struct SMaterialSystemConfig {
@@ -33,9 +31,36 @@ public:
 	static bool LoadMaterial(SMaterialConfig config, Material* mat);
 	static void DestroyMaterial(Material* mat);
 
+
+	/**
+	 * @brief Applies global-level data for the material shader id.
+	 *
+	 * @param shader_id The identifier of the shader to apply globals for.
+	 * @param projection A constant pointer to a projection matrix.
+	 * @param view A constant pointer to a view matrix.
+	 * @return True on success; otherwise false.
+	 */
+	static bool ApplyGlobal(uint32_t shader_id, const Matrix4& projection, const Matrix4& view, const Vec4& ambient_color, const Vec3& view_position);
+
+	/**
+	 * @brief Applies instance-level material data for the given material.
+	 *
+	 * @param m A pointer to the material to be applied.
+	 * @return True on success; otherwise false.
+	 */
+	static bool ApplyInstance(Material* mat);
+
+	/**
+	 * @brief Applies local-level material data (typically just model matrix).
+	 *
+	 * @param m A pointer to the material to be applied.
+	 * @param model A constant pointer to the model matrix to be applied.
+	 * @return True on success; otherwise false.
+	 */
+	static bool ApplyLocal(Material* mat, const Matrix4& model);
+
 private:
 	static bool CreateDefaultMaterial();
-	static void DestroyDefaultMaterial();
 
 public:
 	static SMaterialSystemConfig MaterialSystemConfig;
@@ -47,6 +72,14 @@ public:
 	// Hashtable for material lookups.
 	static SMaterialReference* TableMemory;
 	static HashTable RegisteredMaterialTable;
+
+	// Know locations for the material shader.
+	static MaterialShaderUniformLocations MaterialLocations;
+	static uint32_t MaterialShaderID;
+
+	// Know locations for the ui shader.
+	static UIShaderUniformLocations UILocations;
+	static uint32_t UIShaderID;
 
 	static bool Initilized;
 

@@ -8,6 +8,8 @@
 
 STextureSystemConfig TextureSystem::TextureSystemConfig;
 Texture TextureSystem::DefaultTexture;
+Texture TextureSystem::DefaultSpecularTexture;
+Texture TextureSystem::DefaultNormalTexture;
 Texture* TextureSystem::RegisteredTextures = nullptr;
 STextureReference* TextureSystem::TableMemory = nullptr;
 HashTable TextureSystem::RegisteredTextureTable;
@@ -203,6 +205,22 @@ Texture* TextureSystem::GetDefaultTexture() {
 	return nullptr;
 }
 
+Texture* TextureSystem::GetDefaultSpecularTexture() {
+	if (Initilized) {
+		return &DefaultSpecularTexture;
+	}
+
+	return nullptr;
+}
+
+Texture* TextureSystem::GetDefaultNormalTexture() {
+	if (Initilized) {
+		return &DefaultNormalTexture;
+	}
+
+	return nullptr;
+}
+
 bool TextureSystem::CreateDefaultTexture() {
 
 	// NOTE: create default texture, a 256x256 blue/white checkerboard pattern.
@@ -241,18 +259,64 @@ bool TextureSystem::CreateDefaultTexture() {
 	DefaultTexture.ChannelCount = 4;
 	DefaultTexture.Generation = INVALID_ID;
 	DefaultTexture.HasTransparency = false;
-
 	Renderer->CreateTexture(Pixels, &DefaultTexture);
 	UL_INFO("Default texture created.");
-
 	// Manually set the texture generation to invalid since this is a default texture.
 	DefaultTexture.Generation = INVALID_ID;
+
+	// Specular texture.
+	UL_INFO("Creating default specular texture...");
+	unsigned char SpecularPixels[16 * 16 * 4];
+	// Default spec map is black (no specular).
+	Memory::Set(SpecularPixels, 0, sizeof(unsigned char) * 16 * 16 * 4);
+	strncpy(DefaultSpecularTexture.Name, DEFAULT_SPECULAR_TEXTURE_NAME, TEXTURE_NAME_MAX_LENGTH);
+	DefaultSpecularTexture.Width = 16;
+	DefaultSpecularTexture.Height = 16;
+	DefaultSpecularTexture.ChannelCount = 4;
+	DefaultSpecularTexture.Generation = INVALID_ID;
+	DefaultSpecularTexture.HasTransparency = false;
+	Renderer->CreateTexture(SpecularPixels, &DefaultSpecularTexture);
+	UL_INFO("Default texture created.");
+	// Manually set the texture generation to invalid since this is a default texture.
+	DefaultSpecularTexture.Generation = INVALID_ID;
+
+	// Normal texture.
+	UL_INFO("Creating default normal texture...");
+	unsigned char NormalPixels[16 * 16 * 4];
+	// Default spec map is black (no specular).
+	Memory::Set(NormalPixels, 0, sizeof(unsigned char) * 16 * 16 * 4);
+
+	// Each pixel.
+	for (size_t row = 0; row < 16; row++) {
+		for (size_t col = 0; col < 16; col++) {
+			uint32_t Index = (uint32_t)((row * 16) + col);
+			uint32_t IndexBpp = Index * bpp;
+			// Set blue, z-axis by default and alpha.
+			NormalPixels[IndexBpp + 0] = 128;
+			NormalPixels[IndexBpp + 1] = 128;
+			NormalPixels[IndexBpp + 2] = 255;
+			NormalPixels[IndexBpp + 3] = 255;
+		}
+	}
+
+	strncpy(DefaultNormalTexture.Name, DEFAULT_NORMAL_TEXTURE_NAME, TEXTURE_NAME_MAX_LENGTH);
+	DefaultNormalTexture.Width = 16;
+	DefaultNormalTexture.Height = 16;
+	DefaultNormalTexture.ChannelCount = 4;
+	DefaultNormalTexture.Generation = INVALID_ID;
+	DefaultNormalTexture.HasTransparency = false;
+	Renderer->CreateTexture(NormalPixels, &DefaultNormalTexture);
+	UL_INFO("Default texture created.");
+	// Manually set the texture generation to invalid since this is a default texture.
+	DefaultNormalTexture.Generation = INVALID_ID;
 
 	return true;
 }
 
 void TextureSystem::DestroyDefaultTexture() {
 	DestroyTexture(&DefaultTexture);
+	DestroyTexture(&DefaultSpecularTexture);
+	DestroyTexture(&DefaultNormalTexture);
 }
 
 

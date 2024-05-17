@@ -36,9 +36,10 @@ bool MaterialLoader::Load(const char* name, Resource* resource) {
 	SMaterialConfig* ResourceData = (SMaterialConfig*)Memory::Allocate(sizeof(SMaterialConfig), MemoryType::eMemory_Type_Material_Instance);
 	// Set defaults.
 	ResourceData->auto_release = true;
-	ResourceData->Type = MaterialType::eMaterial_Type_World;
+	ResourceData->shader_name = "Builtin.Material";
 	ResourceData->diffuse_color = Vec4(1.0f);	// White
 	ResourceData->diffuse_map_name[0] = '\0';
+	ResourceData->shininess = 32.0f;
 	strncpy(ResourceData->name, name, MATERIAL_NAME_MAX_LENGTH);
 
 	char LineBuffer[512] = "";
@@ -89,17 +90,29 @@ bool MaterialLoader::Load(const char* name, Resource* resource) {
 		else if (strcmp(TrimmedVarName, "diffuse_map_name") == 0) {
 			strncpy(ResourceData->diffuse_map_name, TrimmedValue, TEXTURE_NAME_MAX_LENGTH);
 		}
+		else if (strcmp(TrimmedVarName, "specular_map_name") == 0) {
+			// Parse the color
+			strncpy(ResourceData->specular_map_name, TrimmedValue, TEXTURE_NAME_MAX_LENGTH);
+		}
+		else if (strcmp(TrimmedVarName, "normal_map_name") == 0) {
+			// Parse the color
+			strncpy(ResourceData->normal_map_name, TrimmedValue, TEXTURE_NAME_MAX_LENGTH);
+		}
 		else if (strcmp(TrimmedVarName, "diffuse_color") == 0) {
 			// Parse the color
 			ResourceData->diffuse_color = Vec4::StringToVec4(TrimmedValue);
 		}
-		else if (strcmp(TrimmedVarName, "material_type") == 0) {
-			// TODO: Other material types.
-			if (strcmp(TrimmedVarName, "UI") == 0) {
-				ResourceData->Type = MaterialType::eMaterial_Type_UI;
+		else if (strcmp(TrimmedVarName, "shader") == 0) {
+			// Take a copy of the material name.
+			size_t StrLen = strlen(TrimmedValue);
+			ResourceData->shader_name = StringCopy(TrimmedValue);
+		}
+		else if (strcmp(TrimmedVarName, "shininess") == 0){
+			if (!StringToFloat(TrimmedValue, &ResourceData->shininess)) {
+				UL_WARN("Error parsing shininess in file '%s'. Using default of 32.0f instead.", FullFilePath);
+				ResourceData->shininess = 32.0f;
 			}
 		}
-
 		// TODO: more fields.
 
 		// Clear the line buffer.
@@ -126,6 +139,7 @@ void MaterialLoader::Unload(Resource* resource) {
 	if (PathLength > 0) {
 		Memory::Free(resource->FullPath, sizeof(char) * PathLength, MemoryType::eMemory_Type_String);
 	}
+	resource->FullPath = nullptr;
 
 	if (resource->Data) {
 		Memory::Free(resource->Data, resource->DataSize, MemoryType::eMemory_Type_Material_Instance);
@@ -133,4 +147,6 @@ void MaterialLoader::Unload(Resource* resource) {
 		resource->DataSize = 0;
 		resource->LoaderID = INVALID_ID;
 	}
+
+	resource = nullptr;
 }

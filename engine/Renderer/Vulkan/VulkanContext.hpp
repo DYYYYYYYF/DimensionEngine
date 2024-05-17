@@ -7,16 +7,15 @@
 #include "VulkanRenderpass.hpp"
 #include "VulkanCommandBuffer.hpp"
 #include "VulkanBuffer.hpp"
+#include "VulkanShader.hpp"
 
-#include "Renderer/Vulkan/Shaders/VulkanMaterialShader.hpp"
-#include "Renderer/Vulkan/Shaders/VulkanUIShader.hpp"
 #include "Systems/GeometrySystem.h"
 
 class Texture;
 
 class VulkanContext {
 public:
-	VulkanContext(): Allocator(nullptr) {}
+	VulkanContext(): Allocator(nullptr), Shaders(nullptr), GraphicsCommandBuffers(nullptr){}
 	virtual ~VulkanContext() {}
 
 public:
@@ -75,8 +74,10 @@ public:
 	VulkanRenderPass UIRenderPass;
 
 	// Shaders
-	VulkanMaterialShader MaterialShader;
-	VulkanUIShader UIShader;
+	Shader MaterialShader;
+	Shader UIShader;
+	Shader* Shaders;
+	uint32_t MaxShaderCount;
 
 	// Geometry
 	VulkanBuffer ObjectVertexBuffer;

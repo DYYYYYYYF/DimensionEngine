@@ -3,7 +3,7 @@
 #include "Defines.hpp"
 
 struct FileHandle {
-	void* handle;
+	void* handle = nullptr;
 	bool is_valid;
 };
 

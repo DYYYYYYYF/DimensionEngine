@@ -13,13 +13,13 @@ struct SRenderPacket {
 	double delta_time;
 
 	uint32_t geometry_count;
-	struct GeometryRenderData* geometries;
+	struct GeometryRenderData* geometries = nullptr;
 
 	uint32_t ui_geometry_count;
-	struct GeometryRenderData* ui_geometries;
+	struct GeometryRenderData* ui_geometries = nullptr;
 };
 
 struct GeometryRenderData {
 	Matrix4 model;
-	class Geometry* geometry;
+	class Geometry* geometry = nullptr;
 };

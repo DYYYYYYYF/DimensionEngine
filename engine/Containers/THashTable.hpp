@@ -15,7 +15,7 @@ public:
 	size_t ElementSize;
 	unsigned int ElementCount;
 	bool IsPointerType;
-	void* Memory;
+	void* Memory = nullptr;
 
 #if defined(LEVEL_DEBUG)
 	size_t Count;

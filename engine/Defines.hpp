@@ -5,6 +5,8 @@
 * and not actually pointing to a real object.
 */
 #define INVALID_ID 4294967295U
+#define INVALID_ID_U16 65535U
+#define INVALID_ID_U8 255U
 
 // Platforms
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__)
@@ -68,3 +70,18 @@
 #define GIGABYTES(amount) amount * 1000 * 1000 * 1000
 #define MEGABYTES(amount) amount * 1000 * 1000
 #define KIGABYTES(amount) amount * 1000
+
+struct Range {
+	unsigned long long offset;
+	unsigned long long size;
+};
+
+
+inline unsigned long long PaddingAligned(unsigned long long operand, unsigned long long granularity) {
+	return ((operand + (granularity - 1)) & ~(granularity - 1));
+}
+
+inline Range PaddingAligned(unsigned long long offset, unsigned long long size, unsigned long long granularity) {
+	return Range{ PaddingAligned(offset, granularity), PaddingAligned(size, granularity) };
+}
+
