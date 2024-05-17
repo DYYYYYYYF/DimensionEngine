@@ -20,7 +20,8 @@ DirectionalLight dir_light = {
 // Samplers£ºdiffuse, specular
 const int SAMP_DIFFUSE = 0;
 const int SAMP_SPECULAR = 1;
-layout (set = 1, binding = 1) uniform sampler2D Samplers[2];
+const int SAMP_NORMAL = 2;
+layout (set = 1, binding = 1) uniform sampler2D Samplers[3];
 
 layout (location = 1) in struct dto{
 	vec2 vTexcoord;
@@ -28,13 +29,27 @@ layout (location = 1) in struct dto{
 	vec4 vAmbientColor;
 	vec3 vViewPosition;
 	vec3 vFragPosition;
+	vec4 vColor;
+	vec4 vTangent;
 }in_dto;
+
+mat3 TBN;
 
 vec4 CalculateDirectionalLight(DirectionalLight light, vec3 normal, vec3 view_direction);
 
 void main(){
+	vec3 Normal = in_dto.vNormal;
+	vec3 Tangent = in_dto.vTangent.xyz;
+	Tangent = (Tangent - dot(Tangent, Normal) * Normal);
+	vec3 Bitangent = cross(in_dto.vNormal, in_dto.vTangent.xyz) * in_dto.vTangent.w;
+	TBN = mat3(Tangent, Bitangent, Normal);
+
+	// Update the normal to use a sample from the normal map.
+	vec3 LocalNormal = 2.0 * texture(Samplers[SAMP_NORMAL], in_dto.vTexcoord).rgb - 1.0f;
+	Normal = normalize(TBN * LocalNormal);
+
 	vec3 vViewDirection = normalize(in_dto.vViewPosition - in_dto.vFragPosition);
-   FragColor = CalculateDirectionalLight(dir_light, in_dto.vNormal, vViewDirection);
+   FragColor = CalculateDirectionalLight(dir_light, Normal, vViewDirection);
 }
 
 

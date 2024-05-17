@@ -16,6 +16,7 @@ struct SMaterialConfig {
 	float shininess;
 	char diffuse_map_name[TEXTURE_NAME_MAX_LENGTH];
 	char specular_map_name[TEXTURE_NAME_MAX_LENGTH];
+	char normal_map_name[TEXTURE_NAME_MAX_LENGTH];
 };
 
 struct TextureMap {
@@ -35,6 +36,7 @@ public:
 	Vec4 DiffuseColor;
 	TextureMap DiffuseMap;
 	TextureMap SpecularMap;
+	TextureMap NormalMap;
 	float Shininess;
 
 	uint32_t ShaderID;

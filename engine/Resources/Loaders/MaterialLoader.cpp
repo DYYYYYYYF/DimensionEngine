@@ -94,6 +94,10 @@ bool MaterialLoader::Load(const char* name, Resource* resource) {
 			// Parse the color
 			strncpy(ResourceData->specular_map_name, TrimmedValue, TEXTURE_NAME_MAX_LENGTH);
 		}
+		else if (strcmp(TrimmedVarName, "normal_map_name") == 0) {
+			// Parse the color
+			strncpy(ResourceData->normal_map_name, TrimmedValue, TEXTURE_NAME_MAX_LENGTH);
+		}
 		else if (strcmp(TrimmedVarName, "diffuse_color") == 0) {
 			// Parse the color
 			ResourceData->diffuse_color = Vec4::StringToVec4(TrimmedValue);

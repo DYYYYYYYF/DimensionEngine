@@ -19,6 +19,8 @@
 #include "Systems/ResourceSystem.h"
 #include "Systems/ShaderSystem.h"
 
+#include "Math/GeometryUtils.hpp"
+
 struct SApplicationState {
 	SGame* game_instance;
 	SPlatformState platform;
@@ -141,6 +143,7 @@ bool ApplicationCreate(SGame* game_instance){
 	// AppState.TestGeometry = GeometrySystem::GetDefaultGeometry();
 	//SGeometryConfig GeoConfig = GeometrySystem::GeneratePlaneConfig(5.0f, 2.0f, 5, 2, 5.0f, 2.0f, "TestGeometry", "Material.World");
 	SGeometryConfig GeoConfig = GeometrySystem::GenerateCubeConfig(5.0f, 5.0f, 5.0f, 1.0f, 1.0f, "TestCube", "Material.World");
+	GeometryUtils::GenerateTangents(GeoConfig.vertex_count, (Vertex*)GeoConfig.vertices, GeoConfig.index_count, (uint32_t*)GeoConfig.indices);
 	AppState.TestGeometry = GeometrySystem::AcquireFromConfig(GeoConfig, true);
 
 	// Clean up the allocations for the geometry config.

@@ -167,6 +167,7 @@ Material* MaterialSystem::AcquireFromConfig(SMaterialConfig config) {
 				MaterialLocations.diffuse_color = ShaderSystem::GetUniformIndex(s, "diffuse_color");
 				MaterialLocations.diffuse_texture = ShaderSystem::GetUniformIndex(s, "diffuse_texture");
 				MaterialLocations.specular_texture = ShaderSystem::GetUniformIndex(s, "specular_texture");
+				MaterialLocations.normal_texture = ShaderSystem::GetUniformIndex(s, "normal_texture");
 				MaterialLocations.view_position = ShaderSystem::GetUniformIndex(s, "view_position");
 				MaterialLocations.shininess = ShaderSystem::GetUniformIndex(s, "shininess");
 				MaterialLocations.model = ShaderSystem::GetUniformIndex(s, "model");
@@ -294,6 +295,20 @@ bool MaterialSystem::LoadMaterial(SMaterialConfig config, Material* mat) {
 		mat->SpecularMap.texture = nullptr;
 	}
 
+	// Normal map
+	if (strlen(config.normal_map_name) > 0) {
+		mat->NormalMap.usage = TextureUsage::eTexture_Usage_Map_Normal;
+		mat->NormalMap.texture = TextureSystem::Acquire(config.normal_map_name, true);
+		if (mat->NormalMap.texture == nullptr) {
+			UL_WARN("Unable to load texture '%s' for material '%s', using default.", config.normal_map_name, mat->Name);
+			mat->NormalMap.texture = TextureSystem::GetDefaultNormalTexture();
+		}
+	}
+	else {
+		// NOTE: Only set for clarity, as call to Memory::Zero above does this already.
+		mat->NormalMap.usage = TextureUsage::eTexture_Usage_Map_Normal;
+		mat->NormalMap.texture = TextureSystem::GetDefaultNormalTexture();
+	}
 	// TODO: other maps.
 
 	// Send it off to the renderer to acquire resources.
@@ -325,6 +340,11 @@ void MaterialSystem::DestroyMaterial(Material* mat) {
 		TextureSystem::Release(mat->SpecularMap.texture->Name);
 	}
 
+	// Release texture references.
+	if (mat->NormalMap.texture != nullptr) {
+		TextureSystem::Release(mat->NormalMap.texture->Name);
+	}
+
 	//Release renderer resources.
 	if (mat->ShaderID != INVALID_ID && mat->InternalId != INVALID_ID) {
 		Shader* s = ShaderSystem::GetByID(mat->ShaderID);
@@ -350,6 +370,9 @@ bool MaterialSystem::CreateDefaultMaterial() {
 
 	DefaultMaterial.SpecularMap.usage = TextureUsage::eTexture_Usage_Map_Specular;
 	DefaultMaterial.SpecularMap.texture = TextureSystem::GetDefaultSpecularTexture();
+
+	DefaultMaterial.SpecularMap.usage = TextureUsage::eTexture_Usage_Map_Normal;
+	DefaultMaterial.SpecularMap.texture = TextureSystem::GetDefaultNormalTexture();
 
 	Shader* s = ShaderSystem::Get(BUILTIN_SHADER_NAME_MATERIAL);
 	DefaultMaterial.InternalId = Renderer->AcquireInstanceResource(s);
@@ -397,6 +420,7 @@ bool MaterialSystem::ApplyInstance(Material* mat) {
 		MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(MaterialLocations.diffuse_color, &mat->DiffuseColor));
 		MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(MaterialLocations.diffuse_texture, mat->DiffuseMap.texture));
 		MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(MaterialLocations.specular_texture, mat->SpecularMap.texture));
+		MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(MaterialLocations.normal_texture, mat->NormalMap.texture));
 		MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(MaterialLocations.shininess, &mat->Shininess));
 	}
 	else if (mat->ShaderID == UIShaderID) {

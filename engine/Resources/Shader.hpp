@@ -59,8 +59,9 @@ struct MaterialShaderUniformLocations {
 	unsigned short ambient_color;
 	unsigned short diffuse_color;
 	unsigned short diffuse_texture;
-	unsigned short shininess;
+	unsigned short normal_texture;
 	unsigned short specular_texture;
+	unsigned short shininess;
 	unsigned short view_position;
 	unsigned short model;
 };

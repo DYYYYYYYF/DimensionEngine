@@ -1073,6 +1073,8 @@ struct Vertex {
 	Vec3 position;
 	Vec3 normal;
 	Vec2 texcoord;
+	Vec4 color;
+	Vec4 tangent;
 };
 
 struct Vertex2D {
