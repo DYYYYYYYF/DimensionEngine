@@ -39,6 +39,11 @@ bool ShaderLoader::Load(const char* name, Resource* resource) {
 	ResourceData->use_local = false;
 	ResourceData->renderpass_name = nullptr;
 	ResourceData->name = nullptr;
+	ResourceData->attributes.clear();
+	ResourceData->uniforms.clear();
+	ResourceData->stages.clear();
+	ResourceData->stage_names.clear();
+	ResourceData->stage_filenames.clear();
 
 	// Read each line of the file.
 	char LineBuf[512] = "";
@@ -185,8 +190,8 @@ bool ShaderLoader::Load(const char* name, Resource* resource) {
 					Attribute.size = 4;
 				}
 				else {
-					UL_ERROR("shader_loader_load: Invalid file layout. Attribute type must be f32, vec2, vec3, vec4, i8, i16, i32, u8, u16, or u32.");
-					UL_WARN("Defaulting to f32.");
+					UL_ERROR("shader_loader_load: Invalid file layout. Attribute type must be float, vec2, vec3, vec4, i8, i16, i32, u8, u16, or u32.");
+					UL_WARN("Defaulting to float.");
 					Attribute.type = ShaderAttributeType::eShader_Attribute_Type_Float;
 					Attribute.size = 4;
 				}
@@ -320,7 +325,16 @@ bool ShaderLoader::Load(const char* name, Resource* resource) {
 void ShaderLoader::Unload(Resource* resource) {
 	ShaderConfig* Data = (ShaderConfig*)resource->Data;
 
+	for (uint32_t i = 0; i < Data->stage_filenames.size(); ++i) {
+		size_t len = strlen(Data->stage_filenames[i]);
+		Memory::Free(Data->stage_filenames[i], sizeof(char) * (len + 1), MemoryType::eMemory_Type_String);
+	}
 	Data->stage_filenames.clear();
+
+	for (uint32_t i = 0; i < Data->stage_names.size(); ++i) {
+		size_t len = strlen(Data->stage_names[i]);
+		Memory::Free(Data->stage_names[i], sizeof(char) * (len + 1), MemoryType::eMemory_Type_String);
+	}
 	Data->stage_names.clear();
 
 	// Clean up attributes.
@@ -343,4 +357,8 @@ void ShaderLoader::Unload(Resource* resource) {
 	Memory::Free(Data->name, sizeof(char) * (strlen(Data->name) + 1), eMemory_Type_String);
 	Memory::Zero(Data, sizeof(ShaderConfig));
 
+	Data->renderpass_name = nullptr;
+	Data->name = nullptr;
+	resource->Data = nullptr;
+	resource = nullptr;
 }

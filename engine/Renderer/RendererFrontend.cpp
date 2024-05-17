@@ -54,7 +54,7 @@ bool IRenderer::Initialize(const char* application_name, struct SPlatformState* 
 	ShaderConfig* Config = nullptr;
 	Resource UIConfigResource;
 	ShaderConfig* UIConfig = nullptr;
-
+	
 	// Builtin material shader.
 	ResourceSystem::Load(BUILTIN_SHADER_NAME_MATERIAL, ResourceType::eResource_Type_Shader, &ConfigResource);
 	Config = (ShaderConfig*)ConfigResource.Data;

@@ -1,5 +1,6 @@
 # Dimension shader config file
 version=1.0
+name=Shader.Builtin.UI
 renderpass=Renderpass.Builtin.UI
 stages=vertex,fragment
 stagefiles=Shaders/Builtin.UIShader.vert.spv,Shaders/Builtin.UIShader.frag.spv
@@ -17,5 +18,3 @@ uniform=mat4,0,view
 uniform=vec4,1,diffuse_color
 uniform=samp,1,diffuse_texture
 uniform=mat4,2,model
-
-name=Shader.Builtin.UI

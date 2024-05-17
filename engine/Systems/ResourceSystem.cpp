@@ -121,8 +121,9 @@ void ResourceSystem::Unload(Resource* resource) {
 	}
 
 	if (resource->LoaderID != INVALID_ID) {
-		if (RegisteredLoaders[resource->LoaderID]->Id != INVALID_ID) {
-			RegisteredLoaders[resource->LoaderID]->Unload(resource);
+		IResourceLoader* Loader = RegisteredLoaders[resource->LoaderID];
+		if (Loader->Id != INVALID_ID) {
+			Loader->Unload(resource);
 		}
 	}
 }

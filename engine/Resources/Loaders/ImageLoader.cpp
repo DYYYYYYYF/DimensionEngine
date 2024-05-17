@@ -79,6 +79,7 @@ void ImageLoader::Unload(Resource* resource) {
 	if (PathLength > 0) {
 		Memory::Free(resource->FullPath, sizeof(char) * PathLength, MemoryType::eMemory_Type_String);
 	}
+	resource->FullPath = nullptr;
 
 	if (resource->Data) {
 		Memory::Free(resource->Data, resource->DataSize, MemoryType::eMemory_Type_Texture);
@@ -86,4 +87,6 @@ void ImageLoader::Unload(Resource* resource) {
 		resource->DataSize = 0;
 		resource->LoaderID = INVALID_ID;
 	}
+
+	resource = nullptr;
 }

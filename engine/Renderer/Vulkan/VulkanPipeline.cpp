@@ -102,6 +102,7 @@ bool VulkanPipeline::Create(VulkanContext* context, VulkanRenderPass* renderpass
 
 	//Push constants
 	vk::PipelineLayoutCreateInfo LayoutCreateInfo;
+	vk::PushConstantRange Ranges[32];
 	if (push_constant_range_count > 0) {
 		if (push_constant_range_count > 32) {
 			UL_ERROR("Vulkan graphics pipeline create: can not have more push constants.");
@@ -109,7 +110,6 @@ bool VulkanPipeline::Create(VulkanContext* context, VulkanRenderPass* renderpass
 		}
 
 		// NOTE: 32 is the max number of ranges we can ever have.
-		vk::PushConstantRange Ranges[32];
 		Memory::Zero(Ranges, sizeof(vk::PushConstantRange) * 32);
 		for(uint32_t i = 0; i < push_constant_range_count; ++i) {
 			Ranges[i].setStageFlags(vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment)

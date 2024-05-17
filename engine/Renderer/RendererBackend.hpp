@@ -66,7 +66,7 @@ public:
 
 protected:
 	RendererBackendType BackendType;
-	struct SPlatformState* PlatformState;
+	SPlatformState* PlatformState;
 	size_t FrameNum;
 
 };

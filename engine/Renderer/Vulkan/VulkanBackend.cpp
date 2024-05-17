@@ -463,7 +463,7 @@ void VulkanBackend::CreateCommandBuffer() {
 	if (Context.GraphicsCommandBuffers == nullptr) {
 		Context.GraphicsCommandBuffers = (VulkanCommandBuffer*)Memory::Allocate(sizeof(VulkanCommandBuffer) * Context.Swapchain.ImageCount, MemoryType::eMemory_Type_Renderer);
 		for (uint32_t i = 0; i < Context.Swapchain.ImageCount; ++i) {
-			Memory::Zero(&(Context.GraphicsCommandBuffers[i]), sizeof(vk::CommandBuffer));
+			Memory::Zero(&(Context.GraphicsCommandBuffers[i]), sizeof(VulkanCommandBuffer));
 		}
 	}
 
@@ -472,7 +472,7 @@ void VulkanBackend::CreateCommandBuffer() {
 			Context.GraphicsCommandBuffers[i].Free(&Context, Context.Device.GetGraphicsCommandPool());
 		}
 
-		Memory::Zero(&Context.GraphicsCommandBuffers[i], sizeof(vk::CommandBuffer));
+		Memory::Zero(&Context.GraphicsCommandBuffers[i], sizeof(VulkanCommandBuffer));
 		Context.GraphicsCommandBuffers[i].Allocate(&Context, Context.Device.GetGraphicsCommandPool(), true);
 	}
 
