@@ -1,7 +1,7 @@
 #include "GeometryUtils.hpp"
 
 void GeometryUtils::GenerateNormals(uint32_t vertex_count, Vertex* vertices, uint32_t index_count, uint32_t* indices) {
-	for (uint32_t i = 0; i < index_count; ++i) {
+	for (uint32_t i = 0; i < index_count; i+=3) {
 		uint32_t i0 = indices[i + 0];
 		uint32_t i1 = indices[i + 1];
 		uint32_t i2 = indices[i + 2];
@@ -19,7 +19,7 @@ void GeometryUtils::GenerateNormals(uint32_t vertex_count, Vertex* vertices, uin
 }
 
 void GeometryUtils::GenerateTangents(uint32_t vertex_count, Vertex* vertices, uint32_t index_count, uint32_t* indices) {
-	for (uint32_t i = 0; i < index_count; ++i) {
+	for (uint32_t i = 0; i < index_count; i+=3) {
 		uint32_t i0 = indices[i + 0];
 		uint32_t i1 = indices[i + 1];
 		uint32_t i2 = indices[i + 2];
