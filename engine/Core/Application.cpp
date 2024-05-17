@@ -385,6 +385,50 @@ bool ApplicationOnResized(unsigned short code, void* sender, void* listener_inst
 					AppState.is_suspended = false;
 				}
 
+				// TODO: Temp
+				SGeometryConfig UIConfig;
+				UIConfig.vertex_size = sizeof(Vertex2D);
+				UIConfig.vertex_count = 4;
+				UIConfig.index_size = sizeof(uint32_t);
+				UIConfig.index_count = 6;
+				strncpy(UIConfig.material_name, "Material.UI", MATERIAL_NAME_MAX_LENGTH);
+				strncpy(UIConfig.name, "Material.UI", MATERIAL_NAME_MAX_LENGTH);
+
+				const float h = 256.0f;
+				const float w = 64.0f;
+				const float x = 0.0f;
+				const float y = Height;
+
+				Vertex2D UIVerts[4];
+				UIVerts[0].position.x = x;
+				UIVerts[0].position.y = y;
+				UIVerts[0].texcoord.x = 0.0f;
+				UIVerts[0].texcoord.y = 0.0f;
+
+				UIVerts[1].position.x = x + h;
+				UIVerts[1].position.y = y - w;
+				UIVerts[1].texcoord.x = 1.0f;
+				UIVerts[1].texcoord.y = 1.0f;
+
+				UIVerts[2].position.x = x;
+				UIVerts[2].position.y = y - w;
+				UIVerts[2].texcoord.x = 0.0f;
+				UIVerts[2].texcoord.y = 1.0f;
+
+				UIVerts[3].position.x = x + h;
+				UIVerts[3].position.y = y;
+				UIVerts[3].texcoord.x = 1.0f;
+				UIVerts[3].texcoord.y = 0.0f;
+
+				UIConfig.vertices = UIVerts;
+
+				// Indices
+				uint32_t UIIndices[6] = { 0, 1, 2, 0, 3, 1 };
+				UIConfig.indices = UIIndices;
+
+				// Get UI geometry from config.
+				AppState.TestUIGeometry = GeometrySystem::AcquireFromConfig(UIConfig, true);
+
 				AppState.game_instance->on_resize(AppState.game_instance, Width, Height);
 				Renderer->OnResize(Width, Height);
 			}
