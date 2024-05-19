@@ -7,7 +7,10 @@ extern bool CreateGame(SGame* out_game);
 
 int main(void) {
 
-    Memory::Memory();
+    if (!Memory::Initialize(MEBIBYTES(300))) {
+        UL_ERROR("Failed to initialize memory system; shuting down.");
+        return false;
+    }
 
 	SGame GameInstance;
 	if (!CreateGame(&GameInstance)) {
@@ -31,6 +34,8 @@ int main(void) {
         UL_INFO("Application did not shutdown gracefully!");
         return 2;
     }
+
+    Memory::Shutdown();
 
     return 0;
 }

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../Defines.hpp"
+#include "Defines.hpp"
 
 struct SPlatformState{
 	void* internalState;

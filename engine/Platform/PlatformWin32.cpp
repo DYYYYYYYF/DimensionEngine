@@ -1,14 +1,20 @@
 #include "Platform.hpp"
 
-#include "../core/Input.hpp"
-
 #if DPLATFORM_WINDOWS
+
+#include "Core/Input.hpp"
+#include "Core/Event.hpp"
+#include "Renderer/Vulkan/VulkanPlatform.hpp"
+#include "Renderer/Vulkan/VulkanContext.hpp"
+
 #include <windows.h>
 #include <windowsx.h>
+#include <vulkan/vulkan_win32.h>
 
 struct SInternalState {
 	HINSTANCE h_instance;
 	HWND hwnd;
+	vk::SurfaceKHR surface;
 };
 
 static double ClockFrequency;
@@ -170,7 +176,9 @@ LRESULT CALLBACK win32_process_message(HWND hwnd, UINT32 msg, WPARAM w_param, LP
 		case WM_ERASEBKGND:
 			return 1;
 		case WM_CLOSE:
-			return 0;
+			SEventContext Context = SEventContext();
+			Core::EventFire(Core::SystemEventCode::eEvent_Code_Application_Quit, 0, Context);
+			return 1;
 		case WM_DESTROY:
 			PostQuitMessage(0);
 			return 0;
@@ -179,6 +187,13 @@ LRESULT CALLBACK win32_process_message(HWND hwnd, UINT32 msg, WPARAM w_param, LP
 			GetClientRect(hwnd, &Rect);
 			unsigned int Width = Rect.right - Rect.left;
 			unsigned int Height = Rect.bottom - Rect.top;
+
+			// Fire the event. The application layer should pick this up, but not handle it
+			// as it should not be visible to other parts of the application.
+			SEventContext Context = SEventContext();
+			Context.data.u16[0] = (unsigned short)Width;
+			Context.data.u16[1] = (unsigned short)Height;
+			Core::EventFire(Core::SystemEventCode::eEvent_Code_Resize, 0, Context);
 			break;
 		}
 		case WM_KEYDOWN:
@@ -190,20 +205,20 @@ LRESULT CALLBACK win32_process_message(HWND hwnd, UINT32 msg, WPARAM w_param, LP
 			Keys key = Keys(w_param);
 
 			// Pass to the input subsystem for processing.
-			Input::InputProcessKey(key, pressed);
+			Core::InputProcessKey(key, pressed);
 		} break;
 		case WM_MOUSEMOVE: {
 			int PositionX = GET_X_LPARAM(l_param);
 			int PositionY = GET_Y_LPARAM(l_param);
 
 			// Pass over to the input subsystem
-			Input::InputProcessMouseMove(PositionX, PositionY);
+			Core::InputProcessMouseMove(PositionX, PositionY);
 		}break;
 		case WM_MOUSEWHEEL: {
 			int DeltaZ = GET_WHEEL_DELTA_WPARAM(w_param);
 			if (DeltaZ != 0) {
 				DeltaZ = (DeltaZ < 0) ? -1 : 1;
-				Input::InputProcessMouseWheel(DeltaZ);
+				Core::InputProcessMouseWheel(DeltaZ);
 			}
 		}break;
 		case WM_LBUTTONDOWN:
@@ -231,13 +246,41 @@ LRESULT CALLBACK win32_process_message(HWND hwnd, UINT32 msg, WPARAM w_param, LP
 
 			// Pass over mouse button to input subsystem.
 			if (MouseButton != eButton_Max) {
-				Input::InputProcessButton(MouseButton, pressed);
+				Core::InputProcessButton(MouseButton, pressed);
 			}
 
 		}break;
 	} 
 
 	return DefWindowProc(hwnd, msg, w_param, l_param);
+}
+
+
+/*
+	Vulkan platform
+*/
+void GetPlatformRequiredExtensionNames(std::vector<const char*>& array) {
+	array.push_back("VK_KHR_win32_surface");
+}
+
+bool PlatformCreateVulkanSurface(SPlatformState* plat_state, VulkanContext* context) {
+	// Simple cold-cast to then know type
+	SInternalState* state = (SInternalState*)plat_state->internalState;
+
+	VkWin32SurfaceCreateInfoKHR info = { VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR };
+	info.hinstance = state->h_instance;
+	info.hwnd = state->hwnd;
+
+	VkSurfaceKHR Win32Surface;
+	if (vkCreateWin32SurfaceKHR(context->Instance, &info, nullptr, &Win32Surface) != VK_SUCCESS) {
+		UL_FATAL("Create surface failed.");
+		return false;
+	}
+
+	state->surface = vk::SurfaceKHR(Win32Surface);
+	context->Surface = state->surface;
+
+	return true;
 }
 
 #endif	//DPLATFORM_WINDOWS

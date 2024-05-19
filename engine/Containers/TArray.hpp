@@ -1,8 +1,8 @@
 #pragma once
 
-#include "../Defines.hpp"
-#include "../core/EngineLogger.hpp"
-#include "../core/DMemory.hpp"
+#include "Defines.hpp"
+#include "core/EngineLogger.hpp"
+#include "Platform/Platform.hpp"
 
 #define ARRAY_DEFAULT_CAPACITY 1
 #define ARRAY_DEFAULT_RESIZE_FACTOR 2
@@ -19,8 +19,8 @@ class TArray {
 public:
 	TArray() {
 		size_t ArrayMemSize = ARRAY_DEFAULT_CAPACITY * sizeof(ElementType);
-		ArrayMemory = Memory::Allocate(ArrayMemSize, MemoryType::eMemory_Type_Array);
-		Memory::Set(ArrayMemory, 0, ArrayMemSize);
+		ArrayMemory = Platform::PlatformAllocate(ArrayMemSize, false);
+		Platform::PlatformSetMemory(ArrayMemory, 0, ArrayMemSize);
 
 		Capacity = ARRAY_DEFAULT_CAPACITY;
 		Stride = sizeof(ElementType);
@@ -29,45 +29,38 @@ public:
 
 	TArray(size_t size) {
 		size_t ArrayMemSize = size * sizeof(ElementType);
-		ArrayMemory = Memory::Allocate(ArrayMemSize, MemoryType::eMemory_Type_Array);
-		Memory::Set(ArrayMemory, 0, ArrayMemSize);
+		ArrayMemory = Platform::PlatformAllocate(ArrayMemSize, false);
+		Platform::PlatformSetMemory(ArrayMemory, 0, ArrayMemSize);
 
 		Capacity = size;
 		Stride = sizeof(ElementType);
 		Length = size;
 	}
 
-	virtual ~TArray() {
-		/*if (ArrayMemory) {
-			size_t MemorySize = Capacity * Stride;
-			Memory::Free(ArrayMemory, MemorySize, MemoryType::eMemory_Type_Array);
-			ArrayMemory = nullptr;
-			Length = 0;
-		}*/
-	}
+	virtual ~TArray() {}
 
 public:
 	size_t GetField(size_t field) {}
 	void SetField(size_t field, size_t val){}
 
-	void Resize() {
-		Capacity *= ARRAY_DEFAULT_RESIZE_FACTOR;
-		void* TempMemory = Memory::Allocate(Capacity, MemoryType::eMemory_Type_Array);
+	void Resize(size_t size = 0) {
+		size_t NewCapacity = size > 0 ? size : Capacity * ARRAY_DEFAULT_RESIZE_FACTOR;
+		void* TempMemory = Platform::PlatformAllocate(NewCapacity * Stride, false);
 
-		Memory::Copy(TempMemory, ArrayMemory, Length * Stride);
-		Memory::Free(ArrayMemory, Capacity * Stride, MemoryType::eMemory_Type_Array);
+		Platform::PlatformCopyMemory(TempMemory, ArrayMemory, Length * Stride);
+		Platform::PlatformFree(ArrayMemory, false);
 
+		Capacity = NewCapacity;
 		ArrayMemory = TempMemory;
 	}
 
 	void Push(const ElementType& value) {
-		if (Length > Capacity) {
+		if (Length >= Capacity) {
 			Resize();
 		}
 
-		size_t addr = (size_t)ArrayMemory;
-		addr += (Length * Stride);
-		Memory::Copy((void*)addr, &value, Stride);
+		char* addr = (char*)ArrayMemory + (Length * Stride);
+		Platform::PlatformCopyMemory((void*)addr, &value, Stride);
 
 		Length++;
 	}
@@ -82,30 +75,25 @@ public:
 			Resize();
 		}
 
-		size_t addr = (size_t)ArrayMemory;
+		char* addr = (char*)ArrayMemory + (Length * Stride);
 		if (index != Length - 1) {
-			Memory::Copy(
+			Platform::PlatformCopyMemory(
 				(void*)(addr + (index + 1) * Stride),
 				(void*)(addr + (index * Stride)),
-				Stride * (Length - index);
-			)
+				Stride * (Length - index)
+			);
 		}
 
-		Memory::Copy((void*)(addr + (index * Stride)), val, Stride);
+		Platform::PlatformCopyMemory((void*)(addr + (index * Stride)), val, Stride);
 		Length++;
 	}
 
 	ElementType Pop() {
-		if (index > Length - 1) {
-			UL_ERROR("Index Out of length! Length: %i, Index: %i", Length, index);
-			return nullptr;
-		}
-
-		size_t addr = (size_t)ArrayMemory;
+		char* addr = (char*)ArrayMemory + (Length * Stride);
 		addr += ((Length - 1) * Stride);
 
 		ElementType result;
-		Memory::Copy(&result, (void*)addr, Stride);
+		Platform::PlatformCopyMemory(&result, (void*)addr, Stride);
 		Length--;
 
 		return result;
@@ -117,12 +105,12 @@ public:
 			return ElementType();
 		}
 
-		size_t addr = (size_t)ArrayMemory;
+		char* addr = (char*)ArrayMemory + (index * Stride);
 		ElementType result;
-		Memory::Copy(&result, (void*)addr, Stride);
+		Platform::PlatformCopyMemory(&result, (void*)addr, Stride);
 
 		if (index != Length - 1) {
-			Memory::Copy(
+			Platform::PlatformCopyMemory(
 				(void*)(addr + (index * Stride)),
 				(void*)(addr + (index + 1) * Stride),
 				Stride * (Length - index)
@@ -136,7 +124,7 @@ public:
 	void Clear() {
 		if (ArrayMemory != nullptr) {
 			size_t MemorySize = Capacity * Stride;
-			Memory::Free(ArrayMemory, MemorySize, MemoryType::eMemory_Type_Array);
+			Platform::PlatformFree(ArrayMemory, false);
 
 			ArrayMemory = nullptr;
 			Length = 0;
@@ -154,9 +142,10 @@ public:
 	ElementType* Data() { return (ElementType*)ArrayMemory; }
 	const ElementType* Data() const { return (ElementType*)ArrayMemory; }
 
-	ElementType* operator[](size_t i) { 
-		if (i > Length || ArrayMemory == nullptr) return nullptr;
-		return (ElementType*)((size_t)ArrayMemory + i * Stride);
+	template<typename IntegerType>
+	ElementType& operator[](const IntegerType& i) {
+		//if (i > Length || ArrayMemory == nullptr) return ElementType();
+		return *((ElementType*)((char*)ArrayMemory + i * Stride));
 	}
 
 
@@ -168,3 +157,16 @@ private:
 	size_t Length;
 };
 
+
+//bool StringsEqual(const char* str0, const char* str1) {
+//	return strcmp(str0, str1) == 0;
+//}
+//
+//// Case-insensitive
+//bool StringsEqualCaseInsensitive(const char* str0, const char* str1) {
+//#if defined(__GUNC__)
+//	return strcasecmp(str0, str1);
+//#elif defined(_MSC_VER)
+//	return _strcmpi(str0, str1);
+//#endif
+//}

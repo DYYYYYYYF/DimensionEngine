@@ -11,5 +11,5 @@ struct SGame {
 
 	void (*on_resize)(struct SGame* game_instance, unsigned int width, unsigned int height);
 
-	void* state;
+	void* state = nullptr;
 };

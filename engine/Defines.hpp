@@ -1,5 +1,13 @@
 #pragma once
 
+/*
+* @brief Any id set to this should be considered invalid,
+* and not actually pointing to a real object.
+*/
+#define INVALID_ID 4294967295U
+#define INVALID_ID_U16 65535U
+#define INVALID_ID_U8 255U
+
 // Platforms
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__)
 #define DPLATFORM_WINDOWS 1
@@ -25,6 +33,7 @@
 #elif TARGET_OS_IPHONE
 #define DPLATFORM_IOS 1
 #elif TARGET_OS_MAC
+#define DPLATFORM_MACOS 1
 #endif
 
 #else
@@ -35,8 +44,7 @@
 #ifdef DEXPORT
 // Export
 #ifdef _MSC_VER
-//#define DAPI __declspec(dllexport)
-#define DAPI
+#define DAPI __declspec(dllexport)
 #else
 #define DAPI __attribute__((visibility("default")))
 #endif
@@ -44,22 +52,36 @@
 // Import
 #else
 #ifdef _MSC_VER
-//#define DAPI __declspec(dllimport)
-#define DAPI
+#define DAPI __declspec(dllimport)
 #else
 #define DAPI
 #endif
 
 #endif	// #ifdef DEXPORT
 
-// Math
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
+#ifndef CLAMP
+#define CLAMP(value, min, max) (value <= min) ? min : (value >= max) ? max : value;
+#endif
 
-typedef glm::vec4 Vector4;
-typedef glm::vec3 Vector3;
-typedef glm::vec2 Vector2;
+#define GIBIBYTES(amount) amount * 1024 * 1024 * 1024
+#define MEBIBYTES(amount) amount * 1024 * 1024
+#define KIBIBYTES(amount) amount * 1024
 
-typedef glm::mat4 Matrix4;
-typedef glm::mat3 Matrix3;
+#define GIGABYTES(amount) amount * 1000 * 1000 * 1000
+#define MEGABYTES(amount) amount * 1000 * 1000
+#define KIGABYTES(amount) amount * 1000
+
+struct Range {
+	unsigned long long offset;
+	unsigned long long size;
+};
+
+
+inline unsigned long long PaddingAligned(unsigned long long operand, unsigned long long granularity) {
+	return ((operand + (granularity - 1)) & ~(granularity - 1));
+}
+
+inline Range PaddingAligned(unsigned long long offset, unsigned long long size, unsigned long long granularity) {
+	return Range{ PaddingAligned(offset, granularity), PaddingAligned(size, granularity) };
+}
 

@@ -1,0 +1,9 @@
+#material file
+
+version=0.1
+name=TestMaterial
+diffuse_color=1.0 1.0 1.0 1.0
+shininess=64.0
+diffuse_map_name=OrangeLines512
+specular_map_name=OrangeLines512SPEC
+shader=Shader.Builtin.Material
