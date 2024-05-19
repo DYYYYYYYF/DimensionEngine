@@ -340,7 +340,7 @@ bool ApplicationOnKey(unsigned short code, void* sender, void* listener_instance
 		}
 		else if (KeyCode == eKeys_A) {
 			Vec3 ViewPos = Renderer->GetViewPosition();
-			ViewPos = ViewPos + Vec3(0.1, 0, 0);
+			ViewPos = ViewPos + Vec3(0.2f, 0, 0);
 			Matrix4 ViewMat = Matrix4::Identity();
 			ViewMat.SetTranslation(ViewPos);
 
@@ -349,7 +349,7 @@ bool ApplicationOnKey(unsigned short code, void* sender, void* listener_instance
 		}
 		else if (KeyCode == eKeys_D) {
 			Vec3 ViewPos = Renderer->GetViewPosition();
-			ViewPos = ViewPos + Vec3(-0.1, 0, 0);
+			ViewPos = ViewPos + Vec3(-0.2f, 0, 0);
 			Matrix4 ViewMat = Matrix4::Identity();
 			ViewMat.SetTranslation(ViewPos);
 
@@ -358,7 +358,7 @@ bool ApplicationOnKey(unsigned short code, void* sender, void* listener_instance
 		}
 		else if (KeyCode == eKeys_W) {
 			Vec3 ViewPos = Renderer->GetViewPosition();
-			ViewPos = ViewPos + Vec3(0, 0, 0.1);
+			ViewPos = ViewPos + Vec3(0, 0, 0.5f);
 			Matrix4 ViewMat = Matrix4::Identity();
 			ViewMat.SetTranslation(ViewPos);
 
@@ -367,7 +367,7 @@ bool ApplicationOnKey(unsigned short code, void* sender, void* listener_instance
 		}
 		else if (KeyCode == eKeys_S) {
 			Vec3 ViewPos = Renderer->GetViewPosition();
-			ViewPos = ViewPos + Vec3(0, 0, -0.1);
+			ViewPos = ViewPos + Vec3(0, 0, -0.5f);
 			Matrix4 ViewMat = Matrix4::Identity();
 			ViewMat.SetTranslation(ViewPos);
 
@@ -376,7 +376,7 @@ bool ApplicationOnKey(unsigned short code, void* sender, void* listener_instance
 		}
 		else if (KeyCode == eKeys_Q) {
 			Vec3 ViewPos = Renderer->GetViewPosition();
-			ViewPos = ViewPos + Vec3(0, -0.1, 0);
+			ViewPos = ViewPos + Vec3(0, -0.2f, 0);
 			Matrix4 ViewMat = Matrix4::Identity();
 			ViewMat.SetTranslation(ViewPos);
 
@@ -385,7 +385,7 @@ bool ApplicationOnKey(unsigned short code, void* sender, void* listener_instance
 		}
 		else if (KeyCode == eKeys_E) {
 			Vec3 ViewPos = Renderer->GetViewPosition();
-			ViewPos = ViewPos + Vec3(0, 0.1, 0);
+			ViewPos = ViewPos + Vec3(0, 0.2f, 0);
 			Matrix4 ViewMat = Matrix4::Identity();
 			ViewMat.SetTranslation(ViewPos);
 
