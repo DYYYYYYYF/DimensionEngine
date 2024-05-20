@@ -70,6 +70,7 @@ bool MaterialSystem::Initialize(IRenderer* renderer, SMaterialSystemConfig confi
 		RegisteredMaterials[i].Id = INVALID_ID;
 		RegisteredMaterials[i].Generation = INVALID_ID;
 		RegisteredMaterials[i].InternalId = INVALID_ID;
+		RegisteredMaterials[i].RenderFrameNumer = INVALID_ID;
 	}
 
 	// Create default textures for use in the system.
@@ -357,6 +358,7 @@ void MaterialSystem::DestroyMaterial(Material* mat) {
 	mat->Id = INVALID_ID;
 	mat->Generation = INVALID_ID;
 	mat->InternalId = INVALID_ID;
+	mat->RenderFrameNumer = INVALID_ID;
 }
 
 bool MaterialSystem::CreateDefaultMaterial() {

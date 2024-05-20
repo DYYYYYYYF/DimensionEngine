@@ -20,6 +20,8 @@
 #include "Systems/ShaderSystem.h"
 
 #include "Math/GeometryUtils.hpp"
+#include "Resources/Mesh.hpp"
+
 
 struct SApplicationState {
 	SGame* game_instance;
@@ -32,7 +34,7 @@ struct SApplicationState {
 	double last_time;
 	SClock clock;
 
-	Geometry* TestGeometry;
+	std::vector<Mesh> Meshes;
 	Geometry* TestUIGeometry;
 };
 
@@ -140,15 +142,39 @@ bool ApplicationCreate(SGame* game_instance){
 	}
 
 	// TODO: Temp
+	AppState.Meshes.resize(10);
+	Mesh* CubeMesh = &AppState.Meshes[0];
+	CubeMesh->geometry_count = 1;
+	CubeMesh->geometries = (Geometry**)Memory::Allocate(sizeof(Geometry*) * CubeMesh->geometry_count, MemoryType::eMemory_Type_Array);
 	// AppState.TestGeometry = GeometrySystem::GetDefaultGeometry();
 	//SGeometryConfig GeoConfig = GeometrySystem::GeneratePlaneConfig(5.0f, 2.0f, 5, 2, 5.0f, 2.0f, "TestGeometry", "Material.World");
-	SGeometryConfig GeoConfig = GeometrySystem::GenerateCubeConfig(5.0f, 5.0f, 5.0f, 1.0f, 1.0f, "TestCube", "Material.World");
+	SGeometryConfig GeoConfig = GeometrySystem::GenerateCubeConfig(10.0f, 10.0f, 10.0f, 1.0f, 1.0f, "TestCube", "Material.World");
 	GeometryUtils::GenerateTangents(GeoConfig.vertex_count, (Vertex*)GeoConfig.vertices, GeoConfig.index_count, (uint32_t*)GeoConfig.indices);
-	AppState.TestGeometry = GeometrySystem::AcquireFromConfig(GeoConfig, true);
+	CubeMesh->geometries[0] = GeometrySystem::AcquireFromConfig(GeoConfig, true);
+	CubeMesh->Transform = Transform();
+
+	Mesh* CubeMesh2 = &AppState.Meshes[1];
+	CubeMesh2->geometry_count = 1;
+	CubeMesh2->geometries = (Geometry**)Memory::Allocate(sizeof(Geometry*) * CubeMesh2->geometry_count, MemoryType::eMemory_Type_Array);
+	SGeometryConfig GeoConfig2 = GeometrySystem::GenerateCubeConfig(5.0f, 5.0f, 5.0f, 1.0f, 1.0f, "TestCube2", "Material.World");
+	GeometryUtils::GenerateTangents(GeoConfig2.vertex_count, (Vertex*)GeoConfig2.vertices, GeoConfig2.index_count, (uint32_t*)GeoConfig2.indices);
+	CubeMesh2->geometries[0] = GeometrySystem::AcquireFromConfig(GeoConfig2, true);
+	CubeMesh2->Transform = Transform(Vec3(10.0f, 0.0f, 1.0f));
+	CubeMesh2->Transform.SetParentTransform(&CubeMesh->Transform);
+
+	Mesh* CubeMesh3 = &AppState.Meshes[2];
+	CubeMesh3->geometry_count = 1;
+	CubeMesh3->geometries = (Geometry**)Memory::Allocate(sizeof(Geometry*) * CubeMesh3->geometry_count, MemoryType::eMemory_Type_Array);
+	SGeometryConfig GeoConfig3 = GeometrySystem::GenerateCubeConfig(2.0f, 2.0f, 2.0f, 1.0f, 1.0f, "TestCube3", "Material.World");
+	GeometryUtils::GenerateTangents(GeoConfig3.vertex_count, (Vertex*)GeoConfig3.vertices, GeoConfig3.index_count, (uint32_t*)GeoConfig3.indices);
+	CubeMesh3->geometries[0] = GeometrySystem::AcquireFromConfig(GeoConfig3, true);
+	CubeMesh3->Transform = Transform(Vec3(5.0f, 0.0f, 1.0f));
+	CubeMesh3->Transform.SetParentTransform(&CubeMesh2->Transform);
 
 	// Clean up the allocations for the geometry config.
-	Memory::Free(GeoConfig.vertices, sizeof(Vertex) * GeoConfig.vertex_count, MemoryType::eMemory_Type_Array);
-	Memory::Free(GeoConfig.indices, sizeof(uint32_t) * GeoConfig.index_count, MemoryType::eMemory_Type_Array);
+	GeometrySystem::ConfigDispose(&GeoConfig);
+	GeometrySystem::ConfigDispose(&GeoConfig2);
+	GeometrySystem::ConfigDispose(&GeoConfig3);
 
 	// Load up some test UI geometry.
 	SGeometryConfig UIConfig;
@@ -245,18 +271,37 @@ bool ApplicationRun() {
 			SRenderPacket Packet;
 			Packet.delta_time = DeltaTime;
 
-			// TODO: Temp
-			GeometryRenderData TestRender;
-			TestRender.geometry = AppState.TestGeometry;
-			//TestRender.model = Matrix4::Identity();
-			static float Angle = 0.0f;
-			Angle += (float)(1.0f * DeltaTime);
-			Quaternion Rotation = QuaternionFromAxisAngle(Vec3(0, 1, 0), Angle, true);
-			TestRender.model = QuatToMatrix(Rotation);
-			
-			Packet.geometries = &TestRender;
-			Packet.geometry_count = 1;
+			size_t MeshCount = AppState.Meshes.size();
+			if (MeshCount > 0) {
+				// Perform a small rotation on the first mesh.
+				Quaternion Rotation = QuaternionFromAxisAngle(Vec3(0, 1, 0), 0.5f * (float)DeltaTime, false);
+				AppState.Meshes[0].Transform.Rotate(Rotation);
 
+				if (MeshCount > 1) {
+					AppState.Meshes[1].Transform.Rotate(Rotation);
+				}
+
+				if (MeshCount > 2) {
+					AppState.Meshes[2].Transform.Rotate(Rotation);
+				}
+
+				// Iterate all meshes and add them to the packet's geometries collection.
+				for (size_t i = 0; i < MeshCount; ++i) {
+					for (size_t j = 0; j < AppState.Meshes[i].geometry_count; ++j) {
+						GeometryRenderData Data;
+						Data.geometry = AppState.Meshes[i].geometries[j];
+						Data.model = AppState.Meshes[i].Transform.GetWorldTransform();
+						Packet.geometries.push_back(Data);
+					}
+				}
+
+				Packet.geometry_count = (uint32_t)Packet.geometries.size();
+			}
+			else {
+				Packet.geometry_count = 0;
+				Packet.geometries.clear();
+			}
+			
 			GeometryRenderData TestUIRender;
 			TestUIRender.geometry = AppState.TestUIGeometry;
 			TestUIRender.model = Matrix4::Identity();
@@ -265,6 +310,11 @@ bool ApplicationRun() {
 			Packet.ui_geometry_count = 1;
 
 			Renderer->DrawFrame(&Packet);
+
+			// Clean up
+			if (Packet.geometries.size() > 0) {
+				Packet.geometries.clear();
+			}
 
 			// Figure FPS
 			double FrameEndTime = Platform::PlatformGetAbsoluteTime();

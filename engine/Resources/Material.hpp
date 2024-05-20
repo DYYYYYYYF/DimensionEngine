@@ -40,4 +40,5 @@ public:
 	float Shininess;
 
 	uint32_t ShaderID;
+	uint32_t RenderFrameNumer;
 };

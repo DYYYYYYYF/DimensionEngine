@@ -2,6 +2,7 @@
 
 #include "Defines.hpp"
 #include "Math/MathTypes.hpp"
+#include "vector"
 
 enum RendererBackendType {
 	eRenderer_Backend_Type_Vulkan,
@@ -13,7 +14,7 @@ struct SRenderPacket {
 	double delta_time;
 
 	uint32_t geometry_count;
-	struct GeometryRenderData* geometries = nullptr;
+	std::vector<struct GeometryRenderData> geometries;
 
 	uint32_t ui_geometry_count;
 	struct GeometryRenderData* ui_geometries = nullptr;

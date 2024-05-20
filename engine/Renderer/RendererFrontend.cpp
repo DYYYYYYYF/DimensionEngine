@@ -74,14 +74,14 @@ bool IRenderer::Initialize(const char* application_name, struct SPlatformState* 
 	FarClip = 1000.0f;
 	Projection = Matrix4::Perspective(Deg2Rad(45.0f), 1280.0f / 720.0f, 0.1f, 1000.0f);
 	View = Matrix4::Identity();
-	View.SetTranslation(Vec3{ 0.0f, 0.0f, -20.0f });
+	View.SetTranslation(Vec3{ 0.0f, 0.0f, -40.0f });
 
 	// UI projection/view
 	UIProjection = Matrix4::Orthographic(0, 1280.0f, 720.0f, 0, -100.f, 100.f);
 	UIView = Matrix4::Identity().Inverse();
 
 	AmbientColor = Vec4(0.25, 0.25, 0.25, 1.0f);
-	ViewPosition = Vec3{ 0.0f, 0.0f, -20.0f };
+	ViewPosition = Vec3{ 0.0f, 0.0f, -40.0f };
 
 	return true;
 }
@@ -108,6 +108,8 @@ void IRenderer::OnResize(unsigned short width, unsigned short height) {
 }
 
 bool IRenderer::DrawFrame(SRenderPacket* packet) {
+	Backend->IncreaseFrameNum();
+
 	if (Backend->BeginFrame(packet->delta_time)) {
 		// World render pass.
 		if (!Backend->BeginRenderpass(eButilin_Renderpass_World)) {
@@ -141,6 +143,9 @@ bool IRenderer::DrawFrame(SRenderPacket* packet) {
 			if (!MaterialSystem::ApplyInstance(mat)) {
 				UL_ERROR("Failed to apply material '%s'. Skipping draw.", mat->Name);
 				continue;
+			}
+			else {
+				mat->RenderFrameNumer = (uint32_t)Backend->GetFrameNum();
 			}
 
 			// Apply the locals.
@@ -203,7 +208,6 @@ bool IRenderer::DrawFrame(SRenderPacket* packet) {
 
 		// End frame
 		bool result = Backend->EndFrame(packet->delta_time);
-		Backend->IncreaseFrameNum();
 
 		if (!result) {
 			UL_ERROR("Renderer end frame failed.");

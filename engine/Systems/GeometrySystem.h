@@ -124,6 +124,8 @@ public:
 	static SGeometryConfig GenerateCubeConfig(float width, float height, 
 		float depth, float tile_x, float tile_y, const char* name, const char* material_name);
 
+	static void ConfigDispose(SGeometryConfig* config);
+
 private:
 	static bool CreateDefaultGeometries();
 	static bool CreateGeometry(SGeometryConfig config, Geometry* geometry);

@@ -148,6 +148,12 @@ public:
 public:
 	Vec3() { Zero(); }
 
+	Vec3(float x) {
+		r = x;
+		g = x;
+		b = x;
+	}
+
 	Vec3(float x, float y, float z) {
 		r = x;
 		g = y;
@@ -501,6 +507,11 @@ public:
 
 	float QuaternionDot(const Vec4& v) {
 		return x * v.x + y * v.y + z * v.z + w * v.w;
+	}
+
+	static Vec4 Identity() {
+		Vec4 Result = Vec4(0.0f, 0.0f, 0.0f, 1.0f);
+		return Result;
 	}
 
 public:
@@ -863,6 +874,18 @@ public:
 		Matrix.data[15] = 1.0f;
 
 		return Matrix;
+	}
+
+	static Matrix4 FromTranslation(Vec3 trans) {
+		Matrix4 Ret = Matrix4::Identity();
+		Ret.SetTranslation(trans);
+		return Ret;
+	}
+
+	static Matrix4 FromScale(Vec3 scale) {
+		Matrix4 Ret = Matrix4::Identity();
+		Ret.SetScale(scale);
+		return Ret;
 	}
 
 	/*
