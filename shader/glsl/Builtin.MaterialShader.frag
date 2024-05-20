@@ -12,9 +12,33 @@ struct DirectionalLight{
 	vec4 color;
 };
 
+struct PointLight{
+	vec3 position;
+	vec4 color;
+	float constant;
+	float linear;
+	float quadratic;
+};
+
 DirectionalLight dir_light = {
 	vec3(-0.57735f, -0.57735f, -0.57735f),
 	vec4(0.8f, 0.8f, 0.8f, 1.0f)
+};
+
+PointLight point_light_0 = {
+	vec3(-5.5f, 0.0f, -5.5f),
+	vec4(0.0f, 1.0f, 0.0f, 1.0f),
+	1.0f,	// Constant
+	0.15f,	// Linear
+	0.44f	// Quadratic
+};
+
+PointLight point_light_1 = {
+	vec3(5.5f, 0.0f, -5.5f),
+	vec4(1.0f, 0.0f, 0.0f, 1.0f),
+	1.0f,	// Constant
+	0.15f,	// Linear
+	0.44f	// Quadratic
 };
 
 // Samplers£ºdiffuse, specular
@@ -36,6 +60,7 @@ layout (location = 1) in struct dto{
 mat3 TBN;
 
 vec4 CalculateDirectionalLight(DirectionalLight light, vec3 normal, vec3 view_direction);
+vec4 CalculatePointLight(PointLight light, vec3 normal, vec3 frag_position, vec3 view_direction);
 
 void main(){
 	vec3 Normal = in_dto.vNormal;
@@ -49,10 +74,11 @@ void main(){
 	Normal = normalize(TBN * LocalNormal);
 
 	vec3 vViewDirection = normalize(in_dto.vViewPosition - in_dto.vFragPosition);
-   FragColor = CalculateDirectionalLight(dir_light, Normal, vViewDirection);
+	FragColor = CalculateDirectionalLight(dir_light, Normal, vViewDirection);
+
+	FragColor += CalculatePointLight(point_light_0, Normal, in_dto.vFragPosition, vViewDirection);
+	FragColor += CalculatePointLight(point_light_1, Normal, in_dto.vFragPosition, vViewDirection);
 }
-
-
 
 vec4 CalculateDirectionalLight(DirectionalLight light, vec3 normal, vec3 view_direction){
 	float fDiffuseFactor = max(dot(normal, -light.direction), 0.0f);
@@ -68,6 +94,34 @@ vec4 CalculateDirectionalLight(DirectionalLight light, vec3 normal, vec3 view_di
 	Ambient *= DiffSamp;
 	Diffuse *= DiffSamp;
 	Specular *= vec4(texture(Samplers[SAMP_SPECULAR], in_dto.vTexcoord).rgb, DiffSamp.a);
+
+	return (Ambient + Diffuse + Specular);
+}
+
+vec4 CalculatePointLight(PointLight light, vec3 normal, vec3 frag_position, vec3 view_direction){
+	vec3 LightDirection = normalize(light.position - frag_position);
+	float Diff = max(dot(normal, LightDirection), 0.0f);
+
+	vec3 ReflectDirection = reflect(-LightDirection, normal);
+	float Spec = pow(max(dot(view_direction, ReflectDirection), 0.0f), ObjectUbo.shininess);
+
+	// Calculate attenuation, or light falloff over distance.
+	float Distance = length(light.position - frag_position);
+	float Attenuation = 1.0f / (light.constant + light.linear * Distance + light.quadratic * (Distance * Distance));
+
+	vec4 Ambient = in_dto.vAmbientColor;
+	vec4 Diffuse = light.color * Diff;
+	vec4 Specular = light.color * Spec;
+	
+	vec4 DiffSamp = texture(Samplers[SAMP_DIFFUSE], in_dto.vTexcoord);
+	Diffuse *= DiffSamp;
+	Ambient *= DiffSamp;
+	Specular *= vec4(texture(Samplers[SAMP_SPECULAR], in_dto.vTexcoord).rgb, Diffuse.a);
+
+	// fall off
+	// Diffuse *= Attenuation;
+	// Ambient *= Attenuation;
+	// Specular *= Attenuation;
 
 	return (Ambient + Diffuse + Specular);
 }
