@@ -139,22 +139,22 @@ bool GeometrySystem::CreateDefaultGeometries() {
 	Memory::Zero(Verts, sizeof(Vertex) * 4);
 
 	Verts[0].position.x = -0.5f * f;
-	Verts[0].position.y = -0.5f * f;
+	Verts[0].position.y = 0.5f * f;
 	Verts[0].texcoord.x = 0.0f;
 	Verts[0].texcoord.y = 0.0f;
 
 	Verts[1].position.x = 0.5f * f;
-	Verts[1].position.y = 0.5f * f;
+	Verts[1].position.y = -0.5f * f;
 	Verts[1].texcoord.x = 1.0f;
 	Verts[1].texcoord.y = 0.0f;
 
 	Verts[2].position.x = -0.5f * f;
-	Verts[2].position.y = 0.5f * f;
+	Verts[2].position.y = -0.5f * f;
 	Verts[2].texcoord.x = 0.0f;
 	Verts[2].texcoord.y = 1.0f;
 
 	Verts[3].position.x = 0.5f * f;
-	Verts[3].position.y = -0.5f * f;
+	Verts[3].position.y = 0.5f * f;
 	Verts[3].texcoord.x = 1.0f;
 	Verts[3].texcoord.y = 1.0f;
 

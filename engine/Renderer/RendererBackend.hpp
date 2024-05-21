@@ -48,7 +48,7 @@ public:
 	virtual bool BindGlobalsShader(Shader* shader) = 0;
 	virtual bool BindInstanceShader(Shader* shader, uint32_t instance_id) = 0;
 	virtual bool ApplyGlobalShader(Shader* shader) = 0;
-	virtual bool ApplyInstanceShader(Shader* shader) = 0;
+	virtual bool ApplyInstanceShader(Shader* shader, bool need_update) = 0;
 	virtual uint32_t AcquireInstanceResource(Shader* shader) = 0;
 	virtual bool ReleaseInstanceResource(Shader* shader, uint32_t instance_id) = 0;
 	virtual bool SetUniform(Shader* shader, ShaderUniform* uniform, const void* value) = 0;

@@ -18,6 +18,7 @@ public:
 	const char* Name = nullptr;
 	char* FullPath = nullptr;
 	size_t DataSize;
+	size_t DataCount;
 	void* Data = nullptr;
 };
 

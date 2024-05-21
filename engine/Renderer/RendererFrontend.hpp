@@ -55,7 +55,7 @@ public:
 
 	/**
 	 * @brief Destroys the given shader and releases any resources held by it.
-	 * @param s A pointer to the shader to be destroyed.
+	 * @param shader A pointer to the shader to be destroyed.
 	 */
 	virtual bool DestroyRenderShader(Shader* shader);
 
@@ -63,7 +63,7 @@ public:
 	 * @brief Initializes a configured shader. Will be automatically destroyed if this step fails.
 	 * Must be done after vulkan_shader_create().
 	 *
-	 * @param s A pointer to the shader to be initialized.
+	 * @param shader A pointer to the shader to be initialized.
 	 * @return True on success; otherwise false.
 	 */
 	virtual bool InitializeRenderShader(Shader* shader);
@@ -72,7 +72,7 @@ public:
 	 * @brief Uses the given shader, activating it for updates to attributes, uniforms and such,
 	 * and for use in draw calls.
 	 *
-	 * @param s A pointer to the shader to be used.
+	 * @param shader A pointer to the shader to be used.
 	 * @return True on success; otherwise false.
 	 */
 	virtual bool UseRenderShader(Shader* shader);
@@ -80,7 +80,7 @@ public:
 	/**
 	 * @brief Binds global resources for use and updating.
 	 *
-	 * @param s A pointer to the shader whose globals are to be bound.
+	 * @param shader A pointer to the shader whose globals are to be bound.
 	 * @return True on success; otherwise false.
 	 */
 	virtual bool BindGlobalsRenderShader(Shader* shader);
@@ -88,7 +88,7 @@ public:
 	/**
 	 * @brief Binds instance resources for use and updating.
 	 *
-	 * @param s A pointer to the shader whose instance resources are to be bound.
+	 * @param shader A pointer to the shader whose instance resources are to be bound.
 	 * @param instance_id The identifier of the instance to be bound.
 	 * @return True on success; otherwise false.
 	 */
@@ -97,7 +97,7 @@ public:
 	/**
 	 * @brief Applies global data to the uniform buffer.
 	 *
-	 * @param s A pointer to the shader to apply the global data for.
+	 * @param shader A pointer to the shader to apply the global data for.
 	 * @return True on success; otherwise false.
 	 */
 	virtual bool ApplyGlobalRenderShader(Shader* shader);
@@ -105,15 +105,16 @@ public:
 	/**
 	 * @brief Applies data for the currently bound instance.
 	 *
-	 * @param s A pointer to the shader to apply the instance data for.
+	 * @param shader A pointer to the shader to apply the instance data for.
+	 * @param need_update
 	 * @return True on success; otherwise false.
 	 */
-	virtual bool ApplyInstanceRenderShader(Shader* shader);
+	virtual bool ApplyInstanceRenderShader(Shader* shader, bool need_update);
 
 	/**
 	 * @brief Acquires internal instance-level resources and provides an instance id.
 	 *
-	 * @param s A pointer to the shader to acquire resources from.
+	 * @param shader A pointer to the shader to acquire resources from.
 	 * @param out_instance_id A pointer to hold the new instance identifier.
 	 * @return True on success; otherwise false.
 	 */
@@ -122,7 +123,7 @@ public:
 	/**
 	 * @brief Releases internal instance-level resources for the given instance id.
 	 *
-	 * @param s A pointer to the shader to release resources from.
+	 * @param shader A pointer to the shader to release resources from.
 	 * @param instance_id The instance identifier whose resources are to be released.
 	 * @return True on success; otherwise false.
 	 */
@@ -131,7 +132,7 @@ public:
 	/**
 	 * @brief Sets the uniform of the given shader to the provided value.
 	 *
-	 * @param s A ponter to the shader.
+	 * @param shader A pointer to the shader.
 	 * @param uniform A constant pointer to the uniform.
 	 * @param value A pointer to the value to be set.
 	 * @return b8 True on success; otherwise false.

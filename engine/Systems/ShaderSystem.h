@@ -139,9 +139,10 @@ public:
 	 * @brief Applies instance-scoped uniforms.
 	 * NOTE: Operates against the currently-used shader.
 	 *
+	 * @param need_update Indicates if the shader need uniform updated or just need to be bound.
 	 * @return True on success; otherwise false.
 	 */
-	static bool ApplyInstance();
+	static bool ApplyInstance(bool need_update);
 
 	/**
 	 * @brief Binds the instance with the given id for use. Must be done before setting

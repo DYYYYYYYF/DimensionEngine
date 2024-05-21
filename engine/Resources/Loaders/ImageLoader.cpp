@@ -1,6 +1,7 @@
 #include "ImageLoader.hpp"
 #include "Systems/ResourceSystem.h"
 
+#include "Platform/FileSystem.hpp"
 #include "Core/DMemory.hpp"
 #include "Core/EngineLogger.hpp"
 
@@ -24,8 +25,24 @@ bool ImageLoader::Load(const char* name, Resource* resource) {
 	stbi_set_flip_vertically_on_load(true);
 	char FullFilePath[512];
 
-	// TODO: try different extensions.
-	sprintf(FullFilePath, FormatStr, ResourceSystem::GetRootPath(), TypePath, name, ".png");
+	// Try different extensions.
+#define IMAGE_EXTENSION_COUNT 4
+	bool Found = false;
+	char* Extensions[IMAGE_EXTENSION_COUNT] = { ".tga", ".png", ".jpg", ".bmp" };
+	for (uint32_t i = 0; i < IMAGE_EXTENSION_COUNT; ++i) {
+		sprintf(FullFilePath, FormatStr, ResourceSystem::GetRootPath(), TypePath, name, Extensions[i]);
+		if (FileSystemExists(FullFilePath)) {
+			Found = true;
+			break;
+		}
+	}
+
+	if (!Found) {
+		UL_ERROR("Image resource loader failed find file '%s'or with any supported extensions.", FullFilePath);
+		return false;
+	}
+
+	//sprintf(FullFilePath, FormatStr, ResourceSystem::GetRootPath(), TypePath, name, ".png");
 
 	int Width, Height, ChannelCount;
 
@@ -34,18 +51,18 @@ bool ImageLoader::Load(const char* name, Resource* resource) {
 	unsigned char* Data = stbi_load(FullFilePath, &Width, &Height, &ChannelCount, RequiredChannelCount);
 
 	// Check for a failure reason. If there is one, abort, clear memory if allocated, return false.
-	if (stbi_failure_reason() != nullptr) {
-		UL_WARN("Load texture failed to load file %s : %s", FullFilePath, stbi_failure_reason());
+	//if (stbi_failure_reason() != nullptr) {
+	//	UL_WARN("Load texture failed to load file %s : %s", FullFilePath, stbi_failure_reason());
 
-		// Clear errors so the next load doesn't fail.
-		stbi__err(0, 0);
+	//	// Clear errors so the next load doesn't fail.
+	//	stbi__err(0, 0);
 
-		if (Data) {
-			stbi_image_free(Data);
-		}
+	//	if (Data) {
+	//		stbi_image_free(Data);
+	//	}
 
-		return false;
-	}
+	//	return false;
+	//}
 
 	if (Data == nullptr) {
 		UL_ERROR("Image resource loader failed to load file '%s'.", FullFilePath);

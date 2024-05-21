@@ -6,6 +6,12 @@ Transform::Transform() {
 	Parent = nullptr;
 }
 
+Transform::Transform(const Transform& trans) {
+	SetPRS(trans.GetPosition(), trans.GetRotation(), trans.GetScale());
+	Local = trans.Local;
+	Parent = trans.Parent;
+}
+
 Transform::Transform(Vec3 position) {
 	SetPRS(position, Quaternion::Identity(), Vec3(1.0f));
 	Local = Matrix4::Identity();

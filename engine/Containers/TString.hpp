@@ -161,3 +161,96 @@ inline bool StringToFloat(const char* str, float* f) {
 	*f = (float)atof(str);
 	return true;
 }
+
+// Case-sensitive string comparison.
+inline bool StringEqual(const char* str0, const char* str1) {
+	return strcmp(str0, str1) == 0;
+}
+
+// Case-insensitive string comparison.
+inline bool StringEquali(const char* str0, const char* str1) {
+#if defined(__GUNC__)
+	return strcasecmp(str0, str1) == 0;
+#elif (defined _MSC_VER)
+	return _strcmpi(str0, str1) == 0;
+#endif
+	return false;
+}
+
+inline bool StringNequal(const char* str0, const char* str1, size_t len) {
+	return strncmp(str0, str1, len);
+}
+
+inline bool StringNequali(const char* str0, const char* str1, size_t len) {
+#if defined(__GUNC__)
+	return strncasecmp(str0, str1, len) == 0;
+#elif (defined _MSC_VER)
+	return _strnicmp(str0, str1, len) == 0;
+#endif
+	return false;
+}
+
+class String {
+public:
+	static void Append(char* dst, const char* src, const char* append) {
+		sprintf(dst, "%s%s", src, append);
+	}
+
+	static void Append(char* dst, const char* src, int append) {
+		sprintf(dst, "%s%i", src, append);
+	}
+
+	static void Append(char* dst, const char* src, bool append) {
+		sprintf(dst, "%s%s", src, append ? "true" : "false");
+	}
+
+	static void Append(char* dst, const char* src, float append) {
+		sprintf(dst, "%s%f", src, append);
+	}
+
+	static void Append(char* dst, const char* src, char append) {
+		sprintf(dst, "%s%c", src, append);
+	}
+
+};
+
+inline void StringDirectoryFromPath(char* dst, const char* path) {
+	size_t Length = strlen(path);
+	for (int i = (int)Length; i >= 0; --i) {
+		char c = path[i];
+		if (c == '/' || c == '\\') {
+			strncpy(dst, path, i + 1);
+			dst[i + 1] = '\0';
+			return;
+		}
+	}
+}
+
+inline void StringFilenameFromPath(char* dst, const char* path) {
+	size_t Length = strlen(path);
+	for (int i = (int)Length; i >= 0; --i) {
+		char c = path[i];
+		if (c == '/' || c == '\\') {
+			strcpy(dst, path + i + 1);
+			return;
+		}
+	}
+}
+
+inline void StringFilenameNoExtensionFromPath(char* dst, const char* path) {
+	size_t Length = strlen(path);
+	size_t Start = 0;
+	size_t End = 0;
+	for (int i = (int)Length; i >= 0; --i) {
+		char c = path[i];
+		if (End == 0 && c == '.') {
+			End = i;
+		}
+		if (Start == 0 && (c == '/' || c == '\\')) {
+			Start = i + 1;
+			break;
+		}
+	}
+
+	StringMid(dst, path, Start, static_cast<int>(End - Start));
+}

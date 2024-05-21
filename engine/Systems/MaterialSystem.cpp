@@ -272,13 +272,13 @@ bool MaterialSystem::LoadMaterial(SMaterialConfig config, Material* mat) {
 		mat->DiffuseMap.texture = TextureSystem::Acquire(config.diffuse_map_name, true);
 		if (mat->DiffuseMap.texture == nullptr) {
 			UL_WARN("Unable to load texture '%s' for material '%s', using default.", config.diffuse_map_name, mat->Name);
-			mat->DiffuseMap.texture = TextureSystem::GetDefaultTexture();
+			mat->DiffuseMap.texture = TextureSystem::GetDefaultDiffuseTexture();
 		}
 	}
 	else {
 		// NOTE: Only set for clarity, as call to Memory::Zero above does this already.
-		mat->DiffuseMap.usage = TextureUsage::eTexture_Usage_Unknown;
-		mat->DiffuseMap.texture = nullptr;
+		mat->DiffuseMap.usage = TextureUsage::eTexture_Usage_Map_Diffuse;
+		mat->DiffuseMap.texture = TextureSystem::GetDefaultDiffuseTexture();
 	}
 
 	// Specular map
@@ -292,8 +292,8 @@ bool MaterialSystem::LoadMaterial(SMaterialConfig config, Material* mat) {
 	}
 	else {
 		// NOTE: Only set for clarity, as call to Memory::Zero above does this already.
-		mat->SpecularMap.usage = TextureUsage::eTexture_Usage_Unknown;
-		mat->SpecularMap.texture = nullptr;
+		mat->SpecularMap.usage = TextureUsage::eTexture_Usage_Map_Specular;
+		mat->SpecularMap.texture = TextureSystem::GetDefaultSpecularTexture();
 	}
 
 	// Normal map
@@ -373,8 +373,8 @@ bool MaterialSystem::CreateDefaultMaterial() {
 	DefaultMaterial.SpecularMap.usage = TextureUsage::eTexture_Usage_Map_Specular;
 	DefaultMaterial.SpecularMap.texture = TextureSystem::GetDefaultSpecularTexture();
 
-	DefaultMaterial.SpecularMap.usage = TextureUsage::eTexture_Usage_Map_Normal;
-	DefaultMaterial.SpecularMap.texture = TextureSystem::GetDefaultNormalTexture();
+	DefaultMaterial.NormalMap.usage = TextureUsage::eTexture_Usage_Map_Normal;
+	DefaultMaterial.NormalMap.texture = TextureSystem::GetDefaultNormalTexture();
 
 	Shader* s = ShaderSystem::Get(BUILTIN_SHADER_NAME_MATERIAL);
 	DefaultMaterial.InternalId = Renderer->AcquireInstanceResource(s);
@@ -415,26 +415,28 @@ bool MaterialSystem::ApplyGlobal(uint32_t shader_id, const Matrix4& projection, 
 	return true;
 }
 
-bool MaterialSystem::ApplyInstance(Material* mat) {
+bool MaterialSystem::ApplyInstance(Material* mat, bool need_update) {
 	// Apply instance-level uniforms.
 	MATERIAL_APPLY_OR_FAIL(ShaderSystem::BindInstance(mat->InternalId));
-	if (mat->ShaderID == MaterialShaderID) {
-		MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(MaterialLocations.diffuse_color, &mat->DiffuseColor));
-		MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(MaterialLocations.diffuse_texture, mat->DiffuseMap.texture));
-		MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(MaterialLocations.specular_texture, mat->SpecularMap.texture));
-		MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(MaterialLocations.normal_texture, mat->NormalMap.texture));
-		MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(MaterialLocations.shininess, &mat->Shininess));
-	}
-	else if (mat->ShaderID == UIShaderID) {
-		MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(UILocations.diffuse_color, &mat->DiffuseColor));
-		MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(UILocations.diffuse_texture, mat->DiffuseMap.texture));
-	}
-	else {
-		UL_ERROR("material_system_apply_instance(): Unrecognized shader id '%d' on shader '%s'.", mat->ShaderID, mat->Name);
-		return false;
+	if (need_update) {
+		if (mat->ShaderID == MaterialShaderID) {
+			MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(MaterialLocations.diffuse_color, &mat->DiffuseColor));
+			MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(MaterialLocations.diffuse_texture, mat->DiffuseMap.texture));
+			MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(MaterialLocations.specular_texture, mat->SpecularMap.texture));
+			MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(MaterialLocations.normal_texture, mat->NormalMap.texture));
+			MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(MaterialLocations.shininess, &mat->Shininess));
+		}
+		else if (mat->ShaderID == UIShaderID) {
+			MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(UILocations.diffuse_color, &mat->DiffuseColor));
+			MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(UILocations.diffuse_texture, mat->DiffuseMap.texture));
+		}
+		else {
+			UL_ERROR("material_system_apply_instance(): Unrecognized shader id '%d' on shader '%s'.", mat->ShaderID, mat->Name);
+			return false;
+		}
 	}
 
-	MATERIAL_APPLY_OR_FAIL(ShaderSystem::ApplyInstance());
+	MATERIAL_APPLY_OR_FAIL(ShaderSystem::ApplyInstance(need_update));
 	return true;
 }
 

@@ -8,6 +8,7 @@
 
 STextureSystemConfig TextureSystem::TextureSystemConfig;
 Texture TextureSystem::DefaultTexture;
+Texture TextureSystem::DefaultDiffuseTexture;
 Texture TextureSystem::DefaultSpecularTexture;
 Texture TextureSystem::DefaultNormalTexture;
 Texture* TextureSystem::RegisteredTextures = nullptr;
@@ -74,6 +75,7 @@ void TextureSystem::Shutdown() {
 	for (uint32_t i = 0; i < TextureSystemConfig.max_texture_count; ++i) {
 		Texture* t = &RegisteredTextures[i];
 		if (t->Generation != INVALID_ID) {
+			UL_DEBUG("Destroying texture: '%s'.", t->Name);
 			Renderer->DestroyTexture(t);
 		}
 	}
@@ -205,6 +207,14 @@ Texture* TextureSystem::GetDefaultTexture() {
 	return nullptr;
 }
 
+Texture* TextureSystem::GetDefaultDiffuseTexture() {
+	if (Initilized) {
+		return &DefaultDiffuseTexture;
+	}
+
+	return nullptr;
+}
+
 Texture* TextureSystem::GetDefaultSpecularTexture() {
 	if (Initilized) {
 		return &DefaultSpecularTexture;
@@ -264,6 +274,22 @@ bool TextureSystem::CreateDefaultTexture() {
 	// Manually set the texture generation to invalid since this is a default texture.
 	DefaultTexture.Generation = INVALID_ID;
 
+	// Diffuse texture.
+	UL_INFO("Creating default diffuse texture...");
+	unsigned char DiffusePixels[16 * 16 * 4];
+	// Default spec map is black (no specular).
+	Memory::Set(DiffusePixels, 255, sizeof(unsigned char) * 16 * 16 * 4);
+	strncpy(DefaultDiffuseTexture.Name, DEFAULT_DIFFUSE_TEXTURE_NAME, TEXTURE_NAME_MAX_LENGTH);
+	DefaultDiffuseTexture.Width = 16;
+	DefaultDiffuseTexture.Height = 16;
+	DefaultDiffuseTexture.ChannelCount = 4;
+	DefaultDiffuseTexture.Generation = INVALID_ID;
+	DefaultDiffuseTexture.HasTransparency = false;
+	Renderer->CreateTexture(DiffusePixels, &DefaultDiffuseTexture);
+	UL_INFO("Default diffuse texture created.");
+	// Manually set the texture generation to invalid since this is a default texture.
+	DefaultDiffuseTexture.Generation = INVALID_ID;
+
 	// Specular texture.
 	UL_INFO("Creating default specular texture...");
 	unsigned char SpecularPixels[16 * 16 * 4];
@@ -276,7 +302,7 @@ bool TextureSystem::CreateDefaultTexture() {
 	DefaultSpecularTexture.Generation = INVALID_ID;
 	DefaultSpecularTexture.HasTransparency = false;
 	Renderer->CreateTexture(SpecularPixels, &DefaultSpecularTexture);
-	UL_INFO("Default texture created.");
+	UL_INFO("Default specular texture created.");
 	// Manually set the texture generation to invalid since this is a default texture.
 	DefaultSpecularTexture.Generation = INVALID_ID;
 
@@ -306,7 +332,7 @@ bool TextureSystem::CreateDefaultTexture() {
 	DefaultNormalTexture.Generation = INVALID_ID;
 	DefaultNormalTexture.HasTransparency = false;
 	Renderer->CreateTexture(NormalPixels, &DefaultNormalTexture);
-	UL_INFO("Default texture created.");
+	UL_INFO("Default normal texture created.");
 	// Manually set the texture generation to invalid since this is a default texture.
 	DefaultNormalTexture.Generation = INVALID_ID;
 
@@ -315,6 +341,7 @@ bool TextureSystem::CreateDefaultTexture() {
 
 void TextureSystem::DestroyDefaultTexture() {
 	DestroyTexture(&DefaultTexture);
+	DestroyTexture(&DefaultDiffuseTexture);
 	DestroyTexture(&DefaultSpecularTexture);
 	DestroyTexture(&DefaultNormalTexture);
 }

@@ -7,6 +7,7 @@
 #include "Resources/Loaders/ImageLoader.hpp"
 #include "Resources/Loaders/MaterialLoader.h"
 #include "Resources/Loaders/ShaderLoader.h"
+#include "Resources/Loaders/MeshLoader.h"
 
 SResourceSystemConfig ResourceSystem::Config;
 TArray<IResourceLoader*> ResourceSystem::RegisteredLoaders = TArray<IResourceLoader*>();
@@ -36,6 +37,8 @@ bool ResourceSystem::Initialize(SResourceSystemConfig config) {
 	RegisterLoader(MatLoader);
 	IResourceLoader* ShaLoader = new ShaderLoader();
 	RegisterLoader(ShaLoader);
+	IResourceLoader* MesLoader = new MeshLoader();
+	RegisterLoader(MesLoader);
 
 	Initilized = true;
 	UL_INFO("Resource system initialize with base path: '%s'.", config.asset_base_path);

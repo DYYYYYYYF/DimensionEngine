@@ -24,12 +24,16 @@ struct SGeometryConfig {
 	// Vertices
 	uint32_t vertex_size;
 	uint32_t vertex_count;
-	void* vertices;
+	void* vertices = nullptr;
 
 	// Indices
 	uint32_t index_size;
 	uint32_t index_count;
 	void* indices = nullptr;
+
+	Vec3 center;
+	Vec3 min_extents;
+	Vec3 max_extents;
 
 	char name[GEOMETRY_NAME_MAX_LENGTH];
 	char material_name[MATERIAL_NAME_MAX_LENGTH];

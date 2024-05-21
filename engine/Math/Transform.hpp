@@ -10,6 +10,8 @@ public:
 	 */
 	DAPI Transform();
 
+	DAPI Transform(const Transform& trans);
+
 	/**
 	 * @brief Creates a transform from the given position.
 	 * Uses a zero rotation and a one scale.

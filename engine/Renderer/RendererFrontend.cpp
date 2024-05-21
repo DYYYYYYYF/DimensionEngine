@@ -139,12 +139,15 @@ bool IRenderer::DrawFrame(SRenderPacket* packet) {
 				mat = MaterialSystem::GetDefaultMaterial();
 			}
 
-			// Apply the material
-			if (!MaterialSystem::ApplyInstance(mat)) {
+			// Apply the material if it hasn't already been this frame. This keeps the
+			// same material from being updated multiple times.
+			bool IsNeedUpdate = (mat->RenderFrameNumer != Backend->GetFrameNum());
+			if (!MaterialSystem::ApplyInstance(mat, IsNeedUpdate)) {
 				UL_ERROR("Failed to apply material '%s'. Skipping draw.", mat->Name);
 				continue;
 			}
 			else {
+				// Sync the frame number.
 				mat->RenderFrameNumer = (uint32_t)Backend->GetFrameNum();
 			}
 
@@ -189,9 +192,13 @@ bool IRenderer::DrawFrame(SRenderPacket* packet) {
 			}
 
 			// Apply the material
-			if (!MaterialSystem::ApplyInstance(Mat)) {
+			bool IsNeedUpdate = (Mat->RenderFrameNumer != Backend->GetFrameNum());
+			if (!MaterialSystem::ApplyInstance(Mat, IsNeedUpdate)) {
 				UL_ERROR("Failed to apply ui '%s'. Skipping draw.", Mat->Name);
 				continue;
+			}
+			else {
+				Mat->RenderFrameNumer = (uint32_t)Backend->GetFrameNum();
 			}
 
 			// Apply the locals.
@@ -282,8 +289,8 @@ bool IRenderer::ApplyGlobalRenderShader(Shader* shader) {
 	return Backend->ApplyGlobalShader(shader);
 }
 
-bool IRenderer::ApplyInstanceRenderShader(Shader* shader) {
-	return Backend->ApplyInstanceShader(shader);
+bool IRenderer::ApplyInstanceRenderShader(Shader* shader, bool need_update) {
+	return Backend->ApplyInstanceShader(shader, need_update);
 }
 
 uint32_t IRenderer::AcquireInstanceResource(Shader* shader) {

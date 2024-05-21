@@ -299,8 +299,8 @@ bool ShaderSystem::ApplyGlobal() {
 	return Renderer->ApplyGlobalRenderShader(&Shaders[CurrentShaderID]);
 }
 
-bool ShaderSystem::ApplyInstance() {
-	return Renderer->ApplyInstanceRenderShader(&Shaders[CurrentShaderID]);
+bool ShaderSystem::ApplyInstance(bool need_update) {
+	return Renderer->ApplyInstanceRenderShader(&Shaders[CurrentShaderID], need_update);
 }
 
 bool ShaderSystem::BindInstance(uint32_t instance_id) {

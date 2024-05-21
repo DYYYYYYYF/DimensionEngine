@@ -29,6 +29,11 @@ public:
 		g = y;
 	}
 
+	Vec2(const Vec2& v) {
+		r = v.x;
+		g = v.y;
+	}
+
 	void Zero() {
 		x = 0.0f;
 		y = 0.0f;
@@ -158,6 +163,12 @@ public:
 		r = x;
 		g = y;
 		b = z;
+	}
+
+	Vec3(const Vec3& v) {
+		r = v.x;
+		g = v.y;
+		b = v.z;
 	}
 
 	void Zero() {
@@ -355,6 +366,13 @@ public:
 		g = y;
 		b = z;
 		a = w;
+	}
+
+	Vec4(const Vec4& v) {
+		r = v.x;
+		g = v.y;
+		b = v.z;
+		a = v.w;
 	}
 
 	void Zero() {
@@ -1098,6 +1116,30 @@ struct Vertex {
 	Vec2 texcoord;
 	Vec4 color;
 	Vec4 tangent;
+
+	Vertex() {
+		position = Vec3(0.0f);
+		normal = Vec3(0, 0, 1);
+		texcoord = Vec2(0, 0);
+		color = Vec4(1, 1, 1, 1);
+		tangent = Vec4(0, 0, 0, 1);
+	}
+
+	Vertex(const Vertex& v) {
+		position = v.position;
+		normal = v.normal;
+		texcoord = v.texcoord;
+		color = v.color;
+		tangent = v.tangent;
+	}
+
+	bool Compare(const Vertex& v0) {
+		return position.Compare(v0.position, D_FLOAT_EPSILON) &&
+			normal.Compare(v0.normal, D_FLOAT_EPSILON) &&
+			texcoord.Compare(v0.texcoord, D_FLOAT_EPSILON) &&
+			color.Compare(v0.color, D_FLOAT_EPSILON) &&
+			tangent.Compare(v0.tangent, D_FLOAT_EPSILON);
+	}
 };
 
 struct Vertex2D {

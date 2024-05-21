@@ -45,10 +45,11 @@ public:
 	/**
 	 * @brief Applies instance-level material data for the given material.
 	 *
-	 * @param m A pointer to the material to be applied.
+	 * @param mat A pointer to the material to be applied.
+	 * @param need_update Indicates if the material needs to be update.
 	 * @return True on success; otherwise false.
 	 */
-	static bool ApplyInstance(Material* mat);
+	static bool ApplyInstance(Material* mat, bool need_update);
 
 	/**
 	 * @brief Applies local-level material data (typically just model matrix).

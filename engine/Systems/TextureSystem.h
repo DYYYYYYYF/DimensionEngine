@@ -5,6 +5,7 @@
 #include "Containers/THashTable.hpp"
 
 #define DEFAULT_TEXTURE_NAME "default"
+#define DEFAULT_DIFFUSE_TEXTURE_NAME "default_diffuse"
 #define DEFAULT_SPECULAR_TEXTURE_NAME "default_specular"
 #define DEFAULT_NORMAL_TEXTURE_NAME "default_normal"
 
@@ -29,6 +30,7 @@ public:
 	static void Release(const char* name);
 
 	static Texture* GetDefaultTexture();
+	static Texture* GetDefaultDiffuseTexture();
 	static Texture* GetDefaultSpecularTexture();
 	static Texture* GetDefaultNormalTexture();
 
@@ -42,6 +44,7 @@ private:
 private:
 	static STextureSystemConfig TextureSystemConfig;
 	static Texture DefaultTexture;
+	static Texture DefaultDiffuseTexture;
 	static Texture DefaultSpecularTexture;
 	static Texture DefaultNormalTexture;
 

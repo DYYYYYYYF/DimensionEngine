@@ -1364,7 +1364,7 @@ bool VulkanBackend::ApplyGlobalShader(Shader* shader) {
 	return true;
 }
 
-bool VulkanBackend::ApplyInstanceShader(Shader* shader) {
+bool VulkanBackend::ApplyInstanceShader(Shader* shader, bool need_update) {
 	if (!shader->UseInstances) {
 		UL_ERROR("This shader does not use instances.");
 		return false;
@@ -1378,73 +1378,74 @@ bool VulkanBackend::ApplyInstanceShader(Shader* shader) {
 	VulkanShaderInstanceState* ObjectState = &Internal->InstanceStates[shader->BoundInstanceId];
 	vk::DescriptorSet ObjectDescriptorSet = ObjectState->descriptor_set_state.descriptorSets[ImageIndex];
 
-	// TODO: if needs update.
-	vk::WriteDescriptorSet DescriptorWrites[2];
-	Memory::Zero(DescriptorWrites, sizeof(vk::WriteDescriptorSet) * 2);
-	uint32_t DescriptorCount = 0;
-	uint32_t DescriptorIndex = 0;
+	if (need_update){
+		vk::WriteDescriptorSet DescriptorWrites[2];
+		Memory::Zero(DescriptorWrites, sizeof(vk::WriteDescriptorSet) * 2);
+		uint32_t DescriptorCount = 0;
+		uint32_t DescriptorIndex = 0;
 
-	// Descriptor 0 - Uniform buffer
-	// Only do this if the descriptor has not yet been updated.
-	uint32_t* InstanceUboGeneration = &(ObjectState->descriptor_set_state.descriptor_states[DescriptorIndex].generations[ImageIndex]);
-	// TODO: determine if update is required.
-	vk::DescriptorBufferInfo BufferInfo;
-	vk::WriteDescriptorSet UboDescriptor;
-	if (*InstanceUboGeneration == INVALID_ID/* || *GlobalUboGeneration != Material->Generation*/) {
-		BufferInfo.setBuffer(Internal->UniformBuffer.Buffer)
-			.setOffset(ObjectState->offset)
-			.setRange(shader->UboStride);
+		// Descriptor 0 - Uniform buffer
+		// Only do this if the descriptor has not yet been updated.
+		uint32_t* InstanceUboGeneration = &(ObjectState->descriptor_set_state.descriptor_states[DescriptorIndex].generations[ImageIndex]);
+		// TODO: determine if update is required.
+		vk::DescriptorBufferInfo BufferInfo;
+		vk::WriteDescriptorSet UboDescriptor;
+		if (*InstanceUboGeneration == INVALID_ID/* || *GlobalUboGeneration != Material->Generation*/) {
+			BufferInfo.setBuffer(Internal->UniformBuffer.Buffer)
+				.setOffset(ObjectState->offset)
+				.setRange(shader->UboStride);
 
-		UboDescriptor.setDstSet(ObjectDescriptorSet)
-			.setDstBinding(DescriptorIndex)
-			.setDescriptorType(vk::DescriptorType::eUniformBuffer)
-			.setDescriptorCount(1)
-			.setBufferInfo(BufferInfo);
+			UboDescriptor.setDstSet(ObjectDescriptorSet)
+				.setDstBinding(DescriptorIndex)
+				.setDescriptorType(vk::DescriptorType::eUniformBuffer)
+				.setDescriptorCount(1)
+				.setBufferInfo(BufferInfo);
 
-		DescriptorWrites[DescriptorCount] = UboDescriptor;
-		DescriptorCount++;
+			DescriptorWrites[DescriptorCount] = UboDescriptor;
+			DescriptorCount++;
 
-		// Update the frame generation. In this case it is only needed once since this is a buffer.
-		*InstanceUboGeneration = 1;  // material->generation; TODO: some generation from... somewhere
-	}
-	DescriptorIndex++;
+			// Update the frame generation. In this case it is only needed once since this is a buffer.
+			*InstanceUboGeneration = 1;  // material->generation; TODO: some generation from... somewhere
+		}
+		DescriptorIndex++;
 
-	// Samplers will always be in the binding. If the binding count is less than 2, there are no samplers.
-	vk::DescriptorImageInfo ImageInfos[VULKAN_SHADER_MAX_GLOBAL_TEXTURES];
-	vk::WriteDescriptorSet SamplerDescriptor;
-	if (Internal->Config.descriptor_sets[DESC_SET_INDEX_INSTANCE].binding_count > 1) {
-		// Iterate samplers.
-		uint32_t TotalSamplerCount = Internal->Config.descriptor_sets[DESC_SET_INDEX_INSTANCE].bindings[BINDING_INDEX_SAMPLER].descriptorCount;
-		uint32_t UpdateSamplerCount = 0;
-		for (uint32_t i = 0; i < TotalSamplerCount; ++i) {
-			// TODO: only update in the list if actually needing an update.
-			Texture* t = Internal->InstanceStates[shader->BoundInstanceId].instance_textures[i];
-			VulkanTexture* InternalData = (VulkanTexture*)t->InternalData;
-			ImageInfos[i].setImageLayout(vk::ImageLayout::eShaderReadOnlyOptimal)
-				.setImageView(InternalData->Image.ImageView)
-				.setSampler(InternalData->sampler);
+		// Samplers will always be in the binding. If the binding count is less than 2, there are no samplers.
+		vk::DescriptorImageInfo ImageInfos[VULKAN_SHADER_MAX_GLOBAL_TEXTURES];
+		vk::WriteDescriptorSet SamplerDescriptor;
+		if (Internal->Config.descriptor_sets[DESC_SET_INDEX_INSTANCE].binding_count > 1) {
+			// Iterate samplers.
+			uint32_t TotalSamplerCount = Internal->Config.descriptor_sets[DESC_SET_INDEX_INSTANCE].bindings[BINDING_INDEX_SAMPLER].descriptorCount;
+			uint32_t UpdateSamplerCount = 0;
+			for (uint32_t i = 0; i < TotalSamplerCount; ++i) {
+				// TODO: only update in the list if actually needing an update.
+				Texture* t = Internal->InstanceStates[shader->BoundInstanceId].instance_textures[i];
+				VulkanTexture* InternalData = (VulkanTexture*)t->InternalData;
+				ImageInfos[i].setImageLayout(vk::ImageLayout::eShaderReadOnlyOptimal)
+					.setImageView(InternalData->Image.ImageView)
+					.setSampler(InternalData->sampler);
 
-			// TODO: change up descriptor state to handle this properly.
-			// Sync frame generation if not using a default texture.
-			// if (t->generation != INVALID_ID) {
-			//     *descriptor_generation = t->generation;
-			//     *descriptor_id = t->id;
-			// }
-			UpdateSamplerCount++;
+				// TODO: change up descriptor state to handle this properly.
+				// Sync frame generation if not using a default texture.
+				/*if (t->generation != INVALID_ID) {
+					*descriptor_generation = t->generation;
+					*descriptor_id = t->id;
+				}*/
+				UpdateSamplerCount++;
+			}
+
+			SamplerDescriptor.setDstSet(ObjectDescriptorSet)
+				.setDstBinding(DescriptorIndex)
+				.setDescriptorType(vk::DescriptorType::eCombinedImageSampler)
+				.setDescriptorCount(UpdateSamplerCount)
+				.setPImageInfo(ImageInfos);
+
+			DescriptorWrites[DescriptorCount] = SamplerDescriptor;
+			DescriptorCount++;
 		}
 
-		SamplerDescriptor.setDstSet(ObjectDescriptorSet)
-			.setDstBinding(DescriptorIndex)
-			.setDescriptorType(vk::DescriptorType::eCombinedImageSampler)
-			.setDescriptorCount(UpdateSamplerCount)
-			.setPImageInfo(ImageInfos);
-
-		DescriptorWrites[DescriptorCount] = SamplerDescriptor;
-		DescriptorCount++;
-	}
-
-	if (DescriptorCount > 0) {
-		Context.Device.GetLogicalDevice().updateDescriptorSets(DescriptorCount, DescriptorWrites, 0, nullptr);
+		if (DescriptorCount > 0) {
+			Context.Device.GetLogicalDevice().updateDescriptorSets(DescriptorCount, DescriptorWrites, 0, nullptr);
+		}
 	}
 
 	// Bind the descriptor set to be updated, or in case the shader changed.
