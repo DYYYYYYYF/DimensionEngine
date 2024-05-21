@@ -24,7 +24,7 @@
 
 
 struct SApplicationState {
-	SGame* game_instance;
+	SGame* game_instance = nullptr;
 	SPlatformState platform;
 
 	bool is_running;
@@ -35,7 +35,7 @@ struct SApplicationState {
 	SClock clock;
 
 	std::vector<Mesh> Meshes;
-	Geometry* TestUIGeometry;
+	Geometry* TestUIGeometry = nullptr;
 };
 
 static bool Initialized = false;
@@ -88,7 +88,7 @@ bool ApplicationCreate(SGame* game_instance){
 	// Init texture system
 	SResourceSystemConfig ResourceSystemConfig;
 	ResourceSystemConfig.max_loader_count = 32;
-	ResourceSystemConfig.asset_base_path = "../Asset";
+	ResourceSystemConfig.asset_base_path = "../Assets";
 	if (!ResourceSystem::Initialize(ResourceSystemConfig)) {
 		UL_FATAL("Resource system failed to initialize!");
 		return false;
@@ -171,6 +171,7 @@ bool ApplicationCreate(SGame* game_instance){
 	CubeMesh3->Transform = Transform(Vec3(5.0f, 0.0f, 1.0f));
 	CubeMesh3->Transform.SetParentTransform(&CubeMesh2->Transform);
 
+	
 	// Clean up the allocations for the geometry config.
 	GeometrySystem::ConfigDispose(&GeoConfig);
 	GeometrySystem::ConfigDispose(&GeoConfig2);
