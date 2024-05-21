@@ -14,3 +14,7 @@ library/
 CMakeSettings.json
 *.spv
 Documents
+
+Asset/Materials/*.dmt
+!Asset/Materials/Material.UI.dmt
+!Asset/Materials/Material.World.dmt
