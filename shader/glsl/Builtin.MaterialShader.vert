@@ -28,7 +28,8 @@ layout (location = 1) out struct out_dto{
 }OutDto;
 
 void main(){
-	OutDto.vTexcoord = vec2(vTexcoord.x, 1.0 - vTexcoord.y);;
+	//OutDto.vTexcoord = vec2(vTexcoord.x, 1.0 - vTexcoord.y);
+	OutDto.vTexcoord = vTexcoord;
 	OutDto.vNormal = mat3(PushConstant.model) * vNormal;
 	OutDto.vAmbientColor = GlobalUBO.ambient_color;
 	OutDto.vViewPosition = GlobalUBO.view_position;
