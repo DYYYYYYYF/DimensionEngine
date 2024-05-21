@@ -171,7 +171,47 @@ bool ApplicationCreate(SGame* game_instance){
 	CubeMesh3->Transform = Transform(Vec3(5.0f, 0.0f, 1.0f));
 	CubeMesh3->Transform.SetParentTransform(&CubeMesh2->Transform);
 
-	
+	// Test mesh loaded from file.
+	Mesh* CarMesh = &AppState.Meshes[3];
+	Resource CarMeshResource;
+	// Test model sponza/falcon
+	if (!ResourceSystem::Load("falcon", ResourceType::eResource_type_Static_Mesh, &CarMeshResource)) {
+		UL_ERROR("Failed to load car test mesh.");
+	}
+	else {
+		SGeometryConfig* Configs = (SGeometryConfig*)CarMeshResource.Data;
+		CarMesh->geometry_count = (unsigned short)CarMeshResource.DataCount;
+		CarMesh->geometries = (Geometry**)Memory::Allocate(sizeof(Geometry*) * CarMesh->geometry_count, MemoryType::eMemory_Type_Array);
+		for (uint32_t i = 0; i < CarMesh->geometry_count; ++i) {
+			SGeometryConfig* c = &Configs[i];
+			GeometryUtils::GenerateTangents(c->vertex_count, (Vertex*)c->vertices, c->index_count, (uint32_t*)c->indices);
+			CarMesh->geometries[i] = GeometrySystem::AcquireFromConfig(Configs[i], true);
+		}
+
+		CarMesh->Transform = Transform(Vec3(15.0f, 0.0f, 0.0f), Quaternion::Identity(), Vec3(1.05f, 1.05f, 1.05f));
+		ResourceSystem::Unload(&CarMeshResource);
+	}
+
+	Mesh* SponzaMesh = &AppState.Meshes[4];
+	Resource SponzaMeshResource;
+	// Test model sponza/falcon
+	if (!ResourceSystem::Load("sponza", ResourceType::eResource_type_Static_Mesh, &SponzaMeshResource)) {
+		UL_ERROR("Failed to load car test mesh.");
+	}
+	else {
+		SGeometryConfig* Configs = (SGeometryConfig*)SponzaMeshResource.Data;
+		SponzaMesh->geometry_count = (unsigned short)SponzaMeshResource.DataCount;
+		SponzaMesh->geometries = (Geometry**)Memory::Allocate(sizeof(Geometry*) * SponzaMesh->geometry_count, MemoryType::eMemory_Type_Array);
+		for (uint32_t i = 0; i < SponzaMesh->geometry_count; ++i) {
+			SGeometryConfig* c = &Configs[i];
+			GeometryUtils::GenerateTangents(c->vertex_count, (Vertex*)c->vertices, c->index_count, (uint32_t*)c->indices);
+			SponzaMesh->geometries[i] = GeometrySystem::AcquireFromConfig(Configs[i], true);
+		}
+
+		SponzaMesh->Transform = Transform(Vec3(15.0f, 0.0f, 0.0f), Quaternion::Identity(), Vec3(1.05f, 1.05f, 1.05f));
+		ResourceSystem::Unload(&SponzaMeshResource);
+	}
+
 	// Clean up the allocations for the geometry config.
 	GeometrySystem::ConfigDispose(&GeoConfig);
 	GeometrySystem::ConfigDispose(&GeoConfig2);
