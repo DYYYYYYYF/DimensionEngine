@@ -5,7 +5,7 @@
 #include "Core/DMemory.hpp"
 #include <ostream>
 
-struct Vec2 {
+struct DAPI Vec2 {
 public:
 	union
 	{
@@ -122,12 +122,17 @@ public:
 		return Vec2{ x / num, y / num };
 	}
 
+	// Negative
+	Vec2 operator-() {
+		return Vec2(-x, -y);
+	}
+
 	friend std::ostream& operator<<(std::ostream& os, const Vec2& vec) {
 		return os << "x: " << vec.x << " y: " << vec.y << "\n";
 	}
 };
 
-struct Vec3 {
+struct DAPI Vec3 {
 public:
 	union{
 		float elements[3];
@@ -268,6 +273,30 @@ public:
 		return d.Length();
 	}
 
+	static Vec3 Forward() {
+		return Vec3(0.0f, 0.0f, -1.0f);
+	}
+
+	static Vec3 Backward() {
+		return Vec3(0.0f, 0.0f, 1.0f);
+	}
+
+	static Vec3 Left() {
+		return Vec3(-1.0f, 0.0f, 0.0f);
+	}
+
+	static Vec3 Right() {
+		return Vec3(1.0f, 0.0f, 0.0f);
+	}
+
+	static Vec3 Up() {
+		return Vec3(0.0f, 1.0f, 0.0f);
+	}
+
+	static Vec3 Down() {
+		return Vec3(0.0f, -1.0f, 0.0f);
+	}
+
 	// Add
 	Vec3 operator+(const Vec3& v) {
 		return Vec3{ x + v.x, y + v.y, z + v.z };
@@ -304,12 +333,17 @@ public:
 		return Vec3{ x / num, y / num, y / num };
 	}
 
+	// Negative
+	Vec3 operator-() {
+		return Vec3(-x, -y, -z);
+	}
+
 	friend std::ostream& operator<<(std::ostream& os, const Vec3& vec) {
 		return os << "x: " << vec.x << " y: " << vec.y << " z: " << vec.z << "\n";
 	}
 };
 
-struct Vec4 {
+struct DAPI Vec4 {
 public:
 	union
 	{
@@ -569,6 +603,11 @@ public:
 		return Vec4{ x / v.x, y / v.y, z / v.z, w / v.w };
 	}
 
+	// Negative
+	Vec4 operator-() {
+		return Vec4(-x, -y, -z, -w);
+	}
+
 	friend std::ostream& operator<<(std::ostream& os, const Vec4& vec) {
 		return os << "x: " << vec.x << " y: " << vec.y << " z: " << vec.z << " w: " << vec.w << "\n";
 	}
@@ -584,7 +623,7 @@ inline Vec4 ToVec4(const Vec3& vec, float w) {
 	return Vec4{ vec, w };
 }
 
-struct Matrix4 {
+struct DAPI Matrix4 {
 public:
 	union {
 		alignas(16) float data[16];
@@ -839,7 +878,7 @@ public:
 	* @param far_clip The far clipping plane distance.
 	* @return A new perspective matrix.
 	*/
-	static Matrix4 Perspective(float fov_radians, float aspect_ratio, float near_clip, float far_clip) {
+	static Matrix4 Perspective(float fov_radians, float aspect_ratio, float near_clip, float far_clip, bool reverse_y = false) {
 		float HalfFov = DTan(fov_radians * 0.5f);
 
 		Matrix4 Matrix;
@@ -850,6 +889,10 @@ public:
 		Matrix.data[10] = -((far_clip + near_clip) / (far_clip - near_clip));
 		Matrix.data[11] = -1.0f;
 		Matrix.data[14] = -((2.0f * far_clip * near_clip) / (far_clip - near_clip));
+
+		if (reverse_y) {
+			Matrix.data[5] *= -1.0f;
+		}
 
 		return Matrix;
 	}
@@ -910,7 +953,7 @@ public:
 	* Euler
 	*/
 	static Matrix4 EulerX(float angle_radians) {
-		Matrix4 Matrix;
+		Matrix4 Matrix = Matrix4::Identity();
 		float c = DCos(angle_radians);
 		float s = DSin(angle_radians);
 
@@ -923,7 +966,7 @@ public:
 	}
 
 	static Matrix4 EulerY(float angle_radians) {
-		Matrix4 Matrix;
+		Matrix4 Matrix = Matrix4::Identity();
 		float c = DCos(angle_radians);
 		float s = DSin(angle_radians);
 
@@ -936,7 +979,7 @@ public:
 	}
 
 	static Matrix4 EulerZ(float angle_radians) {
-		Matrix4 Matrix;
+		Matrix4 Matrix = Matrix4::Identity();
 		float c = DCos(angle_radians);
 		float s = DSin(angle_radians);
 
@@ -949,7 +992,7 @@ public:
 	}
 
 	static Matrix4 EulerXYZ(float x_radians, float y_radians, float z_radians) {
-		Matrix4 Matrix;
+		Matrix4 Matrix = Matrix4::Identity();
 		Matrix4 mx = Matrix4::EulerX(x_radians);
 		Matrix4 my = Matrix4::EulerY(y_radians);
 		Matrix4 mz = Matrix4::EulerZ(z_radians);

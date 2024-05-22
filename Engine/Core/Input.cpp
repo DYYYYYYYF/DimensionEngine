@@ -92,7 +92,7 @@ void InputProcessMouseWheel(char z_delta) {
 }
 
 bool InputIsKeyDown(Keys key) {
-	if (Initialized) {
+	if (!Initialized) {
 		return false;
 	}
 
@@ -100,7 +100,7 @@ bool InputIsKeyDown(Keys key) {
 }
 
 bool InputIsKeyUp(Keys key) {
-	if (Initialized) {
+	if (!Initialized) {
 		return false;
 	}
 
@@ -108,7 +108,7 @@ bool InputIsKeyUp(Keys key) {
 }
 
 bool InputWasKeyDown(Keys key) {
-	if (Initialized) {
+	if (!Initialized) {
 		return false;
 	}
 
@@ -116,7 +116,7 @@ bool InputWasKeyDown(Keys key) {
 }
 
 bool InputWasKeyUp(Keys key) {
-	if (Initialized) {
+	if (!Initialized) {
 		return false;
 	}
 
@@ -124,7 +124,7 @@ bool InputWasKeyUp(Keys key) {
 }
 
 bool InputeIsButtonDown(Buttons button) {
-	if (Initialized) {
+	if (!Initialized) {
 		return false;
 	}
 
@@ -132,7 +132,7 @@ bool InputeIsButtonDown(Buttons button) {
 }
 
 bool InputIsButtonUp(Buttons button) {
-	if (Initialized) {
+	if (!Initialized) {
 		return false;
 	}
 
@@ -140,7 +140,7 @@ bool InputIsButtonUp(Buttons button) {
 }
 
 bool InputWasButtonDown(Buttons button) {
-	if (Initialized) {
+	if (!Initialized) {
 		return false;
 	}
 
@@ -148,7 +148,7 @@ bool InputWasButtonDown(Buttons button) {
 }
 
 bool InputWasButtonUp(Buttons button) {
-	if (Initialized) {
+	if (!Initialized) {
 		return false;
 	}
 
