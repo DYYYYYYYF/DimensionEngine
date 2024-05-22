@@ -27,13 +27,17 @@ bool GameUpdate(SGame* game_instance, float delta_time) {
 		State->WorldCamera->RotateYaw(1.0f * delta_time);
 	}
 	if (Core::InputIsKeyDown(Keys::eKeys_Up)) {
-		State->WorldCamera->RotatePitch(1.0f * delta_time);
-	}
-	if (Core::InputIsKeyDown(Keys::eKeys_Down)) {
 		State->WorldCamera->RotatePitch(-1.0f * delta_time);
 	}
+	if (Core::InputIsKeyDown(Keys::eKeys_Down)) {
+		State->WorldCamera->RotatePitch(1.0f * delta_time);
+	}
 
-	static const float TempMoveSpeed = 50.0f;
+	float TempMoveSpeed = 50.0f;
+	if (Core::InputIsKeyDown(Keys::eKeys_Shift)) {
+		TempMoveSpeed *= 2.0f;
+	}
+
 	if (Core::InputIsKeyDown(Keys::eKeys_W)) {
 		State->WorldCamera->MoveForward(TempMoveSpeed * delta_time);
 	}

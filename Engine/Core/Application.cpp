@@ -210,7 +210,7 @@ bool ApplicationCreate(SGame* game_instance){
 			SponzaMesh->geometries[i] = GeometrySystem::AcquireFromConfig(Configs[i], true);
 		}
 
-		SponzaMesh->Transform = Transform(Vec3(15.0f, 0.0f, 0.0f), Quaternion::Identity(), Vec3(1.05f, 1.05f, 1.05f));
+		SponzaMesh->Transform = Transform(Vec3(15.0f, 0.0f, 0.0f), Quaternion::Identity(), Vec3(0.05f, 0.05f, 0.05f));
 		ResourceSystem::Unload(&SponzaMeshResource);
 	}
 

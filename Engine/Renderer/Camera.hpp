@@ -98,11 +98,6 @@ public:
 	void RotatePitch(float amount);
 
 	/**
-	 * @brief Rotate camera around axis z.
-	 */
-	void RotateRoll(float amount);
-
-	/**
 	 * @brief Get forward vector of view.
 	 */
 	Vec3 Forward() { return ViewMatrix.Forward(); }

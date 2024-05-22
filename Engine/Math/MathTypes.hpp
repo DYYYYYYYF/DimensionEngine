@@ -997,8 +997,8 @@ public:
 		Matrix4 my = Matrix4::EulerY(y_radians);
 		Matrix4 mz = Matrix4::EulerZ(z_radians);
 
-		Matrix = mx.Multiply(my);
-		Matrix = Matrix.Multiply(mz);
+		Matrix = my.Multiply(mx);
+		Matrix = mz.Multiply(Matrix);
 
 		return Matrix;
 	}
