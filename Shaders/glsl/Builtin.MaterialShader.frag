@@ -119,9 +119,9 @@ vec4 CalculatePointLight(PointLight light, vec3 normal, vec3 frag_position, vec3
 	Specular *= vec4(texture(Samplers[SAMP_SPECULAR], in_dto.vTexcoord).rgb, Diffuse.a);
 
 	// fall off
-	// Diffuse *= Attenuation;
-	// Ambient *= Attenuation;
-	// Specular *= Attenuation;
+	Diffuse *= Attenuation;
+	Ambient *= Attenuation;
+	Specular *= Attenuation;
 
 	return (Ambient + Diffuse + Specular);
 }

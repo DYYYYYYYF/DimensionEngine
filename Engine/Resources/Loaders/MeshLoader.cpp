@@ -105,17 +105,17 @@ void MeshLoader::Unload(Resource* resource) {
 bool MeshLoader::ImportObjFile(FileHandle* obj_file, const char* out_dsm_filename, std::vector<SGeometryConfig>& out_geometries) {
 	// Positions
 	std::vector<Vec3> Positions;
-	Positions.reserve(16384);
+	Positions.reserve(65535);
 	// Normals
 	std::vector<Vec3> Normals;
-	Normals.reserve(16384);
+	Normals.reserve(65535);
 	// Texcoords
 	std::vector<Vec2> Texcoords;
-	Texcoords.reserve(16384);
+	Texcoords.reserve(65535);
 
 	//Groups
 	std::vector<MeshGroupData> Groups;
-	Groups.reserve(4);
+	Groups.reserve(10);
 
 	char MaterialFileName[512] = "";
 
@@ -159,7 +159,6 @@ bool MeshLoader::ImportObjFile(FileHandle* obj_file, const char* out_dsm_filenam
 					UL_ERROR("Mesh loader ImportObjFile: sscanf failed. succeed num: %i  Line: %s", Result, LineBuf);
 				}
 
-				Pos.y *= -1.0f;
 				Positions.push_back(Pos);
 			}break;
 			case 'n': {
@@ -258,7 +257,7 @@ bool MeshLoader::ImportObjFile(FileHandle* obj_file, const char* out_dsm_filenam
 				UL_ERROR("Mesh loader ImportObjFile: sscanf failed. succeed num: %i  Line: %s", Result, LineBuf);
 			}
 
-			strncpy(name, MaterialNames[CurrentMatNameCount], 511);
+			strncpy(name, MaterialNames[CurrentMatNameCount], 255);
 			CurrentMatNameCount++;
 		} break;
 		case 'g': {
@@ -357,6 +356,10 @@ bool MeshLoader::ImportObjFile(FileHandle* obj_file, const char* out_dsm_filenam
 		// Destroy.
 		Memory::Free(g->indices, sizeof(uint32_t)* g->index_count, MemoryType::eMemory_Type_Array);
 		g->indices = Indices;
+
+		// Also generate tangents here, this way tangents are also stored in the output file.
+		GeometryUtils::GenerateTangents(g->vertex_count, (Vertex*)g->vertices, g->index_count, (uint32_t*)g->indices);
+
 	}
 
 	// Output a dsm file, which will be loaded in the future.
@@ -366,8 +369,8 @@ bool MeshLoader::ImportObjFile(FileHandle* obj_file, const char* out_dsm_filenam
 void MeshLoader::ProcessSubobject(std::vector<Vec3>& positions, std::vector<Vec3>& normals, std::vector<Vec2>& texcoords, std::vector<MeshFaceData>& faces, SGeometryConfig* out_data) {
 	std::vector<uint32_t> Indices;
 	std::vector<Vertex> Vertices;
-	Indices.reserve(25968);
-	Vertices.reserve(25968);
+	Indices.reserve(65535);
+	Vertices.reserve(65535);
 	
 	bool ExtentSet = false;
 	Memory::Zero(&out_data->min_extents, sizeof(Vec3));
@@ -446,6 +449,11 @@ void MeshLoader::ProcessSubobject(std::vector<Vec3>& positions, std::vector<Vec3
 		}
 	}
 
+	// Calculate the center based on the extents.
+	for (unsigned short i = 0; i < 3; ++i) {
+		out_data->center.elements[i] = (out_data->min_extents.elements[i] + out_data->max_extents.elements[i]) / 2.0f;
+	}
+
 	out_data->vertex_count = (uint32_t)Vertices.size();
 	out_data->vertex_size = sizeof(Vertex);
 	out_data->vertices = Memory::Allocate(out_data->vertex_count * out_data->vertex_size, MemoryType::eMemory_Type_Array);
@@ -455,14 +463,6 @@ void MeshLoader::ProcessSubobject(std::vector<Vec3>& positions, std::vector<Vec3
 	out_data->index_size = sizeof(uint32_t);
 	out_data->indices = Memory::Allocate(out_data->index_count * out_data->index_size, MemoryType::eMemory_Type_Array);
 	Memory::Copy(out_data->indices, Indices.data(), out_data->index_count * out_data->index_size);
-
-	// Calculate the center based on the extents.
-	for (unsigned short i = 0; i < 3; ++i) {
-		out_data->center.elements[i] = (out_data->min_extents.elements[i] + out_data->max_extents.elements[i]) / 2.0f;
-	}
-
-	// Calculate tangents.
-	GeometryUtils::GenerateTangents(out_data->vertex_count, (Vertex*)out_data->vertices, out_data->index_count, (uint32_t*)out_data->indices);
 }
 
 bool MeshLoader::ImportObjMaterialLibraryFile(const char* mtl_file_path) {
@@ -696,12 +696,121 @@ bool MeshLoader::WriteDmtFile(const char* mtl_file_path, SMaterialConfig* config
 }
 
 bool MeshLoader::LoadDsmFile(FileHandle* dsm_file, std::vector<SGeometryConfig>& out_geometries) {
-	// TODO:
+	// Version
+	size_t BytesRead = 0;
+	unsigned short Version = 0;
+	FileSystemRead(dsm_file, sizeof(unsigned short), &Version, &BytesRead);
+
+	// Name length
+	uint32_t NameLength = 0;
+	FileSystemRead(dsm_file, sizeof(uint32_t), &NameLength, &BytesRead);
+	// Name + terminator
+	char name[256];
+	FileSystemRead(dsm_file, sizeof(char) * NameLength, name, &BytesRead);
+
+	//Geometry count.
+	uint32_t GeometryCount = 0;
+	FileSystemRead(dsm_file, sizeof(uint32_t), &GeometryCount, &BytesRead);
+
+	// Each geometry.
+	for (uint32_t i = 0; i < GeometryCount; ++i) {
+		SGeometryConfig g;
+
+		// Vertices (size/count/array)
+		FileSystemRead(dsm_file, sizeof(uint32_t), &g.vertex_size, &BytesRead);
+		FileSystemRead(dsm_file, sizeof(uint32_t), &g.vertex_count, &BytesRead);
+		g.vertices = Memory::Allocate(g.vertex_count * g.vertex_size, MemoryType::eMemory_Type_Array);
+		FileSystemRead(dsm_file, g.vertex_count * g.vertex_size, g.vertices, &BytesRead);
+
+		// Indices (size/count/array)
+		FileSystemRead(dsm_file, sizeof(uint32_t), &g.index_size, &BytesRead);
+		FileSystemRead(dsm_file, sizeof(uint32_t), &g.index_count, &BytesRead);
+		g.indices = Memory::Allocate(g.index_count * g.index_size, MemoryType::eMemory_Type_Array);
+		FileSystemRead(dsm_file, g.index_count * g.index_size, g.indices, &BytesRead);
+
+		// Name
+		uint32_t GNameLength = 0;
+		FileSystemRead(dsm_file, sizeof(uint32_t), &GNameLength, &BytesRead);
+		FileSystemRead(dsm_file, sizeof(char) * GNameLength, g.name, &BytesRead);
+
+		// Material name.
+		uint32_t MNameLength = 0;
+		FileSystemRead(dsm_file, sizeof(uint32_t), &MNameLength, &BytesRead);
+		FileSystemRead(dsm_file, sizeof(char) * MNameLength, g.material_name, &BytesRead);
+
+		// Center
+		FileSystemRead(dsm_file, sizeof(Vec3), &g.center, &BytesRead);
+
+		// Extents (min/max)
+		FileSystemRead(dsm_file, sizeof(Vec3), &g.min_extents, &BytesRead);
+		FileSystemRead(dsm_file, sizeof(Vec3), &g.max_extents, &BytesRead);
+
+		// Add to the output array.
+		out_geometries.push_back(g);
+	}
+
+	FileSystemClose(dsm_file);
 	return true;
 }
 
 bool MeshLoader::WriteDsmFile(const char* path, const char* name, uint32_t geometry_count, std::vector<SGeometryConfig>& geometries) {
-	// TODO:
+	if (FileSystemExists(path)) {
+		UL_INFO("File '%s' already exists and will be overwritten.", path);
+	}
+
+	FileHandle f;
+	if (!FileSystemOpen(path, FileMode::eFile_Mode_Write, true, &f)) {
+		UL_INFO("Unable to open file '%s'. Dsm file write failed.", path);
+		return false;
+	}
+
+	// Version.
+	size_t Written = 0;
+	unsigned short Version = 0x0001U;
+	FileSystemWrite(&f, sizeof(unsigned short), &Version, &Written);
+
+	// Name length.
+	uint32_t NameLength = (uint32_t)strlen(name);
+	FileSystemWrite(&f, sizeof(uint32_t), &NameLength, &Written);
+	// Name + terminator
+	FileSystemWrite(&f, sizeof(char) * NameLength, &name, &Written);
+
+	// Geometry count.
+	FileSystemWrite(&f, sizeof(uint32_t), &geometry_count, &Written);
+
+	// Each geometry.
+	for (uint32_t i = 0; i < geometry_count; ++i) {
+		SGeometryConfig* g = &geometries[i];
+
+		// Vertices (size/count/array)
+		FileSystemWrite(&f, sizeof(uint32_t), &g->vertex_size, &Written);
+		FileSystemWrite(&f, sizeof(uint32_t), &g->vertex_count, &Written);
+		FileSystemWrite(&f, g->vertex_size * g->vertex_count, &g->vertices, &Written);
+
+		// Indices (size/count/array)
+		FileSystemWrite(&f, sizeof(uint32_t), &g->index_size, &Written);
+		FileSystemWrite(&f, sizeof(uint32_t), &g->index_count, &Written);
+		FileSystemWrite(&f, g->index_size * g->index_count, &g->indices, &Written);
+
+		// Name
+		uint32_t GNameLength = (uint32_t)strlen(g->name) + 1;
+		FileSystemWrite(&f, sizeof(uint32_t), &GNameLength, &Written);
+		FileSystemWrite(&f, sizeof(char) * GNameLength, g->name, &Written);
+
+		// Material Name
+		uint32_t MNameLength = (uint32_t)strlen(g->material_name) + 1;
+		FileSystemWrite(&f, sizeof(uint32_t), &MNameLength, &Written);
+		FileSystemWrite(&f, sizeof(char) * MNameLength, g->material_name, &Written);
+
+		// Center
+		FileSystemWrite(&f, sizeof(Vec3), &g->center, &Written);
+
+		// Extents (min/ max)
+		FileSystemWrite(&f, sizeof(Vec3), &g->min_extents, &Written);
+		FileSystemWrite(&f, sizeof(Vec3), &g->max_extents, &Written);
+	}
+
+	FileSystemClose(&f);
 	return true;
 }
 
