@@ -1,61 +1,61 @@
 #include "Game.hpp"
-#include "Core/EngineLogger.hpp"
-#include "Core/Input.hpp"
 
-#include "Renderer/RendererFrontend.hpp"
+#include <Core/EngineLogger.hpp>
+#include <Core/Input.hpp>
+#include <Core/Event.hpp>
+#include <Systems/CameraSystem.h>
 
-
-void RecalculateViewMatrix(SGameState* state) {
-	if (state->camera_view_dirty) {
-		Matrix4 Rotation = Matrix4::EulerXYZ(state->camera_euler.x, state->camera_euler.y, state->camera_euler.z);
-		Matrix4 Translation = Matrix4::Identity();
-		Translation.SetTranslation(state->camera_position);
-
-		state->camera_view_dirty = false;
-	}
-}
-
-void CameraYaw(SGameState* state, float amount) {
-	state->camera_euler.y += amount;
-	state->camera_view_dirty = true;
-}
-
-void CameraPitch(SGameState* state, float amount) {
-	state->camera_euler.x += amount;
-
-	float Limit = Deg2Rad(89.5f);
-	state->camera_euler.x = CLAMP(state->camera_euler.x, -Limit, Limit);
-
-	state->camera_view_dirty = true;
-}
 
 bool GameInitialize(SGame* game_instance) {
 	UL_DEBUG("GameInitialize() called.");
 
 	SGameState* State = (SGameState*)game_instance->state;
 
-	State->camera_position = Vec3{ 0, 0, -30.f };
-	State->camera_euler = Vec3();
-
-	State->view = Matrix4::Identity();
-	State->view.SetTranslation(State->camera_position);
-
-	State->camera_view_dirty = true;
+	State->WorldCamera = CameraSystem::GetDefault();
+	State->WorldCamera->SetPosition(Vec3(0.0f, 0.0f, -40.0f));
 
 	return true;
 }
 
 bool GameUpdate(SGame* game_instance, float delta_time) {
+	SGameState* State = (SGameState*)game_instance->state;
 
-	if (Core::InputIsKeyDown(eKeys_A) || Core::InputIsKeyDown(eKeys_Left)) {
-		CameraYaw((SGameState*)game_instance->state, 1.0f * delta_time);
+	if (Core::InputIsKeyDown(eKeys_Left)) {
+		State->WorldCamera->RotateYaw(-1.0f * delta_time);
 	}
-	if (Core::InputIsKeyDown(eKeys_D) || Core::InputIsKeyDown(eKeys_Right)) {
-		CameraYaw((SGameState*)game_instance->state, -1.0f * delta_time);
+	if (Core::InputIsKeyDown(eKeys_Right)) {
+		State->WorldCamera->RotateYaw(1.0f * delta_time);
+	}
+	if (Core::InputIsKeyDown(Keys::eKeys_Up)) {
+		State->WorldCamera->RotatePitch(1.0f * delta_time);
+	}
+	if (Core::InputIsKeyDown(Keys::eKeys_Down)) {
+		State->WorldCamera->RotatePitch(-1.0f * delta_time);
 	}
 
-	RecalculateViewMatrix((SGameState*)game_instance->state);
-	((SGameState*)game_instance->state)->view;
+	static const float TempMoveSpeed = 50.0f;
+	if (Core::InputIsKeyDown(Keys::eKeys_W)) {
+		State->WorldCamera->MoveForward(TempMoveSpeed * delta_time);
+	}
+	if (Core::InputIsKeyDown(Keys::eKeys_S)) {
+		State->WorldCamera->MoveBackward(TempMoveSpeed * delta_time);
+	}
+	if (Core::InputIsKeyDown(Keys::eKeys_A)) {
+		State->WorldCamera->MoveLeft(TempMoveSpeed * delta_time);
+	}
+	if (Core::InputIsKeyDown(Keys::eKeys_D)) {
+		State->WorldCamera->MoveRight(TempMoveSpeed * delta_time);
+	}
+	if (Core::InputIsKeyDown(Keys::eKeys_Q)) {
+		State->WorldCamera->MoveDown(TempMoveSpeed * delta_time);
+	}
+	if (Core::InputIsKeyDown(Keys::eKeys_E)) {
+		State->WorldCamera->MoveUp(TempMoveSpeed * delta_time);
+	}
+
+	if (Core::InputIsKeyDown(Keys::eKeys_R)) {
+		State->WorldCamera->Reset();
+	}
 
 	return true;
 }

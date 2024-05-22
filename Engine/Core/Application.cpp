@@ -18,6 +18,7 @@
 #include "Systems/GeometrySystem.h"
 #include "Systems/ResourceSystem.h"
 #include "Systems/ShaderSystem.h"
+#include "Systems/CameraSystem.h"
 
 #include "Math/GeometryUtils.hpp"
 #include "Resources/Mesh.hpp"
@@ -141,6 +142,14 @@ bool ApplicationCreate(SGame* game_instance){
 		return false;
 	}
 
+	// Init camera system
+	SCameraSystemConfig CameraSystemConfig;
+	CameraSystemConfig.max_camera_count = 61;
+	if (!CameraSystem::Initialize(Renderer, CameraSystemConfig)) {
+		UL_FATAL("Camera system failed to initialize!");
+		return false;
+	}
+
 	// TODO: Temp
 	AppState.Meshes.resize(10);
 	Mesh* CubeMesh = &AppState.Meshes[0];
@@ -149,7 +158,6 @@ bool ApplicationCreate(SGame* game_instance){
 	// AppState.TestGeometry = GeometrySystem::GetDefaultGeometry();
 	//SGeometryConfig GeoConfig = GeometrySystem::GeneratePlaneConfig(5.0f, 2.0f, 5, 2, 5.0f, 2.0f, "TestGeometry", "Material.World");
 	SGeometryConfig GeoConfig = GeometrySystem::GenerateCubeConfig(10.0f, 10.0f, 10.0f, 1.0f, 1.0f, "TestCube", "Material.World");
-	GeometryUtils::GenerateTangents(GeoConfig.vertex_count, (Vertex*)GeoConfig.vertices, GeoConfig.index_count, (uint32_t*)GeoConfig.indices);
 	CubeMesh->geometries[0] = GeometrySystem::AcquireFromConfig(GeoConfig, true);
 	CubeMesh->Transform = Transform();
 
@@ -157,7 +165,6 @@ bool ApplicationCreate(SGame* game_instance){
 	CubeMesh2->geometry_count = 1;
 	CubeMesh2->geometries = (Geometry**)Memory::Allocate(sizeof(Geometry*) * CubeMesh2->geometry_count, MemoryType::eMemory_Type_Array);
 	SGeometryConfig GeoConfig2 = GeometrySystem::GenerateCubeConfig(5.0f, 5.0f, 5.0f, 1.0f, 1.0f, "TestCube2", "Material.World");
-	GeometryUtils::GenerateTangents(GeoConfig2.vertex_count, (Vertex*)GeoConfig2.vertices, GeoConfig2.index_count, (uint32_t*)GeoConfig2.indices);
 	CubeMesh2->geometries[0] = GeometrySystem::AcquireFromConfig(GeoConfig2, true);
 	CubeMesh2->Transform = Transform(Vec3(10.0f, 0.0f, 1.0f));
 	CubeMesh2->Transform.SetParentTransform(&CubeMesh->Transform);
@@ -166,7 +173,6 @@ bool ApplicationCreate(SGame* game_instance){
 	CubeMesh3->geometry_count = 1;
 	CubeMesh3->geometries = (Geometry**)Memory::Allocate(sizeof(Geometry*) * CubeMesh3->geometry_count, MemoryType::eMemory_Type_Array);
 	SGeometryConfig GeoConfig3 = GeometrySystem::GenerateCubeConfig(2.0f, 2.0f, 2.0f, 1.0f, 1.0f, "TestCube3", "Material.World");
-	GeometryUtils::GenerateTangents(GeoConfig3.vertex_count, (Vertex*)GeoConfig3.vertices, GeoConfig3.index_count, (uint32_t*)GeoConfig3.indices);
 	CubeMesh3->geometries[0] = GeometrySystem::AcquireFromConfig(GeoConfig3, true);
 	CubeMesh3->Transform = Transform(Vec3(5.0f, 0.0f, 1.0f));
 	CubeMesh3->Transform.SetParentTransform(&CubeMesh2->Transform);
@@ -183,8 +189,6 @@ bool ApplicationCreate(SGame* game_instance){
 		CarMesh->geometry_count = (unsigned short)CarMeshResource.DataCount;
 		CarMesh->geometries = (Geometry**)Memory::Allocate(sizeof(Geometry*) * CarMesh->geometry_count, MemoryType::eMemory_Type_Array);
 		for (uint32_t i = 0; i < CarMesh->geometry_count; ++i) {
-			SGeometryConfig* c = &Configs[i];
-			GeometryUtils::GenerateTangents(c->vertex_count, (Vertex*)c->vertices, c->index_count, (uint32_t*)c->indices);
 			CarMesh->geometries[i] = GeometrySystem::AcquireFromConfig(Configs[i], true);
 		}
 
@@ -203,8 +207,6 @@ bool ApplicationCreate(SGame* game_instance){
 		SponzaMesh->geometry_count = (unsigned short)SponzaMeshResource.DataCount;
 		SponzaMesh->geometries = (Geometry**)Memory::Allocate(sizeof(Geometry*) * SponzaMesh->geometry_count, MemoryType::eMemory_Type_Array);
 		for (uint32_t i = 0; i < SponzaMesh->geometry_count; ++i) {
-			SGeometryConfig* c = &Configs[i];
-			GeometryUtils::GenerateTangents(c->vertex_count, (Vertex*)c->vertices, c->index_count, (uint32_t*)c->indices);
 			SponzaMesh->geometries[i] = GeometrySystem::AcquireFromConfig(Configs[i], true);
 		}
 
@@ -296,13 +298,13 @@ bool ApplicationRun() {
 			double DeltaTime = (CurrentTime - AppState.last_time);
 			double FrameStartTime = Platform::PlatformGetAbsoluteTime();
 
-			if (!AppState.game_instance->update(AppState.game_instance, (float)0)) {
+			if (!AppState.game_instance->update(AppState.game_instance, (float)DeltaTime)) {
 				UL_FATAL("Game update failed!");
 				AppState.is_running = false;
 				break;
 			}
 
-			if (!AppState.game_instance->render(AppState.game_instance, (float)0)) {
+			if (!AppState.game_instance->render(AppState.game_instance, (float)DeltaTime)) {
 				UL_FATAL("Game render failed!");
 				AppState.is_running = false;
 				break;
@@ -391,7 +393,7 @@ bool ApplicationRun() {
 	Core::EventShutdown();
 	Core::InputShutdown();
 
-
+	CameraSystem::Shutdown();
 	GeometrySystem::Shutdown();
 	MaterialSystem::Shutdown();
 	TextureSystem::Shutdown();
@@ -429,74 +431,8 @@ bool ApplicationOnKey(unsigned short code, void* sender, void* listener_instance
 			// Block anything else from processing this.
 			return true;
 		}
-		else if (KeyCode == eKeys_A) {
-			Vec3 ViewPos = Renderer->GetViewPosition();
-			ViewPos = ViewPos + Vec3(0.2f, 0, 0);
-			Matrix4 ViewMat = Matrix4::Identity();
-			ViewMat.SetTranslation(ViewPos);
-
-			Renderer->SetViewTransform(ViewMat, ViewPos);
-			return true;
-		}
-		else if (KeyCode == eKeys_D) {
-			Vec3 ViewPos = Renderer->GetViewPosition();
-			ViewPos = ViewPos + Vec3(-0.2f, 0, 0);
-			Matrix4 ViewMat = Matrix4::Identity();
-			ViewMat.SetTranslation(ViewPos);
-
-			Renderer->SetViewTransform(ViewMat, ViewPos);
-			return true;
-		}
-		else if (KeyCode == eKeys_W) {
-			Vec3 ViewPos = Renderer->GetViewPosition();
-			ViewPos = ViewPos + Vec3(0, 0, 0.5f);
-			Matrix4 ViewMat = Matrix4::Identity();
-			ViewMat.SetTranslation(ViewPos);
-
-			Renderer->SetViewTransform(ViewMat, ViewPos);
-			return true;
-		}
-		else if (KeyCode == eKeys_S) {
-			Vec3 ViewPos = Renderer->GetViewPosition();
-			ViewPos = ViewPos + Vec3(0, 0, -0.5f);
-			Matrix4 ViewMat = Matrix4::Identity();
-			ViewMat.SetTranslation(ViewPos);
-
-			Renderer->SetViewTransform(ViewMat, ViewPos);
-			return true;
-		}
-		else if (KeyCode == eKeys_Q) {
-			Vec3 ViewPos = Renderer->GetViewPosition();
-			ViewPos = ViewPos + Vec3(0, -0.2f, 0);
-			Matrix4 ViewMat = Matrix4::Identity();
-			ViewMat.SetTranslation(ViewPos);
-
-			Renderer->SetViewTransform(ViewMat, ViewPos);
-			return true;
-		}
-		else if (KeyCode == eKeys_E) {
-			Vec3 ViewPos = Renderer->GetViewPosition();
-			ViewPos = ViewPos + Vec3(0, 0.2f, 0);
-			Matrix4 ViewMat = Matrix4::Identity();
-			ViewMat.SetTranslation(ViewPos);
-
-			Renderer->SetViewTransform(ViewMat, ViewPos);
-			return true;
-		}
-		else {
-			//printf("%c key released.", KeyCode);
-		}
 	}
-	else if (code == Core::eEvent_Code_Key_Released) {
-		unsigned short KeyCode = context.data.u16[0];
-		if (KeyCode == eKeys_B) {
-			//printf("B pressed!");
-		}
-		else {
-			//printf("%c released!", KeyCode);
-		}
-	}
-
+	
 	return false;
 }
 

@@ -3,6 +3,7 @@
 #include "Renderer/RendererFrontend.hpp"
 #include "Core/EngineLogger.hpp"
 #include "Core/DMemory.hpp"
+#include "Math/GeometryUtils.hpp"
 
 SGeometrySystemConfig GeometrySystem::GeometrySystemConfig;
 Geometry GeometrySystem::DefaultGeometry;
@@ -514,11 +515,11 @@ SGeometryConfig GeometrySystem::GenerateCubeConfig(float width, float height,
 			uint32_t OffsetV = i * 4;
 			uint32_t OffsetI = i * 6;
 			((uint32_t*)Config.indices)[OffsetI + 0] = OffsetV + 0;
-			((uint32_t*)Config.indices)[OffsetI + 1] = OffsetV + 1;
-			((uint32_t*)Config.indices)[OffsetI + 2] = OffsetV + 2;
+			((uint32_t*)Config.indices)[OffsetI + 1] = OffsetV + 2;
+			((uint32_t*)Config.indices)[OffsetI + 2] = OffsetV + 1;
 			((uint32_t*)Config.indices)[OffsetI + 3] = OffsetV + 0;
-			((uint32_t*)Config.indices)[OffsetI + 4] = OffsetV + 3;
-			((uint32_t*)Config.indices)[OffsetI + 5] = OffsetV + 1;
+			((uint32_t*)Config.indices)[OffsetI + 4] = OffsetV + 1;
+			((uint32_t*)Config.indices)[OffsetI + 5] = OffsetV + 3;
 		}
 
 		if (name && strlen(name) > 0) {
@@ -534,6 +535,8 @@ SGeometryConfig GeometrySystem::GenerateCubeConfig(float width, float height,
 		else {
 			strncpy(Config.material_name, DEFAULT_MATERIAL_NAME, MATERIAL_NAME_MAX_LENGTH);
 		}
+
+		GeometryUtils::GenerateTangents(Config.vertex_count, (Vertex*)Config.vertices, Config.index_count, (uint32_t*)Config.indices);
 
 		return Config;
 }

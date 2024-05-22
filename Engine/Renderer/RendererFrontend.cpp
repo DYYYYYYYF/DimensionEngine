@@ -9,6 +9,7 @@
 #include "Systems/ResourceSystem.h"
 #include "Systems/ShaderSystem.h"
 #include "Systems/TextureSystem.h"
+#include "Systems/CameraSystem.h"
 
 // TODO: temp
 #include "Core/Event.hpp"
@@ -52,8 +53,6 @@ bool IRenderer::Initialize(const char* application_name, struct SPlatformState* 
 	// Shaders
 	Resource ConfigResource;
 	ShaderConfig* Config = nullptr;
-	Resource UIConfigResource;
-	ShaderConfig* UIConfig = nullptr;
 	
 	// Builtin material shader.
 	ResourceSystem::Load(BUILTIN_SHADER_NAME_MATERIAL, ResourceType::eResource_Type_Shader, &ConfigResource);
@@ -63,25 +62,22 @@ bool IRenderer::Initialize(const char* application_name, struct SPlatformState* 
 	MaterialShaderID = ShaderSystem::GetID(BUILTIN_SHADER_NAME_MATERIAL);
 
 	// Builtin ui shader.
-	ResourceSystem::Load(BUILTIN_SHADER_NAME_UI, ResourceType::eResource_Type_Shader, &UIConfigResource);
-	UIConfig = (ShaderConfig*)UIConfigResource.Data;
-	ShaderSystem::Create(UIConfig);
-	ResourceSystem::Unload(&UIConfigResource);
+	ResourceSystem::Load(BUILTIN_SHADER_NAME_UI, ResourceType::eResource_Type_Shader, &ConfigResource);
+	Config = (ShaderConfig*)ConfigResource.Data;
+	ShaderSystem::Create(Config);
+	ResourceSystem::Unload(&ConfigResource);
 	UISHaderID = ShaderSystem::GetID(BUILTIN_SHADER_NAME_UI);
 
 	// World projection/view
 	NearClip = 0.01f;
 	FarClip = 1000.0f;
-	Projection = Matrix4::Perspective(Deg2Rad(45.0f), 1280.0f / 720.0f, 0.1f, 1000.0f);
-	View = Matrix4::Identity();
-	View.SetTranslation(Vec3{ 0.0f, 0.0f, -40.0f });
+	Projection = Matrix4::Perspective(Deg2Rad(45.0f), 1280.0f / 720.0f, 0.1f, 1000.0f, true);
 
 	// UI projection/view
 	UIProjection = Matrix4::Orthographic(0, 1280.0f, 720.0f, 0, -100.f, 100.f);
-	UIView = Matrix4::Identity().Inverse();
+	UIView = Matrix4::Identity();
 
 	AmbientColor = Vec4(0.25, 0.25, 0.25, 1.0f);
-	ViewPosition = Vec3{ 0.0f, 0.0f, -40.0f };
 
 	return true;
 }
@@ -98,7 +94,7 @@ void IRenderer::Shutdown() {
 
 void IRenderer::OnResize(unsigned short width, unsigned short height) {
 	if (Backend != nullptr) {
-		Projection = Matrix4::Perspective(Deg2Rad(45.0f), (float)width / (float)height, NearClip, FarClip);
+		Projection = Matrix4::Perspective(Deg2Rad(45.0f), (float)width / (float)height, NearClip, FarClip, true);
 		UIProjection = Matrix4::Orthographic(0, (float)width, (float)height, 0, -100.f, 100.f);
 		Backend->Resize(width, height);
 	}
@@ -109,6 +105,13 @@ void IRenderer::OnResize(unsigned short width, unsigned short height) {
 
 bool IRenderer::DrawFrame(SRenderPacket* packet) {
 	Backend->IncreaseFrameNum();
+
+	if (ActiveWorldCamera == nullptr) {
+		ActiveWorldCamera = CameraSystem::GetDefault();
+	}
+
+	Matrix4 View = ActiveWorldCamera->GetViewMatrix();
+	Vec3 ViewPosition = ActiveWorldCamera->GetPosition();
 
 	if (Backend->BeginFrame(packet->delta_time)) {
 		// World render pass.

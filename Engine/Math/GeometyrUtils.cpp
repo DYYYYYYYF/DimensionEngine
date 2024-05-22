@@ -84,7 +84,7 @@ void GeometryUtils::DeduplicateVertices(uint32_t vertex_count, Vertex* vertices,
 	for (uint32_t v = 0; v < vertex_count; ++v) {
 		bool Found = false;
 		for (uint32_t u = 0; u < *out_vertex_count; ++u) {
-			if (VertexEqual(vertices[u], vertices[v])) {
+			if (VertexEqual(UniqueVerts[u], vertices[v])) {
 				// Reassign indices, do not copy.
 				ReassignIndex(index_count, indices, v - FoundCount, u);
 				FoundCount++;
@@ -108,5 +108,5 @@ void GeometryUtils::DeduplicateVertices(uint32_t vertex_count, Vertex* vertices,
 	Memory::Free(UniqueVerts, sizeof(Vertex) * vertex_count, MemoryType::eMemory_Type_Array);
 
 	uint32_t RemovedCount = vertex_count - *out_vertex_count;
-	UL_DEBUG("Geometry system deduplicate vertices: removed %d vertices, origin/now %d/%d.", RemovedCount, vertex_count, *out_vertex_count);
+	UL_DEBUG("Geometry system de-duplicate vertices: removed %d vertices, origin/now %d/%d.", RemovedCount, vertex_count, *out_vertex_count);
 }

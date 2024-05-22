@@ -10,6 +10,7 @@ struct ShaderUniform;
 class IRendererBackend;
 class Geometry;
 class Shader;
+class Camera;
 
 class IRenderer {
 public:
@@ -139,29 +140,22 @@ public:
 	 */
 	virtual bool SetUniform(Shader* shader, ShaderUniform* uniform, const void* value);
 
-	public:
-		virtual void SetViewTransform(Matrix4 view, Vec3 view_pos) { View = view; ViewPosition = view_pos; }
-		virtual const Matrix4& GetViewTransform() const { return View; }
-		virtual Matrix4 GetViewTransform() { return View; }
-		virtual const Vec3& GetViewPosition() const { return ViewPosition; }
-		virtual Vec3 GetViewPosition() { return ViewPosition; }
-
 protected:
 	RendererBackendType BackendType;
 	class IRendererBackend* Backend;
 
+	Camera* ActiveWorldCamera;
+
 	// Projection perspective
 	Matrix4 Projection;
-	Matrix4 View;
-	float NearClip;
-	float FarClip;
-
 	Matrix4 UIProjection;
 	Matrix4 UIView;
+
+	float NearClip;
+	float FarClip;
 
 	uint32_t MaterialShaderID;
 	uint32_t UISHaderID;
 
 	Vec4 AmbientColor;
-	Vec3 ViewPosition;
 };
