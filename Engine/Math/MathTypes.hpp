@@ -555,12 +555,6 @@ public:
 			z * q.z +
 			w * q.w;
 
-		// Copy result
-		this->x = NewVector.x;
-		this->y = NewVector.y;
-		this->z = NewVector.z;
-		this->w = NewVector.w;
-
 		return NewVector;
 	}
 

@@ -155,8 +155,6 @@ bool ApplicationCreate(SGame* game_instance){
 	Mesh* CubeMesh = &AppState.Meshes[0];
 	CubeMesh->geometry_count = 1;
 	CubeMesh->geometries = (Geometry**)Memory::Allocate(sizeof(Geometry*) * CubeMesh->geometry_count, MemoryType::eMemory_Type_Array);
-	// AppState.TestGeometry = GeometrySystem::GetDefaultGeometry();
-	//SGeometryConfig GeoConfig = GeometrySystem::GeneratePlaneConfig(5.0f, 2.0f, 5, 2, 5.0f, 2.0f, "TestGeometry", "Material.World");
 	SGeometryConfig GeoConfig = GeometrySystem::GenerateCubeConfig(10.0f, 10.0f, 10.0f, 1.0f, 1.0f, "TestCube", "Material.World");
 	CubeMesh->geometries[0] = GeometrySystem::AcquireFromConfig(GeoConfig, true);
 	CubeMesh->Transform = Transform();
@@ -210,7 +208,7 @@ bool ApplicationCreate(SGame* game_instance){
 			SponzaMesh->geometries[i] = GeometrySystem::AcquireFromConfig(Configs[i], true);
 		}
 
-		SponzaMesh->Transform = Transform(Vec3(15.0f, 0.0f, 0.0f), Quaternion::Identity(), Vec3(0.05f, 0.05f, 0.05f));
+		SponzaMesh->Transform = Transform(Vec3(0.0f, -60.0f, 0.0f), Quaternion(Vec3(0.0f, 90.0f, 0.0f)), Vec3(0.1f, 0.1f, 0.1f));
 		ResourceSystem::Unload(&SponzaMeshResource);
 	}
 
@@ -320,13 +318,13 @@ bool ApplicationRun() {
 				Quaternion Rotation = QuaternionFromAxisAngle(Vec3(0.0f, 1.0f, 0.0f), 0.5f * (float)DeltaTime, false);
 				AppState.Meshes[0].Transform.Rotate(Rotation);
 
-				/*if (MeshCount > 1) {
+				if (MeshCount > 1) {
 					AppState.Meshes[1].Transform.Rotate(Rotation);
 				}
 
 				if (MeshCount > 2) {
 					AppState.Meshes[2].Transform.Rotate(Rotation);
-				}*/
+				}
 
 				// Iterate all meshes and add them to the packet's geometries collection.
 				for (size_t i = 0; i < MeshCount; ++i) {

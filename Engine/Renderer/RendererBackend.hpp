@@ -11,6 +11,7 @@ class Texture;
 class Material;
 class Geometry;
 class Shader;
+struct TextureMap;
 
 enum BuiltinRenderpass : unsigned char{
 	eButilin_Renderpass_World = 0x01,
@@ -49,9 +50,12 @@ public:
 	virtual bool BindInstanceShader(Shader* shader, uint32_t instance_id) = 0;
 	virtual bool ApplyGlobalShader(Shader* shader) = 0;
 	virtual bool ApplyInstanceShader(Shader* shader, bool need_update) = 0;
-	virtual uint32_t AcquireInstanceResource(Shader* shader) = 0;
+	virtual uint32_t AcquireInstanceResource(Shader* shader, std::vector<TextureMap*>& maps) = 0;
 	virtual bool ReleaseInstanceResource(Shader* shader, uint32_t instance_id) = 0;
 	virtual bool SetUniform(Shader* shader, ShaderUniform* uniform, const void* value) = 0;
+
+	virtual bool AcquireTextureMap(TextureMap* map) = 0;
+	virtual void ReleaseTextureMap(TextureMap* map) = 0;
 
 public:
 	SPlatformState* GetPlatformState() { return PlatformState; }

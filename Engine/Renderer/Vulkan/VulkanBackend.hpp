@@ -40,9 +40,12 @@ public:
 	virtual bool BindInstanceShader(Shader* shader, uint32_t instance_id) override;
 	virtual bool ApplyGlobalShader(Shader* shader) override;
 	virtual bool ApplyInstanceShader(Shader* shader, bool need_update) override;
-	virtual uint32_t AcquireInstanceResource(Shader* shader) override;
+	virtual uint32_t AcquireInstanceResource(Shader* shader, std::vector<TextureMap*>& maps) override;
 	virtual bool ReleaseInstanceResource(Shader* shader, uint32_t instance_id) override;
 	virtual bool SetUniform(Shader* shader, ShaderUniform* uniform, const void* value) override;
+
+	virtual bool AcquireTextureMap(TextureMap* map) override;
+	virtual void ReleaseTextureMap(TextureMap* map) override;
 
 public:
 	virtual bool CreateBuffers();
@@ -57,6 +60,8 @@ public:
 
 private:
 	bool CreateModule(VulkanShader* shader, VulkanShaderStageConfig config, VulkanShaderStage* shader_stage);
+	vk::SamplerAddressMode ConvertRepeatType(const char* axis, TextureRepeat repeat);
+	vk::Filter ConvertFilterType(const char* op, TextureFilter filter);
 
 protected:
 	VulkanContext Context;

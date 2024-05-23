@@ -689,27 +689,6 @@ void VulkanBackend::CreateTexture(const unsigned char* pixels, Texture* texture)
 	TempBuffer.EndSingleUse(&Context, Pool, Queue);
 	Staging.Destroy(&Context);
 
-	// Create a sampler for the texture.
-	vk::SamplerCreateInfo SamplerInfo;
-	SamplerInfo.setMagFilter(vk::Filter::eLinear)
-		.setMinFilter(vk::Filter::eLinear)
-		.setAddressModeU(vk::SamplerAddressMode::eRepeat)
-		.setAddressModeV(vk::SamplerAddressMode::eRepeat)
-		.setAddressModeW(vk::SamplerAddressMode::eRepeat)
-		.setAnisotropyEnable(VK_TRUE)
-		.setMaxAnisotropy(16)
-		.setBorderColor(vk::BorderColor::eIntOpaqueBlack)
-		.setUnnormalizedCoordinates(VK_FALSE)
-		.setCompareEnable(VK_FALSE)
-		.setCompareOp(vk::CompareOp::eAlways)
-		.setMipLodBias(0.0f)
-		.setMipmapMode(vk::SamplerMipmapMode::eLinear)
-		.setMinLod(0.0f)
-		.setMaxLod(0.0f);
-
-	Data->sampler = Context.Device.GetLogicalDevice().createSampler(SamplerInfo, Context.Allocator);
-	ASSERT(Data->sampler);
-
 	texture->Generation++;
 }
 
@@ -721,9 +700,6 @@ void VulkanBackend::DestroyTexture(Texture* texture) {
 	if (Data != nullptr) {
 		Data->Image.Destroy(&Context);
 		Memory::Zero(&Data->Image, sizeof(VulkanImage));
-		Context.Device.GetLogicalDevice().destroySampler(Data->sampler, Context.Allocator);
-		Data->sampler = nullptr;
-
 		Memory::Free(texture->InternalData, sizeof(VulkanTexture), MemoryType::eMemory_Type_Texture);
 	}
 
@@ -1418,11 +1394,12 @@ bool VulkanBackend::ApplyInstanceShader(Shader* shader, bool need_update) {
 			uint32_t UpdateSamplerCount = 0;
 			for (uint32_t i = 0; i < TotalSamplerCount; ++i) {
 				// TODO: only update in the list if actually needing an update.
-				Texture* t = Internal->InstanceStates[shader->BoundInstanceId].instance_textures[i];
+				TextureMap* map = Internal->InstanceStates[shader->BoundInstanceId].instance_texture_maps[i];
+				Texture* t = map->texture;
 				VulkanTexture* InternalData = (VulkanTexture*)t->InternalData;
 				ImageInfos[i].setImageLayout(vk::ImageLayout::eShaderReadOnlyOptimal)
 					.setImageView(InternalData->Image.ImageView)
-					.setSampler(InternalData->sampler);
+					.setSampler(*((vk::Sampler*)&map->internal_data));
 
 				// TODO: change up descriptor state to handle this properly.
 				// Sync frame generation if not using a default texture.
@@ -1453,7 +1430,75 @@ bool VulkanBackend::ApplyInstanceShader(Shader* shader, bool need_update) {
 	return true;
 }
 
-uint32_t VulkanBackend::AcquireInstanceResource(Shader* shader) {
+vk::SamplerAddressMode VulkanBackend::ConvertRepeatType(const char* axis, TextureRepeat repeat) {
+	switch (repeat)
+	{
+	case eTexture_Repeat_Repeat:
+		return vk::SamplerAddressMode::eRepeat;
+	case eTexture_Repeat_Minrrored_Repeat:
+		return vk::SamplerAddressMode::eMirroredRepeat;
+	case eTexture_Repeat_Clamp_To_Edge:
+		return vk::SamplerAddressMode::eClampToEdge;
+	case eTexture_Repeat_Clamp_To_Border:
+		return vk::SamplerAddressMode::eClampToBorder;
+	default:
+		UL_WARN("Convert repeat type (axis='%s'): Type '%x' not supported, defauting to repeat.", axis, repeat);
+		return vk::SamplerAddressMode::eRepeat;
+	}
+}
+
+vk::Filter VulkanBackend::ConvertFilterType(const char* op, TextureFilter filter) {
+	switch (filter)
+	{
+	case eTexture_Filter_Mode_Nearest:
+		return vk::Filter::eNearest;
+	case eTexture_Filter_Mode_Linear:
+		return vk::Filter::eLinear;
+	default:
+		UL_WARN("Convert filter type (op='%s'): Filter '%x' not supported, defauting to linear.", op, filter);
+		return vk::Filter::eLinear;
+	}
+}
+
+bool VulkanBackend::AcquireTextureMap(TextureMap* map) {
+	// Create a sampler for the texture.
+	vk::SamplerCreateInfo SamplerInfo;
+	SamplerInfo.setMinFilter(ConvertFilterType("min", map->filter_minify))
+		.setMagFilter(ConvertFilterType("mag", map->filter_magnify))
+		.setAddressModeU(ConvertRepeatType("U", map->repeat_u))
+		.setAddressModeV(ConvertRepeatType("V", map->repeat_v))
+		.setAddressModeW(ConvertRepeatType("W", map->repeat_w));
+
+	// Configurable.
+	SamplerInfo.setAnisotropyEnable(VK_TRUE)
+		.setMaxAnisotropy(16)
+		.setBorderColor(vk::BorderColor::eIntOpaqueBlack)
+		.setUnnormalizedCoordinates(VK_FALSE)
+		.setCompareEnable(VK_FALSE)
+		.setCompareOp(vk::CompareOp::eAlways)
+		.setMipmapMode(vk::SamplerMipmapMode::eLinear)
+		.setMipLodBias(0.0f)
+		.setMinLod(0.0f)
+		.setMaxLod(0.0f);
+
+	if (Context.Device.GetLogicalDevice().createSampler(&SamplerInfo, Context.Allocator, (vk::Sampler*)&map->internal_data)
+		!= vk::Result::eSuccess) {
+		UL_ERROR("Create sampler failed.");
+		return false;
+	}
+
+	return true;
+}
+
+void VulkanBackend::ReleaseTextureMap(TextureMap* map) {
+	if (map) {
+		Context.Device.GetLogicalDevice().waitIdle();
+		Context.Device.GetLogicalDevice().destroySampler(*((vk::Sampler*)&map->internal_data), Context.Allocator);
+		map->internal_data = nullptr;
+	}
+}
+
+uint32_t VulkanBackend::AcquireInstanceResource(Shader* shader, std::vector<TextureMap*>& maps) {
 	VulkanShader* Internal = (VulkanShader*)shader->InternalData;
 	// TODO: Dynamic
 	uint32_t OutInstanceID = INVALID_ID;
@@ -1473,11 +1518,14 @@ uint32_t VulkanBackend::AcquireInstanceResource(Shader* shader) {
 	VulkanShaderInstanceState* InstanceState = &Internal->InstanceStates[OutInstanceID];
 	uint32_t InstanceTextureCount = Internal->Config.descriptor_sets[DESC_SET_INDEX_INSTANCE].bindings[BINDING_INDEX_SAMPLER].descriptorCount;
 	// Wipe out the memory for the entire array, even if it isn't all used.
-	InstanceState->instance_textures.resize(shader->InstanceTextureCount);
+	InstanceState->instance_texture_maps.resize(shader->InstanceTextureCount);
 	Texture* DefaultTexture = TextureSystem::GetDefaultTexture();
 	// Set all the texture pointers to default until assigned.
 	for (uint32_t i = 0; i < InstanceTextureCount; ++i) {
-		InstanceState->instance_textures[i] = DefaultTexture;
+		InstanceState->instance_texture_maps[i] = maps[i];
+		if (!InstanceState->instance_texture_maps[i]->texture) {
+			InstanceState->instance_texture_maps[i]->texture = DefaultTexture;
+		}
 	}
 
 	// Allocate some space in the UBO - by the stride, not the size.
@@ -1536,11 +1584,11 @@ bool VulkanBackend::ReleaseInstanceResource(Shader* shader, uint32_t instance_id
 	// Destroy descriptor states.
 	Memory::Zero(InstanceState->descriptor_set_state.descriptor_states, sizeof(VulkanDescriptorState) * VULKAN_SHADER_MAX_BINDINGS);
 
-	if (InstanceState->instance_textures.size() > 0) {
-		for (uint32_t i = 0; i < InstanceState->instance_textures.size(); ++i) {
-			InstanceState->instance_textures[i] = nullptr;
+	if (InstanceState->instance_texture_maps.size() > 0) {
+		for (uint32_t i = 0; i < InstanceState->instance_texture_maps.size(); ++i) {
+			InstanceState->instance_texture_maps[i]->texture = nullptr;
 		}
-		InstanceState->instance_textures.clear();
+		InstanceState->instance_texture_maps.clear();
 	}
 
 	Internal->UniformBuffer.Free(shader->UboStride, InstanceState->offset);
@@ -1558,10 +1606,10 @@ bool VulkanBackend::SetUniform(Shader* shader, ShaderUniform* uniform, const voi
 	VulkanShader* Internal = (VulkanShader*)shader->InternalData;
 	if (uniform->type == ShaderUniformType::eShader_Uniform_Type_Sampler) {
 		if (uniform->scope == ShaderScope::eShader_Scope_Global) {
-			shader->GlobalTextures[uniform->location] = (Texture*)value;
+			shader->GlobalTextureMaps[uniform->location] = (TextureMap*)value;
 		}
 		else {
-			Internal->InstanceStates[shader->BoundInstanceId].instance_textures[uniform->location] = (Texture*)value;
+			Internal->InstanceStates[shader->BoundInstanceId].instance_texture_maps[uniform->location] = (TextureMap*)value;
 		}
 	}
 	else {

@@ -58,7 +58,7 @@ struct VulkanShaderInstanceState {
 	uint32_t id;
 	size_t offset;
 	VulkanShaderDescriptorSetState descriptor_set_state;
-	std::vector<Texture*> instance_textures;
+	std::vector<TextureMap*> instance_texture_maps;
 };
 
 class VulkanShader {
@@ -78,5 +78,4 @@ public:
 
 	uint32_t InstanceCount;
 	VulkanShaderInstanceState InstanceStates[VULKAN_MAX_MATERIAL_COUNT];
-
 };

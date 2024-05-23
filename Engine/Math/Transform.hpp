@@ -60,13 +60,13 @@ public:
 	DAPI const Quaternion& GetRotation() const { return vRotation; }
 
 
-	DAPI void Translate(Vec3 translation);
+	DAPI void Translate(const Vec3& translation);
 	DAPI void Rotate(const Quaternion& rotation);
-	DAPI void Scale(Vec3 scale);
+	DAPI void Scale(const Vec3& scale);
 
-	DAPI void SetPR(Vec3 pos, Quaternion rotation);
-	DAPI void SetPRS(Vec3 pos, Quaternion rotation, Vec3 scale);
-	DAPI void TransformRotate(Vec3 translation, Quaternion rotation);
+	DAPI void SetPR(const Vec3& pos, const Quaternion& rotation);
+	DAPI void SetPRS(const Vec3& pos, const Quaternion& rotation, const Vec3& scale);
+	DAPI void TransformRotate(const Vec3& translation, const Quaternion& rotation);
 
 	DAPI Matrix4 GetLocal();
 	DAPI Matrix4 GetWorldTransform();

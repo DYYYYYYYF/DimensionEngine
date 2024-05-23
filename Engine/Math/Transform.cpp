@@ -36,37 +36,39 @@ Transform::Transform(Vec3 position, Quaternion rotation, Vec3 scale) {
 	Parent = nullptr;
 }
 
-void Transform::Translate(Vec3 translation) {
+void Transform::Translate(const Vec3& translation) {
 	vPosition = vPosition + translation;
 	IsDirty = true;
 }
 
 void Transform::Rotate(const Quaternion& rotation) {
-	vRotation.QuaternionMultiply(rotation);
+	Quaternion r = rotation;
+	vRotation = r.QuaternionMultiply(vRotation);
 	IsDirty = true;
 }
 
-void Transform::Scale(Vec3 scale) {
+void Transform::Scale(const Vec3& scale) {
 	vScale = vScale * scale;
 	IsDirty = true;
 }
 
-void Transform::SetPR(Vec3 pos, Quaternion rotation) {
+void Transform::SetPR(const Vec3& pos, const Quaternion& rotation) {
 	vPosition = pos;
 	vRotation = rotation;
 	IsDirty = true;
 }
 
-void Transform::SetPRS(Vec3 pos, Quaternion rotation, Vec3 scale) {
+void Transform::SetPRS(const Vec3& pos, const Quaternion& rotation, const Vec3& scale) {
 	vPosition = pos;
 	vRotation = rotation;
 	vScale = scale;
 	IsDirty = true;
 }
 
-void Transform::TransformRotate(Vec3 translation, Quaternion rotation) {
+void Transform::TransformRotate(const Vec3& translation, const Quaternion& rotation) {
 	vPosition = vPosition + translation;
-	vRotation.QuaternionMultiply(rotation);
+	Quaternion r = rotation;
+	vRotation = r.QuaternionMultiply(vRotation);
 	IsDirty = true;
 }
 

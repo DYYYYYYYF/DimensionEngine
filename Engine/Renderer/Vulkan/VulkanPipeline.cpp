@@ -23,7 +23,7 @@ bool VulkanPipeline::Create(VulkanContext* context, VulkanRenderPass* renderpass
 		.setRasterizerDiscardEnable(VK_FALSE)
 		.setPolygonMode(is_wireframe ? vk::PolygonMode::eLine : vk::PolygonMode::eFill)
 		.setLineWidth(1.0f)
-		.setCullMode(vk::CullModeFlagBits::eBack)
+		.setCullMode(vk::CullModeFlagBits::eNone)
 		.setFrontFace(vk::FrontFace::eClockwise)
 		.setDepthBiasEnable(VK_FALSE)
 		.setDepthBiasConstantFactor(0.0f)

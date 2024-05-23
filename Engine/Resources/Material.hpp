@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Math/MathTypes.hpp"
+#include "Resources/Texture.hpp"
 
 #define DEFAULT_MATERIAL_NAME "default"
 #define VULKAN_MAX_MATERIAL_COUNT 1024
@@ -17,11 +18,6 @@ struct SMaterialConfig {
 	char diffuse_map_name[TEXTURE_NAME_MAX_LENGTH];
 	char specular_map_name[TEXTURE_NAME_MAX_LENGTH];
 	char normal_map_name[TEXTURE_NAME_MAX_LENGTH];
-};
-
-struct TextureMap {
-	Texture* texture = nullptr;
-	TextureUsage usage;
 };
 
 class Material {

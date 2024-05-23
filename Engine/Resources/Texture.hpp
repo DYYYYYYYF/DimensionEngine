@@ -11,6 +11,29 @@ enum TextureUsage {
 	eTexture_Usage_Map_Normal = 0x03
 };
 
+enum TextureFilter {
+	eTexture_Filter_Mode_Nearest = 0x0,
+	eTexture_Filter_Mode_Linear = 0x1
+};
+
+enum TextureRepeat{
+	eTexture_Repeat_Repeat = 0x1,
+	eTexture_Repeat_Minrrored_Repeat = 0x2,
+	eTexture_Repeat_Clamp_To_Edge = 0x3,
+	eTexture_Repeat_Clamp_To_Border = 0x4,
+};
+
+struct TextureMap {
+	class Texture* texture = nullptr;
+	TextureUsage usage;
+	TextureFilter filter_minify;
+	TextureFilter filter_magnify;
+	TextureRepeat repeat_u;
+	TextureRepeat repeat_v;
+	TextureRepeat repeat_w;
+	void* internal_data = nullptr;
+};
+
 class Texture {
 public:
 	Texture() {}
@@ -22,7 +45,8 @@ public:
 	uint32_t Height;
 
 	int ChannelCount;
-	bool HasTransparency;
+	bool IsTransparency;
+	bool IsWriteable;
 
 	uint32_t Generation;
 	char Name[TEXTURE_NAME_MAX_LENGTH];

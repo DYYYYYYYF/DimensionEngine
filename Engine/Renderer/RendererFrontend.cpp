@@ -296,8 +296,8 @@ bool IRenderer::ApplyInstanceRenderShader(Shader* shader, bool need_update) {
 	return Backend->ApplyInstanceShader(shader, need_update);
 }
 
-uint32_t IRenderer::AcquireInstanceResource(Shader* shader) {
-	return Backend->AcquireInstanceResource(shader);
+uint32_t IRenderer::AcquireInstanceResource(Shader* shader, std::vector<TextureMap*> maps) {
+	return Backend->AcquireInstanceResource(shader, maps);
 }
 
 bool IRenderer::ReleaseInstanceResource(Shader* shader, uint32_t instance_id) {
@@ -306,4 +306,12 @@ bool IRenderer::ReleaseInstanceResource(Shader* shader, uint32_t instance_id) {
 
 bool IRenderer::SetUniform(Shader* shader, ShaderUniform* uniform, const void* value) {
 	return Backend->SetUniform(shader, uniform, value);
+}
+
+bool IRenderer::AcquireTextureMap(TextureMap* map) {
+	return Backend->AcquireTextureMap(map);
+}
+
+void IRenderer::ReleaseTextureMap(TextureMap* map) {
+	Backend->ReleaseTextureMap(map);
 }

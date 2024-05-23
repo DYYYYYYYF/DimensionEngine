@@ -41,5 +41,4 @@ public:
 // Vulkan texture
 struct VulkanTexture {
 	VulkanImage Image;
-	vk::Sampler sampler;
 };

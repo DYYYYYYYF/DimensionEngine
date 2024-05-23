@@ -116,10 +116,10 @@ public:
 	 * @brief Acquires internal instance-level resources and provides an instance id.
 	 *
 	 * @param shader A pointer to the shader to acquire resources from.
-	 * @param out_instance_id A pointer to hold the new instance identifier.
+	 * @param maps Array to hold the texture maps.
 	 * @return True on success; otherwise false.
 	 */
-	virtual uint32_t AcquireInstanceResource(Shader* shader);
+	virtual uint32_t AcquireInstanceResource(Shader* shader, std::vector<TextureMap*> maps);
 
 	/**
 	 * @brief Releases internal instance-level resources for the given instance id.
@@ -139,6 +139,21 @@ public:
 	 * @return b8 True on success; otherwise false.
 	 */
 	virtual bool SetUniform(Shader* shader, ShaderUniform* uniform, const void* value);
+
+	/**
+	 * @brief Acquires internal resource for the given texture map.
+	 * 
+	 * @param map A pointer to texture map to obtain resources for.
+	 * @return True on success.
+	 */
+	virtual bool AcquireTextureMap(TextureMap* map);
+	
+	/**
+	 * @brief Release internal resource for the given texture map.
+	 *
+	 * @param map A pointer to texture map to obtain resources for.
+	 */
+	virtual void ReleaseTextureMap(TextureMap* map);
 
 protected:
 	RendererBackendType BackendType;

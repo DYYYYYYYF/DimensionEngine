@@ -267,6 +267,17 @@ bool MaterialSystem::LoadMaterial(SMaterialConfig config, Material* mat) {
 	mat->Shininess = config.shininess;
 
 	// Diffuse map
+	// TODO: Make configurable.
+	mat->DiffuseMap.filter_minify = TextureFilter::eTexture_Filter_Mode_Linear;
+	mat->DiffuseMap.filter_magnify = TextureFilter::eTexture_Filter_Mode_Linear;
+	mat->DiffuseMap.repeat_u = TextureRepeat::eTexture_Repeat_Repeat;
+	mat->DiffuseMap.repeat_v = TextureRepeat::eTexture_Repeat_Repeat;
+	mat->DiffuseMap.repeat_w = TextureRepeat::eTexture_Repeat_Repeat;
+	if (!Renderer->AcquireTextureMap(&mat->DiffuseMap)) {
+		UL_ERROR("Unable to acquire resources for diffuse texture map.");
+		return false;
+	}
+
 	if (strlen(config.diffuse_map_name) > 0) {
 		mat->DiffuseMap.usage = TextureUsage::eTexture_Usage_Map_Diffuse;
 		mat->DiffuseMap.texture = TextureSystem::Acquire(config.diffuse_map_name, true);
@@ -282,6 +293,16 @@ bool MaterialSystem::LoadMaterial(SMaterialConfig config, Material* mat) {
 	}
 
 	// Specular map
+	mat->SpecularMap.filter_minify = TextureFilter::eTexture_Filter_Mode_Linear;
+	mat->SpecularMap.filter_magnify = TextureFilter::eTexture_Filter_Mode_Linear;
+	mat->SpecularMap.repeat_u = TextureRepeat::eTexture_Repeat_Repeat;
+	mat->SpecularMap.repeat_v = TextureRepeat::eTexture_Repeat_Repeat;
+	mat->SpecularMap.repeat_w = TextureRepeat::eTexture_Repeat_Repeat;
+	if (!Renderer->AcquireTextureMap(&mat->SpecularMap)) {
+		UL_ERROR("Unable to acquire resources for specular texture map.");
+		return false;
+	}
+
 	if (strlen(config.specular_map_name) > 0) {
 		mat->SpecularMap.usage = TextureUsage::eTexture_Usage_Map_Specular;
 		mat->SpecularMap.texture = TextureSystem::Acquire(config.specular_map_name, true);
@@ -297,6 +318,16 @@ bool MaterialSystem::LoadMaterial(SMaterialConfig config, Material* mat) {
 	}
 
 	// Normal map
+	mat->NormalMap.filter_minify = TextureFilter::eTexture_Filter_Mode_Linear;
+	mat->NormalMap.filter_magnify = TextureFilter::eTexture_Filter_Mode_Linear;
+	mat->NormalMap.repeat_u = TextureRepeat::eTexture_Repeat_Repeat;
+	mat->NormalMap.repeat_v = TextureRepeat::eTexture_Repeat_Repeat;
+	mat->NormalMap.repeat_w = TextureRepeat::eTexture_Repeat_Repeat;
+	if (!Renderer->AcquireTextureMap(&mat->NormalMap)) {
+		UL_ERROR("Unable to acquire resources for normal texture map.");
+		return false;
+	}
+
 	if (strlen(config.normal_map_name) > 0) {
 		mat->NormalMap.usage = TextureUsage::eTexture_Usage_Map_Normal;
 		mat->NormalMap.texture = TextureSystem::Acquire(config.normal_map_name, true);
@@ -319,7 +350,9 @@ bool MaterialSystem::LoadMaterial(SMaterialConfig config, Material* mat) {
 		return false;
 	}
 
-	mat->InternalId = Renderer->AcquireInstanceResource(s);
+	// Gather a list of pointers to texture maps.
+	std::vector<TextureMap*> Maps = { &mat->DiffuseMap, &mat->SpecularMap, &mat->NormalMap };
+	mat->InternalId = Renderer->AcquireInstanceResource(s, Maps);
 	if (mat->InternalId == INVALID_ID) {
 		UL_ERROR("Failed to acquire renderer resources for material '%s'.", mat->Name);
 		return false;
@@ -345,6 +378,11 @@ void MaterialSystem::DestroyMaterial(Material* mat) {
 	if (mat->NormalMap.texture != nullptr) {
 		TextureSystem::Release(mat->NormalMap.texture->Name);
 	}
+
+	// Release texture map resources.
+	Renderer->ReleaseTextureMap(&mat->DiffuseMap);
+	Renderer->ReleaseTextureMap(&mat->SpecularMap);
+	Renderer->ReleaseTextureMap(&mat->NormalMap);
 
 	//Release renderer resources.
 	if (mat->ShaderID != INVALID_ID && mat->InternalId != INVALID_ID) {
@@ -376,8 +414,10 @@ bool MaterialSystem::CreateDefaultMaterial() {
 	DefaultMaterial.NormalMap.usage = TextureUsage::eTexture_Usage_Map_Normal;
 	DefaultMaterial.NormalMap.texture = TextureSystem::GetDefaultNormalTexture();
 
+	std::vector<TextureMap*> Maps = { &DefaultMaterial.DiffuseMap, &DefaultMaterial.SpecularMap, &DefaultMaterial.NormalMap };
+
 	Shader* s = ShaderSystem::Get(BUILTIN_SHADER_NAME_MATERIAL);
-	DefaultMaterial.InternalId = Renderer->AcquireInstanceResource(s);
+	DefaultMaterial.InternalId = Renderer->AcquireInstanceResource(s, Maps);
 	if (DefaultMaterial.InternalId == INVALID_ID) {
 		UL_ERROR("Create default material failed. Application quit now!");
 		return false;
@@ -421,14 +461,14 @@ bool MaterialSystem::ApplyInstance(Material* mat, bool need_update) {
 	if (need_update) {
 		if (mat->ShaderID == MaterialShaderID) {
 			MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(MaterialLocations.diffuse_color, &mat->DiffuseColor));
-			MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(MaterialLocations.diffuse_texture, mat->DiffuseMap.texture));
-			MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(MaterialLocations.specular_texture, mat->SpecularMap.texture));
-			MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(MaterialLocations.normal_texture, mat->NormalMap.texture));
+			MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(MaterialLocations.diffuse_texture, &mat->DiffuseMap));
+			MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(MaterialLocations.specular_texture, &mat->SpecularMap));
+			MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(MaterialLocations.normal_texture, &mat->NormalMap));
 			MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(MaterialLocations.shininess, &mat->Shininess));
 		}
 		else if (mat->ShaderID == UIShaderID) {
 			MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(UILocations.diffuse_color, &mat->DiffuseColor));
-			MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(UILocations.diffuse_texture, mat->DiffuseMap.texture));
+			MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(UILocations.diffuse_texture, &mat->DiffuseMap));
 		}
 		else {
 			UL_ERROR("material_system_apply_instance(): Unrecognized shader id '%d' on shader '%s'.", mat->ShaderID, mat->Name);

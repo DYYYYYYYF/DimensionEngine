@@ -194,6 +194,12 @@ void ShaderSystem::DestroyShader(Shader* s) {
 	// Set it to be unusable right away.
 	s->State = eShader_State_Not_Created;
 
+	uint32_t SamplerCount = (uint32_t)s->GlobalTextureMaps.size();
+	for (uint32_t i = 0; i < SamplerCount; ++i) {
+		s->GlobalTextureMaps[i] = nullptr;
+	}
+	s->GlobalTextureMaps.clear();
+
 	// Free the name.
 	if (s->Name) {
 		size_t Length = strlen(s->Name);
@@ -373,13 +379,32 @@ bool ShaderSystem::AddSampler(Shader* shader, ShaderUniformConfig& config) {
 	// If global, push into the global list.
 	uint32_t Location = 0;
 	if (config.scope == eShader_Scope_Global) {
-		uint32_t GlobalTextureCount = (uint32_t)shader->Attributes.size();
+		uint32_t GlobalTextureCount = (uint32_t)shader->GlobalTextureMaps.size();
 		if (GlobalTextureCount + 1 > Config.max_global_textures) {
 			UL_ERROR("Shader global texture count %i exceeds max of %i", GlobalTextureCount, Config.max_global_textures);
 			return false;
 		}
 		Location = GlobalTextureCount;
-		shader->GlobalTextures.push_back(TextureSystem::GetDefaultTexture());
+
+		// NOTE: Create a default texture map to be used here. Can always be updated later.
+		TextureMap DefaultMap;
+		DefaultMap.filter_magnify = TextureFilter::eTexture_Filter_Mode_Linear;
+		DefaultMap.filter_minify = TextureFilter::eTexture_Filter_Mode_Linear;
+		DefaultMap.repeat_u = TextureRepeat::eTexture_Repeat_Repeat;
+		DefaultMap.repeat_v = TextureRepeat::eTexture_Repeat_Repeat;
+		DefaultMap.repeat_w = TextureRepeat::eTexture_Repeat_Repeat;
+		DefaultMap.usage = TextureUsage::eTexture_Usage_Unknown;
+		if (!Renderer->AcquireTextureMap(&DefaultMap)) {
+			UL_ERROR("Failed to acquire for global texture map during shader creation.");
+			return false;
+		}
+
+		// Allocate a pointer assign the texture, and push into global texture maps.
+		// NOTE: This allocation is only done for global texture maps.
+		TextureMap* Map = (TextureMap*)Memory::Allocate(sizeof(TextureMap), MemoryType::eMemory_Type_Renderer);
+		*Map = DefaultMap;
+		Map->texture = TextureSystem::GetDefaultTexture();
+		shader->GlobalTextureMaps.push_back(Map);
 	}
 	else {
 		// Otherwise, it's instance-level, so keep count of how many need to be added during the resource acquisition.

@@ -268,7 +268,8 @@ bool TextureSystem::CreateDefaultTexture() {
 	DefaultTexture.Height = TexDimension;
 	DefaultTexture.ChannelCount = 4;
 	DefaultTexture.Generation = INVALID_ID;
-	DefaultTexture.HasTransparency = false;
+	DefaultTexture.IsTransparency = false;
+	DefaultTexture.IsWriteable = false;
 	Renderer->CreateTexture(Pixels, &DefaultTexture);
 	UL_INFO("Default texture created.");
 	// Manually set the texture generation to invalid since this is a default texture.
@@ -284,7 +285,8 @@ bool TextureSystem::CreateDefaultTexture() {
 	DefaultDiffuseTexture.Height = 16;
 	DefaultDiffuseTexture.ChannelCount = 4;
 	DefaultDiffuseTexture.Generation = INVALID_ID;
-	DefaultDiffuseTexture.HasTransparency = false;
+	DefaultDiffuseTexture.IsTransparency = false;
+	DefaultDiffuseTexture.IsWriteable = false;
 	Renderer->CreateTexture(DiffusePixels, &DefaultDiffuseTexture);
 	UL_INFO("Default diffuse texture created.");
 	// Manually set the texture generation to invalid since this is a default texture.
@@ -300,7 +302,8 @@ bool TextureSystem::CreateDefaultTexture() {
 	DefaultSpecularTexture.Height = 16;
 	DefaultSpecularTexture.ChannelCount = 4;
 	DefaultSpecularTexture.Generation = INVALID_ID;
-	DefaultSpecularTexture.HasTransparency = false;
+	DefaultSpecularTexture.IsTransparency = false;
+	DefaultSpecularTexture.IsWriteable = false;
 	Renderer->CreateTexture(SpecularPixels, &DefaultSpecularTexture);
 	UL_INFO("Default specular texture created.");
 	// Manually set the texture generation to invalid since this is a default texture.
@@ -330,7 +333,8 @@ bool TextureSystem::CreateDefaultTexture() {
 	DefaultNormalTexture.Height = 16;
 	DefaultNormalTexture.ChannelCount = 4;
 	DefaultNormalTexture.Generation = INVALID_ID;
-	DefaultNormalTexture.HasTransparency = false;
+	DefaultNormalTexture.IsTransparency = false;
+	DefaultNormalTexture.IsWriteable = false;
 	Renderer->CreateTexture(NormalPixels, &DefaultNormalTexture);
 	UL_INFO("Default normal texture created.");
 	// Manually set the texture generation to invalid since this is a default texture.
@@ -379,7 +383,8 @@ bool TextureSystem::LoadTexture(const char* name, Texture* texture) {
 		// Take a copy of the name
 		strncpy(TempTexture.Name, name, TEXTURE_NAME_MAX_LENGTH);
 		TempTexture.Generation = INVALID_ID;
-		TempTexture.HasTransparency = HasTransparency;
+		TempTexture.IsTransparency = HasTransparency;
+		TempTexture.IsWriteable = false;
 
 		//Acquire internal texture resources and upload to GPU.
 		Renderer->CreateTexture(ResourceData->pixels, &TempTexture);

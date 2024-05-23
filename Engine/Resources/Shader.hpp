@@ -5,7 +5,7 @@
 #include "Containers/THashTable.hpp"
 #include "Math/MathTypes.hpp"
 
-class Texture;
+struct TextureMap;
 
 #define BUILTIN_SHADER_NAME_MATERIAL "Shader.Builtin.Material"
 #define BUILTIN_SHADER_NAME_UI "Shader.Builtin.UI"
@@ -183,5 +183,5 @@ public:
 
 	std::vector<ShaderUniform> Uniforms;
 	std::vector<ShaderAttribute> Attributes;
-	std::vector<Texture*> GlobalTextures;
+	std::vector<TextureMap*> GlobalTextureMaps;
 };
