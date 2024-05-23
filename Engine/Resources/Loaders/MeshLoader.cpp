@@ -358,11 +358,11 @@ bool MeshLoader::ImportObjFile(FileHandle* obj_file, const char* out_dsm_filenam
 		g->indices = Indices;
 
 		// Also generate tangents here, this way tangents are also stored in the output file.
+		UL_WARN("Geomeyries: %d", i);
 		GeometryUtils::GenerateTangents(g->vertex_count, (Vertex*)g->vertices, g->index_count, (uint32_t*)g->indices);
-
 	}
 
-	// Output a dsm file, which will be loaded in the future.
+	// Output a .dsm file, which will be loaded in the future.
 	return WriteDsmFile(out_dsm_filename, name, (uint32_t)Count, out_geometries);
 }
 
@@ -394,18 +394,16 @@ void MeshLoader::ProcessSubobject(std::vector<Vec3>& positions, std::vector<Vec3
 	}
 
 	for (size_t f = 0; f < FaceCount; ++f) {
-		MeshFaceData Face = faces[f];
-
 		// Each vertex
 		for (size_t i = 0; i < 3; ++i) {
-			MeshVertexIndexData IndexData = Face.vertices[i];
+			MeshVertexIndexData IndexData = faces[f].vertices[i];
 			Indices.push_back((uint32_t)(i + (f * 3)));
 
 			Vertex Vert;
 			Vec3 Pos = positions[IndexData.position_index - 1];
 			Vert.position = Pos;
 
-			// Check extens - min
+			// Check extents - min
 			if (Pos.x < out_data->min_extents.x || !ExtentSet) {
 				out_data->min_extents.x = Pos.x;
 			}
@@ -416,7 +414,7 @@ void MeshLoader::ProcessSubobject(std::vector<Vec3>& positions, std::vector<Vec3
 				out_data->min_extents.z = Pos.z;
 			}
 
-			// Check extens - max
+			// Check extents - max
 			if (Pos.x >out_data->min_extents.x || !ExtentSet) {
 				out_data->max_extents.x = Pos.x;
 			}
@@ -476,7 +474,7 @@ bool MeshLoader::ImportObjMaterialLibraryFile(const char* mtl_file_path) {
 	}
 
 	SMaterialConfig CurrentConfig;
-	Memory::Zero(&CurrentConfig, sizeof(CurrentConfig));
+	Memory::Zero(&CurrentConfig, sizeof(SMaterialConfig));
 
 	bool HitName = false;
 
@@ -621,7 +619,7 @@ bool MeshLoader::ImportObjMaterialLibraryFile(const char* mtl_file_path) {
 					}
 
 					// Reset material for the next round.
-					Memory::Zero(&CurrentConfig, sizeof(CurrentConfig));
+					Memory::Zero(&CurrentConfig, sizeof(SMaterialConfig));
 				}
 
 				HitName = true;
@@ -770,7 +768,7 @@ bool MeshLoader::WriteDsmFile(const char* path, const char* name, uint32_t geome
 	FileSystemWrite(&f, sizeof(unsigned short), &Version, &Written);
 
 	// Name length.
-	uint32_t NameLength = (uint32_t)strlen(name);
+	uint32_t NameLength = (uint32_t)strlen(name) + 1;
 	FileSystemWrite(&f, sizeof(uint32_t), &NameLength, &Written);
 	// Name + terminator
 	FileSystemWrite(&f, sizeof(char) * NameLength, &name, &Written);
@@ -785,12 +783,12 @@ bool MeshLoader::WriteDsmFile(const char* path, const char* name, uint32_t geome
 		// Vertices (size/count/array)
 		FileSystemWrite(&f, sizeof(uint32_t), &g->vertex_size, &Written);
 		FileSystemWrite(&f, sizeof(uint32_t), &g->vertex_count, &Written);
-		FileSystemWrite(&f, g->vertex_size * g->vertex_count, &g->vertices, &Written);
+		FileSystemWrite(&f, g->vertex_size * g->vertex_count, g->vertices, &Written);
 
 		// Indices (size/count/array)
 		FileSystemWrite(&f, sizeof(uint32_t), &g->index_size, &Written);
 		FileSystemWrite(&f, sizeof(uint32_t), &g->index_count, &Written);
-		FileSystemWrite(&f, g->index_size * g->index_count, &g->indices, &Written);
+		FileSystemWrite(&f, g->index_size * g->index_count, g->indices, &Written);
 
 		// Name
 		uint32_t GNameLength = (uint32_t)strlen(g->name) + 1;

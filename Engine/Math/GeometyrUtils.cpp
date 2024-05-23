@@ -34,8 +34,8 @@ void GeometryUtils::GenerateTangents(uint32_t vertex_count, Vertex* vertices, ui
 		float DeltaU2 = vertices[i2].texcoord.x - vertices[i0].texcoord.x;
 		float DeltaV2 = vertices[i2].texcoord.y - vertices[i0].texcoord.y;
 
-		float Dividend = (DeltaU1 * DeltaV2 - DeltaU2 * DeltaV1);
-		float FC = 1.0f / Dividend;
+		float Divided = (DeltaU1 * DeltaV2 - DeltaU2 * DeltaV1);
+		float FC = 1.0f / Divided;
 
 		Vec3 Tangent = Vec3{
 			(FC * (DeltaV2 * Edge1.x - DeltaV1 * Edge2.x)),
@@ -95,7 +95,7 @@ void GeometryUtils::DeduplicateVertices(uint32_t vertex_count, Vertex* vertices,
 
 		if (!Found) {
 			// Copy over to unique.
-			UniqueVerts[*out_vertex_count] = vertices[v];
+			Memory::Copy((char*)UniqueVerts + *out_vertex_count * sizeof(Vertex), (char*)vertices + v * sizeof(Vertex), sizeof(Vertex));
 			(*out_vertex_count)++;
 		}
 	}
