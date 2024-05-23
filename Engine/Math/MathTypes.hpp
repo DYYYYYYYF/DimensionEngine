@@ -537,24 +537,31 @@ public:
 	}
 
 	Vec4 QuaternionMultiply(const Vec4& q) {
-		x = x * q.w +
+		Vec4 NewVector;
+		NewVector.x = x * q.w +
 			y * q.z -
 			z * q.y +
 			w * q.x;
-		y = -x * q.z +
+		NewVector.y = -x * q.z +
 			y * q.w +
 			z * q.x +
 			w * q.y;
-		z = x * q.y -
+		NewVector.z = x * q.y -
 			y * q.x +
 			z * q.w +
 			w * q.z;
-		w = -x * q.x -
+		NewVector.w = -x * q.x -
 			y * q.y -
 			z * q.z +
 			w * q.w;
 
-		return *this;
+		// Copy result
+		this->x = NewVector.x;
+		this->y = NewVector.y;
+		this->z = NewVector.z;
+		this->w = NewVector.w;
+
+		return NewVector;
 	}
 
 	float QuaternionDot(const Vec4& v) {
@@ -937,13 +944,13 @@ public:
 		return Matrix;
 	}
 
-	static Matrix4 FromTranslation(Vec3 trans) {
+	static Matrix4 FromTranslation(const Vec3& trans) {
 		Matrix4 Ret = Matrix4::Identity();
 		Ret.SetTranslation(trans);
 		return Ret;
 	}
 
-	static Matrix4 FromScale(Vec3 scale) {
+	static Matrix4 FromScale(const Vec3& scale) {
 		Matrix4 Ret = Matrix4::Identity();
 		Ret.SetScale(scale);
 		return Ret;
@@ -1042,9 +1049,10 @@ public:
 	}
 };
 
-inline Matrix4 QuatToMatrix(Quaternion q) {
+inline Matrix4 QuatToMatrix(const Quaternion& q) {
 	Matrix4 Matrix = Matrix4::Identity();
-	Quaternion n = q.Normalize();
+	Quaternion n =  q;
+	n.Normalize();
 
 	Matrix.data[0] = 1.0f - 2.0f * n.y * n.y - 2.0f * n.z * n.z;
 	Matrix.data[1] = 2.0f * n.x * n.y - 2.0f * n.z * n.w;
@@ -1094,7 +1102,7 @@ inline Quaternion QuaternionFromAxisAngle(const Vec3& axis, float angle, bool no
 	float s = DSin(HalfAngle);
 	float c = DCos(HalfAngle);
 
-	Quaternion q{ s * axis.x, s * axis.y, s * axis.z, c };
+	Quaternion q = Quaternion( s * axis.x, s * axis.y, s * axis.z, c );
 	if (normalize) {
 		q.Normalize();
 	}

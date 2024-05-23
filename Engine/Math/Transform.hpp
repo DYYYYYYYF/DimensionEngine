@@ -61,7 +61,7 @@ public:
 
 
 	DAPI void Translate(Vec3 translation);
-	DAPI void Rotate(Quaternion rotation);
+	DAPI void Rotate(const Quaternion& rotation);
 	DAPI void Scale(Vec3 scale);
 
 	DAPI void SetPR(Vec3 pos, Quaternion rotation);

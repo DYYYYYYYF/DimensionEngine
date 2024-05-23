@@ -41,7 +41,7 @@ void Transform::Translate(Vec3 translation) {
 	IsDirty = true;
 }
 
-void Transform::Rotate(Quaternion rotation) {
+void Transform::Rotate(const Quaternion& rotation) {
 	vRotation.QuaternionMultiply(rotation);
 	IsDirty = true;
 }
@@ -72,9 +72,11 @@ void Transform::TransformRotate(Vec3 translation, Quaternion rotation) {
 
 Matrix4 Transform::GetLocal() {
 	if (IsDirty) {
-		Matrix4 Tr = QuatToMatrix(vRotation).Multiply(Matrix4::FromTranslation(vPosition));
-		Tr = Matrix4::FromScale(vScale).Multiply(Tr);
-		Local = Tr;
+		Matrix4 R = QuatToMatrix(vRotation);
+		Matrix4 T = Matrix4::FromTranslation(vPosition);
+		Matrix4 S = Matrix4::FromScale(vScale);
+		
+		Local = T.Multiply(R).Multiply(S);
 		IsDirty = false;
 	}
 
@@ -85,7 +87,7 @@ Matrix4 Transform::GetWorldTransform() {
 	Matrix4 l = GetLocal();
 	if (Parent != nullptr) {
 		Matrix4 p = Parent->GetWorldTransform();
-		return l.Multiply(p);
+		return p.Multiply(l);
 	}
 
 	return l;

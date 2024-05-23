@@ -192,7 +192,7 @@ bool ApplicationCreate(SGame* game_instance){
 			CarMesh->geometries[i] = GeometrySystem::AcquireFromConfig(Configs[i], true);
 		}
 
-		CarMesh->Transform = Transform(Vec3(15.0f, 0.0f, 0.0f), Quaternion::Identity(), Vec3(1.05f, 1.05f, 1.05f));
+		CarMesh->Transform = Transform(Vec3(15.0f, 0.0f, 0.0f), Quaternion::Identity(), Vec3(1.0f, 1.0f, 1.0f));
 		ResourceSystem::Unload(&CarMeshResource);
 	}
 
@@ -317,16 +317,16 @@ bool ApplicationRun() {
 			size_t MeshCount = AppState.Meshes.size();
 			if (MeshCount > 0) {
 				// Perform a small rotation on the first mesh.
-				Quaternion Rotation = QuaternionFromAxisAngle(Vec3(0, 1, 0), 0.5f * (float)DeltaTime, false);
+				Quaternion Rotation = QuaternionFromAxisAngle(Vec3(0.0f, 1.0f, 0.0f), 0.5f * (float)DeltaTime, false);
 				AppState.Meshes[0].Transform.Rotate(Rotation);
 
-				if (MeshCount > 1) {
+				/*if (MeshCount > 1) {
 					AppState.Meshes[1].Transform.Rotate(Rotation);
 				}
 
 				if (MeshCount > 2) {
 					AppState.Meshes[2].Transform.Rotate(Rotation);
-				}
+				}*/
 
 				// Iterate all meshes and add them to the packet's geometries collection.
 				for (size_t i = 0; i < MeshCount; ++i) {
