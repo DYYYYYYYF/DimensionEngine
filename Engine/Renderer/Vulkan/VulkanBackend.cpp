@@ -675,6 +675,7 @@ void VulkanBackend::CreateTexture(const unsigned char* pixels, Texture* texture)
 
 	// Load the data.
 	WriteTextureData(texture, 0, (uint32_t)ImageSize, pixels);
+	Staging.Destroy(&Context);
 
 	texture->Generation++;
 }
