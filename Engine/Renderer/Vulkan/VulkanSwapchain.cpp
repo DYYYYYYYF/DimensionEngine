@@ -4,6 +4,8 @@
 #include "Core/DMemory.hpp"
 #include "VulkanContext.hpp"
 
+#include "Systems/TextureSystem.h"
+
 void VulkanSwapchain::Create(VulkanContext* context, unsigned int width, unsigned int height) {
 	vk::Extent2D SwapchainExtent = { width, height };
 	MaxFramesInFlight = 2;
@@ -99,36 +101,69 @@ void VulkanSwapchain::Create(VulkanContext* context, unsigned int width, unsigne
 		return;
 	}
 
-	if (Images == nullptr) {
-		Images = (vk::Image*)Memory::Allocate(sizeof(vk::Image) * ImageCount, MemoryType::eMemory_Type_Renderer);
+	if (RenderTextures.size() == 0) {
+		RenderTextures.resize(ImageCount);
+		// If creating the array, then the internal texture objects aren't created yet either.
+		for (uint32_t i = 0; i < ImageCount; ++i) {
+			void* InternalData = Memory::Allocate(sizeof(VulkanImage), MemoryType::eMemory_Type_Texture);
+
+			char TexName[38] = "__internal_vulkan_swapchain_image_0__";
+			TexName[34] = '0' + (char)i;
+
+			RenderTextures[i] = TextureSystem::WrapInternal(
+				TexName,
+				SwapchainExtent.width,
+				SwapchainExtent.height,
+				4,
+				false,
+				true,
+				false,
+				InternalData);
+			if (!RenderTextures[i]) {
+				UL_FATAL("Failed to generate new swapchain image texture.");
+				return;
+			}
+		}
+	}
+	else {
+		for (uint32_t i = 0; i < ImageCount; ++i) {
+			TextureSystem::Resize(RenderTextures[i], SwapchainExtent.width, SwapchainExtent.height, false);
+		}
 	}
 
-	if (ImageViews == nullptr) {
-		ImageViews = (vk::ImageView*)Memory::Allocate(sizeof(vk::ImageView) * ImageCount, MemoryType::eMemory_Type_Renderer);
-	}
-
-	if (LogicalDevice.getSwapchainImagesKHR(Handle, &ImageCount, Images) != vk::Result::eSuccess) {
+	vk::Image SwapchainImages[32];
+	if (LogicalDevice.getSwapchainImagesKHR(Handle, &ImageCount, SwapchainImages) != vk::Result::eSuccess) {
 		UL_INFO("Get swapchain images failed.");
 		return;
 	}
 
+	for (uint32_t i = 0; i < ImageCount; ++i) {
+		// Update the internal image for each.
+		VulkanImage* Image = (VulkanImage*)RenderTextures[i]->InternalData;
+		Image->Image = SwapchainImages[i];
+		Image->Width = SwapchainExtent.width;
+		Image->Height = SwapchainExtent.height;
+	}
+
 	// Image views
 	for (uint32_t i = 0; i < ImageCount; ++i) {
+		VulkanImage* Image = (VulkanImage*)RenderTextures[i]->InternalData;
+
 		vk::ImageSubresourceRange Range;
 		Range.setAspectMask(vk::ImageAspectFlagBits::eColor)
-			.setBaseMipLevel(0)
+			.setBaseMipLevel(0) 
 			.setLevelCount(1)
 			.setBaseArrayLayer(0)
 			.setLayerCount(1);
 
 		vk::ImageViewCreateInfo ViewInfo;
-		ViewInfo.setImage(Images[i])
+		ViewInfo.setImage(Image->Image)
 			.setViewType(vk::ImageViewType::e2D)
 			.setFormat(ImageFormat.format)
 			.setSubresourceRange(Range);
 
-		ImageViews[i] = LogicalDevice.createImageView(ViewInfo, context->Allocator);
-		ASSERT(ImageViews[i]);
+		Image->ImageView = LogicalDevice.createImageView(ViewInfo, context->Allocator);
+		ASSERT(Image->ImageView);
 	}
 
 	// Depth resources
@@ -156,8 +191,8 @@ bool VulkanSwapchain::Destroy(VulkanContext* context) {
 	// Only destroy views, not the images, since those are owned by swapchain and are thus destroyed when it is.
 	vk::Device LogicalDevice = context->Device.GetLogicalDevice();
 	for (uint32_t i = 0; i < ImageCount; ++i) {
-		LogicalDevice.destroyImageView(ImageViews[i], context->Allocator);
-		ImageViews[i] = nullptr;
+		VulkanImage* Image = (VulkanImage*)RenderTextures[i]->InternalData;
+		LogicalDevice.destroyImageView(Image->ImageView, context->Allocator);
 	}
 
 	LogicalDevice.destroySwapchainKHR(Handle, context->Allocator);
@@ -167,7 +202,7 @@ bool VulkanSwapchain::Destroy(VulkanContext* context) {
 }
 
 void VulkanSwapchain::Presnet(VulkanContext* context, vk::Queue graphics_queue, vk::Queue present_queue, vk::Semaphore render_complete_semaphore, uint32_t present_image_index) {
-	// Return the image to the swapchain for presentation.
+	// Return the image to the swapcahin for presentation.
 	vk::PresentInfoKHR PresentInfo;
 	PresentInfo.setWaitSemaphoreCount(1)
 		.setWaitSemaphores(render_complete_semaphore)

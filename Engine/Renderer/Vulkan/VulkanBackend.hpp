@@ -20,8 +20,12 @@ public:
 	virtual bool EndFrame(double delta_time) override;
 	virtual void Resize(unsigned short width, unsigned short height) override;
 
+	// Textures
 	virtual void CreateTexture(const unsigned char* pixels, Texture* texture) override;
 	virtual void DestroyTexture(Texture* texture) override;
+	virtual void CreateWriteableTexture(Texture* tex) override;
+	virtual void ResizeTexture(Texture* tex, uint32_t new_width, uint32_t new_height) override;
+	virtual void WriteTextureData(Texture* tex, uint32_t offset, uint32_t size, const unsigned char* pixels) override;
 
 	virtual bool CreateGeometry(Geometry* geometry, uint32_t vertex_size, uint32_t vertex_count, 
 		const void* vertices, uint32_t index_size, uint32_t index_count, const void* indices) override;
@@ -30,7 +34,6 @@ public:
 	virtual bool BeginRenderpass(unsigned char renderpass_id) override;
 	virtual bool EndRenderpass(unsigned char renderpass_id) override;
 
-public:
 	// Shaders.
 	virtual bool CreateShader(Shader* shader, unsigned short renderpass_id, unsigned short stage_count, const std::vector<char*>& stage_filenames, std::vector<ShaderStage>& stages) override;
 	virtual bool DestroyShader(Shader* shader) override;
@@ -62,6 +65,7 @@ private:
 	bool CreateModule(VulkanShader* shader, VulkanShaderStageConfig config, VulkanShaderStage* shader_stage);
 	vk::SamplerAddressMode ConvertRepeatType(const char* axis, TextureRepeat repeat);
 	vk::Filter ConvertFilterType(const char* op, TextureFilter filter);
+	vk::Format ChannelCountToFormat(unsigned char channel_count, vk::Format default_format = vk::Format::eR8G8B8A8Unorm);
 
 protected:
 	VulkanContext Context;

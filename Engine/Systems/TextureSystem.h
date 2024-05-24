@@ -29,6 +29,13 @@ public:
 	static Texture* Acquire(const char* name, bool auto_release);
 	static void Release(const char* name);
 
+	static Texture* AcquireWriteable(const char* name, uint32_t width, uint32_t height, unsigned char channel_count, bool has_transparency);
+	static Texture* WrapInternal(const char* name, uint32_t width, uint32_t height, unsigned char channel_count,
+		bool has_transparency, bool is_writeable, bool register_texture, void* internal_data);
+	static bool SetInternal(Texture* t, void* internal_data);
+	static bool Resize(Texture* t, uint32_t width, uint32_t height, bool regenerate_internal_data);
+	static bool WriteData(Texture* t, uint32_t offset, uint32_t size, void* data) { return true; }
+
 	static Texture* GetDefaultTexture();
 	static Texture* GetDefaultDiffuseTexture();
 	static Texture* GetDefaultSpecularTexture();
@@ -40,6 +47,7 @@ public:
 private:
 	static bool CreateDefaultTexture();
 	static void DestroyDefaultTexture();
+	static bool ProcessTextureReference(const char* name, short reference_diff, bool auto_release, bool skip_load, uint32_t* out_texture_id);
 
 private:
 	static STextureSystemConfig TextureSystemConfig;

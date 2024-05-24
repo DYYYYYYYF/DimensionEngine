@@ -5,10 +5,11 @@
 
 class VulkanContext;
 class VulkanFrameBuffer;
+class Texture;
 
 class VulkanSwapchain {
 public:
-	VulkanSwapchain() : MaxFramesInFlight(0), ImageCount(0), Images(nullptr), ImageViews(nullptr) {}
+	VulkanSwapchain() : MaxFramesInFlight(0), ImageCount(0){}
 	virtual ~VulkanSwapchain() {}
 
 public:
@@ -25,8 +26,7 @@ public:
 
 	vk::SurfaceFormatKHR ImageFormat;
 	vk::SwapchainKHR Handle;
-	vk::Image* Images;
-	vk::ImageView* ImageViews;
+	std::vector<Texture*> RenderTextures;
 
 	VulkanImage DepthAttachment;
 	

@@ -38,7 +38,3 @@ public:
 	uint32_t Height;
 };
 
-// Vulkan texture
-struct VulkanTexture {
-	VulkanImage Image;
-};

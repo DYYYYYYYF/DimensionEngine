@@ -29,7 +29,7 @@ PointLight point_light_0 = {
 	vec3(-5.5f, 0.0f, -5.5f),
 	vec4(0.0f, 1.0f, 0.0f, 1.0f),
 	1.0f,	// Constant
-	0.15f,	// Linear
+	0.35f,	// Linear
 	0.44f	// Quadratic
 };
 
@@ -37,7 +37,7 @@ PointLight point_light_1 = {
 	vec3(5.5f, 0.0f, -5.5f),
 	vec4(1.0f, 0.0f, 0.0f, 1.0f),
 	1.0f,	// Constant
-	0.15f,	// Linear
+	0.35f,	// Linear
 	0.44f	// Quadratic
 };
 
@@ -83,7 +83,7 @@ void main(){
 vec4 CalculateDirectionalLight(DirectionalLight light, vec3 normal, vec3 view_direction){
 	float fDiffuseFactor = max(dot(normal, -light.direction), 0.0f);
 
-	vec3 HalfDirection = normalize(view_direction - light.direction);
+	vec3 HalfDirection = normalize(-view_direction - light.direction);
 	float SpecularFactor = pow(max(dot(HalfDirection, normal), 0.0f), ObjectUbo.shininess);
 
 	vec4 DiffSamp = texture(Samplers[SAMP_DIFFUSE], in_dto.vTexcoord);
@@ -93,7 +93,7 @@ vec4 CalculateDirectionalLight(DirectionalLight light, vec3 normal, vec3 view_di
 
 	Ambient *= DiffSamp;
 	Diffuse *= DiffSamp;
-	Specular *= vec4(texture(Samplers[SAMP_SPECULAR], in_dto.vTexcoord).rgb, DiffSamp.a);
+	Specular *= vec4(texture(Samplers[SAMP_SPECULAR], in_dto.vTexcoord).rgb, Diffuse.a);
 
 	return (Ambient + Diffuse + Specular);
 }

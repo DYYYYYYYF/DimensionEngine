@@ -242,6 +242,18 @@ void IRenderer::DestroyTexture(Texture* txture) {
 	Backend->DestroyTexture(txture);
 }
 
+void IRenderer::CreateWriteableTexture(Texture* tex) {
+	Backend->CreateWriteableTexture(tex);
+}
+
+void IRenderer::ResizeTexture(Texture* tex, uint32_t new_width, uint32_t new_height) {
+	Backend->ResizeTexture(tex, new_width, new_height);
+}
+
+void IRenderer::WriteTextureData(Texture* tex, uint32_t offset, uint32_t size, const unsigned char* pixels) {
+	Backend->WriteTextureData(tex, offset, size, pixels);
+}
+
 bool IRenderer::CreateGeometry(Geometry* geometry, uint32_t vertex_size, uint32_t vertex_count,
 	const void* vertices, uint32_t index_size, uint32_t index_count, const void* indices) {
 	return Backend->CreateGeometry(geometry, vertex_size, vertex_count, vertices, index_size, index_count, indices);

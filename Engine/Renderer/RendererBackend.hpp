@@ -34,6 +34,9 @@ public:
 
 	virtual void CreateTexture(const unsigned char* pixels, Texture* texture) = 0;
 	virtual void DestroyTexture(Texture* txture) = 0;
+	virtual void CreateWriteableTexture(Texture* tex) = 0;
+	virtual void ResizeTexture(Texture* tex, uint32_t new_width, uint32_t new_height) = 0;
+	virtual void WriteTextureData(Texture* tex, uint32_t offset, uint32_t size, const unsigned char* pixels) = 0;
 
 	virtual bool CreateGeometry(Geometry* geometry, uint32_t vertex_size, uint32_t vertex_count, const void* vertices, uint32_t index_size, uint32_t index_count, const void* indices) = 0;
 	virtual void DestroyGeometry(Geometry* geometry) = 0;

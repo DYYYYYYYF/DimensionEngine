@@ -28,13 +28,12 @@ layout (location = 1) out struct out_dto{
 }OutDto;
 
 void main(){
-	//OutDto.vTexcoord = vec2(vTexcoord.x, 1.0 - vTexcoord.y);
 	OutDto.vTexcoord = vTexcoord;
-	OutDto.vNormal = mat3(PushConstant.model) * vNormal;
+	OutDto.vColor = vColor;
 	OutDto.vAmbientColor = GlobalUBO.ambient_color;
 	OutDto.vViewPosition = GlobalUBO.view_position;
 	OutDto.vFragPosition = vec3(PushConstant.model * vec4(vPosition, 1.0f));
-	OutDto.vColor = vColor;
+	OutDto.vNormal = normalize(mat3(PushConstant.model) * vNormal);
 	OutDto.vTangent = vec4(normalize(mat3(PushConstant.model) * vTangent.xyz), vTangent.w);
 
 	gl_Position = GlobalUBO.projection * GlobalUBO.view * PushConstant.model * vec4(vPosition, 1.0f);

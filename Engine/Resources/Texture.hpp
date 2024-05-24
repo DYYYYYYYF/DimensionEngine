@@ -23,6 +23,13 @@ enum TextureRepeat{
 	eTexture_Repeat_Clamp_To_Border = 0x4,
 };
 
+enum TextureFlagBits{
+	eTexture_Flag_Has_Transparency = 0x1,
+	eTexture_Flag_Is_Writeable = 0x2,
+	eTexture_Flag_Is_Wrapped = 0x4
+};
+typedef unsigned char TextureFlag;
+
 struct TextureMap {
 	class Texture* texture = nullptr;
 	TextureUsage usage;
@@ -45,8 +52,8 @@ public:
 	uint32_t Height;
 
 	int ChannelCount;
-	bool IsTransparency;
-	bool IsWriteable;
+	/** TextureFlag */
+	TextureFlag Flags;
 
 	uint32_t Generation;
 	char Name[TEXTURE_NAME_MAX_LENGTH];

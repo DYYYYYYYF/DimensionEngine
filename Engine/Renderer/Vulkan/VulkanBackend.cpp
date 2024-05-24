@@ -199,7 +199,7 @@ bool VulkanBackend::Initialize(const char* application_name, struct SPlatformSta
 	// World renderpass
 	Context.MainRenderPass.Create(&Context, 
 		Vec4(0.0f, 0.0f, (float)Context.FrameBufferWidth, (float)Context.FrameBufferHeight), 
-		Vec4(1.0f, 0.5f, 0.5f, 1.0f), 1.0f, 0, 
+		Vec4(0.2f, 0.2f, 0.2f, 1.0f), 1.0f, 0, 
 		eRenderpass_Clear_Color_Buffer | eRenderpass_Clear_Depth_Buffer | eRenderpass_Clear_Stencil_Buffer,
 		false, true);
 	
@@ -482,9 +482,10 @@ void VulkanBackend::CreateCommandBuffer() {
 void VulkanBackend::RegenerateFrameBuffers() {
 	uint32_t ImageCount = Context.Swapchain.ImageCount;
 	for (uint32_t i = 0; i < ImageCount; ++i) {
+		VulkanImage* Image = (VulkanImage*)Context.Swapchain.RenderTextures[i]->InternalData;
 		uint32_t AttachmentCount = 2;
 		vk::ImageView WorldAttachments[2] = {
-			Context.Swapchain.ImageViews[i],
+			Image->ImageView,
 			Context.Swapchain.DepthAttachment.ImageView
 		};
 
@@ -502,7 +503,7 @@ void VulkanBackend::RegenerateFrameBuffers() {
 		// Swapchain framebuffers (UI pass). Outputs to swapchain image.
 		uint32_t UIAttachmentCount = 1;
 		vk::ImageView UIAttachments[1] = {
-			Context.Swapchain.ImageViews[i],
+			Image->ImageView
 		};
 
 		vk::FramebufferCreateInfo SCFramebufferCreateInfo;
@@ -648,8 +649,8 @@ void VulkanBackend::FreeDataRange(VulkanBuffer* buffer, size_t offset, size_t si
 void VulkanBackend::CreateTexture(const unsigned char* pixels, Texture* texture) {
 	// Internal data creation.
 	// TODO: Use an allocator for this.
-	texture->InternalData = (VulkanTexture*)Memory::Allocate(sizeof(VulkanTexture), MemoryType::eMemory_Type_Texture);
-	VulkanTexture* Data = (VulkanTexture*)texture->InternalData;
+	texture->InternalData = (VulkanImage*)Memory::Allocate(sizeof(VulkanImage), MemoryType::eMemory_Type_Texture);
+	VulkanImage* Image = (VulkanImage*)texture->InternalData;
 	vk::DeviceSize ImageSize = texture->Width * texture->Height * texture->ChannelCount;
 
 	// NOTE: Assumes 8 bits per channel.
@@ -665,29 +666,15 @@ void VulkanBackend::CreateTexture(const unsigned char* pixels, Texture* texture)
 
 	// NOTE: Lots of assumptions here, different texture types will require.
 	// different options here.
-	Data->Image.CreateImage(&Context, vk::ImageType::e2D, texture->Width, texture->Height, ImageFormat,
+	Image->CreateImage(&Context, vk::ImageType::e2D, texture->Width, texture->Height, ImageFormat,
 		vk::ImageTiling::eOptimal,
 		vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst |
 		vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eColorAttachment,
 		vk::MemoryPropertyFlagBits::eDeviceLocal,
 		true, vk::ImageAspectFlagBits::eColor);
 
-	VulkanCommandBuffer TempBuffer;
-	vk::CommandPool Pool = Context.Device.GetGraphicsCommandPool();
-	vk::Queue Queue = Context.Device.GetGraphicsQueue();
-	TempBuffer.AllocateAndBeginSingleUse(&Context, Pool);
-
-	// Transition the layout from whatever it is currently to optimal for receiving data.
-	Data->Image.TransitionLayout(&Context, &TempBuffer, ImageFormat, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal);
-
-	// Copy the data from buffer.
-	Data->Image.CopyFromBuffer(&Context, Staging.Buffer, &TempBuffer);
-
-	// Transition from optimal for data receipt to shader-read-only optimal layout.
-	Data->Image.TransitionLayout(&Context, &TempBuffer, ImageFormat, vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal);
-
-	TempBuffer.EndSingleUse(&Context, Pool, Queue);
-	Staging.Destroy(&Context);
+	// Load the data.
+	WriteTextureData(texture, 0, (uint32_t)ImageSize, pixels);
 
 	texture->Generation++;
 }
@@ -695,15 +682,104 @@ void VulkanBackend::CreateTexture(const unsigned char* pixels, Texture* texture)
 void VulkanBackend::DestroyTexture(Texture* texture) {
 	Context.Device.GetLogicalDevice().waitIdle();
 
-	VulkanTexture* Data = (VulkanTexture*)texture->InternalData;
+	VulkanImage* Image = (VulkanImage*)texture->InternalData;
 
-	if (Data != nullptr) {
-		Data->Image.Destroy(&Context);
-		Memory::Zero(&Data->Image, sizeof(VulkanImage));
-		Memory::Free(texture->InternalData, sizeof(VulkanTexture), MemoryType::eMemory_Type_Texture);
+	if (Image != nullptr) {
+		Image->Destroy(&Context);
+		Memory::Zero(Image, sizeof(VulkanImage));
+		Memory::Free(texture->InternalData, sizeof(VulkanImage), MemoryType::eMemory_Type_Texture);
 	}
 
 	Memory::Zero(texture, sizeof(Texture));
+}
+
+vk::Format VulkanBackend::ChannelCountToFormat(unsigned char channel_count, vk::Format default_format /*= vk::Format::eR8G8B8A8Unorm*/) {
+	switch (channel_count)
+	{
+	case 1:
+		return vk::Format::eR8Unorm;
+	case 2:
+		return vk::Format::eR8G8Unorm;
+	case 3:
+		return vk::Format::eR8G8B8Unorm;
+	case 4:
+		return vk::Format::eR8G8B8A8Unorm;
+	default:
+		return default_format;
+	}
+}
+
+void VulkanBackend::CreateWriteableTexture(Texture* tex) {
+	// Internal data creation.
+	tex->InternalData = (VulkanImage*)Memory::Allocate(sizeof(VulkanImage), MemoryType::eMemory_Type_Texture);
+	VulkanImage* Image = (VulkanImage*)tex->InternalData;
+
+	vk::Format ImageFormat = ChannelCountToFormat(tex->ChannelCount, vk::Format::eR8G8B8A8Unorm);
+	// TODO: Lots of assumptions here, different texture types will require.
+	// different options here.
+	Image->CreateImage(&Context, vk::ImageType::e2D, tex->Width,  tex->Height, ImageFormat, vk::ImageTiling::eOptimal,
+		vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eColorAttachment,
+		vk::MemoryPropertyFlagBits::eDeviceLocal, true, vk::ImageAspectFlagBits::eColor);
+
+	tex->Generation++;
+}
+
+void VulkanBackend::ResizeTexture(Texture* tex, uint32_t new_width, uint32_t new_height) {
+	if (tex == nullptr) {
+		return;
+	}
+
+	if (tex->InternalData == nullptr) {
+		return;
+	}
+
+	// Resizing is really just destroying the old image and creating a new one.
+	// Data is not preserved because there's no reliable way to map the old data to 
+	// the new since the amount of data differs.
+	VulkanImage* Image = (VulkanImage*)tex->InternalData;
+	Image->Destroy(&Context);
+
+	vk::Format ImageFormat = ChannelCountToFormat(tex->ChannelCount, vk::Format::eR8G8B8A8Unorm);
+
+	// TODO: Lots of assumptions here, different texture types will require different options here.
+	Image->CreateImage(&Context, vk::ImageType::e2D, new_width, new_height, ImageFormat, vk::ImageTiling::eOptimal,
+		vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eColorAttachment,
+		vk::MemoryPropertyFlagBits::eDeviceLocal, true, vk::ImageAspectFlagBits::eColor);
+
+	tex->Generation++;
+}
+
+void VulkanBackend::WriteTextureData(Texture* tex, uint32_t offset, uint32_t size, const unsigned char* pixels) {
+	VulkanImage* Image = (VulkanImage*)tex->InternalData;
+	vk::DeviceSize ImageSize = tex->Width * tex->Height * tex->ChannelCount;
+
+	vk::Format ImageFormat = ChannelCountToFormat(tex->ChannelCount, vk::Format::eR8G8B8A8Unorm);
+
+	// Create a staging buffer and load data into it.
+	vk::BufferUsageFlags Usage = vk::BufferUsageFlagBits::eTransferSrc;
+	vk::MemoryPropertyFlags MempropFlags = vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent;
+	VulkanBuffer Staging;
+	Staging.Create(&Context, ImageSize, Usage, MempropFlags, true, false);
+	Staging.LoadData(&Context, 0, ImageSize, vk::MemoryMapFlags(), pixels);
+
+	VulkanCommandBuffer TempBuffer;
+	vk::CommandPool Pool = Context.Device.GetGraphicsCommandPool();
+	vk::Queue Queue = Context.Device.GetGraphicsQueue();
+	TempBuffer.AllocateAndBeginSingleUse(&Context, Pool);
+
+	// Transition the layout from whatever it is currently to optimal for reciving data.
+	Image->TransitionLayout(&Context, &TempBuffer, ImageFormat, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal);
+
+	// Copy the data from the buffer.
+	Image->CopyFromBuffer(&Context, Staging.Buffer, &TempBuffer);
+
+	// Transition from optimal for data reciept to shader-read-only optimal layout.
+	Image->TransitionLayout(&Context, &TempBuffer, ImageFormat, vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal);
+
+	TempBuffer.EndSingleUse(&Context, Pool, Queue);
+	Staging.Destroy(&Context);
+
+	tex->Generation++;
 }
 
 bool VulkanBackend::CreateGeometry(Geometry* geometry, uint32_t vertex_size, uint32_t vertex_count, 
@@ -1396,9 +1472,9 @@ bool VulkanBackend::ApplyInstanceShader(Shader* shader, bool need_update) {
 				// TODO: only update in the list if actually needing an update.
 				TextureMap* map = Internal->InstanceStates[shader->BoundInstanceId].instance_texture_maps[i];
 				Texture* t = map->texture;
-				VulkanTexture* InternalData = (VulkanTexture*)t->InternalData;
+				VulkanImage* Image = (VulkanImage*)t->InternalData;
 				ImageInfos[i].setImageLayout(vk::ImageLayout::eShaderReadOnlyOptimal)
-					.setImageView(InternalData->Image.ImageView)
+					.setImageView(Image->ImageView)
 					.setSampler(*((vk::Sampler*)&map->internal_data));
 
 				// TODO: change up descriptor state to handle this properly.
