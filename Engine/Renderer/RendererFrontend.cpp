@@ -3,6 +3,7 @@
 
 #include "Core/EngineLogger.hpp"
 #include "Core/DMemory.hpp"
+#include "Core/Event.hpp"
 
 #include "Math/MathTypes.hpp"
 #include "Systems/MaterialSystem.h"
@@ -15,7 +16,7 @@
 #include "Core/Event.hpp"
 // TODO: temp
 
-IRenderer::IRenderer() : Backend(nullptr) {}
+IRenderer::IRenderer() : Backend(nullptr), WorldRenderpass(nullptr),UIRenderpass(nullptr){}
 
 IRenderer::IRenderer(RendererBackendType type, struct SPlatformState* plat_state) : Backend(nullptr){
 	if (plat_state == nullptr) {
@@ -45,10 +46,56 @@ bool IRenderer::Initialize(const char* application_name, struct SPlatformState* 
 		return false;
 	}
 
-	if (!Backend->Initialize(application_name, plat_state)) {
+	// Default framebuffer size. Overriden when window is created.
+	FramebufferWidth = 1280;
+	FramebufferHeight = 720;
+	Resizing = false;
+	FrameSinceResize = 0;
+
+	RenderBackendConfig RendererConfig;
+	RendererConfig.application_name = application_name;
+	RendererConfig.OnRenderTargetRefreshRequired = std::bind(&IRenderer::RegenerateRenderTargets, this);
+
+	// Renderpasses. TODO: Read config from file.
+	RendererConfig.renderpass_count = 2;
+	const char* WorldPassName = "Renderpass.Builtin.World";
+	const char* UIPassName = "Renderpass.Builtin.UI";
+	RenderpassConfig PassConfigs[2];
+	PassConfigs[0].name = WorldPassName;
+	PassConfigs[0].prev_name = nullptr;
+	PassConfigs[0].next_name = UIPassName;
+	PassConfigs[0].render_area = Vec4(0.0f, 0.0f, 1280.0f, 720.0f);
+	PassConfigs[0].clear_color = Vec4(0.0f, 0.0f, 0.2f, 1.0f);
+	PassConfigs[0].clear_flags = RenderpassClearFlags::eRenderpass_Clear_Color_Buffer | RenderpassClearFlags::eRenderpass_Clear_Depth_Buffer | RenderpassClearFlags::eRenderpass_Clear_Stencil_Buffer;
+
+	PassConfigs[1].name = UIPassName;
+	PassConfigs[1].prev_name = WorldPassName;
+	PassConfigs[1].next_name = nullptr;
+	PassConfigs[1].render_area = Vec4(0.0f, 0.0f, 1280.0f, 720.0f);
+	PassConfigs[1].clear_color = Vec4(0.0f, 0.0f, 0.2f, 1.0f);
+	PassConfigs[1].clear_flags = RenderpassClearFlags::eRenderpass_Clear_None;
+
+	RendererConfig.pass_config = PassConfigs;
+
+	if (!Backend->Initialize(&RendererConfig, &WindowRenderTargetCount, plat_state)) {
 		UL_FATAL("Renderer backend init failed.");
 		return false;
 	}
+
+	// TODO: Will know how to get these when we define views.
+	WorldRenderpass = Backend->GetRenderpass(WorldPassName);
+	WorldRenderpass->RenderTargetCount = WindowRenderTargetCount;
+	WorldRenderpass->Targets.resize(WindowRenderTargetCount);
+
+	UIRenderpass = Backend->GetRenderpass(UIPassName);
+	UIRenderpass->RenderTargetCount = WindowRenderTargetCount;
+	UIRenderpass->Targets.resize(WindowRenderTargetCount);
+
+	RegenerateRenderTargets();
+
+	// Update the main/world renderpass dimensions.
+	WorldRenderpass->SetRenderArea(Vec4(0, 0, (float)FramebufferWidth, (float)FramebufferHeight));
+	UIRenderpass->SetRenderArea(Vec4(0, 0, (float)FramebufferWidth, (float)FramebufferHeight));
 
 	// Shaders
 	Resource ConfigResource;
@@ -85,6 +132,11 @@ bool IRenderer::Initialize(const char* application_name, struct SPlatformState* 
 void IRenderer::Shutdown() {
 	if (Backend != nullptr) {
 
+		for (unsigned char i = 0; i < WindowRenderTargetCount; ++i) {
+			Backend->DestroyRenderTarget(&WorldRenderpass->Targets[i], true);
+			Backend->DestroyRenderTarget(&UIRenderpass->Targets[i], true);
+		}
+
 		Backend->Shutdown();
 		Memory::Free(Backend, sizeof(IRendererBackend), eMemory_Type_Renderer);
 	}
@@ -94,9 +146,10 @@ void IRenderer::Shutdown() {
 
 void IRenderer::OnResize(unsigned short width, unsigned short height) {
 	if (Backend != nullptr) {
-		Projection = Matrix4::Perspective(Deg2Rad(45.0f), (float)width / (float)height, NearClip, FarClip, true);
-		UIProjection = Matrix4::Orthographic(0, (float)width, (float)height, 0, -100.f, 100.f);
-		Backend->Resize(width, height);
+		Resizing = true;
+		FramebufferWidth = width;
+		FramebufferHeight = height;
+		FrameSinceResize = 0;
 	}
 	else {
 		UL_WARN("Renderer backend does not exist to accept resize: %i %i", width, height);
@@ -106,6 +159,36 @@ void IRenderer::OnResize(unsigned short width, unsigned short height) {
 bool IRenderer::DrawFrame(SRenderPacket* packet) {
 	Backend->IncreaseFrameNum();
 
+	// Make sure the window is not currently being resized by waiting a designated
+	// number of frames after the last resize operation before performing the backend updates.
+	if (Resizing) {
+		FrameSinceResize++;
+
+		// If the required number of frames have passed since the resize, go ahead and perform the actual update.
+		if (FrameSinceResize >= 30) {
+			float Width = (float)FramebufferWidth;
+			float Height = (float)FramebufferHeight;
+			Projection = Matrix4::Perspective(Deg2Rad(45.0f), Width / (float)Height, NearClip, FarClip, true);
+			UIProjection = Matrix4::Orthographic(0, (float)Width, (float)Height, 0, -100.0f, 100.0f);
+			Backend->Resize(
+				static_cast<unsigned short>(Width), 
+				static_cast<unsigned short>(Height)
+			);
+
+			FrameSinceResize = 0;
+			Resizing = false;
+		}
+		else {
+			// Skip rendering the frame and try again next time.
+			return true;
+		}
+	}
+
+	// TOD): Views
+	WorldRenderpass->SetRenderArea(Vec4(0, 0, (float)FramebufferWidth, (float)FramebufferHeight));
+	UIRenderpass->SetRenderArea(Vec4(0, 0, (float)FramebufferWidth, (float)FramebufferHeight));
+
+	// Camera
 	if (ActiveWorldCamera == nullptr) {
 		ActiveWorldCamera = CameraSystem::GetDefault();
 	}
@@ -114,8 +197,10 @@ bool IRenderer::DrawFrame(SRenderPacket* packet) {
 	Vec3 ViewPosition = ActiveWorldCamera->GetPosition();
 
 	if (Backend->BeginFrame(packet->delta_time)) {
+		unsigned char AttachmentIndex = Backend->GetWindowAttachmentIndex();
+
 		// World render pass.
-		if (!Backend->BeginRenderpass(eButilin_Renderpass_World)) {
+		if (!Backend->BeginRenderpass(WorldRenderpass, &WorldRenderpass->Targets[AttachmentIndex])) {
 			UL_ERROR("Backend begin eButilin_Renderpass_World renderpass failed. Application quit now.");
 			return false;
 		}
@@ -160,14 +245,14 @@ bool IRenderer::DrawFrame(SRenderPacket* packet) {
 			Backend->DrawGeometry(packet->geometries[i]);
 		}
 		
-		if (!Backend->EndRenderpass(eButilin_Renderpass_World)) {
+		if (!Backend->EndRenderpass(WorldRenderpass)) {
 			UL_ERROR("Backend end eButilin_Renderpass_World renderpass failed. Application quit now.");
 			return false;
 		}
 		// End world renderpass
 
 		// UI renderpass
-		if (!Backend->BeginRenderpass(eButilin_Renderpass_UI)) {
+		if (!Backend->BeginRenderpass(UIRenderpass, &UIRenderpass->Targets[AttachmentIndex])) {
 			UL_ERROR("Backend begin eButilin_Renderpass_UI renderpass failed. Application quit now.");
 			return false;
 		}
@@ -210,7 +295,7 @@ bool IRenderer::DrawFrame(SRenderPacket* packet) {
 			Backend->DrawGeometry(packet->ui_geometries[i]);
 		}
 
-		if (!Backend->EndRenderpass(eButilin_Renderpass_UI)) {
+		if (!Backend->EndRenderpass(UIRenderpass)) {
 			UL_ERROR("Backend end eButilin_Renderpass_UI renderpass failed. Application quit now.");
 			return false;
 		}
@@ -263,21 +348,12 @@ void IRenderer::DestroyGeometry(Geometry* geometry) {
 	Backend->DestroyGeometry(geometry);
 }
 
-unsigned short IRenderer::GetRenderpassID(const char* name) {
-	// TODO: HACK: Need dynamic renderpasses instead of hardcoding them.
-	if (strcmp("Renderpass.Builtin.World", name) == 0) {
-		return eButilin_Renderpass_World;
-	}
-	else if (strcmp("Renderpass.Builtin.UI", name) == 0) {
-		return eButilin_Renderpass_UI;
-	}
-
-	UL_ERROR("renderer_renderpass_id: No renderpass named '%s'.", name);
-	return INVALID_ID_U8;
+IRenderpass* IRenderer::GetRenderpass(const char* name) {
+	return Backend->GetRenderpass(name);
 }
 
-bool IRenderer::CreateRenderShader(Shader* shader, unsigned short renderpass_id, unsigned short stage_count, std::vector<char*> stage_filenames, std::vector<ShaderStage> stages) {
-	return Backend->CreateShader(shader, renderpass_id, stage_count, stage_filenames, stages);
+bool IRenderer::CreateRenderShader(Shader* shader, IRenderpass* pass, unsigned short stage_count, std::vector<char*> stage_filenames, std::vector<ShaderStage> stages) {
+	return Backend->CreateShader(shader, pass, stage_count, stage_filenames, stages);
 }
 
 bool IRenderer::DestroyRenderShader(Shader* shader) {
@@ -326,4 +402,41 @@ bool IRenderer::AcquireTextureMap(TextureMap* map) {
 
 void IRenderer::ReleaseTextureMap(TextureMap* map) {
 	Backend->ReleaseTextureMap(map);
+}
+
+void IRenderer::CreateRenderTarget(unsigned char attachment_count, std::vector<Texture*> attachments, IRenderpass* pass, uint32_t width, uint32_t height, RenderTarget* out_target) {
+	Backend->CreateRenderTarget(attachment_count, attachments, pass, width, height, out_target);
+}
+
+void IRenderer::DestroyRenderTarget(RenderTarget* target, bool free_internal_memory) {
+	Backend->DestroyRenderTarget(target, free_internal_memory);
+}
+
+void IRenderer::CreateRenderpass(IRenderpass* out_renderpass, float depth, uint32_t stencil, bool has_prev_pass, bool has_next_pass) {
+	Backend->CreateRenderpass(out_renderpass, depth, stencil, has_prev_pass, has_next_pass);
+}
+
+void IRenderer::DestroyRenderpass(IRenderpass* pass) {
+	Backend->DestroyRenderpass(pass);
+}
+
+void IRenderer::RegenerateRenderTargets() {
+	// Create render targets for each. TODO: Should be configurable.
+	for (unsigned char i = 0; i < WindowRenderTargetCount; ++i) {
+		// Destroy the old first if exists.
+		Backend->DestroyRenderTarget(&WorldRenderpass->Targets[i], false);
+		Backend->DestroyRenderTarget(&UIRenderpass->Targets[i], false);
+
+		Texture* WindowTargetTexture = Backend->GetWindowAttachment(i);
+		Texture* DepthTargetTexture = Backend->GetDepthAttachment();
+
+		// World render targets.
+		std::vector<Texture*> Attachments = {WindowTargetTexture, DepthTargetTexture};
+		Backend->CreateRenderTarget(2, Attachments, WorldRenderpass, FramebufferWidth, FramebufferHeight, &WorldRenderpass->Targets[i]);
+
+		// UI render targets.
+		std::vector<Texture*> UIAttachments = { WindowTargetTexture };
+		Backend->CreateRenderTarget(1, UIAttachments, UIRenderpass, FramebufferWidth, FramebufferHeight, &UIRenderpass->Targets[i]);
+
+	}
 }

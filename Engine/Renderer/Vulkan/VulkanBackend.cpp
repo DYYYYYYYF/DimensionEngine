@@ -1,8 +1,8 @@
 #include "VulkanBackend.hpp"
 #include "VulkanPlatform.hpp"
 #include "VulkanDevice.hpp"
+#include "VulkanImage.hpp"
 
-#include "Core/Application.hpp"
 #include "Core/EngineLogger.hpp"
 #include "Containers/TArray.hpp"
 #include "Platform/Platform.hpp"
@@ -16,9 +16,6 @@
 #include "Systems/ResourceSystem.h"
 #include "Systems/TextureSystem.h"
 #include "Systems/ShaderSystem.h"
-
-static uint32_t CachedFramebufferWidth = 0;
-static uint32_t CachedFramebufferHeight = 0;
 
 /*
 * Vulkan debug callback
@@ -56,23 +53,21 @@ VulkanBackend::~VulkanBackend() {
 
 }
 
-bool VulkanBackend::Initialize(const char* application_name, struct SPlatformState* plat_state) {
+bool VulkanBackend::Initialize(const RenderBackendConfig* config, unsigned char* out_window_render_target_count, struct SPlatformState* plat_state) {
 
 	// TODO: Custom allocator;
 	Context.Allocator = nullptr;
 
-	GetFramebufferSize(&CachedFramebufferWidth, &CachedFramebufferHeight);
-	Context.FrameBufferWidth = (CachedFramebufferWidth > 0) ? CachedFramebufferWidth : 800;
-	Context.FrameBufferHeight = (CachedFramebufferHeight > 0) ? CachedFramebufferHeight : 600;
-	CachedFramebufferWidth = 0;
-	CachedFramebufferHeight = 0;
+	Context.OnRenderTargetRefreshRequired = config->OnRenderTargetRefreshRequired;
+	Context.FrameBufferWidth = 800;
+	Context.FrameBufferHeight = 600;
 
 	vk::ApplicationInfo ApplicationInfo;
 	vk::InstanceCreateInfo InstanceInfo;
 
 	ApplicationInfo.setApiVersion(VK_API_VERSION_1_3)
 		.setApplicationVersion((1, 0, 0))
-		.setPApplicationName(application_name)
+		.setPApplicationName(config->application_name)
 		.setEngineVersion((1, 0, 0))
 		.setPEngineName("Dimension Engine");
 	InstanceInfo.setPApplicationInfo(&ApplicationInfo);
@@ -196,22 +191,59 @@ bool VulkanBackend::Initialize(const char* application_name, struct SPlatformSta
 	// Swapchain
 	Context.Swapchain.Create(&Context, Context.FrameBufferWidth, Context.FrameBufferHeight);
 
-	// World renderpass
-	Context.MainRenderPass.Create(&Context, 
-		Vec4(0.0f, 0.0f, (float)Context.FrameBufferWidth, (float)Context.FrameBufferHeight), 
-		Vec4(0.2f, 0.2f, 0.2f, 1.0f), 1.0f, 0, 
-		eRenderpass_Clear_Color_Buffer | eRenderpass_Clear_Depth_Buffer | eRenderpass_Clear_Stencil_Buffer,
-		false, true);
-	
-	// UI renderpass
-	Context.UIRenderPass.Create(&Context,
-		Vec4(0.0f, 0.0f, (float)Context.FrameBufferWidth, (float)Context.FrameBufferHeight),
-		Vec4(0.0f, 0.0f, 0.0f, 0.0f), 1.0f, 0,
-		eRenderpass_Clear_None,
-		true, false);
+	// Save off the number of images we have as the number of render targets needed.
+	*out_window_render_target_count = Context.Swapchain.ImageCount;
 
-	// Swapchain framebuffers.
-	RegenerateFrameBuffers();
+	// Hold registered renderpasses.
+	for (uint32_t i = 0; i < VULKAN_MAX_REGISTERED_RENDERPASSES; ++i) {
+		Context.RegisteredPasses[i].SetID(INVALID_ID_U16);
+	}
+
+	// The renderpass table will be a lookup of array indices. Start off every index with an invalid id.
+	Context.RenderpassTableBlock = Memory::Allocate(sizeof(uint32_t) * VULKAN_MAX_REGISTERED_RENDERPASSES, MemoryType::eMemory_Type_Renderer);
+	Context.RenderpassTable.Create(sizeof(uint32_t), VULKAN_MAX_REGISTERED_RENDERPASSES, Context.RenderpassTableBlock, false);
+	uint32_t Value = INVALID_ID;
+	Context.RenderpassTable.Fill(&Value);
+
+	// Renderpasses
+	for (uint32_t i = 0; i < config->renderpass_count; ++i) {
+		// TODO: move to a function for reusability.
+		// Make sure there are no collisions with the name first.
+		uint32_t ID = INVALID_ID;
+		Context.RenderpassTable.Get(config->pass_config[i].name, &ID);
+		if (ID != INVALID_ID) {
+			UL_ERROR("Collision with renderpass named '%s'. Initialization failed.", config->pass_config[i].name);
+			return false;
+		}
+
+		// Snip up a new id.
+		for (uint32_t j = 0; j < VULKAN_MAX_REGISTERED_RENDERPASSES; ++j) {
+			if (Context.RegisteredPasses[j].GetID() == INVALID_ID_U16) {
+				// Found.
+				Context.RegisteredPasses[j].SetID(j);
+				ID = j;
+				break;
+			}
+		}
+
+		// Verify we got an id
+		if (ID == INVALID_ID) {
+			UL_ERROR("No space was found for a new renderpass. Increase VULKAN_MAX_REGISTERED_RENDERPASSES. Initialization failed.");
+			return false;
+		}
+
+		// Set up renderpass.
+		Context.RegisteredPasses[ID].SetClearColor(config->pass_config[i].clear_color);
+		Context.RegisteredPasses[ID].SetClearFlags(config->pass_config[i].clear_flags);
+		Context.RegisteredPasses[ID].SetRenderArea(config->pass_config[i].render_area);
+
+		bool HasPrev = config->pass_config[i].prev_name != nullptr;
+		bool HasNext = config->pass_config[i].next_name != nullptr;
+		Context.RegisteredPasses[ID].Create(&Context, 1.0f, 0, HasPrev, HasNext);
+
+		// Update table with the new id.
+		Context.RenderpassTable.Set(config->pass_config[i].name, &ID);
+	}
 
 	// Command buffers
 	CreateCommandBuffer();
@@ -285,16 +317,18 @@ void VulkanBackend::Shutdown() {
 		}
 	}
 
-	UL_DEBUG("Destroying frame buffers.");
+	UL_DEBUG("Destroying render targets.");
 	for (uint32_t i = 0; i < Context.Swapchain.ImageCount; ++i) {
-		Context.Device.GetLogicalDevice().destroyFramebuffer(Context.WorldFramebuffers[i], Context.Allocator);
-		Context.Device.GetLogicalDevice().destroyFramebuffer(Context.Swapchain.Framebuffers[i], Context.Allocator);
+		DestroyRenderTarget(&Context.WorldRenderTargets[i], true);
+		DestroyRenderTarget(&Context.Swapchain.RenderTargets[i], true);
 	}
 
-	UL_DEBUG("Destroying render pass ui.");
-	Context.UIRenderPass.Destroy(&Context);
-	UL_DEBUG("Destroying render pass world.");
-	Context.MainRenderPass.Destroy(&Context);
+	UL_DEBUG("Destroying renderpasses.");
+	for (uint32_t i = 0; i < VULKAN_MAX_REGISTERED_RENDERPASSES; ++i) {
+		if (Context.RegisteredPasses[i].GetID() != INVALID_ID_U16) {
+			DestroyRenderpass(&Context.RegisteredPasses[i]);
+		}
+	}
 
 	UL_DEBUG("Destroying swapchain.");
 	Context.Swapchain.Destroy(&Context);
@@ -382,9 +416,6 @@ bool VulkanBackend::BeginFrame(double delta_time){
 	CommandBuffer->CommandBuffer.setViewport(0, 1, &Viewport);
 	CommandBuffer->CommandBuffer.setScissor(0, 1, &Scissor);
 
-	Context.MainRenderPass.SetW((float)Context.FrameBufferWidth);
-	Context.MainRenderPass.SetH((float)Context.FrameBufferHeight);
-
 	return true;
 }
 
@@ -452,8 +483,8 @@ bool VulkanBackend::EndFrame(double delta_time) {
 void VulkanBackend::Resize(unsigned short width, unsigned short height) {
 	// Update the "Framebuffer size generate", a counter which indicates when the
 	// framebuffer size has been updated
-	CachedFramebufferWidth = width;
-	CachedFramebufferHeight = height;
+	Context.FrameBufferWidth = width;
+	Context.FrameBufferHeight = height;
 	Context.FramebufferSizeGenerate++;
 
 	UL_INFO("Vulkan renderer backend resize: width/height/generation: %i/%i/%llu", width, height, Context.FramebufferSizeGenerate);
@@ -477,46 +508,6 @@ void VulkanBackend::CreateCommandBuffer() {
 	}
 
 	UL_INFO("Vulkan command buffers created.");
-}
-
-void VulkanBackend::RegenerateFrameBuffers() {
-	uint32_t ImageCount = Context.Swapchain.ImageCount;
-	for (uint32_t i = 0; i < ImageCount; ++i) {
-		VulkanImage* Image = (VulkanImage*)Context.Swapchain.RenderTextures[i]->InternalData;
-		uint32_t AttachmentCount = 2;
-		vk::ImageView WorldAttachments[2] = {
-			Image->ImageView,
-			Context.Swapchain.DepthAttachment.ImageView
-		};
-
-		vk::FramebufferCreateInfo FramebufferCreateInfo;
-		FramebufferCreateInfo.setRenderPass(Context.MainRenderPass.GetRenderPass())
-			.setAttachmentCount(AttachmentCount)
-			.setPAttachments(WorldAttachments)
-			.setWidth(Context.FrameBufferWidth)
-			.setHeight(Context.FrameBufferHeight)
-			.setLayers(1);
-
-		Context.WorldFramebuffers[i] = Context.Device.GetLogicalDevice().createFramebuffer(FramebufferCreateInfo, Context.Allocator);
-		ASSERT(Context.WorldFramebuffers[i]);
-
-		// Swapchain framebuffers (UI pass). Outputs to swapchain image.
-		uint32_t UIAttachmentCount = 1;
-		vk::ImageView UIAttachments[1] = {
-			Image->ImageView
-		};
-
-		vk::FramebufferCreateInfo SCFramebufferCreateInfo;
-		SCFramebufferCreateInfo.setRenderPass(Context.UIRenderPass.GetRenderPass())
-			.setAttachmentCount(UIAttachmentCount)
-			.setPAttachments(UIAttachments)
-			.setWidth(Context.FrameBufferWidth)
-			.setHeight(Context.FrameBufferHeight)
-			.setLayers(1);
-
-		Context.Swapchain.Framebuffers[i] = Context.Device.GetLogicalDevice().createFramebuffer(SCFramebufferCreateInfo, Context.Allocator);
-		ASSERT(Context.Swapchain.Framebuffers[i]);
-	}
 }
 
 bool VulkanBackend::RecreateSwapchain() {
@@ -547,17 +538,7 @@ bool VulkanBackend::RecreateSwapchain() {
 	Context.Device.QuerySwapchainSupport(Context.Device.GetPhysicalDevice(), Context.Surface, Context.Device.GetSwapchainSupportInfo());
 	Context.Device.DetectDepthFormat();
 
-	Context.Swapchain.Recreate(&Context, CachedFramebufferWidth, CachedFramebufferHeight);
-
-	// Sync the framebuffer size with the cached sizes.
-	Context.FrameBufferWidth = CachedFramebufferWidth;
-	Context.FrameBufferHeight = CachedFramebufferHeight;
-	Context.MainRenderPass.SetW((float)Context.FrameBufferWidth);
-	Context.MainRenderPass.SetH((float)Context.FrameBufferHeight);
-	Context.UIRenderPass.SetW((float)Context.FrameBufferWidth);
-	Context.UIRenderPass.SetH((float)Context.FrameBufferHeight);
-	CachedFramebufferWidth = 0;
-	CachedFramebufferHeight = 0;
+	Context.Swapchain.Recreate(&Context, Context.FrameBufferWidth, Context.FrameBufferHeight);
 
 	// Update framebuffer size generation.
 	Context.FramebufferSizeGenerateLast = Context.FramebufferSizeGenerate;
@@ -567,22 +548,11 @@ bool VulkanBackend::RecreateSwapchain() {
 		Context.GraphicsCommandBuffers[i].Free(&Context, Context.Device.GetGraphicsCommandPool());
 	}
 
-	// Framebuffers
-	for (uint32_t i = 0; i < Context.Swapchain.ImageCount; ++i) {
-		Context.Device.GetLogicalDevice().destroyFramebuffer(Context.WorldFramebuffers[i], Context.Allocator);
-		Context.Device.GetLogicalDevice().destroyFramebuffer(Context.Swapchain.Framebuffers[i], Context.Allocator);
+	// Tell the renderer that a refresh is required.
+	if (Context.OnRenderTargetRefreshRequired) {
+		Context.OnRenderTargetRefreshRequired();
 	}
 
-	Context.MainRenderPass.SetX(0);
-	Context.MainRenderPass.SetY(0);
-	Context.MainRenderPass.SetW((float)Context.FrameBufferWidth);
-	Context.MainRenderPass.SetH((float)Context.FrameBufferHeight);
-	Context.UIRenderPass.SetX(0);
-	Context.UIRenderPass.SetY(0);
-	Context.UIRenderPass.SetW((float)Context.FrameBufferWidth);
-	Context.UIRenderPass.SetH((float)Context.FrameBufferHeight);
-
-	RegenerateFrameBuffers();
 	CreateCommandBuffer();
 
 	// Clear the recreating flag.
@@ -916,52 +886,15 @@ void VulkanBackend::DrawGeometry(GeometryRenderData geometry) {
 	}
 }
 
-bool VulkanBackend::BeginRenderpass(unsigned char renderpass_id) {
-	VulkanRenderPass* Renderpass = nullptr;
+bool VulkanBackend::BeginRenderpass(IRenderpass* pass, RenderTarget* target) {
 	VulkanCommandBuffer* CmdBuffer = &Context.GraphicsCommandBuffers[Context.ImageIndex];
-	vk::Framebuffer Framebuffer;
-
-	// Choose a renderpass based on ID.
-	switch (renderpass_id)
-	{
-	case eButilin_Renderpass_World:
-		Renderpass = &Context.MainRenderPass;
-		Framebuffer = Context.WorldFramebuffers[Context.ImageIndex];
-		break;
-	case eButilin_Renderpass_UI:
-		Renderpass = &Context.UIRenderPass;
-		Framebuffer = Context.Swapchain.Framebuffers[Context.ImageIndex];
-		break;
-	default:
-		UL_ERROR("Renderer backend begin renderpass called on unrecognized renderpass id: %#02x", renderpass_id);
-		return false;
-	}
-
-	// Begin renderpass.
-	Renderpass->Begin(CmdBuffer, Framebuffer);
-
+	pass->Begin(CmdBuffer, target);
 	return true;
 }
 
-bool VulkanBackend::EndRenderpass(unsigned char renderpass_id) {
-	VulkanRenderPass* Renderpass = nullptr;
+bool VulkanBackend::EndRenderpass(IRenderpass* pass) {
 	VulkanCommandBuffer* CmdBuffer = &Context.GraphicsCommandBuffers[Context.ImageIndex];
-
-	// Choose a renderpass based on ID.
-	switch (renderpass_id)
-	{
-	case eButilin_Renderpass_World:
-		Renderpass = &Context.MainRenderPass;
-		break;
-	case eButilin_Renderpass_UI:
-		Renderpass = &Context.UIRenderPass;
-		break;
-	default:
-		UL_ERROR("Renderer backend begin renderpass called on unrecognized renderpass id: %#02x", renderpass_id);
-		return false;
-	}
-
-	Renderpass->End(CmdBuffer);
+	pass->End(CmdBuffer);
 	return true;
 }
 
@@ -993,13 +926,9 @@ const uint32_t BINDING_INDEX_UBO = 0;
 // The index of the image sampler binding.
 const uint32_t BINDING_INDEX_SAMPLER = 1;
 
-bool VulkanBackend::CreateShader(Shader* shader, unsigned short renderpass_id, unsigned short stage_count,
+bool VulkanBackend::CreateShader(Shader* shader, IRenderpass* pass, unsigned short stage_count, 
 	const std::vector<char*>& stage_filenames, std::vector<ShaderStage>& stages) {
 	shader->InternalData = Memory::Allocate(sizeof(VulkanShader), MemoryType::eMemory_Type_Renderer);
-
-	// TODO: Dynamic renderpass.
-	VulkanRenderPass* Renderpass = renderpass_id == BuiltinRenderpass::eButilin_Renderpass_World
-		? &Context.MainRenderPass : &Context.UIRenderPass;
 
 	// Translate stages.
 	vk::ShaderStageFlags VkStages[VULKAN_SHADER_MAX_STAGES];
@@ -1031,7 +960,7 @@ bool VulkanBackend::CreateShader(Shader* shader, unsigned short renderpass_id, u
 
 	// Take a copy of the pointer to the context.
 	VulkanShader* OutShader = (VulkanShader*)shader->InternalData;
-	OutShader->Renderpass = Renderpass;
+	OutShader->Renderpass = (VulkanRenderPass*)pass;
 	OutShader->Config.max_descriptor_set_count = MaxDescriptorAllocateCount;
 
 	// Shader stages. Parse out the flags.
@@ -1738,4 +1667,85 @@ bool VulkanBackend::CreateModule(VulkanShader* Shader, VulkanShaderStageConfig c
 	shader_stage->shader_stage_create_info.pName = "main";
 
 	return true;
+}
+
+IRenderpass* VulkanBackend::GetRenderpass(const char* name) {
+	if (name == nullptr || name[0] == '\0') {
+		UL_ERROR("VulkanBackend::GetRenderpass() requires a name. nullptr will be returned.");
+		return nullptr;
+	}
+
+	uint32_t ID = INVALID_ID;
+	Context.RenderpassTable.Get(name, &ID);
+	if (ID == INVALID_ID) {
+		UL_WARN("There is no registered renderpass named '%s'.", name);
+		return nullptr;
+	}
+
+	return &Context.RegisteredPasses[ID];
+}
+
+void VulkanBackend::CreateRenderTarget(unsigned char attachment_count, std::vector<Texture*> attachments, IRenderpass* pass, uint32_t width, uint32_t height, RenderTarget* out_target) {
+	// Max number of attachments.
+	vk::ImageView AttachmentViews[32];
+	for (uint32_t i = 0; i < attachment_count; ++i) {
+		AttachmentViews[i] = ((VulkanImage*)attachments[i]->InternalData)->ImageView;
+	}
+
+	// Take a copy of the attachments and count.
+	out_target->attachment_count = attachment_count;
+	if (out_target->attachments.empty()) {
+		out_target->attachments.resize(attachment_count);
+	}
+	for (const auto& att : attachments) {
+		out_target->attachments.push_back(att);
+	}
+
+	vk::FramebufferCreateInfo FramebufferCreateInfo;
+	FramebufferCreateInfo.setRenderPass(((VulkanRenderPass*)pass)->GetRenderPass())
+		.setAttachmentCount(attachment_count)
+		.setPAttachments(AttachmentViews)
+		.setWidth(width)
+		.setHeight(height)
+		.setLayers(1);
+
+	if (Context.Device.GetLogicalDevice().createFramebuffer(&FramebufferCreateInfo, Context.Allocator,
+		(vk::Framebuffer*)&out_target->internal_framebuffer) != vk::Result::eSuccess) {
+		UL_ERROR("VulkanBackend::CreateRenderTarget() Failed to create framebuffers.");
+	}
+}
+
+void  VulkanBackend::DestroyRenderTarget(RenderTarget* target, bool free_internal_memory) {
+	if (target && target->internal_framebuffer) {
+		Context.Device.GetLogicalDevice().destroyFramebuffer(*(vk::Framebuffer*)&target->internal_framebuffer, Context.Allocator);
+		target->internal_framebuffer = nullptr;
+		if (free_internal_memory) {
+			target->attachments.clear();
+			target->attachment_count = 0;
+		}
+	}
+}
+
+Texture* VulkanBackend::GetWindowAttachment(unsigned char index) {
+	if (index >= Context.Swapchain.ImageCount) {
+		UL_FATAL("Attempting to get attachment index out of range: %d. Attachment count: %d.", index, Context.Swapchain.ImageCount);
+		return nullptr;
+	}
+
+	return Context.Swapchain.RenderTextures[index];
+}
+
+Texture* VulkanBackend::GetDepthAttachment() {
+	return Context.Swapchain.DepthTexture;
+}
+unsigned char VulkanBackend::GetWindowAttachmentIndex() {
+	return (unsigned char)Context.ImageIndex;
+}
+
+void VulkanBackend::CreateRenderpass(IRenderpass* out_renderpass, float depth, uint32_t stencil, bool has_prev_pass, bool has_next_pass) {
+	out_renderpass->Create(&Context, depth, stencil, has_prev_pass, has_next_pass);
+}
+
+void VulkanBackend::DestroyRenderpass(IRenderpass* pass) {
+	pass->Destroy(&Context);
 }

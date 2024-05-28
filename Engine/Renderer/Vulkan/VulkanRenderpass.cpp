@@ -7,19 +7,13 @@
 #include "Core/EngineLogger.hpp"
 
 void VulkanRenderPass::Create(VulkanContext* context,
-	Vec4 render_area, Vec4 clear_color,
 	float depth, uint32_t stencil,
-	int clear_flags,
 	bool has_prev_pass, bool has_next_pass) {
-
-	ClearFlags = clear_flags;
-	ClearColor = clear_color;
-	RenderArea = render_area;
-	HasPrevPass = has_prev_pass;
-	HasNextPass = has_next_pass;
 
 	Depth = depth;
 	Stencil = stencil;
+	HasPrevPass = has_prev_pass;
+	HasNextPass = has_next_pass;
 
 	// Main subpass
 	vk::SubpassDescription Subpass;
@@ -109,7 +103,6 @@ void VulkanRenderPass::Create(VulkanContext* context,
 		.setDstAccessMask(vk::AccessFlagBits::eColorAttachmentRead | vk::AccessFlagBits::eColorAttachmentWrite)
 		.setDependencyFlags(vk::DependencyFlagBits::eByRegion);
 
-
 	// Render pass create
 	vk::RenderPassCreateInfo CreateInfo;
 	CreateInfo.setAttachmentCount(AttachmentDescriptionCount)
@@ -117,27 +110,30 @@ void VulkanRenderPass::Create(VulkanContext* context,
 		.setSubpassCount(1)
 		.setPSubpasses(&Subpass)
 		.setDependencyCount(1)
-		.setDependencies(Dependency)
+		.setPDependencies(&Dependency)
 		.setPNext(nullptr);
 
-	RenderPass = context->Device.GetLogicalDevice().createRenderPass(CreateInfo, context->Allocator);
-	ASSERT(RenderPass);
-}
-
-void VulkanRenderPass::Destroy(VulkanContext* context) {
-	if (RenderPass) {
-		context->Device.GetLogicalDevice().destroyRenderPass(RenderPass, context->Allocator);
+	if (context->Device.GetLogicalDevice().createRenderPass(&CreateInfo,
+		context->Allocator, (vk::RenderPass*)&Renderpass) != vk::Result::eSuccess) {
+		UL_ERROR("VulkanRenderPass::Create() Failed to create renderpass.");
 	}
 }
 
-void VulkanRenderPass::Begin(VulkanCommandBuffer* command_buffer, vk::Framebuffer frame_buffer) {
+void VulkanRenderPass::Destroy(VulkanContext* context) {
+	if (Renderpass) {
+		context->Device.GetLogicalDevice().destroyRenderPass(GetRenderPass(), context->Allocator);
+		Renderpass = nullptr;
+	}
+}
+
+void VulkanRenderPass::Begin(VulkanCommandBuffer* command_buffer, RenderTarget* target) {
 	vk::Rect2D Area;
 	Area.setOffset({ (int32_t)RenderArea.x, (int32_t)RenderArea.y })
 		.setExtent({ (uint32_t)RenderArea.z, (uint32_t)RenderArea.w });
 
 	vk::RenderPassBeginInfo BeginInfo;
-	BeginInfo.setRenderPass(RenderPass)
-		.setFramebuffer(frame_buffer)
+	BeginInfo.setRenderPass(*(vk::RenderPass*)&Renderpass)
+		.setFramebuffer(*((vk::Framebuffer*)&target->internal_framebuffer))
 		.setRenderArea(Area);
 
 	BeginInfo.setClearValueCount(0);

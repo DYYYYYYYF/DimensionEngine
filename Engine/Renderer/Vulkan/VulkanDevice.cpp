@@ -388,6 +388,8 @@ bool VulkanDevice::DetectDepthFormat() {
 		vk::Format::eD24UnormS8Uint
 	};
 
+	unsigned char Sizes[3] = { 4, 4, 3 };
+
 	vk::FormatFeatureFlags Flags = vk::FormatFeatureFlagBits::eDepthStencilAttachment;
 	for (uint32_t i = 0; i < CandidateCount; ++i) {
 		vk::FormatProperties Properties;
@@ -395,10 +397,12 @@ bool VulkanDevice::DetectDepthFormat() {
 
 		if ((Properties.linearTilingFeatures & Flags) == Flags){
 			DepthFormat = Candidates[i];
+			DepthChannelCount = Sizes[i];
 			return true;
 		}
 		else if ((Properties.optimalTilingFeatures & Flags) == Flags) {
 			DepthFormat = Candidates[i];
+			DepthChannelCount = Sizes[i];
 			return true;
 		}
 	}

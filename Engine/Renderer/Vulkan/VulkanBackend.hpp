@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Renderer/RendererBackend.hpp"
+#include "Renderer/Interface/IRendererBackend.hpp"
 #include "Core/DMemory.hpp"
 #include "VulkanContext.hpp"
 
@@ -12,7 +12,7 @@ public:
 	virtual ~VulkanBackend();
 
 public:
-	virtual bool Initialize(const char* application_name, struct SPlatformState* plat_state) override;
+	virtual bool Initialize(const RenderBackendConfig* config, unsigned char* out_window_render_target_count, struct SPlatformState* plat_state) override;
 	virtual void Shutdown() override;
 
 	virtual bool BeginFrame(double delta_time) override;
@@ -31,11 +31,20 @@ public:
 		const void* vertices, uint32_t index_size, uint32_t index_count, const void* indices) override;
 	virtual void DestroyGeometry(Geometry* geometry) override;
 
-	virtual bool BeginRenderpass(unsigned char renderpass_id) override;
-	virtual bool EndRenderpass(unsigned char renderpass_id) override;
+	// Renderpass
+	virtual bool BeginRenderpass(IRenderpass* pass, RenderTarget* target) override;
+	virtual bool EndRenderpass(IRenderpass* pass) override;
+	virtual IRenderpass* GetRenderpass(const char* name) override;
+	virtual void CreateRenderTarget(unsigned char attachment_count, std::vector<Texture*> attachments, IRenderpass* pass, uint32_t width, uint32_t height, RenderTarget* out_target) override;
+	virtual void DestroyRenderTarget(RenderTarget* target, bool free_internal_memory) override;
+	virtual Texture* GetWindowAttachment(unsigned char index) override;
+	virtual Texture* GetDepthAttachment() override;
+	virtual unsigned char GetWindowAttachmentIndex() override;
+	virtual void CreateRenderpass(IRenderpass* out_renderpass, float depth, uint32_t stencil, bool has_prev_pass, bool has_next_pass) override;
+	virtual void DestroyRenderpass(IRenderpass* pass) override;
 
 	// Shaders.
-	virtual bool CreateShader(Shader* shader, unsigned short renderpass_id, unsigned short stage_count, const std::vector<char*>& stage_filenames, std::vector<ShaderStage>& stages) override;
+	virtual bool CreateShader(Shader* shader, IRenderpass* pass, unsigned short stage_count, const std::vector<char*>& stage_filenames, std::vector<ShaderStage>& stages) override;
 	virtual bool DestroyShader(Shader* shader) override;
 	virtual bool InitializeShader(Shader* shader) override;
 	virtual bool UseShader(Shader* shader) override;
@@ -56,7 +65,6 @@ public:
 	virtual void FreeDataRange(VulkanBuffer* buffer, size_t offset, size_t size);
 
 	virtual void CreateCommandBuffer();
-	virtual void RegenerateFrameBuffers();
 	virtual bool RecreateSwapchain();
 
 	virtual bool VerifyShaderID(uint32_t shader_id);

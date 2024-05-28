@@ -120,13 +120,13 @@ bool ShaderSystem::Create(ShaderConfig* config) {
 	OutShader->PushConstantsStride = 128;
 	OutShader->PushConstantsSize = 0;
 
-	unsigned short RenderpassID = Renderer->GetRenderpassID(config->renderpass_name);
-	if (RenderpassID == INVALID_ID_U16) {
+	IRenderpass* Pass = Renderer->GetRenderpass(config->renderpass_name);
+	if (Pass == nullptr) {
 		UL_ERROR("Unable to find renderpass '%s'", config->renderpass_name);
 		return false;
 	}
 
-	if (!Renderer->CreateRenderShader(OutShader, RenderpassID, config->stage_cout, config->stage_filenames, config->stages)) {
+	if (!Renderer->CreateRenderShader(OutShader, Pass, config->stage_cout, config->stage_filenames, config->stages)) {
 		UL_ERROR("Error creating shader.");
 		return false;
 	}

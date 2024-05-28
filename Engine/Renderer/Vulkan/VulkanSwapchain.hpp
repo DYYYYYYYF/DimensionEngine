@@ -1,7 +1,7 @@
 #pragma once
 
 #include "vulkan/vulkan.hpp"
-#include "VulkanImage.hpp"
+#include "Renderer/RendererTypes.hpp"
 
 class VulkanContext;
 class VulkanFrameBuffer;
@@ -28,9 +28,9 @@ public:
 	vk::SwapchainKHR Handle;
 	std::vector<Texture*> RenderTextures;
 
-	VulkanImage DepthAttachment;
+	Texture* DepthTexture;
 	
 	// Framebuffers used for on-screen rendering
-	vk::Framebuffer Framebuffers[3];
+	RenderTarget RenderTargets[3];
 
 };

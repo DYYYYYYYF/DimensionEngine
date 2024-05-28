@@ -15,7 +15,7 @@ class Texture;
 
 class VulkanContext {
 public:
-	VulkanContext(): Allocator(nullptr), Shaders(nullptr), GraphicsCommandBuffers(nullptr){}
+	VulkanContext(): Allocator(nullptr), Shaders(nullptr), GraphicsCommandBuffers(nullptr), RenderpassTableBlock(nullptr){}
 	virtual ~VulkanContext() {}
 
 public:
@@ -32,7 +32,6 @@ public:
 		UL_WARN("Unable to find suitable memory type!");
 		return -1;
 	}
-
 
 public:
 	double FrameDeltaTime;
@@ -70,9 +69,10 @@ public:
 
 	VulkanDevice Device;
 	VulkanSwapchain Swapchain;
-	VulkanRenderPass MainRenderPass;
-	VulkanRenderPass UIRenderPass;
 
+	void* RenderpassTableBlock;
+	HashTable RenderpassTable;
+	VulkanRenderPass RegisteredPasses[VULKAN_MAX_REGISTERED_RENDERPASSES];
 	// Shaders
 	Shader MaterialShader;
 	Shader UIShader;
@@ -84,9 +84,10 @@ public:
 	VulkanBuffer ObjectIndexBuffer;
 
 	// Framebuffers used for world rendering, one per frame.
-	vk::Framebuffer WorldFramebuffers[3];
+	RenderTarget WorldRenderTargets[3];
 
 	// TODO: Make dynamic
 	GeometryData Geometries[GEOMETRY_MAX_COUNT];
 
+	std::function<void()> OnRenderTargetRefreshRequired;
 };

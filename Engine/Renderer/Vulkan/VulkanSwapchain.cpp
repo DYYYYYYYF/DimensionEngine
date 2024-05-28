@@ -1,8 +1,9 @@
 #include "VulkanSwapchain.hpp"
+#include "VulkanContext.hpp"
+#include "VulkanImage.hpp"
 
 #include "Core/EngineLogger.hpp"
 #include "Core/DMemory.hpp"
-#include "VulkanContext.hpp"
 
 #include "Systems/TextureSystem.h"
 
@@ -170,11 +171,20 @@ void VulkanSwapchain::Create(VulkanContext* context, unsigned int width, unsigne
 	if (!context->Device.DetectDepthFormat()) {
 		context->Device.SetDepthFormat(vk::Format::eUndefined);
 		UL_FATAL("Failed to find a supported format!");
-	}
+	};
 
 	// Create depth image and view
-	DepthAttachment.CreateImage(context, vk::ImageType::e2D, SwapchainExtent.width, SwapchainExtent.height, context->Device.GetDepthFormat(),
+	VulkanImage* DepthImage = (VulkanImage*)Memory::Allocate(sizeof(VulkanImage), MemoryType::eMemory_Type_Texture);
+	DepthImage->CreateImage(context, vk::ImageType::e2D, SwapchainExtent.width, SwapchainExtent.height, context->Device.GetDepthFormat(),
 		vk::ImageTiling::eOptimal, vk::ImageUsageFlagBits::eDepthStencilAttachment, vk::MemoryPropertyFlagBits::eDeviceLocal, true, vk::ImageAspectFlagBits::eDepth);
+
+	// Wrap it in a texture.
+	context->Swapchain.DepthTexture = TextureSystem::WrapInternal(
+		"__default_depth_texture__",
+		SwapchainExtent.width,
+		SwapchainExtent.height,
+		context->Device.GetDepthChannelCount(),
+		false, true, false, DepthImage);
 
 	UL_INFO("Create swapchain successful.");
 }
@@ -186,7 +196,9 @@ void VulkanSwapchain::Recreate(VulkanContext* context, unsigned int width, unsig
 
 bool VulkanSwapchain::Destroy(VulkanContext* context) {
 	context->Device.GetLogicalDevice().waitIdle();
-	DepthAttachment.Destroy(context);
+	((VulkanImage*)DepthTexture->InternalData)->Destroy(context);
+	Memory::Free(DepthTexture->InternalData, sizeof(VulkanImage), MemoryType::eMemory_Type_Texture);
+	DepthTexture->InternalData = nullptr;
 
 	// Only destroy views, not the images, since those are owned by swapchain and are thus destroyed when it is.
 	vk::Device LogicalDevice = context->Device.GetLogicalDevice();

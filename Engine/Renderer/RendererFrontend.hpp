@@ -8,6 +8,7 @@ struct SPlatformState;
 struct ShaderUniform;
 
 class IRendererBackend;
+class IRenderpass;
 class Geometry;
 class Shader;
 class Camera;
@@ -39,24 +40,24 @@ public:
 
 public:
 	/**
-	 * @brief Obtains the identifier of the renderpass with the given name.
+	 * @brief Obtains a pointer of the renderpass with the given name.
 	 *
 	 * @param name The name of the renderpass whose identifier to obtain.
-	 * @return INVALID_ID_U16 if not found; otherwise id.
+	 * @return A pointer to a renderpass if found.
 	 */
-	virtual unsigned short GetRenderpassID(const char* name);
+	virtual IRenderpass* GetRenderpass(const char* name);
 
 	/**
 	 * @brief Creates internal shader resources using the provided parameters.
 	 *
 	 * @param shader A pointer to the shader.
-	 * @param renderpass_id The identifier of the renderpass to be associated with the shader.
+	 * @param pass The pointer of the renderpass to be associated with the shader.
 	 * @param stage_count The total number of stages.
 	 * @param stage_filenames An array of shader stage filenames to be loaded. Should align with stages array.
 	 * @param stages A array of shader_stages indicating what render stages (vertex, fragment, etc.) used in this shader.
 	 * @return True on success; otherwise false.
 	 */
-	virtual bool CreateRenderShader(Shader* shader, unsigned short renderpass_id, unsigned short stage_count, std::vector<char*> stage_filenames, std::vector<ShaderStage> stages);
+	virtual bool CreateRenderShader(Shader* shader, IRenderpass* pass, unsigned short stage_count, std::vector<char*> stage_filenames, std::vector<ShaderStage> stages);
 
 	/**
 	 * @brief Destroys the given shader and releases any resources held by it.
@@ -159,6 +160,14 @@ public:
 	 */
 	virtual void ReleaseTextureMap(TextureMap* map);
 
+	virtual void CreateRenderTarget(unsigned char attachment_count, std::vector<Texture*> attachments, IRenderpass* pass, uint32_t width, uint32_t height, RenderTarget* out_target) ;
+	virtual void DestroyRenderTarget(RenderTarget* target, bool free_internal_memory) ;
+	virtual void CreateRenderpass(IRenderpass* out_renderpass, float depth, uint32_t stencil, bool has_prev_pass, bool has_next_pass) ;
+	virtual void DestroyRenderpass(IRenderpass* pass) ;
+
+private:
+	virtual void RegenerateRenderTargets();
+
 protected:
 	RendererBackendType BackendType;
 	class IRendererBackend* Backend;
@@ -177,4 +186,14 @@ protected:
 	uint32_t UISHaderID;
 
 	Vec4 AmbientColor;
+
+	// Renderpass
+	unsigned char WindowRenderTargetCount;
+	uint32_t FramebufferWidth;
+	uint32_t FramebufferHeight;
+
+	IRenderpass* WorldRenderpass;
+	IRenderpass* UIRenderpass;
+	bool Resizing;
+	unsigned char FrameSinceResize;
 };

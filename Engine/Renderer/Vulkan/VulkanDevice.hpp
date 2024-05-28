@@ -67,6 +67,7 @@ public:
 	vk::Queue GetTransferQueue() { return TransferQueue; }
 
 	bool GetIsSupportDeviceLocalHostVisible() const { return IsSupportDeviceLocalHostVisible; }
+	unsigned char GetDepthChannelCount() const { return DepthChannelCount; }
 
 private:
 	bool SelectPhysicalDevice(vk::Instance* instance, vk::SurfaceKHR surface);
@@ -90,4 +91,5 @@ private:
 	SSwapchainSupportInfo SwapchainSupport;
 
 	vk::Format DepthFormat;
+	unsigned char DepthChannelCount;
 };
