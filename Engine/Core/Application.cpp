@@ -295,7 +295,7 @@ bool ApplicationCreate(SGame* game_instance){
 	UIConfig.vertices = UIVerts;
 
 	// Indices
-	uint32_t UIIndices[6] = { 0, 1, 2, 0, 3, 1 };
+	uint32_t UIIndices[6] = { 0, 2, 1, 0, 1, 3 };
 	UIConfig.indices = UIIndices;
 
 	// Get UI geometry from config.
@@ -540,7 +540,7 @@ bool ApplicationOnResized(unsigned short code, void* sender, void* listener_inst
 				UIConfig.vertices = UIVerts;
 
 				// Indices
-				uint32_t UIIndices[6] = { 0, 1, 2, 0, 3, 1 };
+				uint32_t UIIndices[6] = { 0, 2, 1, 0, 1, 3 };
 				UIConfig.indices = UIIndices;
 
 				AppState.UIMeshes[0].geometries[0] = GeometrySystem::AcquireFromConfig(UIConfig, true);
