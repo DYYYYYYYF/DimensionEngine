@@ -397,7 +397,7 @@ bool TextureSystem::LoadTexture(const char* name, Texture* texture) {
 		// Take a copy of the name
 		strncpy(TempTexture.Name, name, TEXTURE_NAME_MAX_LENGTH);
 		TempTexture.Generation = INVALID_ID;
-		DefaultDiffuseTexture.Flags = HasTransparency ? TextureFlagBits::eTexture_Flag_Has_Transparency : 0;
+		TempTexture.Flags = HasTransparency ? TextureFlagBits::eTexture_Flag_Has_Transparency : 0;
 
 		//Acquire internal texture resources and upload to GPU.
 		Renderer->CreateTexture(ResourceData->pixels, &TempTexture);

@@ -273,6 +273,15 @@ public:
 		return d.Length();
 	}
 
+	/**
+	 * @brief Transform v by m. NOTE: It is assumed by this function that the vector
+	 * v is a point, not a direction, and is calculated as if a w component with a value of 1.0f is there.
+	 * 
+	 * @param m The matrix to transform by.
+	 * @return A transformed copy of v.
+	 */
+	Vec3 Transform(struct Matrix4 m);
+
 	static Vec3 Forward() {
 		return Vec3(0.0f, 0.0f, -1.0f);
 	}
@@ -1154,6 +1163,30 @@ inline Quaternion QuaternionSlerp(Quaternion q0, Quaternion q1, float percentage
 	};
 
 }
+
+inline Vec3 Vec3::Transform(struct Matrix4 m) {
+	Vec3 out;
+	out.x = x * m.data[0 + 0] + y * m.data[4 + 0] + z * m.data[8 + 0] + 1.0f * m.data[12 + 0];
+	out.y = x * m.data[0 + 1] + y * m.data[4 + 1] + z * m.data[8 + 1] + 1.0f * m.data[12 + 1];
+	out.z = x * m.data[0 + 2] + y * m.data[4 + 2] + z * m.data[8 + 2] + 1.0f * m.data[12 + 2];
+	return out;
+}
+
+/**
+ * @brief Represents the extents of a 2D object.
+ */
+struct Extents2D {
+	Vec2 min;
+	Vec2 max;
+};
+
+/**
+ * @brief Represents the extents of a 3D object.
+ */
+struct Extents3D {
+	Vec3 min;
+	Vec3 max;
+};
 
 struct Vertex {
 	Vec3 position;

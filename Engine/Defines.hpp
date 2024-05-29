@@ -4,6 +4,7 @@
 * @brief Any id set to this should be considered invalid,
 * and not actually pointing to a real object.
 */
+#define INVALID_ID_U64 18446744073709551615UL
 #define INVALID_ID 4294967295U
 #define INVALID_ID_U16 65535U
 #define INVALID_ID_U8 255U

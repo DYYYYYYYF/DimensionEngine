@@ -56,6 +56,7 @@ bool ShaderSystem::Initialize(IRenderer* renderer, SShaderSystemConfig config) {
 
 	for (uint32_t i = 0; i < config.max_shader_count; ++i) {
 		Shaders[i].ID = INVALID_ID;
+		Shaders[i].RenderFrameNumber = INVALID_ID_U64;
 	}
 
 	Initilized = true;

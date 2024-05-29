@@ -15,6 +15,13 @@
 #include "Renderer/Interface/IRenderpass.hpp"
 #include "Renderer/Interface/IRendererBackend.hpp"
 
+struct GeometryDistance {
+	GeometryRenderData g;
+	float distance;
+};
+
+static void QuickSort(TArray<GeometryDistance> arr, int low_index, int high_index, bool ascending);
+
 
 void RenderViewWorld::OnCreate() {
 	ShaderID = ShaderSystem::GetID(CustomShaderName ? CustomShaderName : "Shader.Builtin.Material");
@@ -30,7 +37,7 @@ void RenderViewWorld::OnCreate() {
 	WorldCamera = CameraSystem::GetDefault();
 
 	// TODO: Obtain from scene.
-	AmbientColor = Vec4(0.85f, 0.85f, 0.85f, 1.0f);
+	AmbientColor = Vec4(0.7f, 0.7f, 0.7f, 1.0f);
 }
 
 void RenderViewWorld::OnDestroy() {
@@ -68,18 +75,48 @@ bool RenderViewWorld::OnBuildPacket(void* data, struct RenderViewPacket* out_pac
 	out_packet->ambient_color = AmbientColor;
 
 	// Obtain all geometries from the current scene.
-	// Iterate all meshes and them to the packet's geometries collection.
+
+	TArray<GeometryDistance> GeometryDistances;
+
 	for (uint32_t i = 0; i < MeshData->mesh_count; ++i) {
 		Mesh* pMesh = &MeshData->meshes[i];
+		Matrix4 Model = pMesh->Transform.GetWorldTransform();
+
 		for (uint32_t j = 0; j < pMesh->geometry_count; j++) {
+			GeometryRenderData RenderData;
+			RenderData.geometry = pMesh->geometries[j];
+			RenderData.model = Model;
+
 			if ((pMesh->geometries[j]->Material->DiffuseMap.texture->Flags & TextureFlagBits::eTexture_Flag_Has_Transparency) == 0) {
-				GeometryRenderData RenderData;
-				RenderData.geometry = pMesh->geometries[j];
-				RenderData.model = pMesh->Transform.GetWorldTransform();
+				// Only add meshes with _no_ transparency.
 				out_packet->geometries.push_back(RenderData);
 				out_packet->geometry_count++;
 			}
+			else {
+				// For meshes _with_ transparency, add them to a separate list to be sorted by distance later.
+				// Get the center, extract the global position from the model matrix and add it to the center,
+				// then calculate the distance between it and the camera, and finally save it to a list to be sorted.
+				// NOTE: This isn't perfect for translucent meshes that intersect, but is enough for our purposes now.
+				Vec3 Center = RenderData.geometry->Center.Transform(Model);
+				float Distance = Center.Distance(WorldCamera->GetPosition());
+
+				GeometryDistance gDist;
+				gDist.distance = Dabs(Distance);
+				gDist.g = RenderData;
+
+				GeometryDistances.Push(gDist);
+			}
 		}
+	}
+
+	// Sort the distances.
+	uint32_t GeometryCount = (uint32_t)GeometryDistances.Size();
+	QuickSort(GeometryDistances, 0, GeometryCount - 1, true);
+
+	// Add them to packet geometry.
+	for (uint32_t i = 0; i < GeometryCount; ++i) {
+		out_packet->geometries.push_back(GeometryDistances[i].g);
+		out_packet->geometry_count++;
 	}
 
 	return true;
@@ -97,7 +134,7 @@ bool RenderViewWorld::OnRender(struct RenderViewPacket* packet, IRendererBackend
 		}
 
 		// Apply globals.
-		if (!MaterialSystem::ApplyGlobal(SID, packet->projection_matrix, packet->view_matrix, packet->ambient_color, packet->view_position)) {
+		if (!MaterialSystem::ApplyGlobal(SID, frame_number, packet->projection_matrix, packet->view_matrix, packet->ambient_color, packet->view_position)) {
 			UL_ERROR("RenderViewUI::OnRender() Failed to use global shader. Render frame failed.");
 			return false;
 		}
@@ -136,3 +173,43 @@ bool RenderViewWorld::OnRender(struct RenderViewPacket* packet, IRendererBackend
 	return true;
 }
 
+
+// Quick sort geometry distance.
+static void Swap(GeometryDistance* a, GeometryDistance* b) {
+	GeometryDistance temp = *a;
+	*a = *b;
+	*b = temp;
+}
+
+static int Partition(TArray<GeometryDistance> arr, int low_index, int high_index, bool ascending) {
+	GeometryDistance Privot = arr[high_index];
+	int i = (low_index - 1);
+
+	for (int j = low_index; j <= high_index; j++) {
+		if (ascending) {
+			if (arr[j].distance < Privot.distance) {
+				++i;
+				Swap(&arr[i], &arr[j]);
+			}
+		}
+		else {
+			if (arr[j].distance > Privot.distance) {
+				++i;
+				Swap(&arr[i], &arr[j]);
+			}
+		}
+	}
+
+	Swap(&arr[i + 1], &arr[high_index]);
+	return i + 1;
+}
+
+static void QuickSort(TArray<GeometryDistance> arr, int low_index, int high_index, bool ascending) {
+	if (low_index < high_index) {
+		int PartitionIndex = Partition(arr, low_index, high_index, ascending);
+
+		// Independently sort elements before and after the partition index.
+		QuickSort(arr, low_index, PartitionIndex - 1, ascending);
+		QuickSort(arr, PartitionIndex + 1, high_index, ascending);
+	}
+}

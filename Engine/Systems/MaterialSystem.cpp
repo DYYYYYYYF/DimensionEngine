@@ -435,7 +435,16 @@ bool MaterialSystem::CreateDefaultMaterial() {
         return false;                                 \
     }
 
-bool MaterialSystem::ApplyGlobal(uint32_t shader_id, const Matrix4& projection, const Matrix4& view, const Vec4& ambient_color, const Vec3& view_position) {
+bool MaterialSystem::ApplyGlobal(uint32_t shader_id, size_t renderer_frame_number, const Matrix4& projection, const Matrix4& view, const Vec4& ambient_color, const Vec3& view_position) {
+	Shader* s = ShaderSystem::GetByID(shader_id);
+	if (s == nullptr) {
+		return false;
+	}
+
+	if (s->RenderFrameNumber == renderer_frame_number) {
+		return true;
+	}
+
 	if (shader_id == MaterialShaderID) {
 		MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(MaterialLocations.projection, &projection));
 		MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(MaterialLocations.view, &view));
@@ -452,6 +461,10 @@ bool MaterialSystem::ApplyGlobal(uint32_t shader_id, const Matrix4& projection, 
 	}
 
 	MATERIAL_APPLY_OR_FAIL(ShaderSystem::ApplyGlobal());
+
+	// Sync
+	s->RenderFrameNumber = renderer_frame_number;
+
 	return true;
 }
 

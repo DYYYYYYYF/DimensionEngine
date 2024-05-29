@@ -84,7 +84,7 @@ bool RenderViewUI::OnRender(struct RenderViewPacket* packet, IRendererBackend* b
 		}
 
 		// Apply globals.
-		if (!MaterialSystem::ApplyGlobal(SID, packet->projection_matrix, packet->view_matrix, Vec4(0), Vec3(0))) {
+		if (!MaterialSystem::ApplyGlobal(SID, frame_number, packet->projection_matrix, packet->view_matrix, Vec4(0), Vec3(0))) {
 			UL_ERROR("RenderViewUI::OnRender() Failed to use global shader. Render frame failed.");
 			return false;
 		}

@@ -161,6 +161,7 @@ public:
 	bool UseInstances;
 	bool UseLocals;
 
+	size_t RenderFrameNumber;
 	size_t RequiredUboAlignment;
 	size_t GlobalUboSize;
 	size_t GlobalUboOffset;

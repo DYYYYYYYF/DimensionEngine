@@ -225,6 +225,11 @@ bool GeometrySystem::CreateGeometry(SGeometryConfig config, Geometry* geometry) 
 		return false;
 	}
 
+	// Copy over extents, center. etc.
+	geometry->Center = config.center;
+	geometry->Extents.min = config.min_extents;
+	geometry->Extents.max = config.max_extents;
+
 	// Acquire the material.
 	if (strlen(config.name) > 0) {
 		geometry->Material = MaterialSystem::Acquire(config.material_name);
@@ -423,6 +428,11 @@ SGeometryConfig GeometrySystem::GenerateCubeConfig(float width, float height,
 		float MaxUVX = tile_x;
 		float MaxUVY = tile_y;
 
+		Config.min_extents = { MinX, MinY, MinZ };
+		Config.max_extents = { MaxX, MaxY, MaxZ };
+		// Always 0 since min/max of each axis are -/+ half of the size.
+		Config.center = { 0, 0, 0 };
+
 		Vertex Verts[24];
 
 		// Front face
@@ -515,11 +525,11 @@ SGeometryConfig GeometrySystem::GenerateCubeConfig(float width, float height,
 			uint32_t OffsetV = i * 4;
 			uint32_t OffsetI = i * 6;
 			((uint32_t*)Config.indices)[OffsetI + 0] = OffsetV + 0;
-			((uint32_t*)Config.indices)[OffsetI + 1] = OffsetV + 2;
-			((uint32_t*)Config.indices)[OffsetI + 2] = OffsetV + 1;
+			((uint32_t*)Config.indices)[OffsetI + 1] = OffsetV + 1;
+			((uint32_t*)Config.indices)[OffsetI + 2] = OffsetV + 2;
 			((uint32_t*)Config.indices)[OffsetI + 3] = OffsetV + 0;
-			((uint32_t*)Config.indices)[OffsetI + 4] = OffsetV + 1;
-			((uint32_t*)Config.indices)[OffsetI + 5] = OffsetV + 3;
+			((uint32_t*)Config.indices)[OffsetI + 4] = OffsetV + 3;
+			((uint32_t*)Config.indices)[OffsetI + 5] = OffsetV + 1;
 		}
 
 		if (name && strlen(name) > 0) {

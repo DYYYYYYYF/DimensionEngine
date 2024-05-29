@@ -1,6 +1,7 @@
 #include "RenderViewSystem.hpp"
 
 #include "Containers/THashTable.hpp"
+#include "Containers/TString.hpp"
 #include "Core/EngineLogger.hpp"
 #include "Core/DMemory.hpp"
 #include "Renderer/RendererFrontend.hpp"
@@ -55,6 +56,11 @@ bool RenderViewSystem::Create(const RenderViewConfig& config) {
 		return false;
 	}
 
+	if (!config.name || strlen(config.name) < 1) {
+		UL_ERROR("RenderViewSystem::Create() name is required.");
+		return false;
+	}
+
 	unsigned short ID = INVALID_ID_U16;
 	Lookup.Get(config.name, &ID);
 	if (ID != INVALID_ID_U16) {
@@ -77,7 +83,7 @@ bool RenderViewSystem::Create(const RenderViewConfig& config) {
 	}
 
 	// TODO: Assign these function pointers to known functions based on the view type.
-	// TODO: Refactory pattern.
+	// TODO: Refactor pattern.
 	if (config.type == RenderViewKnownType::eRender_View_Known_Type_World) {
 		RegisteredViews[ID] = new RenderViewWorld();
 	}
@@ -88,6 +94,7 @@ bool RenderViewSystem::Create(const RenderViewConfig& config) {
 	IRenderView* View = RegisteredViews[ID];
 	View->ID = ID;
 	View->Type = config.type;
+	View->Name = StringCopy(config.name);
 	View->CustomShaderName = config.custom_shader_name;
 	View->RenderpassCount = config.pass_count;
 	View->Passes.resize(View->RenderpassCount);
