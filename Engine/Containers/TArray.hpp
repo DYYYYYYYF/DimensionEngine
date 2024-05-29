@@ -50,7 +50,9 @@ public:
 		Platform::PlatformCopyMemory(TempMemory, ArrayMemory, Length * Stride);
 		Platform::PlatformFree(ArrayMemory, false);
 
-		Length = size;
+		if (size > 0) {
+			Length = size;
+		}
 		Capacity = NewCapacity;
 		ArrayMemory = TempMemory;
 	}
