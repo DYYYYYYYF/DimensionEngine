@@ -19,6 +19,7 @@
 #include "Systems/ResourceSystem.h"
 #include "Systems/ShaderSystem.h"
 #include "Systems/CameraSystem.h"
+#include "Systems/RenderViewSystem.hpp"
 
 #include "Math/GeometryUtils.hpp"
 #include "Resources/Mesh.hpp"
@@ -35,8 +36,9 @@ struct SApplicationState {
 	double last_time;
 	SClock clock;
 
+	// Temp
 	std::vector<Mesh> Meshes;
-	Geometry* TestUIGeometry = nullptr;
+	std::vector<Mesh> UIMeshes;
 };
 
 static bool Initialized = false;
@@ -150,6 +152,44 @@ bool ApplicationCreate(SGame* game_instance){
 		return false;
 	}
 
+	SRenderViewSystemConfig RenderViewSysConfig;
+	RenderViewSysConfig.max_view_count = 255;
+	if (!RenderViewSystem::Initialize(Renderer, RenderViewSysConfig)) {
+		UL_FATAL("Render view system failed to intialize!");
+		return false;
+	}
+
+	// Load render views.
+	RenderViewConfig OpaqueWorldConfig;
+	OpaqueWorldConfig.type = RenderViewKnownType::eRender_View_Known_Type_World;
+	OpaqueWorldConfig.width = 0;
+	OpaqueWorldConfig.height = 0;
+	OpaqueWorldConfig.name = "World_Opaque";
+	OpaqueWorldConfig.pass_count = 1;
+	std::vector<RenderViewPassConfig> Passes(1);
+	Passes[0].name = "Renderpass.Builtin.World";
+	OpaqueWorldConfig.passes = Passes;
+	OpaqueWorldConfig.view_matrix_source = RenderViewViewMatrixtSource::eRender_View_View_Matrix_Source_Scene_Camera;
+	if (!RenderViewSystem::Create(OpaqueWorldConfig)) {
+		UL_FATAL("Failed to create world view. Aborting application.");
+		return false;
+	}
+
+	RenderViewConfig UIViewConfig;
+	UIViewConfig.type = RenderViewKnownType::eRender_View_Known_Type_UI;
+	UIViewConfig.width = 0;
+	UIViewConfig.height = 0;
+	UIViewConfig.name = "UI";
+	UIViewConfig.pass_count = 1;
+	std::vector<RenderViewPassConfig> UIPasses(1);
+	UIPasses[0].name = "Renderpass.Builtin.UI";
+	UIViewConfig.passes = UIPasses;
+	UIViewConfig.view_matrix_source = RenderViewViewMatrixtSource::eRender_View_View_Matrix_Source_Scene_Camera;
+	if (!RenderViewSystem::Create(UIViewConfig)) {
+		UL_FATAL("Failed to create ui view. Aborting application.");
+		return false;
+	}
+
 	// TODO: Temp
 	AppState.Meshes.resize(10);
 	Mesh* CubeMesh = &AppState.Meshes[0];
@@ -259,7 +299,12 @@ bool ApplicationCreate(SGame* game_instance){
 	UIConfig.indices = UIIndices;
 
 	// Get UI geometry from config.
-	AppState.TestUIGeometry = GeometrySystem::AcquireFromConfig(UIConfig, true);
+	Mesh UIMesh;
+	UIMesh.geometry_count = 1;
+	UIMesh.geometries = (Geometry**)Memory::Allocate(sizeof(Geometry*), MemoryType::eMemory_Type_Array);
+	UIMesh.geometries[0] = GeometrySystem::AcquireFromConfig(UIConfig, true);
+	UIMesh.Transform = Transform();
+	AppState.UIMeshes.push_back(UIMesh);
 
 	// Init Game
 	if (!AppState.game_instance->initialize(AppState.game_instance)) {
@@ -308,10 +353,6 @@ bool ApplicationRun() {
 				break;
 			}
 
-			// TODO: Refactor packet
-			SRenderPacket Packet;
-			Packet.delta_time = DeltaTime;
-
 			size_t MeshCount = AppState.Meshes.size();
 			if (MeshCount > 0) {
 				// Perform a small rotation on the first mesh.
@@ -325,37 +366,37 @@ bool ApplicationRun() {
 				if (MeshCount > 2) {
 					AppState.Meshes[2].Transform.Rotate(Rotation);
 				}
-
-				// Iterate all meshes and add them to the packet's geometries collection.
-				for (size_t i = 0; i < MeshCount; ++i) {
-					for (size_t j = 0; j < AppState.Meshes[i].geometry_count; ++j) {
-						GeometryRenderData Data;
-						Data.geometry = AppState.Meshes[i].geometries[j];
-						Data.model = AppState.Meshes[i].Transform.GetWorldTransform();
-						Packet.geometries.push_back(Data);
-					}
-				}
-
-				Packet.geometry_count = (uint32_t)Packet.geometries.size();
 			}
-			else {
-				Packet.geometry_count = 0;
-				Packet.geometries.clear();
+
+			// TODO: Refactor packet creation.
+			SRenderPacket Packet;
+			Packet.delta_time = DeltaTime;
+
+			// TODO: Read from config.
+			Packet.view_count = 2;
+			std::vector<RenderViewPacket> Views;
+			Views.resize(Packet.view_count);
+			Packet.views = Views;
+
+			// World
+			MeshPacketData WorldMeshData;
+			WorldMeshData.mesh_count = (uint32_t)AppState.Meshes.size();
+			WorldMeshData.meshes = AppState.Meshes;
+			if (!RenderViewSystem::BuildPacket(RenderViewSystem::Get("World_Opaque"), &WorldMeshData, &Packet.views[0])) {
+				UL_ERROR("Failed to build packet for view 'World_Opaque'.");
+				return false;
 			}
-			
-			GeometryRenderData TestUIRender;
-			TestUIRender.geometry = AppState.TestUIGeometry;
-			TestUIRender.model = Matrix4::Identity();
-			TestUIRender.model.SetTranslation(Vec3(0, 0, 0));
-			Packet.ui_geometries = &TestUIRender;
-			Packet.ui_geometry_count = 1;
+
+			// UI
+			MeshPacketData UIMeshData;
+			UIMeshData.mesh_count = (uint32_t)AppState.UIMeshes.size();
+			UIMeshData.meshes = AppState.UIMeshes;
+			if (!RenderViewSystem::BuildPacket(RenderViewSystem::Get("UI"), &UIMeshData, &Packet.views[1])) {
+				UL_ERROR("Failed to build packet for view 'UI'.");
+				return false;
+			}
 
 			Renderer->DrawFrame(&Packet);
-
-			// Clean up
-			if (Packet.geometries.size() > 0) {
-				Packet.geometries.clear();
-			}
 
 			// Figure FPS
 			double FrameEndTime = Platform::PlatformGetAbsoluteTime();
@@ -502,9 +543,7 @@ bool ApplicationOnResized(unsigned short code, void* sender, void* listener_inst
 				uint32_t UIIndices[6] = { 0, 1, 2, 0, 3, 1 };
 				UIConfig.indices = UIIndices;
 
-				// Get UI geometry from config.
-				AppState.TestUIGeometry = GeometrySystem::AcquireFromConfig(UIConfig, true);
-
+				AppState.UIMeshes[0].geometries[0] = GeometrySystem::AcquireFromConfig(UIConfig, true);
 				AppState.game_instance->on_resize(AppState.game_instance, Width, Height);
 				Renderer->OnResize(Width, Height);
 			}

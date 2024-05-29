@@ -14,6 +14,7 @@ void VulkanRenderPass::Create(VulkanContext* context,
 	Stencil = stencil;
 	HasPrevPass = has_prev_pass;
 	HasNextPass = has_next_pass;
+	Context = context;
 
 	// Main subpass
 	vk::SubpassDescription Subpass;
@@ -126,7 +127,9 @@ void VulkanRenderPass::Destroy(VulkanContext* context) {
 	}
 }
 
-void VulkanRenderPass::Begin(VulkanCommandBuffer* command_buffer, RenderTarget* target) {
+void VulkanRenderPass::Begin(RenderTarget* target) {
+	VulkanCommandBuffer* CmdBuffer = &Context->GraphicsCommandBuffers[Context->ImageIndex];
+
 	vk::Rect2D Area;
 	Area.setOffset({ (int32_t)RenderArea.x, (int32_t)RenderArea.y })
 		.setExtent({ (uint32_t)RenderArea.z, (uint32_t)RenderArea.w });
@@ -159,11 +162,12 @@ void VulkanRenderPass::Begin(VulkanCommandBuffer* command_buffer, RenderTarget* 
 
 	BeginInfo.setPClearValues(BeginInfo.clearValueCount > 0 ? ClearValues : nullptr);
 
-	command_buffer->CommandBuffer.beginRenderPass(BeginInfo, vk::SubpassContents::eInline);
-	command_buffer->State = VulkanCommandBufferState::eCommand_Buffer_State_In_Renderpass;
+	CmdBuffer->CommandBuffer.beginRenderPass(BeginInfo, vk::SubpassContents::eInline);
+	CmdBuffer->State = VulkanCommandBufferState::eCommand_Buffer_State_In_Renderpass;
 }
 
-void VulkanRenderPass::End(VulkanCommandBuffer* command_buffer) {
-	command_buffer->CommandBuffer.endRenderPass();
-	command_buffer->State = VulkanCommandBufferState::eCommand_Buffer_State_Recording;
+void VulkanRenderPass::End() {
+	VulkanCommandBuffer* CmdBuffer = &Context->GraphicsCommandBuffers[Context->ImageIndex];
+	CmdBuffer->CommandBuffer.endRenderPass();
+	CmdBuffer->State = VulkanCommandBufferState::eCommand_Buffer_State_Recording;
 }

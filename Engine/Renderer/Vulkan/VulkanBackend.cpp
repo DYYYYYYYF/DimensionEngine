@@ -858,17 +858,17 @@ void VulkanBackend::DestroyGeometry(Geometry* geometry) {
 	}
 }
 
-void VulkanBackend::DrawGeometry(GeometryRenderData geometry) {
+void VulkanBackend::DrawGeometry(GeometryRenderData* geometry) {
 	// Ignore non-uploaded geometries.
-	if (geometry.geometry == nullptr) {
+	if (geometry->geometry == nullptr) {
 		return;
 	}
 
-	if (geometry.geometry->InternalID == INVALID_ID) {
+	if (geometry->geometry->InternalID == INVALID_ID) {
 		return;
 	}
 
-	GeometryData* BufferData = &Context.Geometries[geometry.geometry->InternalID];
+	GeometryData* BufferData = &Context.Geometries[geometry->geometry->InternalID];
 	VulkanCommandBuffer* CmdBuffer = &Context.GraphicsCommandBuffers[Context.ImageIndex];
 
 	// Bind vertex buffer at offset
@@ -887,14 +887,12 @@ void VulkanBackend::DrawGeometry(GeometryRenderData geometry) {
 }
 
 bool VulkanBackend::BeginRenderpass(IRenderpass* pass, RenderTarget* target) {
-	VulkanCommandBuffer* CmdBuffer = &Context.GraphicsCommandBuffers[Context.ImageIndex];
-	pass->Begin(CmdBuffer, target);
+	pass->Begin(target);
 	return true;
 }
 
 bool VulkanBackend::EndRenderpass(IRenderpass* pass) {
-	VulkanCommandBuffer* CmdBuffer = &Context.GraphicsCommandBuffers[Context.ImageIndex];
-	pass->End(CmdBuffer);
+	pass->End();
 	return true;
 }
 

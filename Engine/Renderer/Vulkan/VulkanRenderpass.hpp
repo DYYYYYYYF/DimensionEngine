@@ -18,8 +18,8 @@ public:
 		bool has_prev_pass, bool has_next_pass) override;
 	void Destroy(VulkanContext* context) override;
 
-	void Begin(VulkanCommandBuffer* command_buffer, RenderTarget* target) override;
-	void End(VulkanCommandBuffer* command_buffer) override;
+	void Begin(RenderTarget* target) override;
+	void End() override;
 
 	vk::RenderPass GetRenderPass() { return *(vk::RenderPass*)&Renderpass; }
 
@@ -31,6 +31,8 @@ public:
 	void SetY(float y) { RenderArea.y = y; }
 
 private:
+	VulkanContext* Context;
+
 	float Depth;
 	uint32_t Stencil;
 

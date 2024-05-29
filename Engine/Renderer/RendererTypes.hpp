@@ -7,6 +7,9 @@
 #include <functional>
 
 struct RenderpassConfig;
+struct Mesh;
+class IRenderer;
+class IRenderpass;
 
 enum RendererBackendType {
 	eRenderer_Backend_Type_Vulkan,
@@ -21,19 +24,19 @@ enum RenderpassClearFlags {
 	eRenderpass_Clear_Stencil_Buffer = 0x04
 };
 
-struct SRenderPacket {
-	double delta_time;
-
-	uint32_t geometry_count;
-	std::vector<struct GeometryRenderData> geometries;
-
-	uint32_t ui_geometry_count;
-	struct GeometryRenderData* ui_geometries = nullptr;
-};
-
 struct GeometryRenderData {
 	Matrix4 model;
 	class Geometry* geometry = nullptr;
+};
+
+struct SRenderViewPassConfig {
+	const char* name = nullptr;
+};
+
+struct SRenderPacket {
+	double delta_time;
+	unsigned short view_count;
+	std::vector<struct RenderViewPacket> views;
 };
 
 struct RenderTarget {
@@ -41,6 +44,11 @@ struct RenderTarget {
 	unsigned char attachment_count;
 	std::vector<class Texture*> attachments;
 	void* internal_framebuffer = nullptr;
+};
+
+struct MeshPacketData {
+	uint32_t mesh_count;
+	std::vector<Mesh> meshes;
 };
 
 struct RenderBackendConfig {

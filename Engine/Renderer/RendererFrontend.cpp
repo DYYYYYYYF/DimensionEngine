@@ -11,6 +11,7 @@
 #include "Systems/ShaderSystem.h"
 #include "Systems/TextureSystem.h"
 #include "Systems/CameraSystem.h"
+#include "Systems/RenderViewSystem.hpp"
 
 // TODO: temp
 #include "Core/Event.hpp"
@@ -115,17 +116,6 @@ bool IRenderer::Initialize(const char* application_name, struct SPlatformState* 
 	ResourceSystem::Unload(&ConfigResource);
 	UISHaderID = ShaderSystem::GetID(BUILTIN_SHADER_NAME_UI);
 
-	// World projection/view
-	NearClip = 0.01f;
-	FarClip = 1000.0f;
-	Projection = Matrix4::Perspective(Deg2Rad(45.0f), 1280.0f / 720.0f, 0.1f, 1000.0f, true);
-
-	// UI projection/view
-	UIProjection = Matrix4::Orthographic(0, 1280.0f, 720.0f, 0, -100.f, 100.f);
-	UIView = Matrix4::Identity();
-
-	AmbientColor = Vec4(0.25, 0.25, 0.25, 1.0f);
-
 	return true;
 }
 
@@ -168,8 +158,9 @@ bool IRenderer::DrawFrame(SRenderPacket* packet) {
 		if (FrameSinceResize >= 30) {
 			float Width = (float)FramebufferWidth;
 			float Height = (float)FramebufferHeight;
-			Projection = Matrix4::Perspective(Deg2Rad(45.0f), Width / (float)Height, NearClip, FarClip, true);
-			UIProjection = Matrix4::Orthographic(0, (float)Width, (float)Height, 0, -100.0f, 100.0f);
+
+			RenderViewSystem::OnWindowResize(FramebufferWidth, FramebufferHeight);
+
 			Backend->Resize(
 				static_cast<unsigned short>(Width), 
 				static_cast<unsigned short>(Height)
@@ -184,122 +175,16 @@ bool IRenderer::DrawFrame(SRenderPacket* packet) {
 		}
 	}
 
-	// TOD): Views
-	WorldRenderpass->SetRenderArea(Vec4(0, 0, (float)FramebufferWidth, (float)FramebufferHeight));
-	UIRenderpass->SetRenderArea(Vec4(0, 0, (float)FramebufferWidth, (float)FramebufferHeight));
-
-	// Camera
-	if (ActiveWorldCamera == nullptr) {
-		ActiveWorldCamera = CameraSystem::GetDefault();
-	}
-
-	Matrix4 View = ActiveWorldCamera->GetViewMatrix();
-	Vec3 ViewPosition = ActiveWorldCamera->GetPosition();
-
 	if (Backend->BeginFrame(packet->delta_time)) {
 		unsigned char AttachmentIndex = Backend->GetWindowAttachmentIndex();
 
-		// World render pass.
-		if (!Backend->BeginRenderpass(WorldRenderpass, &WorldRenderpass->Targets[AttachmentIndex])) {
-			UL_ERROR("Backend begin eButilin_Renderpass_World renderpass failed. Application quit now.");
-			return false;
-		}
-		
-		// Update UBO buffer.
-		if (!ShaderSystem::UseByID(MaterialShaderID)) {
-			UL_ERROR("Failed to use material shader. Render frame failed.");
-			return false;
-		}
-
-		// Apply globals.
-		if (!MaterialSystem::ApplyGlobal(MaterialShaderID, Projection, View, AmbientColor, ViewPosition)) {
-			UL_ERROR("Failed to apply globals to material shader. Render frame failed.");
-			return false;
-		}
-
-		// Draw geometries.
-		for (uint32_t i = 0; i < packet->geometry_count; ++i) {
-			Material* mat = nullptr;
-			if (packet->geometries[i].geometry->Material) {
-				mat = packet->geometries[i].geometry->Material;
+		// Render each view.
+		for (uint32_t i = 0; i < packet->view_count; ++i) {
+			if (!RenderViewSystem::OnRender(packet->views[i].view, &packet->views[i], Backend->GetFrameNum(), AttachmentIndex)) {
+				UL_ERROR("Error rendering view index '%i'.", i);
+				return false;
 			}
-			else {
-				mat = MaterialSystem::GetDefaultMaterial();
-			}
-
-			// Apply the material if it hasn't already been this frame. This keeps the
-			// same material from being updated multiple times.
-			bool IsNeedUpdate = (mat->RenderFrameNumer != Backend->GetFrameNum());
-			if (!MaterialSystem::ApplyInstance(mat, IsNeedUpdate)) {
-				UL_ERROR("Failed to apply material '%s'. Skipping draw.", mat->Name);
-				continue;
-			}
-			else {
-				// Sync the frame number.
-				mat->RenderFrameNumer = (uint32_t)Backend->GetFrameNum();
-			}
-
-			// Apply the locals.
-			MaterialSystem::ApplyLocal(mat, packet->geometries[i].model);
-
-			Backend->DrawGeometry(packet->geometries[i]);
 		}
-		
-		if (!Backend->EndRenderpass(WorldRenderpass)) {
-			UL_ERROR("Backend end eButilin_Renderpass_World renderpass failed. Application quit now.");
-			return false;
-		}
-		// End world renderpass
-
-		// UI renderpass
-		if (!Backend->BeginRenderpass(UIRenderpass, &UIRenderpass->Targets[AttachmentIndex])) {
-			UL_ERROR("Backend begin eButilin_Renderpass_UI renderpass failed. Application quit now.");
-			return false;
-		}
-
-		// Update UI buffer.
-		if (!ShaderSystem::UseByID(UISHaderID)) {
-			UL_ERROR("Failed to use ui shader. Render frame failed.");
-			return false;
-		}
-
-		// Apply globals.
-		if (!MaterialSystem::ApplyGlobal(UISHaderID, UIProjection, UIView, AmbientColor, ViewPosition)) {
-			UL_ERROR("Failed to apply globals to ui shader. Render frame failed.");
-			return false;
-		}
-
-		// Draw ui geometries.
-		for (uint32_t i = 0; i < packet->ui_geometry_count; ++i) {
-			Material* Mat = nullptr;
-			if (packet->ui_geometries[i].geometry->Material) {
-				Mat = packet->ui_geometries[i].geometry->Material;
-			}
-			else {
-				Mat = MaterialSystem::GetDefaultMaterial();
-			}
-
-			// Apply the material
-			bool IsNeedUpdate = (Mat->RenderFrameNumer != Backend->GetFrameNum());
-			if (!MaterialSystem::ApplyInstance(Mat, IsNeedUpdate)) {
-				UL_ERROR("Failed to apply ui '%s'. Skipping draw.", Mat->Name);
-				continue;
-			}
-			else {
-				Mat->RenderFrameNumer = (uint32_t)Backend->GetFrameNum();
-			}
-
-			// Apply the locals.
-			MaterialSystem::ApplyLocal(Mat, packet->ui_geometries[i].model);
-
-			Backend->DrawGeometry(packet->ui_geometries[i]);
-		}
-
-		if (!Backend->EndRenderpass(UIRenderpass)) {
-			UL_ERROR("Backend end eButilin_Renderpass_UI renderpass failed. Application quit now.");
-			return false;
-		}
-		// End UI renderpass
 
 		// End frame
 		bool result = Backend->EndFrame(packet->delta_time);
@@ -346,6 +231,18 @@ bool IRenderer::CreateGeometry(Geometry* geometry, uint32_t vertex_size, uint32_
 
 void IRenderer::DestroyGeometry(Geometry* geometry) {
 	Backend->DestroyGeometry(geometry);
+}
+
+void IRenderer::DrawGeometry(GeometryRenderData* data) {
+	Backend->DrawGeometry(data);
+}
+
+bool IRenderer::BeginRenderpass(IRenderpass* pass, RenderTarget* target) {
+	return Backend->BeginRenderpass(pass, target);
+}
+
+bool IRenderer::EndRenderpass(IRenderpass* pass) {
+	return Backend->EndRenderpass(pass);
 }
 
 IRenderpass* IRenderer::GetRenderpass(const char* name) {

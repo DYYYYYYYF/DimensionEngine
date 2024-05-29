@@ -1,18 +1,21 @@
 #pragma once
 
-#include <vector>
 #include "Renderer/RendererTypes.hpp"
+#include <vector>
 
 enum ShaderStage;
 struct SPlatformState;
 struct ShaderUniform;
+struct GeometryRenderData;
+struct RenderTarget;
+struct TextureMap;
+struct RenderBackendConfig;
 
 class Texture;
 class Material;
 class Geometry;
 class Shader;
 class IRenderpass;
-struct TextureMap;
 
 enum BuiltinRenderpass : unsigned char{
 	eButilin_Renderpass_World = 0x01,
@@ -22,12 +25,12 @@ enum BuiltinRenderpass : unsigned char{
 class IRendererBackend {
 public:
 	// Generic
-	virtual bool Initialize(const RenderBackendConfig* config, unsigned char* out_window_render_target_count, struct SPlatformState* plat_state) = 0;
+	virtual bool Initialize(const RenderBackendConfig* config, unsigned char* out_window_render_target_count, SPlatformState* plat_state) = 0;
 	virtual void Shutdown() = 0;
 	virtual bool BeginFrame(double delta_time) = 0;
 	virtual bool EndFrame(double delta_time) = 0;
 	virtual void Resize(unsigned short width, unsigned short height) = 0;
-	virtual void DrawGeometry(GeometryRenderData geometry) = 0;
+	virtual void DrawGeometry(GeometryRenderData* geometry) = 0;
 
 	// Texture
 	virtual void CreateTexture(const unsigned char* pixels, Texture* texture) = 0;

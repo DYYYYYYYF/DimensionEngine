@@ -34,8 +34,8 @@ public:
 		bool has_prev_pass, bool has_next_pass) = 0;
 	virtual void Destroy(VulkanContext* context) = 0;
 
-	virtual void Begin(VulkanCommandBuffer* command_buffer, RenderTarget* target) = 0;
-	virtual void End(VulkanCommandBuffer* command_buffer) = 0;
+	virtual void Begin(RenderTarget* target) = 0;
+	virtual void End() = 0;
 
 public:
 	void SetRenderArea(const Vec4& area) { RenderArea = area; }

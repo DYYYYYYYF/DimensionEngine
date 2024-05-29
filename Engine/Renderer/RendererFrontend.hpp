@@ -40,6 +40,30 @@ public:
 
 public:
 	/**
+	 * @beief Draws the given geometry. Should only be called inside a renderpas, within a frame.
+	 * 
+	 * @param data The render data of the geometry to be drawn.
+	 */
+	virtual void DrawGeometry(GeometryRenderData* data);
+
+	/**
+	 * @brief Begins the given renderpass.
+	 * 
+	 * @param pass A pointer to the renderpass to begin.
+	 * @param target A pointer to the render target to be used.
+	 * @return True on success.
+	 */
+	virtual bool BeginRenderpass(IRenderpass* pass, RenderTarget* target);
+
+	/**
+	 * @beief End the given renderpass.
+	 * 
+	 * @param pass A pointer to the renderpass to begin.
+	 * @return True on success.
+	 */
+	virtual bool EndRenderpass(IRenderpass* pass);
+
+	/**
 	 * @brief Obtains a pointer of the renderpass with the given name.
 	 *
 	 * @param name The name of the renderpass whose identifier to obtain.
@@ -164,6 +188,7 @@ public:
 	virtual void DestroyRenderTarget(RenderTarget* target, bool free_internal_memory) ;
 	virtual void CreateRenderpass(IRenderpass* out_renderpass, float depth, uint32_t stencil, bool has_prev_pass, bool has_next_pass) ;
 	virtual void DestroyRenderpass(IRenderpass* pass) ;
+	virtual IRendererBackend* GetRenderBackend() { return Backend; }
 
 private:
 	virtual void RegenerateRenderTargets();
@@ -172,20 +197,8 @@ protected:
 	RendererBackendType BackendType;
 	class IRendererBackend* Backend;
 
-	Camera* ActiveWorldCamera;
-
-	// Projection perspective
-	Matrix4 Projection;
-	Matrix4 UIProjection;
-	Matrix4 UIView;
-
-	float NearClip;
-	float FarClip;
-
 	uint32_t MaterialShaderID;
 	uint32_t UISHaderID;
-
-	Vec4 AmbientColor;
 
 	// Renderpass
 	unsigned char WindowRenderTargetCount;
