@@ -227,7 +227,7 @@ LRESULT CALLBACK win32_process_message(HWND hwnd, UINT32 msg, WPARAM w_param, LP
 		case WM_LBUTTONUP:
 		case WM_MBUTTONUP:
 		case WM_RBUTTONUP: {
-			bool pressed = msg == WM_LBUTTONDOWN || WM_RBUTTONDOWN || WM_MBUTTONDOWN;
+			bool pressed = msg == WM_LBUTTONDOWN || msg == WM_RBUTTONDOWN || msg == WM_MBUTTONDOWN;
 			Buttons MouseButton = eButton_Max;
 			switch (msg) {
 			case WM_LBUTTONDOWN:
@@ -239,11 +239,13 @@ LRESULT CALLBACK win32_process_message(HWND hwnd, UINT32 msg, WPARAM w_param, LP
 				MouseButton = eButton_Middle;
 				break;
 			case WM_RBUTTONDOWN:
+				MouseButton = eButton_Right;
+				break;
 			case WM_RBUTTONUP:
 				MouseButton = eButton_Right;
 				break;
 			}
-
+			printf("%s", pressed ? "true" : "false");
 			// Pass over mouse button to input subsystem.
 			if (MouseButton != eButton_Max) {
 				Core::InputProcessButton(MouseButton, pressed);

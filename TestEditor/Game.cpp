@@ -61,6 +61,19 @@ bool GameUpdate(SGame* game_instance, float delta_time) {
 		State->WorldCamera->Reset();
 	}
 
+	int px, py, cx, cy;
+	Core::InputGetMousePosition(cx, cy);
+	Core::InputGetPreviousMousePosition(px, py);
+	float MouseMoveSpeed = 0.005f;
+	if (Core::InputeIsButtonDown(eButton_Right)) {
+		if (cx != px) {
+			State->WorldCamera->RotateYaw((cx - px) * MouseMoveSpeed);
+		}
+		if (cy != py) {
+			State->WorldCamera->RotatePitch((cy - py) * MouseMoveSpeed);
+		}
+	}
+
 	return true;
 }
 
