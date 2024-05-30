@@ -245,7 +245,7 @@ LRESULT CALLBACK win32_process_message(HWND hwnd, UINT32 msg, WPARAM w_param, LP
 				MouseButton = eButton_Right;
 				break;
 			}
-			printf("%s", pressed ? "true" : "false");
+
 			// Pass over mouse button to input subsystem.
 			if (MouseButton != eButton_Max) {
 				Core::InputProcessButton(MouseButton, pressed);
