@@ -58,12 +58,11 @@ bool ApplicationCreate(SGame* game_instance){
 	static EngineLogger* GlobalLogger  = new EngineLogger();
 	Core::InputInitialize();
 
-	UL_INFO("Test Info");
-	UL_DEBUG("Test Debug");
-	UL_ERROR("Test Error");
-	UL_WARN("Test Warn");
-	UL_FATAL("Test Fatal");
-
+	LOG_INFO("Test Info");
+	LOG_DEBUG("Test Debug");
+	LOG_ERROR("Test Error");
+	LOG_WARN("Test Warn");
+	LOG_FATAL("Test Fatal");
 
 	AppState.is_running = true;
 	AppState.is_suspended = false;
