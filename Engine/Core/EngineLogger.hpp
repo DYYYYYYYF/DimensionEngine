@@ -16,9 +16,6 @@ public:
         UL_DEBUG(#expr "is null!"); \
         exit(-1); \
 }
-#else
-#define ASSERT(expr) {}
-#endif //ifdef DEBUG
 
 #ifndef LOG_DEBUG
 #define LOG_DEBUG(...) \
@@ -49,5 +46,34 @@ public:
     Platform::PlatformConsoleWrite(__VA_ARGS__"\n", 0);  \
     UL_FATAL(__VA_ARGS__);
 #endif
+
+#else
+
+#ifndef LOG_DEBUG
+#define LOG_DEBUG(...) 
+#endif
+
+#ifndef LOG_INFO
+#define LOG_INFO(...) \
+    UL_INFO(__VA_ARGS__);
+#endif
+
+#ifndef LOG_WARN
+#define LOG_WARN(...) \
+    UL_WARN(__VA_ARGS__);
+#endif
+
+#ifndef LOG_ERROR
+#define LOG_ERROR(...) \
+    UL_ERROR(__VA_ARGS__);
+#endif
+
+#ifndef LOG_FATAL
+#define LOG_FATAL(...) \
+    UL_FATAL(__VA_ARGS__);
+#endif
+
+#define ASSERT(expr) {}
+#endif //ifdef DEBUG
 
 #define CoreLog UL_INFO
