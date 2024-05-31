@@ -27,9 +27,10 @@ public:
 	static void Shutdown();
 
 	static Texture* Acquire(const char* name, bool auto_release);
+	static Texture* AcquireCube(const char* name, bool auto_release);
+	static Texture* AcquireWriteable(const char* name, uint32_t width, uint32_t height, unsigned char channel_count, bool has_transparency);
 	static void Release(const char* name);
 
-	static Texture* AcquireWriteable(const char* name, uint32_t width, uint32_t height, unsigned char channel_count, bool has_transparency);
 	static Texture* WrapInternal(const char* name, uint32_t width, uint32_t height, unsigned char channel_count,
 		bool has_transparency, bool is_writeable, bool register_texture, void* internal_data);
 	static bool SetInternal(Texture* t, void* internal_data);
@@ -41,13 +42,14 @@ public:
 	static Texture* GetDefaultSpecularTexture();
 	static Texture* GetDefaultNormalTexture();
 
+private:
 	static bool LoadTexture(const char* name, Texture* texture);
+	static bool LoadCubeTexture(const char* name, const char texture_names[6][TEXTURE_NAME_MAX_LENGTH], Texture* t);
 	static void DestroyTexture(Texture* t);
 
-private:
 	static bool CreateDefaultTexture();
 	static void DestroyDefaultTexture();
-	static bool ProcessTextureReference(const char* name, short reference_diff, bool auto_release, bool skip_load, uint32_t* out_texture_id);
+	static bool ProcessTextureReference(const char* name, TextureType type, short reference_diff, bool auto_release, bool skip_load, uint32_t* out_texture_id);
 
 private:
 	static STextureSystemConfig TextureSystemConfig;

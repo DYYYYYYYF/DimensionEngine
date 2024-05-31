@@ -8,7 +8,8 @@ enum TextureUsage {
 	eTexture_Usage_Unknown = 0x00,
 	eTexture_Usage_Map_Diffuse = 0x01,
 	eTexture_Usage_Map_Specular = 0x02,
-	eTexture_Usage_Map_Normal = 0x03
+	eTexture_Usage_Map_Normal = 0x03,
+	eTexture_Usage_Map_Cubemap = 0x04
 };
 
 enum TextureFilter {
@@ -30,6 +31,11 @@ enum TextureFlagBits{
 };
 typedef unsigned char TextureFlag;
 
+enum TextureType {
+	eTexture_Type_2D,
+	eTexture_Type_Cube
+};
+
 struct TextureMap {
 	class Texture* texture = nullptr;
 	TextureUsage usage;
@@ -48,6 +54,7 @@ public:
 
 public:
 	uint32_t Id;
+	TextureType Type;
 	uint32_t Width;
 	uint32_t Height;
 
@@ -58,4 +65,12 @@ public:
 	uint32_t Generation;
 	char Name[TEXTURE_NAME_MAX_LENGTH];
 	void* InternalData = nullptr;
+};
+
+class Skybox {
+public:
+	TextureMap Cubemap;
+	Geometry* g = nullptr;
+	uint32_t InstanceID;
+	size_t RenderFrameNumber;
 };

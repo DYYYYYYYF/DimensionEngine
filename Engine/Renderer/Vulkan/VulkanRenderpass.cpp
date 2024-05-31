@@ -59,12 +59,17 @@ void VulkanRenderPass::Create(VulkanContext* context,
 	if (IsNeedClearDepth) {
 		DepthAttachment.setFormat(context->Device.GetDepthFormat())
 			.setSamples(vk::SampleCountFlagBits::e1)
-			.setLoadOp(IsNeedClearDepth ? vk::AttachmentLoadOp::eClear : vk::AttachmentLoadOp::eLoad)
 			.setStoreOp(vk::AttachmentStoreOp::eDontCare)
 			.setStencilLoadOp(vk::AttachmentLoadOp::eDontCare)
 			.setStencilStoreOp(vk::AttachmentStoreOp::eDontCare)
 			.setInitialLayout(vk::ImageLayout::eUndefined)
 			.setFinalLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal);
+		if (has_prev_pass) {
+			DepthAttachment.setLoadOp(IsNeedClearDepth ? vk::AttachmentLoadOp::eClear : vk::AttachmentLoadOp::eLoad);
+		}
+		else {
+			DepthAttachment.setLoadOp(vk::AttachmentLoadOp::eDontCare);
+		}
 
 		AttachmentDescriptions.push_back(DepthAttachment);
 		AttachmentDescriptionCount++;
@@ -147,6 +152,9 @@ void VulkanRenderPass::Begin(RenderTarget* target) {
 	bool IsNeedClearColor = (ClearFlags & eRenderpass_Clear_Color_Buffer) != 0;
 	if (IsNeedClearColor) {
 		Memory::Copy(ClearValues[BeginInfo.clearValueCount].color.float32, ClearColor.elements, sizeof(float) * 4);
+		BeginInfo.clearValueCount++;
+	}
+	else {
 		BeginInfo.clearValueCount++;
 	}
 

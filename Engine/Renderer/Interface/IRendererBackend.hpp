@@ -10,6 +10,7 @@ struct GeometryRenderData;
 struct RenderTarget;
 struct TextureMap;
 struct RenderBackendConfig;
+struct ShaderConfig;
 
 class Texture;
 class Material;
@@ -57,7 +58,7 @@ public:
 	virtual unsigned char GetWindowAttachmentIndex() = 0;
 
 	// Shader
-	virtual bool CreateShader(Shader* shader, IRenderpass* pass, unsigned short stage_count, const std::vector<char*>& stage_filenames, std::vector<ShaderStage>& stages) = 0;
+	virtual bool CreateShader(Shader* shader, const ShaderConfig* config, IRenderpass* pass, unsigned short stage_count, const std::vector<char*>& stage_filenames, std::vector<ShaderStage>& stages) = 0;
 	virtual bool DestroyShader(Shader* shader) = 0;
 	virtual bool InitializeShader(Shader* shader) = 0;
 	virtual bool UseShader(Shader* shader) = 0;
@@ -78,10 +79,6 @@ public:
 	size_t GetFrameNum() const { return FrameNum; }
 	void SetFrameNum(size_t num) { FrameNum = num; }
 	void IncreaseFrameNum() { FrameNum++; }
-
-public:
-	// Points to default textures.
-	Texture* DefaultDiffuse = nullptr;
 
 protected:
 	RendererBackendType BackendType;

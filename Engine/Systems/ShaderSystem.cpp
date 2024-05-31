@@ -91,8 +91,6 @@ bool ShaderSystem::Create(ShaderConfig* config) {
 	
 	OutShader->Name = StringCopy(config->name);
 	OutShader->State = eShader_State_Not_Created;
-	OutShader->UseInstances = config->use_instances;
-	OutShader->UseLocals = config->use_local;
 	OutShader->PushConstantsRangeCount = 0;
 	OutShader->BoundInstanceId = INVALID_ID;
 	OutShader->AttributeStride = 0;
@@ -127,7 +125,7 @@ bool ShaderSystem::Create(ShaderConfig* config) {
 		return false;
 	}
 
-	if (!Renderer->CreateRenderShader(OutShader, Pass, config->stage_cout, config->stage_filenames, config->stages)) {
+	if (!Renderer->CreateRenderShader(OutShader, config, Pass, config->stage_cout, config->stage_filenames, config->stages)) {
 		UL_ERROR("Error creating shader.");
 		return false;
 	}
@@ -310,6 +308,12 @@ bool ShaderSystem::ApplyInstance(bool need_update) {
 	return Renderer->ApplyInstanceRenderShader(&Shaders[CurrentShaderID], need_update);
 }
 
+bool ShaderSystem::BindGlobal(uint32_t instance_id) {
+	Shader* s = &Shaders[CurrentShaderID];
+	s->BoundInstanceId = instance_id;
+	return Renderer->BindGlobalsRenderShader(s);
+}
+
 bool ShaderSystem::BindInstance(uint32_t instance_id) {
 	Shader* s = &Shaders[CurrentShaderID];
 	s->BoundInstanceId = instance_id;
@@ -361,11 +365,6 @@ bool ShaderSystem::AddAttribute(Shader* shader, const ShaderAttributeConfig& con
 }
 
 bool ShaderSystem::AddSampler(Shader* shader, ShaderUniformConfig& config) {
-	if (config.scope == eShader_Scope_Instance && !shader->UseInstances) {
-		UL_ERROR("add_sampler cannot add an instance sampler for a shader that does not use instances.");
-		return false;
-	}
-
 	// Samples can't be used for push constants.
 	if (config.scope == eShader_Scope_Local) {
 		UL_ERROR("add_sampler cannot add a sampler at local scope.");
@@ -483,11 +482,6 @@ bool ShaderSystem::AddUniform(Shader* shader, const char* uniform_name, uint32_t
 		Entry.size = is_sampler ? 0 : size;
 	}
 	else {
-		if (Entry.scope == eShader_Scope_Local && !shader->UseLocals) {
-			UL_ERROR("Cannot add a locally-scoped uniform for a shader that does not support locals.");
-			return false;
-		}
-
 		// Push a new aligned range (align to 4, as required by Vulkan spec)
 		Entry.set_index = INVALID_ID_U16;
 		Range r = PaddingAligned(shader->PushConstantsSize, size, 4);

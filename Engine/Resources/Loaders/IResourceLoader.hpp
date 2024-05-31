@@ -7,7 +7,7 @@ public:
 	IResourceLoader() : Id(INVALID_ID), CustomType(nullptr), TypePath(nullptr) {}
 
 public:
-	virtual bool Load(const char* name, Resource* resource) = 0;
+	virtual bool Load(const char* name, void* params, Resource* resource) = 0;
 	virtual void Unload(Resource* resouce) = 0;
 
 public:

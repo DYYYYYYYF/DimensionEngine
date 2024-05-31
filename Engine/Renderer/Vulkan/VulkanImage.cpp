@@ -5,7 +5,7 @@
 #include "Core/DMemory.hpp"
 #include "Core/EngineLogger.hpp"
 
-void VulkanImage::CreateImage(VulkanContext* context, vk::ImageType type, uint32_t width, uint32_t height, vk::Format format, vk::ImageTiling tiling,
+void VulkanImage::CreateImage(VulkanContext* context, TextureType type, uint32_t width, uint32_t height, vk::Format format, vk::ImageTiling tiling,
 	vk::ImageUsageFlags usage, vk::MemoryPropertyFlags memory_flags, bool create_view, vk::ImageAspectFlags view_aspect_flags) {
 	Width = width;
 	Height = height;
@@ -18,16 +18,28 @@ void VulkanImage::CreateImage(VulkanContext* context, vk::ImageType type, uint32
 		.setDepth(1);			// TODO: Support configurable depth
 
 	vk::ImageCreateInfo ImageCreateInfo;
-	ImageCreateInfo.setImageType(vk::ImageType::e2D)
-		.setExtent(Extent)
+	switch (type)
+	{
+	default:
+	case eTexture_Type_2D:
+	case eTexture_Type_Cube:
+		ImageCreateInfo.setImageType(vk::ImageType::e2D);
+		break;
+	}
+
+	ImageCreateInfo.setExtent(Extent)
 		.setMipLevels(4)		// TODO: Support mip mapping
-		.setArrayLayers(1)		// TODO: Support number of layers in the image
+		.setArrayLayers(1)		
 		.setFormat(format)
 		.setTiling(tiling)
 		.setInitialLayout(vk::ImageLayout::eUndefined)
 		.setUsage(usage)
 		.setSamples(vk::SampleCountFlagBits::e1)		// TODO: Configurable sample count
 		.setSharingMode(vk::SharingMode::eExclusive);	// TODO: Configurable sharing mode
+	if (type == TextureType::eTexture_Type_Cube) {
+		ImageCreateInfo.setFlags(vk::ImageCreateFlagBits::eCubeCompatible)
+			.setArrayLayers(6);
+	}
 
 	Image = LogicalDevice.createImage(ImageCreateInfo, context->Allocator);
 	ASSERT(Image);
@@ -53,25 +65,35 @@ void VulkanImage::CreateImage(VulkanContext* context, vk::ImageType type, uint32
 
 	// Create image view
 	if (create_view) {
-		CreateImageView(context, format, view_aspect_flags);
+		CreateImageView(context, type, format, view_aspect_flags);
 	}
 
 }
 
-void VulkanImage::CreateImageView(VulkanContext* context, vk::Format format, vk::ImageAspectFlags view_aspect_flags) {
+void VulkanImage::CreateImageView(VulkanContext* context, TextureType type, vk::Format format, vk::ImageAspectFlags view_aspect_flags) {
 	vk::ImageSubresourceRange Range;
 	Range.setAspectMask(view_aspect_flags)
 		// TODO: Make configurable
 		.setBaseMipLevel(0)
 		.setLevelCount(1)
 		.setBaseArrayLayer(0)
-		.setLayerCount(1);
+		.setLayerCount(type == TextureType::eTexture_Type_Cube ? 6 : 1);
 
 	vk::ImageViewCreateInfo ImageViewCreateInfo;
 	ImageViewCreateInfo.setImage(Image)
-		.setViewType(vk::ImageViewType::e2D)
 		.setFormat(format)
 		.setSubresourceRange(Range);
+
+	switch (type)
+	{
+	default:
+	case eTexture_Type_2D:
+		ImageViewCreateInfo.setViewType(vk::ImageViewType::e2D);
+		break;
+	case eTexture_Type_Cube:
+		ImageViewCreateInfo.setViewType(vk::ImageViewType::eCube);
+		break;
+	}
 
 	ImageView = context->Device.GetLogicalDevice().createImageView(ImageViewCreateInfo, context->Allocator);
 	ASSERT(ImageView);
@@ -93,7 +115,7 @@ void VulkanImage::Destroy(VulkanContext* context) {
 	}
 }
 
-void VulkanImage::TransitionLayout(VulkanContext* context, VulkanCommandBuffer* command_buffer, vk::Format, vk::ImageLayout old_layout, vk::ImageLayout new_layout) {
+void VulkanImage::TransitionLayout(VulkanContext* context, TextureType type, VulkanCommandBuffer* command_buffer, vk::ImageLayout old_layout, vk::ImageLayout new_layout) {
 	vk::ImageMemoryBarrier Barrier;
 	Barrier.setOldLayout(old_layout)
 		.setNewLayout(new_layout)
@@ -106,7 +128,7 @@ void VulkanImage::TransitionLayout(VulkanContext* context, VulkanCommandBuffer* 
 		.setBaseMipLevel(0)
 		.setLevelCount(1)
 		.setBaseArrayLayer(0)
-		.setLayerCount(1);
+		.setLayerCount(type == TextureType::eTexture_Type_Cube ? 6 : 1);
 	Barrier.setSubresourceRange(Range);
 
 	vk::PipelineStageFlags SrcStage;
@@ -142,7 +164,7 @@ void VulkanImage::TransitionLayout(VulkanContext* context, VulkanCommandBuffer* 
 	command_buffer->CommandBuffer.pipelineBarrier(SrcStage, DstStage, vk::DependencyFlagBits::eByRegion, 0, nullptr, 0, nullptr, 1, &Barrier);
 }
 
-void VulkanImage::CopyFromBuffer(VulkanContext* context, vk::Buffer buffer, VulkanCommandBuffer* command_buffer) {
+void VulkanImage::CopyFromBuffer(VulkanContext* context, TextureType type, vk::Buffer buffer, VulkanCommandBuffer* command_buffer) {
 	// Region to copy
 	vk::BufferImageCopy Region;
 	Memory::Zero(&Region, sizeof(vk::BufferImageCopy));
@@ -154,8 +176,8 @@ void VulkanImage::CopyFromBuffer(VulkanContext* context, vk::Buffer buffer, Vulk
 	vk::ImageSubresourceLayers Subresource;
 	Subresource.setAspectMask(vk::ImageAspectFlagBits::eColor)
 		.setMipLevel(0)
-		.setLayerCount(1)
-		.setBaseArrayLayer(0);
+		.setBaseArrayLayer(0)
+		.setLayerCount(type == TextureType::eTexture_Type_Cube ? 6 : 1);
 	Region.setImageSubresource(Subresource);
 
 	// Extent

@@ -18,7 +18,7 @@ MeshLoader::MeshLoader() {
 	TypePath = "Models";
 }
 
-bool MeshLoader::Load(const char* name, Resource* resource) {
+bool MeshLoader::Load(const char* name, void* params, Resource* resource) {
 	if (name == nullptr || resource == nullptr) {
 		return false;
 	}
@@ -96,10 +96,25 @@ void MeshLoader::Unload(Resource* resource) {
 		GeometrySystem::ConfigDispose(Config);
 	}
 
-	Memory::Free(resource->Data, resource->DataSize, MemoryType::eMemory_Type_Array);
-	resource->Data = nullptr;
-	resource->DataSize = 0;
-	resource->DataCount = 0;
+	if (resource->Name) {
+		Memory::Free(resource->Name, sizeof(char) * (strlen(resource->Name) + 1), MemoryType::eMemory_Type_String);
+		resource->Name = nullptr;
+	}
+
+	if (resource->FullPath) {
+		Memory::Free(resource->FullPath, sizeof(char) * (strlen(resource->FullPath) + 1), MemoryType::eMemory_Type_String);
+		resource->FullPath = nullptr;
+	}
+
+	if (resource->Data) {
+		Memory::Free(resource->Data, resource->DataSize * resource->DataCount, MemoryType::eMemory_Type_Texture);
+		resource->Data = nullptr;
+		resource->DataSize = 0;
+		resource->DataCount = 0;
+		resource->LoaderID = INVALID_ID;
+	}
+
+	resource = nullptr;
 }
 
 bool MeshLoader::ImportObjFile(FileHandle* obj_file, const char* out_dsm_filename, std::vector<SGeometryConfig>& out_geometries) {

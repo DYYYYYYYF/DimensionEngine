@@ -8,7 +8,8 @@ bool VulkanPipeline::Create(VulkanContext* context, VulkanRenderPass* renderpass
 	uint32_t attribute_count, vk::VertexInputAttributeDescription* attributes,
 	uint32_t descriptor_set_layout_count, vk::DescriptorSetLayout* descriptor_set_layout,
 	uint32_t stage_count, vk::PipelineShaderStageCreateInfo* stages,
-	vk::Viewport viewport, vk::Rect2D scissor, bool is_wireframe, bool depth_test_enabled,
+	vk::Viewport viewport, vk::Rect2D scissor, FaceCullMode cull_mode,
+	bool is_wireframe, bool depth_test_enabled,
 	uint32_t push_constant_range_count, Range* push_constant_ranges){
 	// Viewport state
 	vk::PipelineViewportStateCreateInfo ViewportState;
@@ -23,12 +24,26 @@ bool VulkanPipeline::Create(VulkanContext* context, VulkanRenderPass* renderpass
 		.setRasterizerDiscardEnable(VK_FALSE)
 		.setPolygonMode(is_wireframe ? vk::PolygonMode::eLine : vk::PolygonMode::eFill)
 		.setLineWidth(1.0f)
-		.setCullMode(vk::CullModeFlagBits::eBack)
 		.setFrontFace(vk::FrontFace::eCounterClockwise)
 		.setDepthBiasEnable(VK_FALSE)
 		.setDepthBiasConstantFactor(0.0f)
 		.setDepthBiasClamp(0.0f)
 		.setDepthBiasSlopeFactor(0.0f);
+	switch (cull_mode)
+	{
+	case eFace_Cull_Mode_None:
+		RasterizerCreateInfo.setCullMode(vk::CullModeFlagBits::eNone);
+		break;
+	case eFace_Cull_Mode_Front:
+		RasterizerCreateInfo.setCullMode(vk::CullModeFlagBits::eFront);
+		break;
+	case eFace_Cull_Mode_Back:
+		RasterizerCreateInfo.setCullMode(vk::CullModeFlagBits::eBack);
+		break;
+	case eFace_Cull_Mode_Front_And_Back:
+		RasterizerCreateInfo.setCullMode(vk::CullModeFlagBits::eFrontAndBack);
+		break;
+	}
 
 	// Multisampling
 	vk::PipelineMultisampleStateCreateInfo MultisamplingCreateInfo;

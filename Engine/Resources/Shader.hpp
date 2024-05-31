@@ -5,10 +5,11 @@
 #include "Containers/THashTable.hpp"
 #include "Math/MathTypes.hpp"
 
-struct TextureMap;
-
 #define BUILTIN_SHADER_NAME_MATERIAL "Shader.Builtin.Material"
+#define BUILTIN_SHADER_NAME_SKYBOX "Shader.Builtin.Skybox"
 #define BUILTIN_SHADER_NAME_UI "Shader.Builtin.UI"
+
+struct TextureMap;
 
 enum ShaderState {
 	eShader_State_Not_Created,
@@ -51,6 +52,13 @@ enum ShaderUniformType {
 	eShader_Uniform_Type_UInt32		= 10U,
 	eShader_Uniform_Type_Sampler	= 11U,
 	eShader_Uniform_Type_Custom		= 12U
+};
+
+enum FaceCullMode {
+	eFace_Cull_Mode_None = 0x0,
+	eFace_Cull_Mode_Front = 0x1,
+	eFace_Cull_Mode_Back = 0x2,
+	eFace_Cull_Mode_Front_And_Back = 0x3,
 };
 
 struct MaterialShaderUniformLocations {
@@ -136,8 +144,7 @@ struct MaterialShaderInstanceUbo {
 
 struct ShaderConfig {
 	char* name = nullptr;
-	bool use_instances;
-	bool use_local;
+	FaceCullMode cull_mode;
 
 	unsigned short attribute_count;
 	std::vector<ShaderAttributeConfig> attributes;
@@ -156,10 +163,8 @@ struct ShaderConfig {
 
 class Shader {
 public:
-	uint32_t ID;
+	uint32_t ID = INVALID_ID;
 	char* Name = nullptr;
-	bool UseInstances;
-	bool UseLocals;
 
 	size_t RenderFrameNumber;
 	size_t RequiredUboAlignment;

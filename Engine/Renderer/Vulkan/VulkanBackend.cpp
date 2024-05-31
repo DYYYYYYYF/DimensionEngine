@@ -317,12 +317,6 @@ void VulkanBackend::Shutdown() {
 		}
 	}
 
-	UL_DEBUG("Destroying render targets.");
-	for (uint32_t i = 0; i < Context.Swapchain.ImageCount; ++i) {
-		DestroyRenderTarget(&Context.WorldRenderTargets[i], true);
-		DestroyRenderTarget(&Context.Swapchain.RenderTargets[i], true);
-	}
-
 	UL_DEBUG("Destroying renderpasses.");
 	for (uint32_t i = 0; i < VULKAN_MAX_REGISTERED_RENDERPASSES; ++i) {
 		if (Context.RegisteredPasses[i].GetID() != INVALID_ID_U16) {
@@ -636,7 +630,7 @@ void VulkanBackend::CreateTexture(const unsigned char* pixels, Texture* texture)
 
 	// NOTE: Lots of assumptions here, different texture types will require.
 	// different options here.
-	Image->CreateImage(&Context, vk::ImageType::e2D, texture->Width, texture->Height, ImageFormat,
+	Image->CreateImage(&Context, texture->Type, texture->Width, texture->Height, ImageFormat,
 		vk::ImageTiling::eOptimal,
 		vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst |
 		vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eColorAttachment,
@@ -688,7 +682,7 @@ void VulkanBackend::CreateWriteableTexture(Texture* tex) {
 	vk::Format ImageFormat = ChannelCountToFormat(tex->ChannelCount, vk::Format::eR8G8B8A8Unorm);
 	// TODO: Lots of assumptions here, different texture types will require.
 	// different options here.
-	Image->CreateImage(&Context, vk::ImageType::e2D, tex->Width,  tex->Height, ImageFormat, vk::ImageTiling::eOptimal,
+	Image->CreateImage(&Context, tex->Type, tex->Width,  tex->Height, ImageFormat, vk::ImageTiling::eOptimal,
 		vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eColorAttachment,
 		vk::MemoryPropertyFlagBits::eDeviceLocal, true, vk::ImageAspectFlagBits::eColor);
 
@@ -713,7 +707,7 @@ void VulkanBackend::ResizeTexture(Texture* tex, uint32_t new_width, uint32_t new
 	vk::Format ImageFormat = ChannelCountToFormat(tex->ChannelCount, vk::Format::eR8G8B8A8Unorm);
 
 	// TODO: Lots of assumptions here, different texture types will require different options here.
-	Image->CreateImage(&Context, vk::ImageType::e2D, new_width, new_height, ImageFormat, vk::ImageTiling::eOptimal,
+	Image->CreateImage(&Context, tex->Type, new_width, new_height, ImageFormat, vk::ImageTiling::eOptimal,
 		vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eColorAttachment,
 		vk::MemoryPropertyFlagBits::eDeviceLocal, true, vk::ImageAspectFlagBits::eColor);
 
@@ -722,7 +716,7 @@ void VulkanBackend::ResizeTexture(Texture* tex, uint32_t new_width, uint32_t new
 
 void VulkanBackend::WriteTextureData(Texture* tex, uint32_t offset, uint32_t size, const unsigned char* pixels) {
 	VulkanImage* Image = (VulkanImage*)tex->InternalData;
-	vk::DeviceSize ImageSize = tex->Width * tex->Height * tex->ChannelCount;
+	vk::DeviceSize ImageSize = tex->Width * tex->Height * tex->ChannelCount * (tex->Type == TextureType::eTexture_Type_2D ? 1 : 6);
 
 	vk::Format ImageFormat = ChannelCountToFormat(tex->ChannelCount, vk::Format::eR8G8B8A8Unorm);
 
@@ -739,13 +733,13 @@ void VulkanBackend::WriteTextureData(Texture* tex, uint32_t offset, uint32_t siz
 	TempBuffer.AllocateAndBeginSingleUse(&Context, Pool);
 
 	// Transition the layout from whatever it is currently to optimal for reciving data.
-	Image->TransitionLayout(&Context, &TempBuffer, ImageFormat, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal);
+	Image->TransitionLayout(&Context, tex->Type, &TempBuffer, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal);
 
 	// Copy the data from the buffer.
-	Image->CopyFromBuffer(&Context, Staging.Buffer, &TempBuffer);
+	Image->CopyFromBuffer(&Context, tex->Type, Staging.Buffer, &TempBuffer);
 
 	// Transition from optimal for data reciept to shader-read-only optimal layout.
-	Image->TransitionLayout(&Context, &TempBuffer, ImageFormat, vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal);
+	Image->TransitionLayout(&Context, tex->Type, &TempBuffer, vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal);
 
 	TempBuffer.EndSingleUse(&Context, Pool, Queue);
 	Staging.Destroy(&Context);
@@ -918,13 +912,7 @@ const uint32_t DESC_SET_INDEX_GLOBAL = 0;
 // The index of the instance descriptor set.
 const uint32_t DESC_SET_INDEX_INSTANCE = 1;
 
-// The index of the UBO binding.
-const uint32_t BINDING_INDEX_UBO = 0;
-
-// The index of the image sampler binding.
-const uint32_t BINDING_INDEX_SAMPLER = 1;
-
-bool VulkanBackend::CreateShader(Shader* shader, IRenderpass* pass, unsigned short stage_count, 
+bool VulkanBackend::CreateShader(Shader* shader, const ShaderConfig* config, IRenderpass* pass, unsigned short stage_count,
 	const std::vector<char*>& stage_filenames, std::vector<ShaderStage>& stages) {
 	shader->InternalData = Memory::Allocate(sizeof(VulkanShader), MemoryType::eMemory_Type_Renderer);
 
@@ -995,51 +983,116 @@ bool VulkanBackend::CreateShader(Shader* shader, IRenderpass* pass, unsigned sho
 
 	// Zero out arrays and counts.
 	Memory::Zero(OutShader->Config.descriptor_sets, sizeof(VulkanDescriptorSetConfig) * 2);
+	OutShader->Config.descriptor_sets[0].sampler_binding_index = INVALID_ID_U8;
+	OutShader->Config.descriptor_sets[1].sampler_binding_index = INVALID_ID_U8;
 
 	// Attributes array.
 	Memory::Zero(OutShader->Config.attributes, sizeof(vk::VertexInputAttributeDescription) * VULKAN_SHADER_MAX_ATTRIBUTES);
 
+	// Get the uniform count.
+	OutShader->GlobalUniformCount = 0;
+	OutShader->GlobalUniformSamplerCount = 0;
+	OutShader->InstanceUniformCount = 0;
+	OutShader->InstanceUniformSamplerCount = 0;
+	OutShader->LocalUniformCount = 0;
+	uint32_t TotalCount = (uint32_t)config->uniforms.size();
+	for (uint32_t i = 0; i < TotalCount; ++i) {
+		switch (config->uniforms[i].scope) {
+		case ShaderScope::eShader_Scope_Global:
+			if (config->uniforms[i].type == ShaderUniformType::eShader_Uniform_Type_Sampler) {
+				OutShader->GlobalUniformSamplerCount++;
+			}
+			else {
+				OutShader->GlobalUniformCount++;
+			}
+			break;
+		case ShaderScope::eShader_Scope_Instance:
+			if (config->uniforms[i].type == ShaderUniformType::eShader_Uniform_Type_Sampler) {
+				OutShader->InstanceUniformSamplerCount++;
+			}
+			else {
+				OutShader->InstanceUniformCount++;
+			}
+			break;
+		case ShaderScope::eShader_Scope_Local:
+			OutShader->LocalUniformCount++;
+			break;
+		}
+	}
 
 	// For now, shaders will only ever have these 2 types of descriptor pools.
 	OutShader->Config.pool_sizes[0] = vk::DescriptorPoolSize{ vk::DescriptorType::eUniformBuffer, 1024 };
 	OutShader->Config.pool_sizes[1] = vk::DescriptorPoolSize{ vk::DescriptorType::eCombinedImageSampler, 4096 };
 
 	// Global descriptor set config.
-	VulkanDescriptorSetConfig GlobalDescriptorSetConfig;
+	if (OutShader->GlobalUniformCount > 0 || OutShader->GlobalUniformSamplerCount > 0) {
+		// Global descriptor set config.
+		VulkanDescriptorSetConfig* SetConfig = &OutShader->Config.descriptor_sets[OutShader->Config.descriptor_set_count];
 
-	// UBO is always available and first.
-	GlobalDescriptorSetConfig.bindings[BINDING_INDEX_UBO]
-		.setBinding(BINDING_INDEX_UBO)
-		.setDescriptorCount(1)
-		.setDescriptorType(vk::DescriptorType::eUniformBuffer)
-		.setStageFlags(vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment);
-	GlobalDescriptorSetConfig.binding_count++;
+		// Global UBO binding is first, if present.
+		if (OutShader->GlobalUniformCount > 0) {
+			unsigned short BindingIndex = SetConfig->binding_count;
+			SetConfig->bindings[BindingIndex].setBinding(BindingIndex);
+			SetConfig->bindings[BindingIndex].setDescriptorCount(1);
+			SetConfig->bindings[BindingIndex].setDescriptorType(vk::DescriptorType::eUniformBuffer);
+			SetConfig->bindings[BindingIndex].setStageFlags(vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment);
+			SetConfig->binding_count++;
+		}
 
-	OutShader->Config.descriptor_sets[DESC_SET_INDEX_GLOBAL] = GlobalDescriptorSetConfig;
-	OutShader->Config.descriptor_set_count++;
-	if (shader->UseInstances) {
-		// If using instances, add a second descriptor set.
-		VulkanDescriptorSetConfig InstanceDescriptorSetConfig;
+		// Add a binding for samplers if used.
+		if (OutShader->GlobalUniformSamplerCount > 0) {
+			unsigned short BindingIndex = SetConfig->binding_count;
+			SetConfig->bindings[BindingIndex].setBinding(BindingIndex);
+			SetConfig->bindings[BindingIndex].setDescriptorCount(OutShader->GlobalUniformSamplerCount);
+			SetConfig->bindings[BindingIndex].setDescriptorType(vk::DescriptorType::eCombinedImageSampler);
+			SetConfig->bindings[BindingIndex].setStageFlags(vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment);
+			SetConfig->sampler_binding_index = (unsigned char)BindingIndex;
+			SetConfig->binding_count++;
+		}
 
-		// Add a UBO to it, as instances should always have one available.
-	   // NOTE: Might be a good idea to only add this if it is going to be used...
-		InstanceDescriptorSetConfig.bindings[BINDING_INDEX_UBO]
-			.setBinding(BINDING_INDEX_UBO)
-			.setDescriptorCount(1)
-			.setDescriptorType(vk::DescriptorType::eUniformBuffer)
-			.setStageFlags(vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment);
-		InstanceDescriptorSetConfig.binding_count++;
-
-		OutShader->Config.descriptor_sets[DESC_SET_INDEX_INSTANCE] = InstanceDescriptorSetConfig;
+		// Increment the set count.
 		OutShader->Config.descriptor_set_count++;
 	}
 
+	// If using instance uniforms, add a UBO descriptor set.
+	if (OutShader->InstanceUniformCount > 0 || OutShader->InstanceUniformSamplerCount > 0) {
+		// Global descriptor set config.
+		VulkanDescriptorSetConfig* SetConfig = &OutShader->Config.descriptor_sets[OutShader->Config.descriptor_set_count];
+
+		// Global UBO binding is first, if present.
+		if (OutShader->InstanceUniformCount > 0) {
+			unsigned short BindingIndex = SetConfig->binding_count;
+			SetConfig->bindings[BindingIndex].setBinding(BindingIndex);
+			SetConfig->bindings[BindingIndex].setDescriptorCount(1);
+			SetConfig->bindings[BindingIndex].setDescriptorType(vk::DescriptorType::eUniformBuffer);
+			SetConfig->bindings[BindingIndex].setStageFlags(vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment);
+			SetConfig->binding_count++;
+		}
+
+		// Add a binding for samplers if used.
+		if (OutShader->InstanceUniformSamplerCount > 0) {
+			unsigned short BindingIndex = SetConfig->binding_count;
+			SetConfig->bindings[BindingIndex].setBinding(BindingIndex);
+			SetConfig->bindings[BindingIndex].setDescriptorCount(OutShader->InstanceUniformSamplerCount);
+			SetConfig->bindings[BindingIndex].setDescriptorType(vk::DescriptorType::eCombinedImageSampler);
+			SetConfig->bindings[BindingIndex].setStageFlags(vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment);
+			SetConfig->sampler_binding_index = (unsigned char)BindingIndex;
+			SetConfig->binding_count++;
+		}
+
+		// Increment the set count.
+		OutShader->Config.descriptor_set_count++;
+	}
+	
 	// Invalidate all instance states.
 	// TODO: Dynamic
 	for (uint32_t i = 0; i < 1024; ++i) {
 		OutShader->InstanceStates[i].id = INVALID_ID;
 		OutShader->InstanceStates[i].offset	= 0;
 	}
+
+	// Keep a copy of the cull mode.
+	OutShader->Config.cull_mode = config->cull_mode;
 
 	return true;
 }
@@ -1143,30 +1196,6 @@ bool VulkanBackend::InitializeShader(Shader* shader) {
 		Offset += shader->Attributes[i].size;
 	}
 
-	// Process uniforms.
-	uint32_t UniformCount = (uint32_t)shader->Uniforms.size();
-	for (uint32_t i = 0; i < UniformCount; ++i) {
-		// For samplers, the descriptor bindings need to be updated. Other types of uniforms don't need anything to be done here.
-		if (shader->Uniforms[i].type == ShaderUniformType::eShader_Uniform_Type_Sampler) {
-			const uint32_t SetIndex = (shader->Uniforms[i].scope == ShaderScope::eShader_Scope_Global ? DESC_SET_INDEX_GLOBAL : DESC_SET_INDEX_INSTANCE);
-			VulkanDescriptorSetConfig* SetConfig = &Shader->Config.descriptor_sets[SetIndex];
-			if (SetConfig->binding_count < 2) {
-				// There isn't a binding yet, meaning this is the first sampler to be added.
-				// Create the binding with a single descriptor for this sampler.
-				SetConfig->bindings[BINDING_INDEX_SAMPLER].setBinding(BINDING_INDEX_SAMPLER)
-					.setDescriptorCount(1)
-					.setDescriptorType(vk::DescriptorType::eCombinedImageSampler)
-					.setStageFlags(vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment);
-				SetConfig->binding_count++;
-			}
-			else {
-				// There is already a binding for samplers, so just add a descriptor to it.
-				// Take the current descriptor count as the location and increment the number of descriptors.
-				SetConfig->bindings[BINDING_INDEX_SAMPLER].descriptorCount++;
-			}
-		}
-	}
-
 	// Descriptor pool.
 	vk::DescriptorPoolCreateInfo PoolInfo;
 	PoolInfo.setPoolSizeCount(2)
@@ -1212,7 +1241,7 @@ bool VulkanBackend::InitializeShader(Shader* shader) {
 	}
 
 	if (!Shader->Pipeline.Create(&Context, Shader->Renderpass, shader->AttributeStride, (uint32_t)shader->Attributes.size(), Shader->Config.attributes, Shader->Config.descriptor_set_count,
-		Shader->DescriptorSetLayouts, Shader->Config.stage_count, StageCreateInfos, Viewport, Scissor, false, true, shader->PushConstantsRangeCount, shader->PushConstantsRanges)){
+		Shader->DescriptorSetLayouts, Shader->Config.stage_count, StageCreateInfos, Viewport, Scissor, Shader->Config.cull_mode, false, true, shader->PushConstantsRangeCount, shader->PushConstantsRanges)){
 		UL_ERROR("Failed to load graphics pipeline for object shader.");
 		return false;
 	}
@@ -1345,12 +1374,16 @@ bool VulkanBackend::ApplyGlobalShader(Shader* shader) {
 }
 
 bool VulkanBackend::ApplyInstanceShader(Shader* shader, bool need_update) {
-	if (!shader->UseInstances) {
+	VulkanShader* Internal = (VulkanShader*)shader->InternalData;
+	if (Internal == nullptr) {
+		return false;
+	}
+
+	if (Internal->InstanceUniformCount < 1 && Internal->InstanceUniformSamplerCount < 1) {
 		UL_ERROR("This shader does not use instances.");
 		return false;
 	}
 
-	VulkanShader* Internal = (VulkanShader*)shader->InternalData;
 	uint32_t ImageIndex = Context.ImageIndex;
 	vk::CommandBuffer CmdBuffer = Context.GraphicsCommandBuffers[ImageIndex].CommandBuffer;
 
@@ -1361,46 +1394,62 @@ bool VulkanBackend::ApplyInstanceShader(Shader* shader, bool need_update) {
 	if (need_update){
 		vk::WriteDescriptorSet DescriptorWrites[2];
 		Memory::Zero(DescriptorWrites, sizeof(vk::WriteDescriptorSet) * 2);
+
 		uint32_t DescriptorCount = 0;
 		uint32_t DescriptorIndex = 0;
 
 		// Descriptor 0 - Uniform buffer
-		// Only do this if the descriptor has not yet been updated.
-		uint32_t* InstanceUboGeneration = &(ObjectState->descriptor_set_state.descriptor_states[DescriptorIndex].generations[ImageIndex]);
-		// TODO: determine if update is required.
 		vk::DescriptorBufferInfo BufferInfo;
 		vk::WriteDescriptorSet UboDescriptor;
-		if (*InstanceUboGeneration == INVALID_ID/* || *GlobalUboGeneration != Material->Generation*/) {
-			BufferInfo.setBuffer(Internal->UniformBuffer.Buffer)
-				.setOffset(ObjectState->offset)
-				.setRange(shader->UboStride);
+		if (Internal->InstanceUniformCount > 0) {
+			// Only do this if the descriptor has not yet been updated.
+			uint32_t* InstanceUboGeneration = &(ObjectState->descriptor_set_state.descriptor_states[DescriptorIndex].generations[ImageIndex]);
+			// TODO: determine if update is required.
+			if (*InstanceUboGeneration == INVALID_ID/* || *GlobalUboGeneration != Material->Generation*/) {
+				BufferInfo.setBuffer(Internal->UniformBuffer.Buffer)
+					.setOffset(ObjectState->offset)
+					.setRange(shader->UboStride);
 
-			UboDescriptor.setDstSet(ObjectDescriptorSet)
-				.setDstBinding(DescriptorIndex)
-				.setDescriptorType(vk::DescriptorType::eUniformBuffer)
-				.setDescriptorCount(1)
-				.setBufferInfo(BufferInfo);
+				UboDescriptor.setDstSet(ObjectDescriptorSet)
+					.setDstBinding(DescriptorIndex)
+					.setDescriptorType(vk::DescriptorType::eUniformBuffer)
+					.setDescriptorCount(1)
+					.setPBufferInfo(&BufferInfo);
 
-			DescriptorWrites[DescriptorCount] = UboDescriptor;
-			DescriptorCount++;
+				DescriptorWrites[DescriptorCount] = UboDescriptor;
+				DescriptorCount++;
 
-			// Update the frame generation. In this case it is only needed once since this is a buffer.
-			*InstanceUboGeneration = 1;  // material->generation; TODO: some generation from... somewhere
+				// Update the frame generation. In this case it is only needed once since this is a buffer.
+				*InstanceUboGeneration = 1;  // material->generation; TODO: some generation from... somewhere
+			}
+			DescriptorIndex++;
 		}
-		DescriptorIndex++;
 
 		// Samplers will always be in the binding. If the binding count is less than 2, there are no samplers.
 		vk::DescriptorImageInfo ImageInfos[VULKAN_SHADER_MAX_GLOBAL_TEXTURES];
 		vk::WriteDescriptorSet SamplerDescriptor;
-		if (Internal->Config.descriptor_sets[DESC_SET_INDEX_INSTANCE].binding_count > 1) {
+		if (Internal->InstanceUniformSamplerCount > 0) {
 			// Iterate samplers.
-			uint32_t TotalSamplerCount = Internal->Config.descriptor_sets[DESC_SET_INDEX_INSTANCE].bindings[BINDING_INDEX_SAMPLER].descriptorCount;
+			unsigned char SamplerBindingIndex = Internal->Config.descriptor_sets[DESC_SET_INDEX_INSTANCE].sampler_binding_index;
+			uint32_t TotalSamplerCount = Internal->Config.descriptor_sets[DESC_SET_INDEX_INSTANCE].bindings[SamplerBindingIndex].descriptorCount;
 			uint32_t UpdateSamplerCount = 0;
 			for (uint32_t i = 0; i < TotalSamplerCount; ++i) {
 				// TODO: only update in the list if actually needing an update.
 				TextureMap* map = Internal->InstanceStates[shader->BoundInstanceId].instance_texture_maps[i];
+				if (map == nullptr) {
+					continue;
+				}
+
 				Texture* t = map->texture;
+				if (t == nullptr) {
+					continue;
+				}
+
 				VulkanImage* Image = (VulkanImage*)t->InternalData;
+				if (Image == nullptr) {
+					continue;
+				}
+
 				ImageInfos[i].setImageLayout(vk::ImageLayout::eShaderReadOnlyOptimal)
 					.setImageView(Image->ImageView)
 					.setSampler(*((vk::Sampler*)&map->internal_data));
@@ -1520,7 +1569,8 @@ uint32_t VulkanBackend::AcquireInstanceResource(Shader* shader, std::vector<Text
 	}
 
 	VulkanShaderInstanceState* InstanceState = &Internal->InstanceStates[OutInstanceID];
-	uint32_t InstanceTextureCount = Internal->Config.descriptor_sets[DESC_SET_INDEX_INSTANCE].bindings[BINDING_INDEX_SAMPLER].descriptorCount;
+	unsigned char SamplerBindingIndex = Internal->Config.descriptor_sets[DESC_SET_INDEX_INSTANCE].sampler_binding_index;
+	uint32_t InstanceTextureCount = Internal->Config.descriptor_sets[DESC_SET_INDEX_INSTANCE].bindings[SamplerBindingIndex].descriptorCount;
 	// Wipe out the memory for the entire array, even if it isn't all used.
 	InstanceState->instance_texture_maps.resize(shader->InstanceTextureCount);
 	Texture* DefaultTexture = TextureSystem::GetDefaultTexture();
@@ -1534,9 +1584,11 @@ uint32_t VulkanBackend::AcquireInstanceResource(Shader* shader, std::vector<Text
 
 	// Allocate some space in the UBO - by the stride, not the size.
 	uint32_t Size = (uint32_t)shader->UboStride;
-	if (!Internal->UniformBuffer.Allocate(Size, &InstanceState->offset)) {
-		UL_ERROR("vulkan_material_shader_acquire_resources failed to acquire ubo space");
-		return INVALID_ID;
+	if (Size > 0) {
+		if (!Internal->UniformBuffer.Allocate(Size, &InstanceState->offset)) {
+			UL_ERROR("vulkan_material_shader_acquire_resources failed to acquire ubo space");
+			return INVALID_ID;
+		}
 	}
 
 	VulkanShaderDescriptorSetState* SetState = &InstanceState->descriptor_set_state;
@@ -1640,7 +1692,7 @@ bool VulkanBackend::SetUniform(Shader* shader, ShaderUniform* uniform, const voi
 bool VulkanBackend::CreateModule(VulkanShader* Shader, VulkanShaderStageConfig config, VulkanShaderStage* shader_stage) {
 	// Read the resource.
 	Resource BinaryResource;
-	if (!ResourceSystem::Load(config.filename, ResourceType::eResource_type_Binary, &BinaryResource)) {
+	if (!ResourceSystem::Load(config.filename, ResourceType::eResource_type_Binary, nullptr, &BinaryResource)) {
 		UL_ERROR("Unable to read shader module: %s.", config.filename);
 		return false;
 	}

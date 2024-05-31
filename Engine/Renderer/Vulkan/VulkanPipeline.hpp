@@ -2,6 +2,7 @@
 
 #include <vulkan/vulkan.hpp>
 
+enum FaceCullMode;
 class VulkanContext;
 class VulkanRenderPass;
 class VulkanCommandBuffer;
@@ -17,7 +18,8 @@ public:
 		uint32_t attribute_count, vk::VertexInputAttributeDescription* attributes,
 		uint32_t descriptor_set_layout_count, vk::DescriptorSetLayout* descriptor_set_layout,
 		uint32_t stage_count, vk::PipelineShaderStageCreateInfo* stages,
-		vk::Viewport viewport, vk::Rect2D scissor, bool is_wireframe, bool depth_test_enabled,
+		vk::Viewport viewport, vk::Rect2D scissor, FaceCullMode cull_mode,
+		bool is_wireframe, bool depth_test_enabled,
 		uint32_t push_constant_range_count, Range* push_constant_ranges);
 
 	void Destroy(VulkanContext* context);

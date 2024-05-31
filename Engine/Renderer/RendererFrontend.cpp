@@ -58,23 +58,31 @@ bool IRenderer::Initialize(const char* application_name, struct SPlatformState* 
 	RendererConfig.OnRenderTargetRefreshRequired = std::bind(&IRenderer::RegenerateRenderTargets, this);
 
 	// Renderpasses. TODO: Read config from file.
-	RendererConfig.renderpass_count = 2;
+	RendererConfig.renderpass_count = 3;
+	const char* SkyboxPassName = "Renderpass.Builtin.Skybox";
 	const char* WorldPassName = "Renderpass.Builtin.World";
 	const char* UIPassName = "Renderpass.Builtin.UI";
-	RenderpassConfig PassConfigs[2];
-	PassConfigs[0].name = WorldPassName;
+	RenderpassConfig PassConfigs[3];
+	PassConfigs[0].name = SkyboxPassName;
 	PassConfigs[0].prev_name = nullptr;
-	PassConfigs[0].next_name = UIPassName;
+	PassConfigs[0].next_name = WorldPassName;
 	PassConfigs[0].render_area = Vec4(0.0f, 0.0f, 1280.0f, 720.0f);
 	PassConfigs[0].clear_color = Vec4(0.0f, 0.0f, 0.2f, 1.0f);
-	PassConfigs[0].clear_flags = RenderpassClearFlags::eRenderpass_Clear_Color_Buffer | RenderpassClearFlags::eRenderpass_Clear_Depth_Buffer | RenderpassClearFlags::eRenderpass_Clear_Stencil_Buffer;
+	PassConfigs[0].clear_flags = RenderpassClearFlags::eRenderpass_Clear_Color_Buffer;
 
-	PassConfigs[1].name = UIPassName;
-	PassConfigs[1].prev_name = WorldPassName;
-	PassConfigs[1].next_name = nullptr;
+	PassConfigs[1].name = WorldPassName;
+	PassConfigs[1].prev_name = SkyboxPassName;
+	PassConfigs[1].next_name = UIPassName;
 	PassConfigs[1].render_area = Vec4(0.0f, 0.0f, 1280.0f, 720.0f);
 	PassConfigs[1].clear_color = Vec4(0.0f, 0.0f, 0.2f, 1.0f);
-	PassConfigs[1].clear_flags = RenderpassClearFlags::eRenderpass_Clear_None;
+	PassConfigs[1].clear_flags = RenderpassClearFlags::eRenderpass_Clear_Depth_Buffer | RenderpassClearFlags::eRenderpass_Clear_Stencil_Buffer;
+
+	PassConfigs[2].name = UIPassName;
+	PassConfigs[2].prev_name = WorldPassName;
+	PassConfigs[2].next_name = nullptr;
+	PassConfigs[2].render_area = Vec4(0.0f, 0.0f, 1280.0f, 720.0f);
+	PassConfigs[2].clear_color = Vec4(0.0f, 0.0f, 0.2f, 1.0f);
+	PassConfigs[2].clear_flags = RenderpassClearFlags::eRenderpass_Clear_None;
 
 	RendererConfig.pass_config = PassConfigs;
 
@@ -84,6 +92,10 @@ bool IRenderer::Initialize(const char* application_name, struct SPlatformState* 
 	}
 
 	// TODO: Will know how to get these when we define views.
+	SkyboxRenderpass = Backend->GetRenderpass(SkyboxPassName);
+	SkyboxRenderpass->RenderTargetCount = WindowRenderTargetCount;
+	SkyboxRenderpass->Targets.resize(WindowRenderTargetCount);
+
 	WorldRenderpass = Backend->GetRenderpass(WorldPassName);
 	WorldRenderpass->RenderTargetCount = WindowRenderTargetCount;
 	WorldRenderpass->Targets.resize(WindowRenderTargetCount);
@@ -95,26 +107,37 @@ bool IRenderer::Initialize(const char* application_name, struct SPlatformState* 
 	RegenerateRenderTargets();
 
 	// Update the main/world renderpass dimensions.
+	SkyboxRenderpass->SetRenderArea(Vec4(0, 0, (float)FramebufferWidth, (float)FramebufferHeight));
 	WorldRenderpass->SetRenderArea(Vec4(0, 0, (float)FramebufferWidth, (float)FramebufferHeight));
 	UIRenderpass->SetRenderArea(Vec4(0, 0, (float)FramebufferWidth, (float)FramebufferHeight));
 
 	// Shaders
 	Resource ConfigResource;
 	ShaderConfig* Config = nullptr;
-	
+
+	// Builtin skybox shader.
+	ResourceSystem::Load(BUILTIN_SHADER_NAME_SKYBOX, ResourceType::eResource_Type_Shader, nullptr, &ConfigResource);
+	Config = (ShaderConfig*)ConfigResource.Data;
+	ShaderSystem::Create(Config);
+	ResourceSystem::Unload(&ConfigResource);
+	SkyboxShaderID = ShaderSystem::GetID(BUILTIN_SHADER_NAME_SKYBOX);
+	Config = nullptr;
+
 	// Builtin material shader.
-	ResourceSystem::Load(BUILTIN_SHADER_NAME_MATERIAL, ResourceType::eResource_Type_Shader, &ConfigResource);
+	ResourceSystem::Load(BUILTIN_SHADER_NAME_MATERIAL, ResourceType::eResource_Type_Shader, nullptr, &ConfigResource);
 	Config = (ShaderConfig*)ConfigResource.Data;
 	ShaderSystem::Create(Config);
 	ResourceSystem::Unload(&ConfigResource);
 	MaterialShaderID = ShaderSystem::GetID(BUILTIN_SHADER_NAME_MATERIAL);
+	Config = nullptr;
 
 	// Builtin ui shader.
-	ResourceSystem::Load(BUILTIN_SHADER_NAME_UI, ResourceType::eResource_Type_Shader, &ConfigResource);
+	ResourceSystem::Load(BUILTIN_SHADER_NAME_UI, ResourceType::eResource_Type_Shader, nullptr, &ConfigResource);
 	Config = (ShaderConfig*)ConfigResource.Data;
 	ShaderSystem::Create(Config);
 	ResourceSystem::Unload(&ConfigResource);
 	UISHaderID = ShaderSystem::GetID(BUILTIN_SHADER_NAME_UI);
+	Config = nullptr;
 
 	return true;
 }
@@ -123,6 +146,7 @@ void IRenderer::Shutdown() {
 	if (Backend != nullptr) {
 
 		for (unsigned char i = 0; i < WindowRenderTargetCount; ++i) {
+			Backend->DestroyRenderTarget(&SkyboxRenderpass->Targets[i], true);
 			Backend->DestroyRenderTarget(&WorldRenderpass->Targets[i], true);
 			Backend->DestroyRenderTarget(&UIRenderpass->Targets[i], true);
 		}
@@ -199,11 +223,6 @@ bool IRenderer::DrawFrame(SRenderPacket* packet) {
 	return true;
 }
 
-void IRenderer::CreateTexture(Texture* texture) {
-	Memory::Zero(texture, sizeof(Texture));
-	texture->Generation = INVALID_ID;
-}
-
 void IRenderer::CreateTexture(const unsigned char* pixels, Texture* texture) {
 	Backend->CreateTexture(pixels, texture);
 }
@@ -249,8 +268,8 @@ IRenderpass* IRenderer::GetRenderpass(const char* name) {
 	return Backend->GetRenderpass(name);
 }
 
-bool IRenderer::CreateRenderShader(Shader* shader, IRenderpass* pass, unsigned short stage_count, std::vector<char*> stage_filenames, std::vector<ShaderStage> stages) {
-	return Backend->CreateShader(shader, pass, stage_count, stage_filenames, stages);
+bool IRenderer::CreateRenderShader(Shader* shader, const ShaderConfig* config, IRenderpass* pass, unsigned short stage_count, std::vector<char*> stage_filenames, std::vector<ShaderStage> stages) {
+	return Backend->CreateShader(shader, config, pass, stage_count, stage_filenames, stages);
 }
 
 bool IRenderer::DestroyRenderShader(Shader* shader) {
@@ -321,15 +340,20 @@ void IRenderer::RegenerateRenderTargets() {
 	// Create render targets for each. TODO: Should be configurable.
 	for (unsigned char i = 0; i < WindowRenderTargetCount; ++i) {
 		// Destroy the old first if exists.
+		Backend->DestroyRenderTarget(&SkyboxRenderpass->Targets[i], false);
 		Backend->DestroyRenderTarget(&WorldRenderpass->Targets[i], false);
 		Backend->DestroyRenderTarget(&UIRenderpass->Targets[i], false);
 
 		Texture* WindowTargetTexture = Backend->GetWindowAttachment(i);
 		Texture* DepthTargetTexture = Backend->GetDepthAttachment();
 
+		// Skybox render targets.
+		std::vector<Texture*> SkyboxAttachments = { WindowTargetTexture };
+		Backend->CreateRenderTarget(1, SkyboxAttachments, SkyboxRenderpass, FramebufferWidth, FramebufferHeight, &SkyboxRenderpass->Targets[i]);
+
 		// World render targets.
-		std::vector<Texture*> Attachments = {WindowTargetTexture, DepthTargetTexture};
-		Backend->CreateRenderTarget(2, Attachments, WorldRenderpass, FramebufferWidth, FramebufferHeight, &WorldRenderpass->Targets[i]);
+		std::vector<Texture*> WorldAttachments = {WindowTargetTexture, DepthTargetTexture};
+		Backend->CreateRenderTarget(2, WorldAttachments, WorldRenderpass, FramebufferWidth, FramebufferHeight, &WorldRenderpass->Targets[i]);
 
 		// UI render targets.
 		std::vector<Texture*> UIAttachments = { WindowTargetTexture };

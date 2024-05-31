@@ -96,7 +96,7 @@ void MaterialSystem::Shutdown() {
 Material* MaterialSystem::Acquire(const char* name) {
 	// Load the given material configuration from disk.
 	Resource MatResource;
-	if (!ResourceSystem::Load(name, eResource_type_Material, &MatResource)) {
+	if (!ResourceSystem::Load(name, eResource_type_Material, nullptr, &MatResource)) {
 		UL_ERROR("Failed to load material resource, returning nullptr.");
 		return nullptr;
 	}
@@ -417,6 +417,8 @@ bool MaterialSystem::CreateDefaultMaterial() {
 	std::vector<TextureMap*> Maps = { &DefaultMaterial.DiffuseMap, &DefaultMaterial.SpecularMap, &DefaultMaterial.NormalMap };
 
 	Shader* s = ShaderSystem::Get(BUILTIN_SHADER_NAME_MATERIAL);
+	ASSERT(s);
+
 	DefaultMaterial.InternalId = Renderer->AcquireInstanceResource(s, Maps);
 	if (DefaultMaterial.InternalId == INVALID_ID) {
 		UL_ERROR("Create default material failed. Application quit now!");

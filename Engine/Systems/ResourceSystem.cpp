@@ -82,14 +82,14 @@ bool ResourceSystem::RegisterLoader(IResourceLoader* loader) {
 	return false;
 }
 
-bool ResourceSystem::Load(const char* name, ResourceType type, Resource* resource) {
+bool ResourceSystem::Load(const char* name, ResourceType type, void* params, Resource* resource) {
 	if (type != eResource_type_Custom) {
 		// Select loader.
 		uint32_t Count = Config.max_loader_count;
 		for (uint32_t i = 0; i < Count; ++i) {
 			if (RegisteredLoaders[i]->Id != INVALID_ID && RegisteredLoaders[i]->Type == type) {
 				resource->LoaderID = RegisteredLoaders[i]->Id;
-				return RegisteredLoaders[i]->Load(name, resource);
+				return RegisteredLoaders[i]->Load(name, params, resource);
 			}
 		}
 	}
@@ -99,7 +99,7 @@ bool ResourceSystem::Load(const char* name, ResourceType type, Resource* resourc
 	return false;
 }
 
-bool ResourceSystem::LoadCustom(const char* name, const char* custom_type, Resource* resource) {
+bool ResourceSystem::LoadCustom(const char* name, const char* custom_type, void* params, Resource* resource) {
 	if (custom_type == nullptr || strlen(custom_type) == 0) {
 		UL_ERROR("Resouce system load custom failed. custom type is invalid.");
 		return false;
@@ -109,7 +109,7 @@ bool ResourceSystem::LoadCustom(const char* name, const char* custom_type, Resou
 	for (uint32_t i = 0; i < Count; ++i) {
 		if (RegisteredLoaders[i]->Id != INVALID_ID && RegisteredLoaders[i]->Type == eResource_type_Custom && strcmp(RegisteredLoaders[i]->CustomType, custom_type)== 0) {
 			resource->LoaderID = RegisteredLoaders[i]->Id;
-			return RegisteredLoaders[i]->Load(name, resource);
+			return RegisteredLoaders[i]->Load(name, params, resource);
 		}
 	}
 

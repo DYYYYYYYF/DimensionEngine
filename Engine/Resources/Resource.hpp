@@ -15,7 +15,7 @@ enum ResourceType {
 class Resource {
 public:
 	uint32_t LoaderID;
-	const char* Name = nullptr;
+	char* Name = nullptr;
 	char* FullPath = nullptr;
 	size_t DataSize;
 	size_t DataCount;
@@ -27,4 +27,8 @@ struct ImageResourceData {
 	uint32_t width;
 	uint32_t height;
 	unsigned char* pixels = nullptr;
+};
+
+struct ImageResourceParams {
+	bool flip_y;
 };

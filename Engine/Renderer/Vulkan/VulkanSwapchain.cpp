@@ -175,7 +175,7 @@ void VulkanSwapchain::Create(VulkanContext* context, unsigned int width, unsigne
 
 	// Create depth image and view
 	VulkanImage* DepthImage = (VulkanImage*)Memory::Allocate(sizeof(VulkanImage), MemoryType::eMemory_Type_Texture);
-	DepthImage->CreateImage(context, vk::ImageType::e2D, SwapchainExtent.width, SwapchainExtent.height, context->Device.GetDepthFormat(),
+	DepthImage->CreateImage(context, TextureType::eTexture_Type_2D, SwapchainExtent.width, SwapchainExtent.height, context->Device.GetDepthFormat(),
 		vk::ImageTiling::eOptimal, vk::ImageUsageFlagBits::eDepthStencilAttachment, vk::MemoryPropertyFlagBits::eDeviceLocal, true, vk::ImageAspectFlagBits::eDepth);
 
 	// Wrap it in a texture.

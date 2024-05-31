@@ -24,6 +24,7 @@ struct VulkanShaderStageConfig{
 struct VulkanDescriptorSetConfig {
 	unsigned short binding_count = 0;
 	vk::DescriptorSetLayoutBinding bindings[VULKAN_SHADER_MAX_BINDINGS];
+	unsigned char sampler_binding_index;
 };
 
 struct VulkanShaderConfig {
@@ -35,6 +36,8 @@ struct VulkanShaderConfig {
 	unsigned short descriptor_set_count;
 	VulkanDescriptorSetConfig descriptor_sets[2];
 	vk::VertexInputAttributeDescription attributes[VULKAN_SHADER_MAX_ATTRIBUTES];
+
+	FaceCullMode cull_mode;
 };
 
 struct VulkanDescriptorState {
@@ -78,4 +81,10 @@ public:
 
 	uint32_t InstanceCount;
 	VulkanShaderInstanceState InstanceStates[VULKAN_MAX_MATERIAL_COUNT];
+
+	unsigned char GlobalUniformCount;
+	unsigned char GlobalUniformSamplerCount;
+	unsigned char InstanceUniformCount;
+	unsigned char InstanceUniformSamplerCount;
+	unsigned char LocalUniformCount;
 };

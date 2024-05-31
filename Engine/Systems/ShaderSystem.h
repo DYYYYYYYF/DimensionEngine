@@ -152,6 +152,16 @@ public:
 	 * @param instance_id The identifier of the instance to bind.
 	 * @return True on success; otherwise false.
 	 */
+	static bool BindGlobal(uint32_t instance_id);
+
+	/**
+	 * @brief Binds the instance with the given id for use. Must be done before setting
+	 * instance-scoped uniforms.
+	 * NOTE: Operates against the currently-used shader.
+	 *
+	 * @param instance_id The identifier of the instance to bind.
+	 * @return True on success; otherwise false.
+	 */
 	static bool BindInstance(uint32_t instance_id);
 
 	static void Destroy(const char* shader_name);

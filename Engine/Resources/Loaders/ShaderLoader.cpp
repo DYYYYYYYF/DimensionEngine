@@ -14,7 +14,7 @@ ShaderLoader::ShaderLoader() {
 	TypePath = "Shaders";
 }
 
-bool ShaderLoader::Load(const char* name, Resource* resource) {
+bool ShaderLoader::Load(const char* name, void* params, Resource* resource) {
 	if (name == nullptr || resource == nullptr) {
 		return false;
 	}
@@ -38,8 +38,8 @@ bool ShaderLoader::Load(const char* name, Resource* resource) {
 
 	ResourceData->attribute_count = 0;
 	ResourceData->uniform_count = 0;
-	ResourceData->use_instances = false;
-	ResourceData->use_local = false;
+	ResourceData->stage_cout = 0;
+	ResourceData->cull_mode = FaceCullMode::eFace_Cull_Mode_Back;
 	ResourceData->renderpass_name = nullptr;
 	ResourceData->name = nullptr;
 
@@ -132,11 +132,16 @@ bool ShaderLoader::Load(const char* name, Resource* resource) {
 				UL_ERROR("shader_loader_load: Invalid file layout. Attribute fields must be 'type,name'. Skipping.");
 			}
 		}
-		else if (strcmp(TrimmedVarName, "use_instance") == 0) {
-			ResourceData->use_instances = StringToBool(TrimmedValue);
-		}
-		else if (strcmp(TrimmedVarName, "use_local") == 0) {
-			ResourceData->use_local = StringToBool(TrimmedValue);
+		else if (strcmp(TrimmedVarName, "cull_mode") == 0) {
+			if (strcmp(TrimmedValue, "front") == 0) {
+				ResourceData->cull_mode = FaceCullMode::eFace_Cull_Mode_Front;
+			}
+			else if (strcmp(TrimmedValue, "front_and_back") == 0) {
+				ResourceData->cull_mode = FaceCullMode::eFace_Cull_Mode_Front_And_Back;
+			}
+			else if (strcmp(TrimmedValue, "none") == 0) {
+				ResourceData->cull_mode = FaceCullMode::eFace_Cull_Mode_None;
+			}
 		}
 		else if (strcmp(TrimmedVarName, "attribute") == 0) {
 			// Parse attribute.
@@ -315,6 +320,7 @@ bool ShaderLoader::Load(const char* name, Resource* resource) {
 	FileSystemClose(&File);
 
 	resource->Data = ResourceData;
+	resource->DataCount = 1;
 	resource->DataSize = sizeof(ShaderConfig);
 
 	return true;
@@ -351,12 +357,33 @@ void ShaderLoader::Unload(Resource* resource) {
 	}
 	Data->uniforms.clear();
 
-	Memory::Free(Data->renderpass_name, sizeof(char) * (strlen(Data->renderpass_name) + 1), eMemory_Type_String);
-	Memory::Free(Data->name, sizeof(char) * (strlen(Data->name) + 1), eMemory_Type_String);
-	Memory::Zero(Data, sizeof(ShaderConfig));
+	if (Data->name) {
+		Memory::Free(Data->name, sizeof(char) * (strlen(Data->name) + 1), MemoryType::eMemory_Type_String);
+		Data->name = nullptr;
+	}
 
-	Data->renderpass_name = nullptr;
-	Data->name = nullptr;
-	resource->Data = nullptr;
+	if (Data->renderpass_name) {
+		Memory::Free(Data->renderpass_name, sizeof(char) * (strlen(Data->renderpass_name) + 1), MemoryType::eMemory_Type_String);
+		Data->renderpass_name = nullptr;
+	}
+
+	if (resource->Name) {
+		Memory::Free(resource->Name, sizeof(char) * (strlen(resource->Name) + 1), MemoryType::eMemory_Type_String);
+		resource->Name = nullptr;
+	}
+
+	if (resource->FullPath) {
+		Memory::Free(resource->FullPath, sizeof(char) * (strlen(resource->FullPath) + 1), MemoryType::eMemory_Type_String);
+		resource->FullPath = nullptr;
+	}
+
+	if (resource->Data) {
+		Memory::Free(resource->Data, resource->DataSize * resource->DataCount, MemoryType::eMemory_Type_Texture);
+		resource->Data = nullptr;
+		resource->DataSize = 0;
+		resource->DataCount = 0;
+		resource->LoaderID = INVALID_ID;
+	}
+
 	resource = nullptr;
 }

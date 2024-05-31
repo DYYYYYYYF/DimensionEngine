@@ -7,7 +7,7 @@ public:
 	BinaryLoader();
 
 public:
-	virtual bool Load(const char* name, Resource* resource) override;
+	virtual bool Load(const char* name, void* params, Resource* resource) override;
 	virtual void Unload(Resource* resource) override;
 
 };

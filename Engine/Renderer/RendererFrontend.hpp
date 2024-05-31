@@ -27,7 +27,6 @@ public:
 	virtual bool DrawFrame(SRenderPacket* packet);
 
 	virtual void CreateTexture(const unsigned char* pixels, Texture* texture);
-	virtual void CreateTexture(Texture* texture);
 	virtual void DestroyTexture(Texture* txture);
 
 	virtual void CreateWriteableTexture(Texture* tex);
@@ -81,7 +80,7 @@ public:
 	 * @param stages A array of shader_stages indicating what render stages (vertex, fragment, etc.) used in this shader.
 	 * @return True on success; otherwise false.
 	 */
-	virtual bool CreateRenderShader(Shader* shader, IRenderpass* pass, unsigned short stage_count, std::vector<char*> stage_filenames, std::vector<ShaderStage> stages);
+	virtual bool CreateRenderShader(Shader* shader, const ShaderConfig* config, IRenderpass* pass, unsigned short stage_count, std::vector<char*> stage_filenames, std::vector<ShaderStage> stages);
 
 	/**
 	 * @brief Destroys the given shader and releases any resources held by it.
@@ -146,7 +145,7 @@ public:
 	 *
 	 * @param shader A pointer to the shader to acquire resources from.
 	 * @param maps Array to hold the texture maps.
-	 * @return True on success; otherwise false.
+	 * @return INVALID_ID on false; otherwise return the instance id.
 	 */
 	virtual uint32_t AcquireInstanceResource(Shader* shader, std::vector<TextureMap*> maps);
 
@@ -197,16 +196,20 @@ protected:
 	RendererBackendType BackendType;
 	class IRendererBackend* Backend;
 
+	// Shaders
+	uint32_t SkyboxShaderID;
 	uint32_t MaterialShaderID;
 	uint32_t UISHaderID;
 
-	// Renderpass
+	// Renderpasses
+	IRenderpass* SkyboxRenderpass;
+	IRenderpass* WorldRenderpass;
+	IRenderpass* UIRenderpass;
+
 	unsigned char WindowRenderTargetCount;
 	uint32_t FramebufferWidth;
 	uint32_t FramebufferHeight;
 
-	IRenderpass* WorldRenderpass;
-	IRenderpass* UIRenderpass;
 	bool Resizing;
 	unsigned char FrameSinceResize;
 };

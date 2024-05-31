@@ -8,6 +8,7 @@
 
 struct RenderpassConfig;
 struct Mesh;
+class Skybox;
 class IRenderer;
 class IRenderpass;
 
@@ -49,6 +50,10 @@ struct RenderTarget {
 struct MeshPacketData {
 	uint32_t mesh_count;
 	std::vector<Mesh> meshes;
+};
+
+struct SkyboxPacketData {
+	Skybox* sb = nullptr;
 };
 
 struct RenderBackendConfig {

@@ -92,8 +92,25 @@ Texture* TextureSystem::Acquire(const char* name, bool auto_release) {
 
 	uint32_t ID = INVALID_ID;
 	// NOTE: Increments reference_cout, or creates new entry.
-	if (!ProcessTextureReference(name, 1, auto_release, false, &ID)) {
+	if (!ProcessTextureReference(name, TextureType::eTexture_Type_2D, 1, auto_release, false, &ID)) {
 		UL_ERROR("TextureSystem::Acquire() failed to obtain a new texture id.");
+		return nullptr;
+	}
+
+	return &RegisteredTextures[ID];
+}
+
+Texture* TextureSystem::AcquireCube(const char* name, bool auto_release) {
+	// Return default texture, but warn about it since this should be returned via GetDefaultTexture()
+	if (strcmp(name, DEFAULT_TEXTURE_NAME) == 0) {
+		UL_WARN("Texture acquire cube return default texture. Use GetDefaultTexture() for texture 'default'");
+		return &DefaultTexture;
+	}
+
+	uint32_t ID = INVALID_ID;
+	// NOTE: Increments reference_cout, or creates new entry.
+	if (!ProcessTextureReference(name, TextureType::eTexture_Type_Cube, 1, auto_release, false, &ID)) {
+		UL_ERROR("TextureSystem::AcquireCube() failed to obtain a new texture id.");
 		return nullptr;
 	}
 
@@ -104,13 +121,14 @@ Texture* TextureSystem::AcquireWriteable(const char* name, uint32_t width, uint3
 	uint32_t ID = INVALID_ID;
 	// NOTE: Wrapped textures are never auto-release because it means that thier
 	// resources are created and managed somewhere within the renderer internals.
-	if (!ProcessTextureReference(name, 1, false, true, &ID)) {
+	if (!ProcessTextureReference(name, TextureType::eTexture_Type_2D, 1, false, true, &ID)) {
 		UL_ERROR("TextureSystem::AcquireWriteable() failed to obtain a new texture id.");
 		return nullptr;
 	}
 	
 	Texture* t = &RegisteredTextures[ID];
 	t->Id = ID;
+	t->Type = TextureType::eTexture_Type_2D;
 	strncpy(t->Name, name, TEXTURE_NAME_MAX_LENGTH);
 	t->Width = width;
 	t->Height = height;
@@ -125,8 +143,6 @@ Texture* TextureSystem::AcquireWriteable(const char* name, uint32_t width, uint3
 }
 
 void TextureSystem::Release(const char* name) {
-
-
 	// Ignore release requests for the default texture.
 	if (strcmp(name, DEFAULT_TEXTURE_NAME) == 0) {
 		return;
@@ -134,7 +150,7 @@ void TextureSystem::Release(const char* name) {
 
 	uint32_t ID = INVALID_ID;
 	// NOTE: Decrement the reference count.
-	if (!ProcessTextureReference(name, -1, false, false, &ID)) {
+	if (!ProcessTextureReference(name, TextureType::eTexture_Type_2D, -1, false, false, &ID)) {
 		UL_ERROR("TextureSystem::Release() failed to release texture '%s' properly.", name);
 	}
 }
@@ -156,7 +172,7 @@ Texture* TextureSystem::WrapInternal(const char* name, uint32_t width, uint32_t 
 	if (register_texture) {
 		// NOTE: Wrapped textures are never auto-release because it means that their
 		// resource are created and managed somewhere within the renderer internals.
-		if (!ProcessTextureReference(name, 1, false, true, &ID)) {
+		if (!ProcessTextureReference(name, TextureType::eTexture_Type_2D, 1, false, true, &ID)) {
 			UL_ERROR("TextureSystem::WrapInternal() fialed to obtain a new texture id.");
 			return nullptr;
 		}
@@ -169,6 +185,7 @@ Texture* TextureSystem::WrapInternal(const char* name, uint32_t width, uint32_t 
 	}
 
 	t->Id = ID;
+	t->Type = TextureType::eTexture_Type_2D;
 	strncpy(t->Name, name, TEXTURE_NAME_MAX_LENGTH);
 	t->Width = width;
 	t->Height = height;
@@ -287,6 +304,7 @@ bool TextureSystem::CreateDefaultTexture() {
 	DefaultTexture.ChannelCount = 4;
 	DefaultTexture.Generation = INVALID_ID;
 	DefaultTexture.Flags = 0;
+	DefaultTexture.Type = TextureType::eTexture_Type_2D;
 	Renderer->CreateTexture(Pixels, &DefaultTexture);
 	UL_INFO("Default texture created.");
 	// Manually set the texture generation to invalid since this is a default texture.
@@ -303,6 +321,7 @@ bool TextureSystem::CreateDefaultTexture() {
 	DefaultDiffuseTexture.ChannelCount = 4;
 	DefaultDiffuseTexture.Generation = INVALID_ID;
 	DefaultDiffuseTexture.Flags = 0;
+	DefaultDiffuseTexture.Type = TextureType::eTexture_Type_2D;
 	Renderer->CreateTexture(DiffusePixels, &DefaultDiffuseTexture);
 	UL_INFO("Default diffuse texture created.");
 	// Manually set the texture generation to invalid since this is a default texture.
@@ -318,7 +337,8 @@ bool TextureSystem::CreateDefaultTexture() {
 	DefaultSpecularTexture.Height = 16;
 	DefaultSpecularTexture.ChannelCount = 4;
 	DefaultSpecularTexture.Generation = INVALID_ID;
-	DefaultDiffuseTexture.Flags = 0;
+	DefaultSpecularTexture.Flags = 0;
+	DefaultSpecularTexture.Type = TextureType::eTexture_Type_2D;
 	Renderer->CreateTexture(SpecularPixels, &DefaultSpecularTexture);
 	UL_INFO("Default specular texture created.");
 	// Manually set the texture generation to invalid since this is a default texture.
@@ -348,7 +368,8 @@ bool TextureSystem::CreateDefaultTexture() {
 	DefaultNormalTexture.Height = 16;
 	DefaultNormalTexture.ChannelCount = 4;
 	DefaultNormalTexture.Generation = INVALID_ID;
-	DefaultDiffuseTexture.Flags = 0;
+	DefaultNormalTexture.Flags = 0;
+	DefaultNormalTexture.Type = TextureType::eTexture_Type_2D;
 	Renderer->CreateTexture(NormalPixels, &DefaultNormalTexture);
 	UL_INFO("Default normal texture created.");
 	// Manually set the texture generation to invalid since this is a default texture.
@@ -364,10 +385,61 @@ void TextureSystem::DestroyDefaultTexture() {
 	DestroyTexture(&DefaultNormalTexture);
 }
 
+bool TextureSystem::LoadCubeTexture(const char* name, const char texture_names[6][TEXTURE_NAME_MAX_LENGTH], Texture* t) {
+	unsigned char* piexels = nullptr;
+	size_t ImageSize = 0;
+	for (unsigned char i = 0; i < 6; ++i) {
+		ImageResourceParams Params;
+		Params.flip_y = false;
+
+		Resource ImageResource;
+		if (!ResourceSystem::Load(texture_names[i], ResourceType::eResource_type_Image, &Params, &ImageResource)) {
+			UL_ERROR("TextureSystem::LoadCubeTexture() Failed to load image resource for texture '%s'.", texture_names[i]);
+			return false;
+		}
+
+		ImageResourceData* ResourceData = (ImageResourceData*)ImageResource.Data;
+		if (!piexels) {
+			t->Width = ResourceData->width;
+			t->Height = ResourceData->height;
+			t->ChannelCount = ResourceData->channel_count;
+			t->Flags = 0;
+			t->Generation = 0;
+			strncpy(t->Name, name, TEXTURE_NAME_MAX_LENGTH);
+			ImageSize = t->Width * t->Height * t->ChannelCount;
+			piexels = (unsigned char*)Memory::Allocate(ImageSize * sizeof(unsigned char) * 6, MemoryType::eMemory_Type_Array);
+		}
+		else {
+			// verify all textures are the same size.
+			if (t->Width != ResourceData->width || t->Height != ResourceData->height || t->ChannelCount != ResourceData->channel_count) {
+				UL_ERROR("TextureSystem::LoadCubeTexture() All textures must be the same resolution and bit depth.");
+				Memory::Free(piexels, sizeof(unsigned char) * ImageSize * 6, MemoryType::eMemory_Type_Array);
+				piexels = nullptr;
+				return false;
+			}
+		}
+
+		// Copy to the relevant portion of the array.
+		Memory::Copy(piexels + sizeof(unsigned char) * ImageSize * i, ResourceData->pixels, ImageSize);
+
+		// Clean up data.
+		ResourceSystem::Unload(&ImageResource);
+	}
+
+	// Acquire internal texture resources and upload to GPU.
+	Renderer->CreateTexture(piexels, t);
+
+	Memory::Free(piexels, sizeof(unsigned char) * ImageSize * 6, MemoryType::eMemory_Type_Array);
+	piexels = nullptr;
+	return true;
+}
 
 bool TextureSystem::LoadTexture(const char* name, Texture* texture) {
+	ImageResourceParams Params;
+	Params.flip_y = true;
+
 	Resource ImgResource;
-	if (!ResourceSystem::Load(name, ResourceType::eResource_type_Image, &ImgResource)) {
+	if (!ResourceSystem::Load(name, ResourceType::eResource_type_Image, &Params, &ImgResource)) {
 		UL_ERROR("Failed to load image resource for texture '%s'.", name);
 		return false;
 	}
@@ -379,51 +451,52 @@ bool TextureSystem::LoadTexture(const char* name, Texture* texture) {
 	TempTexture.Width = ResourceData->width;
 	TempTexture.Height= ResourceData->height;
 	TempTexture.ChannelCount = ResourceData->channel_count;
+	TempTexture.Type = TextureType::eTexture_Type_2D;
 
-		uint32_t CurrentGeneration = texture->Generation;
-		texture->Generation = INVALID_ID;
+	uint32_t CurrentGeneration = texture->Generation;
+	texture->Generation = INVALID_ID;
 
-		size_t TotalSize = TempTexture.Width * TempTexture.Height * TempTexture.ChannelCount;
-		// Check for transparency.
-		bool HasTransparency = false;
-		for (size_t i = 0; i < TotalSize; i += TempTexture.ChannelCount) {
-			unsigned char a = ResourceData->pixels[i + 3];
-			if (a < 255) {
-				HasTransparency = true;
-				break;
-			}
+	size_t TotalSize = TempTexture.Width * TempTexture.Height * TempTexture.ChannelCount;
+	// Check for transparency.
+	bool HasTransparency = false;
+	for (size_t i = 0; i < TotalSize; i += TempTexture.ChannelCount) {
+		unsigned char a = ResourceData->pixels[i + 3];
+		if (a < 255) {
+			HasTransparency = true;
+			break;
 		}
+	}
 
-		// Take a copy of the name
-		strncpy(TempTexture.Name, name, TEXTURE_NAME_MAX_LENGTH);
-		TempTexture.Generation = INVALID_ID;
-		TempTexture.Flags = HasTransparency ? TextureFlagBits::eTexture_Flag_Has_Transparency : 0;
+	// Take a copy of the name
+	strncpy(TempTexture.Name, name, TEXTURE_NAME_MAX_LENGTH);
+	TempTexture.Generation = INVALID_ID;
+	TempTexture.Flags = HasTransparency ? TextureFlagBits::eTexture_Flag_Has_Transparency : 0;
 
-		//Acquire internal texture resources and upload to GPU.
-		Renderer->CreateTexture(ResourceData->pixels, &TempTexture);
+	//Acquire internal texture resources and upload to GPU.
+	Renderer->CreateTexture(ResourceData->pixels, &TempTexture);
 
-		// Take a copy of the old texture.
-		Texture Old = *texture;
+	// Take a copy of the old texture.
+	Texture Old = *texture;
 
-		// Assign the temp texture to the pointer.
-		*texture = TempTexture;
+	// Assign the temp texture to the pointer.
+	*texture = TempTexture;
 
-		// Destroy the old texture.
-		Renderer->DestroyTexture(&Old);
+	// Destroy the old texture.
+	Renderer->DestroyTexture(&Old);
 
-		if (CurrentGeneration == INVALID_ID) {
-			texture->Generation = 0;
-		}
-		else {
-			texture->Generation = CurrentGeneration + 1;
-		}
+	if (CurrentGeneration == INVALID_ID) {
+		texture->Generation = 0;
+	}
+	else {
+		texture->Generation = CurrentGeneration + 1;
+	}
 
-		// Clean up data.
-		ResourceSystem::Unload(&ImgResource);
-		return true;
+	// Clean up data.
+	ResourceSystem::Unload(&ImgResource);
+	return true;
 }
 
-bool TextureSystem::ProcessTextureReference(const char* name, 
+bool TextureSystem::ProcessTextureReference(const char* name, TextureType type ,
 	short reference_diff, bool auto_release, bool skip_load, uint32_t* out_texture_id) {
 	*out_texture_id = INVALID_ID;
 	if (!Initilized) {
@@ -501,16 +574,37 @@ bool TextureSystem::ProcessTextureReference(const char* name,
 				}
 				else {
 					Texture* t = &RegisteredTextures[Ref.handle];
+					t->Type = type;
 					// Create new texture.
 					if (skip_load) {
 						UL_INFO("Load skipped for texture '%s'. This is expected behaviour.", name);
 					}
 					else {
-						if (!LoadTexture(name, t)) {
-							*out_texture_id = INVALID_ID;
-							UL_ERROR("Failed to load texture '%s'.", name);
-							return false;
+						if (type == TextureType::eTexture_Type_2D) {
+							if (!LoadTexture(name, t)) {
+								*out_texture_id = INVALID_ID;
+								UL_ERROR("Failed to load texture '%s'.", name);
+								return false;
+							}
 						}
+						else {
+							char TextureNames[6][TEXTURE_NAME_MAX_LENGTH];
+							
+							// +x,-X,+y,-Y,+Z,-Z in _cubemap_ space, which is LH y-down.
+							sprintf(TextureNames[0], "%s_r", name);		// Right texture.
+							sprintf(TextureNames[1], "%s_l", name);		// Left texture.
+							sprintf(TextureNames[2], "%s_u", name);		// Up texture.
+							sprintf(TextureNames[3], "%s_d", name);		// Down texture.
+							sprintf(TextureNames[4], "%s_f", name);		// Front texture.
+							sprintf(TextureNames[5], "%s_b", name);		// Back texture.
+
+							if (!LoadCubeTexture(name, TextureNames, t)) {
+								*out_texture_id = INVALID_ID;
+								UL_ERROR("Failed to load cube texture '%s'.", name);
+								return false;
+							}
+						}
+						
 						t->Id = Ref.handle;
 					}
 					UL_INFO("Texture '%s' does not yet exist. Created, and ref_count is now %i.", name, Ref.reference_count);

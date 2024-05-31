@@ -6,7 +6,8 @@
 
 enum RenderViewKnownType {
 	eRender_View_Known_Type_World = 0x01,
-	eRender_View_Known_Type_UI = 0x02
+	eRender_View_Known_Type_UI = 0x02,
+	eRender_View_Known_Type_Skybox = 0x03
 };
 
 enum RenderViewViewMatrixtSource {
@@ -56,20 +57,9 @@ public:
 	unsigned short Width;
 	unsigned short Height;
 	RenderViewKnownType Type;
-
 	unsigned char RenderpassCount;
 	std::vector<class IRenderpass*> Passes;
-
 	const char* CustomShaderName = nullptr;
-	void* InternalData = nullptr;
-
-	/*
-	std::function<bool(class IRenderView* self)> OnCreate;
-	std::function<void(class IRenderView* self)> OnDestroy;
-	std::function<void(class IRenderView* self, uint32_t width, uint32_t height)> OnResize;
-	std::function<bool(class IRenderView* self, void* data, struct RenderViewPacket* out_packet)> OnBuildPacket;
-	std::function<bool(class IRenderView* self, const struct RenderViewPacket* out_packet, size_t frame_number, size_t render_target_index)> OnRender;
-	*/
 };
 
 struct RenderViewPacket {

@@ -2,6 +2,7 @@
 
 #include "Core/DMemory.hpp"
 #include "Core/EngineLogger.hpp"
+#include "Containers/TString.hpp"
 
 #include "Systems/ResourceSystem.h"
 #include "Platform/FileSystem.hpp"
@@ -12,7 +13,7 @@ BinaryLoader::BinaryLoader() {
 	TypePath = "";
 }
 
-bool BinaryLoader::Load(const char* name, Resource* resource) {
+bool BinaryLoader::Load(const char* name, void* params, Resource* resource) {
 	if (name == nullptr || resource == nullptr) {
 		return false;
 	}
@@ -22,9 +23,7 @@ bool BinaryLoader::Load(const char* name, Resource* resource) {
 	sprintf(FullFilePath, FormatStr, ResourceSystem::GetRootPath(), TypePath, name, "");
 
 	// TODO: Should be using an allocator here.
-	size_t FullPathLength = sizeof(char) * strlen(FullFilePath);
-	resource->FullPath = (char*)Memory::Allocate(FullPathLength, MemoryType::eMemory_Type_String);
-	strncpy(resource->FullPath, FullFilePath, FullPathLength);
+	resource->FullPath = StringCopy(FullFilePath);
 
 	FileHandle File;
 	if (!FileSystemOpen(FullFilePath, eFile_Mode_Read, true, &File)) {
@@ -52,7 +51,7 @@ bool BinaryLoader::Load(const char* name, Resource* resource) {
 
 	resource->Data = ResourceData;
 	resource->DataSize = ReadSize;
-	resource->Name = name;
+	resource->Name = StringCopy(name);
 
 	return true;
 }
@@ -63,14 +62,18 @@ void BinaryLoader::Unload(Resource* resource) {
 		return;
 	}
 
-	size_t PathLength = strlen(resource->FullPath);
-	if (PathLength > 0) {
-		Memory::Free(resource->FullPath, PathLength, MemoryType::eMemory_Type_String);
+	if (resource->Name) {
+		Memory::Free(resource->Name, sizeof(char) * (strlen(resource->Name) + 1), MemoryType::eMemory_Type_String);
+		resource->Name = nullptr;
 	}
-	resource->FullPath = nullptr;
+
+	if (resource->FullPath) {
+		Memory::Free(resource->FullPath, sizeof(char) * (strlen(resource->FullPath) + 1), MemoryType::eMemory_Type_String);
+		resource->FullPath = nullptr;
+	}
 
 	if (resource->Data) {
-		Memory::Free(resource->Data, resource->DataSize, MemoryType::eMemory_Type_Array);
+		Memory::Free(resource->Data, resource->DataSize, MemoryType::eMemory_Type_Texture);
 		resource->Data = nullptr;
 		resource->DataSize = 0;
 		resource->LoaderID = INVALID_ID;

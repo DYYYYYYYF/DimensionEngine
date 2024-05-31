@@ -37,6 +37,7 @@ struct SApplicationState {
 	SClock clock;
 
 	// Temp
+	Skybox SB;
 	std::vector<Mesh> Meshes;
 	std::vector<Mesh> UIMeshes;
 };
@@ -159,6 +160,21 @@ bool ApplicationCreate(SGame* game_instance){
 	}
 
 	// Load render views.
+	RenderViewConfig SkyboxConfig;
+	SkyboxConfig.type = RenderViewKnownType::eRender_View_Known_Type_Skybox;
+	SkyboxConfig.width = 0;
+	SkyboxConfig.height = 0;
+	SkyboxConfig.name = "Skybox";
+	SkyboxConfig.pass_count = 1;
+	std::vector<RenderViewPassConfig> SkyboxPasses(1);
+	SkyboxPasses[0].name = "Renderpass.Builtin.Skybox";
+	SkyboxConfig.passes = SkyboxPasses;
+	SkyboxConfig.view_matrix_source = RenderViewViewMatrixtSource::eRender_View_View_Matrix_Source_Scene_Camera;
+	if (!RenderViewSystem::Create(SkyboxConfig)) {
+		UL_FATAL("Failed to create skybox view. Aborting application.");
+		return false;
+	}
+
 	RenderViewConfig OpaqueWorldConfig;
 	OpaqueWorldConfig.type = RenderViewKnownType::eRender_View_Known_Type_World;
 	OpaqueWorldConfig.width = 0;
@@ -190,6 +206,31 @@ bool ApplicationCreate(SGame* game_instance){
 	}
 
 	// TODO: Temp
+	// Skybox
+	TextureMap* CubeMap = &AppState.SB.Cubemap;
+	CubeMap->filter_magnify = TextureFilter::eTexture_Filter_Mode_Linear;
+	CubeMap->filter_minify = TextureFilter::eTexture_Filter_Mode_Linear;
+	CubeMap->usage = TextureUsage::eTexture_Usage_Map_Cubemap;
+	if (!Renderer->AcquireTextureMap(CubeMap)) {
+		UL_FATAL("Unable to acquire resources for cube map texture.");
+		return false;
+	}
+	CubeMap->texture = TextureSystem::AcquireCube("skybox", true);
+	SGeometryConfig SkyboxCubeConfig = GeometrySystem::GenerateCubeConfig(10.0f, 10.0f, 10.0f, 1.0f, 1.0f, "SkyboxCube", nullptr);
+	// Clear out the material name.
+	SkyboxCubeConfig.material_name[0] = '\0';
+	AppState.SB.g = GeometrySystem::AcquireFromConfig(SkyboxCubeConfig, true);
+	AppState.SB.RenderFrameNumber = INVALID_ID_U64;
+	Shader* SkyboxShader = ShaderSystem::Get(BUILTIN_SHADER_NAME_SKYBOX);
+	std::vector<TextureMap*> Maps = { &AppState.SB.Cubemap };
+
+	AppState.SB.InstanceID = Renderer->AcquireInstanceResource(SkyboxShader, Maps);
+	if (AppState.SB.InstanceID == INVALID_ID) {
+		UL_FATAL("Unable to acquire shader resource for skybox texture.");
+		return false;
+	}
+
+	// World meshes
 	AppState.Meshes.resize(10);
 	Mesh* CubeMesh = &AppState.Meshes[0];
 	CubeMesh->geometry_count = 1;
@@ -218,7 +259,7 @@ bool ApplicationCreate(SGame* game_instance){
 	Mesh* CarMesh = &AppState.Meshes[3];
 	Resource CarMeshResource;
 	// Test model sponza/falcon
-	if (!ResourceSystem::Load("falcon", ResourceType::eResource_type_Static_Mesh, &CarMeshResource)) {
+	if (!ResourceSystem::Load("falcon", ResourceType::eResource_type_Static_Mesh, nullptr, &CarMeshResource)) {
 		UL_ERROR("Failed to load car test mesh.");
 	}
 	else {
@@ -236,7 +277,7 @@ bool ApplicationCreate(SGame* game_instance){
 	Mesh* SponzaMesh = &AppState.Meshes[4];
 	Resource SponzaMeshResource;
 	// Test model sponza/falcon
-	if (!ResourceSystem::Load("sponza", ResourceType::eResource_type_Static_Mesh, &SponzaMeshResource)) {
+	if (!ResourceSystem::Load("sponza", ResourceType::eResource_type_Static_Mesh, nullptr, &SponzaMeshResource)) {
 		UL_ERROR("Failed to load car test mesh.");
 	}
 	else {
@@ -372,16 +413,24 @@ bool ApplicationRun() {
 			Packet.delta_time = DeltaTime;
 
 			// TODO: Read from config.
-			Packet.view_count = 2;
+			Packet.view_count = 3;
 			std::vector<RenderViewPacket> Views;
 			Views.resize(Packet.view_count);
 			Packet.views = Views;
+
+			// Skybox
+			SkyboxPacketData SkyboxData;
+			SkyboxData.sb = &AppState.SB;
+			if (!RenderViewSystem::BuildPacket(RenderViewSystem::Get("Skybox"), &SkyboxData, &Packet.views[0])) {
+				UL_ERROR("Failed to build packet for view 'World_Opaque'.");
+				return false;
+			}
 
 			// World
 			MeshPacketData WorldMeshData;
 			WorldMeshData.mesh_count = (uint32_t)AppState.Meshes.size();
 			WorldMeshData.meshes = AppState.Meshes;
-			if (!RenderViewSystem::BuildPacket(RenderViewSystem::Get("World_Opaque"), &WorldMeshData, &Packet.views[0])) {
+			if (!RenderViewSystem::BuildPacket(RenderViewSystem::Get("World_Opaque"), &WorldMeshData, &Packet.views[1])) {
 				UL_ERROR("Failed to build packet for view 'World_Opaque'.");
 				return false;
 			}
@@ -390,7 +439,7 @@ bool ApplicationRun() {
 			MeshPacketData UIMeshData;
 			UIMeshData.mesh_count = (uint32_t)AppState.UIMeshes.size();
 			UIMeshData.meshes = AppState.UIMeshes;
-			if (!RenderViewSystem::BuildPacket(RenderViewSystem::Get("UI"), &UIMeshData, &Packet.views[1])) {
+			if (!RenderViewSystem::BuildPacket(RenderViewSystem::Get("UI"), &UIMeshData, &Packet.views[2])) {
 				UL_ERROR("Failed to build packet for view 'UI'.");
 				return false;
 			}
@@ -436,6 +485,11 @@ bool ApplicationRun() {
 	MaterialSystem::Shutdown();
 	TextureSystem::Shutdown();
 	ShaderSystem::Shutdown();
+
+	// Temp
+	Renderer->ReleaseTextureMap(&AppState.SB.Cubemap);
+
+	RenderViewSystem::Shutdown();
 	ResourceSystem::Shutdown();
 
 	Renderer->Shutdown();

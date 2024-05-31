@@ -13,7 +13,7 @@ MaterialLoader::MaterialLoader() {
 	TypePath = "Materials";
 }
 
-bool MaterialLoader::Load(const char* name, Resource* resource) {
+bool MaterialLoader::Load(const char* name, void* params, Resource* resource) {
 	if (name == nullptr || resource == nullptr) {
 		return false;
 	}
@@ -23,8 +23,7 @@ bool MaterialLoader::Load(const char* name, Resource* resource) {
 	sprintf(FullFilePath, FormatStr, ResourceSystem::GetRootPath(), TypePath, name, ".dmt");
 
 	// TODO: Should be using an allocator here.
-	resource->FullPath = (char*)Memory::Allocate(sizeof(char) * strlen(FullFilePath), MemoryType::eMemory_Type_String);
-	strncpy(resource->FullPath, FullFilePath, sizeof(char) * strlen(FullFilePath));
+	resource->FullPath = StringCopy(FullFilePath);
 
 	FileHandle File;
 	if (!FileSystemOpen(FullFilePath, eFile_Mode_Read, false, &File)) {
@@ -124,7 +123,8 @@ bool MaterialLoader::Load(const char* name, Resource* resource) {
 
 	resource->Data = ResourceData;
 	resource->DataSize = sizeof(SMaterialConfig);
-	resource->Name = name;
+	resource->Name = StringCopy(name);
+	resource->DataCount = 1;
 
 	return true;
 }
@@ -135,16 +135,21 @@ void MaterialLoader::Unload(Resource* resource) {
 		return;
 	}
 
-	uint32_t PathLength = (uint32_t)strlen(resource->FullPath);
-	if (PathLength > 0) {
-		Memory::Free(resource->FullPath, sizeof(char) * PathLength, MemoryType::eMemory_Type_String);
+	if (resource->Name) {
+		Memory::Free(resource->Name, sizeof(char) * (strlen(resource->Name) + 1), MemoryType::eMemory_Type_String);
+		resource->Name = nullptr;
 	}
-	resource->FullPath = nullptr;
+
+	if (resource->FullPath) {
+		Memory::Free(resource->FullPath, sizeof(char) * (strlen(resource->FullPath) + 1), MemoryType::eMemory_Type_String);
+		resource->FullPath = nullptr;
+	}
 
 	if (resource->Data) {
-		Memory::Free(resource->Data, resource->DataSize, MemoryType::eMemory_Type_Material_Instance);
+		Memory::Free(resource->Data, resource->DataSize * resource->DataCount, MemoryType::eMemory_Type_Texture);
 		resource->Data = nullptr;
 		resource->DataSize = 0;
+		resource->DataCount = 0;
 		resource->LoaderID = INVALID_ID;
 	}
 

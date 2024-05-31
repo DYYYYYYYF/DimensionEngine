@@ -9,6 +9,7 @@
 // TODO: temp
 #include "Renderer/Views/RenderViewUI.hpp"
 #include "Renderer/Views/RenderViewWorld.hpp"
+#include "Renderer/Views/RenderViewSkybox.hpp"
 
 HashTable RenderViewSystem::Lookup;
 void* RenderViewSystem::TableBlock = nullptr;
@@ -87,8 +88,11 @@ bool RenderViewSystem::Create(const RenderViewConfig& config) {
 	if (config.type == RenderViewKnownType::eRender_View_Known_Type_World) {
 		RegisteredViews[ID] = new RenderViewWorld();
 	}
-	else {
+	else if (config.type == RenderViewKnownType::eRender_View_Known_Type_UI) {
 		RegisteredViews[ID] = new RenderViewUI();
+	}
+	else if (config.type == RenderViewKnownType::eRender_View_Known_Type_Skybox) {
+		RegisteredViews[ID] = new RenderViewSkybox();
 	}
 
 	IRenderView* View = RegisteredViews[ID];
