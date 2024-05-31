@@ -306,8 +306,8 @@ bool ApplicationCreate(SGame* game_instance){
 	strncpy(UIConfig.material_name, "Material.UI", MATERIAL_NAME_MAX_LENGTH);
 	strncpy(UIConfig.name, "Material.UI", MATERIAL_NAME_MAX_LENGTH);
 
-	const float h = 256.0f;
-	const float w = 64.0f;
+	const float h = game_instance->app_config.start_height / 3.0f;
+	const float w = h * 200.0f / 470.0f;
 	const float x = 0.0f;
 	const float y = game_instance->app_config.start_height;
 
@@ -564,8 +564,8 @@ bool ApplicationOnResized(unsigned short code, void* sender, void* listener_inst
 				strncpy(UIConfig.material_name, "Material.UI", MATERIAL_NAME_MAX_LENGTH);
 				strncpy(UIConfig.name, "Material.UI", MATERIAL_NAME_MAX_LENGTH);
 
-				const float h = 256.0f;
-				const float w = 64.0f;
+				const float h = Height / 3.0f;
+				const float w = h * 200.0f / 470.0f;
 				const float x = 0.0f;
 				const float y = Height;
 

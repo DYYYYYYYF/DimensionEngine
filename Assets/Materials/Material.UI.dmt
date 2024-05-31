@@ -3,5 +3,5 @@
 version=0.1
 name=TestUIMaterial
 diffuse_color=1.0 1.0 1.0 1.0
-diffuse_map_name=OrangeLines512
+diffuse_map_name=DimensionEngine
 shader=Shader.Builtin.UI
