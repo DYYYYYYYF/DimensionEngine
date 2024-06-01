@@ -42,6 +42,10 @@
 
 #endif
 
+#ifdef DPLATFORM_MACOS
+#include <stddef.h>
+#endif
+
 #ifdef DEXPORT
 // Export
 #ifdef _MSC_VER

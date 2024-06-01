@@ -1,6 +1,6 @@
 #pragma once
 
-#include "core/Application.hpp"
+#include "Core/Application.hpp"
 
 struct SGame {
 	SApplicationConfig app_config;

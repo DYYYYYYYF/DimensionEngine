@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Defines.hpp"
-#include "core/EngineLogger.hpp"
+#include "Core/EngineLogger.hpp"
 #include "Platform/Platform.hpp"
 
 #define ARRAY_DEFAULT_CAPACITY 1
@@ -71,7 +71,6 @@ public:
 	void InsertAt(size_t index, ElementType val) {
 		if (index > Length - 1) {
 			UL_ERROR("Index Out of length! Length: %i, Index: %i", Length, index);
-			return nullptr;
 		}
 
 		if (Length >= Capacity) {

@@ -9,7 +9,7 @@ static std::random_device m_seed;
 #if DPLATFORM_WINDOWS
 static std::mt19937 m_mt19937 = std::mt19937(m_seed());
 #else
-static std::mt19937 m_mt19937 = std::mt19937(m_seed);
+static std::mt19937 m_mt19937;
 #endif
 
 float DSin(float x) {
