@@ -110,7 +110,7 @@ if __name__ == '__main__':
             elif opt in ("-l", "--language"):
                 default_shader_language = arg
 
-        CompileShaders(arg)
+        CompileShaders(default_shader_language)
 
     except getopt.GetoptError:
         print('compile_shader.py -l <language>')
