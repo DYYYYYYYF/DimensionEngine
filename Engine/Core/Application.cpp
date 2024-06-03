@@ -47,6 +47,9 @@ static SApplicationState AppState;
 static IRenderer* Renderer = nullptr;
 static TextureSystem TextureManager;
 
+// Init logger
+static EngineLogger* GlobalLogger = new EngineLogger();
+
 bool ApplicationCreate(SGame* game_instance){
 	if (Initialized) {
 		UL_ERROR("Create application more than once!");
@@ -55,15 +58,13 @@ bool ApplicationCreate(SGame* game_instance){
 
 	AppState.game_instance = game_instance;
 
-	// Init logger
-	static EngineLogger* GlobalLogger  = new EngineLogger();
 	Core::InputInitialize();
 
-	/*LOG_INFO("Test Info");
-	LOG_DEBUG("Test Debug");
+	LOG_INFO("Test Info");
+	LOG_DEBUG("Test %s", "Debug");
 	LOG_ERROR("Test Error");
 	LOG_WARN("Test Warn");
-	LOG_FATAL("Test Fatal");*/
+	LOG_FATAL("Test Fatal");
 
 	AppState.is_running = true;
 	AppState.is_suspended = false;
