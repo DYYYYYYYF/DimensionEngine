@@ -30,6 +30,8 @@ public:
 
 	static double PlatformGetAbsoluteTime();
 
-	static void PlatformSleep(int ms);
+	static void PlatformSleep(size_t ms);
+
+	static int GetProcessorCount();
 };
 

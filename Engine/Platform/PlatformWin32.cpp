@@ -4,6 +4,8 @@
 
 #include "Core/Input.hpp"
 #include "Core/Event.hpp"
+#include "Core/DThread.hpp"
+#include "Core/DMutex.hpp"
 #include "Renderer/Vulkan/VulkanPlatform.hpp"
 #include "Renderer/Vulkan/VulkanContext.hpp"
 
@@ -167,9 +169,139 @@ double Platform::PlatformGetAbsoluteTime() {
 	return (double)CurrentTime.QuadPart * ClockFrequency;
 }
 
-void Platform::PlatformSleep(int ms) {
-	Sleep(ms);
+void Platform::PlatformSleep(size_t ms) {
+	Sleep((DWORD)ms);
 }
+
+int Platform::GetProcessorCount() {
+	SYSTEM_INFO SystemInfo;
+	GetSystemInfo(&SystemInfo);
+	UL_INFO("%i processor cores detected.", SystemInfo.dwNumberOfProcessors);
+	return SystemInfo.dwNumberOfProcessors;
+}
+
+// NOTE: Begin Threads
+bool Thread::Create(PFN_thread_start start_func, void* params, bool auto_detach) {
+	if (!start_func) {
+		return false;
+	}
+
+	InternalData = CreateThread(
+		0,
+		0,													// Default stack size
+		(LPTHREAD_START_ROUTINE)start_func, params,			// Function ptr
+		0,													// Params to pass to thread
+		(DWORD*)&ThreadID);
+
+	UL_DEBUG("Starting process on thread id: %#x.", ThreadID);
+	if (!InternalData) {
+		return false;
+	}
+
+	if (auto_detach) {
+		CloseHandle((HANDLE)InternalData);
+	}
+
+	return true;
+}
+
+void Thread::Destroy() {
+	if (InternalData != nullptr) {
+		DWORD ExitCode;
+		GetExitCodeThread(InternalData, &ExitCode);
+		//if (ExitCode == STILL_ACTIVE) {
+		//	TerminateThread(InternalData, 0);	// 0 = failure
+		//}
+		CloseHandle((HANDLE)InternalData);
+		InternalData = nullptr;
+		ThreadID = 0;
+	}
+}
+
+void Thread::Detach() {
+	if (InternalData == nullptr) {
+		return;
+	}
+
+	CloseHandle((HANDLE)InternalData);
+	InternalData = nullptr;
+}
+
+void Thread::Cancel() {
+	if (InternalData == nullptr) {
+		return;
+	}
+
+	TerminateThread((HANDLE)InternalData, 0);
+	InternalData = nullptr;
+}
+
+bool Thread::IsActive() const {
+	if (InternalData == nullptr) {
+		return false;
+	}
+
+	DWORD ExitCode = WaitForSingleObject((HANDLE)InternalData, 0);
+	if (ExitCode == WAIT_TIMEOUT) {
+		return true;
+	}
+	return false;
+}
+
+void Thread::Sleep(size_t ms) {
+	Platform::PlatformSleep(ms); 
+}
+
+size_t Thread::GetThreadID() const {
+	return (size_t)GetCurrentThreadId();
+}
+// NOTE: End Threads
+
+// NOTE: Begin mutexs
+bool Mutex::Create() {
+	InternalData = CreateMutex(0, 0, 0);
+	if (InternalData == nullptr) {
+		UL_FATAL("Unable to create mutex.");
+		return false;
+	}
+
+	return true;
+}
+
+void Mutex::Destroy() {
+	if (InternalData == nullptr) {
+		return;
+	}
+
+	CloseHandle((HANDLE)InternalData);
+	InternalData = nullptr;
+}
+
+bool Mutex::Lock() {
+	DWORD Result = WaitForSingleObject((HANDLE)InternalData, INFINITE);
+	switch (Result)
+	{
+	// The thread got ownership of mutex
+	case WAIT_OBJECT_0:
+		return true;
+	// The thread got ownership of an obandoned mutex
+	case WAIT_ABANDONED:
+		UL_FATAL("Mutex lock faield.");
+		return false;
+	}
+	return true;
+}
+
+bool Mutex::UnLock() {
+	if (InternalData == nullptr) {
+		return false;
+	}
+
+	int Result = ReleaseMutex((HANDLE)InternalData);
+	return Result != 0;	// 0 is failed.
+}
+
+// NOTE: End mutexs.
 
 LRESULT CALLBACK win32_process_message(HWND hwnd, UINT32 msg, WPARAM w_param, LPARAM l_param) {
 	switch (msg) {
