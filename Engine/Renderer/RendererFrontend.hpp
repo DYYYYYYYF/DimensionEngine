@@ -37,6 +37,8 @@ public:
 		const void* vertices, uint32_t index_size, uint32_t index_count, const void* indices);
 	virtual void DestroyGeometry(Geometry* geometry);
 
+	virtual bool GetEnabledMutiThread() const;
+
 public:
 	/**
 	 * @beief Draws the given geometry. Should only be called inside a renderpas, within a frame.

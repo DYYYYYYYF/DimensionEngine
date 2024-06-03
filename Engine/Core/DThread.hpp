@@ -49,7 +49,7 @@ public:
 	 */
 	void Sleep(size_t ms);
 
-	size_t GetThreadID() const;
+	static size_t GetThreadID();
 
 public:
 	size_t ThreadID;

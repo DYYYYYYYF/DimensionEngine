@@ -340,6 +340,7 @@ bool MeshLoader::ImportObjFile(FileHandle* obj_file, const char* out_dsm_filenam
 	if (strlen(MaterialFileName) > 0) {
 		// Load up the material file.
 		char FullMtlPath[512];
+		Memory::Zero(FullMtlPath, sizeof(char) * 512);
 		StringDirectoryFromPath(FullMtlPath, out_dsm_filename);
 		String::Append(FullMtlPath, FullMtlPath, MaterialFileName);
 

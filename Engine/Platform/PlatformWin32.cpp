@@ -252,7 +252,7 @@ void Thread::Sleep(size_t ms) {
 	Platform::PlatformSleep(ms); 
 }
 
-size_t Thread::GetThreadID() const {
+size_t Thread::GetThreadID() {
 	return (size_t)GetCurrentThreadId();
 }
 // NOTE: End Threads

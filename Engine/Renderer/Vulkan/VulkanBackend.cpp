@@ -47,6 +47,13 @@ VKAPI_ATTR VkBool32 VKAPI_CALL VulkanDebugCallback(
 
 
 VulkanBackend::VulkanBackend() {
+	// TODO: Custom allocator;
+	Context.Allocator = nullptr;
+
+	// TODO: Implement muti-thread
+	Context.EnableMultithreading = false;
+	Context.FrameBufferWidth = 800;
+	Context.FrameBufferHeight = 600;
 }
 
 VulkanBackend::~VulkanBackend() {
@@ -54,13 +61,7 @@ VulkanBackend::~VulkanBackend() {
 }
 
 bool VulkanBackend::Initialize(const RenderBackendConfig* config, unsigned char* out_window_render_target_count, struct SPlatformState* plat_state) {
-
-	// TODO: Custom allocator;
-	Context.Allocator = nullptr;
-
 	Context.OnRenderTargetRefreshRequired = config->OnRenderTargetRefreshRequired;
-	Context.FrameBufferWidth = 800;
-	Context.FrameBufferHeight = 600;
 
 	vk::ApplicationInfo ApplicationInfo;
 	vk::InstanceCreateInfo InstanceInfo;
@@ -1798,4 +1799,8 @@ void VulkanBackend::CreateRenderpass(IRenderpass* out_renderpass, float depth, u
 
 void VulkanBackend::DestroyRenderpass(IRenderpass* pass) {
 	pass->Destroy(&Context);
+}
+
+bool VulkanBackend::GetEnabledMultiThread() const {
+	return Context.EnableMultithreading;
 }

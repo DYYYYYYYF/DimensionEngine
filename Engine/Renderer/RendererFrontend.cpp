@@ -361,3 +361,7 @@ void IRenderer::RegenerateRenderTargets() {
 
 	}
 }
+
+bool IRenderer::GetEnabledMutiThread() const {
+	return Backend->GetEnabledMultiThread();
+}

@@ -72,6 +72,7 @@ public:
 
 	virtual bool AcquireTextureMap(TextureMap* map) = 0;
 	virtual void ReleaseTextureMap(TextureMap* map) = 0;
+	virtual bool GetEnabledMultiThread() const { return false; }
 
 public:
 	SPlatformState* GetPlatformState() { return PlatformState; }

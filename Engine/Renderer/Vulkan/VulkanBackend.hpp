@@ -58,6 +58,7 @@ public:
 
 	virtual bool AcquireTextureMap(TextureMap* map) override;
 	virtual void ReleaseTextureMap(TextureMap* map) override;
+	virtual bool GetEnabledMultiThread() const override;
 
 public:
 	virtual bool CreateBuffers();

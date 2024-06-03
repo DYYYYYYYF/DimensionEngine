@@ -86,6 +86,8 @@ public:
 	// Framebuffers used for world rendering, one per frame.
 	RenderTarget WorldRenderTargets[3];
 
+	bool EnableMultithreading;
+
 	// TODO: Make dynamic
 	GeometryData Geometries[GEOMETRY_MAX_COUNT];
 
