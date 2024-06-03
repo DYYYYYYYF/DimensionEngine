@@ -1,6 +1,8 @@
 #pragma once
 
 #include "Defines.hpp"
+
+#include "DMutex.hpp"
 #include "Memory/DynamicAllocator.h"
 
 enum MemoryType {
@@ -70,4 +72,5 @@ namespace Memory {
 	static DynamicAllocator DynamicAlloc;
 	static size_t AllocateCount;
 	
+	static Mutex AllocationMutex;
 };

@@ -152,11 +152,29 @@ bool ApplicationCreate(SGame* game_instance){
 		return false;
 	}
 
+	// Init render view system.
 	SRenderViewSystemConfig RenderViewSysConfig;
 	RenderViewSysConfig.max_view_count = 255;
 	if (!RenderViewSystem::Initialize(Renderer, RenderViewSysConfig)) {
 		UL_FATAL("Render view system failed to intialize!");
 		return false;
+	}
+
+	// This is really a core count. Subtract 1 to account for the main thread already being in use.
+	int ThreadCount = Platform::GetProcessorCount() - 1;
+	if (ThreadCount < 1) {
+		UL_FATAL("Error: Platform reported processor count (minus one for main thread) as %i. Need at least one additional thread for the job system.", ThreadCount);
+		return false;
+	}
+	else {
+		UL_INFO("Available threads: %i.", ThreadCount);
+	}
+
+	// Cap the thread count.
+	const int MaxThreadCount = 15;
+	if (ThreadCount > MaxThreadCount) {
+		UL_INFO("Available threads on the system is %i, but will be capped at %i.", ThreadCount, MaxThreadCount);
+		ThreadCount = MaxThreadCount;
 	}
 
 	// Load render views.
