@@ -61,6 +61,11 @@ bool GameUpdate(SGame* game_instance, float delta_time) {
 		State->WorldCamera->Reset();
 	}
 
+	if (Core::InputIsKeyDown(Keys::eKeys_O)) {
+		SEventContext Context = {};
+		Core::EventFire(Core::eEvent_Code_Debug_0, game_instance, Context);
+	}
+
 	int px, py, cx, cy;
 	Core::InputGetMousePosition(cx, cy);
 	Core::InputGetPreviousMousePosition(px, py);

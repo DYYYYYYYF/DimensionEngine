@@ -33,7 +33,7 @@ namespace Core {
 	bool EventRegister(unsigned short code, void* listener, PFN_on_event on_event);
 	bool EventUnregister(unsigned short code, void* listener, PFN_on_event on_event);
 
-	bool EventFire(unsigned short code, void* sender, SEventContext context);
+	DAPI bool EventFire(unsigned short code, void* sender, SEventContext context);
 
 	// System internal event codes. Application should use codes beyond 255.
 	enum SystemEventCode {

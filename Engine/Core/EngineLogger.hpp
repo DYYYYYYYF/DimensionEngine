@@ -54,7 +54,7 @@ public:
     {char* str = AppendLogMessage(format, ##__VA_ARGS__);\
     Platform::PlatformConsoleWrite(str, 2);  \
     delete[] str;\
-    UL_INFO(format, ##__VA_ARGS__);}
+    UL_WARN(format, ##__VA_ARGS__);}
 #endif
 
 #ifndef LOG_ERROR
@@ -62,7 +62,7 @@ public:
     {char* str = AppendLogMessage(format, ##__VA_ARGS__);\
     Platform::PlatformConsoleWrite(str, 1);  \
     delete[] str;\
-    UL_INFO(format, ##__VA_ARGS__);}
+    UL_ERROR(format, ##__VA_ARGS__);}
 #endif
 
 #ifndef LOG_FATAL
@@ -70,7 +70,7 @@ public:
     {char* str = AppendLogMessage(format, ##__VA_ARGS__);\
     Platform::PlatformConsoleWrite(str, 0);  \
     delete[] str;\
-    UL_INFO(format, ##__VA_ARGS__);}
+    UL_FATAL(format, ##__VA_ARGS__);}
 #endif
 
 #else
