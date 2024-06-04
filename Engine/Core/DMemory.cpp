@@ -13,13 +13,7 @@ bool Memory::Initialize(size_t size) {
 	AllocateCount = 0;
 	TotalAllocateSize = size;
 
-	if (!AllocationMutex.Create()) {
-		UL_FATAL("Unable to create allocation mutex.");
-		return false;
-	}
-
 	UL_DEBUG("Memory system successfully allocated %llu bytes.", TotalAllocateSize);
-
 	return true;
 }
 

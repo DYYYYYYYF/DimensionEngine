@@ -20,6 +20,7 @@
 #include "Systems/ShaderSystem.h"
 #include "Systems/CameraSystem.h"
 #include "Systems/RenderViewSystem.hpp"
+#include "Systems/JobSystem.hpp"
 
 #include "Math/GeometryUtils.hpp"
 #include "Resources/Mesh.hpp"
@@ -61,7 +62,7 @@ bool ApplicationCreate(SGame* game_instance){
 	Core::InputInitialize();
 
 	LOG_INFO("Test Info");
-	LOG_DEBUG("Test %s", "Debug");
+	LOG_DEBUG("Test Debug");
 	LOG_ERROR("Test Error");
 	LOG_WARN("Test Warn");
 	LOG_FATAL("Test Fatal");
@@ -116,6 +117,53 @@ bool ApplicationCreate(SGame* game_instance){
 		return false;
 	}
 
+	// This is really a core count. Subtract 1 to account for the main thread already being in use.
+	bool RenderWithMultithread = Renderer->GetEnabledMutiThread();
+	int ThreadCount = Platform::GetProcessorCount() - 1;
+	if (ThreadCount < 1) {
+		UL_FATAL("Error: Platform reported processor count (minus one for main thread) as %i. Need at least one additional thread for the job system.", ThreadCount);
+		return false;
+	}
+	else {
+		UL_INFO("Available threads: %i.", ThreadCount);
+	}
+
+	// Cap the thread count.
+	const int MaxThreadCount = 15;
+	if (ThreadCount > MaxThreadCount) {
+		UL_INFO("Available threads on the system is %i, but will be capped at %i.", ThreadCount, MaxThreadCount);
+		ThreadCount = MaxThreadCount;
+	}
+
+	// Initialize the job system.
+	// Requires knowledge of renderer multithread support, so should be initialized here.
+	uint32_t JobThreadTypes[15];
+	for (uint32_t i = 0; i < 15; ++i) {
+		JobThreadTypes[i] = JobType::eGeneral;
+	}
+
+	if (ThreadCount == 1 || !RenderWithMultithread) {
+		// Everything on one job thread.
+		JobThreadTypes[0] |= (JobType::eGPU_Resource | JobType::eResource_Load);
+	}
+	else if (ThreadCount == 2) {
+		// Split things between 2 threads.
+		JobThreadTypes[0] |= JobType::eGPU_Resource;
+		JobThreadTypes[1] |= JobType::eResource_Load;
+	}
+	else {
+		// Dedicate the first 2 threads to these thing, pass of general tasks to other threads.
+		JobThreadTypes[0] = JobType::eGPU_Resource;
+		JobThreadTypes[1] = JobType::eResource_Load;
+	}
+
+	// Job system
+	if (!JobSystem::Initialize(ThreadCount, JobThreadTypes)) {
+		UL_FATAL("Job system failed to initialize!");
+		return false;
+	}
+
+	// Render system.
 	if (!Renderer->Initialize(game_instance->app_config.name, &AppState.platform)) {
 		UL_FATAL("Renderer failed to initialize!");
 		return false;
@@ -159,23 +207,6 @@ bool ApplicationCreate(SGame* game_instance){
 	if (!RenderViewSystem::Initialize(Renderer, RenderViewSysConfig)) {
 		UL_FATAL("Render view system failed to intialize!");
 		return false;
-	}
-
-	// This is really a core count. Subtract 1 to account for the main thread already being in use.
-	int ThreadCount = Platform::GetProcessorCount() - 1;
-	if (ThreadCount < 1) {
-		UL_FATAL("Error: Platform reported processor count (minus one for main thread) as %i. Need at least one additional thread for the job system.", ThreadCount);
-		return false;
-	}
-	else {
-		UL_INFO("Available threads: %i.", ThreadCount);
-	}
-
-	// Cap the thread count.
-	const int MaxThreadCount = 15;
-	if (ThreadCount > MaxThreadCount) {
-		UL_INFO("Available threads on the system is %i, but will be capped at %i.", ThreadCount, MaxThreadCount);
-		ThreadCount = MaxThreadCount;
 	}
 
 	// Load render views.
@@ -400,6 +431,8 @@ bool ApplicationRun() {
 			double DeltaTime = (CurrentTime - AppState.last_time);
 			double FrameStartTime = Platform::PlatformGetAbsoluteTime();
 
+			JobSystem::Update();
+
 			if (!AppState.game_instance->update(AppState.game_instance, (float)DeltaTime)) {
 				UL_FATAL("Game update failed!");
 				AppState.is_running = false;
@@ -504,6 +537,7 @@ bool ApplicationRun() {
 	MaterialSystem::Shutdown();
 	TextureSystem::Shutdown();
 	ShaderSystem::Shutdown();
+	JobSystem::Shutdown();
 
 	// Temp
 	Renderer->ReleaseTextureMap(&AppState.SB.Cubemap);

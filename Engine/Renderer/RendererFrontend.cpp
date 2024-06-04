@@ -20,6 +20,8 @@
 IRenderer::IRenderer() : Backend(nullptr), WorldRenderpass(nullptr),UIRenderpass(nullptr){}
 
 IRenderer::IRenderer(RendererBackendType type, struct SPlatformState* plat_state) : Backend(nullptr){
+	IRenderer();
+
 	if (plat_state == nullptr) {
 		return ;
 	}
@@ -32,10 +34,7 @@ IRenderer::IRenderer(RendererBackendType type, struct SPlatformState* plat_state
 
 		// TODO: make this configurable
 		Backend->SetFrameNum(0);
-
-		return ;
 	}
-
 }
 
 IRenderer::~IRenderer() {

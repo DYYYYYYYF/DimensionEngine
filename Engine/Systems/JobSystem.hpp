@@ -79,6 +79,7 @@ struct JobResultEntry {
 };
 
 class JobSystem {
+public:
 	static bool Initialize(unsigned char job_thread_count, unsigned int type_masks[]);
 	static void Shutdown();
 
@@ -96,7 +97,7 @@ class JobSystem {
 	/**
 	 * @brief Creates a new job with default type
 	 */
-	static DAPI void CreateJob(PFN_OnJobStart entry, PFN_OnJobComplete on_success, PFN_OnJobComplete on_failed, 
+	static DAPI JobInfo CreateJob(PFN_OnJobStart entry, PFN_OnJobComplete on_success, PFN_OnJobComplete on_failed, 
 		void* param_data, unsigned int param_data_size, unsigned int result_data_size, 
 		JobType type = JobType::eGeneral, JobPriority priority = JobPriority::eNormal);
 

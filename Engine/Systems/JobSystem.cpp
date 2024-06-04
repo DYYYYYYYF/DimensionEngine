@@ -33,7 +33,7 @@ void JobSystem::StoreResult(PFN_OnJobComplete callback, void* params, uint32_t p
 
 	// Lock, find a free space, store, unlock.
 	if (!ResultMutex.Lock()) {
-		UL_ERROR("Failed to obtain mutex lock for storing a result! Result storage may be corrupted.");
+		LOG_ERROR("Failed to obtain mutex lock for storing a result! Result storage may be corrupted.");
 	}
 
 	for (unsigned short i = 0; i < MAX_JOB_RESULTS; ++i) {
@@ -45,7 +45,7 @@ void JobSystem::StoreResult(PFN_OnJobComplete callback, void* params, uint32_t p
 	}
 
 	if (!ResultMutex.UnLock()) {
-		UL_ERROR("Failed to release mutex lock for result storage, storage may be corrupted.");
+		LOG_ERROR("Failed to release mutex lock for result storage, storage may be corrupted.");
 	}
 }
 
@@ -68,13 +68,13 @@ uint32_t JobSystem::RunJobThread(void* param) {
 		}
 
 		// Lock and grab a copy of info.
-		if (!Thr->info_mutex.Lock()) {
-			UL_ERROR("Failed to obtain lock on job thread mutex!");
+ 		if (!Thr->info_mutex.Lock()) {
+			LOG_ERROR("Failed to obtain lock on job thread mutex!");
 		}
 
 		JobInfo info = Thr->info;
 		if (!Thr->info_mutex.UnLock()) {
-			UL_ERROR("Failed to release lock on job thread mutex!");
+			LOG_ERROR("Failed to release lock on job thread mutex!");
 		}
 
 		if (info.entry_point) {
@@ -100,11 +100,11 @@ uint32_t JobSystem::RunJobThread(void* param) {
 
 			// Lock and reset the thread's info object.
 			if (!Thr->info_mutex.Lock()) {
-				UL_ERROR("Failed to obtain lock on job thread mutex!");
+				LOG_ERROR("Failed to obtain lock on job thread mutex!");
 			}
 			Memory::Zero(&Thr->info, sizeof(JobInfo));
 			if (!Thr->info_mutex.UnLock()) {
-				UL_ERROR("Failed to release lock on job thread mutex!");
+				LOG_ERROR("Failed to release lock on job thread mutex!");
 			}
 		}
 
@@ -132,15 +132,15 @@ bool JobSystem::Initialize(unsigned char job_thread_count, unsigned int type_mas
 		PendingResults[i].id = INVALID_ID_U16;
 	}
 
-	UL_DEBUG("Main thread id is: %#x.", Thread::GetThreadID());
+	LOG_DEBUG("Main thread id is: %#x.", Thread::GetThreadID());
 
-	UL_DEBUG("Spawning %i job threads.", ThreadCount);
+	LOG_DEBUG("Spawning %i job threads.", ThreadCount);
 
 	for (unsigned char i = 0; i < ThreadCount; ++i) {
 		JobThreads[i].index = i;
 		JobThreads[i].type_mask = type_masks[i];
 		if (!JobThreads[i].thread.Create(RunJobThread, &JobThreads[i].index, false)) {
-			UL_FATAL("OS Error in creating job thread. Application cannot continue.");
+			LOG_FATAL("OS Error in creating job thread. Application cannot continue.");
 			return false;
 		}
 
@@ -149,19 +149,19 @@ bool JobSystem::Initialize(unsigned char job_thread_count, unsigned int type_mas
 
 	// Create needed mutexes.
 	if (!ResultMutex.Create()) {
-		UL_ERROR("Failed to create result mutex!");
+		LOG_ERROR("Failed to create result mutex!");
 		return false;
 	}
 	if (!LowPriQueueMutex.Create()) {
-		UL_ERROR("Failed to create low priority queue mutex!");
+		LOG_ERROR("Failed to create low priority queue mutex!");
 		return false;
 	}
 	if (!NormalPriQueueMutex.Create()) {
-		UL_ERROR("Failed to create normal priority queue mutex!");
+		LOG_ERROR("Failed to create normal priority queue mutex!");
 		return false;
 	}
 	if (!HighPriQueueMutex.Create()) {
-		UL_ERROR("Failed to create high priority queue mutex!");
+		LOG_ERROR("Failed to create high priority queue mutex!");
 		return false;
 	}
 
@@ -208,26 +208,26 @@ void JobSystem::ProcessQueue(RingQueue<JobInfo>* queue, Mutex* queue_mutex) {
 
 			// Check that the job thread can handle the job type.
 			if (!thread->info_mutex.Lock()) {
-				UL_ERROR("Failed to obtain lock on job thread mutex!");
+				LOG_ERROR("Failed to obtain lock on job thread mutex!");
 			}
 
 			if (!thread->info.entry_point) {
 				// Make sure to remove the entry from the queue.
 				if (!queue_mutex->Lock()) {
-					UL_ERROR("Failed to obtain lock on queue mutex!");
+					LOG_ERROR("Failed to obtain lock on queue mutex!");
 				}
 				queue->Dequeue(&info);
 				if (!queue_mutex->UnLock()) {
-					UL_ERROR("Failed to release lock on queue mutex!");
+					LOG_ERROR("Failed to release lock on queue mutex!");
 				}
 
 				thread->info = info;
-				UL_INFO("Assigning job to thread: %u.", thread->index);
+				LOG_INFO("Assigning job to thread: %u.", thread->index);
 				ThreadFound = true;
 			}
 
 			if (!thread->info_mutex.UnLock()) {
-				UL_ERROR("Failed to release lock on thread mutex!");
+				LOG_ERROR("Failed to release lock on thread mutex!");
 			}
 
 			// Break after unlocking if an available thread was found.
@@ -257,12 +257,12 @@ void JobSystem::Update() {
 	for (unsigned short i = 0; i < MAX_JOB_RESULTS; ++i) {
 		// Lock and take a copy, unlock.
 		if (!ResultMutex.Lock()) {
-			UL_ERROR("Failed to obtain lock on result mutex!");
+			LOG_ERROR("Failed to obtain lock on result mutex!");
 		}
 
 		JobResultEntry Entry = PendingResults[i];
 		if (!ResultMutex.UnLock()) {
-			UL_ERROR("Failed to release lock on result mutex!");
+			LOG_ERROR("Failed to release lock on result mutex!");
 		}
 
 		if (Entry.id != INVALID_ID_U16) {
@@ -275,12 +275,12 @@ void JobSystem::Update() {
 
 			// Lock actual entry, invalidate and clear it
 			if (!ResultMutex.Lock()) {
-				UL_ERROR("Failed to obtain lock on result mutex!");
+				LOG_ERROR("Failed to obtain lock on result mutex!");
 			}
 			Memory::Zero(&PendingResults[i], sizeof(JobResultEntry));
 			PendingResults[i].id = INVALID_ID_U16;
 			if (!ResultMutex.UnLock()) {
-				UL_ERROR("Failed to release lock on result mutex!");
+				LOG_ERROR("Failed to release lock on result mutex!");
 			}
 		}
 	}
@@ -301,16 +301,16 @@ void JobSystem::Submit(JobInfo info) {
 			if (thread->type_mask & info.type) {
 				bool Found = false;
 				if (!thread->info_mutex.Lock()) {
-					UL_ERROR("Failed to obtain lock on job thread mutex!");
+					LOG_ERROR("Failed to obtain lock on job thread mutex!");
 				}
 				if (!thread->info.entry_point) {
-					UL_INFO("Job immediately submitted on thread %i.", thread->index);
+					LOG_INFO("Job immediately submitted on thread %i.", thread->index);
 					thread->info = info;
 					Found = true;
 					return;
 				}
 				if (!thread->info_mutex.UnLock()) {
-					UL_ERROR("Failed to release lock on job thread mutex!");
+					LOG_ERROR("Failed to release lock on job thread mutex!");
 				}
 				if (Found) {
 					return;
@@ -328,16 +328,40 @@ void JobSystem::Submit(JobInfo info) {
 
 	// NOTO: Locking here in case the job is submitted from another thread.
 	if (!QueueMutex->Lock()) {
-		UL_ERROR("Failed to obtain lock on queue mutex!");
+		LOG_ERROR("Failed to obtain lock on queue mutex!");
 	}
 	Queue->Enqueue(&info);
 	if (!QueueMutex->UnLock()) {
-		UL_ERROR("Failed to release lock on queue mutex!");
+		LOG_ERROR("Failed to release lock on queue mutex!");
 	}
-	UL_INFO("Job queued.");
+	LOG_INFO("Job queued.");
 }
 
-void JobSystem::CreateJob(PFN_OnJobStart entry, PFN_OnJobComplete on_success, PFN_OnJobComplete on_failed,
+JobInfo JobSystem::CreateJob(PFN_OnJobStart entry, PFN_OnJobComplete on_success, PFN_OnJobComplete on_failed,
 	void* param_data, unsigned int param_data_size, unsigned int result_data_size, JobType type, JobPriority priority) {
+	JobInfo Job;
+	Job.entry_point = entry;
+	Job.on_success = on_success;
+	Job.on_failed = on_failed;
+	Job.type = type;
+	Job.priority = priority;
 
+	Job.param_data_size = param_data_size;
+	if (param_data_size > 0) {
+		Job.param_data = Memory::Allocate(param_data_size, MemoryType::eMemory_Type_Job);
+		Memory::Copy(Job.param_data, param_data, param_data_size);
+	}
+	else {
+		Job.param_data = nullptr;
+	}
+
+	Job.result_data_size = result_data_size;
+	if (result_data_size > 0) {
+		Job.result_data = Memory::Allocate(result_data_size, MemoryType::eMemory_Type_Job);
+	}
+	else {
+		Job.result_data = nullptr;
+	}
+
+	return Job;
 }

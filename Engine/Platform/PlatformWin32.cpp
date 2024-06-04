@@ -176,7 +176,7 @@ void Platform::PlatformSleep(size_t ms) {
 int Platform::GetProcessorCount() {
 	SYSTEM_INFO SystemInfo;
 	GetSystemInfo(&SystemInfo);
-	UL_INFO("%i processor cores detected.", SystemInfo.dwNumberOfProcessors);
+	LOG_INFO("%i processor cores detected.", SystemInfo.dwNumberOfProcessors);
 	return SystemInfo.dwNumberOfProcessors;
 }
 
@@ -193,7 +193,7 @@ bool Thread::Create(PFN_thread_start start_func, void* params, bool auto_detach)
 		0,													// Params to pass to thread
 		(DWORD*)&ThreadID);
 
-	UL_DEBUG("Starting process on thread id: %#x.", ThreadID);
+	LOG_DEBUG("Starting process on thread id: %#x.", ThreadID);
 	if (!InternalData) {
 		return false;
 	}
@@ -261,7 +261,7 @@ size_t Thread::GetThreadID() {
 bool Mutex::Create() {
 	InternalData = CreateMutex(0, 0, 0);
 	if (InternalData == nullptr) {
-		UL_FATAL("Unable to create mutex.");
+		LOG_FATAL("Unable to create mutex.");
 		return false;
 	}
 
@@ -286,7 +286,7 @@ bool Mutex::Lock() {
 		return true;
 	// The thread got ownership of an obandoned mutex
 	case WAIT_ABANDONED:
-		UL_FATAL("Mutex lock faield.");
+		LOG_FATAL("Mutex lock faield.");
 		return false;
 	}
 	return true;
@@ -407,7 +407,7 @@ bool PlatformCreateVulkanSurface(SPlatformState* plat_state, VulkanContext* cont
 
 	VkSurfaceKHR Win32Surface;
 	if (vkCreateWin32SurfaceKHR(context->Instance, &info, nullptr, &Win32Surface) != VK_SUCCESS) {
-		UL_FATAL("Create surface failed.");
+		LOG_FATAL("Create surface failed.");
 		return false;
 	}
 
