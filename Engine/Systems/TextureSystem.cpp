@@ -3,7 +3,10 @@
 #include "Core/EngineLogger.hpp"
 #include "Core/Application.hpp"
 
+#include "Containers/TString.hpp"
+
 #include "Systems/ResourceSystem.h"
+#include "Systems/JobSystem.hpp"
 #include "Renderer/RendererFrontend.hpp"
 
 STextureSystemConfig TextureSystem::TextureSystemConfig;
@@ -434,32 +437,66 @@ bool TextureSystem::LoadCubeTexture(const char* name, const char texture_names[6
 	return true;
 }
 
-bool TextureSystem::LoadTexture(const char* name, Texture* texture) {
-	ImageResourceParams Params;
-	Params.flip_y = true;
+void TextureSystem::LoadJobSuccess(void* params) {
+	TextureLoadParams* TextureParams = (TextureLoadParams*)params;
 
-	Resource ImgResource;
-	if (!ResourceSystem::Load(name, ResourceType::eResource_type_Image, &Params, &ImgResource)) {
-		UL_ERROR("Failed to load image resource for texture '%s'.", name);
-		return false;
+	// This also handles the GPU upload. Can't be jobfied until the renderer is multithread.
+	ImageResourceData* ResourceData = (ImageResourceData*)TextureParams->ImageResource.Data;
+
+	// Acquire internal texture resources and upload to GPU. Can't be jobfied until renderer is multithread.
+	Renderer->CreateTexture(ResourceData->pixels, &TextureParams->temp_texture);
+
+	// Take a copy of the old texture.
+	Texture Old = *TextureParams->out_texture;
+
+	// Destroy the old texture.
+	Renderer->DestroyTexture(&Old);
+	Memory::Zero(&Old, sizeof(Texture));
+
+	if (TextureParams->current_generation == INVALID_ID) {
+		TextureParams->out_texture->Generation = 0;
+	}
+	else {
+		TextureParams->out_texture->Generation = TextureParams->current_generation + 1;
 	}
 
-	ImageResourceData* ResourceData = (ImageResourceData*)ImgResource.Data;
+	LOG_INFO("Successfully loaded texture '%s.", TextureParams->resource_name);
 
+	// Clean up data.
+	ResourceSystem::Unload(&TextureParams->ImageResource);
+	if (TextureParams->resource_name) {
+		Memory::Free(TextureParams->resource_name, sizeof(char) * (strlen(TextureParams->resource_name) + 1), MemoryType::eMemory_Type_String);
+		TextureParams->resource_name = nullptr;
+	}
+}
+
+void TextureSystem::LoadJobFail(void* params) {
+	TextureLoadParams* TextureParams = (TextureLoadParams*)params;
+	LOG_ERROR("Failed to load texture '%s'.", TextureParams->resource_name);
+	ResourceSystem::Unload(&TextureParams->ImageResource);
+}
+
+bool TextureSystem::LoadJobStart(void* params, void* result_data) {
+	TextureLoadParams* LoadParams = (TextureLoadParams*)params;
+
+	ImageResourceParams ResourceParams;
+	ResourceParams.flip_y = true;
+
+	bool Result = ResourceSystem::Load(LoadParams->resource_name, ResourceType::eResource_type_Image, &ResourceParams, &LoadParams->ImageResource);
+
+	ImageResourceData* ResourceData = (ImageResourceData*)LoadParams->ImageResource.Data;
 	// Use a temporary texture to load into.
-	Texture TempTexture;
-	TempTexture.Width = ResourceData->width;
-	TempTexture.Height= ResourceData->height;
-	TempTexture.ChannelCount = ResourceData->channel_count;
-	TempTexture.Type = TextureType::eTexture_Type_2D;
+	LoadParams->temp_texture.Width = ResourceData->width;
+	LoadParams->temp_texture.Height = ResourceData->height;
+	LoadParams->temp_texture.ChannelCount = ResourceData->channel_count;
 
-	uint32_t CurrentGeneration = texture->Generation;
-	texture->Generation = INVALID_ID;
+	LoadParams->current_generation = LoadParams->out_texture->Generation;
+	LoadParams->out_texture->Generation = INVALID_ID;
 
-	size_t TotalSize = TempTexture.Width * TempTexture.Height * TempTexture.ChannelCount;
+	size_t TotalSize = LoadParams->temp_texture.Width * LoadParams->temp_texture.Height * LoadParams->temp_texture.ChannelCount;
 	// Check for transparency.
 	bool HasTransparency = false;
-	for (size_t i = 0; i < TotalSize; i += TempTexture.ChannelCount) {
+	for (size_t i = 0; i < TotalSize; i += LoadParams->temp_texture.ChannelCount) {
 		unsigned char a = ResourceData->pixels[i + 3];
 		if (a < 255) {
 			HasTransparency = true;
@@ -468,31 +505,31 @@ bool TextureSystem::LoadTexture(const char* name, Texture* texture) {
 	}
 
 	// Take a copy of the name
-	strncpy(TempTexture.Name, name, TEXTURE_NAME_MAX_LENGTH);
-	TempTexture.Generation = INVALID_ID;
-	TempTexture.Flags = HasTransparency ? TextureFlagBits::eTexture_Flag_Has_Transparency : 0;
+	strncpy(LoadParams->temp_texture.Name, LoadParams->resource_name, TEXTURE_NAME_MAX_LENGTH);
+	LoadParams->temp_texture.Generation = INVALID_ID;
+	LoadParams->temp_texture.Flags = HasTransparency ? TextureFlagBits::eTexture_Flag_Has_Transparency : 0;
 
-	//Acquire internal texture resources and upload to GPU.
-	Renderer->CreateTexture(ResourceData->pixels, &TempTexture);
+	// NOTE: The load params are also used as the result data here, only the image_resource field is populated now.
+	Memory::Copy(result_data, LoadParams, sizeof(TextureLoadParams));
 
-	// Take a copy of the old texture.
-	Texture Old = *texture;
+	return Result;
+}
 
-	// Assign the temp texture to the pointer.
-	*texture = TempTexture;
+bool TextureSystem::LoadTexture(const char* name, Texture* texture) {
+	// Kick off a texture loading job. Only handles loading from disk to CPU.
+	// GPU upload is handled after completion of this job.
+	TextureLoadParams Params;
+	Params.resource_name = StringCopy(name);
+	Params.out_texture = texture;
+	Params.current_generation = texture->Generation;
 
-	// Destroy the old texture.
-	Renderer->DestroyTexture(&Old);
-
-	if (CurrentGeneration == INVALID_ID) {
-		texture->Generation = 0;
-	}
-	else {
-		texture->Generation = CurrentGeneration + 1;
-	}
-
-	// Clean up data.
-	ResourceSystem::Unload(&ImgResource);
+	JobInfo Job = JobSystem::CreateJob(
+		TextureSystem::LoadJobStart,
+		TextureSystem::LoadJobSuccess,
+		TextureSystem::LoadJobFail,
+		&Params, 
+		(uint32_t)sizeof(TextureLoadParams), (uint32_t)sizeof(TextureLoadParams));
+	JobSystem::Submit(Job);
 	return true;
 }
 

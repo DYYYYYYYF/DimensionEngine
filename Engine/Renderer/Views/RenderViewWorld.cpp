@@ -79,7 +79,7 @@ bool RenderViewWorld::OnBuildPacket(void* data, struct RenderViewPacket* out_pac
 	TArray<GeometryDistance> GeometryDistances;
 
 	for (uint32_t i = 0; i < MeshData->mesh_count; ++i) {
-		Mesh* pMesh = &MeshData->meshes[i];
+		Mesh* pMesh = MeshData->meshes[i];
 		Matrix4 Model = pMesh->Transform.GetWorldTransform();
 
 		for (uint32_t j = 0; j < pMesh->geometry_count; j++) {

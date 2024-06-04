@@ -2,6 +2,7 @@
 
 #include "Renderer/RendererTypes.hpp"
 #include "Resources/Texture.hpp"
+#include "Resources/Resource.hpp"
 #include "Containers/THashTable.hpp"
 
 #define DEFAULT_TEXTURE_NAME "default"
@@ -19,6 +20,14 @@ struct STextureReference {
 	size_t reference_count;
 	unsigned int handle;
 	bool auto_release;
+};
+
+struct TextureLoadParams {
+	char* resource_name;
+	Texture* out_texture;
+	Texture temp_texture;
+	uint32_t current_generation;
+	Resource ImageResource;
 };
 
 class TextureSystem {
@@ -50,6 +59,10 @@ private:
 	static bool CreateDefaultTexture();
 	static void DestroyDefaultTexture();
 	static bool ProcessTextureReference(const char* name, TextureType type, short reference_diff, bool auto_release, bool skip_load, uint32_t* out_texture_id);
+	
+	static void LoadJobSuccess(void* params);
+	static void LoadJobFail(void* params);
+	static bool LoadJobStart(void* params, void* result_data);
 
 private:
 	static STextureSystemConfig TextureSystemConfig;

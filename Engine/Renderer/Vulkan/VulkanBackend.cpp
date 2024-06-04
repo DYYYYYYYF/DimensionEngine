@@ -1446,6 +1446,26 @@ bool VulkanBackend::ApplyInstanceShader(Shader* shader, bool need_update) {
 					continue;
 				}
 
+				// Ensure the texture is valid.
+				if (t->Generation == INVALID_ID) {
+					switch (map->usage)
+					{
+					case TextureUsage::eTexture_Usage_Map_Diffuse:
+						t = TextureSystem::GetDefaultDiffuseTexture();
+						break;
+					case TextureUsage::eTexture_Usage_Map_Normal:
+						t = TextureSystem::GetDefaultNormalTexture();
+						break;
+					case TextureUsage::eTexture_Usage_Map_Specular:
+						t = TextureSystem::GetDefaultSpecularTexture();
+						break;
+					default:
+						LOG_WARN("Undefined texture use %d.", map->usage);
+						t = TextureSystem::GetDefaultTexture();
+						break;
+					}
+				}
+
 				VulkanImage* Image = (VulkanImage*)t->InternalData;
 				if (Image == nullptr) {
 					continue;

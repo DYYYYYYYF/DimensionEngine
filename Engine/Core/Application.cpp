@@ -40,7 +40,12 @@ struct SApplicationState {
 	// Temp
 	Skybox SB;
 	std::vector<Mesh> Meshes;
+	Mesh* CarMesh = nullptr;
+	Mesh* SponzaMesh = nullptr;
+	bool ModelsLoaded;
+
 	std::vector<Mesh> UIMeshes;
+
 };
 
 static bool Initialized = false;
@@ -50,6 +55,29 @@ static TextureSystem TextureManager;
 
 // Init logger
 static EngineLogger* GlobalLogger = new EngineLogger();
+
+// TODO: Temp
+bool EventOnDebugEvent(unsigned short code, void* sender, void* listener_instance, SEventContext context) {
+	if (code == Core::eEvent_Code_Debug_0) {
+		if (!AppState.ModelsLoaded) {
+			LOG_DEBUG("Loading models...");
+
+			if (!AppState.CarMesh->LoadFromResource("falcon")) {
+				LOG_ERROR("Failed to load falcon mesh!");
+			}
+
+			if (!AppState.SponzaMesh->LoadFromResource("sponza")) {
+				LOG_ERROR("Failed to load sponza mesh!");
+			}
+
+			AppState.ModelsLoaded = true;
+		}
+
+		return true;
+	}
+
+	return false;
+}
 
 bool ApplicationCreate(SGame* game_instance){
 	if (Initialized) {
@@ -70,6 +98,9 @@ bool ApplicationCreate(SGame* game_instance){
 	AppState.is_running = true;
 	AppState.is_suspended = false;
 
+	// Temp
+	AppState.ModelsLoaded = false;
+
 	if (!Core::EventInitialize()) {
 		UL_ERROR("Event system init failed. Application can not start.");
 		return false;
@@ -79,6 +110,7 @@ bool ApplicationCreate(SGame* game_instance){
 	Core::EventRegister(Core::eEvent_Code_Key_Pressed, 0, ApplicationOnKey);
 	Core::EventRegister(Core::eEvent_Code_Key_Released, 0, ApplicationOnKey);
 	Core::EventRegister(Core::eEvent_Code_Resize, 0, ApplicationOnResized);
+	Core::EventRegister(Core::eEvent_Code_Debug_0, 0, EventOnDebugEvent);
 
 	Platform::PlatformStartup(&AppState.platform,
 		game_instance->app_config.name, 
@@ -282,11 +314,18 @@ bool ApplicationCreate(SGame* game_instance){
 
 	// World meshes
 	AppState.Meshes.resize(10);
+	AppState.UIMeshes.resize(10);
+	for (uint32_t i = 0; i < 10; ++i) {
+		AppState.Meshes[i].Generation = INVALID_ID_U8;
+		AppState.UIMeshes[i].Generation = INVALID_ID_U8;
+	}
+
 	Mesh* CubeMesh = &AppState.Meshes[0];
 	CubeMesh->geometry_count = 1;
 	CubeMesh->geometries = (Geometry**)Memory::Allocate(sizeof(Geometry*) * CubeMesh->geometry_count, MemoryType::eMemory_Type_Array);
 	SGeometryConfig GeoConfig = GeometrySystem::GenerateCubeConfig(10.0f, 10.0f, 10.0f, 1.0f, 1.0f, "TestCube", "Material.World");
 	CubeMesh->geometries[0] = GeometrySystem::AcquireFromConfig(GeoConfig, true);
+	CubeMesh->Generation = 0;
 	CubeMesh->Transform = Transform();
 
 	Mesh* CubeMesh2 = &AppState.Meshes[1];
@@ -295,6 +334,7 @@ bool ApplicationCreate(SGame* game_instance){
 	SGeometryConfig GeoConfig2 = GeometrySystem::GenerateCubeConfig(5.0f, 5.0f, 5.0f, 1.0f, 1.0f, "TestCube2", "Material.World");
 	CubeMesh2->geometries[0] = GeometrySystem::AcquireFromConfig(GeoConfig2, true);
 	CubeMesh2->Transform = Transform(Vec3(10.0f, 0.0f, 1.0f));
+	CubeMesh2->Generation = 0;
 	CubeMesh2->Transform.SetParentTransform(&CubeMesh->Transform);
 
 	Mesh* CubeMesh3 = &AppState.Meshes[2];
@@ -303,49 +343,19 @@ bool ApplicationCreate(SGame* game_instance){
 	SGeometryConfig GeoConfig3 = GeometrySystem::GenerateCubeConfig(2.0f, 2.0f, 2.0f, 1.0f, 1.0f, "TestCube3", "Material.World");
 	CubeMesh3->geometries[0] = GeometrySystem::AcquireFromConfig(GeoConfig3, true);
 	CubeMesh3->Transform = Transform(Vec3(5.0f, 0.0f, 1.0f));
+	CubeMesh3->Generation = 0;
 	CubeMesh3->Transform.SetParentTransform(&CubeMesh2->Transform);
-
-	// Test mesh loaded from file.
-	Mesh* CarMesh = &AppState.Meshes[3];
-	Resource CarMeshResource;
-	// Test model sponza/falcon
-	if (!ResourceSystem::Load("falcon", ResourceType::eResource_type_Static_Mesh, nullptr, &CarMeshResource)) {
-		UL_ERROR("Failed to load car test mesh.");
-	}
-	else {
-		SGeometryConfig* Configs = (SGeometryConfig*)CarMeshResource.Data;
-		CarMesh->geometry_count = (unsigned short)CarMeshResource.DataCount;
-		CarMesh->geometries = (Geometry**)Memory::Allocate(sizeof(Geometry*) * CarMesh->geometry_count, MemoryType::eMemory_Type_Array);
-		for (uint32_t i = 0; i < CarMesh->geometry_count; ++i) {
-			CarMesh->geometries[i] = GeometrySystem::AcquireFromConfig(Configs[i], true);
-		}
-
-		CarMesh->Transform = Transform(Vec3(15.0f, 0.0f, 0.0f), Quaternion::Identity(), Vec3(1.0f, 1.0f, 1.0f));
-		ResourceSystem::Unload(&CarMeshResource);
-	}
-
-	Mesh* SponzaMesh = &AppState.Meshes[4];
-	Resource SponzaMeshResource;
-	// Test model sponza/falcon
-	if (!ResourceSystem::Load("sponza", ResourceType::eResource_type_Static_Mesh, nullptr, &SponzaMeshResource)) {
-		UL_ERROR("Failed to load car test mesh.");
-	}
-	else {
-		SGeometryConfig* Configs = (SGeometryConfig*)SponzaMeshResource.Data;
-		SponzaMesh->geometry_count = (unsigned short)SponzaMeshResource.DataCount;
-		SponzaMesh->geometries = (Geometry**)Memory::Allocate(sizeof(Geometry*) * SponzaMesh->geometry_count, MemoryType::eMemory_Type_Array);
-		for (uint32_t i = 0; i < SponzaMesh->geometry_count; ++i) {
-			SponzaMesh->geometries[i] = GeometrySystem::AcquireFromConfig(Configs[i], true);
-		}
-
-		SponzaMesh->Transform = Transform(Vec3(0.0f, -60.0f, 0.0f), Quaternion(Vec3(0.0f, 90.0f, 0.0f)), Vec3(0.1f, 0.1f, 0.1f));
-		ResourceSystem::Unload(&SponzaMeshResource);
-	}
 
 	// Clean up the allocations for the geometry config.
 	GeometrySystem::ConfigDispose(&GeoConfig);
 	GeometrySystem::ConfigDispose(&GeoConfig2);
 	GeometrySystem::ConfigDispose(&GeoConfig3);
+
+	AppState.CarMesh = &AppState.Meshes[3];
+	AppState.CarMesh->Transform = Transform(Vec3(15.0f, 0.0f, 1.0f));
+
+	AppState.SponzaMesh = &AppState.Meshes[4];
+	AppState.SponzaMesh->Transform = Transform(Vec3(0.0f, -60.0f, 0.0f), Quaternion(Vec3(0.0f, 90.0f, 0.0f)), Vec3(0.1f, 0.1f, 0.1f));
 
 	// Load up some test UI geometry.
 	SGeometryConfig UIConfig;
@@ -389,12 +399,12 @@ bool ApplicationCreate(SGame* game_instance){
 	UIConfig.indices = UIIndices;
 
 	// Get UI geometry from config.
-	Mesh UIMesh;
-	UIMesh.geometry_count = 1;
-	UIMesh.geometries = (Geometry**)Memory::Allocate(sizeof(Geometry*), MemoryType::eMemory_Type_Array);
-	UIMesh.geometries[0] = GeometrySystem::AcquireFromConfig(UIConfig, true);
-	UIMesh.Transform = Transform();
-	AppState.UIMeshes.push_back(UIMesh);
+	Mesh* UIMesh = &AppState.UIMeshes[0];
+	UIMesh->geometry_count = 1;
+	UIMesh->geometries = (Geometry**)Memory::Allocate(sizeof(Geometry*), MemoryType::eMemory_Type_Array);
+	UIMesh->geometries[0] = GeometrySystem::AcquireFromConfig(UIConfig, true);
+	UIMesh->Generation = 0;
+	UIMesh->Transform = Transform();
 
 	// Init Game
 	if (!AppState.game_instance->initialize(AppState.game_instance)) {
@@ -445,20 +455,12 @@ bool ApplicationRun() {
 				break;
 			}
 
-			size_t MeshCount = AppState.Meshes.size();
-			if (MeshCount > 0) {
-				// Perform a small rotation on the first mesh.
-				Quaternion Rotation = QuaternionFromAxisAngle(Vec3(0.0f, 1.0f, 0.0f), 0.5f * (float)DeltaTime, false);
-				AppState.Meshes[0].Transform.Rotate(Rotation);
-
-				if (MeshCount > 1) {
-					AppState.Meshes[1].Transform.Rotate(Rotation);
-				}
-
-				if (MeshCount > 2) {
-					AppState.Meshes[2].Transform.Rotate(Rotation);
-				}
-			}
+			Quaternion Rotation = QuaternionFromAxisAngle(Vec3(0.0f, 1.0f, 0.0f), 0.5f * (float)DeltaTime, false);
+			AppState.Meshes[0].Transform.Rotate(Rotation);
+			
+			AppState.Meshes[1].Transform.Rotate(Rotation);
+			
+			AppState.Meshes[2].Transform.Rotate(Rotation);
 
 			// TODO: Refactor packet creation.
 			SRenderPacket Packet;
@@ -479,18 +481,36 @@ bool ApplicationRun() {
 			}
 
 			// World
+			std::vector<Mesh*> Meshes;
+			// TODO: Flexible size array.
+			for (uint32_t i = 0; i < 10; ++i) {
+				if (AppState.Meshes[i].Generation != INVALID_ID_U8) {
+					Meshes.push_back(&AppState.Meshes[i]);
+				}
+			}
+
 			MeshPacketData WorldMeshData;
-			WorldMeshData.mesh_count = (uint32_t)AppState.Meshes.size();
-			WorldMeshData.meshes = AppState.Meshes;
+			WorldMeshData.meshes = Meshes;
+			WorldMeshData.mesh_count = (uint32_t)Meshes.size();
+
 			if (!RenderViewSystem::BuildPacket(RenderViewSystem::Get("World_Opaque"), &WorldMeshData, &Packet.views[1])) {
 				UL_ERROR("Failed to build packet for view 'World_Opaque'.");
 				return false;
 			}
 
 			// UI
+			std::vector<Mesh*> UIMeshes;
+			// TODO: Flexible size array.
+			for (uint32_t i = 0; i < 10; ++i) {
+				if (AppState.UIMeshes[i].Generation != INVALID_ID_U8) {
+					UIMeshes.push_back(&AppState.UIMeshes[i]);
+				}
+			}
+
 			MeshPacketData UIMeshData;
-			UIMeshData.mesh_count = (uint32_t)AppState.UIMeshes.size();
-			UIMeshData.meshes = AppState.UIMeshes;
+			UIMeshData.meshes = UIMeshes;
+			UIMeshData.mesh_count = (uint32_t)UIMeshes.size();
+
 			if (!RenderViewSystem::BuildPacket(RenderViewSystem::Get("UI"), &UIMeshData, &Packet.views[2])) {
 				UL_ERROR("Failed to build packet for view 'UI'.");
 				return false;

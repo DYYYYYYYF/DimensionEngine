@@ -6,10 +6,12 @@
 #include "Core/DMutex.hpp"
 #include "Containers/TQueue.hpp"
 
+#include <functional>
+
 #define MAX_JOB_RESULTS 512
 
-typedef bool (*PFN_OnJobStart)(void*, void*);
-typedef void (*PFN_OnJobComplete)(void*);
+typedef std::function<bool(void*, void*)> PFN_OnJobStart;
+typedef std::function<void(void*)> PFN_OnJobComplete;
 
 /**
  * @brief Describes a type of job.

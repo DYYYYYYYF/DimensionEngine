@@ -8,6 +8,8 @@
 
 // TODO: resource loader.
 #define STB_IMAGE_IMPLEMENTATION
+// Use our own filesystem
+#define STBI_NO_STDIO
 #include "stb_image.h"
 
 ImageLoader::ImageLoader() {
@@ -29,7 +31,7 @@ bool ImageLoader::Load(const char* name, void* params, Resource* resource) {
 
 	char* FormatStr = "%s/%s/%s%s";
 	const int RequiredChannelCount = 4;
-	stbi_set_flip_vertically_on_load(TypedParams->flip_y);
+	stbi_set_flip_vertically_on_load_thread(TypedParams->flip_y);
 	char FullFilePath[512];
 
 	// Try different extensions.
@@ -44,27 +46,59 @@ bool ImageLoader::Load(const char* name, void* params, Resource* resource) {
 		}
 	}
 
+	// Take a copy of the resource full path and name first.
+	resource->FullPath = StringCopy(FullFilePath);
+	resource->Name = StringCopy(name);
+
 	if (!Found) {
 		UL_ERROR("Image resource loader failed find file '%s'or with any supported extensions.", FullFilePath);
+		return false;
+	}
+
+	FileHandle f;
+	if (!FileSystemOpen(FullFilePath, FileMode::eFile_Mode_Read, true, &f)) {
+		LOG_ERROR("Unable to read file: %s.", FullFilePath);
+		FileSystemClose(&f);
+		return false;
+	}
+
+	size_t FileSize = 0;
+	if (!FileSystemSize(&f, &FileSize)) {
+		LOG_ERROR("Unable to get size of file: %s.", FullFilePath);
+		FileSystemClose(&f);
 		return false;
 	}
 
 	//sprintf(FullFilePath, FormatStr, ResourceSystem::GetRootPath(), TypePath, name, ".png");
 
 	int Width, Height, ChannelCount;
-
-	// For now, assume 8 bits per channel, 4 channels.
-	// TODO: extend this to make it configurable.
-	unsigned char* Data = stbi_load(FullFilePath, &Width, &Height, &ChannelCount, RequiredChannelCount);
-	if (Data == nullptr) {
-		UL_ERROR("Image resource loader failed to load file '%s'.", FullFilePath);
+	unsigned char* RawData = (unsigned char*)Memory::Allocate(FileSize, MemoryType::eMemory_Type_Texture);
+	if (RawData == nullptr) {
+		LOG_ERROR("Image resource loader failed to load file: '%s'.", FullFilePath);
+		FileSystemClose(&f);
 		return false;
 	}
 
-	// TODO: Should be using an allocator here.
-	resource->FullPath = StringCopy(FullFilePath);
+	size_t BytesRead = 0;
+	bool ReadResult = FileSystemReadAllBytes(&f, RawData, &BytesRead);
+	FileSystemClose(&f);
 
-	// TODO: Should be using an allocator here.
+	if (!ReadResult) {
+		LOG_ERROR("Unable to read file: '%s'.", FullFilePath);
+		return false;
+	}
+
+	if (BytesRead != FileSize) {
+		LOG_ERROR("File size if %llu does not match expected: %llu.", BytesRead, FileSize);
+		return false;
+	}
+	
+	unsigned char* Data = stbi_load_from_memory(RawData, (int)FileSize, &Width, &Height, &ChannelCount, RequiredChannelCount);
+	if (Data == nullptr) {
+		LOG_ERROR("Image resource loader failed to load file: '%s'.", FullFilePath);
+		return false;
+	}
+
 	ImageResourceData* ResourceData = (ImageResourceData*)Memory::Allocate(sizeof(ImageResourceData), MemoryType::eMemory_Type_Texture);
 	ResourceData->pixels = Data;
 	ResourceData->width = Width;
@@ -73,7 +107,6 @@ bool ImageLoader::Load(const char* name, void* params, Resource* resource) {
 
 	resource->Data = ResourceData;
 	resource->DataSize = sizeof(ImageResourceData);
-	resource->Name = StringCopy(name);
 	resource->DataCount = 1;
 
 	return true;
