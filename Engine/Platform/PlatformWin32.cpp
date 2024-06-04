@@ -278,6 +278,10 @@ void Mutex::Destroy() {
 }
 
 bool Mutex::Lock() {
+	if (InternalData == nullptr) {
+		return false;
+	}
+
 	DWORD Result = WaitForSingleObject((HANDLE)InternalData, INFINITE);
 	switch (Result)
 	{

@@ -70,11 +70,13 @@ uint32_t JobSystem::RunJobThread(void* param) {
 		// Lock and grab a copy of info.
  		if (!Thr->info_mutex.Lock()) {
 			LOG_ERROR("Failed to obtain lock on job thread mutex!");
+			break;
 		}
 
 		JobInfo info = Thr->info;
 		if (!Thr->info_mutex.UnLock()) {
 			LOG_ERROR("Failed to release lock on job thread mutex!");
+			break;
 		}
 
 		if (info.entry_point) {
@@ -101,10 +103,12 @@ uint32_t JobSystem::RunJobThread(void* param) {
 			// Lock and reset the thread's info object.
 			if (!Thr->info_mutex.Lock()) {
 				LOG_ERROR("Failed to obtain lock on job thread mutex!");
+				break;
 			}
 			Memory::Zero(&Thr->info, sizeof(JobInfo));
 			if (!Thr->info_mutex.UnLock()) {
 				LOG_ERROR("Failed to release lock on job thread mutex!");
+				break;
 			}
 		}
 

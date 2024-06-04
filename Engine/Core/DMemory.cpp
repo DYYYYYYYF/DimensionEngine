@@ -12,6 +12,7 @@ bool Memory::Initialize(size_t size) {
 
 	AllocateCount = 0;
 	TotalAllocateSize = size;
+	AllocationMutex.Create();
 
 	UL_DEBUG("Memory system successfully allocated %llu bytes.", TotalAllocateSize);
 	return true;

@@ -38,7 +38,6 @@ public:
 			Block = (ElementType*)Memory::Allocate(Capacity * Stride, MemoryType::eMemory_Type_Ring_Queue);
 		}
 
-		ASSERT(Block);
 	}
 
 	/**
