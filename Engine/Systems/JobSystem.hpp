@@ -10,8 +10,11 @@
 
 #define MAX_JOB_RESULTS 512
 
-typedef std::function<bool(void*, void*)> PFN_OnJobStart;
-typedef std::function<void(void*)> PFN_OnJobComplete;
+//typedef std::function<bool(void*, void*)> PFN_OnJobStart;
+//typedef std::function<void(void*)> PFN_OnJobComplete;
+
+typedef bool(*PFN_OnJobStart)(void*, void*);
+typedef void(*PFN_OnJobComplete)(void*);
 
 /**
  * @brief Describes a type of job.
@@ -50,6 +53,42 @@ enum JobPriority : char{
 };
 
 struct JobInfo {
+public:
+	JobInfo() : entry_point(nullptr), on_success(nullptr), on_failed(nullptr), param_data(nullptr), result_data(nullptr) {}
+	JobInfo(const JobInfo& info) {
+		type = info.type;
+		priority = info.priority;
+		entry_point = info.entry_point;
+		on_success = info.on_success;
+		on_failed = info.on_failed;
+		param_data_size = info.param_data_size;
+		result_data_size = info.result_data_size;
+
+		if (info.param_data) {
+			param_data = Memory::Allocate(param_data_size, MemoryType::eMemory_Type_Job);
+			Memory::Copy(param_data, info.param_data, param_data_size);
+		}
+		if (info.result_data) {
+			result_data = Memory::Allocate(result_data_size, MemoryType::eMemory_Type_Job);
+			Memory::Copy(result_data, info.result_data, result_data_size);
+		}
+	}
+
+	void Release() {
+		if (param_data) {
+			Memory::Free(param_data, param_data_size, MemoryType::eMemory_Type_Job);
+			param_data = nullptr;
+		}
+		if (result_data) {
+			Memory::Free(result_data, result_data_size, MemoryType::eMemory_Type_Job);
+			result_data = nullptr;
+		}
+
+		entry_point = nullptr;
+		on_success = nullptr;
+		on_failed = nullptr;
+	}
+
 	JobType type;
 	JobPriority priority;
 	PFN_OnJobStart entry_point;
@@ -77,7 +116,7 @@ struct JobResultEntry {
 	unsigned short id;
 	PFN_OnJobComplete callback;
 	uint32_t param_size;
-	void* params;
+	void* params = nullptr;
 };
 
 class JobSystem {

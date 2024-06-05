@@ -69,8 +69,6 @@ bool ImageLoader::Load(const char* name, void* params, Resource* resource) {
 		return false;
 	}
 
-	//sprintf(FullFilePath, FormatStr, ResourceSystem::GetRootPath(), TypePath, name, ".png");
-
 	int Width, Height, ChannelCount;
 	unsigned char* RawData = (unsigned char*)Memory::Allocate(FileSize, MemoryType::eMemory_Type_Texture);
 	if (RawData == nullptr) {

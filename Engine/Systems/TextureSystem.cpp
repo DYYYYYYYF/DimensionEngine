@@ -449,6 +449,9 @@ void TextureSystem::LoadJobSuccess(void* params) {
 	// Take a copy of the old texture.
 	Texture Old = *TextureParams->out_texture;
 
+	// Assign the temp texture to the pointer.
+	*TextureParams->out_texture = TextureParams->temp_texture;
+
 	// Destroy the old texture.
 	Renderer->DestroyTexture(&Old);
 	Memory::Zero(&Old, sizeof(Texture));
@@ -490,6 +493,7 @@ bool TextureSystem::LoadJobStart(void* params, void* result_data) {
 	LoadParams->temp_texture.Height = ResourceData->height;
 	LoadParams->temp_texture.ChannelCount = ResourceData->channel_count;
 
+	LoadParams->temp_texture.Type = LoadParams->out_texture->Type;
 	LoadParams->current_generation = LoadParams->out_texture->Generation;
 	LoadParams->out_texture->Generation = INVALID_ID;
 
@@ -507,7 +511,7 @@ bool TextureSystem::LoadJobStart(void* params, void* result_data) {
 	// Take a copy of the name
 	strncpy(LoadParams->temp_texture.Name, LoadParams->resource_name, TEXTURE_NAME_MAX_LENGTH);
 	LoadParams->temp_texture.Generation = INVALID_ID;
-	LoadParams->temp_texture.Flags = HasTransparency ? TextureFlagBits::eTexture_Flag_Has_Transparency : 0;
+	LoadParams->temp_texture.Flags |= HasTransparency ? TextureFlagBits::eTexture_Flag_Has_Transparency : 0;
 
 	// NOTE: The load params are also used as the result data here, only the image_resource field is populated now.
 	Memory::Copy(result_data, LoadParams, sizeof(TextureLoadParams));
@@ -644,12 +648,12 @@ bool TextureSystem::ProcessTextureReference(const char* name, TextureType type ,
 						
 						t->Id = Ref.handle;
 					}
-					UL_INFO("Texture '%s' does not yet exist. Created, and ref_count is now %i.", name, Ref.reference_count);
+					UL_DEBUG("Texture '%s' does not yet exist. Created, and ref_count is now %i.", name, Ref.reference_count);
 				}
 			}
 			else {
 				*out_texture_id = Ref.handle;
-				UL_INFO("Texture '%s' already exists, ref_count increased to %i.", name, Ref.reference_count);
+				UL_DEBUG("Texture '%s' already exists, ref_count increased to %i.", name, Ref.reference_count);
 			}
 		}
 

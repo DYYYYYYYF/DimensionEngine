@@ -12,10 +12,11 @@ void Mesh::LoadJobSuccess(void* params) {
 
 	// This also handle the GPU upload. Can't be jobified until the renderer is multithread.
 	SGeometryConfig* Configs = (SGeometryConfig*)MeshParams->mesh_resource.Data;
-	MeshParams->out_mesh->geometry_count = (unsigned short)MeshParams->mesh_resource.DataSize;
+	MeshParams->out_mesh->geometry_count = (unsigned short)MeshParams->mesh_resource.DataCount;
 	MeshParams->out_mesh->geometries = (Geometry**)Memory::Allocate(sizeof(Geometry*) * MeshParams->out_mesh->geometry_count, MemoryType::eMemory_Type_Array);
 	for (uint32_t i = 0; i < MeshParams->out_mesh->geometry_count; ++i) {
-		MeshParams->out_mesh->geometries[i] = GeometrySystem::AcquireFromConfig(Configs[i], true);
+		SGeometryConfig Config = Configs[i];
+		MeshParams->out_mesh->geometries[i] = GeometrySystem::AcquireFromConfig(Config, true);
 	}
 	MeshParams->out_mesh->Generation++;
 
@@ -62,7 +63,7 @@ void Mesh::Unload() {
 		GeometrySystem::Release(geometries[i]);
 	}
 
-	Memory::Free(geometries, sizeof(Geometry) * geometry_count, MemoryType::eMemory_Type_Array);
+	Memory::Free(geometries, sizeof(Geometry*) * geometry_count, MemoryType::eMemory_Type_Array);
 	geometries = nullptr;
 
 	// For good measure. Invalidate the geometry so it doesn't attemp to be renderer.

@@ -51,6 +51,7 @@ bool MeshLoader::Load(const char* name, void* params, Resource* resource) {
 	}
 
 	resource->FullPath = StringCopy(FullFilePath);
+	resource->Name = StringCopy(name);
 
 	// The resource data is just an array of configs.
 	std::vector<SGeometryConfig> ResourceDatas;
@@ -82,11 +83,15 @@ bool MeshLoader::Load(const char* name, void* params, Resource* resource) {
 		return false;
 	}
 
+	std::vector<SGeometryConfig> Temp = ResourceDatas;
+
 	resource->Data = Memory::Allocate(sizeof(SGeometryConfig) * ResourceDatas.size(), MemoryType::eMemory_Type_Array);
 	Memory::Zero(resource->Data, sizeof(SGeometryConfig) * ResourceDatas.size());
 	Memory::Copy(resource->Data, ResourceDatas.data(), sizeof(SGeometryConfig) * ResourceDatas.size());
 	resource->DataSize = sizeof(SGeometryConfig);
 	resource->DataCount = ResourceDatas.size();
+	ResourceDatas.clear();
+
 	return true;
 }
 

@@ -14,7 +14,7 @@ template<typename ElementType>
 class RingQueue{
 public:
 	RingQueue() {
-		RingQueue(1024, nullptr);
+		RingQueue(1024);
 	}
 
 	/**
@@ -35,7 +35,8 @@ public:
 		}
 		else {
 			OwnsMemory = true;
-			Block = (ElementType*)Memory::Allocate(Capacity * Stride, MemoryType::eMemory_Type_Ring_Queue);
+			Block = (ElementType*)Platform::PlatformAllocate(Capacity * Stride, false);
+			Platform::PlatformSetMemory(Block, 0, Capacity * Stride);
 		}
 
 	}
@@ -44,8 +45,8 @@ public:
 	 * @brief Destroys the queue.
 	 */
 	void Clear() {
-		if (OwnsMemory) {
-			Memory::Free(Block, Capacity * Stride, MemoryType::eMemory_Type_Ring_Queue);
+		if (OwnsMemory && Block != nullptr) {
+			Platform::PlatformFree(Block, false);
 			Block = nullptr;
 		}
 	}
@@ -57,7 +58,7 @@ public:
 	 * @return True if success.
 	 */
 	bool Enqueue(ElementType* value) {
-		if (value == nullptr) {
+		if (Block == nullptr || value == nullptr) {
 			return false;
 		}
 
@@ -67,7 +68,7 @@ public:
 		}
 
 		Tail = (Tail + 1) % Capacity;
-		Memory::Copy(Block + (Tail * Stride), value, Stride);
+		Platform::PlatformCopyMemory(Block + (Tail * Stride), value, Stride);
 		Length++;
 		return true;
 	}
@@ -79,7 +80,7 @@ public:
 	 * @return True if success;
 	 */
 	bool Dequeue(ElementType* out_val) {
-		if (out_val == nullptr) {
+		if (Block == nullptr || out_val == nullptr) {
 			return false;
 		}
 
@@ -88,7 +89,7 @@ public:
 			return false;
 		}
 
-		Memory::Copy(out_val, Block + (Head * Stride), Stride);
+		Platform::PlatformCopyMemory(out_val, Block + (Head * Stride), Stride);
 		Head = (Head + 1) % Capacity;
 		Length--;
 		return true;
@@ -101,7 +102,7 @@ public:
 	 * @return True if success;
 	 */
 	bool Peek(ElementType* out_val) {
-		if (out_val == nullptr) {
+		if (Block == nullptr || out_val == nullptr) {
 			return false;
 		}
 
@@ -110,7 +111,7 @@ public:
 			return false;
 		}
 
-		Memory::Copy(out_val, Block + (Head * Stride), Stride);
+		Platform::PlatformCopyMemory(out_val, Block + (Head * Stride), Stride);
 		return true;
 	}
 

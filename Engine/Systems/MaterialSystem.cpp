@@ -192,10 +192,10 @@ Material* MaterialSystem::AcquireFromConfig(SMaterialConfig config) {
 
 			// Also use the handle as the material id.
 			m->Id = Ref.handle;
-			UL_INFO("Material '%s' does not yet exist. Created and RefCount is now %i.", config.name, Ref.reference_count);
+			UL_DEBUG("Material '%s' does not yet exist. Created and RefCount is now %i.", config.name, Ref.reference_count);
 		}
 		else {
-			UL_INFO("Material '%s' already exist. RefCount increased to %i.", config.name, Ref.reference_count);
+			UL_DEBUG("Material '%s' already exist. RefCount increased to %i.", config.name, Ref.reference_count);
 		}
 
 		// Update the entry.

@@ -6,9 +6,9 @@
 bool JobSystem::IsRunning = false;
 unsigned char JobSystem::ThreadCount;
 JobThread JobSystem::JobThreads[32];
-RingQueue<JobInfo> JobSystem::LowPriorityQueue;
-RingQueue<JobInfo> JobSystem::NormalPriorityQueue;
-RingQueue<JobInfo> JobSystem::HighPriorityQueue;
+RingQueue<JobInfo> JobSystem::LowPriorityQueue(1024);
+RingQueue<JobInfo> JobSystem::NormalPriorityQueue(1024);
+RingQueue<JobInfo> JobSystem::HighPriorityQueue(1024);
 Mutex JobSystem::LowPriQueueMutex;
 Mutex JobSystem::NormalPriQueueMutex;
 Mutex JobSystem::HighPriQueueMutex;
@@ -148,7 +148,7 @@ bool JobSystem::Initialize(unsigned char job_thread_count, unsigned int type_mas
 			return false;
 		}
 
-		Memory::Zero(&JobThreads[i].info, sizeof(JobThread));
+		Memory::Zero(&JobThreads[i].info, sizeof(JobInfo));
 	}
 
 	// Create needed mutexes.
@@ -184,9 +184,15 @@ void JobSystem::Shutdown() {
 		JobThreads[i].thread.Destroy();
 	}
 
-	LowPriorityQueue.Clear();
-	NormalPriorityQueue.Clear();
-	HighPriorityQueue.Clear();
+	for (uint32_t i = 0; i < LowPriorityQueue.GetLength(); ++i) {
+		JobInfo* Temp = nullptr;
+		LowPriorityQueue.Dequeue(Temp);
+		Temp->Release();
+		NormalPriorityQueue.Dequeue(Temp);
+		Temp->Release();
+		HighPriorityQueue.Dequeue(Temp);
+		Temp->Release();
+	}
 
 	// Destroy mutexes
 	ResultMutex.Destroy();
