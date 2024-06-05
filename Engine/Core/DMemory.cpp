@@ -6,7 +6,7 @@
 bool Memory::Initialize(size_t size) {
 	Platform::PlatformZeroMemory(&stats, sizeof(stats));
 	if (!DynamicAlloc.Create(size)) {
-		UL_FATAL("Memory system is unable to setup internal allocator. Application can not continue.");
+		LOG_FATAL("Memory system is unable to setup internal allocator. Application can not continue.");
 		return false;
 	}
 
@@ -14,7 +14,7 @@ bool Memory::Initialize(size_t size) {
 	TotalAllocateSize = size;
 	AllocationMutex.Create();
 
-	UL_DEBUG("Memory system successfully allocated %llu bytes.", TotalAllocateSize);
+	LOG_DEBUG("Memory system successfully allocated %llu bytes.", TotalAllocateSize);
 	return true;
 }
 
@@ -24,12 +24,12 @@ void Memory::Shutdown() {
 	AllocateCount = 0;
 	TotalAllocateSize = 0;
 
-	UL_INFO("Shutdown memory system, left memory: %llu.", DynamicAlloc.GetFreeSpace());
+	LOG_INFO("Shutdown memory system, left memory: %llu.", DynamicAlloc.GetFreeSpace());
 }
 
 void* Memory::Allocate(size_t size, MemoryType type = MemoryType::eMemory_Type_Array) {
 	if (type == eMemory_Type_Unknow) {
-		UL_WARN("Called allocate using eMemory_Type_Unknow. Re-class this allocation.");
+		LOG_WARN("Called allocate using eMemory_Type_Unknow. Re-class this allocation.");
 	}
 
 	void* Block = nullptr;
@@ -39,7 +39,7 @@ void* Memory::Allocate(size_t size, MemoryType type = MemoryType::eMemory_Type_A
 
 	// Make sure multi-threaded requests don't trample each other.
 	if (!AllocationMutex.Lock()) {
-		UL_FATAL("Error obtaining mutex lock during allocation.");
+		LOG_FATAL("Error obtaining mutex lock during allocation.");
 		return nullptr;
 	}
 
@@ -47,12 +47,12 @@ void* Memory::Allocate(size_t size, MemoryType type = MemoryType::eMemory_Type_A
 	AllocationMutex.UnLock();
 
 	if (Block == nullptr) {
-		UL_WARN("Allocate by platform. Dynamic allocator memory is not enough!");
+		LOG_WARN("Allocate by platform. Dynamic allocator memory is not enough!");
 		Block = Platform::PlatformAllocate(size, false);
 	}
 
 	if (Block == nullptr) {
-		UL_FATAL("Allocate failed.");
+		LOG_FATAL("Allocate failed.");
 	}
 
 	Platform::PlatformZeroMemory(Block, size);
@@ -62,7 +62,7 @@ void* Memory::Allocate(size_t size, MemoryType type = MemoryType::eMemory_Type_A
 
 void  Memory::Free(void* block, size_t size, MemoryType type) {
 	if (type == eMemory_Type_Unknow) {
-		UL_WARN("Called free using eMemory_Type_Unknow. Re-class this allocation.");
+		LOG_WARN("Called free using eMemory_Type_Unknow. Re-class this allocation.");
 	}
 
 	stats.total_allocated -= size;
@@ -70,7 +70,7 @@ void  Memory::Free(void* block, size_t size, MemoryType type) {
 
 	// Make sure multi-threaded requests don't trample each other.
 	if (!AllocationMutex.Lock()) {
-		UL_FATAL("Unable to obtain mutex lock for free operation. Heap corruption is likely.");
+		LOG_FATAL("Unable to obtain mutex lock for free operation. Heap corruption is likely.");
 		return;
 	}
 

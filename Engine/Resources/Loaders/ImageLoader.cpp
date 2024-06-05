@@ -25,7 +25,7 @@ bool ImageLoader::Load(const char* name, void* params, Resource* resource) {
 
 	ImageResourceParams* TypedParams = (ImageResourceParams*)params;
 	if (params == nullptr) {
-		UL_ERROR("ImageLoader::Load() Required a valid params (ImageResourceParams).");
+		LOG_ERROR("ImageLoader::Load() Required a valid params (ImageResourceParams).");
 		return false;
 	}
 
@@ -51,7 +51,7 @@ bool ImageLoader::Load(const char* name, void* params, Resource* resource) {
 	resource->Name = StringCopy(name);
 
 	if (!Found) {
-		UL_ERROR("Image resource loader failed find file '%s'or with any supported extensions.", FullFilePath);
+		LOG_ERROR("Image resource loader failed find file '%s'or with any supported extensions.", FullFilePath);
 		return false;
 	}
 

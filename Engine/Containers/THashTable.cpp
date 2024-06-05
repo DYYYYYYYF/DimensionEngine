@@ -5,12 +5,12 @@
 
 void HashTable::Create(size_t element_size, unsigned int element_count, void* memory, bool is_pointer) {
 	if (memory == nullptr) {
-		UL_ERROR("Hash table create failed. Pointer to memory or Hash memory is nullptr");
+		LOG_ERROR("Hash table create failed. Pointer to memory or Hash memory is nullptr");
 		return;
 	}
 
 	if (element_count == 0 || element_size == 0) {
-		UL_ERROR("element_size and element_size must be a positive non-zero value.");
+		LOG_ERROR("element_size and element_size must be a positive non-zero value.");
 		return;
 	}
 
@@ -28,12 +28,12 @@ void HashTable::Destroy() {
 
 bool HashTable::Set(const char* name, void* value) {
 	if (name == nullptr || value == nullptr) {
-		UL_ERROR("Hash table set falied. name or value is nullptr.");
+		LOG_ERROR("Hash table set falied. name or value is nullptr.");
 		return false;
 	}
 
 	if (IsPointerType) {
-		UL_ERROR("Hash table should not be used with tables that have pointer types.");
+		LOG_ERROR("Hash table should not be used with tables that have pointer types.");
 		return false;
 	}
 
@@ -45,12 +45,12 @@ bool HashTable::Set(const char* name, void* value) {
 
 bool HashTable::Set(const char* name, void** value) {
 	if (name == nullptr || value == nullptr) {
-		UL_ERROR("Hash table set falied. name or value is nullptr.");
+		LOG_ERROR("Hash table set falied. name or value is nullptr.");
 		return false;
 	}
 
 	if (!IsPointerType) {
-		UL_ERROR("Hash table should not be used with tables that have non pointer types.");
+		LOG_ERROR("Hash table should not be used with tables that have non pointer types.");
 		return false;
 	}
 
@@ -61,12 +61,12 @@ bool HashTable::Set(const char* name, void** value) {
 
 bool HashTable::Get(const char* name, void* out_value) {
 	if (name == nullptr || out_value == nullptr) {
-		UL_ERROR("Hash table get falied. name or value is nullptr.");
+		LOG_ERROR("Hash table get falied. name or value is nullptr.");
 		return false;
 	}
 
 	if (IsPointerType) {
-		UL_ERROR("Hash table should not be used with tables that have pointer types.");
+		LOG_ERROR("Hash table should not be used with tables that have pointer types.");
 		return false;
 	}
 
@@ -77,12 +77,12 @@ bool HashTable::Get(const char* name, void* out_value) {
 
 bool HashTable::Get(const char* name, void** out_value) {
 	if (name == nullptr || out_value == nullptr) {
-		UL_ERROR("Hash table get falied. name or value is nullptr.");
+		LOG_ERROR("Hash table get falied. name or value is nullptr.");
 		return false;
 	}
 
 	if (!IsPointerType) {
-		UL_ERROR("Hash table should not be used with tables that have non pointer types.");
+		LOG_ERROR("Hash table should not be used with tables that have non pointer types.");
 		return false;
 	}
 
@@ -93,12 +93,12 @@ bool HashTable::Get(const char* name, void** out_value) {
 
 bool HashTable::Fill(void* value) {
 	if (value == nullptr || Memory == nullptr) {
-		UL_ERROR("Hash table fill falied. value is nullptr.");
+		LOG_ERROR("Hash table fill falied. value is nullptr.");
 		return false;
 	}
 
 	if (IsPointerType) {
-		UL_ERROR("Hash table fill should not be used with tables that have pointer types.");
+		LOG_ERROR("Hash table fill should not be used with tables that have pointer types.");
 		return false;
 	}
 

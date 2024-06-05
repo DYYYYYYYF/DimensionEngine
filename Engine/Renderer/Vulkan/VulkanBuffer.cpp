@@ -31,7 +31,7 @@ bool VulkanBuffer::Create(VulkanContext* context, size_t size, vk::BufferUsageFl
 	MemRequirements = context->Device.GetLogicalDevice().getBufferMemoryRequirements(Buffer);
 	MemoryIndex = context->FindMemoryIndex(MemRequirements.memoryTypeBits, MemoryPropertyFlags);
 	if (MemoryIndex == -1) {
-		UL_ERROR("Unable to create vulkan buffer because the required memory type index was not found.");
+		LOG_ERROR("Unable to create vulkan buffer because the required memory type index was not found.");
 
 		CleanupFreelist();
 		return false;
@@ -75,14 +75,14 @@ bool VulkanBuffer::Resize(VulkanContext* context, size_t size, vk::Queue queue, 
 
 	// Sanity check
 	if (size < TotalSize) {
-		UL_ERROR("Vulkan buffer resize requires that new size larger than the old. Nothing will doing.");
+		LOG_ERROR("Vulkan buffer resize requires that new size larger than the old. Nothing will doing.");
 		return false;
 	}
 
 	// Resize the freelist first.
 	if (UseFreelist) {
 		if (!BufferFreelist.Resize(size)) {
-			UL_ERROR("Vulkan buffer resize failed to resize freelist.");
+			LOG_ERROR("Vulkan buffer resize failed to resize freelist.");
 			return false;
 		}
 	}
@@ -149,12 +149,12 @@ void VulkanBuffer::UnlockMemory(VulkanContext* context) {
 
 bool VulkanBuffer::Allocate(size_t size, size_t* offset) {
 	if (offset == nullptr) {
-		UL_ERROR("Vulkan buffer allocate requires a valid point offset.");
+		LOG_ERROR("Vulkan buffer allocate requires a valid point offset.");
 		return false;
 	}
 
 	if (!UseFreelist) {
-		UL_WARN("Vulkan buffer allocate called on a buffer not using freelists. Offset will not be valid. Call vulkan_buffer_load_data instead.");
+		LOG_WARN("Vulkan buffer allocate called on a buffer not using freelists. Offset will not be valid. Call vulkan_buffer_load_data instead.");
 		*offset = 0;
 		return true;
 	}
@@ -164,12 +164,12 @@ bool VulkanBuffer::Allocate(size_t size, size_t* offset) {
 
 bool VulkanBuffer::Free(size_t size, size_t offset) {
 	if (size == 0) {
-		UL_ERROR("Vulkan buffer free requires a non-zero size.");
+		LOG_ERROR("Vulkan buffer free requires a non-zero size.");
 		return false;
 	}
 
 	if (!UseFreelist) {
-		UL_WARN("vulkan_buffer_free called on a buffer not using freelists. Nothing was done.");
+		LOG_WARN("vulkan_buffer_free called on a buffer not using freelists. Nothing was done.");
 		return true;
 	}
 

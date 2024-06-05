@@ -121,7 +121,7 @@ void VulkanRenderPass::Create(VulkanContext* context,
 
 	if (context->Device.GetLogicalDevice().createRenderPass(&CreateInfo,
 		context->Allocator, (vk::RenderPass*)&Renderpass) != vk::Result::eSuccess) {
-		UL_ERROR("VulkanRenderPass::Create() Failed to create renderpass.");
+		LOG_ERROR("VulkanRenderPass::Create() Failed to create renderpass.");
 	}
 }
 

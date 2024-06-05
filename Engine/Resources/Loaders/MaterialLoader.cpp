@@ -27,7 +27,7 @@ bool MaterialLoader::Load(const char* name, void* params, Resource* resource) {
 
 	FileHandle File;
 	if (!FileSystemOpen(FullFilePath, eFile_Mode_Read, false, &File)) {
-		UL_ERROR("Material loader load. Unable to open material file for reading: '%s'.", FullFilePath);
+		LOG_ERROR("Material loader load. Unable to open material file for reading: '%s'.", FullFilePath);
 		return false;
 	}
 
@@ -61,7 +61,7 @@ bool MaterialLoader::Load(const char* name, void* params, Resource* resource) {
 		// Split into var-value
 		int EqualIndex = StringIndexOf(Trimmed, '=');
 		if (EqualIndex == -1) {
-			UL_WARN("Potential formatting issue found in file '%s': '=' token not found. Skiping line %ui.", FullFilePath, LineNumber);
+			LOG_WARN("Potential formatting issue found in file '%s': '=' token not found. Skiping line %ui.", FullFilePath, LineNumber);
 			LineNumber++;
 			continue;
 		}
@@ -108,7 +108,7 @@ bool MaterialLoader::Load(const char* name, void* params, Resource* resource) {
 		}
 		else if (strcmp(TrimmedVarName, "shininess") == 0){
 			if (!StringToFloat(TrimmedValue, &ResourceData->shininess)) {
-				UL_WARN("Error parsing shininess in file '%s'. Using default of 32.0f instead.", FullFilePath);
+				LOG_WARN("Error parsing shininess in file '%s'. Using default of 32.0f instead.", FullFilePath);
 				ResourceData->shininess = 32.0f;
 			}
 		}
@@ -131,7 +131,7 @@ bool MaterialLoader::Load(const char* name, void* params, Resource* resource) {
 
 void MaterialLoader::Unload(Resource* resource) {
 	if (resource == nullptr) {
-		UL_WARN("Material loader unload called with nullptr.");
+		LOG_WARN("Material loader unload called with nullptr.");
 		return;
 	}
 

@@ -27,7 +27,7 @@ static SInputState state = {};
 void InputInitialize() {
 	Memory::Zero(&state, sizeof(SInputState));
 	Initialized = true;
-	UL_INFO("Input system initialized.");
+	LOG_INFO("Input system initialized.");
 }
 
 void InputShutdown() {

@@ -31,8 +31,8 @@ EngineLogger::EngineLogger(){
     Log::Logger::getInstance()->setMaxSize(1024000);
     Log::Logger::getInstance()->setLevel(LogLevel);
 
-    UL_INFO("Logger Init Success.");
-    UL_INFO("Mode: Debug.");
+    LOG_INFO("Logger Init Success.");
+    LOG_INFO("Mode: Debug.");
 
 }
 

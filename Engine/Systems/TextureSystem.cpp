@@ -22,12 +22,12 @@ IRenderer* TextureSystem::Renderer = nullptr;
 
 bool TextureSystem::Initialize(IRenderer* renderer, STextureSystemConfig config) {
 	if (config.max_texture_count == 0) {
-		UL_FATAL("Texture system init failed. TextureSystemConfig.max_texture_count should > 0");
+		LOG_FATAL("Texture system init failed. TextureSystemConfig.max_texture_count should > 0");
 		return false;
 	}
 
 	if (renderer == nullptr) {
-		UL_FATAL("Texture system init failed. Renderer is nullptr.");
+		LOG_FATAL("Texture system init failed. Renderer is nullptr.");
 		return false;
 	}
 
@@ -65,7 +65,7 @@ bool TextureSystem::Initialize(IRenderer* renderer, STextureSystemConfig config)
 
 	// Create default textures for use in the system.
 	if (!CreateDefaultTexture()) {
-		UL_FATAL("Create default texture failed. Application quit now!");
+		LOG_FATAL("Create default texture failed. Application quit now!");
 		return false;
 	}
 
@@ -78,7 +78,7 @@ void TextureSystem::Shutdown() {
 	for (uint32_t i = 0; i < TextureSystemConfig.max_texture_count; ++i) {
 		Texture* t = &RegisteredTextures[i];
 		if (t->Generation != INVALID_ID) {
-			UL_DEBUG("Destroying texture: '%s'.", t->Name);
+			LOG_DEBUG("Destroying texture: '%s'.", t->Name);
 			Renderer->DestroyTexture(t);
 		}
 	}
@@ -89,14 +89,14 @@ void TextureSystem::Shutdown() {
 Texture* TextureSystem::Acquire(const char* name, bool auto_release) {
 	// Return default texture, but warn about it since this should be returned via GetDefaultTexture()
 	if (strcmp(name, DEFAULT_TEXTURE_NAME) == 0) {
-		UL_WARN("Texture acquire return default texture. Use GetDefaultTexture() for texture 'default'");
+		LOG_WARN("Texture acquire return default texture. Use GetDefaultTexture() for texture 'default'");
 		return &DefaultTexture;
 	}
 
 	uint32_t ID = INVALID_ID;
 	// NOTE: Increments reference_cout, or creates new entry.
 	if (!ProcessTextureReference(name, TextureType::eTexture_Type_2D, 1, auto_release, false, &ID)) {
-		UL_ERROR("TextureSystem::Acquire() failed to obtain a new texture id.");
+		LOG_ERROR("TextureSystem::Acquire() failed to obtain a new texture id.");
 		return nullptr;
 	}
 
@@ -106,14 +106,14 @@ Texture* TextureSystem::Acquire(const char* name, bool auto_release) {
 Texture* TextureSystem::AcquireCube(const char* name, bool auto_release) {
 	// Return default texture, but warn about it since this should be returned via GetDefaultTexture()
 	if (strcmp(name, DEFAULT_TEXTURE_NAME) == 0) {
-		UL_WARN("Texture acquire cube return default texture. Use GetDefaultTexture() for texture 'default'");
+		LOG_WARN("Texture acquire cube return default texture. Use GetDefaultTexture() for texture 'default'");
 		return &DefaultTexture;
 	}
 
 	uint32_t ID = INVALID_ID;
 	// NOTE: Increments reference_cout, or creates new entry.
 	if (!ProcessTextureReference(name, TextureType::eTexture_Type_Cube, 1, auto_release, false, &ID)) {
-		UL_ERROR("TextureSystem::AcquireCube() failed to obtain a new texture id.");
+		LOG_ERROR("TextureSystem::AcquireCube() failed to obtain a new texture id.");
 		return nullptr;
 	}
 
@@ -125,7 +125,7 @@ Texture* TextureSystem::AcquireWriteable(const char* name, uint32_t width, uint3
 	// NOTE: Wrapped textures are never auto-release because it means that thier
 	// resources are created and managed somewhere within the renderer internals.
 	if (!ProcessTextureReference(name, TextureType::eTexture_Type_2D, 1, false, true, &ID)) {
-		UL_ERROR("TextureSystem::AcquireWriteable() failed to obtain a new texture id.");
+		LOG_ERROR("TextureSystem::AcquireWriteable() failed to obtain a new texture id.");
 		return nullptr;
 	}
 	
@@ -154,7 +154,7 @@ void TextureSystem::Release(const char* name) {
 	uint32_t ID = INVALID_ID;
 	// NOTE: Decrement the reference count.
 	if (!ProcessTextureReference(name, TextureType::eTexture_Type_2D, -1, false, false, &ID)) {
-		UL_ERROR("TextureSystem::Release() failed to release texture '%s' properly.", name);
+		LOG_ERROR("TextureSystem::Release() failed to release texture '%s' properly.", name);
 	}
 }
 
@@ -176,7 +176,7 @@ Texture* TextureSystem::WrapInternal(const char* name, uint32_t width, uint32_t 
 		// NOTE: Wrapped textures are never auto-release because it means that their
 		// resource are created and managed somewhere within the renderer internals.
 		if (!ProcessTextureReference(name, TextureType::eTexture_Type_2D, 1, false, true, &ID)) {
-			UL_ERROR("TextureSystem::WrapInternal() fialed to obtain a new texture id.");
+			LOG_ERROR("TextureSystem::WrapInternal() fialed to obtain a new texture id.");
 			return nullptr;
 		}
 
@@ -184,7 +184,7 @@ Texture* TextureSystem::WrapInternal(const char* name, uint32_t width, uint32_t 
 	}
 	else {
 		t = (Texture*)Memory::Allocate(sizeof(Texture), MemoryType::eMemory_Type_Texture);
-		UL_INFO("TextureSystem::WrapInternal() created texture '%s', but not registering, resulting in an allocation. It is up to the caller for free this memory.", name);
+		LOG_INFO("TextureSystem::WrapInternal() created texture '%s', but not registering, resulting in an allocation. It is up to the caller for free this memory.", name);
 	}
 
 	t->Id = ID;
@@ -218,7 +218,7 @@ bool TextureSystem::Resize(Texture* t, uint32_t width, uint32_t height, bool reg
 	}
 
 	if (!(t->Flags & TextureFlagBits::eTexture_Flag_Is_Writeable)) {
-		UL_WARN("Texture system resize should not be called on textures that are not writeable.");
+		LOG_WARN("Texture system resize should not be called on textures that are not writeable.");
 		return false;
 	}
 
@@ -273,7 +273,7 @@ bool TextureSystem::CreateDefaultTexture() {
 
 	// NOTE: create default texture, a 256x256 blue/white checkerboard pattern.
 	// This is done in code to eliminate asset dependencies.
-	UL_INFO("Createing default texture...");
+	LOG_INFO("Createing default texture...");
 	const uint32_t TexDimension = 256;
 	const uint32_t bpp = 4;
 	const uint32_t PixelCount = TexDimension * TexDimension;
@@ -309,12 +309,12 @@ bool TextureSystem::CreateDefaultTexture() {
 	DefaultTexture.Flags = 0;
 	DefaultTexture.Type = TextureType::eTexture_Type_2D;
 	Renderer->CreateTexture(Pixels, &DefaultTexture);
-	UL_INFO("Default texture created.");
+	LOG_INFO("Default texture created.");
 	// Manually set the texture generation to invalid since this is a default texture.
 	DefaultTexture.Generation = INVALID_ID;
 
 	// Diffuse texture.
-	UL_INFO("Creating default diffuse texture...");
+	LOG_INFO("Creating default diffuse texture...");
 	unsigned char DiffusePixels[16 * 16 * 4];
 	// Default spec map is black (no specular).
 	Memory::Set(DiffusePixels, 255, sizeof(unsigned char) * 16 * 16 * 4);
@@ -326,12 +326,12 @@ bool TextureSystem::CreateDefaultTexture() {
 	DefaultDiffuseTexture.Flags = 0;
 	DefaultDiffuseTexture.Type = TextureType::eTexture_Type_2D;
 	Renderer->CreateTexture(DiffusePixels, &DefaultDiffuseTexture);
-	UL_INFO("Default diffuse texture created.");
+	LOG_INFO("Default diffuse texture created.");
 	// Manually set the texture generation to invalid since this is a default texture.
 	DefaultDiffuseTexture.Generation = INVALID_ID;
 
 	// Specular texture.
-	UL_INFO("Creating default specular texture...");
+	LOG_INFO("Creating default specular texture...");
 	unsigned char SpecularPixels[16 * 16 * 4];
 	// Default spec map is black (no specular).
 	Memory::Set(SpecularPixels, 0, sizeof(unsigned char) * 16 * 16 * 4);
@@ -343,12 +343,12 @@ bool TextureSystem::CreateDefaultTexture() {
 	DefaultSpecularTexture.Flags = 0;
 	DefaultSpecularTexture.Type = TextureType::eTexture_Type_2D;
 	Renderer->CreateTexture(SpecularPixels, &DefaultSpecularTexture);
-	UL_INFO("Default specular texture created.");
+	LOG_INFO("Default specular texture created.");
 	// Manually set the texture generation to invalid since this is a default texture.
 	DefaultSpecularTexture.Generation = INVALID_ID;
 
 	// Normal texture.
-	UL_INFO("Creating default normal texture...");
+	LOG_INFO("Creating default normal texture...");
 	unsigned char NormalPixels[16 * 16 * 4];
 	// Default spec map is black (no specular).
 	Memory::Set(NormalPixels, 0, sizeof(unsigned char) * 16 * 16 * 4);
@@ -374,7 +374,7 @@ bool TextureSystem::CreateDefaultTexture() {
 	DefaultNormalTexture.Flags = 0;
 	DefaultNormalTexture.Type = TextureType::eTexture_Type_2D;
 	Renderer->CreateTexture(NormalPixels, &DefaultNormalTexture);
-	UL_INFO("Default normal texture created.");
+	LOG_INFO("Default normal texture created.");
 	// Manually set the texture generation to invalid since this is a default texture.
 	DefaultNormalTexture.Generation = INVALID_ID;
 
@@ -397,7 +397,7 @@ bool TextureSystem::LoadCubeTexture(const char* name, const char texture_names[6
 
 		Resource ImageResource;
 		if (!ResourceSystem::Load(texture_names[i], ResourceType::eResource_type_Image, &Params, &ImageResource)) {
-			UL_ERROR("TextureSystem::LoadCubeTexture() Failed to load image resource for texture '%s'.", texture_names[i]);
+			LOG_ERROR("TextureSystem::LoadCubeTexture() Failed to load image resource for texture '%s'.", texture_names[i]);
 			return false;
 		}
 
@@ -415,7 +415,7 @@ bool TextureSystem::LoadCubeTexture(const char* name, const char texture_names[6
 		else {
 			// verify all textures are the same size.
 			if (t->Width != ResourceData->width || t->Height != ResourceData->height || t->ChannelCount != ResourceData->channel_count) {
-				UL_ERROR("TextureSystem::LoadCubeTexture() All textures must be the same resolution and bit depth.");
+				LOG_ERROR("TextureSystem::LoadCubeTexture() All textures must be the same resolution and bit depth.");
 				Memory::Free(piexels, sizeof(unsigned char) * ImageSize * 6, MemoryType::eMemory_Type_Array);
 				piexels = nullptr;
 				return false;
@@ -556,11 +556,11 @@ bool TextureSystem::ProcessTextureReference(const char* name, TextureType type ,
 			}
 			else {
 				if (Ref.auto_release) {
-					UL_WARN("Tried to release non-existent texture: '%s'.", name);
+					LOG_WARN("Tried to release non-existent texture: '%s'.", name);
 					return false;
 				}
 				else {
-					UL_WARN("Tried to release a texture where auto-release=false, but references was already: 0.");
+					LOG_WARN("Tried to release a texture where auto-release=false, but references was already: 0.");
 					// Still count this as a success but warn about it.
 					return true;
 				}
@@ -588,10 +588,10 @@ bool TextureSystem::ProcessTextureReference(const char* name, TextureType type ,
 				// Reset the reference.
 				Ref.handle = INVALID_ID;
 				Ref.auto_release = false;
-				UL_INFO("Released texture '%s', Texture unloaded because count=0 and auto_release=true.", NameCopy);
+				LOG_INFO("Released texture '%s', Texture unloaded because count=0 and auto_release=true.", NameCopy);
 			}
 			else {
-				UL_INFO("Released texture '%s', now has a reference count of '%i' (auto_release=%s)", NameCopy, Ref.reference_count, Ref.auto_release ? "true" : "false");
+				LOG_INFO("Released texture '%s', now has a reference count of '%i' (auto_release=%s)", NameCopy, Ref.reference_count, Ref.auto_release ? "true" : "false");
 			}
 		}
 		else {
@@ -610,7 +610,7 @@ bool TextureSystem::ProcessTextureReference(const char* name, TextureType type ,
 
 				// An empty slot was not found, bleat about it and boot out.
 				if (*out_texture_id == INVALID_ID) {
-					UL_FATAL("ProcessTextureReference() texture system can not hold anymore textures. Adjust configuration to allow more.");
+					LOG_FATAL("ProcessTextureReference() texture system can not hold anymore textures. Adjust configuration to allow more.");
 					return false;
 				}
 				else {
@@ -618,13 +618,13 @@ bool TextureSystem::ProcessTextureReference(const char* name, TextureType type ,
 					t->Type = type;
 					// Create new texture.
 					if (skip_load) {
-						UL_INFO("Load skipped for texture '%s'. This is expected behaviour.", name);
+						LOG_INFO("Load skipped for texture '%s'. This is expected behaviour.", name);
 					}
 					else {
 						if (type == TextureType::eTexture_Type_2D) {
 							if (!LoadTexture(name, t)) {
 								*out_texture_id = INVALID_ID;
-								UL_ERROR("Failed to load texture '%s'.", name);
+								LOG_ERROR("Failed to load texture '%s'.", name);
 								return false;
 							}
 						}
@@ -641,7 +641,7 @@ bool TextureSystem::ProcessTextureReference(const char* name, TextureType type ,
 
 							if (!LoadCubeTexture(name, TextureNames, t)) {
 								*out_texture_id = INVALID_ID;
-								UL_ERROR("Failed to load cube texture '%s'.", name);
+								LOG_ERROR("Failed to load cube texture '%s'.", name);
 								return false;
 							}
 						}
@@ -663,6 +663,6 @@ bool TextureSystem::ProcessTextureReference(const char* name, TextureType type ,
 	}
 
 	// NOTE: This would only happen in the event something went wrong with the state.
-	UL_ERROR("ProcessTextureReference() failed to acquire id for name '%s'.", name);
+	LOG_ERROR("ProcessTextureReference() failed to acquire id for name '%s'.", name);
 	return false;
 }

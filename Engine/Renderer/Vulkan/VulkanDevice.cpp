@@ -6,7 +6,7 @@ bool VulkanDevice::Create(vk::Instance* context, vk::AllocationCallbacks* alloca
 		return false;
 	}
 	
-	UL_INFO("Creating logical device...");
+	LOG_INFO("Creating logical device...");
 	// NOTE: Do not create additional queues for shared indices.
 	bool PresentSharesGraphicsQueue = QueueFamilyInfo.graphics_index == QueueFamilyInfo.present_index;
 	bool TransferSharesGraphicsQueue = QueueFamilyInfo.graphics_index == QueueFamilyInfo.transfer_index;
@@ -56,12 +56,12 @@ bool VulkanDevice::Create(vk::Instance* context, vk::AllocationCallbacks* alloca
 
 	LogicalDevice = PhysicalDevice.createDevice(DeviceCreateInfo, allocator);
 	ASSERT(LogicalDevice);
-	UL_INFO("Created logical device.");
+	LOG_INFO("Created logical device.");
 
 	GraphicsQueue = LogicalDevice.getQueue(QueueFamilyInfo.graphics_index, 0);
 	PresentQueue = LogicalDevice.getQueue(QueueFamilyInfo.present_index, 0);
 	TransferQueue = LogicalDevice.getQueue(QueueFamilyInfo.transfer_index, 0);
-	UL_INFO("Queues obtained.");
+	LOG_INFO("Queues obtained.");
 
 	// Create command pool for graphics queue
 	vk::CommandPoolCreateInfo PoolCreateInfo;
@@ -69,14 +69,14 @@ bool VulkanDevice::Create(vk::Instance* context, vk::AllocationCallbacks* alloca
 		.setFlags(vk::CommandPoolCreateFlagBits::eResetCommandBuffer);
 	GraphicsCommandPool = LogicalDevice.createCommandPool(PoolCreateInfo, allocator);
 	ASSERT(GraphicsCommandPool);
-	UL_INFO("Created graphics command pool.");
+	LOG_INFO("Created graphics command pool.");
 
 	return true;
 }
 
 void VulkanDevice::Destroy(vk::Instance* context) {
 
-	UL_INFO("Releasing physical device resources...");
+	LOG_INFO("Releasing physical device resources...");
 	if (!SwapchainSupport.formats.empty()) {
 		SwapchainSupport.formats.clear();
 		SwapchainSupport.format_count = 0;
@@ -99,13 +99,13 @@ void VulkanDevice::Destroy(vk::Instance* context) {
 void VulkanDevice::QuerySwapchainSupport(vk::PhysicalDevice device, vk::SurfaceKHR surface, SSwapchainSupportInfo* support_info) {
 	// Surface capabilities
 	if (device.getSurfaceCapabilitiesKHR(surface, &support_info->capabilities) != vk::Result::eSuccess) {
-		UL_ERROR("Can not get surface capalities.");
+		LOG_ERROR("Can not get surface capalities.");
 		return;
 	}
 
 	// Surface formats;
 	if (device.getSurfaceFormatsKHR(surface, &support_info->format_count, nullptr) != vk::Result::eSuccess) {
-		UL_ERROR("Can not get surface formats.");
+		LOG_ERROR("Can not get surface formats.");
 		return;
 	}
 	ASSERT(support_info->format_count != 0);
@@ -113,14 +113,14 @@ void VulkanDevice::QuerySwapchainSupport(vk::PhysicalDevice device, vk::SurfaceK
 	support_info->formats.resize(support_info->format_count);
 	if (device.getSurfaceFormatsKHR(surface, &support_info->format_count,
 		support_info->formats.data()) != vk::Result::eSuccess) {
-		UL_ERROR("Can not get surface formats.");
+		LOG_ERROR("Can not get surface formats.");
 		return;
 	}
 
 	// Surface present mode
 	if (device.getSurfacePresentModesKHR(surface, &support_info->present_mode_count,
 		support_info->present_modes.data()) != vk::Result::eSuccess) {
-		UL_ERROR("Can not get present modes.");
+		LOG_ERROR("Can not get present modes.");
 		return;
 	}
 	ASSERT(support_info->present_mode_count != 0);
@@ -128,7 +128,7 @@ void VulkanDevice::QuerySwapchainSupport(vk::PhysicalDevice device, vk::SurfaceK
 	support_info->present_modes.resize(support_info->present_mode_count);
 	if (device.getSurfacePresentModesKHR(surface, &support_info->present_mode_count,
 		support_info->present_modes.data()) != vk::Result::eSuccess) {
-		UL_ERROR("Can not get surface formats.");
+		LOG_ERROR("Can not get surface formats.");
 		return;
 	}
 }
@@ -138,14 +138,14 @@ bool VulkanDevice::SelectPhysicalDevice(vk::Instance* instance, vk::SurfaceKHR s
 	TArray<vk::PhysicalDevice> PhysicalDevices;
 
 	if (instance->enumeratePhysicalDevices(&PhysicalDeviceCount, nullptr) != vk::Result::eSuccess) {
-		UL_ERROR("Enumerate physical devices failed.");
+		LOG_ERROR("Enumerate physical devices failed.");
 		return false;
 	}
 
 	ASSERT(PhysicalDeviceCount != 0);
 	PhysicalDevices.Resize(PhysicalDeviceCount);
 	if (instance->enumeratePhysicalDevices(&PhysicalDeviceCount, PhysicalDevices.Data()) != vk::Result::eSuccess) {
-		UL_FATAL("No devices support vulkan.");
+		LOG_FATAL("No devices support vulkan.");
 		return false;
 	}
 
@@ -185,34 +185,34 @@ bool VulkanDevice::SelectPhysicalDevice(vk::Instance* instance, vk::SurfaceKHR s
 		DeviceRequirements.device_extensions_name.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
 
 		if (MeetsRequirements(PhysicalDevices[i], surface, &Properties, &features)) {
-			UL_INFO("Selected device: %s", Properties.deviceName);
+			LOG_INFO("Selected device: %s", Properties.deviceName);
 			switch (Properties.deviceType)
 			{
 			case vk::PhysicalDeviceType::eOther:
-				UL_INFO("GPU type is Unknown.");
+				LOG_INFO("GPU type is Unknown.");
 				break;
 			case vk::PhysicalDeviceType::eIntegratedGpu:
-				UL_INFO("GPU type is Integrated.");
+				LOG_INFO("GPU type is Integrated.");
 				break;
 			case vk::PhysicalDeviceType::eDiscreteGpu:
-				UL_INFO("GPU type is Discrete.");
+				LOG_INFO("GPU type is Discrete.");
 				break;
 			case vk::PhysicalDeviceType::eVirtualGpu:
-				UL_INFO("GPU type is Virtual GPU.");
+				LOG_INFO("GPU type is Virtual GPU.");
 				break;
 			case vk::PhysicalDeviceType::eCpu:
-				UL_INFO("GPU type is CPU");
+				LOG_INFO("GPU type is CPU");
 				break;
 			}
 
 			// GPU Driver version
-			UL_INFO("GOU Driver version: %d.%d.%d",
+			LOG_INFO("GOU Driver version: %d.%d.%d",
 				VK_VERSION_MAJOR(Properties.driverVersion),
 				VK_VERSION_MINOR(Properties.driverVersion),
 				VK_VERSION_PATCH(Properties.driverVersion));
 
 			// Vulkan API version
-			UL_INFO("Vulkan API version: %d.%d.%d",
+			LOG_INFO("Vulkan API version: %d.%d.%d",
 				VK_VERSION_MAJOR(Properties.apiVersion),
 				VK_VERSION_MINOR(Properties.apiVersion),
 				VK_VERSION_PATCH(Properties.apiVersion));
@@ -221,10 +221,10 @@ bool VulkanDevice::SelectPhysicalDevice(vk::Instance* instance, vk::SurfaceKHR s
 			for (unsigned int j = 0; j < memory.memoryHeapCount; ++j) {
 				float MemorySizeGib = (((float)memory.memoryHeaps[j].size) / 1024.f / 1024.f / 1024.f);
 				if (memory.memoryHeaps[j].flags & vk::MemoryHeapFlagBits::eDeviceLocal) {
-					UL_INFO("Local GPU memory: %.2f Gib.", MemorySizeGib);
+					LOG_INFO("Local GPU memory: %.2f Gib.", MemorySizeGib);
 				}
 				else {
-					UL_INFO("Shared System memory: %.2f Gib.", MemorySizeGib);
+					LOG_INFO("Shared System memory: %.2f Gib.", MemorySizeGib);
 				}
 			}
 
@@ -237,7 +237,7 @@ bool VulkanDevice::SelectPhysicalDevice(vk::Instance* instance, vk::SurfaceKHR s
 	}
 
 	if (!PhysicalDevice) {
-		UL_INFO("Physical device not selected.");
+		LOG_INFO("Physical device not selected.");
 		return false;
 	}
 
@@ -255,7 +255,7 @@ bool VulkanDevice::MeetsRequirements(vk::PhysicalDevice device, vk::SurfaceKHR s
 	// Is discrete GPU
 	if (DeviceRequirements.discrete_gpu) {
 		if (properties->deviceType != vk::PhysicalDeviceType::eDiscreteGpu) {
-			UL_ERROR("Device is not a discrete GPU. one is least. Skipping.");
+			LOG_ERROR("Device is not a discrete GPU. one is least. Skipping.");
 			return false;
 		}
 	}
@@ -267,7 +267,7 @@ bool VulkanDevice::MeetsRequirements(vk::PhysicalDevice device, vk::SurfaceKHR s
 	device.getQueueFamilyProperties(&QueueFamilyCount, QueueFamilies.Data());
 
 	// Look at each queue and see what queues it supports
-	UL_INFO("Graphics | Present | Compute | Transfer | Name");
+	LOG_INFO("Graphics | Present | Compute | Transfer | Name");
 	short MinTransferScore = 256;
 	for (unsigned int i = 0; i < QueueFamilyCount; i++) {
 		short CurrrentTransferScore = 0;
@@ -296,7 +296,7 @@ bool VulkanDevice::MeetsRequirements(vk::PhysicalDevice device, vk::SurfaceKHR s
 		// Present queue
 vk::Bool32 SupportedPresent = VK_FALSE;
 if (device.getSurfaceSupportKHR(i, surface, &SupportedPresent) != vk::Result::eSuccess) {
-	UL_ERROR("Get surface support failed.");
+	LOG_ERROR("Get surface support failed.");
 	return false;
 }
 if (SupportedPresent) {
@@ -304,7 +304,7 @@ if (SupportedPresent) {
 }
 	}
 
-	UL_INFO("        %d |        %d |       %d |        %d | %s",
+	LOG_INFO("        %d |        %d |       %d |        %d | %s",
 		QueueFamilyInfo.graphics_index != -1,
 		QueueFamilyInfo.present_index != -1,
 		QueueFamilyInfo.compute_index != -1,
@@ -316,11 +316,11 @@ if (SupportedPresent) {
 		(!DeviceRequirements.present || (DeviceRequirements.present && QueueFamilyInfo.present_index != -1)) &&
 		(!DeviceRequirements.compute || (DeviceRequirements.compute && QueueFamilyInfo.compute_index != -1)) &&
 		(!DeviceRequirements.transfer || (DeviceRequirements.transfer && QueueFamilyInfo.transfer_index != -1))) {
-		UL_INFO("Device meets queue requirements.");
-		UL_INFO("Graphics Family Index: %i", QueueFamilyInfo.graphics_index);
-		UL_INFO("Present Family Index: %i", QueueFamilyInfo.present_index);
-		UL_INFO("Compute Family Index: %i", QueueFamilyInfo.compute_index);
-		UL_INFO("Transfer Family Index: %i", QueueFamilyInfo.transfer_index);
+		LOG_INFO("Device meets queue requirements.");
+		LOG_INFO("Graphics Family Index: %i", QueueFamilyInfo.graphics_index);
+		LOG_INFO("Present Family Index: %i", QueueFamilyInfo.present_index);
+		LOG_INFO("Compute Family Index: %i", QueueFamilyInfo.compute_index);
+		LOG_INFO("Transfer Family Index: %i", QueueFamilyInfo.transfer_index);
 
 		QuerySwapchainSupport(device, surface, &SwapchainSupport);
 
@@ -333,7 +333,7 @@ if (SupportedPresent) {
 				SwapchainSupport.present_modes.clear();
 			}
 
-			UL_INFO("Required swapcain support not present, skipping device.");
+			LOG_INFO("Required swapcain support not present, skipping device.");
 			return false;
 		}
 
@@ -341,7 +341,7 @@ if (SupportedPresent) {
 			unsigned int AvailableExtensionCount = 0;
 			TArray<vk::ExtensionProperties> AvailbaleExtensions;
 			if (device.enumerateDeviceExtensionProperties(nullptr, &AvailableExtensionCount, nullptr) != vk::Result::eSuccess) {
-				UL_INFO("Required device extension preperties failed.");
+				LOG_INFO("Required device extension preperties failed.");
 				return false;
 			}
 
@@ -358,7 +358,7 @@ if (SupportedPresent) {
 				}
 
 				if (!IsFound) {
-					UL_INFO("Required extension not found: %s", DeviceRequirements.device_extensions_name[i]);
+					LOG_INFO("Required extension not found: %s", DeviceRequirements.device_extensions_name[i]);
 					AvailbaleExtensions.Clear();
 					return false;
 				}
@@ -369,7 +369,7 @@ if (SupportedPresent) {
 
 		// Sampler anisotropy
 		if (DeviceRequirements.sampler_anisotropy && !features->samplerAnisotropy) {
-			UL_INFO("Device does not support samplerAnisotropy. Skipping.");
+			LOG_INFO("Device does not support samplerAnisotropy. Skipping.");
 			return false;
 		}
 

@@ -25,8 +25,8 @@ public:
 	static void* PlatformCopyMemory(void* dst, const void* src, size_t size);
 	static void* PlatformSetMemory(void* dst, int val, size_t size);
 
-	static void PlatformConsoleWrite(const char* message, unsigned char color);
-	static void PlatformConsoleWriteError(const char* message, unsigned char color);
+	static DAPI void PlatformConsoleWrite(const char* message, unsigned char color);
+	static DAPI void PlatformConsoleWriteError(const char* message, unsigned char color);
 
 	static double PlatformGetAbsoluteTime();
 

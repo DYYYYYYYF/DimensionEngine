@@ -46,7 +46,7 @@ bool MeshLoader::Load(const char* name, void* params, Resource* resource) {
 	}
 
 	if (Type == MeshFileType::eMesh_File_Type_Not_Found) {
-		UL_ERROR("Unable to find mesh of supported type called '%s'.", name);
+		LOG_ERROR("Unable to find mesh of supported type called '%s'.", name);
 		return false;
 	}
 
@@ -68,7 +68,7 @@ bool MeshLoader::Load(const char* name, void* params, Resource* resource) {
 		Result = LoadDsmFile(&f, ResourceDatas);
 		break;
 	case MeshFileType::eMesh_File_Type_Not_Found:
-		UL_ERROR("Unable to find mesh of supported type called '%s'.", name);
+		LOG_ERROR("Unable to find mesh of supported type called '%s'.", name);
 		Result = false;
 		break;
 	}
@@ -76,7 +76,7 @@ bool MeshLoader::Load(const char* name, void* params, Resource* resource) {
 	FileSystemClose(&f);
 
 	if (!Result) {
-		UL_ERROR("Failed to process mesh file '%s'.", FullFilePath);
+		LOG_ERROR("Failed to process mesh file '%s'.", FullFilePath);
 		ResourceDatas.clear();
 		resource->Data = nullptr;
 		resource->DataSize = 0;
@@ -176,7 +176,7 @@ bool MeshLoader::ImportObjFile(FileHandle* obj_file, const char* out_dsm_filenam
 				char t[2];
 				int Result = sscanf(LineBuf, "%s %f %f %f", t, &Pos.x, &Pos.y, &Pos.z);
 				if (Result == -1) {
-					UL_ERROR("Mesh loader ImportObjFile: sscanf failed. succeed num: %i  Line: %s", Result, LineBuf);
+					LOG_ERROR("Mesh loader ImportObjFile: sscanf failed. succeed num: %i  Line: %s", Result, LineBuf);
 				}
 
 				Positions.push_back(Pos);
@@ -187,7 +187,7 @@ bool MeshLoader::ImportObjFile(FileHandle* obj_file, const char* out_dsm_filenam
 				char t[3];
 				int Result = sscanf(LineBuf, "%s %f %f %f", t, &Norm.x, &Norm.y, &Norm.z);
 				if (Result == -1) {
-					UL_ERROR("Mesh loader ImportObjFile: sscanf failed. succeed num: %i  Line: %s", Result, LineBuf);
+					LOG_ERROR("Mesh loader ImportObjFile: sscanf failed. succeed num: %i  Line: %s", Result, LineBuf);
 				}
 
 				Normals.push_back(Norm);
@@ -198,7 +198,7 @@ bool MeshLoader::ImportObjFile(FileHandle* obj_file, const char* out_dsm_filenam
 				char t[3];
 				int Result = sscanf(LineBuf, "%s %f %f", t, &Texcoord.x, &Texcoord.y);
 				if (Result == -1) {
-					UL_ERROR("Mesh loader ImportObjFile: sscanf failed. succeed num: %i  Line: %s", Result, LineBuf);
+					LOG_ERROR("Mesh loader ImportObjFile: sscanf failed. succeed num: %i  Line: %s", Result, LineBuf);
 				}
 
 				Texcoords.push_back(Texcoord);
@@ -224,7 +224,7 @@ bool MeshLoader::ImportObjFile(FileHandle* obj_file, const char* out_dsm_filenam
 					&Face.vertices[1].position_index,
 					&Face.vertices[2].position_index);
 				if (Result == -1) {
-					UL_ERROR("Mesh loader ImportObjFile: sscanf failed. succeed num: %i  Line: %s", Result, LineBuf);
+					LOG_ERROR("Mesh loader ImportObjFile: sscanf failed. succeed num: %i  Line: %s", Result, LineBuf);
 				}
 			}
 			else {
@@ -242,7 +242,7 @@ bool MeshLoader::ImportObjFile(FileHandle* obj_file, const char* out_dsm_filenam
 					&Face.vertices[2].texcoord_index, 
 					&Face.vertices[2].normal_index);
 				if (Result == -1) {
-					UL_ERROR("Mesh loader ImportObjFile: sscanf failed. succeed num: %i  Line: %s", Result, LineBuf);
+					LOG_ERROR("Mesh loader ImportObjFile: sscanf failed. succeed num: %i  Line: %s", Result, LineBuf);
 				}
 			}
 
@@ -254,7 +254,7 @@ bool MeshLoader::ImportObjFile(FileHandle* obj_file, const char* out_dsm_filenam
 			char SubStr[8];
 			int Result = sscanf(LineBuf, "%s %s", SubStr, MaterialFileName);
 			if (Result == -1) {
-				UL_ERROR("Mesh loader ImportObjFile: sscanf failed. succeed num: %i  Line: %s", Result, LineBuf);
+				LOG_ERROR("Mesh loader ImportObjFile: sscanf failed. succeed num: %i  Line: %s", Result, LineBuf);
 			}
 
 			// If found, save off the material file name.
@@ -274,7 +274,7 @@ bool MeshLoader::ImportObjFile(FileHandle* obj_file, const char* out_dsm_filenam
 			char t[8];
 			int Result = sscanf(LineBuf, "%s %s", t, MaterialNames[CurrentMatNameCount]);
 			if (Result == -1) {
-				UL_ERROR("Mesh loader ImportObjFile: sscanf failed. succeed num: %i  Line: %s", Result, LineBuf);
+				LOG_ERROR("Mesh loader ImportObjFile: sscanf failed. succeed num: %i  Line: %s", Result, LineBuf);
 			}
 
 			strncpy(name, MaterialNames[CurrentMatNameCount], 255);
@@ -308,7 +308,7 @@ bool MeshLoader::ImportObjFile(FileHandle* obj_file, const char* out_dsm_filenam
 			char t[3];
 			int Result = sscanf(LineBuf, "%s %s", t, name);
 			if (Result == -1) {
-				UL_ERROR("Mesh loader ImportObjFile: sscanf failed. succeed num: %i  Line: %s", Result, LineBuf);
+				LOG_ERROR("Mesh loader ImportObjFile: sscanf failed. succeed num: %i  Line: %s", Result, LineBuf);
 			}
 		}break;
 		}
@@ -351,7 +351,7 @@ bool MeshLoader::ImportObjFile(FileHandle* obj_file, const char* out_dsm_filenam
 
 		// Process material library file.
 		if (!ImportObjMaterialLibraryFile(FullMtlPath)) {
-			UL_ERROR("Error reading obj material file.");
+			LOG_ERROR("Error reading obj material file.");
 		}
 	}
 
@@ -361,7 +361,7 @@ bool MeshLoader::ImportObjFile(FileHandle* obj_file, const char* out_dsm_filenam
 	Vertex* UniqueVerts = nullptr;
 	for (size_t i = 0; i < Count; ++i) {
 		SGeometryConfig* g = &out_geometries[i];
-		UL_DEBUG("Geometry de-duplication process starting on geometry object named '%s'.", g->name);
+		LOG_DEBUG("Geometry de-duplication process starting on geometry object named '%s'.", g->name);
 		GeometryUtils::DeduplicateVertices(g->vertex_count, (Vertex*)g->vertices, g->index_count, (uint32_t*)g->indices, &NewVertCount, &UniqueVerts);
 
 		// Destroy the old, large array.
@@ -379,7 +379,7 @@ bool MeshLoader::ImportObjFile(FileHandle* obj_file, const char* out_dsm_filenam
 		g->indices = Indices;
 
 		// Also generate tangents here, this way tangents are also stored in the output file.
-		UL_WARN("Geomeyries: %d", i);
+		LOG_WARN("Geomeyries: %d", i);
 		GeometryUtils::GenerateTangents(g->vertex_count, (Vertex*)g->vertices, g->index_count, (uint32_t*)g->indices);
 	}
 
@@ -405,12 +405,12 @@ void MeshLoader::ProcessSubobject(std::vector<Vec3>& positions, std::vector<Vec3
 	bool SkipTexcoord = false;
 
 	if (NormalCount == 0) {
-		UL_WARN("No normals are present in this model.");
+		LOG_WARN("No normals are present in this model.");
 		SkipNormal = true;
 	}
 
 	if (TexcoordCount == 0) {
-		UL_WARN("No tex-coord are present in this model.");
+		LOG_WARN("No tex-coord are present in this model.");
 		SkipTexcoord = true;
 	}
 
@@ -485,12 +485,12 @@ void MeshLoader::ProcessSubobject(std::vector<Vec3>& positions, std::vector<Vec3
 }
 
 bool MeshLoader::ImportObjMaterialLibraryFile(const char* mtl_file_path) {
-	UL_DEBUG("Importing obj .mtl file '%s'.", mtl_file_path);
+	LOG_DEBUG("Importing obj .mtl file '%s'.", mtl_file_path);
 
 	// Grab the .mtl file, if it exists, and read the material information.
 	FileHandle MtlFile;
 	if (!FileSystemOpen(mtl_file_path, FileMode::eFile_Mode_Read, false, &MtlFile)) {
-		UL_ERROR("Unable to open mtl file: '%s'", mtl_file_path);
+		LOG_ERROR("Unable to open mtl file: '%s'", mtl_file_path);
 		return false;
 	}
 
@@ -534,7 +534,7 @@ bool MeshLoader::ImportObjMaterialLibraryFile(const char* mtl_file_path) {
 				char t[3];
 				int Result = sscanf(Line, "%s %f %f %f", t, &CurrentConfig.diffuse_color.r, &CurrentConfig.diffuse_color.g, &CurrentConfig.diffuse_color.b);
 				if (Result == -1) {
-					UL_ERROR("Mesh loader ImportObjFile: sscanf failed. succeed num: %i  Line: %s", Result, LineBuf);
+					LOG_ERROR("Mesh loader ImportObjFile: sscanf failed. succeed num: %i  Line: %s", Result, LineBuf);
 				}
 
 				// NOTE: This is only used by the color shader, and will set to max_norm by default.
@@ -550,7 +550,7 @@ bool MeshLoader::ImportObjMaterialLibraryFile(const char* mtl_file_path) {
 				float SpecRubbish = 0.0f;
 				int Result = sscanf(Line, "%s %f %f %f", t, &SpecRubbish, &SpecRubbish, &SpecRubbish);
 				if (Result == -1) {
-					UL_ERROR("Mesh loader ImportObjFile: sscanf failed. succeed num: %i  Line: %s", Result, LineBuf);
+					LOG_ERROR("Mesh loader ImportObjFile: sscanf failed. succeed num: %i  Line: %s", Result, LineBuf);
 				}
 			} break;
 			}
@@ -566,7 +566,7 @@ bool MeshLoader::ImportObjMaterialLibraryFile(const char* mtl_file_path) {
 				char t[3];
 				int Result = sscanf(Line, "%s %f", t, &CurrentConfig.shininess);
 				if (Result == -1) {
-					UL_ERROR("Mesh loader ImportObjFile: sscanf failed. succeed num: %i  Line: %s", Result, LineBuf);
+					LOG_ERROR("Mesh loader ImportObjFile: sscanf failed. succeed num: %i  Line: %s", Result, LineBuf);
 				}
 			}break;
 			}
@@ -579,7 +579,7 @@ bool MeshLoader::ImportObjMaterialLibraryFile(const char* mtl_file_path) {
 
 			int Result = sscanf(Line, "%s %s", SubStr, TextureFileName);
 			if (Result == -1) {
-				UL_ERROR("Mesh loader ImportObjFile: sscanf failed. succeed num: %i  Line: %s", Result, LineBuf);
+				LOG_ERROR("Mesh loader ImportObjFile: sscanf failed. succeed num: %i  Line: %s", Result, LineBuf);
 			}
 
 			if (StringNequali(SubStr, "map_Kd", 6)) {
@@ -603,7 +603,7 @@ bool MeshLoader::ImportObjMaterialLibraryFile(const char* mtl_file_path) {
 
 			int Result = sscanf(Line, "%s %s", SubStr, TextureFileName);
 			if (Result == -1) {
-				UL_ERROR("Mesh loader ImportObjFile: sscanf failed. succeed num: %i  Line: %s", Result, LineBuf);
+				LOG_ERROR("Mesh loader ImportObjFile: sscanf failed. succeed num: %i  Line: %s", Result, LineBuf);
 			}
 
 			if (StringNequali(SubStr, "bump", 4)) {
@@ -619,7 +619,7 @@ bool MeshLoader::ImportObjMaterialLibraryFile(const char* mtl_file_path) {
 
 			int Result = sscanf(Line, "%s %s", SubStr, MaterialName);
 			if (Result == -1) {
-				UL_ERROR("Mesh loader ImportObjFile: sscanf failed. succeed num: %i  Line: %s", Result, LineBuf);
+				LOG_ERROR("Mesh loader ImportObjFile: sscanf failed. succeed num: %i  Line: %s", Result, LineBuf);
 			}
 
 			if (StringNequali(SubStr, "newmtl", 6)) {
@@ -635,7 +635,7 @@ bool MeshLoader::ImportObjMaterialLibraryFile(const char* mtl_file_path) {
 				if (HitName) {
 					// Write out a dmt file and move on.
 					if (!WriteDmtFile(mtl_file_path, &CurrentConfig)) {
-						UL_ERROR("Unable to write dmt file.");
+						LOG_ERROR("Unable to write dmt file.");
 						return false;
 					}
 
@@ -660,7 +660,7 @@ bool MeshLoader::ImportObjMaterialLibraryFile(const char* mtl_file_path) {
 	}
 
 	if (!WriteDmtFile(mtl_file_path, &CurrentConfig)) {
-		UL_ERROR("Unable to write dmt file.");
+		LOG_ERROR("Unable to write dmt file.");
 		return false;
 	}
 
@@ -680,10 +680,10 @@ bool MeshLoader::WriteDmtFile(const char* mtl_file_path, SMaterialConfig* config
 	char FullFilePath[512];
 	sprintf(FullFilePath, FormatStr, Directory, config->name, ".dmt");
 	if (!FileSystemOpen(FullFilePath, FileMode::eFile_Mode_Write, false, &f)) {
-		UL_ERROR("Error opening material file for writing: '%s'.", FullFilePath);
+		LOG_ERROR("Error opening material file for writing: '%s'.", FullFilePath);
 		return false;
 	}
-	UL_DEBUG("Writing .dmt file '%s'.", FullFilePath);
+	LOG_DEBUG("Writing .dmt file '%s'.", FullFilePath);
 
 	char LineBuf[512];
 	FileSystemWriteLine(&f, "#material file");
@@ -774,12 +774,12 @@ bool MeshLoader::LoadDsmFile(FileHandle* dsm_file, std::vector<SGeometryConfig>&
 
 bool MeshLoader::WriteDsmFile(const char* path, const char* name, uint32_t geometry_count, std::vector<SGeometryConfig>& geometries) {
 	if (FileSystemExists(path)) {
-		UL_INFO("File '%s' already exists and will be overwritten.", path);
+		LOG_INFO("File '%s' already exists and will be overwritten.", path);
 	}
 
 	FileHandle f;
 	if (!FileSystemOpen(path, FileMode::eFile_Mode_Write, true, &f)) {
-		UL_INFO("Unable to open file '%s'. Dsm file write failed.", path);
+		LOG_INFO("Unable to open file '%s'. Dsm file write failed.", path);
 		return false;
 	}
 

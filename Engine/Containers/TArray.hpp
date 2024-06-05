@@ -70,7 +70,7 @@ public:
 
 	void InsertAt(size_t index, ElementType val) {
 		if (index > Length - 1) {
-			UL_ERROR("Index Out of length! Length: %i, Index: %i", Length, index);
+			LOG_ERROR("Index Out of length! Length: %i, Index: %i", Length, index);
 		}
 
 		if (Length >= Capacity) {
@@ -103,7 +103,7 @@ public:
 
 	ElementType PopAt(size_t index) {
 		if (index > Length - 1) {
-			UL_ERROR("Index Out of length! Length: %i, Index: %i", Length, index);
+			LOG_ERROR("Index Out of length! Length: %i, Index: %i", Length, index);
 			return ElementType();
 		}
 

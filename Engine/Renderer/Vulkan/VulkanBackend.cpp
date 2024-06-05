@@ -29,16 +29,16 @@ VKAPI_ATTR VkBool32 VKAPI_CALL VulkanDebugCallback(
 	switch (message_servity) {
 	default:
 	case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
-		UL_ERROR(callback_data->pMessage);
+		LOG_ERROR(callback_data->pMessage);
 		break;
 	case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT:
-		UL_WARN(callback_data->pMessage);
+		LOG_WARN(callback_data->pMessage);
 		break;
 	case VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT:
-		UL_FATAL(callback_data->pMessage);
+		LOG_FATAL(callback_data->pMessage);
 		break;
 	case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT:
-		UL_INFO(callback_data->pMessage);
+		LOG_INFO(callback_data->pMessage);
 		break;
 	}
 
@@ -87,7 +87,7 @@ bool VulkanBackend::Initialize(const RenderBackendConfig* config, unsigned char*
 		output.append(temp);
 		output.append("\n");
 	}
-	UL_DEBUG("%s", output.c_str());
+	LOG_DEBUG("%s", output.c_str());
 #endif
 	InstanceInfo.setEnabledExtensionCount((uint32_t)RequiredExtensions.size())
 		.setPEnabledExtensionNames(RequiredExtensions);
@@ -96,7 +96,7 @@ bool VulkanBackend::Initialize(const RenderBackendConfig* config, unsigned char*
 	std::vector<const char*> RequiredValidationLayerName;
 
 #ifdef LEVEL_DEBUG
-	UL_INFO("Validation layers enabled. Enumerating ...");
+	LOG_INFO("Validation layers enabled. Enumerating ...");
 
 	// List of validation layers required
 	RequiredValidationLayerName.push_back("VK_LAYER_KHRONOS_validation");
@@ -107,7 +107,7 @@ bool VulkanBackend::Initialize(const RenderBackendConfig* config, unsigned char*
 	vk::Result result;
 	result = vk::enumerateInstanceLayerProperties(&AvailableLayersCount, AvailableLayers.data());
 	if (result != vk::Result::eSuccess) {
-		UL_FATAL("Enum instance layer properties failed.");
+		LOG_FATAL("Enum instance layer properties failed.");
 		return false;
 	}
 	AvailableLayers.resize(AvailableLayersCount);
@@ -116,19 +116,19 @@ bool VulkanBackend::Initialize(const RenderBackendConfig* config, unsigned char*
 
 	// Verify all required layers are available.
 	for (uint32_t i = 0; i < RequiredValidationLayerName.size(); i++) {
-		UL_INFO("Searching for layer: %s...", RequiredValidationLayerName[i]);
+		LOG_INFO("Searching for layer: %s...", RequiredValidationLayerName[i]);
 		
 		bool IsFound = false;
 		for (uint32_t j = 0; j < AvailableLayersCount; j++) {
 			if (strcmp(RequiredValidationLayerName[i], AvailableLayers[j].layerName.data()) == 0) {
 				IsFound = true;
-				UL_INFO("Found.");
+				LOG_INFO("Found.");
 				break;
 			}
 		}
 
 		if (!IsFound) {
-			UL_WARN("Required validation layer is missing: '%s'!", RequiredValidationLayerName[i]);
+			LOG_WARN("Required validation layer is missing: '%s'!", RequiredValidationLayerName[i]);
 
 			// TODO: Remove spec-element.
 			RequiredValidationLayerName.clear();
@@ -143,7 +143,7 @@ bool VulkanBackend::Initialize(const RenderBackendConfig* config, unsigned char*
 	ASSERT(Context.Instance);
 
 #ifdef LEVEL_DEBUG
-	UL_INFO("Create vulkan debugger...");
+	LOG_INFO("Create vulkan debugger...");
 	
 	vk::DebugUtilsMessageSeverityFlagsEXT LogServerity = 
 		vk::DebugUtilsMessageSeverityFlagBitsEXT::eError |
@@ -166,28 +166,28 @@ bool VulkanBackend::Initialize(const RenderBackendConfig* config, unsigned char*
 	auto dispatcher = vk::DispatchLoaderDynamic(Context.Instance, vkGetInstanceProcAddr);
 	if (Context.Instance.createDebugUtilsMessengerEXT(&DebugCreateInfo,
 		Context.Allocator, &Context.DebugMessenger, dispatcher) != vk::Result::eSuccess) {
-		UL_FATAL("Create debug utils messenger failed.");
+		LOG_FATAL("Create debug utils messenger failed.");
 		return false;
 	}
 
-	UL_INFO("Vulkan debugger created.");
+	LOG_INFO("Vulkan debugger created.");
 #endif
 
 	// Surface
-	UL_INFO("Creating vulkan surface...");
+	LOG_INFO("Creating vulkan surface...");
 	if (!PlatformCreateVulkanSurface(plat_state, &Context)) {
-		UL_ERROR("Create platform surface failed.");
+		LOG_ERROR("Create platform surface failed.");
 		return false;
 	}
-	UL_INFO("Vulkan surface created.");
+	LOG_INFO("Vulkan surface created.");
 
 	// Device
-	UL_INFO("Creating vulkan device...");
+	LOG_INFO("Creating vulkan device...");
 	if (!Context.Device.Create(&Context.Instance, Context.Allocator, Context.Surface)) {
-		UL_ERROR("Create vulkan device failed.");
+		LOG_ERROR("Create vulkan device failed.");
 		return false;
 	}
-	UL_INFO("Vulkan device created.");
+	LOG_INFO("Vulkan device created.");
 
 	// Swapchain
 	Context.Swapchain.Create(&Context, Context.FrameBufferWidth, Context.FrameBufferHeight);
@@ -213,7 +213,7 @@ bool VulkanBackend::Initialize(const RenderBackendConfig* config, unsigned char*
 		uint32_t ID = INVALID_ID;
 		Context.RenderpassTable.Get(config->pass_config[i].name, &ID);
 		if (ID != INVALID_ID) {
-			UL_ERROR("Collision with renderpass named '%s'. Initialization failed.", config->pass_config[i].name);
+			LOG_ERROR("Collision with renderpass named '%s'. Initialization failed.", config->pass_config[i].name);
 			return false;
 		}
 
@@ -229,7 +229,7 @@ bool VulkanBackend::Initialize(const RenderBackendConfig* config, unsigned char*
 
 		// Verify we got an id
 		if (ID == INVALID_ID) {
-			UL_ERROR("No space was found for a new renderpass. Increase VULKAN_MAX_REGISTERED_RENDERPASSES. Initialization failed.");
+			LOG_ERROR("No space was found for a new renderpass. Increase VULKAN_MAX_REGISTERED_RENDERPASSES. Initialization failed.");
 			return false;
 		}
 
@@ -281,7 +281,7 @@ bool VulkanBackend::Initialize(const RenderBackendConfig* config, unsigned char*
 		Context.Geometries[i].id = INVALID_ID;
 	}
 
-	UL_INFO("Create vulkan instance succeed.");
+	LOG_INFO("Create vulkan instance succeed.");
 	return true;
 }
 
@@ -289,11 +289,11 @@ void VulkanBackend::Shutdown() {
 	vk::Device LogicalDevice = Context.Device.GetLogicalDevice();
 	LogicalDevice.waitIdle();
 
-	UL_DEBUG("Destroying Buffers");
+	LOG_DEBUG("Destroying Buffers");
 	Context.ObjectVertexBuffer.Destroy(&Context);
 	Context.ObjectIndexBuffer.Destroy(&Context);
 
-	UL_DEBUG("Destroying sync objects.");
+	LOG_DEBUG("Destroying sync objects.");
 	for (uint32_t i = 0; i < Context.Swapchain.MaxFramesInFlight; ++i) {
 		if (Context.ImageAvailableSemaphores[i]) {
 			LogicalDevice.destroySemaphore(Context.ImageAvailableSemaphores[i], Context.Allocator);
@@ -311,40 +311,40 @@ void VulkanBackend::Shutdown() {
 	Context.QueueCompleteSemaphores.clear();
 	Context.InFlightFences.clear();
 
-	UL_DEBUG("Destroying command buffers.");
+	LOG_DEBUG("Destroying command buffers.");
 	for (uint32_t i = 0; i < Context.Swapchain.ImageCount; ++i) {
 		if (Context.GraphicsCommandBuffers[i].CommandBuffer) {
 			Context.GraphicsCommandBuffers[i].Free(&Context, Context.Device.GetGraphicsCommandPool());
 		}
 	}
 
-	UL_DEBUG("Destroying renderpasses.");
+	LOG_DEBUG("Destroying renderpasses.");
 	for (uint32_t i = 0; i < VULKAN_MAX_REGISTERED_RENDERPASSES; ++i) {
 		if (Context.RegisteredPasses[i].GetID() != INVALID_ID_U16) {
 			DestroyRenderpass(&Context.RegisteredPasses[i]);
 		}
 	}
 
-	UL_DEBUG("Destroying swapchain.");
+	LOG_DEBUG("Destroying swapchain.");
 	Context.Swapchain.Destroy(&Context);
 
-	UL_DEBUG("Destroying vulkan device.");
+	LOG_DEBUG("Destroying vulkan device.");
 	Context.Device.Destroy(&Context.Instance);
 
-	UL_DEBUG("Destroying vulkan surface.");
+	LOG_DEBUG("Destroying vulkan surface.");
 	if (Context.Surface) {
 		Context.Instance.destroy(Context.Surface, Context.Allocator);
 	}
 
 #ifdef LEVEL_DEBUG
-	UL_DEBUG("Destroying vulkan debugger...");
+	LOG_DEBUG("Destroying vulkan debugger...");
 	auto dispatcher = vk::DispatchLoaderDynamic(Context.Instance, vkGetInstanceProcAddr);
 	if (Context.DebugMessenger) {
 		Context.Instance.destroyDebugUtilsMessengerEXT(Context.DebugMessenger, Context.Allocator, dispatcher);
 	}
 #endif
 
-	UL_DEBUG("Destroying vulkan instance...");
+	LOG_DEBUG("Destroying vulkan instance...");
 	Context.Instance.destroy(Context.Allocator);
 
 }
@@ -356,7 +356,7 @@ bool VulkanBackend::BeginFrame(double delta_time){
 	// Check if recreating swap chain and boot out
 	if (Context.RecreatingSwapchain) {
 		Device->GetLogicalDevice().waitIdle();
-		UL_INFO("Recreating swapchain, booting.");
+		LOG_INFO("Recreating swapchain, booting.");
 		return false;
 	}
 
@@ -367,18 +367,18 @@ bool VulkanBackend::BeginFrame(double delta_time){
 		// If the swap chain recreation failed
 		// boot out before unsetting the flag
 		if (!RecreateSwapchain()) {
-			UL_INFO("Recreating swapchain, booting.");
+			LOG_INFO("Recreating swapchain, booting.");
 			return false;
 		}
 
-		UL_INFO("Resized, booting.");
+		LOG_INFO("Resized, booting.");
 		return false;
 	}
 
 	// Wait for the execution of the current frame to complete. The fence being free will allow this one to move on
 	if (Context.Device.GetLogicalDevice().waitForFences(1, &Context.InFlightFences[Context.CurrentFrame], true, UINT64_MAX)
 		!= vk::Result::eSuccess) {
-		UL_WARN("In flight fence wait failure!");
+		LOG_WARN("In flight fence wait failure!");
 		return false;
 	}
 
@@ -424,7 +424,7 @@ bool VulkanBackend::EndFrame(double delta_time) {
 	if (Context.ImagesInFilght[Context.ImageIndex] != VK_NULL_HANDLE) {
 		if (Context.Device.GetLogicalDevice().waitForFences(1, Context.ImagesInFilght[Context.ImageIndex], true, UINT64_MAX)
 			!= vk::Result::eSuccess) {
-			UL_WARN("In flight fence wait failure!");
+			LOG_WARN("In flight fence wait failure!");
 			return false;
 		}
 	}
@@ -435,7 +435,7 @@ bool VulkanBackend::EndFrame(double delta_time) {
 	// Reset the fence for use on the next frame
 	if (Context.Device.GetLogicalDevice().resetFences(1, &Context.InFlightFences[Context.CurrentFrame])
 		!= vk::Result::eSuccess) {
-		UL_WARN("In flight fence wait failure!");
+		LOG_WARN("In flight fence wait failure!");
 		return false;
 	}
 
@@ -462,7 +462,7 @@ bool VulkanBackend::EndFrame(double delta_time) {
 	SubmitInfo.setWaitDstStageMask(Flags);
 
 	if (Context.Device.GetGraphicsQueue().submit(1, &SubmitInfo, Context.InFlightFences[Context.CurrentFrame]) != vk::Result::eSuccess) {
-		UL_ERROR("Queue submit failed.");
+		LOG_ERROR("Queue submit failed.");
 		return false;
 	}
 
@@ -482,7 +482,7 @@ void VulkanBackend::Resize(unsigned short width, unsigned short height) {
 	Context.FrameBufferHeight = height;
 	Context.FramebufferSizeGenerate++;
 
-	UL_INFO("Vulkan renderer backend resize: width/height/generation: %i/%i/%llu", width, height, Context.FramebufferSizeGenerate);
+	LOG_INFO("Vulkan renderer backend resize: width/height/generation: %i/%i/%llu", width, height, Context.FramebufferSizeGenerate);
 }
 
 void VulkanBackend::CreateCommandBuffer() {
@@ -502,19 +502,19 @@ void VulkanBackend::CreateCommandBuffer() {
 		Context.GraphicsCommandBuffers[i].Allocate(&Context, Context.Device.GetGraphicsCommandPool(), true);
 	}
 
-	UL_INFO("Vulkan command buffers created.");
+	LOG_INFO("Vulkan command buffers created.");
 }
 
 bool VulkanBackend::RecreateSwapchain() {
 	// If already being recreated, do not try again.
 	if (Context.RecreatingSwapchain) {
-		UL_DEBUG("Already called recreate swapchain. Booting.");
+		LOG_DEBUG("Already called recreate swapchain. Booting.");
 		return false;
 	}
 	
 	// Detect if the windows is too small to be drawn to
 	if (Context.FrameBufferWidth == 0 || Context.FrameBufferHeight == 0) {
-		UL_DEBUG("Recreate swapchain called when windows is < 1px. Booting.");
+		LOG_DEBUG("Recreate swapchain called when windows is < 1px. Booting.");
 		return false;
 	}
 
@@ -564,7 +564,7 @@ bool VulkanBackend::CreateBuffers() {
 	if (!Context.ObjectVertexBuffer.Create(&Context, VertexBufferSize, 
 		vk::BufferUsageFlagBits::eVertexBuffer | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eTransferSrc,
 		MemoryPropertyFlags, true, true)) {
-		UL_ERROR("Error creating vertex buffer.");
+		LOG_ERROR("Error creating vertex buffer.");
 		return false;
 	}
 
@@ -573,7 +573,7 @@ bool VulkanBackend::CreateBuffers() {
 	if (!Context.ObjectIndexBuffer.Create(&Context, IndexBufferSize,
 		vk::BufferUsageFlagBits::eIndexBuffer | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eTransferSrc,
 		MemoryPropertyFlags, true, true)) {
-		UL_ERROR("Error creating index buffer.");
+		LOG_ERROR("Error creating index buffer.");
 		return false;
 	}
 
@@ -583,7 +583,7 @@ bool VulkanBackend::CreateBuffers() {
 bool VulkanBackend::UploadDataRange(vk::CommandPool pool, vk::Fence fence, vk::Queue queue, VulkanBuffer* buffer, size_t* offset, size_t size, const void* data) {
 	// Allocate space in the buffer.
 	if (!buffer->Allocate(size, offset)) {
-		UL_ERROR("Upload data range failed to allocate from the buffer.");
+		LOG_ERROR("Upload data range failed to allocate from the buffer.");
 		return false;
 	}
 
@@ -751,7 +751,7 @@ void VulkanBackend::WriteTextureData(Texture* tex, uint32_t offset, uint32_t siz
 bool VulkanBackend::CreateGeometry(Geometry* geometry, uint32_t vertex_size, uint32_t vertex_count, 
 	const void* vertices, uint32_t index_size, uint32_t index_count, const void* indices) {
 	if (vertex_count == 0 || vertices == nullptr) {
-		UL_ERROR("Vulkan renderer create geometry requires vertex data, and none was supplied. vertex_count=%d, vertices=%p", vertex_count, vertices);
+		LOG_ERROR("Vulkan renderer create geometry requires vertex data, and none was supplied. vertex_count=%d, vertices=%p", vertex_count, vertices);
 		return false;
 	}
 
@@ -784,7 +784,7 @@ bool VulkanBackend::CreateGeometry(Geometry* geometry, uint32_t vertex_size, uin
 	}
 
 	if (InternalData == nullptr) {
-		UL_FATAL("Vulkan renderer create geometry failed to find a free index for a new geometry upload. Adjust config to allow for more.");
+		LOG_FATAL("Vulkan renderer create geometry failed to find a free index for a new geometry upload. Adjust config to allow for more.");
 		return false;
 	}
 
@@ -797,7 +797,7 @@ bool VulkanBackend::CreateGeometry(Geometry* geometry, uint32_t vertex_size, uin
 	uint32_t VertexTotalSize = vertex_size * vertex_count;
 	if (!UploadDataRange(Pool, nullptr, Queue, &Context.ObjectVertexBuffer,
 		&InternalData->vertext_buffer_offset, VertexTotalSize, vertices)) {
-		UL_ERROR("Vulkan renderer create geometry failed to upload vertex data.");
+		LOG_ERROR("Vulkan renderer create geometry failed to upload vertex data.");
 		return false;
 	}
 
@@ -808,7 +808,7 @@ bool VulkanBackend::CreateGeometry(Geometry* geometry, uint32_t vertex_size, uin
 		uint32_t IndexTotalSize = index_size * index_count;
 		if (!UploadDataRange(Pool, nullptr, Queue, &Context.ObjectIndexBuffer,
 			&InternalData->index_buffer_offset, IndexTotalSize, indices)) {
-			UL_ERROR("Vulkan renderer create geometry failed to upload index data.");
+			LOG_ERROR("Vulkan renderer create geometry failed to upload index data.");
 			return false;
 		}
 	}
@@ -929,11 +929,11 @@ bool VulkanBackend::CreateShader(Shader* shader, const ShaderConfig* config, IRe
 			VkStages[i] = vk::ShaderStageFlagBits::eVertex;
 			break;
 		case eShader_Stage_Geometry:
-			UL_WARN("vulkan_renderer_shader_create: VK_SHADER_STAGE_GEOMETRY_BIT is set but not yet supported.");
+			LOG_WARN("vulkan_renderer_shader_create: VK_SHADER_STAGE_GEOMETRY_BIT is set but not yet supported.");
 			VkStages[i] = vk::ShaderStageFlagBits::eGeometry;
 			break;
 		case eShader_Stage_Compute:
-			UL_WARN("vulkan_renderer_shader_create: SHADER_STAGE_COMPUTE is set but not yet supported.");
+			LOG_WARN("vulkan_renderer_shader_create: SHADER_STAGE_COMPUTE is set but not yet supported.");
 			VkStages[i] = vk::ShaderStageFlagBits::eCompute;
 			break;
 		default:
@@ -956,7 +956,7 @@ bool VulkanBackend::CreateShader(Shader* shader, const ShaderConfig* config, IRe
 	for (uint32_t i = 0; i < stage_count; ++i) {
 		// Make sure there is room enough to add the stage.
 		if (OutShader->Config.stage_count + 1 > VULKAN_SHADER_MAX_STAGES) {
-			UL_ERROR("Shaders may have a maximum of %d stages", VULKAN_SHADER_MAX_STAGES);
+			LOG_ERROR("Shaders may have a maximum of %d stages", VULKAN_SHADER_MAX_STAGES);
 			return false;
 		}
 
@@ -972,7 +972,7 @@ bool VulkanBackend::CreateShader(Shader* shader, const ShaderConfig* config, IRe
 			break;
 		default:
 			// Go to the next type.
-			UL_ERROR("vulkan_shader_create: Unsupported shader stage flagged: %d. Stage ignored.", stages[i]);
+			LOG_ERROR("vulkan_shader_create: Unsupported shader stage flagged: %d. Stage ignored.", stages[i]);
 			continue;
 		}
 
@@ -1102,7 +1102,7 @@ bool VulkanBackend::DestroyShader(Shader* shader) {
 	if (shader && shader->InternalData) {
 		VulkanShader* Shader = (VulkanShader*)shader->InternalData;
 		if (Shader == nullptr) {
-			UL_ERROR("vulkan_renderer_shader_destroy requires a valid pointer to a shader.");
+			LOG_ERROR("vulkan_renderer_shader_destroy requires a valid pointer to a shader.");
 			return false;
 		}
 
@@ -1159,7 +1159,7 @@ bool VulkanBackend::InitializeShader(Shader* shader) {
 	Memory::Zero(Shader->Stages, sizeof(VulkanShaderStage) * VULKAN_SHADER_MAX_STAGES);
 	for (uint32_t i = 0; i < Shader->Config.stage_count; ++i) {
 		if (!CreateModule(Shader, Shader->Config.stages[i], &Shader->Stages[i])) {
-			UL_ERROR("Unable to create %s shader module for '%s'. Shader will be destroyed.", Shader->Config.stages[i].filename, shader->Name);
+			LOG_ERROR("Unable to create %s shader module for '%s'. Shader will be destroyed.", Shader->Config.stages[i].filename, shader->Name);
 			return false;
 		}
 	}
@@ -1243,7 +1243,7 @@ bool VulkanBackend::InitializeShader(Shader* shader) {
 
 	if (!Shader->Pipeline.Create(&Context, Shader->Renderpass, shader->AttributeStride, (uint32_t)shader->Attributes.size(), Shader->Config.attributes, Shader->Config.descriptor_set_count,
 		Shader->DescriptorSetLayouts, Shader->Config.stage_count, StageCreateInfos, Viewport, Scissor, Shader->Config.cull_mode, false, true, shader->PushConstantsRangeCount, shader->PushConstantsRanges)){
-		UL_ERROR("Failed to load graphics pipeline for object shader.");
+		LOG_ERROR("Failed to load graphics pipeline for object shader.");
 		return false;
 	}
 
@@ -1262,13 +1262,13 @@ bool VulkanBackend::InitializeShader(Shader* shader) {
 		vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eUniformBuffer,
 		vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent | DeviceLocalBits,
 		true, true)) {
-		UL_ERROR("Vulkan buffer creation failed for object shader.");
+		LOG_ERROR("Vulkan buffer creation failed for object shader.");
 		return false;
 	}
 
 	// Allocate space for the global UBO, which should occupy the _stride_ space, _not_ the actual size used.
 	if (!Shader->UniformBuffer.Allocate(shader->GlobalUboStride, &shader->GlobalUboOffset)) {
-		UL_ERROR("Failed to allocate space for the uniform buffer!");
+		LOG_ERROR("Failed to allocate space for the uniform buffer!");
 		return false;
 	}
 
@@ -1288,7 +1288,7 @@ bool VulkanBackend::InitializeShader(Shader* shader) {
 		.setPSetLayouts(GlobalLayouts);
 	if (LogicalDevice.allocateDescriptorSets(&AllocInfo, Shader->GlobalDescriptorSets)
 		!= vk::Result::eSuccess) {
-		UL_ERROR("Allocate descriptor sets failed.");
+		LOG_ERROR("Allocate descriptor sets failed.");
 		return false;
 	}
 
@@ -1317,7 +1317,7 @@ bool VulkanBackend::BindGlobalsShader(Shader* shader) {
 
 bool VulkanBackend::BindInstanceShader(Shader* shader, uint32_t instance_id) {
 	if (shader == nullptr) {
-		UL_ERROR("vulkan_shader_bind_instance requires a valid pointer to a shader.");
+		LOG_ERROR("vulkan_shader_bind_instance requires a valid pointer to a shader.");
 		return false;
 	}
 
@@ -1361,7 +1361,7 @@ bool VulkanBackend::ApplyGlobalShader(Shader* shader) {
 	if (GlobalSetBindingCount > 1) {
 		// TODO: There are samplers to be written. Support this.
 		GlobalSetBindingCount = 1;
-		UL_ERROR("Global image samplers are not yet supported.");
+		LOG_ERROR("Global image samplers are not yet supported.");
 
 		// VkWriteDescriptorSet sampler_write = {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET};
 		// descriptor_writes[1] = ...
@@ -1381,7 +1381,7 @@ bool VulkanBackend::ApplyInstanceShader(Shader* shader, bool need_update) {
 	}
 
 	if (Internal->InstanceUniformCount < 1 && Internal->InstanceUniformSamplerCount < 1) {
-		UL_ERROR("This shader does not use instances.");
+		LOG_ERROR("This shader does not use instances.");
 		return false;
 	}
 
@@ -1516,7 +1516,7 @@ vk::SamplerAddressMode VulkanBackend::ConvertRepeatType(const char* axis, Textur
 	case eTexture_Repeat_Clamp_To_Border:
 		return vk::SamplerAddressMode::eClampToBorder;
 	default:
-		UL_WARN("Convert repeat type (axis='%s'): Type '%x' not supported, defauting to repeat.", axis, repeat);
+		LOG_WARN("Convert repeat type (axis='%s'): Type '%x' not supported, defauting to repeat.", axis, repeat);
 		return vk::SamplerAddressMode::eRepeat;
 	}
 }
@@ -1529,7 +1529,7 @@ vk::Filter VulkanBackend::ConvertFilterType(const char* op, TextureFilter filter
 	case eTexture_Filter_Mode_Linear:
 		return vk::Filter::eLinear;
 	default:
-		UL_WARN("Convert filter type (op='%s'): Filter '%x' not supported, defauting to linear.", op, filter);
+		LOG_WARN("Convert filter type (op='%s'): Filter '%x' not supported, defauting to linear.", op, filter);
 		return vk::Filter::eLinear;
 	}
 }
@@ -1557,7 +1557,7 @@ bool VulkanBackend::AcquireTextureMap(TextureMap* map) {
 
 	if (Context.Device.GetLogicalDevice().createSampler(&SamplerInfo, Context.Allocator, (vk::Sampler*)&map->internal_data)
 		!= vk::Result::eSuccess) {
-		UL_ERROR("Create sampler failed.");
+		LOG_ERROR("Create sampler failed.");
 		return false;
 	}
 
@@ -1585,7 +1585,7 @@ uint32_t VulkanBackend::AcquireInstanceResource(Shader* shader, std::vector<Text
 	}
 
 	if (OutInstanceID == INVALID_ID) {
-		UL_ERROR("vulkan_shader_acquire_instance_resources failed to acquire new id");
+		LOG_ERROR("vulkan_shader_acquire_instance_resources failed to acquire new id");
 		return INVALID_ID;
 	}
 
@@ -1607,7 +1607,7 @@ uint32_t VulkanBackend::AcquireInstanceResource(Shader* shader, std::vector<Text
 	uint32_t Size = (uint32_t)shader->UboStride;
 	if (Size > 0) {
 		if (!Internal->UniformBuffer.Allocate(Size, &InstanceState->offset)) {
-			UL_ERROR("vulkan_material_shader_acquire_resources failed to acquire ubo space");
+			LOG_ERROR("vulkan_material_shader_acquire_resources failed to acquire ubo space");
 			return INVALID_ID;
 		}
 	}
@@ -1637,7 +1637,7 @@ uint32_t VulkanBackend::AcquireInstanceResource(Shader* shader, std::vector<Text
 		.setPSetLayouts(Layouts);
 	if(Context.Device.GetLogicalDevice().allocateDescriptorSets(&AllocInfo, InstanceState->descriptor_set_state.descriptorSets)
 		!= vk::Result::eSuccess) {
-			UL_ERROR("Allocate descriptor sets failed.");
+			LOG_ERROR("Allocate descriptor sets failed.");
 			return INVALID_ID;
 	}
 
@@ -1714,7 +1714,7 @@ bool VulkanBackend::CreateModule(VulkanShader* Shader, VulkanShaderStageConfig c
 	// Read the resource.
 	Resource BinaryResource;
 	if (!ResourceSystem::Load(config.filename, ResourceType::eResource_type_Binary, nullptr, &BinaryResource)) {
-		UL_ERROR("Unable to read shader module: %s.", config.filename);
+		LOG_ERROR("Unable to read shader module: %s.", config.filename);
 		return false;
 	}
 
@@ -1742,14 +1742,14 @@ bool VulkanBackend::CreateModule(VulkanShader* Shader, VulkanShaderStageConfig c
 
 IRenderpass* VulkanBackend::GetRenderpass(const char* name) {
 	if (name == nullptr || name[0] == '\0') {
-		UL_ERROR("VulkanBackend::GetRenderpass() requires a name. nullptr will be returned.");
+		LOG_ERROR("VulkanBackend::GetRenderpass() requires a name. nullptr will be returned.");
 		return nullptr;
 	}
 
 	uint32_t ID = INVALID_ID;
 	Context.RenderpassTable.Get(name, &ID);
 	if (ID == INVALID_ID) {
-		UL_WARN("There is no registered renderpass named '%s'.", name);
+		LOG_WARN("There is no registered renderpass named '%s'.", name);
 		return nullptr;
 	}
 
@@ -1782,7 +1782,7 @@ void VulkanBackend::CreateRenderTarget(unsigned char attachment_count, std::vect
 
 	if (Context.Device.GetLogicalDevice().createFramebuffer(&FramebufferCreateInfo, Context.Allocator,
 		(vk::Framebuffer*)&out_target->internal_framebuffer) != vk::Result::eSuccess) {
-		UL_ERROR("VulkanBackend::CreateRenderTarget() Failed to create framebuffers.");
+		LOG_ERROR("VulkanBackend::CreateRenderTarget() Failed to create framebuffers.");
 	}
 }
 
@@ -1799,7 +1799,7 @@ void  VulkanBackend::DestroyRenderTarget(RenderTarget* target, bool free_interna
 
 Texture* VulkanBackend::GetWindowAttachment(unsigned char index) {
 	if (index >= Context.Swapchain.ImageCount) {
-		UL_FATAL("Attempting to get attachment index out of range: %d. Attachment count: %d.", index, Context.Swapchain.ImageCount);
+		LOG_FATAL("Attempting to get attachment index out of range: %d. Attachment count: %d.", index, Context.Swapchain.ImageCount);
 		return nullptr;
 	}
 

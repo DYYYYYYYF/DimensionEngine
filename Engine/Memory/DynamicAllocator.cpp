@@ -6,7 +6,7 @@
 
 bool DynamicAllocator::Create(unsigned long long total_size) {
 	if (total_size < 1) {
-		UL_ERROR("Dynamic allocator create can not have a total_size of 0. Failed.");
+		LOG_ERROR("Dynamic allocator create can not have a total_size of 0. Failed.");
 		return false;
 	}
 
@@ -41,35 +41,35 @@ void* DynamicAllocator::Allocate(unsigned long long size) {
 			return Block;
 		}
 		else {
-			UL_ERROR("Dynamic allocator allocate no blocks of memory large enough to allocate from.");
+			LOG_ERROR("Dynamic allocator allocate no blocks of memory large enough to allocate from.");
 			size_t available = List.GetFreeSpace();
-			UL_ERROR("Requested size: %llu, Total space available: %llu.", size, available);
+			LOG_ERROR("Requested size: %llu, Total space available: %llu.", size, available);
 			// TODO: Report fragmentation?
 			return nullptr;
 		}
 	}
 
-	UL_ERROR("Dynamic allocator allocate requires a valid size.");
+	LOG_ERROR("Dynamic allocator allocate requires a valid size.");
 	return nullptr;
 }
 
 bool DynamicAllocator::Free(void* block, unsigned long long size) {
 	if (block == nullptr) {
-		UL_ERROR("Dynamic allocator free requires a valid block (0x%p).", block);
+		LOG_ERROR("Dynamic allocator free requires a valid block (0x%p).", block);
 		return false;
 	}
 
 	bool IsOut = (size_t)((char*)block - (char*)MemoryBlock) > TotalSize;
 	if (MemoryBlock && IsOut) {
 		void* EndOfBlock = (char*)MemoryBlock + TotalSize;
-		UL_ERROR("Dynamic allocator trying to release block (0x%p) outside of allocator range (0x%p)-(0x%p). Sub size: %uul, Total size: %uul.",
+		LOG_ERROR("Dynamic allocator trying to release block (0x%p) outside of allocator range (0x%p)-(0x%p). Sub size: %uul, Total size: %uul.",
 			block, MemoryBlock, EndOfBlock, (char*)block - (char*)MemoryBlock, TotalSize);
 		return false;
 	}
 
 	size_t Offset = (char*)block - (char*)MemoryBlock;
 	if (!List.FreeBlock(size, Offset)) {
-		UL_ERROR("Dynamic allocator free failed.");
+		LOG_ERROR("Dynamic allocator free failed.");
 		return false;
 	}
 

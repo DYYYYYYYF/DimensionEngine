@@ -14,12 +14,12 @@ IRenderer* GeometrySystem::Renderer = nullptr;
 
 bool GeometrySystem::Initialize(IRenderer* renderer, SGeometrySystemConfig config) {
 	if (config.max_geometry_count == 0) {
-		UL_FATAL("Geometry system initialize failed. config.max_geometry_count must be > 0.");
+		LOG_FATAL("Geometry system initialize failed. config.max_geometry_count must be > 0.");
 		return false;
 	}
 
 	if (renderer == nullptr) {
-		UL_FATAL("Material system init failed. Renderer is nullptr.");
+		LOG_FATAL("Material system init failed. Renderer is nullptr.");
 		return false;
 	}
 
@@ -35,7 +35,7 @@ bool GeometrySystem::Initialize(IRenderer* renderer, SGeometrySystemConfig confi
 	}
 
 	if (!CreateDefaultGeometries()) {
-		UL_FATAL("Failed to create default geometries. Application quit now!");
+		LOG_FATAL("Failed to create default geometries. Application quit now!");
 		return false;
 	}
 
@@ -54,7 +54,7 @@ Geometry* GeometrySystem::AcquireByID(uint32_t id) {
 	}
 
 	// NOTE: Should return default geometry instead.
-	UL_ERROR("Geometry system acquire by id cannot load invalid id. Reutrn nullptr.");
+	LOG_ERROR("Geometry system acquire by id cannot load invalid id. Reutrn nullptr.");
 	return nullptr;
 }
 
@@ -72,12 +72,12 @@ Geometry* GeometrySystem::AcquireFromConfig(SGeometryConfig config, bool auto_re
 	}
 
 	if (geometry == nullptr) {
-		UL_ERROR("Unable to obtain free slot for geometry. Adjust configuration to allow more space. Returning nullptr.");
+		LOG_ERROR("Unable to obtain free slot for geometry. Adjust configuration to allow more space. Returning nullptr.");
 		return nullptr;
 	}
 
 	if (!CreateGeometry(config, geometry)) {
-		UL_ERROR("Failed to create geometry. Returning nullptr.");
+		LOG_ERROR("Failed to create geometry. Returning nullptr.");
 		return nullptr;
 	}
 
@@ -107,13 +107,13 @@ void GeometrySystem::Release(Geometry* geometry) {
 			}
 		}
 		else {
-			UL_FATAL("Geometry id mismatch. Check registration logic. as this should never occur.");
+			LOG_FATAL("Geometry id mismatch. Check registration logic. as this should never occur.");
 		}
 
 		return;
 	}
 
-	UL_WARN("Geometry system release by id can not release invalid geometry id. Nothing was down.");
+	LOG_WARN("Geometry system release by id can not release invalid geometry id. Nothing was down.");
 }
 
 Geometry* GeometrySystem::GetDefaultGeometry() {
@@ -121,7 +121,7 @@ Geometry* GeometrySystem::GetDefaultGeometry() {
 		return &DefaultGeometry;
 	}
 
-	UL_FATAL("Get default Geometry called before system initialize. Returning nullptr");
+	LOG_FATAL("Get default Geometry called before system initialize. Returning nullptr");
 	return nullptr;
 }
 
@@ -130,7 +130,7 @@ Geometry* GeometrySystem::GetDefaultGeometry2D() {
 		return &Default2DGeometry;
 	}
 
-	UL_FATAL("Get default 2D Geometry called before system initialize. Returning nullptr");
+	LOG_FATAL("Get default 2D Geometry called before system initialize. Returning nullptr");
 	return nullptr;
 }
 
@@ -164,7 +164,7 @@ bool GeometrySystem::CreateDefaultGeometries() {
 	// Send the geometry off to the renderer to be uploaded to the GPU.
 	DefaultGeometry.InternalID = INVALID_ID;
 	if (!Renderer->CreateGeometry(&DefaultGeometry, sizeof(Vertex), 4, Verts, sizeof(uint32_t), 6, Indices)) {
-		UL_FATAL("Failed to create default geometry. Application quit now!");
+		LOG_FATAL("Failed to create default geometry. Application quit now!");
 		return false;
 	}
 
@@ -201,7 +201,7 @@ bool GeometrySystem::CreateDefaultGeometries() {
 	// Send the geometry off to the renderer to be uploaded to the GPU.
 	Default2DGeometry.InternalID = INVALID_ID;
 	if (!Renderer->CreateGeometry(&Default2DGeometry, sizeof(Vertex2D), 4, Verts2D, sizeof(uint32_t), 6, Indices2D)) {
-		UL_FATAL("Failed to create default 2d geometry. Application quit now!");
+		LOG_FATAL("Failed to create default 2d geometry. Application quit now!");
 		return false;
 	}
 
@@ -271,32 +271,32 @@ void GeometrySystem::DestroyGeometry(Geometry* geometry) {
 SGeometryConfig GeometrySystem::GeneratePlaneConfig(float width, float height, uint32_t x_segment_count,
 	uint32_t y_segment_count, float tile_x, float tile_y, const char* name, const char* material_name) {
 	if (width == 0) {
-		UL_WARN("width must be non-zero. Defauting to one.");
+		LOG_WARN("width must be non-zero. Defauting to one.");
 		width = 1.0f;
 	}
 
 	if (height == 0) {
-		UL_WARN("height must be non-zero. Defauting to one.");
+		LOG_WARN("height must be non-zero. Defauting to one.");
 		height = 1.0f;
 	}
 
 	if (x_segment_count < 1) {
-		UL_WARN("x_segment_count must be non-zero. Defauting to one.");
+		LOG_WARN("x_segment_count must be non-zero. Defauting to one.");
 		x_segment_count = 1;
 	}
 
 	if (y_segment_count < 1) {
-		UL_WARN("y_segment_count must be non-zero. Defauting to one.");
+		LOG_WARN("y_segment_count must be non-zero. Defauting to one.");
 		y_segment_count = 1;
 	}
 
 	if (tile_x == 0) {
-		UL_WARN("width must be non-zero. Defauting to one.");
+		LOG_WARN("width must be non-zero. Defauting to one.");
 		tile_x = 1.0f;
 	}
 
 	if (tile_y == 0) {
-		UL_WARN("width must be non-zero. Defauting to one.");
+		LOG_WARN("width must be non-zero. Defauting to one.");
 		tile_y = 1.0f;
 	}
 
@@ -382,27 +382,27 @@ SGeometryConfig GeometrySystem::GeneratePlaneConfig(float width, float height, u
 SGeometryConfig GeometrySystem::GenerateCubeConfig(float width, float height,
 	float depth, float tile_x, float tile_y, const char* name, const char* material_name) {
 		if (width == 0) {
-			UL_WARN("width must be non-zero. Defauting to one.");
+			LOG_WARN("width must be non-zero. Defauting to one.");
 			width = 1.0f;
 		}
 
 		if (height == 0) {
-			UL_WARN("height must be non-zero. Defauting to one.");
+			LOG_WARN("height must be non-zero. Defauting to one.");
 			height = 1.0f;
 		}
 
 		if (depth == 0) {
-			UL_WARN("height must be non-zero. Defauting to one.");
+			LOG_WARN("height must be non-zero. Defauting to one.");
 			height = 1.0f;
 		}
 
 		if (tile_x == 0) {
-			UL_WARN("width must be non-zero. Defauting to one.");
+			LOG_WARN("width must be non-zero. Defauting to one.");
 			tile_x = 1.0f;
 		}
 
 		if (tile_y == 0) {
-			UL_WARN("width must be non-zero. Defauting to one.");
+			LOG_WARN("width must be non-zero. Defauting to one.");
 			tile_y = 1.0f;
 		}
 

@@ -10,7 +10,7 @@ void Freelist::Create(unsigned long long total_size) {
 	TotalSize = total_size;
 	
 	if (MaxEntries == 0) {
-		UL_WARN("Freelists are very inefficient with  amouts of memory less than %iB; it is recommended to not use freelist in this case.", 
+		LOG_WARN("Freelists are very inefficient with  amouts of memory less than %iB; it is recommended to not use freelist in this case.", 
 			total_size);
 	}
 
@@ -77,7 +77,7 @@ bool Freelist::AllocateBlock(unsigned long long size, unsigned long long* offset
 	}
 
 	size_t FreeSpace = GetFreeSpace();
-	UL_WARN("Freelist find block, no block with enough free space found (requested: %uB, available: %lluB).", size, FreeSpace);
+	LOG_WARN("Freelist find block, no block with enough free space found (requested: %uB, available: %lluB).", size, FreeSpace);
 	return false;
 }
 
@@ -156,7 +156,7 @@ bool Freelist::FreeBlock(unsigned long long size, unsigned long long offset) {
 		}
 	}
 
-	UL_WARN("Unable to find block to be freed. Corruption possible?");
+	LOG_WARN("Unable to find block to be freed. Corruption possible?");
 	return false;
 }
 

@@ -108,5 +108,5 @@ void GeometryUtils::DeduplicateVertices(uint32_t vertex_count, Vertex* vertices,
 	Memory::Free(UniqueVerts, sizeof(Vertex) * vertex_count, MemoryType::eMemory_Type_Array);
 
 	uint32_t RemovedCount = vertex_count - *out_vertex_count;
-	UL_DEBUG("Geometry system de-duplicate vertices: removed %d vertices, origin/now %d/%d.", RemovedCount, vertex_count, *out_vertex_count);
+	LOG_DEBUG("Geometry system de-duplicate vertices: removed %d vertices, origin/now %d/%d.", RemovedCount, vertex_count, *out_vertex_count);
 }

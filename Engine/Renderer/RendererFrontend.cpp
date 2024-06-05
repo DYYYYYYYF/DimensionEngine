@@ -86,7 +86,7 @@ bool IRenderer::Initialize(const char* application_name, struct SPlatformState* 
 	RendererConfig.pass_config = PassConfigs;
 
 	if (!Backend->Initialize(&RendererConfig, &WindowRenderTargetCount, plat_state)) {
-		UL_FATAL("Renderer backend init failed.");
+		LOG_FATAL("Renderer backend init failed.");
 		return false;
 	}
 
@@ -165,7 +165,7 @@ void IRenderer::OnResize(unsigned short width, unsigned short height) {
 		FrameSinceResize = 0;
 	}
 	else {
-		UL_WARN("Renderer backend does not exist to accept resize: %i %i", width, height);
+		LOG_WARN("Renderer backend does not exist to accept resize: %i %i", width, height);
 	}
 }
 
@@ -204,7 +204,7 @@ bool IRenderer::DrawFrame(SRenderPacket* packet) {
 		// Render each view.
 		for (uint32_t i = 0; i < packet->view_count; ++i) {
 			if (!RenderViewSystem::OnRender(packet->views[i].view, &packet->views[i], Backend->GetFrameNum(), AttachmentIndex)) {
-				UL_ERROR("Error rendering view index '%i'.", i);
+				LOG_ERROR("Error rendering view index '%i'.", i);
 				return false;
 			}
 		}
@@ -213,7 +213,7 @@ bool IRenderer::DrawFrame(SRenderPacket* packet) {
 		bool result = Backend->EndFrame(packet->delta_time);
 
 		if (!result) {
-			UL_ERROR("Renderer end frame failed.");
+			LOG_ERROR("Renderer end frame failed.");
 			return false;
 		}
 

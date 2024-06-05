@@ -65,7 +65,7 @@ void VulkanCommandBuffer::EndSingleUse(VulkanContext* context, vk::CommandPool p
 	SubmitInfo.setCommandBufferCount(1)
 		.setCommandBuffers(CommandBuffer);
 	if (queue.submit(1, &SubmitInfo, nullptr) != vk::Result::eSuccess) {
-		UL_ERROR("Can not submit command.");
+		LOG_ERROR("Can not submit command.");
 		return;
 	}
 

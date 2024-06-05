@@ -26,7 +26,7 @@ bool ShaderLoader::Load(const char* name, void* params, Resource* resource) {
 
 	FileHandle File;
 	if (!FileSystemOpen(FullFilePath, eFile_Mode_Read, false, &File)) {
-		UL_ERROR("Shader loader load. Unable to open file for binary reading: '%s'.", FullFilePath);
+		LOG_ERROR("Shader loader load. Unable to open file for binary reading: '%s'.", FullFilePath);
 		return false;
 	}
 	resource->FullPath = StringCopy(FullFilePath);
@@ -64,7 +64,7 @@ bool ShaderLoader::Load(const char* name, void* params, Resource* resource) {
 		// Split into var/ value
 		int EqualIndex = StringIndexOf(Trimmed, '=');
 		if (EqualIndex == -1) {
-			UL_WARN("Potential formatting issue found in file '%s': '=' token not found. Skipping line %ui.", FullFilePath, LineNumber);
+			LOG_WARN("Potential formatting issue found in file '%s': '=' token not found. Skipping line %ui.", FullFilePath, LineNumber);
 			LineNumber++;
 			continue;
 		}
@@ -101,7 +101,7 @@ bool ShaderLoader::Load(const char* name, void* params, Resource* resource) {
 				ResourceData->stage_cout = (unsigned short)StageNames.size();
 			}
 			else if (ResourceData->stage_cout != StageNames.size()) {
-				UL_ERROR("shader_loader_load: Invalid file layout. Count mismatch between stage names and stage filenames.");
+				LOG_ERROR("shader_loader_load: Invalid file layout. Count mismatch between stage names and stage filenames.");
 			}
 
 			// Parse each stage and add the right type to the array.
@@ -119,7 +119,7 @@ bool ShaderLoader::Load(const char* name, void* params, Resource* resource) {
 					ResourceData->stages.push_back(ShaderStage::eShader_Stage_Compute);
 				}
 				else {
-					UL_ERROR("shader_loader_load: Invalid file layout. Unrecognized stage '%s'", StageNames[i]);
+					LOG_ERROR("shader_loader_load: Invalid file layout. Unrecognized stage '%s'", StageNames[i]);
 				}
 			}
 		}
@@ -129,7 +129,7 @@ bool ShaderLoader::Load(const char* name, void* params, Resource* resource) {
 				ResourceData->stage_cout = (unsigned short)ResourceData->stage_filenames.size();
 			}
 			else if (ResourceData->stage_cout != ResourceData->stage_filenames.size()) {
-				UL_ERROR("shader_loader_load: Invalid file layout. Attribute fields must be 'type,name'. Skipping.");
+				LOG_ERROR("shader_loader_load: Invalid file layout. Attribute fields must be 'type,name'. Skipping.");
 			}
 		}
 		else if (strcmp(TrimmedVarName, "cull_mode") == 0) {
@@ -147,7 +147,7 @@ bool ShaderLoader::Load(const char* name, void* params, Resource* resource) {
 			// Parse attribute.
 			std::vector<char*> Fields = StringSplit(TrimmedValue, ',', true, true);
 			if (Fields.size() != 2) {
-				UL_ERROR("shader_loader_load: Invalid file layout. Attribute fields must be 'type,name'. Skipping.");
+				LOG_ERROR("shader_loader_load: Invalid file layout. Attribute fields must be 'type,name'. Skipping.");
 			}
 			else {
 				ShaderAttributeConfig Attribute;
@@ -193,8 +193,8 @@ bool ShaderLoader::Load(const char* name, void* params, Resource* resource) {
 					Attribute.size = 4;
 				}
 				else {
-					UL_ERROR("shader_loader_load: Invalid file layout. Attribute type must be float, vec2, vec3, vec4, i8, i16, i32, u8, u16, or u32.");
-					UL_WARN("Defaulting to float.");
+					LOG_ERROR("shader_loader_load: Invalid file layout. Attribute type must be float, vec2, vec3, vec4, i8, i16, i32, u8, u16, or u32.");
+					LOG_WARN("Defaulting to float.");
 					Attribute.type = ShaderAttributeType::eShader_Attribute_Type_Float;
 					Attribute.size = 4;
 				}
@@ -219,7 +219,7 @@ bool ShaderLoader::Load(const char* name, void* params, Resource* resource) {
 			// Parse field type.
 			std::vector<char*> Fields = StringSplit(TrimmedValue, ',', true, true);
 			if (Fields.size() != 3) {
-				UL_ERROR("shader_loader_load: Invalid file layout. Uniform fields must be 'type,scope,name'. Skipping.");
+				LOG_ERROR("shader_loader_load: Invalid file layout. Uniform fields must be 'type,scope,name'. Skipping.");
 			}
 			else {
 				ShaderUniformConfig Uniform;
@@ -272,8 +272,8 @@ bool ShaderLoader::Load(const char* name, void* params, Resource* resource) {
 					Uniform.size = 0;
 				}
 				else {
-					UL_ERROR("shader_loader_load: Invalid file layout. Uniform type must be f32, vec2, vec3, vec4, i8, i16, i32, u8, u16, u32 or mat4.");
-					UL_WARN("Defaulting to f32.");
+					LOG_ERROR("shader_loader_load: Invalid file layout. Uniform type must be f32, vec2, vec3, vec4, i8, i16, i32, u8, u16, u32 or mat4.");
+					LOG_WARN("Defaulting to f32.");
 					Uniform.type = ShaderUniformType::eShader_Uniform_Type_Float;
 					Uniform.size = 4;
 				}
@@ -289,8 +289,8 @@ bool ShaderLoader::Load(const char* name, void* params, Resource* resource) {
 					Uniform.scope = ShaderScope::eShader_Scope_Local;
 				}
 				else {
-					UL_ERROR("shader_loader_load: Invalid file layout: Uniform scope must be 0 for global, 1 for instance or 2 for local.");
-					UL_WARN("Defaulting to global.");
+					LOG_ERROR("shader_loader_load: Invalid file layout: Uniform scope must be 0 for global, 1 for instance or 2 for local.");
+					LOG_WARN("Defaulting to global.");
 					Uniform.scope = ShaderScope::eShader_Scope_Global;
 				}
 

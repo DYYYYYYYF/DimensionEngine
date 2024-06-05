@@ -57,7 +57,7 @@ void RenderViewSkybox::OnResize(uint32_t width, uint32_t height) {
 
 bool RenderViewSkybox::OnBuildPacket(void* data, struct RenderViewPacket* out_packet) const {
 	if (data == nullptr || out_packet == nullptr) {
-		UL_WARN("RenderViewSkybox::OnBuildPacke() Requires valid pointer to packet and data.");
+		LOG_WARN("RenderViewSkybox::OnBuildPacke() Requires valid pointer to packet and data.");
 		return false;
 	}
 
@@ -83,7 +83,7 @@ bool RenderViewSkybox::OnRender(struct RenderViewPacket* packet, IRendererBacken
 		Pass->Begin(&Pass->Targets[render_target_index]);
 
 		if (!ShaderSystem::UseByID(SID)) {
-			UL_ERROR("RenderViewSkybox::OnRender() Failed to use material shader. Render frame failed.");
+			LOG_ERROR("RenderViewSkybox::OnRender() Failed to use material shader. Render frame failed.");
 			return false;
 		}
 
@@ -97,12 +97,12 @@ bool RenderViewSkybox::OnRender(struct RenderViewPacket* packet, IRendererBacken
 		// TODO: This is terrible
 		back_renderer->BindGlobalsShader(ShaderSystem::GetByID(SID));
 		if (!ShaderSystem::SetUniformByIndex(ProjectionLocation, &packet->projection_matrix)) {
-			UL_ERROR("RenderViewSkybox::OnRender() Failed to apply skybox projection uniform.");
+			LOG_ERROR("RenderViewSkybox::OnRender() Failed to apply skybox projection uniform.");
 			return false;
 		}
 
 		if (!ShaderSystem::SetUniformByIndex(ViewLocation, &ViewMatrix)) {
-			UL_ERROR("RenderViewSkybox::OnRender() Failed to apply skybox view uniform.");
+			LOG_ERROR("RenderViewSkybox::OnRender() Failed to apply skybox view uniform.");
 			return false;
 		}
 
@@ -111,7 +111,7 @@ bool RenderViewSkybox::OnRender(struct RenderViewPacket* packet, IRendererBacken
 		// Instance.
 		ShaderSystem::BindInstance(SkyboxData->sb->InstanceID);
 		if (!ShaderSystem::SetUniformByIndex(CubeMapLocation, &SkyboxData->sb->Cubemap)) {
-			UL_ERROR("RenderViewSkybox::OnRender() Failed to apply cube map uniform.");
+			LOG_ERROR("RenderViewSkybox::OnRender() Failed to apply cube map uniform.");
 			return false;
 		}
 

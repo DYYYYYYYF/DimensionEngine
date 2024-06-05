@@ -16,7 +16,7 @@ bool VulkanShaderUtils::CreateShaderModule(VulkanContext* context, const char* n
 	// Read binary resource.
 	Resource BinaryResource;
 	if (!ResourceSystem::Load(FileName, eResource_type_Binary, nullptr, &BinaryResource)) {
-		UL_ERROR("Unable to read shader module: '%s'.", FileName);
+		LOG_ERROR("Unable to read shader module: '%s'.", FileName);
 		return false;
 	}
 

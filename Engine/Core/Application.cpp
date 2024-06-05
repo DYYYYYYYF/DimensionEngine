@@ -81,7 +81,7 @@ bool EventOnDebugEvent(unsigned short code, void* sender, void* listener_instanc
 
 bool ApplicationCreate(SGame* game_instance){
 	if (Initialized) {
-		UL_ERROR("Create application more than once!");
+		LOG_ERROR("Create application more than once!");
 		return false;
 	}
 
@@ -102,7 +102,7 @@ bool ApplicationCreate(SGame* game_instance){
 	AppState.ModelsLoaded = false;
 
 	if (!Core::EventInitialize()) {
-		UL_ERROR("Event system init failed. Application can not start.");
+		LOG_ERROR("Event system init failed. Application can not start.");
 		return false;
 	}
 
@@ -127,7 +127,7 @@ bool ApplicationCreate(SGame* game_instance){
 	ResourceSystemConfig.max_loader_count = 32;
 	ResourceSystemConfig.asset_base_path = "../Assets";
 	if (!ResourceSystem::Initialize(ResourceSystemConfig)) {
-		UL_FATAL("Resource system failed to initialize!");
+		LOG_FATAL("Resource system failed to initialize!");
 		return false;
 	}
 
@@ -145,7 +145,7 @@ bool ApplicationCreate(SGame* game_instance){
 	ShaderSystemConfig.max_global_textures = 31;
 	ShaderSystemConfig.max_instance_textures = 31;
 	if (!ShaderSystem::Initialize(Renderer, ShaderSystemConfig)) {
-		UL_FATAL("Shader system failed to initialize!");
+		LOG_FATAL("Shader system failed to initialize!");
 		return false;
 	}
 
@@ -153,17 +153,17 @@ bool ApplicationCreate(SGame* game_instance){
 	bool RenderWithMultithread = Renderer->GetEnabledMutiThread();
 	int ThreadCount = Platform::GetProcessorCount() - 1;
 	if (ThreadCount < 1) {
-		UL_FATAL("Error: Platform reported processor count (minus one for main thread) as %i. Need at least one additional thread for the job system.", ThreadCount);
+		LOG_FATAL("Error: Platform reported processor count (minus one for main thread) as %i. Need at least one additional thread for the job system.", ThreadCount);
 		return false;
 	}
 	else {
-		UL_INFO("Available threads: %i.", ThreadCount);
+		LOG_INFO("Available threads: %i.", ThreadCount);
 	}
 
 	// Cap the thread count.
 	const int MaxThreadCount = 15;
 	if (ThreadCount > MaxThreadCount) {
-		UL_INFO("Available threads on the system is %i, but will be capped at %i.", ThreadCount, MaxThreadCount);
+		LOG_INFO("Available threads on the system is %i, but will be capped at %i.", ThreadCount, MaxThreadCount);
 		ThreadCount = MaxThreadCount;
 	}
 
@@ -191,13 +191,13 @@ bool ApplicationCreate(SGame* game_instance){
 
 	// Job system
 	if (!JobSystem::Initialize(ThreadCount, JobThreadTypes)) {
-		UL_FATAL("Job system failed to initialize!");
+		LOG_FATAL("Job system failed to initialize!");
 		return false;
 	}
 
 	// Render system.
 	if (!Renderer->Initialize(game_instance->app_config.name, &AppState.platform)) {
-		UL_FATAL("Renderer failed to initialize!");
+		LOG_FATAL("Renderer failed to initialize!");
 		return false;
 	}
 
@@ -205,7 +205,7 @@ bool ApplicationCreate(SGame* game_instance){
 	STextureSystemConfig TextureSystemConfig;
 	TextureSystemConfig.max_texture_count = 65536;
 	if (!TextureSystem::Initialize(Renderer, TextureSystemConfig)) {
-		UL_FATAL("Texture system failed to initialize!");
+		LOG_FATAL("Texture system failed to initialize!");
 		return false;
 	}
 
@@ -213,7 +213,7 @@ bool ApplicationCreate(SGame* game_instance){
 	SMaterialSystemConfig MaterialSystemConfig;
 	MaterialSystemConfig.max_material_count = 4096;
 	if (!MaterialSystem::Initialize(Renderer, MaterialSystemConfig)) {
-		UL_FATAL("Material system failed to initialize!");
+		LOG_FATAL("Material system failed to initialize!");
 		return false;
 	}
 
@@ -221,7 +221,7 @@ bool ApplicationCreate(SGame* game_instance){
 	SGeometrySystemConfig GeometrySystemConfig;
 	GeometrySystemConfig.max_geometry_count = 4096;
 	if (!GeometrySystem::Initialize(Renderer, GeometrySystemConfig)) {
-		UL_FATAL("Geometry system failed to initialize!");
+		LOG_FATAL("Geometry system failed to initialize!");
 		return false;
 	}
 
@@ -229,7 +229,7 @@ bool ApplicationCreate(SGame* game_instance){
 	SCameraSystemConfig CameraSystemConfig;
 	CameraSystemConfig.max_camera_count = 61;
 	if (!CameraSystem::Initialize(Renderer, CameraSystemConfig)) {
-		UL_FATAL("Camera system failed to initialize!");
+		LOG_FATAL("Camera system failed to initialize!");
 		return false;
 	}
 
@@ -237,7 +237,7 @@ bool ApplicationCreate(SGame* game_instance){
 	SRenderViewSystemConfig RenderViewSysConfig;
 	RenderViewSysConfig.max_view_count = 255;
 	if (!RenderViewSystem::Initialize(Renderer, RenderViewSysConfig)) {
-		UL_FATAL("Render view system failed to intialize!");
+		LOG_FATAL("Render view system failed to intialize!");
 		return false;
 	}
 
@@ -253,7 +253,7 @@ bool ApplicationCreate(SGame* game_instance){
 	SkyboxConfig.passes = SkyboxPasses;
 	SkyboxConfig.view_matrix_source = RenderViewViewMatrixtSource::eRender_View_View_Matrix_Source_Scene_Camera;
 	if (!RenderViewSystem::Create(SkyboxConfig)) {
-		UL_FATAL("Failed to create skybox view. Aborting application.");
+		LOG_FATAL("Failed to create skybox view. Aborting application.");
 		return false;
 	}
 
@@ -268,7 +268,7 @@ bool ApplicationCreate(SGame* game_instance){
 	OpaqueWorldConfig.passes = Passes;
 	OpaqueWorldConfig.view_matrix_source = RenderViewViewMatrixtSource::eRender_View_View_Matrix_Source_Scene_Camera;
 	if (!RenderViewSystem::Create(OpaqueWorldConfig)) {
-		UL_FATAL("Failed to create world view. Aborting application.");
+		LOG_FATAL("Failed to create world view. Aborting application.");
 		return false;
 	}
 
@@ -283,7 +283,7 @@ bool ApplicationCreate(SGame* game_instance){
 	UIViewConfig.passes = UIPasses;
 	UIViewConfig.view_matrix_source = RenderViewViewMatrixtSource::eRender_View_View_Matrix_Source_Scene_Camera;
 	if (!RenderViewSystem::Create(UIViewConfig)) {
-		UL_FATAL("Failed to create ui view. Aborting application.");
+		LOG_FATAL("Failed to create ui view. Aborting application.");
 		return false;
 	}
 
@@ -294,7 +294,7 @@ bool ApplicationCreate(SGame* game_instance){
 	CubeMap->filter_minify = TextureFilter::eTexture_Filter_Mode_Linear;
 	CubeMap->usage = TextureUsage::eTexture_Usage_Map_Cubemap;
 	if (!Renderer->AcquireTextureMap(CubeMap)) {
-		UL_FATAL("Unable to acquire resources for cube map texture.");
+		LOG_FATAL("Unable to acquire resources for cube map texture.");
 		return false;
 	}
 	CubeMap->texture = TextureSystem::AcquireCube("skybox", true);
@@ -308,7 +308,7 @@ bool ApplicationCreate(SGame* game_instance){
 
 	AppState.SB.InstanceID = Renderer->AcquireInstanceResource(SkyboxShader, Maps);
 	if (AppState.SB.InstanceID == INVALID_ID) {
-		UL_FATAL("Unable to acquire shader resource for skybox texture.");
+		LOG_FATAL("Unable to acquire shader resource for skybox texture.");
 		return false;
 	}
 
@@ -408,7 +408,7 @@ bool ApplicationCreate(SGame* game_instance){
 
 	// Init Game
 	if (!AppState.game_instance->initialize(AppState.game_instance)) {
-		UL_FATAL("Game failed to initialize!");
+		LOG_FATAL("Game failed to initialize!");
 		return false;
 	}
 
@@ -428,7 +428,7 @@ bool ApplicationRun() {
 	short FrameCount = 0;
 	double TargetFrameSeconds = 1.0f / 60;
 
-	UL_DEBUG(Memory::GetMemoryUsageStr());
+	LOG_DEBUG(Memory::GetMemoryUsageStr());
 
 	while (AppState.is_running) {
 		if (!Platform::PlatformPumpMessage(&AppState.platform)) {
@@ -444,13 +444,13 @@ bool ApplicationRun() {
 			JobSystem::Update();
 
 			if (!AppState.game_instance->update(AppState.game_instance, (float)DeltaTime)) {
-				UL_FATAL("Game update failed!");
+				LOG_FATAL("Game update failed!");
 				AppState.is_running = false;
 				break;
 			}
 
 			if (!AppState.game_instance->render(AppState.game_instance, (float)DeltaTime)) {
-				UL_FATAL("Game render failed!");
+				LOG_FATAL("Game render failed!");
 				AppState.is_running = false;
 				break;
 			}
@@ -476,7 +476,7 @@ bool ApplicationRun() {
 			SkyboxPacketData SkyboxData;
 			SkyboxData.sb = &AppState.SB;
 			if (!RenderViewSystem::BuildPacket(RenderViewSystem::Get("Skybox"), &SkyboxData, &Packet.views[0])) {
-				UL_ERROR("Failed to build packet for view 'World_Opaque'.");
+				LOG_ERROR("Failed to build packet for view 'World_Opaque'.");
 				return false;
 			}
 
@@ -494,7 +494,7 @@ bool ApplicationRun() {
 			WorldMeshData.mesh_count = (uint32_t)Meshes.size();
 
 			if (!RenderViewSystem::BuildPacket(RenderViewSystem::Get("World_Opaque"), &WorldMeshData, &Packet.views[1])) {
-				UL_ERROR("Failed to build packet for view 'World_Opaque'.");
+				LOG_ERROR("Failed to build packet for view 'World_Opaque'.");
 				return false;
 			}
 
@@ -512,7 +512,7 @@ bool ApplicationRun() {
 			UIMeshData.mesh_count = (uint32_t)UIMeshes.size();
 
 			if (!RenderViewSystem::BuildPacket(RenderViewSystem::Get("UI"), &UIMeshData, &Packet.views[2])) {
-				UL_ERROR("Failed to build packet for view 'UI'.");
+				LOG_ERROR("Failed to build packet for view 'UI'.");
 				return false;
 			}
 
@@ -576,7 +576,7 @@ bool ApplicationRun() {
 bool ApplicationOnEvent(unsigned short code, void* sender, void* listener_instance, SEventContext context) {
 	switch (code){
 	case Core::eEvent_Code_Application_Quit: {
-		UL_INFO("Application quit now.");
+		LOG_INFO("Application quit now.");
 		AppState.is_running = false;
 		return true;
 	}
@@ -614,17 +614,17 @@ bool ApplicationOnResized(unsigned short code, void* sender, void* listener_inst
 		if (Width != AppState.width || Height != AppState.height) {
 			AppState.width = Width;
 			AppState.height = Height;
-			UL_DEBUG("Window resize: %i %i", Width, Height);
+			LOG_DEBUG("Window resize: %i %i", Width, Height);
 
 			// Handle minimization
 			if (Width == 0 || Height == 0) {
-				UL_INFO("Window minimized, suspending application.");
+				LOG_INFO("Window minimized, suspending application.");
 				AppState.is_suspended = true;
 				return true;
 			}
 			else {
 				if (AppState.is_suspended) {
-					UL_INFO("Window restored, resuming application.");
+					LOG_INFO("Window restored, resuming application.");
 					AppState.is_suspended = false;
 				}
 

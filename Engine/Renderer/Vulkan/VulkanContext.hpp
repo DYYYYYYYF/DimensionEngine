@@ -29,7 +29,7 @@ public:
 			}
 		}
 
-		UL_WARN("Unable to find suitable memory type!");
+		LOG_WARN("Unable to find suitable memory type!");
 		return -1;
 	}
 

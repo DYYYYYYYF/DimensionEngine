@@ -61,7 +61,7 @@ void RenderViewWorld::OnResize(uint32_t width, uint32_t height) {
 
 bool RenderViewWorld::OnBuildPacket(void* data, struct RenderViewPacket* out_packet) const {
 	if (data == nullptr || out_packet == nullptr) {
-		UL_WARN("RenderViewUI::OnBuildPacke() Requires valid pointer to packet and data.");
+		LOG_WARN("RenderViewUI::OnBuildPacke() Requires valid pointer to packet and data.");
 		return false;
 	}
 
@@ -129,13 +129,13 @@ bool RenderViewWorld::OnRender(struct RenderViewPacket* packet, IRendererBackend
 		Pass->Begin(&Pass->Targets[render_target_index]);
 
 		if (!ShaderSystem::UseByID(SID)) {
-			UL_ERROR("RenderViewUI::OnRender() Failed to use material shader. Render frame failed.");
+			LOG_ERROR("RenderViewUI::OnRender() Failed to use material shader. Render frame failed.");
 			return false;
 		}
 
 		// Apply globals.
 		if (!MaterialSystem::ApplyGlobal(SID, frame_number, packet->projection_matrix, packet->view_matrix, packet->ambient_color, packet->view_position)) {
-			UL_ERROR("RenderViewUI::OnRender() Failed to use global shader. Render frame failed.");
+			LOG_ERROR("RenderViewUI::OnRender() Failed to use global shader. Render frame failed.");
 			return false;
 		}
 
@@ -152,7 +152,7 @@ bool RenderViewWorld::OnRender(struct RenderViewPacket* packet, IRendererBackend
 
 			bool IsNeedUpdate = Mat->RenderFrameNumer != frame_number;
 			if (!MaterialSystem::ApplyInstance(Mat, IsNeedUpdate)) {
-				UL_WARN("Failed to apply material '%s'. Skipping draw.", Mat->Name);
+				LOG_WARN("Failed to apply material '%s'. Skipping draw.", Mat->Name);
 				continue;
 			}
 			else {

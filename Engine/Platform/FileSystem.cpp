@@ -33,14 +33,14 @@ bool FileSystemOpen(const char* path, FileMode mode, bool binary, FileHandle* ha
 		ModeStr = binary ? "wb" : "w";
 	}
 	else {
-		UL_ERROR("Invalid mode passed while trying to open file: %s", path);
+		LOG_ERROR("Invalid mode passed while trying to open file: %s", path);
 		return false;
 	}
 
 	// Attempt to open the file
 	FILE* File = fopen(path, ModeStr);
 	if (!File) {
-		UL_ERROR("Error opening file: %s", path);
+		LOG_ERROR("Error opening file: %s", path);
 		return false;
 	}
 

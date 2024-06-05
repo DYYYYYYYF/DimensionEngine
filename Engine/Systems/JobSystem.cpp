@@ -53,11 +53,11 @@ uint32_t JobSystem::RunJobThread(void* param) {
 	uint32_t index = *(uint32_t*)param;
 	JobThread* Thr = &JobThreads[index];
 	size_t ThreadID = Thr->thread.ThreadID;
-	UL_INFO("Starting job thread #%i (id=%#x, type=%#x).", Thr->index, ThreadID, Thr->type_mask);
+	LOG_INFO("Starting job thread #%i (id=%#x, type=%#x).", Thr->index, ThreadID, Thr->type_mask);
 
 	// A mutex to lock info for this thread.
 	if (!Thr->info_mutex.Create()) {
-		UL_ERROR("Failed to create job thread mutex! Aborting thread.");
+		LOG_ERROR("Failed to create job thread mutex! Aborting thread.");
 		return 0;
 	}
 
@@ -344,7 +344,6 @@ void JobSystem::Submit(JobInfo info) {
 	if (!QueueMutex->UnLock()) {
 		LOG_ERROR("Failed to release lock on queue mutex!");
 	}
-	LOG_INFO("Job queued.");
 }
 
 JobInfo JobSystem::CreateJob(PFN_OnJobStart entry, PFN_OnJobComplete on_success, PFN_OnJobComplete on_failed,

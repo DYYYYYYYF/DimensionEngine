@@ -20,12 +20,12 @@ IRenderer* RenderViewSystem::Renderer = nullptr;
 
 bool RenderViewSystem::Initialize(IRenderer* renderer, SRenderViewSystemConfig config) {
 	if (renderer == nullptr) {
-		UL_FATAL("RenderViewSystem::Initialize() Invalid renderer pointer.");
+		LOG_FATAL("RenderViewSystem::Initialize() Invalid renderer pointer.");
 		return false;
 	}
 
 	if (config.max_view_count == 0) {
-		UL_FATAL("RenderViewSystem::Initialize() Config.max_view_count must be > 0.");
+		LOG_FATAL("RenderViewSystem::Initialize() Config.max_view_count must be > 0.");
 		return false;
 	}
 
@@ -53,19 +53,19 @@ void RenderViewSystem::Shutdown() {
 
 bool RenderViewSystem::Create(const RenderViewConfig& config) {
 	if (config.pass_count < 1) {
-		UL_ERROR("RenderViewSystem::Create() Renderpass count is zero.");
+		LOG_ERROR("RenderViewSystem::Create() Renderpass count is zero.");
 		return false;
 	}
 
 	if (!config.name || strlen(config.name) < 1) {
-		UL_ERROR("RenderViewSystem::Create() name is required.");
+		LOG_ERROR("RenderViewSystem::Create() name is required.");
 		return false;
 	}
 
 	unsigned short ID = INVALID_ID_U16;
 	Lookup.Get(config.name, &ID);
 	if (ID != INVALID_ID_U16) {
-		UL_ERROR("RenderViewSystem::Create() A view named '%s' already exists. A new one will not be created.", config.name);
+		LOG_ERROR("RenderViewSystem::Create() A view named '%s' already exists. A new one will not be created.", config.name);
 		return false;
 	}
 
@@ -79,7 +79,7 @@ bool RenderViewSystem::Create(const RenderViewConfig& config) {
 
 	// Make sure id was valid.
 	if (ID == INVALID_ID_U16) {
-		UL_ERROR("RenderViewSystem::Create() No available space for a new view. Change system config to account for more.");
+		LOG_ERROR("RenderViewSystem::Create() No available space for a new view. Change system config to account for more.");
 		return false;
 	}
 
@@ -106,7 +106,7 @@ bool RenderViewSystem::Create(const RenderViewConfig& config) {
 	for (uint32_t i = 0; i < View->RenderpassCount; ++i) {
 		View->Passes[i] = Renderer->GetRenderpass(config.passes[i].name);
 		if (!View->Passes[i]) {
-			UL_FATAL("RenderViewSystem::Create() Renderpass not found: '%s'.", config.passes[i].name);
+			LOG_FATAL("RenderViewSystem::Create() Renderpass not found: '%s'.", config.passes[i].name);
 			return false;
 		}
 	}

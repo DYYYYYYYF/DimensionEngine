@@ -7,7 +7,7 @@
 
 
 bool GameInitialize(SGame* game_instance) {
-	UL_DEBUG("GameInitialize() called.");
+	LOG_DEBUG("GameInitialize() called.");
 
 	SGameState* State = (SGameState*)game_instance->state;
 

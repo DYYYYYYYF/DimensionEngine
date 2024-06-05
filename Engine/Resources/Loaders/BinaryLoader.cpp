@@ -27,13 +27,13 @@ bool BinaryLoader::Load(const char* name, void* params, Resource* resource) {
 
 	FileHandle File;
 	if (!FileSystemOpen(FullFilePath, eFile_Mode_Read, true, &File)) {
-		UL_ERROR("Binary loader load. Unable to open file for binary reading: '%s'.", FullFilePath);
+		LOG_ERROR("Binary loader load. Unable to open file for binary reading: '%s'.", FullFilePath);
 		return false;
 	}
 
 	size_t FileSize = 0;
 	if (!FileSystemSize(&File, &FileSize)) {
-		UL_ERROR("Unable to binary read file: '%s'.", FullFilePath);
+		LOG_ERROR("Unable to binary read file: '%s'.", FullFilePath);
 		FileSystemClose(&File);
 		return false;
 	}
@@ -42,7 +42,7 @@ bool BinaryLoader::Load(const char* name, void* params, Resource* resource) {
 	unsigned char* ResourceData = (unsigned char*)Memory::Allocate(sizeof(unsigned char) * FileSize, MemoryType::eMemory_Type_Array);
 	size_t ReadSize = 0;
 	if (!FileSystemReadAllBytes(&File, ResourceData, &ReadSize)) {
-		UL_ERROR("Unable to binary read file: '%s'.", FullFilePath);
+		LOG_ERROR("Unable to binary read file: '%s'.", FullFilePath);
 		FileSystemClose(&File);
 		return false;
 	}
@@ -58,7 +58,7 @@ bool BinaryLoader::Load(const char* name, void* params, Resource* resource) {
 
 void BinaryLoader::Unload(Resource* resource) {
 	if (resource == nullptr) {
-		UL_WARN("Material loader unload called with nullptr.");
+		LOG_WARN("Material loader unload called with nullptr.");
 		return;
 	}
 
