@@ -35,7 +35,7 @@ bool MeshLoader::Load(const char* name, void* params, Resource* resource) {
 	MeshFileType Type = MeshFileType::eMesh_File_Type_Not_Found;
 	// Try each supported extension.
 	for (uint32_t i = 0; i < SUPPORTED_FILETYPE_COUNT; ++i) {
-		sprintf(FullFilePath, FormatStr, ResourceSystem::GetRootPath(), TypePath, name, SupportedFileTypes[i].extension);
+		StringFormat(FullFilePath, 512, FormatStr, ResourceSystem::GetRootPath(), TypePath, name, SupportedFileTypes[i].extension);
 		// If the file exists, open it and stop finding.
 		if (FileSystemExists(FullFilePath)) {
 			if (FileSystemOpen(FullFilePath, FileMode::eFile_Mode_Read, SupportedFileTypes[i].is_binary, &f)) {
@@ -61,7 +61,7 @@ bool MeshLoader::Load(const char* name, void* params, Resource* resource) {
 	case MeshFileType::eMesh_File_Type_OBJ:
 		// Generate the dsm filename.
 		char DsmFileName[512];
-		sprintf(DsmFileName, "%s/%s/%s%s", ResourceSystem::GetRootPath(), TypePath, name, ".dsm");
+		StringFormat(DsmFileName, 512, "%s/%s/%s%s", ResourceSystem::GetRootPath(), TypePath, name, ".dsm");
 		Result = ImportObjFile(&f, DsmFileName, ResourceDatas);
 		break;
 	case MeshFileType::eMesh_File_Type_DSM:
@@ -288,7 +288,7 @@ bool MeshLoader::ImportObjFile(FileHandle* obj_file, const char* out_dsm_filenam
 				strncpy(NewData.name, name, 255);
 
 				if (i > 0) {
-					String::Append(NewData.name, NewData.name, (int)i);
+					String::Append(NewData.name, GEOMETRY_NAME_MAX_LENGTH, NewData.name, (int)i);
 				}
 				strncpy(NewData.material_name, MaterialNames[i], 255);
 
@@ -326,7 +326,7 @@ bool MeshLoader::ImportObjFile(FileHandle* obj_file, const char* out_dsm_filenam
 		strncpy(NewData.name, name, 255);
 
 		if (i > 0) {
-			String::Append(NewData.name, NewData.name, (int)i);
+			String::Append(NewData.name, GEOMETRY_NAME_MAX_LENGTH,NewData.name, (int)i);
 		}
 		strncpy(NewData.material_name, MaterialNames[i], 255);
 
@@ -347,7 +347,7 @@ bool MeshLoader::ImportObjFile(FileHandle* obj_file, const char* out_dsm_filenam
 		char FullMtlPath[512];
 		Memory::Zero(FullMtlPath, sizeof(char) * 512);
 		StringDirectoryFromPath(FullMtlPath, out_dsm_filename);
-		String::Append(FullMtlPath, FullMtlPath, MaterialFileName);
+		String::Append(FullMtlPath, 512, FullMtlPath, MaterialFileName);
 
 		// Process material library file.
 		if (!ImportObjMaterialLibraryFile(FullMtlPath)) {
@@ -678,7 +678,7 @@ bool MeshLoader::WriteDmtFile(const char* mtl_file_path, SMaterialConfig* config
 	StringDirectoryFromPath(Directory, mtl_file_path);
 
 	char FullFilePath[512];
-	sprintf(FullFilePath, FormatStr, Directory, config->name, ".dmt");
+	StringFormat(FullFilePath, 512, FormatStr, Directory, config->name, ".dmt");
 	if (!FileSystemOpen(FullFilePath, FileMode::eFile_Mode_Write, false, &f)) {
 		LOG_ERROR("Error opening material file for writing: '%s'.", FullFilePath);
 		return false;
@@ -689,25 +689,25 @@ bool MeshLoader::WriteDmtFile(const char* mtl_file_path, SMaterialConfig* config
 	FileSystemWriteLine(&f, "#material file");
 	FileSystemWriteLine(&f, "");
 	FileSystemWriteLine(&f, "version=0.1");	// TODO: hardcoded version.
-	sprintf(LineBuf, "name=%s", config->name);
+	StringFormat(LineBuf, 512, "name=%s", config->name);
 	FileSystemWriteLine(&f, LineBuf);
-	sprintf(LineBuf, "diffuse_color=%.6f %.6f %.6f %.6f", config->diffuse_color.r, config->diffuse_color.g, config->diffuse_color.b, config->diffuse_color.a);
+	StringFormat(LineBuf, 512, "diffuse_color=%.6f %.6f %.6f %.6f", config->diffuse_color.r, config->diffuse_color.g, config->diffuse_color.b, config->diffuse_color.a);
 	FileSystemWriteLine(&f, LineBuf);
-	sprintf(LineBuf, "shininess=%.6f", config->shininess);
+	StringFormat(LineBuf, 512, "shininess=%.6f", config->shininess);
 	FileSystemWriteLine(&f, LineBuf);
 	if (config->diffuse_map_name[0]) {
-		sprintf(LineBuf, "diffuse_map_name=%s", config->diffuse_map_name);
+		StringFormat(LineBuf, 512, "diffuse_map_name=%s", config->diffuse_map_name);
 		FileSystemWriteLine(&f, LineBuf);
 	}
 	if (config->specular_map_name[0]) {
-		sprintf(LineBuf, "specular_map_name=%s", config->specular_map_name);
+		StringFormat(LineBuf, 512, "specular_map_name=%s", config->specular_map_name);
 		FileSystemWriteLine(&f, LineBuf);
 	}
 	if (config->normal_map_name[0]) {
-		sprintf(LineBuf, "normal_map_name=%s", config->normal_map_name);
+		StringFormat(LineBuf, 512, "normal_map_name=%s", config->normal_map_name);
 		FileSystemWriteLine(&f, LineBuf);
 	}
-	sprintf(LineBuf, "shader=%s", config->shader_name);
+	StringFormat(LineBuf, 512, "shader=%s", config->shader_name);
 	FileSystemWriteLine(&f, LineBuf);
 
 	FileSystemClose(&f);

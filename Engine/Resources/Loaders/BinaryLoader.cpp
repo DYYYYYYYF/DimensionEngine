@@ -20,7 +20,7 @@ bool BinaryLoader::Load(const char* name, void* params, Resource* resource) {
 
 	char* FormatStr = "%s/%s/%s%s";
 	char FullFilePath[512];
-	sprintf(FullFilePath, FormatStr, ResourceSystem::GetRootPath(), TypePath, name, "");
+	StringFormat(FullFilePath, 512, FormatStr, ResourceSystem::GetRootPath(), TypePath, name, "");
 
 	// TODO: Should be using an allocator here.
 	resource->FullPath = StringCopy(FullFilePath);

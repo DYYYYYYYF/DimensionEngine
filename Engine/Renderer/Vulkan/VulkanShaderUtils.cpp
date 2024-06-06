@@ -1,6 +1,7 @@
 #include "VulkanShaderUtils.hpp"
 #include "VulkanContext.hpp"
 
+#include "Containers/TString.hpp"
 #include "Core/EngineLogger.hpp"
 #include "Core/DMemory.hpp"
 
@@ -11,7 +12,7 @@ bool VulkanShaderUtils::CreateShaderModule(VulkanContext* context, const char* n
 	vk::ShaderStageFlagBits stage_flag, uint32_t stage_index, VulkanShaderStage* shader_stage) {
 	// Build file name, which will also be used as the resource name.
 	char FileName[512];
-	sprintf(FileName, "Shaders/%s.%s.spv", name, type_str);
+	StringFormat(FileName, 512, "Shaders/%s.%s.spv", name, type_str);
 
 	// Read binary resource.
 	Resource BinaryResource;

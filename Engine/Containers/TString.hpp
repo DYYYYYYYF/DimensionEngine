@@ -205,24 +205,24 @@ inline bool StringNequali(const char* str0, const char* str1, size_t len) {
 
 class String {
 public:
-	static void Append(char* dst, const char* src, const char* append) {
-		sprintf(dst, "%s%s", src, append);
+	static void Append(char* dst, size_t size, const char* src, const char* append) {
+		StringFormat(dst, 512, "%s%s", src, append);
 	}
 
-	static void Append(char* dst, const char* src, int append) {
-		sprintf(dst, "%s%i", src, append);
+	static void Append(char* dst, size_t size, const char* src, int append) {
+		StringFormat(dst, 512, "%s%i", src, append);
 	}
 
-	static void Append(char* dst, const char* src, bool append) {
-		sprintf(dst, "%s%s", src, append ? "true" : "false");
+	static void Append(char* dst, size_t size, const char* src, bool append) {
+		StringFormat(dst, 512, "%s%s", src, append ? "true" : "false");
 	}
 
-	static void Append(char* dst, const char* src, float append) {
-		sprintf(dst, "%s%f", src, append);
+	static void Append(char* dst, size_t size, const char* src, float append) {
+		StringFormat(dst, 512, "%s%f", src, append);
 	}
 
-	static void Append(char* dst, const char* src, char append) {
-		sprintf(dst, "%s%c", src, append);
+	static void Append(char* dst, size_t size, const char* src, char append) {
+		StringFormat(dst, 512, "%s%c", src, append);
 	}
 
 };

@@ -39,7 +39,7 @@ bool ImageLoader::Load(const char* name, void* params, Resource* resource) {
 	bool Found = false;
 	char* Extensions[IMAGE_EXTENSION_COUNT] = { ".tga", ".png", ".jpg", ".bmp" };
 	for (uint32_t i = 0; i < IMAGE_EXTENSION_COUNT; ++i) {
-		sprintf(FullFilePath, FormatStr, ResourceSystem::GetRootPath(), TypePath, name, Extensions[i]);
+		StringFormat(FullFilePath, 512, FormatStr, ResourceSystem::GetRootPath(), TypePath, name, Extensions[i]);
 		if (FileSystemExists(FullFilePath)) {
 			Found = true;
 			break;

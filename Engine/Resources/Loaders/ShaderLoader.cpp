@@ -21,7 +21,7 @@ bool ShaderLoader::Load(const char* name, void* params, Resource* resource) {
 
 	char* FormatStr = "%s/%s/%s%s";
 	char FullFilePath[512];
-	sprintf(FullFilePath, FormatStr, ResourceSystem::GetRootPath(), TypePath, name, ".scfg");	// shader config
+	StringFormat(FullFilePath, 512, FormatStr, ResourceSystem::GetRootPath(), TypePath, name, ".scfg");	// shader config
 
 
 	FileHandle File;

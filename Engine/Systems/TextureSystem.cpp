@@ -635,12 +635,12 @@ bool TextureSystem::ProcessTextureReference(const char* name, TextureType type ,
 							char TextureNames[6][TEXTURE_NAME_MAX_LENGTH];
 							
 							// +x,-X,+y,-Y,+Z,-Z in _cubemap_ space, which is LH y-down.
-							sprintf(TextureNames[0], "%s_r", name);		// Right texture.
-							sprintf(TextureNames[1], "%s_l", name);		// Left texture.
-							sprintf(TextureNames[2], "%s_u", name);		// Up texture.
-							sprintf(TextureNames[3], "%s_d", name);		// Down texture.
-							sprintf(TextureNames[4], "%s_f", name);		// Front texture.
-							sprintf(TextureNames[5], "%s_b", name);		// Back texture.
+							StringFormat(TextureNames[0], 512, "%s_r", name);		// Right texture.
+							StringFormat(TextureNames[1], 512, "%s_l", name);		// Left texture.
+							StringFormat(TextureNames[2], 512, "%s_u", name);		// Up texture.
+							StringFormat(TextureNames[3], 512, "%s_d", name);		// Down texture.
+							StringFormat(TextureNames[4], 512, "%s_f", name);		// Front texture.
+							StringFormat(TextureNames[5], 512, "%s_b", name);		// Back texture.
 
 							if (!LoadCubeTexture(name, TextureNames, t)) {
 								*out_texture_id = INVALID_ID;
