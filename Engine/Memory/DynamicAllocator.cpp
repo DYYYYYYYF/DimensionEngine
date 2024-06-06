@@ -32,9 +32,9 @@ bool DynamicAllocator::Destroy() {
 	return false;
 }
 
-void* DynamicAllocator::Allocate(unsigned long long size) {
+void* DynamicAllocator::Allocate(size_t size) {
 	if (size > 0) {
-		unsigned long Offset = 0;
+		size_t Offset = 0;
 		if (List.AllocateBlock(size, &Offset)) {
 			// Use that offset against the base memory block to get the block.
 			void* Block = ((char*)MemoryBlock + Offset);

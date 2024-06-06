@@ -68,7 +68,7 @@ void VulkanSwapchain::Create(VulkanContext* context, unsigned int width, unsigne
 	// Setup the queue family indices
 	SVulkanPhysicalDeviceQueueFamilyInfo* QueueFamilyInfo = context->Device.GetQueueFamilyInfo();
 	if (QueueFamilyInfo->graphics_index != QueueFamilyInfo->present_index) {
-    std::array<uint32_t, 2> QueueFamilyIndices = {
+		std::array<uint32_t, 2> QueueFamilyIndices = {
 			(uint32_t)QueueFamilyInfo->graphics_index,
 			(uint32_t)QueueFamilyInfo->present_index
 		};

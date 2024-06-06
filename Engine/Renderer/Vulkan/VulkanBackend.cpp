@@ -868,7 +868,7 @@ void VulkanBackend::DrawGeometry(GeometryRenderData* geometry) {
 
 	// Bind vertex buffer at offset
 	vk::DeviceSize offsets[1] = { BufferData->vertext_buffer_offset };
-	CmdBuffer->CommandBuffer.bindVertexBuffers(0, 0, &Context.ObjectVertexBuffer.Buffer, offsets);
+	CmdBuffer->CommandBuffer.bindVertexBuffers(0, 1, &Context.ObjectVertexBuffer.Buffer, offsets);
 
 	// Draw index or non-index
 	if (BufferData->index_count > 0) {
