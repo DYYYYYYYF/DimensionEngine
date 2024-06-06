@@ -1,14 +1,16 @@
 #include "string.h"
 #include "Core/DMemory.hpp"
 
+#include <cstdio>
 #include <vector>
 
 #ifdef DPLATFORM_MACOS
 #include <ctype.h>
 #endif
 
-inline void StringFormat(char* dst, const char* format, ...){
-  // snprintf(dst,format, __ARGS__); 
+template<typename... Args>
+inline void StringFormat(char* dst, size_t size, const char* format, Args... args){
+  snprintf(dst, size, format, args...); 
 }
 
 inline char* Strtrim(char* str) {
