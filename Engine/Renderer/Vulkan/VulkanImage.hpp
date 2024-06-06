@@ -1,6 +1,7 @@
 #pragma once
 
 #include "vulkan/vulkan.hpp"
+#include "Resources/Texture.hpp"
 
 enum TextureType;
 class VulkanContext;

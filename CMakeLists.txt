@@ -46,7 +46,7 @@ if(${APPLE})
     pkg_search_module(GLM REQUIRED GLM)
     
     include_directories(${Vulkan_INCLUDE_DIRS})
-
+  link_directories(${UD_LOGGER_DIR}/lib/MacOS/${CMAKE_BUILD_TYPE})
 elseif(${WIN32})
     message("-- Current environment: Windows")
 

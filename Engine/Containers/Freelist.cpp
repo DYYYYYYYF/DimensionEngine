@@ -4,7 +4,7 @@
 #include "Core/EngineLogger.hpp"
 #include "Platform/Platform.hpp"
 
-void Freelist::Create(unsigned long long total_size) {
+void Freelist::Create(unsigned long total_size) {
 	// Enough space to hold state, plus array for all nodes.
 	MaxEntries = (total_size / sizeof(void*));	// NOTO: This might have a remainder, but ok.
 	TotalSize = total_size;
@@ -40,7 +40,7 @@ void Freelist::Destroy() {
 	}
 }
 
-bool Freelist::AllocateBlock(unsigned long long size, unsigned long long* offset) {
+bool Freelist::AllocateBlock(unsigned long size, unsigned long * offset) {
 	if (offset == nullptr || ListMemory == nullptr) {
 		return false;
 	}
@@ -81,7 +81,7 @@ bool Freelist::AllocateBlock(unsigned long long size, unsigned long long* offset
 	return false;
 }
 
-bool Freelist::FreeBlock(unsigned long long size, unsigned long long offset) {
+bool Freelist::FreeBlock(unsigned long size, unsigned long long offset) {
 	if (ListMemory == nullptr || size == 0) {
 		return false;
 	}
@@ -160,7 +160,7 @@ bool Freelist::FreeBlock(unsigned long long size, unsigned long long offset) {
 	return false;
 }
 
-bool Freelist::Resize(unsigned long long new_size) {
+bool Freelist::Resize(unsigned long new_size) {
 	if (ListMemory == nullptr || new_size < TotalSize) {
 		return false;
 	}
@@ -253,7 +253,7 @@ void Freelist::Clear() {
 	}
 }
 
-unsigned long long Freelist::GetFreeSpace() {
+unsigned long Freelist::GetFreeSpace() {
 	if (ListMemory == nullptr) {
 		return 0;
 	}

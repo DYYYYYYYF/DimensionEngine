@@ -2,6 +2,7 @@
 
 #include "Defines.hpp"
 #include "Math/MathTypes.hpp"
+#include "Resources/Shader.hpp"
 
 #include <vector>
 #include <functional>

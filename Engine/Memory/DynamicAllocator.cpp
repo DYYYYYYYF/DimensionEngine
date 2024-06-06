@@ -34,7 +34,7 @@ bool DynamicAllocator::Destroy() {
 
 void* DynamicAllocator::Allocate(unsigned long long size) {
 	if (size > 0) {
-		unsigned long long Offset = 0;
+		unsigned long Offset = 0;
 		if (List.AllocateBlock(size, &Offset)) {
 			// Use that offset against the base memory block to get the block.
 			void* Block = ((char*)MemoryBlock + Offset);

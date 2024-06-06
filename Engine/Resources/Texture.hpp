@@ -70,7 +70,7 @@ public:
 class Skybox {
 public:
 	TextureMap Cubemap;
-	Geometry* g = nullptr;
+	class Geometry* g = nullptr;
 	uint32_t InstanceID;
 	size_t RenderFrameNumber;
 };

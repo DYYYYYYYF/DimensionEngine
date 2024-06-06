@@ -6,7 +6,7 @@
 #include "Entry.hpp"
 
 // TODO: Remove
-#include "core/DMemory.hpp"
+#include "Core/DMemory.hpp"
 
 extern bool CreateGame(SGame* out_game) {
 

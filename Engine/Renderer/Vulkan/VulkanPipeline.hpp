@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vulkan/vulkan.hpp>
+#include "Resources/Shader.hpp"
 
 enum FaceCullMode;
 class VulkanContext;

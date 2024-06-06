@@ -27,6 +27,7 @@
 
 #elif __APPLE__
 #define DPLATFORM_APPLE 1
+#define __deprecated_msg(_msg) __attribute__((__deprecated__(_msg)))
 #include <TargetConditionals.h>
 #if TARGET_IPHONE_SIMULATOR
 #define DPLATFORM_IOS 1

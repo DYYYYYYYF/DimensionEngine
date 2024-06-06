@@ -11,7 +11,7 @@ struct SApplicationConfig {
 	short start_width;
 	short start_height;
 
-	char* name = nullptr;
+	const char* name = nullptr;
 };
 
 DAPI bool ApplicationCreate(struct SGame* game_instance);

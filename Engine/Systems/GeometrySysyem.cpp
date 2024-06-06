@@ -369,7 +369,7 @@ SGeometryConfig GeometrySystem::GeneratePlaneConfig(float width, float height, u
 		strncpy(Config.name, DEFAULT_GEOMETRY_NAME, GEOMETRY_NAME_MAX_LENGTH);
 	}
 
-	if (material_name && material_name > 0) {
+	if (material_name && strlen(material_name) > 0) {
 		strncpy(Config.material_name, material_name, MATERIAL_NAME_MAX_LENGTH);
 	}
 	else {
@@ -539,7 +539,7 @@ SGeometryConfig GeometrySystem::GenerateCubeConfig(float width, float height,
 			strncpy(Config.name, DEFAULT_GEOMETRY_NAME, GEOMETRY_NAME_MAX_LENGTH);
 		}
 
-		if (material_name && material_name > 0) {
+		if (material_name && strlen(material_name) > 0) {
 			strncpy(Config.material_name, material_name, MATERIAL_NAME_MAX_LENGTH);
 		}
 		else {

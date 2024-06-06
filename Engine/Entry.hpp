@@ -9,7 +9,7 @@ int main(void) {
 
     if (!Memory::Initialize(MEBIBYTES(200))) {
         LOG_ERROR("Failed to initialize memory system; shuting down.");
-        return false;
+        return 0;
     }
 
 	SGame GameInstance;

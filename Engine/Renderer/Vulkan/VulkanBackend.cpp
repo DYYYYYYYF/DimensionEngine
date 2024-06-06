@@ -458,7 +458,7 @@ bool VulkanBackend::EndFrame(double delta_time) {
 	// Each semaphore waits on the corresponding pipeline stage to complete. 1:1 ratio.
 	// vk::PipelineStageFlagBits::eColor_Attachment_Ouput prevents subsequent color attachment.
 	// Writes from executing until the semaphore signals
-	vk::PipelineStageFlags Flags[1] = { vk::PipelineStageFlagBits::eColorAttachmentOutput };
+  std::array<vk::PipelineStageFlags,1> Flags = { vk::PipelineStageFlagBits::eColorAttachmentOutput };
 	SubmitInfo.setWaitDstStageMask(Flags);
 
 	if (Context.Device.GetGraphicsQueue().submit(1, &SubmitInfo, Context.InFlightFences[Context.CurrentFrame]) != vk::Result::eSuccess) {
@@ -868,7 +868,7 @@ void VulkanBackend::DrawGeometry(GeometryRenderData* geometry) {
 
 	// Bind vertex buffer at offset
 	vk::DeviceSize offsets[1] = { BufferData->vertext_buffer_offset };
-	CmdBuffer->CommandBuffer.bindVertexBuffers(0, Context.ObjectVertexBuffer.Buffer, offsets);
+	CmdBuffer->CommandBuffer.bindVertexBuffers(0, 0, &Context.ObjectVertexBuffer.Buffer, offsets);
 
 	// Draw index or non-index
 	if (BufferData->index_count > 0) {
