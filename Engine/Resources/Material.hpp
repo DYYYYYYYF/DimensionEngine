@@ -11,7 +11,7 @@ class Texture;
 
 struct SMaterialConfig {
 	char name[MATERIAL_NAME_MAX_LENGTH];
-	char* shader_name = nullptr;
+	const char* shader_name = nullptr;
 	bool auto_release;
 	Vec4 diffuse_color;
 	float shininess;

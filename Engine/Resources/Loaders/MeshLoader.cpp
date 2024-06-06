@@ -23,7 +23,7 @@ bool MeshLoader::Load(const char* name, void* params, Resource* resource) {
 		return false;
 	}
 
-	char* FormatStr = "%s/%s/%s%s";
+	const char* FormatStr = "%s/%s/%s%s";
 	FileHandle f;
 
 #define SUPPORTED_FILETYPE_COUNT 2
@@ -672,7 +672,7 @@ bool MeshLoader::WriteDmtFile(const char* mtl_file_path, SMaterialConfig* config
 	// NOTE: The .obj file this came from (and resulting .mtl file) sit in the
 	// models directory. This moves up a level and back into the materials folder.
 	// TODO: Read from config and get an avsolute path for output.
-	char* FormatStr = "%s../Materials/%s%s";
+	const char* FormatStr = "%s../Materials/%s%s";
 	FileHandle f;
 	char Directory[320];
 	StringDirectoryFromPath(Directory, mtl_file_path);

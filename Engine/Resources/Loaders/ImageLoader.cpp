@@ -29,7 +29,7 @@ bool ImageLoader::Load(const char* name, void* params, Resource* resource) {
 		return false;
 	}
 
-	char* FormatStr = "%s/%s/%s%s";
+	const char* FormatStr = "%s/%s/%s%s";
 	const int RequiredChannelCount = 4;
 	stbi_set_flip_vertically_on_load_thread(TypedParams->flip_y);
 	char FullFilePath[512];
@@ -37,7 +37,7 @@ bool ImageLoader::Load(const char* name, void* params, Resource* resource) {
 	// Try different extensions.
 #define IMAGE_EXTENSION_COUNT 4
 	bool Found = false;
-	char* Extensions[IMAGE_EXTENSION_COUNT] = { ".tga", ".png", ".jpg", ".bmp" };
+	const char* Extensions[IMAGE_EXTENSION_COUNT] = { ".tga", ".png", ".jpg", ".bmp" };
 	for (uint32_t i = 0; i < IMAGE_EXTENSION_COUNT; ++i) {
 		StringFormat(FullFilePath, 512, FormatStr, ResourceSystem::GetRootPath(), TypePath, name, Extensions[i]);
 		if (FileSystemExists(FullFilePath)) {

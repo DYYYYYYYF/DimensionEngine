@@ -9,7 +9,7 @@ struct SResourceSystemConfig {
 	uint32_t max_loader_count;
 
 	// The relative base path for assets.
-	char* asset_base_path = nullptr;
+	const char* asset_base_path = nullptr;
 };
 
 class ResourceSystem {

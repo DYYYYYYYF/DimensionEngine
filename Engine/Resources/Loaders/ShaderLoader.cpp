@@ -19,7 +19,7 @@ bool ShaderLoader::Load(const char* name, void* params, Resource* resource) {
 		return false;
 	}
 
-	char* FormatStr = "%s/%s/%s%s";
+	const char* FormatStr = "%s/%s/%s%s";
 	char FullFilePath[512];
 	StringFormat(FullFilePath, 512, FormatStr, ResourceSystem::GetRootPath(), TypePath, name, ".scfg");	// shader config
 

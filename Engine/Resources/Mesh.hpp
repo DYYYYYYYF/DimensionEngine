@@ -12,7 +12,7 @@ enum MeshFileType {
 };
 
 struct SupportedMeshFileType {
-	char* extension = nullptr;
+	const char* extension = nullptr;
 	MeshFileType type;
 	bool is_binary;
 };
