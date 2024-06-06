@@ -4,7 +4,7 @@
 #include "Core/EngineLogger.hpp"
 #include "Platform/Platform.hpp"
 
-bool DynamicAllocator::Create(unsigned long long total_size) {
+bool DynamicAllocator::Create(size_t total_size) {
 	if (total_size < 1) {
 		LOG_ERROR("Dynamic allocator create can not have a total_size of 0. Failed.");
 		return false;
@@ -53,7 +53,7 @@ void* DynamicAllocator::Allocate(size_t size) {
 	return nullptr;
 }
 
-bool DynamicAllocator::Free(void* block, unsigned long long size) {
+bool DynamicAllocator::Free(void* block, size_t size) {
 	if (block == nullptr) {
 		LOG_ERROR("Dynamic allocator free requires a valid block (0x%p).", block);
 		return false;
