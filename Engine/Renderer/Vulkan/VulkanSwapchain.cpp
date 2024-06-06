@@ -213,7 +213,7 @@ bool VulkanSwapchain::Destroy(VulkanContext* context) {
 	return false;
 }
 
-void VulkanSwapchain::Presnet(VulkanContext* context, vk::Queue graphics_queue, vk::Queue present_queue, vk::Semaphore render_complete_semaphore, uint32_t present_image_index) {
+void VulkanSwapchain::Presnet(VulkanContext* context, vk::Queue present_queue, vk::Semaphore render_complete_semaphore, uint32_t present_image_index) {
 	// Return the image to the swapcahin for presentation.
 	vk::PresentInfoKHR PresentInfo;
 	PresentInfo.setWaitSemaphoreCount(1)

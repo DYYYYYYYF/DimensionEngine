@@ -486,6 +486,9 @@ bool TextureSystem::LoadJobStart(void* params, void* result_data) {
 	ResourceParams.flip_y = true;
 
 	bool Result = ResourceSystem::Load(LoadParams->resource_name, ResourceType::eResource_type_Image, &ResourceParams, &LoadParams->ImageResource);
+	if (!Result) {
+		return false;
+	}
 
 	ImageResourceData* ResourceData = (ImageResourceData*)LoadParams->ImageResource.Data;
 	// Use a temporary texture to load into.

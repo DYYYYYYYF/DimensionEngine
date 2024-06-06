@@ -469,7 +469,7 @@ bool VulkanBackend::EndFrame(double delta_time) {
 	CommandBuffer->UpdateSubmitted();
 
 	// End queue submission
-	Context.Swapchain.Presnet(&Context, Context.Device.GetGraphicsQueue(), Context.Device.GetPresentQueue(),
+	Context.Swapchain.Presnet(&Context, Context.Device.GetPresentQueue(),
 		Context.QueueCompleteSemaphores[Context.CurrentFrame], Context.ImageIndex);
 
 	return true;
