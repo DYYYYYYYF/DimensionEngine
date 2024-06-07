@@ -209,8 +209,7 @@ bool ShaderLoader::Load(const char* name, void* params, Resource* resource) {
 			}
 
 			for (uint32_t i = 0; i < Fields.size(); ++i) {
-				size_t len = strlen(Fields[i]);
-				Memory::Free(Fields[i], sizeof(char) * (len + 1), MemoryType::eMemory_Type_String);
+				StringFree(Fields[i]);
 			}
 			Fields.clear();
 			// TODO: Free Memory in fields.

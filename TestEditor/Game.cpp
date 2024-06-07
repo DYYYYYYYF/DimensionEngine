@@ -6,6 +6,8 @@
 #include <Core/DMemory.hpp>
 #include <Systems/CameraSystem.h>
 
+#include "Containers/TString.hpp"
+
 
 bool GameInitialize(SGame* game_instance) {
 	LOG_DEBUG("GameInitialize() called.");
@@ -23,6 +25,9 @@ bool GameUpdate(SGame* game_instance, float delta_time) {
 	size_t PrevAllocCount = AllocCount;
 	AllocCount = Memory::GetAllocateCount();
 	if (Core::InputIsKeyUp(eKeys_M) && Core::InputWasKeyDown(eKeys_M)) {
+		char* Usage = Memory::GetMemoryUsageStr();
+		LOG_INFO(Usage);
+		StringFree(Usage);
 		LOG_DEBUG("Allocations: %llu (%llu this frame)", AllocCount, AllocCount - PrevAllocCount);
 	}
 

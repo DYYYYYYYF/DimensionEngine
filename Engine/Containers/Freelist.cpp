@@ -41,6 +41,11 @@ void Freelist::Destroy() {
 }
 
 bool Freelist::AllocateBlock(size_t size, size_t* offset) {
+	unsigned short RubbishAlignmentOffset = 0;
+	return AllocateBlockAligned(size, 1, offset, &RubbishAlignmentOffset);
+}
+
+bool Freelist::AllocateBlockAligned(size_t size, unsigned short alignment, size_t* offset, unsigned short* out_alignment_offset) {
 	if (offset == nullptr || ListMemory == nullptr) {
 		return false;
 	}
@@ -48,9 +53,18 @@ bool Freelist::AllocateBlock(size_t size, size_t* offset) {
 	FreelistNode* Node = Head;
 	FreelistNode* Prev = nullptr;
 	while (Node != nullptr) {
-		if (Node->size == size) {
+		// Get the aligned offset for the node.
+		size_t AlignedOffset = PaddingAligned(Node->offset, alignment);
+		// The number of bytes taken to perform the alignment.
+		size_t AlignmentOffset = AlignedOffset - Node->offset;
+		// The total size required by the aligned allocation.
+		size_t AlignedSize = size + AlignmentOffset;
+
+		if (Node->size == AlignedSize && AlignedOffset == 0) {
 			// Exact match. Just return the node.
-			*offset = Node->offset;
+			// If not aligned, this wont be large enough.
+			*offset = AlignedOffset;
+			*out_alignment_offset = 0;
 			FreelistNode* ReturnNode = nullptr;
 			if (Prev != nullptr) {
 				Prev->next = Node->next;
@@ -64,11 +78,13 @@ bool Freelist::AllocateBlock(size_t size, size_t* offset) {
 			ResetNode(ReturnNode);
 			return true;
 		}
-		else if (Node->size > size) {
-			// Node is larger. Deduct the memory from it and move the offset by that amount.
-			*offset = Node->offset;
-			Node->size -= size;
-			Node->offset += size;
+		else if (Node->size > AlignedSize) {
+			// Node is larger than the requirement + the alignment offset.
+			// Deduct the memory from it and move the offset by that amount.
+			*offset = AlignedOffset;
+			*out_alignment_offset = (unsigned short)AlignmentOffset;
+			Node->size -= AlignedSize;
+			Node->offset += AlignedSize;
 			return true;
 		}
 
@@ -82,28 +98,36 @@ bool Freelist::AllocateBlock(size_t size, size_t* offset) {
 }
 
 bool Freelist::FreeBlock(size_t size, size_t offset) {
+	return FreeBlockAligned(size, offset, 0);
+}
+
+bool Freelist::FreeBlockAligned(size_t size, size_t offset, unsigned short alignment_offset) {
 	if (ListMemory == nullptr || size == 0) {
 		return false;
 	}
 
 	FreelistNode* Node = Head;
 	FreelistNode* Prev = nullptr;
+
+	size_t UnalignedOffset = offset - alignment_offset;
+	size_t UnalignedSize = size + alignment_offset;
+
 	if (Node == nullptr) {
 		// Check for the case where the entire thing is allocated.
 		// In this case a new node is needed at the head.
 		FreelistNode* NewNode = AcquireFreeNode();
-		NewNode->offset = offset;
-		NewNode->size = size;
+		NewNode->offset = UnalignedOffset;
+		NewNode->size = UnalignedSize;
 		NewNode->next = nullptr;
 		Head = NewNode;
 		return true;
 	}
-	else 
-		{
+	else
+	{
 		while (Node != nullptr) {
-			if (Node->offset == offset) {
+			if (Node->offset == UnalignedOffset) {
 				// Can just be appended to this node.
-				Node->size += size;
+				Node->size += UnalignedSize;
 
 				// Check if this then connects the range between this and the next node,
 				// and if so, combine them and return the second node.
@@ -115,11 +139,11 @@ bool Freelist::FreeBlock(size_t size, size_t offset) {
 				}
 				return true;
 			}
-			else if (Node->offset > offset) {
+			else if (Node->offset > UnalignedOffset) {
 				// Iterated beyond the space to be freed. Need a new node.
 				FreelistNode* NewNode = AcquireFreeNode();
-				NewNode->offset = offset;
-				NewNode->size = size;
+				NewNode->offset = UnalignedOffset;
+				NewNode->size = UnalignedSize;
 
 				// If there is a previous node, the new node should be inserted between this and it.
 				if (Prev) {

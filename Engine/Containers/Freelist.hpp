@@ -35,14 +35,36 @@ public:
 	bool AllocateBlock(size_t size, size_t* offset);
 
 	/*
+	* @brief Attempts to find a free block of memory the given size and granularity.
+	*
+	* @param size The size to allocate.
+	* @param alignment The number to bytes to align to.
+	* @param offset A pointer to hold the offset to the allocated memory.
+	* @param out_alignment_offset A pointer to hold the internal alignment offset in bytes.
+	* @return bool True if a block of memory has found and allocated; otherwise false.
+	*/
+	bool AllocateBlockAligned(size_t size, unsigned short alignment, size_t* offset, unsigned short* out_alignment_offset);
+
+	/*
 	* @brief Attempts to free a free block of memory at the given offset, and of the 
 	* given size. Can fail if invalid data is passed.
 	*
 	* @param size The size to allocate.
-	* @param offset A pointer to hold the offset to the allocated memory.
+	* @param offset The offset to free at.
 	* @return bool True if a block of memory has free; otherwise false.
 	*/
 	bool FreeBlock(size_t size, size_t offset);
+
+	/*
+	* @brief Attempts to free a free block of memory at the given offset, and of the
+	* given size. Can fail if invalid data is passed.
+	*
+	* @param size The size to allocate.
+	* @param offset The offset to free at.
+	* @param alignment_offset The alignment offset.
+	* @return bool True if a block of memory has free; otherwise false.
+	*/
+	bool FreeBlockAligned(size_t size, size_t offset, unsigned short alignment_offset);
 
 	/**
 	 * @brief Attempts to resize the freelist

@@ -29,7 +29,7 @@ public:
 #ifdef LEVEL_DEBUG
 #define ASSERT(expr) \
     if(!(expr)) { \
-        UL_DEBUG(#expr "is null!"); \
+        UL_DEBUG(#expr " is null!"); \
         exit(-1); \
 }
 

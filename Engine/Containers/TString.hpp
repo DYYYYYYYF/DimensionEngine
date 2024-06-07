@@ -13,6 +13,21 @@ inline void StringFormat(char* dst, size_t size, const char* format, Args... arg
   snprintf(dst, size, format, args...); 
 }
 
+inline void StringFree(char* str) {
+	if (str == nullptr) {
+		return;
+	}
+
+	size_t Size = 0;
+	unsigned short  Alignment = 0;
+	if (Memory::GetAlignmentSize(str, &Size, &Alignment)) {
+		Memory::FreeAligned(str, Size, Alignment, MemoryType::eMemory_Type_String);
+	}
+	else {
+
+	}
+}
+
 inline char* Strtrim(char* str) {
 
 	while (isspace((unsigned char)*str)) {

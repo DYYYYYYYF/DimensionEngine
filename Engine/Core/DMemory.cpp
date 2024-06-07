@@ -2,6 +2,7 @@
 
 #include "EngineLogger.hpp"
 #include "Platform/Platform.hpp"
+#include "Containers/TString.hpp"
 
 struct SMemoryStats Memory::stats;
 size_t Memory::TotalAllocateSize;
@@ -34,6 +35,10 @@ void Memory::Shutdown() {
 }
 
 void* Memory::Allocate(size_t size, MemoryType type = MemoryType::eMemory_Type_Array) {
+	return AllocateAligned(size, 1, type);
+}
+
+void* Memory::AllocateAligned(size_t size, unsigned short alignment, MemoryType type) {
 	if (type == eMemory_Type_Unknow) {
 		LOG_WARN("Called allocate using eMemory_Type_Unknow. Re-class this allocation.");
 	}
@@ -49,7 +54,7 @@ void* Memory::Allocate(size_t size, MemoryType type = MemoryType::eMemory_Type_A
 		return nullptr;
 	}
 
-	Block = DynamicAlloc.Allocate(size);
+	Block = DynamicAlloc.AllocateAligned(size, alignment);
 	AllocationMutex.UnLock();
 
 	if (Block == nullptr) {
@@ -66,7 +71,25 @@ void* Memory::Allocate(size_t size, MemoryType type = MemoryType::eMemory_Type_A
 	return Block;
 }
 
+void Memory::AllocateReport(size_t size, MemoryType type) {
+	// Make sure multi-threaded requests don't trample each other.
+	if (!AllocationMutex.Lock()) {
+		LOG_FATAL("Error obtaining mutex lock during allocation.");
+		return;
+	}
+
+	stats.total_allocated += size;
+	stats.tagged_allocations[type] += size;
+	AllocateCount++;
+
+	AllocationMutex.UnLock();
+}
+
 void  Memory::Free(void* block, size_t size, MemoryType type) {
+	FreeAligned(block, size, 1, type);
+}
+
+void Memory::FreeAligned(void* block, size_t size, unsigned short alignment, MemoryType type) {
 	if (type == eMemory_Type_Unknow) {
 		LOG_WARN("Called free using eMemory_Type_Unknow. Re-class this allocation.");
 	}
@@ -77,18 +100,35 @@ void  Memory::Free(void* block, size_t size, MemoryType type) {
 		return;
 	}
 
-	bool Result = DynamicAlloc.Free(block, size);
+	stats.total_allocated -= size;
+	stats.tagged_allocations[type] -= size;
+	AllocateCount--;
+
+	bool Result = DynamicAlloc.FreeAligned(block);
 	AllocationMutex.UnLock();
 
 	if (!Result) {
 		Platform::PlatformFree(block, false);
 	}
 
+	block = nullptr;
+}
+
+void Memory::FreeReport(size_t size, MemoryType type) {
+	if (!AllocationMutex.Lock()) {
+		LOG_FATAL("Unable to obtain mutex lock for free operation. Heap corruption is likely.");
+		return;
+	}
+
 	stats.total_allocated -= size;
 	stats.tagged_allocations[type] -= size;
 	AllocateCount--;
 
-	block = nullptr;
+	AllocationMutex.UnLock();
+}
+
+bool Memory::GetAlignmentSize(void* block, size_t* out_size, unsigned short* out_alignment) {
+	return DynamicAlloc.GetAlignmentSize(block, out_size, out_alignment);
 }
 
 void* Memory::Zero(void* block, size_t size) {
@@ -133,7 +173,8 @@ char* Memory::GetMemoryUsageStr() {
 	}
 
 #if defined(DPLATFORM_WINDOWS)
-	char* outString = _strdup(buffer);
+	//char* outString = _strdup(buffer);
+	char* outString = StringCopy(buffer);
 #elif defined(DPLATFORM_MACOS)
 	char* outString = strdup(buffer);
 #endif
