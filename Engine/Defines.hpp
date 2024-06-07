@@ -69,13 +69,13 @@
 #define CLAMP(value, min, max) (value <= min) ? min : (value >= max) ? max : value;
 #endif
 
-#define GIBIBYTES(amount) amount * 1024 * 1024 * 1024
-#define MEBIBYTES(amount) amount * 1024 * 1024
-#define KIBIBYTES(amount) amount * 1024
+#define GIBIBYTES(amount) (amount * 1024 * 1024 * 1024)
+#define MEBIBYTES(amount) (amount * 1024 * 1024)
+#define KIBIBYTES(amount) (amount * 1024)
 
-#define GIGABYTES(amount) amount * 1000 * 1000 * 1000
-#define MEGABYTES(amount) amount * 1000 * 1000
-#define KIGABYTES(amount) amount * 1000
+#define GIGABYTES(amount) (amount * 1000 * 1000 * 1000)
+#define MEGABYTES(amount) (amount * 1000 * 1000)
+#define KIGABYTES(amount) (amount * 1000)
 
 struct Range {
 	unsigned long long offset;

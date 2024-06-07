@@ -80,6 +80,13 @@ public:
 	 */
 	size_t GetFreeSpace();
 
+	/**
+	 * @brief Obtains the amount of total space left in the allocator.
+	 *
+	 * @return The amount of total space in bytes.
+	 */
+	size_t GetTotalSpace();
+
 private:
 	size_t TotalSize;
 	Freelist List;

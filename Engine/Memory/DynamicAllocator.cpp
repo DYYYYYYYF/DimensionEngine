@@ -4,10 +4,12 @@
 #include "Core/EngineLogger.hpp"
 #include "Platform/Platform.hpp"
 
+// The storage size in bytes of a node's user memory block size.
+#define DSIZE_STORAGE sizeof(uint32_t)
+
 struct AllocHeader {
-	size_t size;
+	void* start;
 	unsigned short alignment;
-	unsigned short alignment_offset;
 };
 
 bool DynamicAllocator::Create(size_t total_size) {
@@ -44,30 +46,37 @@ void* DynamicAllocator::Allocate(size_t size) {
 
 void* DynamicAllocator::AllocateAligned(size_t size, unsigned short alignment) {
 	if (size > 0 && alignment > 0) {
-		size_t Offset = 0;
-		// Account for space for the header.
-		size_t ActualSize = size + sizeof(AllocHeader);
-		unsigned short AlignmentOffset = 0;
+		// The size required is based on the requested size, plus the alignment, header and a u32 to hold
+		// the size for quick/easy lookups.
+		size_t RequiredSize = alignment + sizeof(AllocHeader) + DSIZE_STORAGE + size;
 
-		void* Block = nullptr;
-		if (List.AllocateBlockAligned(ActualSize, alignment, &Offset, &AlignmentOffset)) {
-			// Set the header info.
-			AllocHeader* Header = (AllocHeader*)(((unsigned char*)MemoryBlock) + Offset);
+		// NOTE: This cast will really only be an issue on allocations over ~4GiB, so... don't do that.
+		ASSERT(RequiredSize < 4294967295U);
+
+		size_t BaseOffset = 0;
+		if (List.AllocateBlock(RequiredSize, &BaseOffset)) {
+			void* ptr = (void*)((size_t)MemoryBlock + BaseOffset);
+			// Start the alignment after enough space to hold a u32. This allows for the u32 to be stored
+			// immediately before the user block, while maintaining alignment on said user block.
+			size_t AlignedBlockOffset = PaddingAligned((size_t)ptr + BaseOffset + DSIZE_STORAGE, alignment);
+			// Store the size just before the user data block
+			uint32_t* BlockSize = (uint32_t*)(AlignedBlockOffset - DSIZE_STORAGE);
+			*BlockSize = (uint32_t)size;
+
+			// Store the header immediately after the user block.
+			AllocHeader* Header = (AllocHeader*)(AlignedBlockOffset + size);
+			Header->start = ptr;
 			Header->alignment = alignment;
-			Header->alignment_offset = AlignmentOffset;
-			Header->size = size; //	 Store the actual size here.
-			// Use that offset against the base memory block to get the block.
-			Block = ((char*)MemoryBlock) + Offset + sizeof(AllocHeader);
+
+			return (void*)AlignedBlockOffset;
 		}
 		else {
 			LOG_ERROR("DynamicAllocator::AllocateAligned() allocate no blocks of memory large enough to allocate from.");
 			size_t available = List.GetFreeSpace();
 			LOG_ERROR("Requested size: %llu, Total space available: %llu.", size, available);
 			// TODO: Report fragmentation?
-			Block = nullptr;
+			return nullptr;
 		}
-
-		return Block;
 	}
 
 	LOG_ERROR("Dynamic allocator allocate requires a valid size and alignment.");
@@ -92,12 +101,12 @@ bool DynamicAllocator::FreeAligned(void* block) {
 		return false;
 	}
 
-	size_t Offset = (char*)block - (char*)MemoryBlock;
+	uint32_t* BlockSize = (uint32_t*)((size_t)block - DSIZE_STORAGE);
+	AllocHeader* Header = (AllocHeader*)((size_t)block + *BlockSize);
+	size_t RequiredSize = Header->alignment + sizeof(AllocHeader) + DSIZE_STORAGE + *BlockSize;
+	size_t Offset = (size_t)Header->start - (size_t)MemoryBlock;
 
-	// Get the header.
-	AllocHeader* Header = (AllocHeader*)(((unsigned char*)block) - sizeof(AllocHeader));
-	size_t ActualSize = Header->size + sizeof(AllocHeader);
-	if (!List.FreeBlockAligned(ActualSize, Offset - sizeof(AllocHeader), Header->alignment_offset)) {
+	if (!List.FreeBlock(RequiredSize, Offset)) {
 		LOG_ERROR("DynamicAllocator::FreeAligned(): Free failed.");
 		return false;
 	}
@@ -107,10 +116,14 @@ bool DynamicAllocator::FreeAligned(void* block) {
 
 bool DynamicAllocator::GetAlignmentSize(void* block, size_t* out_size, unsigned short* out_alignment) {
 	// Get the header.
-	AllocHeader* Header = (AllocHeader*)((char*)block - sizeof(AllocHeader));
-	*out_size = Header->size;
+	*out_size = *(uint32_t*)((size_t)block - DSIZE_STORAGE);
+	AllocHeader* Header = (AllocHeader*)((size_t*)block + *out_size);
 	*out_alignment = Header->alignment;
 	return true;
+}
+
+size_t DynamicAllocator::GetTotalSpace() {
+	return TotalSize;
 }
 
 size_t DynamicAllocator::GetFreeSpace() {

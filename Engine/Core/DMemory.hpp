@@ -79,6 +79,8 @@ public:
 	static void* Zero(void* block, size_t size);
 	static void* Copy(void* dst, const void* src, size_t size);
 	static void* Set(void* dst, int val, size_t size);
+
+	static const char* GetUnitForSize(size_t size_bytes, float* out_amount);
 	static char* GetMemoryUsageStr();
 
 	static void AllocateReport(size_t size, MemoryType type);

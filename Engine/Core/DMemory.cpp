@@ -143,41 +143,54 @@ void* Memory::Set(void* dst, int val, size_t size) {
 	return Platform::PlatformSetMemory(dst, val, size);
 }
 
-char* Memory::GetMemoryUsageStr() {
-	const size_t gid = 1024 * 1024 * 1024;
-	const size_t mid = 1024 * 1024;
-	const size_t kid = 1024;
+const char* Memory::GetUnitForSize(size_t size_bytes, float* out_amount) {
+	if (size_bytes >= GIBIBYTES(1)) {
+		*out_amount = (float)size_bytes / (float)GIBIBYTES(1);
+		return "GiB";
+	}
+	else if (size_bytes >= MEBIBYTES(1)) {
+		*out_amount = (float)size_bytes / (float)MEBIBYTES(1);
+		return "MiB";
+	}
+	else if (size_bytes >= KIBIBYTES(1)) {
+		*out_amount = (float)size_bytes / (float)KIBIBYTES(1);
+		return "KiB";
+	}
+	else {
+		*out_amount = (float)size_bytes;
+		return "B";
+	}
+}
 
+char* Memory::GetMemoryUsageStr() {
 	char buffer[8000] = "\nSystem memory use (Type): \n";
 	size_t offset = strlen(buffer);
 	for (size_t i = 0; i < eMemory_Type_Max; i++) {
-		char unit[4] = "XiB";
 		float amount = 1.0f;
-		if(stats.tagged_allocations[i] >= gid) {
-			unit[0] = 'G';
-			amount = stats.tagged_allocations[i] / (float)gid;
-		} else if (stats.tagged_allocations[i] >= mid) {
-			unit[0] = 'M';
-			amount = stats.tagged_allocations[i] / (float)mid;
-		} else if(stats.tagged_allocations[i] >= kid) {
-			unit[0] = 'K';
-			amount = stats.tagged_allocations[i] / (float)kid;
-		} else {
-			unit[0] = 'B';
-			unit[1] = 0;
-			amount = (float)stats.tagged_allocations[i];
-		}
-
-		int length = snprintf(buffer + offset, 8000, " %s: %.2f%s\n", MemoryTypeStrings[i], amount, unit);
+		const char* Unit = GetUnitForSize(stats.tagged_allocations[i], &amount);
+		int length = snprintf(buffer + offset, 8000, " %s: %.2f%s\n", MemoryTypeStrings[i], amount, Unit);
 		offset += length;
 	}
 
-#if defined(DPLATFORM_WINDOWS)
-	//char* outString = _strdup(buffer);
+	// Compute total usage.
+	{
+		size_t TotalSpace = DynamicAlloc.GetTotalSpace();
+		size_t FreeSpace = DynamicAlloc.GetFreeSpace();
+		size_t UsedSpace = TotalSpace - FreeSpace;
+
+		float UsedAmount = 1.0f;
+		const char* UsedUnit = GetUnitForSize(UsedSpace, &UsedAmount);
+
+		float TotalAmount = 1.0f;
+		const char* TotalUnit = GetUnitForSize(TotalSpace, &TotalAmount);
+
+		double PercentUsed = (double)UsedSpace / (double)TotalSpace;
+
+		int Length = snprintf(buffer + offset, 8000, "Total memory usage: %.2f%s of %.2f%s (%.2f%%)\n", UsedAmount, UsedUnit, TotalAmount, TotalUnit, PercentUsed);
+		offset += Length;
+	}
+
 	char* outString = StringCopy(buffer);
-#elif defined(DPLATFORM_MACOS)
-	char* outString = strdup(buffer);
-#endif
 	return outString;
 }
 

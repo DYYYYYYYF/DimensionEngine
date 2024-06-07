@@ -7,7 +7,7 @@ extern bool CreateGame(SGame* out_game);
 
 int main(void) {
 
-    if (!Memory::Initialize(MEBIBYTES(200))) {
+    if (!Memory::Initialize(MEBIBYTES(500))) {
         LOG_ERROR("Failed to initialize memory system; shuting down.");
         return 0;
     }
