@@ -72,6 +72,12 @@ bool RenderViewUI::OnBuildPacket(void* data, struct RenderViewPacket* out_packet
 	return true;
 }
 
+void RenderViewUI::OnDestroyPacket(struct RenderViewPacket* packet) const {
+	// No much to do here, just zero mem.
+	packet->geometries.clear();
+	Memory::Zero(packet, sizeof(RenderViewPacket));
+}
+
 bool RenderViewUI::OnRender(struct RenderViewPacket* packet, IRendererBackend* back_renderer, size_t frame_number, size_t render_target_index) const {
 	uint32_t SID = ShaderID;
 	for (uint32_t p = 0; p < RenderpassCount; ++p) {

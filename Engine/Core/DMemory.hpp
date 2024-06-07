@@ -25,6 +25,13 @@ enum MemoryType {
 	eMemory_Type_Entity_Node,
 	eMemory_Type_Resource,
 	eMemory_Type_Scene,
+	eMemory_Type_Vulkan,
+	// "External" vulkan allocations, for reporting purposes only.
+	eMemory_Type_Vulkan_EXT,
+	eMemory_Type_Direct3D,
+	eMemory_Type_OpenGL,
+	// Representation of GPU-local
+	eMemory_Type_GPU_Local,
 	eMemory_Type_Max
 };
 
@@ -47,26 +54,42 @@ static const char* MemoryTypeStrings[eMemory_Type_Max]{
 	"Entity",
 	"Entity_Node",
 	"Resource",
-	"Scene"
+	"Scene",
+	"Vulkan",
+	"Vulkan_EXT",
+	"Direct3D",
+	"OpenGL",
+	"GPU_Local"
 };
 
-struct SMemoryStats {
+struct DAPI SMemoryStats {
 	size_t total_allocated;
 	size_t tagged_allocations[eMemory_Type_Max];
 };
 
-namespace Memory {
+class DAPI Memory {
+public:
+	static bool Initialize(size_t size);
+	static void Shutdown();
 
-	DAPI bool Initialize(size_t size);
-	DAPI void Shutdown();
+	static void* Allocate(size_t size, MemoryType type);
+	static void* AllocateAligned(size_t size, unsigned short alignment, MemoryType type);
+	static void Free(void* block, size_t size, MemoryType type);
+	static void FreeAligned(void* block, size_t size, unsigned short alignment, MemoryType type);
+	static void* Zero(void* block, size_t size);
+	static void* Copy(void* dst, const void* src, size_t size);
+	static void* Set(void* dst, int val, size_t size);
 
-	DAPI void* Allocate(size_t size, MemoryType type);
-	DAPI void Free(void* block, size_t size, MemoryType type);
-	DAPI void* Zero(void* block, size_t size);
-	DAPI void* Copy(void* dst, const void* src, size_t size);
-	DAPI void* Set(void* dst, int val, size_t size);
-	DAPI char* GetMemoryUsageStr();
+	static const char* GetUnitForSize(size_t size_bytes, float* out_amount);
+	static char* GetMemoryUsageStr();
 
+	static void AllocateReport(size_t size, MemoryType type);
+	static void FreeReport(size_t size, MemoryType type);
+	static bool GetAlignmentSize(void* block, size_t* out_size, unsigned short* out_alignment);
+
+	static size_t GetAllocateCount();
+
+public:
 	static struct SMemoryStats stats;
 	static size_t TotalAllocateSize;
 	static DynamicAllocator DynamicAlloc;

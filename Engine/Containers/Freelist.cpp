@@ -50,6 +50,7 @@ bool Freelist::AllocateBlock(size_t size, size_t* offset) {
 	while (Node != nullptr) {
 		if (Node->size == size) {
 			// Exact match. Just return the node.
+			// If not aligned, this wont be large enough.
 			*offset = Node->offset;
 			FreelistNode* ReturnNode = nullptr;
 			if (Prev != nullptr) {
@@ -65,7 +66,8 @@ bool Freelist::AllocateBlock(size_t size, size_t* offset) {
 			return true;
 		}
 		else if (Node->size > size) {
-			// Node is larger. Deduct the memory from it and move the offset by that amount.
+			// Node is larger than the requirement + the alignment offset.
+			// Deduct the memory from it and move the offset by that amount.
 			*offset = Node->offset;
 			Node->size -= size;
 			Node->offset += size;
@@ -88,6 +90,7 @@ bool Freelist::FreeBlock(size_t size, size_t offset) {
 
 	FreelistNode* Node = Head;
 	FreelistNode* Prev = nullptr;
+
 	if (Node == nullptr) {
 		// Check for the case where the entire thing is allocated.
 		// In this case a new node is needed at the head.
@@ -98,8 +101,8 @@ bool Freelist::FreeBlock(size_t size, size_t offset) {
 		Head = NewNode;
 		return true;
 	}
-	else 
-		{
+	else
+	{
 		while (Node != nullptr) {
 			if (Node->offset == offset) {
 				// Can just be appended to this node.

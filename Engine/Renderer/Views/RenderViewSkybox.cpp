@@ -75,6 +75,11 @@ bool RenderViewSkybox::OnBuildPacket(void* data, struct RenderViewPacket* out_pa
 	return true;
 }
 
+void RenderViewSkybox::OnDestroyPacket(struct RenderViewPacket* packet) const {
+	// No much to do here, just zero mem.
+	Memory::Zero(packet, sizeof(RenderViewPacket));
+}
+
 bool RenderViewSkybox::OnRender(struct RenderViewPacket* packet, IRendererBackend* back_renderer, size_t frame_number, size_t render_target_index) const {
 	uint32_t SID = ShaderID;
 	SkyboxPacketData* SkyboxData = (SkyboxPacketData*)packet->extended_data;

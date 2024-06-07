@@ -7,7 +7,7 @@
  * is used to limit access to a resource when there are multiple threads of 
  * execution around that resource.
  */
-class Mutex {
+class DAPI Mutex {
 public:
 	Mutex() : InternalData(nullptr) {}
 

@@ -10,7 +10,7 @@ int TestFreelist() {
 
 	// Verify that the memory was assigned.
 	size_t FreeSpace = List.GetFreeSpace();
-	printf("Free space: %liB\n", FreeSpace);
+	printf("Free space: %ziB\n", FreeSpace);
 
 	size_t Offset = INVALID_ID;
 	bool result = List.AllocateBlock(64, &Offset);
@@ -19,7 +19,7 @@ int TestFreelist() {
 	}
 
 	FreeSpace = List.GetFreeSpace();
-	printf("Free space: %liB\n", FreeSpace);
+	printf("Free space: %ziB\n", FreeSpace);
 
 	result = List.FreeBlock(64, Offset);
 	if (result) {
