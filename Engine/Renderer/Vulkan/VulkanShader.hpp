@@ -66,7 +66,7 @@ struct VulkanShaderInstanceState {
 
 class VulkanShader {
 public:
-	void* MappedUniformBufferBlock;
+	void* MappedUniformBufferBlock = nullptr;
 	uint32_t ID;
 	VulkanShaderConfig Config;
 	VulkanRenderPass* Renderpass = nullptr;

@@ -524,6 +524,7 @@ bool ApplicationRun() {
 				const IRenderView* RenderView = Packet.views[i].view;
 				RenderView->OnDestroyPacket(&Packet.views[i]);
 			}
+			Packet.views.clear();
 
 			// Figure FPS
 			double FrameEndTime = Platform::PlatformGetAbsoluteTime();

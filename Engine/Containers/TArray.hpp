@@ -27,6 +27,16 @@ public:
 		Length = 0;
 	}
 
+	TArray(const TArray& arr) {
+		Capacity = arr.Capacity;
+		Stride = arr.Stride;
+		Length = arr.Length;
+
+		size_t ArrayMemSize = Capacity * Length;
+		ArrayMemory = Platform::PlatformAllocate(ArrayMemSize, false);
+		Platform::PlatformCopyMemory(ArrayMemory, arr.ArrayMemory, Stride * Length);
+	}
+
 	TArray(size_t size) {
 		size_t ArrayMemSize = size * sizeof(ElementType);
 		ArrayMemory = Platform::PlatformAllocate(ArrayMemSize, false);
@@ -146,7 +156,7 @@ public:
 
 	template<typename IntegerType>
 	ElementType& operator[](const IntegerType& i) {
-		//if (i > Length || ArrayMemory == nullptr) return ElementType();
+		ASSERT(i <= Length);
 		return *((ElementType*)((char*)ArrayMemory + i * Stride));
 	}
 
@@ -159,16 +169,3 @@ private:
 	size_t Length;
 };
 
-
-//bool StringsEqual(const char* str0, const char* str1) {
-//	return strcmp(str0, str1) == 0;
-//}
-//
-//// Case-insensitive
-//bool StringsEqualCaseInsensitive(const char* str0, const char* str1) {
-//#if defined(__GUNC__)
-//	return strcasecmp(str0, str1);
-//#elif defined(_MSC_VER)
-//	return _strcmpi(str0, str1);
-//#endif
-//}

@@ -20,10 +20,10 @@ bool DynamicAllocator::Create(size_t total_size) {
 
 	List.Create(total_size);
 	TotalSize = total_size;
-	MemoryBlock = Platform::PlatformAllocate(total_size,false);
+	MemoryBlock = Platform::PlatformAllocate(total_size, false);
 	ASSERT(MemoryBlock);
 
-	Memory::Zero(MemoryBlock, total_size);
+	Platform::PlatformSetMemory(MemoryBlock, 0, total_size);
 
 	return true;
 }
@@ -31,7 +31,7 @@ bool DynamicAllocator::Create(size_t total_size) {
 bool DynamicAllocator::Destroy() {
 	if (MemoryBlock != nullptr) {
 		List.Destroy();
-		Memory::Zero(MemoryBlock, TotalSize);
+		Platform::PlatformFree(MemoryBlock, false);
 		MemoryBlock = nullptr;
 		TotalSize = 0;
 		return true;
@@ -93,7 +93,8 @@ bool DynamicAllocator::FreeAligned(void* block) {
 		return false;
 	}
 
-	bool IsOut = (size_t)((char*)block - (char*)MemoryBlock) > TotalSize;
+	size_t Sub = (size_t)block - (size_t)MemoryBlock;
+	bool IsOut = Sub > TotalSize;
 	if (MemoryBlock && IsOut) {
 		void* EndOfBlock = (char*)MemoryBlock + TotalSize;
 		LOG_ERROR("DynamicAllocator::FreeAligned(): Trying to release block (0x%p) outside of allocator range (0x%p)-(0x%p). Sub size: %uul, Total size: %uul.",
