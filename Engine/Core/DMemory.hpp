@@ -50,23 +50,26 @@ static const char* MemoryTypeStrings[eMemory_Type_Max]{
 	"Scene"
 };
 
-struct SMemoryStats {
+struct DAPI SMemoryStats {
 	size_t total_allocated;
 	size_t tagged_allocations[eMemory_Type_Max];
 };
 
-namespace Memory {
+class Memory {
+public:
+	static DAPI bool Initialize(size_t size);
+	static DAPI void Shutdown();
+	 	   
+	static DAPI void* Allocate(size_t size, MemoryType type);
+	static DAPI void Free(void* block, size_t size, MemoryType type);
+	static DAPI void* Zero(void* block, size_t size);
+	static DAPI void* Copy(void* dst, const void* src, size_t size);
+	static DAPI void* Set(void* dst, int val, size_t size);
+	static DAPI char* GetMemoryUsageStr();
+	 
+	static DAPI size_t GetAllocateCount();
 
-	DAPI bool Initialize(size_t size);
-	DAPI void Shutdown();
-
-	DAPI void* Allocate(size_t size, MemoryType type);
-	DAPI void Free(void* block, size_t size, MemoryType type);
-	DAPI void* Zero(void* block, size_t size);
-	DAPI void* Copy(void* dst, const void* src, size_t size);
-	DAPI void* Set(void* dst, int val, size_t size);
-	DAPI char* GetMemoryUsageStr();
-
+public:
 	static struct SMemoryStats stats;
 	static size_t TotalAllocateSize;
 	static DynamicAllocator DynamicAlloc;

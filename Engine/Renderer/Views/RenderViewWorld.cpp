@@ -119,7 +119,16 @@ bool RenderViewWorld::OnBuildPacket(void* data, struct RenderViewPacket* out_pac
 		out_packet->geometry_count++;
 	}
 
+	GeometryDistances.Clear();
+
 	return true;
+}
+
+
+void RenderViewWorld::OnDestroyPacket(struct RenderViewPacket* packet) const {
+	// No much to do here, just zero mem.
+	packet->geometries.clear();
+	Memory::Zero(packet, sizeof(RenderViewPacket));
 }
 
 bool RenderViewWorld::OnRender(struct RenderViewPacket* packet, IRendererBackend* back_renderer, size_t frame_number, size_t render_target_index) const {

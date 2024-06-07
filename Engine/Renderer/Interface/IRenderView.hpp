@@ -45,6 +45,7 @@ public:
 	virtual void OnDestroy() = 0;
 	virtual void OnResize(uint32_t width, uint32_t height) = 0;
 	virtual bool OnBuildPacket(void* data, struct RenderViewPacket* out_packet) const = 0;
+	virtual void OnDestroyPacket(struct RenderViewPacket* packet) const = 0;
 	virtual bool OnRender(struct RenderViewPacket* packet, class IRendererBackend* back_renderer, size_t frame_number, size_t render_target_index) const = 0;
 
 public:

@@ -3,6 +3,12 @@
 #include "EngineLogger.hpp"
 #include "Platform/Platform.hpp"
 
+struct SMemoryStats Memory::stats;
+size_t Memory::TotalAllocateSize;
+DynamicAllocator Memory::DynamicAlloc;
+size_t Memory::AllocateCount;
+Mutex Memory::AllocationMutex;
+
 bool Memory::Initialize(size_t size) {
 	Platform::PlatformZeroMemory(&stats, sizeof(stats));
 	if (!DynamicAlloc.Create(size)) {
@@ -65,9 +71,6 @@ void  Memory::Free(void* block, size_t size, MemoryType type) {
 		LOG_WARN("Called free using eMemory_Type_Unknow. Re-class this allocation.");
 	}
 
-	stats.total_allocated -= size;
-	stats.tagged_allocations[type] -= size;
-
 	// Make sure multi-threaded requests don't trample each other.
 	if (!AllocationMutex.Lock()) {
 		LOG_FATAL("Unable to obtain mutex lock for free operation. Heap corruption is likely.");
@@ -80,6 +83,10 @@ void  Memory::Free(void* block, size_t size, MemoryType type) {
 	if (!Result) {
 		Platform::PlatformFree(block, false);
 	}
+
+	stats.total_allocated -= size;
+	stats.tagged_allocations[type] -= size;
+	AllocateCount--;
 
 	block = nullptr;
 }
@@ -131,4 +138,8 @@ char* Memory::GetMemoryUsageStr() {
 	char* outString = strdup(buffer);
 #endif
 	return outString;
+}
+
+size_t Memory::GetAllocateCount() { 
+	return AllocateCount; 
 }

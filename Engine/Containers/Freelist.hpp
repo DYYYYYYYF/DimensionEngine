@@ -2,13 +2,13 @@
 
 #include "Defines.hpp"
 
-struct FreelistNode {
+struct DAPI FreelistNode {
 	size_t offset;
 	size_t size;
 	struct FreelistNode* next = nullptr;
 };
 
-class Freelist {
+class DAPI Freelist {
 public:
 	Freelist() : ListMemory(nullptr), Head(nullptr), Nodes(nullptr) {}
 
@@ -18,12 +18,12 @@ public:
 	* 
 	* @param total_size The total size in bytes that the free list should track.
 	*/
-	DAPI void Create(size_t total_size);
+	void Create(size_t total_size);
 
 	/*
 	* @brief Destroys list.
 	*/
-	DAPI void Destroy();
+	void Destroy();
 
 	/*
 	* @brief Attempts to find a free block of memory the given size.
@@ -32,7 +32,7 @@ public:
 	* @param offset A pointer to hold the offset to the allocated memory.
 	* @return bool True if a block of memory has found and allocated; otherwise false.
 	*/
-	DAPI bool AllocateBlock(size_t size, size_t* offset);
+	bool AllocateBlock(size_t size, size_t* offset);
 
 	/*
 	* @brief Attempts to free a free block of memory at the given offset, and of the 
@@ -42,25 +42,25 @@ public:
 	* @param offset A pointer to hold the offset to the allocated memory.
 	* @return bool True if a block of memory has free; otherwise false.
 	*/
-	DAPI bool FreeBlock(size_t size, size_t offset);
+	bool FreeBlock(size_t size, size_t offset);
 
 	/**
 	 * @brief Attempts to resize the freelist
 	 * 
 	 * @param new_size The new size of memory the freelist could hold.
 	 */
-	DAPI bool Resize(size_t new_size);
+	bool Resize(size_t new_size);
 
 	/*
 	* @brief Clears the free list.
 	*/
-	DAPI void Clear();
+	void Clear();
 
 	/*
 	* @brief Returns the amount of free space in this list.
 	* NOTE: Since this has to iterate the entire internal list, this can be an expensive operation. Use sparingly.
 	*/
-	DAPI size_t GetFreeSpace();
+	size_t GetFreeSpace();
 
 private:
 	FreelistNode* AcquireFreeNode();

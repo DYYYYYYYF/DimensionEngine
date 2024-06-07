@@ -518,6 +518,13 @@ bool ApplicationRun() {
 
 			Renderer->DrawFrame(&Packet);
 
+			// TODO: Temp
+			// Cleanup the packet.
+			for (uint32_t i = 0; i < Packet.view_count; ++i) {
+				const IRenderView* RenderView = Packet.views[i].view;
+				RenderView->OnDestroyPacket(&Packet.views[i]);
+			}
+
 			// Figure FPS
 			double FrameEndTime = Platform::PlatformGetAbsoluteTime();
 			double FrameEsapsedTime = FrameEndTime - FrameStartTime;

@@ -3,6 +3,7 @@
 #include <Core/EngineLogger.hpp>
 #include <Core/Input.hpp>
 #include <Core/Event.hpp>
+#include <Core/DMemory.hpp>
 #include <Systems/CameraSystem.h>
 
 
@@ -18,6 +19,13 @@ bool GameInitialize(SGame* game_instance) {
 }
 
 bool GameUpdate(SGame* game_instance, float delta_time) {
+	static size_t AllocCount = 0;
+	size_t PrevAllocCount = AllocCount;
+	AllocCount = Memory::GetAllocateCount();
+	if (Core::InputIsKeyUp(eKeys_M) && Core::InputWasKeyDown(eKeys_M)) {
+		LOG_DEBUG("Allocations: %llu (%llu this frame)", AllocCount, AllocCount - PrevAllocCount);
+	}
+
 	SGameState* State = (SGameState*)game_instance->state;
 
 	if (Core::InputIsKeyDown(eKeys_Left)) {
