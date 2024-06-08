@@ -1,6 +1,6 @@
 #include "Platform.hpp"
 
-#ifdef DPLATFORM_MACOS
+#if defined(DPLATFORM_MACOS)
 
 #include "Core/Input.hpp"
 #include "Core/Event.hpp"
@@ -22,16 +22,22 @@
 // For surface creation
 #define VK_USE_PLATFORM_METAL_EXT
 #include <vulkan/vulkan.hpp>
+#include <vulkan/vulkan_metal.h>
+#include <vulkan/vulkan_macos.h>
+
+@class ApplicationDelegate;
+@class WindowDelegate;
+@class ContentView;
 
 struct SInternalState {
-	ApplicationDelegate* app_delegate;
+  ApplicationDelegate* app_delegate;
 	WindowDelegate* wnd_delegate;
-	NSWindow* window;
+  NSWindow* window;
 	ContentView* view;
 	CAMetalLayer* layer;
 
 	vk::SurfaceKHR surface;
-	bool quit_falgged;
+	bool quit_flagged;
 };
 
 enum MacOSModifierKeys {
@@ -46,15 +52,15 @@ enum MacOSModifierKeys {
 };
 
 // Key translation
-Keys TranslateKeyCode(uint32_t ns_keycode);
+enum Keys TranslateKeyCode(uint32_t ns_keycode);
 // Modifier key handling
-void HandleModifierKeys(uint32_t ns_keycode, uint32_t modifier_flags);
+void HandleModifierKeys(uint32_t ns_keycode, uint32_t modifier_flags, SInternalState* state_ptr);
 
 @interface WindowDelegate : NSObject <NSWindowDelegate> {
-	SPlatformState* state;
+	struct SPlatformState* state;
 };
 
--(instancetype)initWithState:(SPlatformState*)onitState;
+-(instancetype)initWithState:(struct SPlatformState*)initState;
 
 @end	// Window Delegate
 
@@ -96,7 +102,7 @@ void HandleModifierKeys(uint32_t ns_keycode, uint32_t modifier_flags);
 }
 
 - (void)mouseDown:(NSEvent*)event{
-	input_process_button(BUTTON_LEFT, true);
+  Core::InputProcessButton(eButton_Left, true);
 }
 
 - (void)mouseDragged : (NSEvent*)event {
@@ -105,16 +111,16 @@ void HandleModifierKeys(uint32_t ns_keycode, uint32_t modifier_flags);
 }
 
 - (void)mouseUp : (NSEvent*)event {
-	input_process_button(BUTTON_LEFT, false);
+  Core::InputProcessButton(eButton_Left, false);
 }
 
 - (void)mouseMoved : (NSEvent*)event {
 	const NSPoint pos = [event locationInWindow];
-	input_process_mouse_move((short)pos.x, (short)pos.y);
+  Core::InputProcessMouseMove(pos.x, pos.y);
 }
 
 - (void)rightMouseDown : (NSEvent*)event {
-	input_process_button(BUTTON_RIGHT, true);
+  Core::InputProcessButton(eButton_Right, true);
 }
 
 - (void)rightMouseDragged : (NSEvent*)event {
@@ -123,11 +129,11 @@ void HandleModifierKeys(uint32_t ns_keycode, uint32_t modifier_flags);
 }
 
 - (void)rightMouseUp : (NSEvent*)event {
-	input_process_button(BUTTON_RIGHT, false);
+  Core::InputProcessButton(eButton_Right, false);
 }
 
 - (void)otherMouseDown : (NSEvent*)event {
-	input_process_button(BUTTON_MIDDLE, true);
+  Core::InputProcessButton(eButton_Middle, true);
 }
 
 - (void)otherMouseDragged : (NSEvent*)event {
@@ -136,26 +142,27 @@ void HandleModifierKeys(uint32_t ns_keycode, uint32_t modifier_flags);
 }
 
 - (void)otherMouseUp : (NSEvent*)event {
-	input_process_button(BUTTON_MIDDLE, false);
+  Core::InputProcessButton(eButton_Middle, false);
 }
 
 // Handle modifier keys since they are only registered via modifier flags
 - (void)flagsChanged : (NSEvent*)event {
-	handle_modifier_keys([event keyCode], [event modifierFlags]);
+  // TODO: Should get SInternalState point and pass here.
+  HandleModifierKeys([event keyCode], [event modifierFlags], nullptr);
 }
 
 - (void)keyDown : (NSEvent*)event {
-	Keys key = TranslateKeyCode((uint32_t)[event keyCode]);
-	input_process_key(key, true);
+	enum Keys key = TranslateKeyCode((uint32_t)[event keyCode]);
+  Core::InputProcessKey(key, true);
 }
 
 - (void)keyUp : (NSEvent*)event {
-	Keys key = TranslateKeyCode((uint32_t)[event keyCode]);
-	input_process_key(key, true);
+	enum Keys key = TranslateKeyCode((uint32_t)[event keyCode]);
+  Core::InputProcessKey(key, true);
 }
 
 - (void)scrollWheel : (NSEvent*)event {
-	input_process_mouse_wheel((char)[event scrollingDeltaY]);
+  Core::InputProcessMouseWheel((char)[event scrollingDeltaY]);
 }
 
 
@@ -212,11 +219,13 @@ static const NSRange kEmptyRange = { NSNotFound, 0 };
 
 @end // ApplicationDelegate
 
-- (instancetype)initWithState:(SPlatformState*)initState {
+@implementation WindowDelegate
+- (instancetype)initWithState:(struct SPlatformState*)initState {
 	self = [super init];
 
 	if (self != nil) {
 		state = initState;
+    SInternalState* state_ptr = (SInternalState*)initState->internalState;
 		state_ptr->quit_flagged = false;
 	}
 
@@ -224,6 +233,7 @@ static const NSRange kEmptyRange = { NSNotFound, 0 };
 }
 
 - (BOOL)windowShouldClose:(id)sender {
+  SInternalState* state_ptr = (SInternalState*)state->internalState;
 	state_ptr->quit_flagged = true;
 
 	SEventContext Data = {};
@@ -233,20 +243,21 @@ static const NSRange kEmptyRange = { NSNotFound, 0 };
 }
 
 - (void)windowDidChangeScreen:(NSNotification*)notification {
+  SInternalState* state_ptr = (SInternalState*)state->internalState;
 	SEventContext Context;
 	CGSize viewSize = state_ptr->view.bounds.size;
 	NSSize newDrawableSize = [state_ptr->view convertSizeToBacking : viewSize];
-	state_ptr->handle.layer.drawableSize = newDrawableSize;
-	state_ptr->handle.layer.contentsScale = state_ptr->view.window.backingScaleFactor;
-	// Save off the device pixel ratio.
-	state_ptr->device_pixel_ratio = state_ptr->handle.layer.contentsScale;
+	state_ptr->layer.drawableSize = newDrawableSize;
+	state_ptr->layer.contentsScale = state_ptr->view.window.backingScaleFactor;
 
-	Context.data.u16[0] = (u16)newDrawableSize.width;
-	Context.data.u16[1] = (u16)newDrawableSize.height;
+	Context.data.u16[0] = (unsigned short)newDrawableSize.width;
+	Context.data.u16[1] = (unsigned short)newDrawableSize.height;
 	Core::EventFire(Core::eEvent_Code_Resize, 0, Context);
 }
 
 - (void)windowDidMiniaturize:(NSNotification*)notification {
+  SInternalState* state_ptr = (SInternalState*)state->internalState;
+
 	// Send a size of 0, which tells the application it was minimized.
 	SEventContext Context;
 	Context.data.u16[0] = 0;
@@ -257,16 +268,16 @@ static const NSRange kEmptyRange = { NSNotFound, 0 };
 }
 
 - (void)windowDidDeminiaturize:(NSNotification*)notification {
+  SInternalState* state_ptr = (SInternalState*)state->internalState;
 	SEventContext Context;
+
 	CGSize viewSize = state_ptr->view.bounds.size;
 	NSSize newDrawableSize = [state_ptr->view convertSizeToBacking : viewSize];
-	state_ptr->handle.layer.drawableSize = newDrawableSize;
-	state_ptr->handle.layer.contentsScale = state_ptr->view.window.backingScaleFactor;
-	// Save off the device pixel ratio.
-	state_ptr->device_pixel_ratio = state_ptr->handle.layer.contentsScale;
+	state_ptr->layer.drawableSize = newDrawableSize;
+	state_ptr->layer.contentsScale = state_ptr->view.window.backingScaleFactor;
 
-	Context.data.u16[0] = (u16)newDrawableSize.width;
-	Context.data.u16[1] = (u16)newDrawableSize.height;
+	Context.data.u16[0] = (unsigned short)newDrawableSize.width;
+	Context.data.u16[1] = (unsigned short)newDrawableSize.height;
 	Core::EventFire(Core::eEvent_Code_Resize, 0, Context);
 
 	[state_ptr->window deminiaturize : nil] ;
@@ -277,7 +288,9 @@ static const NSRange kEmptyRange = { NSNotFound, 0 };
 // Platform.hpp
 bool Platform::PlatformStartup(SPlatformState* platform_state, const char* application_name,
 	int x, int y, int width, int height){
-	state_ptr->device_pixel_ratio = 1.0f;
+  SInternalState* state_ptr = (SInternalState*)platform_state->internalState;
+
+
 
 	@autoreleasepool{
 
@@ -286,26 +299,26 @@ bool Platform::PlatformStartup(SPlatformState* platform_state, const char* appli
 	// App delegate creation
 	state_ptr->app_delegate = [[ApplicationDelegate alloc]init];
 	if (!state_ptr->app_delegate) {
-		KERROR("Failed to create application delegate")
+		LOG_ERROR("Failed to create application delegate")
 		return false;
 	}
 	[NSApp setDelegate : state_ptr->app_delegate];
 
 	// Window delegate creation
-	state_ptr->wnd_delegate = [[WindowDelegate alloc]initWithState:state];
+	state_ptr->wnd_delegate = [[WindowDelegate alloc]initWithState:platform_state];
 	if (!state_ptr->wnd_delegate) {
-		KERROR("Failed to create window delegate")
+		LOG_ERROR("Failed to create window delegate")
 		return false;
 	}
 
 	// Window creation
 	state_ptr->window = [[NSWindow alloc]
-		initWithContentRect:NSMakeRect(typed_config->x, typed_config->y, typed_config->width, typed_config->height)
+		initWithContentRect:NSMakeRect(x, y, width, height)
 		styleMask : NSWindowStyleMaskMiniaturizable | NSWindowStyleMaskTitled | NSWindowStyleMaskClosable | NSWindowStyleMaskResizable
 		backing : NSBackingStoreBuffered
 		defer : NO];
 	if (!state_ptr->window) {
-		KERROR("Failed to create window");
+		LOG_ERROR("Failed to create window");
 		return false;
 	}
 
@@ -314,9 +327,9 @@ bool Platform::PlatformStartup(SPlatformState* platform_state, const char* appli
 	[state_ptr->view setWantsLayer : YES] ;
 
 	// Layer creation
-	state_ptr->handle.layer = [CAMetalLayer layer];
-	if (!state_ptr->handle.layer) {
-		KERROR("Failed to create layer for view");
+	state_ptr->layer = [CAMetalLayer layer];
+	if (!state_ptr->layer) {
+		LOG_ERROR("Failed to create layer for view");
 	}
 
 
@@ -324,7 +337,7 @@ bool Platform::PlatformStartup(SPlatformState* platform_state, const char* appli
 	[state_ptr->window setLevel : NSNormalWindowLevel];
 	[state_ptr->window setContentView : state_ptr->view] ;
 	[state_ptr->window makeFirstResponder : state_ptr->view] ;
-	[state_ptr->window setTitle : @(typed_config->application_name)] ;
+	[state_ptr->window setTitle : @(application_name)] ;
 	[state_ptr->window setDelegate : state_ptr->wnd_delegate] ;
 	[state_ptr->window setAcceptsMouseMovedEvents : YES] ;
 	[state_ptr->window setRestorable : NO] ;
@@ -340,33 +353,31 @@ bool Platform::PlatformStartup(SPlatformState* platform_state, const char* appli
 	[state_ptr->window makeKeyAndOrderFront : nil] ;
 
 	// Handle content scaling for various fidelity displays (i.e. Retina)
-	state_ptr->handle.layer.bounds = state_ptr->view.bounds;
+	state_ptr->layer.bounds = state_ptr->view.bounds;
 	// It's important to set the drawableSize to the actual backing pixels. When rendering
 	// full-screen, we can skip the macOS compositor if the size matches the display size.
-	state_ptr->handle.layer.drawableSize = [state_ptr->view convertSizeToBacking : state_ptr->view.bounds.size];
+	state_ptr->layer.drawableSize = [state_ptr->view convertSizeToBacking : state_ptr->view.bounds.size];
 
 	// In its implementation of vkGetPhysicalDeviceSurfaceCapabilitiesKHR, MoltenVK takes into
 	// consideration both the size (in points) of the bounds, and the contentsScale of the
 	// CAMetalLayer from which the Vulkan surface was created.
 	// See also https://github.com/KhronosGroup/MoltenVK/issues/428
-	state_ptr->handle.layer.contentsScale = state_ptr->view.window.backingScaleFactor;
-	KDEBUG("contentScale: %f", state_ptr->handle.layer.contentsScale);
-	// Save off the device pixel ratio.
-	state_ptr->device_pixel_ratio = state_ptr->handle.layer.contentsScale;
+	state_ptr->layer.contentsScale = state_ptr->view.window.backingScaleFactor;
+	LOG_DEBUG("contentScale: %f", state_ptr->layer.contentsScale);
 
-	[state_ptr->view setLayer : state_ptr->handle.layer] ;
+	[state_ptr->view setLayer : state_ptr->layer] ;
 
 	// This is set to NO by default, but is also important to ensure we can bypass the compositor
 	// in full-screen mode
 	// See "Direct to Display" http://metalkit.org/2017/06/30/introducing-metal-2.html.
-	state_ptr->handle.layer.opaque = YES;
+	state_ptr->layer.opaque = YES;
 
 	// Fire off a resize event to make sure the framebuffer is the right size.
 	// Again, this should be the actual backing framebuffer size (taking into account pixel density).
-	event_context context;
-	context.data.u16[0] = (u16)state_ptr->handle.layer.drawableSize.width;
-	context.data.u16[1] = (u16)state_ptr->handle.layer.drawableSize.height;
-	event_fire(EVENT_CODE_RESIZED, 0, context);
+	SEventContext context;
+	context.data.u16[0] = (unsigned short)state_ptr->layer.drawableSize.width;
+	context.data.u16[1] = (unsigned short)state_ptr->layer.drawableSize.height;
+	Core::EventFire(Core::eEvent_Code_Resize, 0, context);
 
 	return true;
 
@@ -375,6 +386,7 @@ bool Platform::PlatformStartup(SPlatformState* platform_state, const char* appli
 }
 
 void Platform::PlatformShutdown(SPlatformState* platform_state){
+  SInternalState* state_ptr = (SInternalState*)platform_state->internalState;
 	if (state_ptr) {
 		@autoreleasepool{
 
@@ -399,6 +411,7 @@ void Platform::PlatformShutdown(SPlatformState* platform_state){
 }
 
 bool Platform::PlatformPumpMessage(SPlatformState* platform_state){
+  SInternalState* state_ptr = (SInternalState*)platform_state->internalState;
 	if (state_ptr) {
 		@autoreleasepool{
 
@@ -418,8 +431,6 @@ bool Platform::PlatformPumpMessage(SPlatformState* platform_state){
 		}
 
 		} // autoreleasepool
-
-		platform_update_watches();
 
 		return !state_ptr->quit_flagged;
 	}
@@ -449,22 +460,22 @@ void* Platform::PlatformSetMemory(void* dst, int val, size_t size) {
 void Platform::PlatformConsoleWrite(const char* message, unsigned char color){
 	// FATAL,ERROR,WARN,INFO,DEBUG,TRACE
 	const char* colour_strings[] = { "0;41", "1;31", "1;33", "1;32", "1;34", "1;30" };
-	printf("\033[%sm%s\033[0m", colour_strings[colour], message);
+	printf("\033[%sm%s\033[0m", colour_strings[color], message);
 }
 
 void Platform::PlatformConsoleWriteError(const char* message, unsigned char color){
 	// FATAL,ERROR,WARN,INFO,DEBUG,TRACE
 	const char* colour_strings[] = { "0;41", "1;31", "1;33", "1;32", "1;34", "1;30" };
-	printf("\033[%sm%s\033[0m", colour_strings[colour], message);
+	printf("\033[%sm%s\033[0m", colour_strings[color], message);
 }
 
 double Platform::PlatformGetAbsoluteTime(){
 	mach_timebase_info_data_t clock_timebase;
 	mach_timebase_info(&clock_timebase);
 
-	u64 mach_absolute = mach_absolute_time();
+	size_t mach_absolute = mach_absolute_time();
 
-	u64 nanos = (f64)(mach_absolute * (u64)clock_timebase.numer) / (f64)clock_timebase.denom;
+	size_t nanos = (double)(mach_absolute * (size_t)clock_timebase.numer) / (double)clock_timebase.denom;
 	return nanos / 1.0e9; // Convert to seconds
 }
 
@@ -486,31 +497,16 @@ int Platform::GetProcessorCount(){
 	return [[NSProcessInfo processInfo]processorCount];
 }
 
-// TODO: Check usage
-void platform_get_handle_info(u64* out_size, void* memory) {
-
-	*out_size = sizeof(macos_handle_info);
-	if (!memory) {
-		return;
-	}
-
-	kcopy_memory(memory, &state_ptr->handle, *out_size);
-}
-
-f32 platform_device_pixel_ratio(void) {
-	return state_ptr->device_pixel_ratio;
-}
-
 // Vulkan
 bool PlatformCreateVulkanSurface(SPlatformState* plat_state, VulkanContext* context) {
 	// Simple cold-cast to then know type
 	SInternalState* state = (SInternalState*)plat_state->internalState;
 
-	VkMetalSurfaceCreateInfoEXT info = { VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR };
+	VkMetalSurfaceCreateInfoEXT info = { VK_STRUCTURE_TYPE_METAL_SURFACE_CREATE_INFO_EXT};
 	info.pLayer = state->layer;
 
 	VkSurfaceKHR MetalSurface;
-	if (vkCreateMetalSurfaceEXT(context->Instance, &info, context->Allocator, &MetalSurface) != VK_SUCCESS) {
+	if (vkCreateMetalSurfaceEXT(context->Instance, &info, nullptr, &MetalSurface) != VK_SUCCESS) {
 		LOG_FATAL("Create surface failed.");
 		return false;
 	}
@@ -533,7 +529,7 @@ bool Thread::Create(PFN_thread_start start_func, void* params, bool auto_detach)
 	}
 
 	// pthread_create uses a function pointer that returns void*, so cold-cast to this type.
-	i32 Result = pthread_create((pthread_t*)&ThreadID, 0, (void* (*)(void*))start_func, params);
+	int Result = pthread_create((pthread_t*)&ThreadID, 0, (void* (*)(void*))start_func, params);
 	if (Result != 0) {
 		switch (Result) {
 		case EAGAIN:
@@ -551,8 +547,8 @@ bool Thread::Create(PFN_thread_start start_func, void* params, bool auto_detach)
 
 	// Only save off the handle if not auto-detaching.
 	if (!auto_detach) {
-		InternalData = platform_allocate(sizeof(u64), false);
-		InternalData = ThreadID;
+		InternalData = Platform::PlatformAllocate(sizeof(size_t), false);
+		*(size_t*)InternalData = ThreadID;
 	}
 	else {
 		// If immediately detaching, make sure the operation is a success.
@@ -580,7 +576,7 @@ void Thread::Destroy() {
 		return;
 	}
 
-	kthread_cancel(InternalData);
+	Cancel();
 }
 
 void Thread::Detach() {
@@ -588,7 +584,7 @@ void Thread::Detach() {
 		return;
 	}
 
-	int Result = pthread_detach(InternalData);
+	int Result = pthread_detach((pthread_t)InternalData);
 	if (Result != 0) {
 		switch (Result) {
 		case EINVAL:
@@ -611,7 +607,7 @@ void Thread::Cancel() {
 		return;
 	}
 
-	int Result = pthread_cancel(InternalData);
+	int Result = pthread_cancel((pthread_t)InternalData);
 	if (Result != 0) {
 		switch (Result) {
 		case ESRCH:
@@ -641,7 +637,7 @@ void Thread::Sleep(size_t ms) {
 
 size_t Thread::GetThreadID() {
 
-	return (u64)pthread_self();
+	return (size_t)pthread_self();
 }
 // NOTE: End Threads
 
@@ -652,7 +648,7 @@ bool Mutex::Create() {
 	pthread_mutexattr_init(&mutex_attr);
 	pthread_mutexattr_settype(&mutex_attr, PTHREAD_MUTEX_RECURSIVE);
 	pthread_mutex_t mutex;
-	i32 result = pthread_mutex_init(&mutex, &mutex_attr);
+	int result = pthread_mutex_init(&mutex, &mutex_attr);
 	if (result != 0) {
 		LOG_ERROR("Mutex creation failure!");
 		return false;
@@ -660,7 +656,7 @@ bool Mutex::Create() {
 
 	// Save off the mutex handle.
 	InternalData = Platform::PlatformAllocate(sizeof(pthread_mutex_t), false);
-	InternalData = mutex;
+	*(pthread_mutex_t*)InternalData = mutex;
 
 	return true;
 }
@@ -752,30 +748,31 @@ Keys TranslateKeyCode(uint32_t ns_keycode) {
 	// https://learn.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes
 	switch (ns_keycode) {
 	case 0x52:
-		return KEY_NUMPAD0;
+		return eKeys_Numpad_0;
 	case 0x53:
-		return KEY_NUMPAD1;
+		return eKeys_Numpad_1;
 	case 0x54:
-		return KEY_NUMPAD2;
+		return eKeys_Numpad_2;
 	case 0x55:
-		return KEY_NUMPAD3;
+		return eKeys_Numpad_3;
 	case 0x56:
-		return KEY_NUMPAD4;
+		return eKeys_Numpad_4;
 	case 0x57:
-		return KEY_NUMPAD5;
+		return eKeys_Numpad_5;
 	case 0x58:
-		return KEY_NUMPAD6;
+		return eKeys_Numpad_6;
 	case 0x59:
-		return KEY_NUMPAD7;
+		return eKeys_Numpad_7;
 	case 0x5B:
-		return KEY_NUMPAD8;
+		return eKeys_Numpad_8;
 	case 0x5C:
-		return KEY_NUMPAD9;
+		return eKeys_Numpad_9;
 
+/*
 	case 0x12:
-		return KEY_1;
+		return eKeys_1;
 	case 0x13:
-		return KEY_2;
+		return eKeys_2;
 	case 0x14:
 		return KEY_3;
 	case 0x15:
@@ -792,195 +789,188 @@ Keys TranslateKeyCode(uint32_t ns_keycode) {
 		return KEY_9;
 	case 0x1D:
 		return KEY_0;
+*/
 
 	case 0x00:
-		return KEY_A;
+		return eKeys_A;
 	case 0x0B:
-		return KEY_B;
+		return eKeys_B;
 	case 0x08:
-		return KEY_C;
+		return eKeys_C;
 	case 0x02:
-		return KEY_D;
+		return eKeys_D;
 	case 0x0E:
-		return KEY_E;
+		return eKeys_E;
 	case 0x03:
-		return KEY_F;
+		return eKeys_F;
 	case 0x05:
-		return KEY_G;
+		return eKeys_G;
 	case 0x04:
-		return KEY_H;
+		return eKeys_H;
 	case 0x22:
-		return KEY_I;
+		return eKeys_I;
 	case 0x26:
-		return KEY_J;
+		return eKeys_J;
 	case 0x28:
-		return KEY_K;
+		return eKeys_K;
 	case 0x25:
-		return KEY_L;
+		return eKeys_L;
 	case 0x2E:
-		return KEY_M;
+		return eKeys_I;
 	case 0x2D:
-		return KEY_N;
+		return eKeys_N;
 	case 0x1F:
-		return KEY_O;
+		return eKeys_O;
 	case 0x23:
-		return KEY_P;
+		return eKeys_P;
 	case 0x0C:
-		return KEY_Q;
+		return eKeys_Q;
 	case 0x0F:
-		return KEY_R;
+		return eKeys_R;
 	case 0x01:
-		return KEY_S;
+		return eKeys_S;
 	case 0x11:
-		return KEY_T;
+		return eKeys_T;
 	case 0x20:
-		return KEY_U;
+		return eKeys_U;
 	case 0x09:
-		return KEY_V;
+		return eKeys_V;
 	case 0x0D:
-		return KEY_W;
+		return eKeys_W;
 	case 0x07:
-		return KEY_X;
+		return eKeys_X;
 	case 0x10:
-		return KEY_Y;
+		return eKeys_Y;
 	case 0x06:
-		return KEY_Z;
+		return eKeys_Z;
 
 	case 0x27:
-		return KEY_APOSTROPHE;
+		return eKeys_Apostrophe;
 	case 0x2A:
-		return KEY_BACKSLASH;
+		return eKeys_Backslash;
 	case 0x2B:
-		return KEY_COMMA;
+		return eKeys_Comma;
 	case 0x18:
-		return KEY_EQUAL; // Equal/Plus
+		return eKeys_Equal; // Equal/Plus
 	case 0x32:
-		return KEY_GRAVE;
+		return eKeys_Grave;
 	case 0x21:
-		return KEY_LBRACKET;
+		return eKeys_LBracket;
 	case 0x1B:
-		return KEY_MINUS;
+		return eKeys_Minus;
 	case 0x2F:
-		return KEY_PERIOD;
+		return eKeys_Period;
 	case 0x1E:
-		return KEY_RBRACKET;
+		return eKeys_Rbracket;
 	case 0x29:
-		return KEY_SEMICOLON;
+		return eKeys_Semicolon;
 	case 0x2C:
-		return KEY_SLASH;
+		return eKeys_Slash;
 	case 0x0A:
-		return KEYS_MAX_KEYS; // ?
+		return eKeys_Max; // ?
 
 	case 0x33:
-		return KEY_BACKSPACE;
+		return eKeys_BackSpace;
 	case 0x39:
-		return KEY_CAPITAL;
+		return eKeys_Capital;
 	case 0x75:
-		return KEY_DELETE;
+		return eKeys_DELETE;
 	case 0x7D:
-		return KEY_DOWN;
+		return eKeys_Down;
 	case 0x77:
-		return KEY_END;
+		return eKeys_End;
 	case 0x24:
-		return KEY_ENTER;
+		return eKeys_Enter;
 	case 0x35:
-		return KEY_ESCAPE;
+		return eKeys_Escape;
 	case 0x7A:
-		return KEY_F1;
+		return eKeys_F1;
 	case 0x78:
-		return KEY_F2;
+		return eKeys_F2;
 	case 0x63:
-		return KEY_F3;
+		return eKeys_F3;
 	case 0x76:
-		return KEY_F4;
+		return eKeys_F4;
 	case 0x60:
-		return KEY_F5;
+		return eKeys_F5;
 	case 0x61:
-		return KEY_F6;
+		return eKeys_F6;
 	case 0x62:
-		return KEY_F7;
+		return eKeys_F7;
 	case 0x64:
-		return KEY_F8;
+		return eKeys_F8;
 	case 0x65:
-		return KEY_F9;
+		return eKeys_F9;
 	case 0x6D:
-		return KEY_F10;
+		return eKeys_F10;
 	case 0x67:
-		return KEY_F11;
+		return eKeys_F11;
 	case 0x6F:
-		return KEY_F12;
+		return eKeys_F12;
 	case 0x69:
-		return KEY_PRINT;
+		return eKeys_Print;
 	case 0x6B:
-		return KEY_F14;
+		return eKeys_F14;
 	case 0x71:
-		return KEY_F15;
+		return eKeys_F15;
 	case 0x6A:
-		return KEY_F16;
+		return eKeys_F16;
 	case 0x40:
-		return KEY_F17;
+		return eKeys_F17;
 	case 0x4F:
-		return KEY_F18;
+		return eKeys_F18;
 	case 0x50:
-		return KEY_F19;
+		return eKeys_F19;
 	case 0x5A:
-		return KEY_F20;
+		return eKeys_F20;
 	case 0x73:
-		return KEY_HOME;
+		return eKeys_Home;
 	case 0x72:
-		return KEY_INSERT;
+		return eKeys_Insert;
 	case 0x7B:
-		return KEY_LEFT;
-	case 0x3A:
-		return KEY_LALT;
+		return eKeys_Left;
 	case 0x3B:
-		return KEY_LCONTROL;
+		return eKeys_LControl;
 	case 0x38:
-		return KEY_LSHIFT;
+		return eKeys_LShift;
 	case 0x37:
-		return KEY_LSUPER;
+		return eKeys_LSuper;
 	case 0x6E:
-		return KEYS_MAX_KEYS; // Menu
-	case 0x47:
-		return KEY_NUMLOCK;
+		return eKeys_Max; // Menu
 	case 0x79:
-		return KEYS_MAX_KEYS; // Page down
+		return eKeys_Max; // Page down
 	case 0x74:
-		return KEYS_MAX_KEYS; // Page up
+		return eKeys_Max; // Page up
 	case 0x7C:
-		return KEY_RIGHT;
-	case 0x3D:
-		return KEY_RALT;
+		return eKeys_Right;
 	case 0x3E:
-		return KEY_RCONTROL;
+		return eKeys_RControl;
 	case 0x3C:
-		return KEY_RSHIFT;
+		return eKeys_RShift;
 	case 0x36:
-		return KEY_RSUPER;
+		return eKeys_RSuper;
 	case 0x31:
-		return KEY_SPACE;
+		return eKeys_Space;
 	case 0x30:
-		return KEY_TAB;
+		return eKeys_Tab;
 	case 0x7E:
-		return KEY_UP;
+		return eKeys_Up;
 
 	case 0x45:
-		return KEY_ADD;
-	case 0x41:
-		return KEY_DECIMAL;
+		return eKeys_Numpad_Add;
 	case 0x4B:
-		return KEY_DIVIDE;
+		return eKeys_Numpad_Divide;
 	case 0x4C:
-		return KEY_ENTER;
+		return eKeys_Enter;
 	case 0x51:
-		return KEY_NUMPAD_EQUAL;
+		return eKeys_Numpad_Equal;
 	case 0x43:
-		return KEY_MULTIPLY;
+		return eKeys_Numpad_Mutiply;
 	case 0x4E:
-		return KEY_SUBTRACT;
+		return eKeys_Numpad_Subtract;
 
 	default:
-		return KEYS_MAX_KEYS;
+		return eKeys_Max;
 	}
 }
 
@@ -996,71 +986,72 @@ Keys TranslateKeyCode(uint32_t ns_keycode) {
 #define MACOS_RALT_MASK (1 << 6)
 
 static void HandleModifierKey(
-	u32 ns_keycode,
-	u32 ns_key_mask,
-	u32 ns_l_keycode,
-	u32 ns_r_keycode,
-	u32 k_l_keycode,
-	u32 k_r_keycode,
-	u32 modifier_flags,
-	u32 l_mod,
-	u32 r_mod,
-	u32 l_mask,
-	u32 r_mask) {
+	unsigned int ns_keycode,
+	unsigned int ns_key_mask,
+	unsigned int ns_l_keycode,
+	unsigned int ns_r_keycode,
+	unsigned int k_l_keycode,
+	unsigned int k_r_keycode,
+	unsigned int modifier_flags,
+	unsigned int l_mod,
+	unsigned int r_mod,
+	unsigned int l_mask,
+	unsigned int r_mask,
+  SInternalState* state_ptr) {
 	if (modifier_flags & ns_key_mask) {
 		// Check left variant
 		if (modifier_flags & l_mask) {
-			if (!(state_ptr->modifier_key_states & l_mod)) {
-				state_ptr->modifier_key_states |= l_mod;
+			//if (!(state_ptr->modifier_key_states & l_mod)) {
+			//	state_ptr->modifier_key_states |= l_mod;
 				// Report the keypress
-				input_process_key(k_l_keycode, true);
-			}
+				Core::InputProcessKey(Keys(k_l_keycode), true);
+			//}
 		}
 
 		// Check right variant
 		if (modifier_flags & r_mask) {
-			if (!(state_ptr->modifier_key_states & r_mod)) {
-				state_ptr->modifier_key_states |= r_mod;
+			//if (!(state_ptr->modifier_key_states & r_mod)) {
+			//	state_ptr->modifier_key_states |= r_mod;
 				// Report the keypress
-				input_process_key(k_r_keycode, true);
-			}
+				Core::InputProcessKey(Keys(k_r_keycode), true);
+			//}
 		}
 	}
 	else {
 		if (ns_keycode == ns_l_keycode) {
-			if (state_ptr->modifier_key_states & l_mod) {
-				state_ptr->modifier_key_states &= ~(l_mod);
+			//if (state_ptr->modifier_key_states & l_mod) {
+			//	state_ptr->modifier_key_states &= ~(l_mod);
 				// Report the release.
-				input_process_key(k_l_keycode, false);
-			}
+				Core::InputProcessKey(Keys(k_l_keycode), false);
+			//}
 		}
 
 		if (ns_keycode == ns_r_keycode) {
-			if (state_ptr->modifier_key_states & r_mod) {
-				state_ptr->modifier_key_states &= ~(r_mod);
+			//if (state_ptr->modifier_key_states & r_mod) {
+			//	state_ptr->modifier_key_states &= ~(r_mod);
 				// Report the release.
-				input_process_key(k_r_keycode, false);
-			}
+				Core::InputProcessKey(Keys(k_r_keycode), false);
+			//}
 		}
 	}
 }
 
-void HandleModifierKeys(uint32_t ns_keycode, uint32_t modifier_flags) {
+void HandleModifierKeys(uint32_t ns_keycode, uint32_t modifier_flags, SInternalState* state_ptr) {
 	// Shift
 	HandleModifierKey(
 		ns_keycode,
 		NSEventModifierFlagShift,
 		0x38,
 		0x3C,
-		KEY_LSHIFT,
-		KEY_RSHIFT,
+		eKeys_LShift,
+		eKeys_RShift,
 		modifier_flags,
-		MACOS_MODIFIER_KEY_LSHIFT,
-		MACOS_MODIFIER_KEY_RSHIFT,
+		eMacOS_Modifier_Key_LShift,
+		eMacOS_Modifier_Key_RShift,
 		MACOS_LSHIFT_MASK,
-		MACOS_RSHIFT_MASK);
+		MACOS_RSHIFT_MASK, state_ptr);
 
-	KTRACE("modifier flags keycode: %u", ns_keycode);
+	  LOG_INFO("modifier flags keycode: %u", ns_keycode);
 
 	// Ctrl
 	HandleModifierKey(
@@ -1068,15 +1059,16 @@ void HandleModifierKeys(uint32_t ns_keycode, uint32_t modifier_flags) {
 		NSEventModifierFlagControl,
 		0x3B,
 		0x3E,
-		KEY_LCONTROL,
-		KEY_RCONTROL,
+		eKeys_LControl,
+		eKeys_RControl,
 		modifier_flags,
-		MACOS_MODIFIER_KEY_LCTRL,
-		MACOS_MODIFIER_KEY_RCTRL,
+    eMacOS_Modifier_Key_LCtrl,
+    eMacOS_Modifier_Key_RCtrl,
 		MACOS_LCTRL_MASK,
-		MACOS_RCTRL_MASK);
+		MACOS_RCTRL_MASK, state_ptr);
 
 	// Alt/Option
+  /*
 	HandleModifierKey(
 		ns_keycode,
 		NSEventModifierFlagOption,
@@ -1089,6 +1081,7 @@ void HandleModifierKeys(uint32_t ns_keycode, uint32_t modifier_flags) {
 		MACOS_MODIFIER_KEY_ROPTION,
 		MACOS_LALT_MASK,
 		MACOS_RALT_MASK);
+    */
 
 	// Command/Super
 	HandleModifierKey(
@@ -1096,25 +1089,25 @@ void HandleModifierKeys(uint32_t ns_keycode, uint32_t modifier_flags) {
 		NSEventModifierFlagCommand,
 		0x37,
 		0x36,
-		KEY_LSUPER,
-		KEY_RSUPER,
+		eKeys_LSuper,
+		eKeys_RSuper,
 		modifier_flags,
-		MACOS_MODIFIER_KEY_LCOMMAND,
-		MACOS_MODIFIER_KEY_RCOMMAND,
+    eMacOS_Modifier_Key_LCommand,
+    eMacOS_Modifier_Key_RCommand,
 		MACOS_LCOMMAND_MASK,
-		MACOS_RCOMMAND_MASK);
+		MACOS_RCOMMAND_MASK, state_ptr);
 
 	// Caps lock - handled a bit differently than other keys.
 	if (ns_keycode == 0x39) {
 		if (modifier_flags & NSEventModifierFlagCapsLock) {
 			// Report as a keypress. This notifies the system
 			// that caps lock has been turned on.
-			input_process_key(KEY_CAPITAL, true);
+			Core::InputProcessKey(eKeys_Capital, true);
 		}
 		else {
 			// Report as a release. This notifies the system
 			// that caps lock has been turned off.
-			input_process_key(KEY_CAPITAL, false);
+			Core::InputProcessKey(eKeys_Capital, false);
 		}
 	}
 }

@@ -1,6 +1,6 @@
 #include "Platform.hpp"
 
-#if DPLATFORM_WINDOWS
+#if defined(DPLATFORM_WINDOWS)
 
 #include "Core/Input.hpp"
 #include "Core/Event.hpp"

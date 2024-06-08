@@ -6,7 +6,7 @@ include_directories(
     ${STB_DIR}
 )
 
-file(GLOB ENGINE_SOURCE_FILES *.cpp */*.cpp */*/*.cpp */*/*/*.cpp Platform/PlatformMacOS.m)
+file(GLOB ENGINE_SOURCE_FILES *.cpp */*.cpp */*/*.cpp */*/*/*.cpp Platform/PlatformMacOS.mm)
 add_library(engine SHARED ${ENGINE_SOURCE_FILES})
 
 # Output .dll to bin directly.
@@ -32,7 +32,12 @@ if(${APPLE})
 
     # MacOS screen
     target_link_libraries(engine PUBLIC "-framework CoreFoundation")
-    
+    target_link_libraries(engine PUBLIC "-framework Metal")
+    target_link_libraries(engine PUBLIC "-framework QuartzCore")
+    target_link_libraries(engine PUBLIC "-framework Cocoa")
+    target_link_libraries(engine PUBLIC "-framework AppKit")
+    target_link_libraries(engine PUBLIC "-framework CoreData")
+
     # other frameworks
     # target_link_libraries(program PUBLIC "-framework ")
 
