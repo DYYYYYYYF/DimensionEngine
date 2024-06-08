@@ -28,8 +28,8 @@ enum Keys {
 	DEFINE_KEY(Mode_Change, 0x1F),
 
 	DEFINE_KEY(Space, 0x20),
-	DEFINE_KEY(Prior, 0x21),
-	DEFINE_KEY(Next, 0x22),
+	DEFINE_KEY(PageUp, 0x21),
+	DEFINE_KEY(PageDown, 0x22),
 	DEFINE_KEY(End, 0x23),
 	DEFINE_KEY(Home, 0x24),
 	DEFINE_KEY(Left, 0x25),
@@ -71,8 +71,8 @@ enum Keys {
 	DEFINE_KEY(Y, 0x59),
 	DEFINE_KEY(Z, 0x5A),
 
-	DEFINE_KEY(LWin, 0x5B),
-	DEFINE_KEY(RWin, 0x5C),
+	DEFINE_KEY(LSuper, 0x5B),
+	DEFINE_KEY(RSuper, 0x5C),
 	DEFINE_KEY(Apps, 0x5D),
 	DEFINE_KEY(Sleep, 0x5F),
 	
@@ -127,15 +127,22 @@ enum Keys {
 	DEFINE_KEY(LMenu, 0xA4),
 	DEFINE_KEY(RMenu, 0xA5),
 
-	DEFINE_KEY(Semicolon, 0xBA),
-	DEFINE_KEY(Plus, 0xBB),
 	DEFINE_KEY(Comma, 0xBC),
 	DEFINE_KEY(Minus, 0xBD),
 	DEFINE_KEY(Period, 0xBE),
 	DEFINE_KEY(Slash, 0xBF),
 	DEFINE_KEY(Grave, 0xC0),
+	DEFINE_KEY(Apostrophe, 0xDE),
+	DEFINE_KEY(Semicolon, 0x3B),
+	DEFINE_KEY(Quote, eKeys_Apostrophe),
+	DEFINE_KEY(Equal, 0xBB),
 
-	Keys_Max
+	DEFINE_KEY(LBracket, 0xDB),
+	DEFINE_KEY(Pipe, 0xDC),
+	DEFINE_KEY(Backslash, eKeys_Pipe),
+	DEFINE_KEY(Rbracket, 0xDD),
+
+	eKeys_Max
 
 };
 
