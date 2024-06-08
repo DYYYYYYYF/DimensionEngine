@@ -6,7 +6,7 @@ include_directories(
     ${STB_DIR}
 )
 
-file(GLOB ENGINE_SOURCE_FILES *.cpp */*.cpp */*/*.cpp */*/*/*.cpp)
+file(GLOB ENGINE_SOURCE_FILES *.cpp */*.cpp */*/*.cpp */*/*/*.cpp Platform/PlatformMacOS.m)
 add_library(engine SHARED ${ENGINE_SOURCE_FILES})
 
 # Output .dll to bin directly.
@@ -30,6 +30,13 @@ if(${APPLE})
     target_link_libraries(engine PUBLIC libLogger.a)
     target_link_libraries(engine PUBLIC Vulkan::Vulkan)
 
+    # MacOS screen
+    target_link_libraries(engine PUBLIC "-framework CoreFoundation")
+    
+    # other frameworks
+    # target_link_libraries(program PUBLIC "-framework ")
+
+    set_target_properties(engine PROPERTIES LINK_FLAGS "-Wl,-F/Library/Frameworks")
 elseif(${WIN32})
     target_link_libraries(engine PUBLIC "Logger.lib")
     target_link_libraries(engine PUBLIC "vulkan-1.lib")
