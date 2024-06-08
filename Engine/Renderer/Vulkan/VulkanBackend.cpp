@@ -110,6 +110,7 @@ bool VulkanBackend::Initialize(const RenderBackendConfig* config, unsigned char*
 		LOG_FATAL("Enum instance layer properties failed.");
 		return false;
 	}
+
 	AvailableLayers.resize(AvailableLayersCount);
 	result = vk::enumerateInstanceLayerProperties(&AvailableLayersCount, AvailableLayers.data());
 	ASSERT(result == vk::Result::eSuccess);
@@ -139,6 +140,10 @@ bool VulkanBackend::Initialize(const RenderBackendConfig* config, unsigned char*
 	InstanceInfo.setEnabledLayerCount((uint32_t)RequiredValidationLayerName.size())
 		.setPEnabledLayerNames(RequiredValidationLayerName);
 
+#if defined (DPLATFORM_MACOS)
+  InstanceInfo.flags |= vk::InstanceCreateFlagBits::eEnumeratePortabilityKHR;    
+#endif
+
 	Context.Instance = vk::createInstance(InstanceInfo, Context.Allocator);
 	ASSERT(Context.Instance);
 
@@ -152,7 +157,9 @@ bool VulkanBackend::Initialize(const RenderBackendConfig* config, unsigned char*
 	// | vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose;
 
 	vk::DebugUtilsMessageTypeFlagsEXT MessageType =
+#if not defined(DPLATFORM_MACOS)
 		vk::DebugUtilsMessageTypeFlagBitsEXT::eDeviceAddressBinding |
+#endif
 		vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral |
 		vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance |
 		vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation;
