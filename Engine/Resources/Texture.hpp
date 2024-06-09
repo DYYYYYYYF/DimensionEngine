@@ -60,7 +60,7 @@ public:
 
 	int ChannelCount;
 	/** TextureFlag */
-	TextureFlag Flags;
+	TextureFlag Flags = 0;
 
 	uint32_t Generation;
 	char Name[TEXTURE_NAME_MAX_LENGTH];

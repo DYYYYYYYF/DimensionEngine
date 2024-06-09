@@ -74,7 +74,7 @@ bool GameUpdate(SGame* game_instance, float delta_time) {
 		State->WorldCamera->Reset();
 	}
 
-	if (Core::InputIsKeyDown(Keys::eKeys_O)) {
+	if (Core::InputIsKeyUp(eKeys_O) && Core::InputWasKeyDown(eKeys_O)) {
 		SEventContext Context = {};
 		Core::EventFire(Core::eEvent_Code_Debug_0, game_instance, Context);
 	}

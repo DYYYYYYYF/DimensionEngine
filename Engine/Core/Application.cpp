@@ -611,6 +611,10 @@ bool ApplicationOnKey(unsigned short code, void* sender, void* listener_instance
 			return true;
 		}
 	}
+	else if (code == Core::eEvent_Code_Key_Released) {
+
+		return true;
+	}
 	
 	return false;
 }
@@ -686,11 +690,13 @@ bool ApplicationOnResized(unsigned short code, void* sender, void* listener_inst
 				AppState.UIMeshes[0].geometries[0] = GeometrySystem::AcquireFromConfig(UIConfig, true);
 				AppState.game_instance->on_resize(AppState.game_instance, Width, Height);
 				Renderer->OnResize(Width, Height);
+
+				return true;
 			}
 		}
 	}
 
-	return false;
+	return true;
 }
 
 void GetFramebufferSize(unsigned int* width, unsigned int* height) {

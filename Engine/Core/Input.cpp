@@ -67,9 +67,6 @@ void InputProcessButton(Buttons button, bool pressed) {
 
 void InputProcessMouseMove(short x, short y) {
 	if (state.mouse_current.x != x || state.mouse_current.y != y) {
-		// TODO: Enable this if debugging
-		// printf("Mouse position: %i, %d", x, y);
-
 		// Update
 		state.mouse_current.x = x;
 		state.mouse_current.y = y;

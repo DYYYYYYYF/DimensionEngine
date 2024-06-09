@@ -62,8 +62,9 @@ bool Core::EventRegister(unsigned short code, void* listener, PFN_on_event on_ev
 
 	size_t RegisterCount = state.registered[code].events.Size();
 	for (size_t i = 0; i < RegisterCount; ++i) {
-		if (state.registered[code].events[i].listener == listener) {
-			// TODO: Warn
+		if (state.registered[code].events[i].listener == listener && 
+			state.registered[code].events[i].callback == on_event) {
+			LOG_WARN("The event callback has been registered.");
 			return false;
 		}
 	}
@@ -105,19 +106,20 @@ bool Core::EventFire(unsigned short code, void* sender, SEventContext context) {
 		return false;
 	}
 
-	if (state.registered[code].events.Data() == nullptr) {
-		// TODO: Warn
+	if (state.registered[code].events.Size() == 0) {
 		return false;
 	}
 
 	size_t RegisterCount = state.registered[code].events.Size();
+	bool SuccessAll = false;
 	for (size_t i = 0; i < RegisterCount; ++i) {
 		const SRegisterEvent& event = state.registered[code].events[i];
-		if (event.callback(code, sender, event.listener, context)) {
-			// Message has been handled, do not send to other listeners.
-			return true;
+
+		// Continue send to other listeners, but record false flag.
+		if (!event.callback(code, sender, event.listener, context)) {
+			SuccessAll = false;
 		}
 	}
 
-	return false;
+	return SuccessAll;
 }
