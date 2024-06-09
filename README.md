@@ -1,7 +1,7 @@
 # Dimension Engine
 3D-Rendering of Vulkan 
 
-CMake Files: (MacOS required Vulkan,GLM,GLFW)
+CMake Files: (MacOS required Vulkan)
 
 create a floder named build
 
@@ -9,9 +9,11 @@ cd build then cmd: cmake [[Custom params]](### Cmake params) ..
 
 cmd 'make'
 
-after all, it will create a executable program named VulkanTestDemo
+after all, it will create a executable program named 'TestEditor'
 
 Windows: Visual Studio 2022
+
+If your plants form is Windows, you could compile shaders by compile_shader_glsl.bat. (Dont forget set current VulkanSDK path)
 
 ### Cmake params
 
@@ -31,14 +33,11 @@ Windows: Visual Studio 2022
 * <font color=Red>ERROR</font>
 * <font color=#8b0000>FATAL </font>
 
-## Warn: Under refactory 
-By far, impl Triangle renderer.
+## Short cut
 
-Renderer: Instance Device Swapchain FrameBuffer RenderPass CommandBuffer
+![](Assets/Shortcuts/RenderEngine.png)
 
-The foundational functions have finished.
 
-If your plants form is Windows, you could compile shaders by compile_shader.bat. (Dont forget set current VulkanSDK path)
 
 ## 3rd-Libraries
 
@@ -46,5 +45,5 @@ Vulkan: https://www.vulkan.org
 
 UncleDon-Logger: https://github.com/DYYYYYYYF/UncleDon-Logger
 
-ThreadPool: https://github.com/DYYYYYYYF/ThreadPool
+stb: https://github.com/nothings/stb/tree/ae721c50eaf761660b4f90cc590453cdb0c2acd0
 
