@@ -524,7 +524,13 @@ bool ApplicationRun() {
 				const IRenderView* RenderView = Packet.views[i].view;
 				RenderView->OnDestroyPacket(&Packet.views[i]);
 			}
+
 			Packet.views.clear();
+			std::vector<RenderViewPacket>().swap(Packet.views);
+			Meshes.clear();
+			std::vector<Mesh*>().swap(Meshes);
+			UIMeshes.clear();
+			std::vector<Mesh*>().swap(UIMeshes);
 
 			// Figure FPS
 			double FrameEndTime = Platform::PlatformGetAbsoluteTime();

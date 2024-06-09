@@ -20,7 +20,7 @@ struct GeometryDistance {
 	float distance;
 };
 
-static void QuickSort(std::vector<GeometryDistance> arr, int low_index, int high_index, bool ascending);
+static void QuickSort(std::vector<GeometryDistance>& arr, int low_index, int high_index, bool ascending);
 
 
 void RenderViewWorld::OnCreate() {
@@ -120,6 +120,7 @@ bool RenderViewWorld::OnBuildPacket(void* data, struct RenderViewPacket* out_pac
 	}
 
 	GeometryDistances.clear();
+	std::vector<GeometryDistance>().swap(GeometryDistances);
 
 	return true;
 }
@@ -128,6 +129,8 @@ bool RenderViewWorld::OnBuildPacket(void* data, struct RenderViewPacket* out_pac
 void RenderViewWorld::OnDestroyPacket(struct RenderViewPacket* packet) const {
 	// No much to do here, just zero mem.
 	packet->geometries.clear();
+	std::vector<GeometryRenderData>().swap(packet->geometries);
+
 	Memory::Zero(packet, sizeof(RenderViewPacket));
 }
 
@@ -190,7 +193,7 @@ static void Swap(GeometryDistance* a, GeometryDistance* b) {
 	*b = temp;
 }
 
-static int Partition(std::vector<GeometryDistance> arr, int low_index, int high_index, bool ascending) {
+static int Partition(std::vector<GeometryDistance>& arr, int low_index, int high_index, bool ascending) {
 	GeometryDistance Privot = arr[high_index];
 	int i = (low_index - 1);
 
@@ -213,7 +216,7 @@ static int Partition(std::vector<GeometryDistance> arr, int low_index, int high_
 	return i + 1;
 }
 
-static void QuickSort(std::vector<GeometryDistance> arr, int low_index, int high_index, bool ascending) {
+static void QuickSort(std::vector<GeometryDistance>& arr, int low_index, int high_index, bool ascending) {
 	if (low_index < high_index) {
 		int PartitionIndex = Partition(arr, low_index, high_index, ascending);
 

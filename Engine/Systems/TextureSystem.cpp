@@ -535,7 +535,8 @@ bool TextureSystem::LoadTexture(const char* name, Texture* texture) {
 		TextureSystem::LoadJobSuccess,
 		TextureSystem::LoadJobFail,
 		&Params, 
-		(uint32_t)sizeof(TextureLoadParams), (uint32_t)sizeof(TextureLoadParams));
+		(uint32_t)sizeof(TextureLoadParams), 
+		(uint32_t)sizeof(TextureLoadParams));
 	JobSystem::Submit(Job);
 	return true;
 }
@@ -569,7 +570,7 @@ bool TextureSystem::ProcessTextureReference(const char* name, TextureType type ,
 				}
 			}
 		}
-		if (reference_diff) {
+		if (reference_diff != 0) {
 			Ref.reference_count += reference_diff;
 		}
 
@@ -592,9 +593,6 @@ bool TextureSystem::ProcessTextureReference(const char* name, TextureType type ,
 				Ref.handle = INVALID_ID;
 				Ref.auto_release = false;
 				LOG_INFO("Released texture '%s', Texture unloaded because count=0 and auto_release=true.", NameCopy);
-			}
-			else {
-				LOG_INFO("Released texture '%s', now has a reference count of '%i' (auto_release=%s)", NameCopy, Ref.reference_count, Ref.auto_release ? "true" : "false");
 			}
 		}
 		else {
