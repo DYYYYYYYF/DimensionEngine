@@ -15,7 +15,7 @@ void Freelist::Create(size_t total_size) {
 	}
 
 	size_t UesdSize = sizeof(FreelistNode) * MaxEntries;
-	ListMemory = Platform::PlatformAllocate(UesdSize, 0);
+	ListMemory = Platform::PlatformAllocate(UesdSize, false);
 	Memory::Zero(ListMemory, UesdSize);
 
 	Nodes = (FreelistNode*)ListMemory;
@@ -35,7 +35,7 @@ void Freelist::Create(size_t total_size) {
 
 void Freelist::Destroy() {
 	if (ListMemory != nullptr) {
-		Memory::Zero(ListMemory, sizeof(FreelistNode) * MaxEntries);
+		Platform::PlatformFree(ListMemory, false);
 		ListMemory = nullptr;
 	}
 }

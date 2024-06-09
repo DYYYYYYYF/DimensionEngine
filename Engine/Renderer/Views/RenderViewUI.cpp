@@ -75,6 +75,8 @@ bool RenderViewUI::OnBuildPacket(void* data, struct RenderViewPacket* out_packet
 void RenderViewUI::OnDestroyPacket(struct RenderViewPacket* packet) const {
 	// No much to do here, just zero mem.
 	packet->geometries.clear();
+	std::vector<GeometryRenderData>().swap(packet->geometries);
+
 	Memory::Zero(packet, sizeof(RenderViewPacket));
 }
 

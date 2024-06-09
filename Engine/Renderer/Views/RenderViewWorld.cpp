@@ -20,7 +20,7 @@ struct GeometryDistance {
 	float distance;
 };
 
-static void QuickSort(TArray<GeometryDistance> arr, int low_index, int high_index, bool ascending);
+static void QuickSort(std::vector<GeometryDistance>& arr, int low_index, int high_index, bool ascending);
 
 
 void RenderViewWorld::OnCreate() {
@@ -76,7 +76,7 @@ bool RenderViewWorld::OnBuildPacket(void* data, struct RenderViewPacket* out_pac
 
 	// Obtain all geometries from the current scene.
 
-	TArray<GeometryDistance> GeometryDistances;
+	std::vector<GeometryDistance> GeometryDistances;
 
 	for (uint32_t i = 0; i < MeshData->mesh_count; ++i) {
 		Mesh* pMesh = MeshData->meshes[i];
@@ -104,13 +104,13 @@ bool RenderViewWorld::OnBuildPacket(void* data, struct RenderViewPacket* out_pac
 				gDist.distance = Dabs(Distance);
 				gDist.g = RenderData;
 
-				GeometryDistances.Push(gDist);
+				GeometryDistances.push_back(gDist);
 			}
 		}
 	}
 
 	// Sort the distances.
-	uint32_t GeometryCount = (uint32_t)GeometryDistances.Size();
+	uint32_t GeometryCount = (uint32_t)GeometryDistances.size();
 	QuickSort(GeometryDistances, 0, GeometryCount - 1, true);
 
 	// Add them to packet geometry.
@@ -119,7 +119,8 @@ bool RenderViewWorld::OnBuildPacket(void* data, struct RenderViewPacket* out_pac
 		out_packet->geometry_count++;
 	}
 
-	GeometryDistances.Clear();
+	GeometryDistances.clear();
+	std::vector<GeometryDistance>().swap(GeometryDistances);
 
 	return true;
 }
@@ -128,6 +129,8 @@ bool RenderViewWorld::OnBuildPacket(void* data, struct RenderViewPacket* out_pac
 void RenderViewWorld::OnDestroyPacket(struct RenderViewPacket* packet) const {
 	// No much to do here, just zero mem.
 	packet->geometries.clear();
+	std::vector<GeometryRenderData>().swap(packet->geometries);
+
 	Memory::Zero(packet, sizeof(RenderViewPacket));
 }
 
@@ -190,7 +193,7 @@ static void Swap(GeometryDistance* a, GeometryDistance* b) {
 	*b = temp;
 }
 
-static int Partition(TArray<GeometryDistance> arr, int low_index, int high_index, bool ascending) {
+static int Partition(std::vector<GeometryDistance>& arr, int low_index, int high_index, bool ascending) {
 	GeometryDistance Privot = arr[high_index];
 	int i = (low_index - 1);
 
@@ -213,7 +216,7 @@ static int Partition(TArray<GeometryDistance> arr, int low_index, int high_index
 	return i + 1;
 }
 
-static void QuickSort(TArray<GeometryDistance> arr, int low_index, int high_index, bool ascending) {
+static void QuickSort(std::vector<GeometryDistance>& arr, int low_index, int high_index, bool ascending) {
 	if (low_index < high_index) {
 		int PartitionIndex = Partition(arr, low_index, high_index, ascending);
 

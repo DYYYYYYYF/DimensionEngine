@@ -232,7 +232,6 @@ void JobSystem::ProcessQueue(RingQueue<JobInfo>* queue, Mutex* queue_mutex) {
 				}
 
 				thread->info = info;
-				LOG_INFO("Assigning job to thread: %u.", thread->index);
 				ThreadFound = true;
 			}
 

@@ -465,7 +465,7 @@ bool VulkanBackend::EndFrame(double delta_time) {
 	// Each semaphore waits on the corresponding pipeline stage to complete. 1:1 ratio.
 	// vk::PipelineStageFlagBits::eColor_Attachment_Ouput prevents subsequent color attachment.
 	// Writes from executing until the semaphore signals
-  std::array<vk::PipelineStageFlags,1> Flags = { vk::PipelineStageFlagBits::eColorAttachmentOutput };
+	std::array<vk::PipelineStageFlags,1> Flags = { vk::PipelineStageFlagBits::eColorAttachmentOutput };
 	SubmitInfo.setWaitDstStageMask(Flags);
 
 	if (Context.Device.GetGraphicsQueue().submit(1, &SubmitInfo, Context.InFlightFences[Context.CurrentFrame]) != vk::Result::eSuccess) {

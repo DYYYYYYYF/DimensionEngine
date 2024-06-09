@@ -194,6 +194,7 @@ bool IRenderer::DrawFrame(SRenderPacket* packet) {
 		}
 		else {
 			// Skip rendering the frame and try again next time.
+			Platform::PlatformSleep(16);
 			return true;
 		}
 	}

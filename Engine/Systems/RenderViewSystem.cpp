@@ -142,7 +142,7 @@ IRenderView* RenderViewSystem::Get(const char* name) {
 }
 
 bool RenderViewSystem::BuildPacket(const IRenderView* view, void* data, struct RenderViewPacket* out_packet) {
-	if (out_packet) {
+	if (out_packet && view) {
 		return view->OnBuildPacket(data, out_packet);
 	}
 
@@ -150,5 +150,9 @@ bool RenderViewSystem::BuildPacket(const IRenderView* view, void* data, struct R
 }
 
 bool RenderViewSystem::OnRender(const IRenderView* view, RenderViewPacket* packet, size_t frame_number, size_t render_target_index) {
-	return view->OnRender(packet, Renderer->GetRenderBackend(), frame_number, render_target_index);
+	if (view && Renderer) {
+		return view->OnRender(packet, Renderer->GetRenderBackend(), frame_number, render_target_index);
+	}
+
+	return false;
 }
