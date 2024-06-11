@@ -27,9 +27,8 @@ bool VulkanBuffer::Create(VulkanContext* context, size_t size, vk::BufferUsageFl
 	ASSERT(Buffer);
 
 	// Gather memory requirements
-	vk::MemoryRequirements MemRequirements;
-	MemRequirements = context->Device.GetLogicalDevice().getBufferMemoryRequirements(Buffer);
-	MemoryIndex = context->FindMemoryIndex(MemRequirements.memoryTypeBits, MemoryPropertyFlags);
+	MemoryRequirements = context->Device.GetLogicalDevice().getBufferMemoryRequirements(Buffer);
+	MemoryIndex = context->FindMemoryIndex(MemoryRequirements.memoryTypeBits, MemoryPropertyFlags);
 	if (MemoryIndex == -1) {
 		LOG_ERROR("Unable to create vulkan buffer because the required memory type index was not found.");
 
@@ -39,11 +38,16 @@ bool VulkanBuffer::Create(VulkanContext* context, size_t size, vk::BufferUsageFl
 
 	// Allocate memory info
 	vk::MemoryAllocateInfo AllocateInfo;
-	AllocateInfo.setAllocationSize(MemRequirements.size)
+	AllocateInfo.setAllocationSize(MemoryRequirements.size)
 		.setMemoryTypeIndex((uint32_t)MemoryIndex);
 
 	Memory = context->Device.GetLogicalDevice().allocateMemory(AllocateInfo, context->Allocator);
 	ASSERT(Memory);
+
+	// Determine if memory is on a device heap.
+	bool IsDeviceMemory = (MemoryPropertyFlags & vk::MemoryPropertyFlagBits::eDeviceLocal) == vk::MemoryPropertyFlagBits::eDeviceLocal;
+	// Report memory as in-use
+	Memory::AllocateReport(MemoryRequirements.size, IsDeviceMemory ? MemoryType::eMemory_Type_GPU_Local : MemoryType::eMemory_Type_Vulkan);
 
 	if (bind_on_create) {
 		Bind(context, Buffer, Memory, 0);
@@ -66,6 +70,11 @@ void VulkanBuffer::Destroy(VulkanContext* context) {
 		context->Device.GetLogicalDevice().destroyBuffer(Buffer, context->Allocator);
 		Buffer = nullptr;
 	}
+
+	// Report the free memory.
+	bool IsDeviceMemory = (MemoryPropertyFlags & vk::MemoryPropertyFlagBits::eDeviceLocal) == vk::MemoryPropertyFlagBits::eDeviceLocal;
+	Memory::FreeReport(MemoryRequirements.size, IsDeviceMemory ? MemoryType::eMemory_Type_GPU_Local : MemoryType::eMemory_Type_Vulkan);
+	Memory::Zero(&MemoryRequirements, sizeof(vk::MemoryRequirements));
 
 	TotalSize = 0;
 	IsLocked = false;
@@ -129,6 +138,12 @@ bool VulkanBuffer::Resize(VulkanContext* context, size_t size, vk::Queue queue, 
 		context->Device.GetLogicalDevice().destroyBuffer(Buffer, context->Allocator);
 		Buffer = nullptr;
 	}
+
+	// Report the free of memory.
+	bool IsDeviceMemory = (MemoryPropertyFlags & vk::MemoryPropertyFlagBits::eDeviceLocal) == vk::MemoryPropertyFlagBits::eDeviceLocal;
+	Memory::FreeReport(MemoryRequirements.size, IsDeviceMemory ? MemoryType::eMemory_Type_GPU_Local : MemoryType::eMemory_Type_Vulkan);
+	MemoryRequirements = MemRequirements;
+	Memory::AllocateReport(MemoryRequirements.size, IsDeviceMemory ? MemoryType::eMemory_Type_GPU_Local : MemoryType::eMemory_Type_Vulkan);
 
 	// Set new properties
 	TotalSize = size;

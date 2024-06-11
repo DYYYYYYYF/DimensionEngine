@@ -36,6 +36,8 @@ public:
 	vk::Image Image;
 	vk::DeviceMemory DeviceMemory;
 	vk::ImageView ImageView;
+	vk::MemoryRequirements MemoryRequirements;
+	vk::MemoryPropertyFlags MemoryFlags;
 	uint32_t Width;
 	uint32_t Height;
 };

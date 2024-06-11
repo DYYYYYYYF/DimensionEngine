@@ -9,6 +9,7 @@ void VulkanImage::CreateImage(VulkanContext* context, TextureType type, uint32_t
 	vk::ImageUsageFlags usage, vk::MemoryPropertyFlags memory_flags, bool create_view, vk::ImageAspectFlags view_aspect_flags) {
 	Width = width;
 	Height = height;
+	MemoryFlags = memory_flags;
 
 	vk::Device LogicalDevice = context->Device.GetLogicalDevice();
 
@@ -45,9 +46,7 @@ void VulkanImage::CreateImage(VulkanContext* context, TextureType type, uint32_t
 	ASSERT(Image);
 
 	// Query memory requirements
-	vk::MemoryRequirements MemoryRequirements;
 	MemoryRequirements = LogicalDevice.getImageMemoryRequirements(Image);
-
 	uint32_t MemoryType = context->FindMemoryIndex(MemoryRequirements.memoryTypeBits, memory_flags);
 	if (MemoryType == -1) {
 		LOG_ERROR("Required memory type not found. Image not vaild.");
@@ -62,6 +61,10 @@ void VulkanImage::CreateImage(VulkanContext* context, TextureType type, uint32_t
 
 	// Bind memory
 	LogicalDevice.bindImageMemory(Image, DeviceMemory, 0);
+
+	// Report the memory as in-use.
+	bool IsDeviceMemory = (MemoryFlags & vk::MemoryPropertyFlagBits::eDeviceLocal) == vk::MemoryPropertyFlagBits::eDeviceLocal;
+	Memory::AllocateReport(MemoryRequirements.size, IsDeviceMemory ? MemoryType::eMemory_Type_GPU_Local : MemoryType::eMemory_Type_Vulkan);
 
 	// Create image view
 	if (create_view) {
@@ -113,6 +116,11 @@ void VulkanImage::Destroy(VulkanContext* context) {
 		LogicalDevice.destroyImage(Image, context->Allocator);
 		Image = nullptr;
 	}
+
+	// Report the memory as no longer in-use.
+	bool IsDeviceMemory = (MemoryFlags & vk::MemoryPropertyFlagBits::eDeviceLocal) == vk::MemoryPropertyFlagBits::eDeviceLocal;
+	Memory::FreeReport(MemoryRequirements.size, IsDeviceMemory ? MemoryType::eMemory_Type_GPU_Local : MemoryType::eMemory_Type_Vulkan);
+	Memory::Zero(&MemoryRequirements, sizeof(vk::MemoryRequirements));
 }
 
 void VulkanImage::TransitionLayout(VulkanContext* context, TextureType type, VulkanCommandBuffer* command_buffer, vk::ImageLayout old_layout, vk::ImageLayout new_layout) {

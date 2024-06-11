@@ -3,7 +3,7 @@
 #include "Core/DMemory.hpp"
 #include "Core/EngineLogger.hpp"
 
-#ifdef DVULKAN_USE_CUSTOM_ALLOCATOR == 1
+#if DVULKAN_USE_CUSTOM_ALLOCATOR == 1
 void* VulkanAllocator::Allocation(void* user_data, size_t size, size_t alignment, VkSystemAllocationScope allocation_scope) {
 	// nullptr must be returned if this fails.
 	if (size == 0) {

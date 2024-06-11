@@ -40,6 +40,7 @@ public:
 	vk::BufferUsageFlags Usage;
 	bool IsLocked;
 	vk::DeviceMemory Memory;
+	vk::MemoryRequirements MemoryRequirements;
 	int MemoryIndex;
 	vk::MemoryPropertyFlags MemoryPropertyFlags;
 	bool UseFreelist;

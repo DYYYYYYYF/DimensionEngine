@@ -14,7 +14,7 @@
 
 class VulkanAllocator {
 public:
-#ifdef DVULKAN_USE_CUSTOM_ALLOCATOR == 1
+#if DVULKAN_USE_CUSTOM_ALLOCATOR == 1
 	static void* Allocation(void* user_data, size_t size, size_t alignment, VkSystemAllocationScope allocation_scope);
 	static void Free(void* user_date, void* memory);
 	static void* Reallocation(void* user_data, void* origin, size_t size, size_t alignment, VkSystemAllocationScope allocation_scope);
