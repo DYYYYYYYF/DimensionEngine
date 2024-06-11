@@ -2,6 +2,7 @@
 #include "VulkanPlatform.hpp"
 #include "VulkanDevice.hpp"
 #include "VulkanImage.hpp"
+#include "VulkanAllocator.hpp"
 
 #include "Core/EngineLogger.hpp"
 #include "Containers/TArray.hpp"
@@ -47,7 +48,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL VulkanDebugCallback(
 
 
 VulkanBackend::VulkanBackend() {
-	// TODO: Custom allocator;
+
 	Context.Allocator = nullptr;
 
 	// TODO: Implement muti-thread
@@ -62,6 +63,18 @@ VulkanBackend::~VulkanBackend() {
 
 bool VulkanBackend::Initialize(const RenderBackendConfig* config, unsigned char* out_window_render_target_count, struct SPlatformState* plat_state) {
 	Context.OnRenderTargetRefreshRequired = config->OnRenderTargetRefreshRequired;
+
+	// NOTE: Custom allocator;
+#if DVULKAN_USE_CUSTOM_ALLOCATOR == 1
+	Context.Allocator = (vk::AllocationCallbacks*)Memory::Allocate(sizeof(vk::AllocationCallbacks), MemoryType::eMemory_Type_Renderer);
+	if (Context.Allocator != nullptr) {
+		if (!VulkanAllocator::Create(Context.Allocator, &Context)) {
+			LOG_WARN("Failed to create custom vulkan allocator! Continuing using the default allocator.");
+			Memory::Free(Context.Allocator, sizeof(vk::AllocationCallbacks), MemoryType::eMemory_Type_Application);
+			Context.Allocator = nullptr;
+		}
+	}
+#endif
 
 	vk::ApplicationInfo ApplicationInfo;
 	vk::InstanceCreateInfo InstanceInfo;
@@ -89,15 +102,44 @@ bool VulkanBackend::Initialize(const RenderBackendConfig* config, unsigned char*
 	}
 	LOG_DEBUG("%s", output.c_str());
 #endif
-	InstanceInfo.setEnabledExtensionCount((uint32_t)RequiredExtensions.size())
-		.setPEnabledExtensionNames(RequiredExtensions);
+
+	// Extemsop
+	uint32_t AvailableExtensionsCount = 0;
+	vk::Result Result = vk::enumerateInstanceExtensionProperties(nullptr, &AvailableExtensionsCount, nullptr);
+	if (Result != vk::Result::eSuccess) {
+		LOG_FATAL("Enum instance extension properties failed.");
+		return false;
+	}
+	std::vector<vk::ExtensionProperties> AvailableExtensions;
+	AvailableExtensions.resize(AvailableExtensionsCount);
+	Result = vk::enumerateInstanceExtensionProperties(nullptr, &AvailableExtensionsCount, AvailableExtensions.data());
+	ASSERT(Result == vk::Result::eSuccess);
+
+	// Verify all extensions are available.
+	for (uint32_t i = 0; i < RequiredExtensions.size(); ++i) {
+		bool Found = false;
+		for (uint32_t j = 0; j < AvailableExtensionsCount; j++) {
+			if (strcmp(RequiredExtensions[i], AvailableExtensions[j].extensionName) == 0) {
+				Found = true;
+				LOG_INFO("Required extension found: %s.", RequiredExtensions[i]);
+				break;
+			}
+		}
+
+		if (!Found) {
+			LOG_FATAL("Required extension is missing: %s!", RequiredExtensions[i]);
+			return false;
+		}
+	}
+
+	AvailableExtensions.clear();
+	std::vector<vk::ExtensionProperties>().swap(AvailableExtensions);
 
 	// Validation layers
 	std::vector<const char*> RequiredValidationLayerName;
 
 #ifdef LEVEL_DEBUG
 	LOG_INFO("Validation layers enabled. Enumerating ...");
-
 	// List of validation layers required
 	RequiredValidationLayerName.push_back("VK_LAYER_KHRONOS_validation");
 
@@ -136,7 +178,14 @@ bool VulkanBackend::Initialize(const RenderBackendConfig* config, unsigned char*
 		}
 	}
 
+	AvailableLayers.clear();
+	std::vector<vk::LayerProperties>().swap(AvailableLayers);
 #endif
+
+	// Extensions
+	InstanceInfo.setEnabledExtensionCount((uint32_t)RequiredExtensions.size())
+		.setPEnabledExtensionNames(RequiredExtensions);
+	// Layers
 	InstanceInfo.setEnabledLayerCount((uint32_t)RequiredValidationLayerName.size())
 		.setPEnabledLayerNames(RequiredValidationLayerName);
 
@@ -157,7 +206,7 @@ bool VulkanBackend::Initialize(const RenderBackendConfig* config, unsigned char*
 	// | vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose;
 
 	vk::DebugUtilsMessageTypeFlagsEXT MessageType =
-#if not defined(DPLATFORM_MACOS)
+#if !defined(DPLATFORM_MACOS)
 		vk::DebugUtilsMessageTypeFlagBitsEXT::eDeviceAddressBinding |
 #endif
 		vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral |
@@ -354,6 +403,11 @@ void VulkanBackend::Shutdown() {
 	LOG_DEBUG("Destroying vulkan instance...");
 	Context.Instance.destroy(Context.Allocator);
 
+	// Destroy the allocator callbacks if set.
+	if (Context.Allocator) {
+		Memory::Free(Context.Allocator, sizeof(vk::AllocationCallbacks), MemoryType::eMemory_Type_Renderer);
+		Context.Allocator = nullptr;
+	}
 }
 
 bool VulkanBackend::BeginFrame(double delta_time){
@@ -913,7 +967,7 @@ bool VulkanBackend::VerifyShaderID(uint32_t shader_id) {
 bool VulkanBackend::VerifyShaderID(uint32_t shader_id) {
 	return true;
 }
-#endif
+#endif	// LEVEL_DEBUG
 
 // The index of the global descriptor set.
 const uint32_t DESC_SET_INDEX_GLOBAL = 0;
