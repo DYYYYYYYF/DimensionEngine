@@ -18,6 +18,7 @@ public:
 	static void* Allocation(void* user_data, size_t size, size_t alignment, VkSystemAllocationScope allocation_scope);
 	static void Free(void* user_date, void* memory);
 	static void* Reallocation(void* user_data, void* origin, size_t size, size_t alignment, VkSystemAllocationScope allocation_scope);
+	static void InternalAlloc(void* pUserData, size_t size, VkInternalAllocationType allocationType, VkSystemAllocationScope allocationScope);
 	static void InternalFree(void* pUserData, size_t size, VkInternalAllocationType allocationType, VkSystemAllocationScope allocationScope);
 	static bool Create(vk::AllocationCallbacks* callbacks, class VulkanContext* context);
 #endif

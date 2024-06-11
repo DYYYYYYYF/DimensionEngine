@@ -10,7 +10,7 @@ void* VulkanAllocator::Allocation(void* user_data, size_t size, size_t alignment
 		return nullptr;
 	}
 
-	void* Result = Memory::AllocateAligned(size, (unsigned)alignment, MemoryType::eMemory_Type_Vulkan);
+	void* Result = Memory::AllocateAligned(size, alignment, MemoryType::eMemory_Type_Vulkan);
 #ifdef DVULKAN_ALLOCATOR_TRACE
 	LOG_INFO("Allocated block %p. Size=%llu, Alignment=%llu.", Result, size, alignment);
 #endif
@@ -42,8 +42,8 @@ void VulkanAllocator::Free(void* user_date, void* memory) {
 	}
 }
 
-void* VulkanAllocator::Reallocation(void* user_data, void* origin, size_t size, size_t alignment, VkSystemAllocationScope allocation_scope) {
-	if (origin == nullptr) {
+void* VulkanAllocator::Reallocation(void* user_data, void* original, size_t size, size_t alignment, VkSystemAllocationScope allocation_scope) {
+	if (original == nullptr) {
 		return Allocation(user_data, size, alignment, allocation_scope);
 	}
 
@@ -54,9 +54,9 @@ void* VulkanAllocator::Reallocation(void* user_data, void* origin, size_t size, 
 	// NOTE: If pOriginal is not nullptr, the same alignment must be used for the new allocation as original.
 	size_t alloc_size;
 	unsigned short alloc_alignment;
-	bool IsAligned = Memory::GetAlignmentSize(origin, &alloc_size, &alloc_alignment);
+	bool IsAligned = Memory::GetAlignmentSize(original, &alloc_size, &alloc_alignment);
 	if (!IsAligned) {
-		LOG_ERROR("VulkanAllocReallocation of unaligned block %p.", origin);
+		LOG_ERROR("VulkanAllocReallocation of unaligned block %p.", original);
 		return nullptr;
 	}
 
@@ -66,30 +66,37 @@ void* VulkanAllocator::Reallocation(void* user_data, void* origin, size_t size, 
 	}
 
 #ifdef DVULKAN_ALLOCATOR_TRACE
-	LOG_INFO("Attempting to realloc block %p.", origin);
+	LOG_INFO("Attempting to realloc block %p.", original);
 #endif
 
 	void* Result = Allocation(user_data, size, alloc_alignment, allocation_scope);
 	if (Result) {
 #ifdef DVULKAN_ALLOCATOR_TRACE
-		LOG_INFO("Block %p reallocated to %p, copying data.", origin, Result);
+		LOG_INFO("Block %p reallocated to %p, copying data.", original, Result);
 #endif
 
 		// Copy over the original memory.
-		Memory::Copy(Result, origin, size);
+		Memory::Copy(Result, original, size);
 #ifdef DVULKAN_ALLOCATOR_TRACE
-		LOG_INFO("Freeing original aligned block %p.", origin);
+		LOG_INFO("Freeing original aligned block %p.", original);
 #endif
 		// Free the original memory only if the new allocation was successful.
-		Memory::FreeAligned(origin, alloc_size, alloc_alignment, MemoryType::eMemory_Type_Vulkan);
+		Memory::FreeAligned(original, alloc_size, alloc_alignment, MemoryType::eMemory_Type_Vulkan);
 	}
 	else {
 #ifdef DVULKAN_ALLOCATOR_TRACE
-		LOG_ERROR("Failed to realloc %p.", origin);
+		LOG_ERROR("Failed to realloc %p.", original);
 #endif
 	}
 
 	return Result;
+}
+
+void VulkanAllocator::InternalAlloc(void* pUserData, size_t size, VkInternalAllocationType allocationType, VkSystemAllocationScope allocationScope) {
+#ifdef DVULKAN_ALLOCATOR_TRACE
+	LOG_INFO("External allocation of size: %llu.", size);
+#endif
+	Memory::AllocateReport(size, MemoryType::eMemory_Type_Vulkan_EXT);
 }
 
 void VulkanAllocator::InternalFree(void* pUserData, size_t size, VkInternalAllocationType allocationType, VkSystemAllocationScope allocationScope) {
@@ -107,7 +114,8 @@ bool VulkanAllocator::Create(vk::AllocationCallbacks* callbacks, class VulkanCon
 	callbacks->setPfnAllocation(VulkanAllocator::Allocation);
 	callbacks->setPfnReallocation(VulkanAllocator::Reallocation);
 	callbacks->setPfnFree(VulkanAllocator::Free);
-	callbacks->setPfnInternalAllocation(VulkanAllocator::InternalFree);
+	callbacks->setPfnInternalAllocation(VulkanAllocator::InternalAlloc);
+	callbacks->setPfnInternalFree(VulkanAllocator::InternalFree);
 	callbacks->setPUserData(context);
 	return true;
 }

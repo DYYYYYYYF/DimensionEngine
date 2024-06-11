@@ -118,7 +118,7 @@ bool DynamicAllocator::FreeAligned(void* block) {
 bool DynamicAllocator::GetAlignmentSize(void* block, size_t* out_size, unsigned short* out_alignment) {
 	// Get the header.
 	*out_size = *(uint32_t*)((size_t)block - DSIZE_STORAGE);
-	AllocHeader* Header = (AllocHeader*)((size_t*)block + *out_size);
+	AllocHeader* Header = (AllocHeader*)((size_t)block + *out_size);
 	*out_alignment = Header->alignment;
 	return true;
 }
