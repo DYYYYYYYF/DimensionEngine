@@ -24,14 +24,7 @@ public:
 		Head = q.Head;
 		Tail = q.Tail;
 		OwnsMemory = q.OwnsMemory;
-
-		if (OwnsMemory) {
-			Block = memory;
-		}
-		else {
-			Block = (ElementType*)Platform::PlatformAllocate(Capacity * Stride, false);
-			Platform::PlatformCopyMemory(Block, q.Block, Capacity * Stride);
-		}
+		Block = q.Block
 	}
 
 	/**
