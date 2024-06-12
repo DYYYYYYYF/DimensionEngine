@@ -1,18 +1,8 @@
-[[vk::binding(0, 1)]] Texture2D DiffuseTexture : register(t1);
-[[vk::binding(1, 1)]] SamplerState DiffuseSampler : register(s1);
-
-struct LocalUniformObject
-{
-    float4 DiffusrColor;
-};
+#include "Builtin.UIShader.structures"
 
 [[vk::binding(0, 1)]] LocalUniformObject localuniform;
-
-struct PSInput
-{
-    [[vk::location(0)]] float4 inColor : COLOR0;
-    [[vk::location(1)]] float2 texCoord : TEXCOORD0;
-};
+[[vk::binding(1, 1)]] Texture2D DiffuseTexture;
+[[vk::binding(1, 1)]] SamplerState DiffuseSampler;
 
 float4 main(PSInput pin) : SV_TARGET
 {

@@ -1,0 +1,40 @@
+/*
+    Builtin.UIShader.vert
+*/
+struct UBO
+{
+    column_major matrix proj;
+    column_major matrix view;
+};
+
+struct PushConstant
+{
+    column_major matrix model;
+};
+
+struct VSInput
+{
+    [[vk::location(0)]] float2 vPosition : POSITION0;
+    [[vk::location(1)]] float2 vTexCoord : TEXCOORD0;
+};
+
+struct VSOutput
+{
+    float4 outPosition : SV_POSITION;
+    [[vk::location(0)]] float4 outColor : COLOR0;
+    [[vk::location(1)]] float2 texCoord : TEXCOORD0;
+};
+
+/*
+    Builtin.UIShader.frag
+*/
+struct LocalUniformObject
+{
+    float4 DiffusrColor;
+};
+
+struct PSInput
+{
+    [[vk::location(0)]] float4 inColor : COLOR0;
+    [[vk::location(1)]] float2 texCoord : TEXCOORD0;
+};
