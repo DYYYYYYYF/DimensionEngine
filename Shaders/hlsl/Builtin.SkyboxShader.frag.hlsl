@@ -1,12 +1,12 @@
 struct FSSkyboxInput
 {
-    [[vk::location(0)]] float3 vTexcoord;
+    [[vk::location(0)]] float3 vTexcoord : TEXCOORD0;
 };
 
 // Samplers
 const int SAMP_DIFFUSE = 0;
-[[vk::binding(1, 0)]] TextureCube SkyboxTextures[];
-[[vk::binding(1, 0)]] SamplerState SkyboxSamplers[];
+[[vk::binding(0, 1)]] TextureCube SkyboxTextures[];
+[[vk::binding(0, 1)]] SamplerState SkyboxSamplers[];
 
 float4 main(FSSkyboxInput input) : SV_TARGET
 {
