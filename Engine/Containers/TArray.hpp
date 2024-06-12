@@ -31,10 +31,7 @@ public:
 		Capacity = arr.Capacity;
 		Stride = arr.Stride;
 		Length = arr.Length;
-
-		size_t ArrayMemSize = Capacity * Length;
-		ArrayMemory = Platform::PlatformAllocate(ArrayMemSize, false);
-		Platform::PlatformCopyMemory(ArrayMemory, arr.ArrayMemory, Stride * Length);
+		ArrayMemory = arr.ArrayMemory;
 	}
 
 	TArray(size_t size) {
