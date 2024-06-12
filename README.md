@@ -1,4 +1,4 @@
-o# Dimension Engine
+## Dimension Engine
 3D-Rendering of Vulkan 
 
 CMake Files: (MacOS required Vulkan)
@@ -45,5 +45,5 @@ Vulkan: https://www.vulkan.org
 
 UncleDon-Logger: https://github.com/DYYYYYYYF/UncleDon-Logger
 
-stb: https://github.com/nothings/stb/tree/ae721c50eaf761660b4f90cc590453cdb0c2acd0
+stb: https://github.com/nothings/stb/tree/master
 
