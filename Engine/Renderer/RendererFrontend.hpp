@@ -27,7 +27,7 @@ public:
 	virtual bool DrawFrame(SRenderPacket* packet);
 
 	virtual void CreateTexture(const unsigned char* pixels, Texture* texture);
-	virtual void DestroyTexture(Texture* txture);
+	virtual void DestroyTexture(Texture* texture);
 
 	virtual void CreateWriteableTexture(Texture* tex);
 	virtual void ResizeTexture(Texture* tex, uint32_t new_width, uint32_t new_height);

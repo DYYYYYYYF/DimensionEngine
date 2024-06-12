@@ -4,7 +4,7 @@
 
 // NOTE: If wanting to trace allocations, uncomment this.
 #ifndef DVULKAN_ALLOCATOR_TRACE
-#define DVULKAN_ALLOCATOR_TRACE 1
+//#define DVULKAN_ALLOCATOR_TRACE 1
 #endif
 
 // NOTE: To disable the custom allocator, comment this out or set to 0.

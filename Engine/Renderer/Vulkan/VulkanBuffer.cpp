@@ -15,7 +15,9 @@ bool VulkanBuffer::Create(VulkanContext* context, size_t size, vk::BufferUsageFl
 
 	// Create a new freelist.
 	if (UseFreelist) {
-		BufferFreelist.Create(size);
+		if (!BufferFreelist.Create(size)) {
+			return false;
+		}
 	}
 
 	vk::BufferCreateInfo BufferInfo;

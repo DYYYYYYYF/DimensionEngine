@@ -18,7 +18,7 @@ public:
 	* 
 	* @param total_size The total size in bytes that the free list should track.
 	*/
-	void Create(size_t total_size);
+	bool Create(size_t total_size);
 
 	/*
 	* @brief Destroys list.

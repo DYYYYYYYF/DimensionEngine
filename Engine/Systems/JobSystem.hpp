@@ -91,9 +91,9 @@ public:
 
 	JobType type;
 	JobPriority priority;
-	PFN_OnJobStart entry_point;
-	PFN_OnJobComplete on_success;
-	PFN_OnJobComplete on_failed;
+	PFN_OnJobStart entry_point = nullptr;
+	PFN_OnJobComplete on_success = nullptr;
+	PFN_OnJobComplete on_failed = nullptr;
 
 	void* param_data = nullptr;
 	unsigned int param_data_size;
@@ -114,7 +114,7 @@ struct JobThread {
 
 struct JobResultEntry {
 	unsigned short id;
-	PFN_OnJobComplete callback;
+	PFN_OnJobComplete callback = nullptr;
 	uint32_t param_size;
 	void* params = nullptr;
 };

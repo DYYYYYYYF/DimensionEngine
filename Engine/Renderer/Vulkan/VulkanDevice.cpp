@@ -1,11 +1,18 @@
 #include "VulkanDevice.hpp"
+#include "VulkanContext.hpp"
 #include "Containers/TArray.hpp"
 
-bool VulkanDevice::Create(vk::Instance* context, vk::AllocationCallbacks* allocator, vk::SurfaceKHR surface) {
-	if (!SelectPhysicalDevice(context, surface)) {
+bool VulkanDevice::Create(VulkanContext* context, vk::SurfaceKHR surface) {
+	if (context == nullptr) {
+		LOG_ERROR("VulkanDevice::Create() Required a valid VulkanContext point.");
 		return false;
 	}
+	Context = context;
 	
+	if (!SelectPhysicalDevice(surface)) {
+		return false;
+	}
+
 	LOG_INFO("Creating logical device...");
 	// NOTE: Do not create additional queues for shared indices.
 	bool PresentSharesGraphicsQueue = QueueFamilyInfo.graphics_index == QueueFamilyInfo.present_index;
@@ -54,7 +61,7 @@ bool VulkanDevice::Create(vk::Instance* context, vk::AllocationCallbacks* alloca
 		.setEnabledExtensionCount(1)
 		.setPEnabledExtensionNames(ExtensionName);
 
-	LogicalDevice = PhysicalDevice.createDevice(DeviceCreateInfo, allocator);
+	LogicalDevice = PhysicalDevice.createDevice(DeviceCreateInfo, Context->Allocator);
 	ASSERT(LogicalDevice);
 	LOG_INFO("Created logical device.");
 
@@ -67,14 +74,14 @@ bool VulkanDevice::Create(vk::Instance* context, vk::AllocationCallbacks* alloca
 	vk::CommandPoolCreateInfo PoolCreateInfo;
 	PoolCreateInfo.setQueueFamilyIndex(QueueFamilyInfo.graphics_index)
 		.setFlags(vk::CommandPoolCreateFlagBits::eResetCommandBuffer);
-	GraphicsCommandPool = LogicalDevice.createCommandPool(PoolCreateInfo, allocator);
+	GraphicsCommandPool = LogicalDevice.createCommandPool(PoolCreateInfo, Context->Allocator);
 	ASSERT(GraphicsCommandPool);
 	LOG_INFO("Created graphics command pool.");
 
 	return true;
 }
 
-void VulkanDevice::Destroy(vk::Instance* context) {
+void VulkanDevice::Destroy() {
 
 	LOG_INFO("Releasing physical device resources...");
 	if (!SwapchainSupport.formats.empty()) {
@@ -92,8 +99,8 @@ void VulkanDevice::Destroy(vk::Instance* context) {
 	QueueFamilyInfo.transfer_index = -1;
 	QueueFamilyInfo.present_index = -1;
 
-	LogicalDevice.destroyCommandPool(GraphicsCommandPool);
-	LogicalDevice.destroy();
+	LogicalDevice.destroyCommandPool(GraphicsCommandPool, Context->Allocator);
+	LogicalDevice.destroy(Context->Allocator);
 }
 
 void VulkanDevice::QuerySwapchainSupport(vk::PhysicalDevice device, vk::SurfaceKHR surface, SSwapchainSupportInfo* support_info) {
@@ -133,18 +140,18 @@ void VulkanDevice::QuerySwapchainSupport(vk::PhysicalDevice device, vk::SurfaceK
 	}
 }
 
-bool VulkanDevice::SelectPhysicalDevice(vk::Instance* instance, vk::SurfaceKHR surface) {
+bool VulkanDevice::SelectPhysicalDevice(vk::SurfaceKHR surface) {
 	unsigned int PhysicalDeviceCount;
 	TArray<vk::PhysicalDevice> PhysicalDevices;
 
-	if (instance->enumeratePhysicalDevices(&PhysicalDeviceCount, nullptr) != vk::Result::eSuccess) {
+	if (Context->Instance.enumeratePhysicalDevices(&PhysicalDeviceCount, nullptr) != vk::Result::eSuccess) {
 		LOG_ERROR("Enumerate physical devices failed.");
 		return false;
 	}
 
 	ASSERT(PhysicalDeviceCount != 0);
 	PhysicalDevices.Resize(PhysicalDeviceCount);
-	if (instance->enumeratePhysicalDevices(&PhysicalDeviceCount, PhysicalDevices.Data()) != vk::Result::eSuccess) {
+	if (Context->Instance.enumeratePhysicalDevices(&PhysicalDeviceCount, PhysicalDevices.Data()) != vk::Result::eSuccess) {
 		LOG_FATAL("No devices support vulkan.");
 		return false;
 	}

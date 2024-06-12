@@ -3,6 +3,8 @@
 #include "vulkan/vulkan.hpp"
 #include "Core/EngineLogger.hpp"
 
+class VulkanContext;
+
 struct  SVulkanPhysicalDeviceRequirements {
 	bool graphics;
 	bool present;
@@ -31,8 +33,8 @@ struct SSwapchainSupportInfo {
 
 class VulkanDevice {
 public:
-	bool Create(vk::Instance* instance, vk::AllocationCallbacks* allocator, vk::SurfaceKHR surface);
-	void Destroy(vk::Instance* instance);
+	bool Create(VulkanContext* context, vk::SurfaceKHR surface);
+	void Destroy();
 
 public:
 	// Physical & logical device
@@ -70,13 +72,14 @@ public:
 	unsigned char GetDepthChannelCount() const { return DepthChannelCount; }
 
 private:
-	bool SelectPhysicalDevice(vk::Instance* instance, vk::SurfaceKHR surface);
+	bool SelectPhysicalDevice(vk::SurfaceKHR surface);
 	bool MeetsRequirements(vk::PhysicalDevice device, vk::SurfaceKHR surface, const vk::PhysicalDeviceProperties* properties,
 		const vk::PhysicalDeviceFeatures* features);
 
 
 private:
 	bool IsSupportDeviceLocalHostVisible;
+	VulkanContext* Context = nullptr;
 
 	vk::PhysicalDevice PhysicalDevice;
 	vk::Device LogicalDevice;

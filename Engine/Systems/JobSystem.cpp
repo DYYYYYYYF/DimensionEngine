@@ -105,6 +105,7 @@ uint32_t JobSystem::RunJobThread(void* param) {
 				LOG_ERROR("Failed to obtain lock on job thread mutex!");
 				break;
 			}
+			Thr->info.Release();
 			Memory::Zero(&Thr->info, sizeof(JobInfo));
 			if (!Thr->info_mutex.UnLock()) {
 				LOG_ERROR("Failed to release lock on job thread mutex!");

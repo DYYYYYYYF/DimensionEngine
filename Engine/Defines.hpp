@@ -12,6 +12,7 @@
 // Platforms
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__)
 #define DPLATFORM_WINDOWS 1
+#include <Cstddef>
 #ifndef _WIN64
 #error "64-bit is required on Windows"
 #endif
@@ -78,16 +79,16 @@
 #define KIGABYTES(amount) (amount * 1000)
 
 struct Range {
-	unsigned long long offset;
-	unsigned long long size;
+	size_t offset;
+	size_t size;
 };
 
 
-inline unsigned long long PaddingAligned(unsigned long long operand, unsigned long long granularity) {
+inline size_t PaddingAligned(size_t operand, size_t granularity) {
 	return ((operand + (granularity - 1)) & ~(granularity - 1));
 }
 
-inline Range PaddingAligned(unsigned long long offset, unsigned long long size, unsigned long long granularity) {
+inline Range PaddingAligned(size_t offset, size_t size, size_t granularity) {
 	return Range{ PaddingAligned(offset, granularity), PaddingAligned(size, granularity) };
 }
 

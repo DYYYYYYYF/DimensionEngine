@@ -239,7 +239,7 @@ bool VulkanBackend::Initialize(const RenderBackendConfig* config, unsigned char*
 
 	// Device
 	LOG_INFO("Creating vulkan device...");
-	if (!Context.Device.Create(&Context.Instance, Context.Allocator, Context.Surface)) {
+	if (!Context.Device.Create(&Context, Context.Surface)) {
 		LOG_ERROR("Create vulkan device failed.");
 		return false;
 	}
@@ -385,11 +385,12 @@ void VulkanBackend::Shutdown() {
 	Context.Swapchain.Destroy(&Context);
 
 	LOG_DEBUG("Destroying vulkan device.");
-	Context.Device.Destroy(&Context.Instance);
+	Context.Device.Destroy();
 
 	LOG_DEBUG("Destroying vulkan surface.");
 	if (Context.Surface) {
-		Context.Instance.destroy(Context.Surface, Context.Allocator);
+		// NOTE: For now, the surface allocated by default vulkan allocator.
+		Context.Instance.destroy(Context.Surface, nullptr);
 	}
 
 #ifdef LEVEL_DEBUG
@@ -685,9 +686,9 @@ void VulkanBackend::CreateTexture(const unsigned char* pixels, Texture* texture)
 	// Create a staging buffer and load data into it.
 	vk::BufferUsageFlags Usage = vk::BufferUsageFlagBits::eTransferSrc;
 	vk::MemoryPropertyFlags MemoryPropFlags = vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent;
+
 	VulkanBuffer Staging;
 	Staging.Create(&Context, ImageSize, Usage, MemoryPropFlags, true, false);
-
 	Staging.LoadData(&Context, 0, ImageSize, {}, pixels);
 
 	// NOTE: Lots of assumptions here, different texture types will require.

@@ -227,8 +227,8 @@ void IRenderer::CreateTexture(const unsigned char* pixels, Texture* texture) {
 	Backend->CreateTexture(pixels, texture);
 }
 
-void IRenderer::DestroyTexture(Texture* txture) {
-	Backend->DestroyTexture(txture);
+void IRenderer::DestroyTexture(Texture* texture) {
+	Backend->DestroyTexture(texture);
 }
 
 void IRenderer::CreateWriteableTexture(Texture* tex) {

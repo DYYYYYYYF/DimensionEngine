@@ -18,13 +18,18 @@ bool DynamicAllocator::Create(size_t total_size) {
 		return false;
 	}
 
-	List.Create(total_size);
 	TotalSize = total_size;
+	if (!List.Create(TotalSize)) {
+		return false;
+	}
+	
 	MemoryBlock = Platform::PlatformAllocate(total_size, false);
-	ASSERT(MemoryBlock);
+	if (MemoryBlock == nullptr) {
+		LOG_FATAL("DynamicAllocator::Create() Cannot allocate enough memory for dynamic allocator.");
+		return false;
+	}
 
 	Platform::PlatformSetMemory(MemoryBlock, 0, total_size);
-
 	return true;
 }
 
@@ -58,7 +63,7 @@ void* DynamicAllocator::AllocateAligned(size_t size, unsigned short alignment) {
 			void* ptr = (void*)((size_t)MemoryBlock + BaseOffset);
 			// Start the alignment after enough space to hold a u32. This allows for the u32 to be stored
 			// immediately before the user block, while maintaining alignment on said user block.
-			size_t AlignedBlockOffset = PaddingAligned((size_t)ptr + BaseOffset + DSIZE_STORAGE, alignment);
+			size_t AlignedBlockOffset = PaddingAligned((size_t)ptr + DSIZE_STORAGE, alignment);
 			// Store the size just before the user data block
 			uint32_t* BlockSize = (uint32_t*)(AlignedBlockOffset - DSIZE_STORAGE);
 			*BlockSize = (uint32_t)size;
@@ -88,17 +93,15 @@ bool DynamicAllocator::Free(void* block, size_t size) {
 }
 
 bool DynamicAllocator::FreeAligned(void* block) {
-	if (block == nullptr) {
+	if (block == nullptr || MemoryBlock == nullptr) {
 		LOG_ERROR("DynamicAllocator::FreeAligned(): Free requires a valid block (0x%p).", block);
 		return false;
 	}
 
-	size_t Sub = (size_t)block - (size_t)MemoryBlock;
-	bool IsOut = Sub > TotalSize;
-	if (MemoryBlock && IsOut) {
-		void* EndOfBlock = (char*)MemoryBlock + TotalSize;
+	void* EndOfBlock = (void*)((size_t)MemoryBlock + TotalSize);
+	if (block < MemoryBlock || block > EndOfBlock) {
 		LOG_ERROR("DynamicAllocator::FreeAligned(): Trying to release block (0x%p) outside of allocator range (0x%p)-(0x%p). Sub size: %uul, Total size: %uul.",
-			block, MemoryBlock, EndOfBlock, (char*)block - (char*)MemoryBlock, TotalSize);
+			block, MemoryBlock, EndOfBlock, (size_t)block - (size_t)MemoryBlock, TotalSize);
 		return false;
 	}
 

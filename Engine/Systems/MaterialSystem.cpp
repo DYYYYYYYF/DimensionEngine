@@ -210,7 +210,7 @@ Material* MaterialSystem::AcquireFromConfig(SMaterialConfig config) {
 
 void MaterialSystem::Release(const char* name) {
 	// Ignore release requests for the default material.
-	if (strcmp(name, DEFAULT_MATERIAL_NAME)) {
+	if (strcmp(name, DEFAULT_MATERIAL_NAME) == 0) {
 		return;
 	}
 
@@ -232,10 +232,6 @@ void MaterialSystem::Release(const char* name) {
 			Ref.handle = INVALID_ID;
 			Ref.auto_release = false;
 			LOG_INFO("Released material '%s'. Material unloaded.", name);
-		}
-		else {
-			LOG_INFO("Release material '%s'. Now has a reference count of '%i' (auto release = %s)", name,
-				Ref.reference_count, Ref.auto_release ? "True" : "False");
 		}
 
 		// Update the entry.

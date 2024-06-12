@@ -145,15 +145,15 @@ void* Memory::Set(void* dst, int val, size_t size) {
 
 const char* Memory::GetUnitForSize(size_t size_bytes, float* out_amount) {
 	if (size_bytes >= GIBIBYTES(1)) {
-		*out_amount = (float)size_bytes / (float)GIBIBYTES(1);
+		*out_amount = static_cast<float>((double)size_bytes / (double)GIBIBYTES(1));
 		return "GiB";
 	}
 	else if (size_bytes >= MEBIBYTES(1)) {
-		*out_amount = (float)size_bytes / (float)MEBIBYTES(1);
+		*out_amount = static_cast<float>((double)size_bytes / (double)MEBIBYTES(1));
 		return "MiB";
 	}
 	else if (size_bytes >= KIBIBYTES(1)) {
-		*out_amount = (float)size_bytes / (float)KIBIBYTES(1);
+		*out_amount = static_cast<float>((double)size_bytes / (double)KIBIBYTES(1));
 		return "KiB";
 	}
 	else {

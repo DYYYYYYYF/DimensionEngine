@@ -10,7 +10,7 @@ void* VulkanAllocator::Allocation(void* user_data, size_t size, size_t alignment
 		return nullptr;
 	}
 
-	void* Result = Memory::AllocateAligned(size, alignment, MemoryType::eMemory_Type_Vulkan);
+	void* Result = Memory::AllocateAligned(size, (unsigned short)alignment, MemoryType::eMemory_Type_Vulkan);
 #ifdef DVULKAN_ALLOCATOR_TRACE
 	LOG_INFO("Allocated block %p. Size=%llu, Alignment=%llu.", Result, size, alignment);
 #endif

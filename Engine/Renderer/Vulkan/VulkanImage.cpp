@@ -47,7 +47,7 @@ void VulkanImage::CreateImage(VulkanContext* context, TextureType type, uint32_t
 
 	// Query memory requirements
 	MemoryRequirements = LogicalDevice.getImageMemoryRequirements(Image);
-	uint32_t MemoryType = context->FindMemoryIndex(MemoryRequirements.memoryTypeBits, memory_flags);
+	uint32_t MemoryType = context->FindMemoryIndex(MemoryRequirements.memoryTypeBits, MemoryFlags);
 	if (MemoryType == -1) {
 		LOG_ERROR("Required memory type not found. Image not vaild.");
 	}
@@ -104,14 +104,17 @@ void VulkanImage::CreateImageView(VulkanContext* context, TextureType type, vk::
 
 void VulkanImage::Destroy(VulkanContext* context) {
 	vk::Device LogicalDevice = context->Device.GetLogicalDevice();
+
 	if (ImageView) {
 		LogicalDevice.destroyImageView(ImageView, context->Allocator);
 		ImageView = nullptr;
 	}
+
 	if (DeviceMemory) {
 		LogicalDevice.freeMemory(DeviceMemory, context->Allocator);
 		DeviceMemory = nullptr;
 	}
+
 	if (Image) {
 		LogicalDevice.destroyImage(Image, context->Allocator);
 		Image = nullptr;

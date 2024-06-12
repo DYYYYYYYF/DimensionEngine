@@ -4,7 +4,7 @@
 #include "Core/EngineLogger.hpp"
 #include "Platform/Platform.hpp"
 
-void Freelist::Create(size_t total_size) {
+bool Freelist::Create(size_t total_size) {
 	// Enough space to hold state, plus array for all nodes.
 	MaxEntries = (total_size / sizeof(void*));	// NOTO: This might have a remainder, but ok.
 	TotalSize = total_size;
@@ -12,10 +12,16 @@ void Freelist::Create(size_t total_size) {
 	if (MaxEntries == 0) {
 		LOG_WARN("Freelists are very inefficient with  amouts of memory less than %iB; it is recommended to not use freelist in this case.", 
 			total_size);
+		MaxEntries = 10;
 	}
 
 	size_t UesdSize = sizeof(FreelistNode) * MaxEntries;
 	ListMemory = Platform::PlatformAllocate(UesdSize, false);
+	if (ListMemory == nullptr) {
+		LOG_FATAL("Cannot allocate enough memory for freelist!");
+		return false;
+	}
+
 	Memory::Zero(ListMemory, UesdSize);
 
 	Nodes = (FreelistNode*)ListMemory;
@@ -31,6 +37,8 @@ void Freelist::Create(size_t total_size) {
 		Nodes[i].offset = INVALID_ID;
 		Nodes[i].size = INVALID_ID;
 	}
+
+	return true;
 }
 
 void Freelist::Destroy() {

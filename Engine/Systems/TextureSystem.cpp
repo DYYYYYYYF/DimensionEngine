@@ -147,7 +147,10 @@ Texture* TextureSystem::AcquireWriteable(const char* name, uint32_t width, uint3
 
 void TextureSystem::Release(const char* name) {
 	// Ignore release requests for the default texture.
-	if (strcmp(name, DEFAULT_TEXTURE_NAME) == 0) {
+	if (strcmp(name, DEFAULT_TEXTURE_NAME) == 0 ||
+		strcmp(name, DEFAULT_DIFFUSE_TEXTURE_NAME) == 0 ||
+		strcmp(name, DEFAULT_SPECULAR_TEXTURE_NAME) == 0 ||
+		strcmp(name, DEFAULT_NORMAL_TEXTURE_NAME) == 0 ) {
 		return;
 	}
 

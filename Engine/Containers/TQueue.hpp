@@ -17,6 +17,23 @@ public:
 		RingQueue(1024);
 	}
 
+	RingQueue(const RingQueue& q) {
+		Length = q.Length;
+		Capacity = q.Capacity;
+		Stride = q.Stride;
+		Head = q.Head;
+		Tail = q.Tail;
+		OwnsMemory = q.OwnsMemory;
+
+		if (OwnsMemory) {
+			Block = memory;
+		}
+		else {
+			Block = (ElementType*)Platform::PlatformAllocate(Capacity * Stride, false);
+			Platform::PlatformCopyMemory(Block, q.Block, Capacity * Stride);
+		}
+	}
+
 	/**
 	 * @brief Creates a new ring queue of the given capacity and stride.
 	 * 
@@ -68,7 +85,7 @@ public:
 		}
 
 		Tail = (Tail + 1) % Capacity;
-		Platform::PlatformCopyMemory(Block + (Tail * Stride), value, Stride);
+		Platform::PlatformCopyMemory(Block + Tail * Stride, value, Stride);
 		Length++;
 		return true;
 	}
@@ -89,7 +106,7 @@ public:
 			return false;
 		}
 
-		Platform::PlatformCopyMemory(out_val, Block + (Head * Stride), Stride);
+		Platform::PlatformCopyMemory(out_val, Block + Head * Stride, Stride);
 		Head = (Head + 1) % Capacity;
 		Length--;
 		return true;
@@ -111,7 +128,7 @@ public:
 			return false;
 		}
 
-		Platform::PlatformCopyMemory(out_val, Block + (Head * Stride), Stride);
+		Platform::PlatformCopyMemory(out_val, Block + Head * Stride, Stride);
 		return true;
 	}
 

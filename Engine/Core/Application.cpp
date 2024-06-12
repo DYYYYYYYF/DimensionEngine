@@ -566,22 +566,20 @@ bool ApplicationRun() {
 	Core::EventShutdown();
 	Core::InputShutdown();
 
+	RenderViewSystem::Shutdown();
 	CameraSystem::Shutdown();
 	GeometrySystem::Shutdown();
 	MaterialSystem::Shutdown();
 	TextureSystem::Shutdown();
-	ShaderSystem::Shutdown();
 	JobSystem::Shutdown();
+	ShaderSystem::Shutdown();
 
 	// Temp
 	Renderer->ReleaseTextureMap(&AppState.SB.Cubemap);
-
-	RenderViewSystem::Shutdown();
-	ResourceSystem::Shutdown();
-
 	Renderer->Shutdown();
 	Memory::Free(Renderer, sizeof(IRenderer), MemoryType::eMemory_Type_Renderer);
 
+	ResourceSystem::Shutdown();
 	Platform::PlatformShutdown(&AppState.platform);
 
 	return true;
