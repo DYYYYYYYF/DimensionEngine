@@ -3,15 +3,15 @@
 */
 struct UBO
 {
-    column_major matrix proj;
-    column_major matrix view;
+    float4x4 proj;
+    float4x4 view;
     float4 ambient_color;
     float3 view_position;
 };
 
 struct PushConstant
 {
-    column_major matrix model;
+    float4x4 model;
 };
 
 struct VSInput
@@ -59,4 +59,19 @@ struct PSInput
     [[vk::location(5)]] float4 vColor           : COLOR1;
     [[vk::location(6)]] float4 vTangent;
 	
+};
+
+struct DirectionalLight
+{
+    float3 direction;
+    float4 color;
+};
+
+struct PointLight
+{
+    float3 position;
+    float4 color;
+    float constant;
+    float linear_attenuation;
+    float quadratic;
 };

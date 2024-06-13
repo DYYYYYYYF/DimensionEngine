@@ -11,9 +11,9 @@ VSOutput main(VSInput input)
 	output.outTexcoord = input.vTexCoord;
     output.outAmbientColor = ubo.ambient_color;
     output.outViewPosition = ubo.view_position;
-    output.outFragPosition = float3(mul(push_constants.model, float4(input.vPosition, 1.0f)));
-    output.outNormal = normalize(mul(float3x3(push_constants.model), input.vNormal));
-    output.outTangent = float4(normalize(mul(float3x3(push_constants.model), float3(input.vTangent))), input.vTangent.w);
+    output.outFragPosition = mul(push_constants.model, float4(input.vPosition, 1.0f));
+    output.outNormal = normalize(mul(push_constants.model, float4(input.vNormal, 1.0f)));
+    output.outTangent = float4(normalize(mul(push_constants.model, input.vTangent)).xyz, input.vTangent.w);
 
 	return output;
 }
