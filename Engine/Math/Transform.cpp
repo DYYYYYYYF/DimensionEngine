@@ -78,7 +78,8 @@ Matrix4 Transform::GetLocal() {
 		Matrix4 T = Matrix4::FromTranslation(vPosition);
 		Matrix4 S = Matrix4::FromScale(vScale);
 		
-		Local = T.Multiply(R).Multiply(S);
+		Matrix4 TempLocal = R.Multiply(T);
+		Local = S.Multiply(TempLocal);
 		IsDirty = false;
 	}
 
@@ -89,7 +90,7 @@ Matrix4 Transform::GetWorldTransform() {
 	Matrix4 l = GetLocal();
 	if (Parent != nullptr) {
 		Matrix4 p = Parent->GetWorldTransform();
-		return p.Multiply(l);
+		return l.Multiply(p);
 	}
 
 	return l;
