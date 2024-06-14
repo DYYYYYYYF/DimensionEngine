@@ -2,16 +2,123 @@
 #include "Core/DMemory.hpp"
 
 #include <cstdio>
+#include <string.h>
 #include <vector>
+#include <iostream>
 
 #ifdef DPLATFORM_MACOS
 #include <ctype.h>
 #endif
 
 template<typename... Args>
-inline void StringFormat(char* dst, size_t size, const char* format, Args... args){
-  snprintf(dst, size, format, args...); 
+inline void StringFormat(char* dst, size_t size, const char* format, Args... args) {
+	snprintf(dst, size, format, args...);
 }
+
+class DAPI String {
+public:
+	String();
+	String(const String& str);
+	String(const char* str);
+
+	template<typename... Args>
+	String(const char* format, Args... args);
+
+	~String();
+
+	String& operator=(const String& str);
+	String& operator=(const char* str);
+	String& operator+=(const String& str);
+	friend bool operator==(const String& s1, const String& s2) { return strcmp(s1.Str, s2.Str) == 0; }
+	friend bool operator>(const String& s1, const String& s2) { return strcmp(s1.Str, s2.Str) > 0; }
+	friend bool operator<(const String& s1, const String& s2) { return strcmp(s1.Str, s2.Str) < 0; }
+
+	char& String::operator[](int i) { return Str[i]; }
+	const char& String::operator[](int i) const { return Str[i]; }
+	char& String::operator[](size_t i) { return Str[i]; }
+	const char& String::operator[](size_t i) const { return Str[i]; }
+
+	friend std::ostream& operator<<(std::ostream& os, String& str) { os << str.Str; return os; }
+	friend std::istream& operator>>(std::istream& is, String& str) {
+		char Temp[256];
+		std::cin.getline(Temp, 256);
+		str = Temp;
+		return is;
+	}
+
+public:
+	// Case-sensitive string comparison.
+	bool Equal(const String& str);
+	// Case-sensitive string comparison.
+	bool Equal(const char* str);
+	// Case-insensitive string comparison.
+	bool Equali(const char* str);
+	// Case-sensitive string comparison.
+	bool Nequal( const char* str, size_t len);
+	// Case-insensitive string comparison.
+	bool Nequali(const char* str, size_t len);
+
+	std::vector<char*> Split(char delimiter, bool trim_entries = true, bool include_empty = true);
+	int IndexOf(char c);
+	String& SubStr(size_t start, int length = -1);
+
+	inline bool ToBool() {
+		if (this->Str == nullptr) { return false; }
+		return (strcmp(this->Str, "1") == 0) || (strcmp(this->Str, "true") == 0);
+	}
+
+	inline float ToFloat() {
+		return(float)atof(this->Str);
+	}
+
+public:
+	size_t GetLength() const { return Length; }
+	char* ToString() { return Str; }
+	const char* ToString() const { return Str; }
+
+private:
+	void ReleaseMemory() {
+		if (Str != nullptr) {
+			size_t Size = 0;
+			unsigned short  Alignment = 0;
+			if (Memory::GetAlignmentSize(Str, &Size, &Alignment)) {
+				Memory::FreeAligned(Str, Size, Alignment, MemoryType::eMemory_Type_String);
+			}
+
+			Str = nullptr;
+			Length = 0;
+		}
+	}
+
+// TODO: Remove above functions. Use class func.
+public:
+	static void Append(char* dst, size_t size, const char* src, const char* append) {
+		StringFormat(dst, 512, "%s%s", src, append);
+	}
+
+	static void Append(char* dst, size_t size, const char* src, int append) {
+		StringFormat(dst, 512, "%s%i", src, append);
+	}
+
+	static void Append(char* dst, size_t size, const char* src, bool append) {
+		StringFormat(dst, 512, "%s%s", src, append ? "true" : "false");
+	}
+
+	static void Append(char* dst, size_t size, const char* src, float append) {
+		StringFormat(dst, 512, "%s%f", src, append);
+	}
+
+	static void Append(char* dst, size_t size, const char* src, char append) {
+		StringFormat(dst, 512, "%s%c", src, append);
+	}
+
+private:
+	char* Str;
+	size_t Length;
+
+};
+
+DAPI String operator+(const String& s1, const String& s2);
 
 inline void StringFree(char* str) {
 	if (str == nullptr) {
@@ -172,17 +279,17 @@ inline std::vector<char*> StringSplit(const char* str, char delimiter, bool trim
 	return Vector;
 }
 
-inline bool StringToBool(const char* str) {
-	if (str == nullptr) {return false;}
-	return (strcmp(str, "1") == 0) || (strcmp(str, "true") == 0);
-}
-
 inline char* StringCopy(const char* str) {
 	size_t Length = strlen(str);
 	char* Copy = (char*)Memory::Allocate(Length + 1, MemoryType::eMemory_Type_String);
 	Memory::Copy(Copy, str, Length);
 	Copy[Length] = '\0';
 	return Copy;
+}
+
+inline bool StringToBool(const char* str) {
+	if (str == nullptr) { return false; }
+	return (strcmp(str, "1") == 0) || (strcmp(str, "true") == 0);
 }
 
 inline bool StringToFloat(const char* str, float* f) {
@@ -217,30 +324,6 @@ inline bool StringNequali(const char* str0, const char* str1, size_t len) {
 #endif
 	return false;
 }
-
-class String {
-public:
-	static void Append(char* dst, size_t size, const char* src, const char* append) {
-		StringFormat(dst, 512, "%s%s", src, append);
-	}
-
-	static void Append(char* dst, size_t size, const char* src, int append) {
-		StringFormat(dst, 512, "%s%i", src, append);
-	}
-
-	static void Append(char* dst, size_t size, const char* src, bool append) {
-		StringFormat(dst, 512, "%s%s", src, append ? "true" : "false");
-	}
-
-	static void Append(char* dst, size_t size, const char* src, float append) {
-		StringFormat(dst, 512, "%s%f", src, append);
-	}
-
-	static void Append(char* dst, size_t size, const char* src, char append) {
-		StringFormat(dst, 512, "%s%c", src, append);
-	}
-
-};
 
 inline void StringDirectoryFromPath(char* dst, const char* path) {
 	size_t Length = strlen(path);
