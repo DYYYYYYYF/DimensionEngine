@@ -3,12 +3,12 @@ message("-- Generating Unit test project")
 project(UnitTest)
 
 set(CMAKE_CXX_STANDARD 17)
-set(EXECUTABLE_OUTPUT_PATH ${CMAKE_CURRENT_SOURCE_DIR}/bin)
+set(EXECUTABLE_OUTPUT_PATH ${CMAKE_CURRENT_SOURCE_DIR}/../bin)
 
 link_directories(${LIBRARY_OUTPUT_PATH})
 
 file(GLOB_RECURSE example_files RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}"
-	"${CMAKE_CURRENT_SOURCE_DIR}/Test.cpp" 
+	"${CMAKE_CURRENT_SOURCE_DIR}/UnitTest.cpp" 
 )
 
 foreach(example_file IN LISTS example_files)

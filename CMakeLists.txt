@@ -69,7 +69,7 @@ endif()
 
 add_subdirectory(3rd)
 add_subdirectory(engine)
-add_subdirectory(TestEditor)
+add_subdirectory(DimensionEditor)
 
 # Unit test
 add_subdirectory(Tests)
