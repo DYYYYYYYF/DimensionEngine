@@ -17,6 +17,7 @@ class Material;
 class Geometry;
 class Shader;
 class IRenderpass;
+class IRenderbuffer;
 
 enum BuiltinRenderpass : unsigned char{
 	eButilin_Renderpass_World = 0x01,
@@ -56,6 +57,21 @@ public:
 	virtual Texture* GetWindowAttachment(unsigned char index) = 0;
 	virtual Texture* GetDepthAttachment() = 0;
 	virtual unsigned char GetWindowAttachmentIndex() = 0;
+
+	// Renderbuffer
+	virtual bool CreateRenderbuffer(enum RenderbufferType type, size_t total_size, bool use_freelist, IRenderbuffer* buffer) = 0;
+	virtual bool CreateRenderbuffer(IRenderbuffer* buffer) = 0;
+	virtual void DestroyRenderbuffer(IRenderbuffer* buffer) = 0;
+	virtual bool BindRenderbuffer(IRenderbuffer* buffer, size_t offset) = 0;
+	virtual bool UnBindRenderbuffer(IRenderbuffer* buffer) = 0;
+	virtual void* MapMemory(IRenderbuffer* buffer, size_t offset, size_t size) = 0;
+	virtual void UnmapMemory(IRenderbuffer* buffer, size_t offset, size_t size) = 0;
+	virtual bool FlushRenderbuffer(IRenderbuffer* buffer, size_t offset, size_t size) = 0;
+	virtual bool ReadRenderbuffer(IRenderbuffer* buffer, size_t offset, size_t size, void** out_memory) = 0;
+	virtual bool ResizeRenderbuffer(IRenderbuffer* buffer, size_t new_size) = 0;
+	virtual bool LoadRange(IRenderbuffer* buffer, size_t offset, size_t size, const void* data) = 0;
+	virtual bool CopyRange(IRenderbuffer* src, size_t src_offset, IRenderbuffer* dst, size_t dst_offset, size_t size) = 0;
+	virtual bool DrawRenderbuffer(IRenderbuffer* buffer, size_t offset, uint32_t element_count, bool bind_only) = 0;
 
 	// Shader
 	virtual bool CreateShader(Shader* shader, const ShaderConfig* config, IRenderpass* pass, unsigned short stage_count, const std::vector<char*>& stage_filenames, std::vector<ShaderStage>& stages) = 0;

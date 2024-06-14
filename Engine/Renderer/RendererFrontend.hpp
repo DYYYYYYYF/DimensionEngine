@@ -8,6 +8,7 @@ struct SPlatformState;
 struct ShaderUniform;
 
 class IRendererBackend;
+class IRenderbuffer;
 class IRenderpass;
 class Geometry;
 class Shader;
@@ -185,6 +186,23 @@ public:
 	 */
 	virtual void ReleaseTextureMap(TextureMap* map);
 
+	// Renderbuffer
+	virtual bool CreateRenderbuffer(enum RenderbufferType type, size_t total_size, bool use_freelist, IRenderbuffer* buffer);
+	virtual void DestroyRenderbuffer(IRenderbuffer* buffer);
+	virtual bool BindRenderbuffer(IRenderbuffer* buffer, size_t offset);
+	virtual bool UnBindRenderbuffer(IRenderbuffer* buffer);
+	virtual void* MapMemory(IRenderbuffer* buffer, size_t offset, size_t size);
+	virtual void UnmapMemory(IRenderbuffer* buffer, size_t offset, size_t size);
+	virtual bool FlushRenderbuffer(IRenderbuffer* buffer, size_t offset, size_t size);
+	virtual bool ReadRenderbuffer(IRenderbuffer* buffer, size_t offset, size_t size, void** out_memory);
+	virtual bool ResizeRenderbuffer(IRenderbuffer* buffer, size_t new_size);
+	virtual bool LoadRange(IRenderbuffer* buffer, size_t offset, size_t size, const void* data);
+	virtual bool CopyRange(IRenderbuffer* src, size_t src_offset, IRenderbuffer* dst, size_t dst_offset, size_t size);
+	virtual bool DrawRenderbuffer(IRenderbuffer* buffer, size_t offset, uint32_t element_count, bool bind_only);
+	virtual bool AllocateRenderbuffer(IRenderbuffer* buffer, size_t size, size_t* out_offset);
+	virtual bool FreeRenderbuffer(IRenderbuffer* buffer, size_t size, size_t offset);
+
+	// Renderpass
 	virtual void CreateRenderTarget(unsigned char attachment_count, std::vector<Texture*> attachments, IRenderpass* pass, uint32_t width, uint32_t height, RenderTarget* out_target) ;
 	virtual void DestroyRenderTarget(RenderTarget* target, bool free_internal_memory) ;
 	virtual void CreateRenderpass(IRenderpass* out_renderpass, float depth, uint32_t stencil, bool has_prev_pass, bool has_next_pass) ;

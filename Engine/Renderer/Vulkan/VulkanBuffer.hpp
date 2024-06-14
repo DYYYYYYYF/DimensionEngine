@@ -2,40 +2,40 @@
 
 #include <vulkan/vulkan.hpp>
 #include "Containers/Freelist.hpp"
+#include "Renderer/Interface/IRenderbuffer.hpp"
 
 class VulkanContext;
 
-class VulkanBuffer {
+class VulkanBuffer : public IRenderbuffer {
 public:
 	VulkanBuffer() {}
 	virtual ~VulkanBuffer() {}
 
 public:
-	bool Create(VulkanContext* context, size_t size, vk::BufferUsageFlags usage,
-		vk::MemoryPropertyFlags memory_property_flags, bool bind_on_create, bool use_freelist);
-	void Destroy(VulkanContext* context);
+	virtual bool Create(VulkanContext* context) override;
+	virtual void Destroy(VulkanContext* context) override;
+	virtual bool Resize(VulkanContext* context, size_t size) override;
+	virtual bool Bind(VulkanContext* context, size_t offset) override;
+	virtual bool UnBind(VulkanContext* context) override;
+	virtual void* MapMemory(VulkanContext* context, size_t offset, size_t size) override;
+	virtual void UnmapMemory(VulkanContext* context) override;
+	virtual bool Flush(VulkanContext* context, size_t offset, size_t size) override;
+	virtual bool CopyRange(VulkanContext* context, vk::Buffer src, size_t src_offset, vk::Buffer dst, size_t dst_offset, size_t size) override;
 
-	bool Resize(VulkanContext* context, size_t size, vk::Queue queue, vk::CommandPool pool);
+public:
+	virtual bool IsDeviceLocal() override {
+		return ((MemoryPropertyFlags & vk::MemoryPropertyFlagBits::eDeviceLocal) == vk::MemoryPropertyFlagBits::eDeviceLocal);
+	}
 
-	void* LockMemory(VulkanContext* context, vk::DeviceSize offset, vk::DeviceSize size, vk::MemoryMapFlags flags);
-	void UnlockMemory(VulkanContext* context);
+	virtual bool IsHostVisible() override {
+		return ((MemoryPropertyFlags & vk::MemoryPropertyFlagBits::eHostVisible) == vk::MemoryPropertyFlagBits::eHostVisible);
+	}
 
-	bool Allocate(size_t size, size_t* offset);
-	bool Free(size_t size, size_t offset);
-
-	void LoadData(VulkanContext* context, size_t offset, size_t size, vk::MemoryMapFlags flags, const void* data);
-
-	void Bind(VulkanContext* context, vk::Buffer buf, vk::DeviceMemory mem, size_t offset);
-	void CopyTo(VulkanContext* context, vk::CommandPool pool, vk::Fence fence, vk::Queue queue, vk::Buffer src, size_t src_offset,
-		vk::Buffer dst, size_t dst_offset, size_t size);
-
-private:
-	void CleanupFreelist() {
-		BufferFreelist.Destroy();
+	virtual bool IsHostCoherent() override {
+		return ((MemoryPropertyFlags & vk::MemoryPropertyFlagBits::eHostCoherent) == vk::MemoryPropertyFlagBits::eHostCoherent);
 	}
 
 public:
-	size_t TotalSize;
 	vk::Buffer Buffer;
 	vk::BufferUsageFlags Usage;
 	bool IsLocked;
@@ -43,7 +43,4 @@ public:
 	vk::MemoryRequirements MemoryRequirements;
 	int MemoryIndex;
 	vk::MemoryPropertyFlags MemoryPropertyFlags;
-	bool UseFreelist;
-
-	Freelist BufferFreelist;
 };

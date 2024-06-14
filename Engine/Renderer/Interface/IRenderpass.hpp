@@ -17,6 +17,13 @@ enum VulkanRenderPassState {
 	eRenderPass_State_Not_Allocated
 };
 
+enum RenderpassClearFlags {
+	eRenderpass_Clear_None = 0x00,
+	eRenderpass_Clear_Color_Buffer = 0x01,
+	eRenderpass_Clear_Depth_Buffer = 0x02,
+	eRenderpass_Clear_Stencil_Buffer = 0x04
+};
+
 struct RenderpassConfig {
 	const char* name;
 	const char* prev_name;

@@ -1,5 +1,6 @@
 #include "RendererFrontend.hpp"
 #include "Vulkan/VulkanBackend.hpp"
+#include "Interface/IRenderbuffer.hpp"
 
 #include "Core/EngineLogger.hpp"
 #include "Core/DMemory.hpp"
@@ -364,4 +365,68 @@ void IRenderer::RegenerateRenderTargets() {
 
 bool IRenderer::GetEnabledMutiThread() const {
 	return Backend->GetEnabledMultiThread();
+}
+
+/**
+ * Renderbuffer
+ */
+bool IRenderer::CreateRenderbuffer(enum RenderbufferType type, size_t total_size, bool use_freelist, IRenderbuffer * buffer) {
+	return Backend->CreateRenderbuffer(type, total_size, use_freelist, buffer);
+}
+
+void IRenderer::DestroyRenderbuffer(IRenderbuffer* buffer) {
+	Backend->DestroyRenderbuffer(buffer);
+}
+
+bool IRenderer::BindRenderbuffer(IRenderbuffer* buffer, size_t offset) {
+	if (buffer == nullptr) {
+		LOG_ERROR("IRenderer::BindRenderbuffer() requires a valid pointer to a buffer.");
+		return false;
+	}
+
+	return Backend->BindRenderbuffer(buffer, offset);
+}
+
+bool IRenderer::UnBindRenderbuffer(IRenderbuffer* buffer) {
+	return Backend->UnBindRenderbuffer(buffer);
+}
+
+void* IRenderer::MapMemory(IRenderbuffer* buffer, size_t offset, size_t size) {
+	return Backend->MapMemory(buffer, offset, size);
+}
+
+void IRenderer::UnmapMemory(IRenderbuffer* buffer, size_t offset, size_t size) {
+	Backend->UnmapMemory(buffer, offset, size);
+}
+
+bool IRenderer::FlushRenderbuffer(IRenderbuffer* buffer, size_t offset, size_t size) {
+	return Backend->FlushRenderbuffer(buffer, offset, size);
+}
+
+bool IRenderer::ReadRenderbuffer(IRenderbuffer* buffer, size_t offset, size_t size, void** out_memory) {
+	return Backend->ReadRenderbuffer(buffer, offset, size, out_memory);
+}
+
+bool IRenderer::ResizeRenderbuffer(IRenderbuffer* buffer, size_t new_size) {
+	return Backend->ResizeRenderbuffer(buffer, new_size);
+}
+
+bool IRenderer::AllocateRenderbuffer(IRenderbuffer* buffer, size_t size, size_t* out_offset) {
+	return AllocateRenderbuffer(buffer, size, out_offset);
+}
+
+bool IRenderer::FreeRenderbuffer(IRenderbuffer* buffer, size_t size, size_t offset) {
+	return Backend->FlushRenderbuffer(buffer, offset, size);
+}
+
+bool IRenderer::LoadRange(IRenderbuffer* buffer, size_t offset, size_t size, const void* data) {
+	return Backend->LoadRange(buffer, offset, size, data);
+}
+
+bool IRenderer::CopyRange(IRenderbuffer* src, size_t src_offset, IRenderbuffer* dst, size_t dst_offset, size_t size) {
+	return Backend->CopyRange(src, src_offset, dst, dst_offset, size);
+}
+
+bool IRenderer::DrawRenderbuffer(IRenderbuffer* buffer, size_t offset, uint32_t element_count, bool bind_only) {
+	return Backend->DrawRenderbuffer(buffer, offset, element_count, bind_only);
 }

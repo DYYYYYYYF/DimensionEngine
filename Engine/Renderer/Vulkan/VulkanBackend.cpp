@@ -330,7 +330,21 @@ bool VulkanBackend::Initialize(const RenderBackendConfig* config, unsigned char*
 		Context.ImagesInFilght[i] = nullptr;
 	}
 
-	CreateBuffers();
+	// Geometry vertex buffer
+	const size_t VertexBufferSize = sizeof(Vertex) * 1024 * 1024;
+	if (!CreateRenderbuffer(RenderbufferType::eRenderbuffer_Type_Vertex, VertexBufferSize, true, &Context.ObjectVertexBuffer)) {
+		LOG_ERROR("Error creating vertex buffer.");
+		return false;
+	}
+	BindRenderbuffer(&Context.ObjectVertexBuffer, 0);
+
+	// Geometry index buffer
+	const size_t IndexBufferSize = sizeof(uint32_t) * 1024 * 1024;
+	if (!CreateRenderbuffer(RenderbufferType::eRenderbuffer_Type_Index, IndexBufferSize, true, &Context.ObjectIndexBuffer)) {
+		LOG_ERROR("Error creating index buffer.");
+		return false;
+	}
+	BindRenderbuffer(&Context.ObjectIndexBuffer, 0);
 
 	// Mark all geometry as invalid.
 	for (uint32_t i = 0; i < GEOMETRY_MAX_COUNT; ++i) {
@@ -346,8 +360,8 @@ void VulkanBackend::Shutdown() {
 	LogicalDevice.waitIdle();
 
 	LOG_DEBUG("Destroying Buffers");
-	Context.ObjectVertexBuffer.Destroy(&Context);
-	Context.ObjectIndexBuffer.Destroy(&Context);
+	DestroyRenderbuffer(&Context.ObjectVertexBuffer);
+	DestroyRenderbuffer(&Context.ObjectIndexBuffer);
 
 	LOG_DEBUG("Destroying sync objects.");
 	for (uint32_t i = 0; i < Context.Swapchain.MaxFramesInFlight; ++i) {
@@ -618,78 +632,15 @@ bool VulkanBackend::RecreateSwapchain() {
 	return true;
 }
 
-bool VulkanBackend::CreateBuffers() {
-	vk::MemoryPropertyFlagBits MemoryPropertyFlags = vk::MemoryPropertyFlagBits::eDeviceLocal;
-
-	// Geometry vertex buffer
-	const size_t VertexBufferSize = sizeof(Vertex) * 1024 * 1024;
-	if (!Context.ObjectVertexBuffer.Create(&Context, VertexBufferSize, 
-		vk::BufferUsageFlagBits::eVertexBuffer | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eTransferSrc,
-		MemoryPropertyFlags, true, true)) {
-		LOG_ERROR("Error creating vertex buffer.");
-		return false;
-	}
-
-	// Geometry index buffer
-	const size_t IndexBufferSize = sizeof(uint32_t) * 1024 * 1024;
-	if (!Context.ObjectIndexBuffer.Create(&Context, IndexBufferSize,
-		vk::BufferUsageFlagBits::eIndexBuffer | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eTransferSrc,
-		MemoryPropertyFlags, true, true)) {
-		LOG_ERROR("Error creating index buffer.");
-		return false;
-	}
-
-	return true;
-}
-
-bool VulkanBackend::UploadDataRange(vk::CommandPool pool, vk::Fence fence, vk::Queue queue, VulkanBuffer* buffer, size_t* offset, size_t size, const void* data) {
-	// Allocate space in the buffer.
-	if (!buffer->Allocate(size, offset)) {
-		LOG_ERROR("Upload data range failed to allocate from the buffer.");
-		return false;
-	}
-
-	// Create a host-visible staging buffer to upload to. Mark it as the source of the transfer.
-	vk::MemoryPropertyFlags Flags = vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent;
-	VulkanBuffer Staging;
-	Staging.Create(&Context, size, vk::BufferUsageFlagBits::eTransferSrc, Flags, true, false);
-
-	// Load the data into the staging buffer.
-	Staging.LoadData(&Context, 0, size, vk::MemoryMapFlags(), data);
-
-	// Perform the copy from staging to the device local buffer.
-	Staging.CopyTo(&Context, pool, fence, queue, 
-		Staging.Buffer, 0 , buffer->Buffer, *offset, size);
-
-	// Clean up the staging buffer.
-	Staging.Destroy(&Context);
-
-	return true;
-}
-
-void VulkanBackend::FreeDataRange(VulkanBuffer* buffer, size_t offset, size_t size) {
-	if (buffer) {
-		buffer->Free(size, offset);
-	}
-}
-
 void VulkanBackend::CreateTexture(const unsigned char* pixels, Texture* texture) {
 	// Internal data creation.
 	// TODO: Use an allocator for this.
 	texture->InternalData = (VulkanImage*)Memory::Allocate(sizeof(VulkanImage), MemoryType::eMemory_Type_Texture);
 	VulkanImage* Image = (VulkanImage*)texture->InternalData;
-	vk::DeviceSize ImageSize = texture->Width * texture->Height * texture->ChannelCount;
+	vk::DeviceSize ImageSize = texture->Width * texture->Height * texture->ChannelCount * (texture->Type == TextureType::eTexture_Type_Cube ? 6 : 1);
 
 	// NOTE: Assumes 8 bits per channel.
 	vk::Format ImageFormat = vk::Format::eR8G8B8A8Unorm;
-
-	// Create a staging buffer and load data into it.
-	vk::BufferUsageFlags Usage = vk::BufferUsageFlagBits::eTransferSrc;
-	vk::MemoryPropertyFlags MemoryPropFlags = vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent;
-
-	VulkanBuffer Staging;
-	Staging.Create(&Context, ImageSize, Usage, MemoryPropFlags, true, false);
-	Staging.LoadData(&Context, 0, ImageSize, {}, pixels);
 
 	// NOTE: Lots of assumptions here, different texture types will require.
 	// different options here.
@@ -702,7 +653,6 @@ void VulkanBackend::CreateTexture(const unsigned char* pixels, Texture* texture)
 
 	// Load the data.
 	WriteTextureData(texture, 0, (uint32_t)ImageSize, pixels);
-	Staging.Destroy(&Context);
 
 	texture->Generation++;
 }
@@ -779,16 +729,16 @@ void VulkanBackend::ResizeTexture(Texture* tex, uint32_t new_width, uint32_t new
 
 void VulkanBackend::WriteTextureData(Texture* tex, uint32_t offset, uint32_t size, const unsigned char* pixels) {
 	VulkanImage* Image = (VulkanImage*)tex->InternalData;
-	vk::DeviceSize ImageSize = tex->Width * tex->Height * tex->ChannelCount * (tex->Type == TextureType::eTexture_Type_2D ? 1 : 6);
-
-	vk::Format ImageFormat = ChannelCountToFormat(tex->ChannelCount, vk::Format::eR8G8B8A8Unorm);
 
 	// Create a staging buffer and load data into it.
-	vk::BufferUsageFlags Usage = vk::BufferUsageFlagBits::eTransferSrc;
-	vk::MemoryPropertyFlags MempropFlags = vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent;
 	VulkanBuffer Staging;
-	Staging.Create(&Context, ImageSize, Usage, MempropFlags, true, false);
-	Staging.LoadData(&Context, 0, ImageSize, vk::MemoryMapFlags(), pixels);
+	if (!CreateRenderbuffer(RenderbufferType::eRenderbuffer_Type_Staging, size, false, &Staging)) {
+		LOG_ERROR("Failed to create staging buffer for texture write.");
+		return;
+	}
+	BindRenderbuffer(&Staging, 0);
+
+	LoadRange(&Staging, 0, size, pixels);
 
 	VulkanCommandBuffer TempBuffer;
 	vk::CommandPool Pool = Context.Device.GetGraphicsCommandPool();
@@ -805,7 +755,9 @@ void VulkanBackend::WriteTextureData(Texture* tex, uint32_t offset, uint32_t siz
 	Image->TransitionLayout(&Context, tex->Type, &TempBuffer, vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal);
 
 	TempBuffer.EndSingleUse(&Context, Pool, Queue);
-	Staging.Destroy(&Context);
+
+	UnBindRenderbuffer(&Staging);
+	DestroyRenderbuffer(&Staging);
 
 	tex->Generation++;
 }
@@ -850,15 +802,17 @@ bool VulkanBackend::CreateGeometry(Geometry* geometry, uint32_t vertex_size, uin
 		return false;
 	}
 
-	vk::CommandPool Pool = Context.Device.GetGraphicsCommandPool();
-	vk::Queue Queue = Context.Device.GetGraphicsQueue();
-
 	// Vertex data.
 	InternalData->vertex_count = vertex_count;
 	InternalData->vertex_element_size = sizeof(Vertex);
 	uint32_t VertexTotalSize = vertex_size * vertex_count;
-	if (!UploadDataRange(Pool, nullptr, Queue, &Context.ObjectVertexBuffer,
-		&InternalData->vertext_buffer_offset, VertexTotalSize, vertices)) {
+	// Allocate space in the buffer.
+	if (!AllocateRenderbuffer(&Context.ObjectVertexBuffer, VertexTotalSize, &InternalData->vertext_buffer_offset)) {
+		LOG_ERROR("Vulkan renderer create geometry failed to allocate vertex data.");
+		return false;
+	}
+
+	if (!LoadRange(&Context.ObjectVertexBuffer, InternalData->vertext_buffer_offset, VertexTotalSize, vertices)) {
 		LOG_ERROR("Vulkan renderer create geometry failed to upload vertex data.");
 		return false;
 	}
@@ -868,8 +822,12 @@ bool VulkanBackend::CreateGeometry(Geometry* geometry, uint32_t vertex_size, uin
 		InternalData->index_count = index_count;
 		InternalData->index_element_size = sizeof(uint32_t);
 		uint32_t IndexTotalSize = index_size * index_count;
-		if (!UploadDataRange(Pool, nullptr, Queue, &Context.ObjectIndexBuffer,
-			&InternalData->index_buffer_offset, IndexTotalSize, indices)) {
+		if (!AllocateRenderbuffer(&Context.ObjectIndexBuffer, IndexTotalSize, &InternalData->index_buffer_offset)) {
+			LOG_ERROR("Vulkan renderer create geometry failed to allocate index data.");
+			return false;
+		}
+
+		if (!LoadRange(&Context.ObjectIndexBuffer, InternalData->index_buffer_offset, IndexTotalSize, indices)) {
 			LOG_ERROR("Vulkan renderer create geometry failed to upload index data.");
 			return false;
 		}
@@ -884,11 +842,11 @@ bool VulkanBackend::CreateGeometry(Geometry* geometry, uint32_t vertex_size, uin
 
 	if (IsReupload) {
 		// Free vertex data.
-		FreeDataRange(&Context.ObjectVertexBuffer, OldRange.vertext_buffer_offset, OldRange.vertex_element_size * OldRange.vertex_count);
+		FreeRenderbuffer(&Context.ObjectVertexBuffer, OldRange.vertext_buffer_offset, OldRange.vertex_element_size * OldRange.vertex_count);
 
 		// Free index data.
 		if (OldRange.index_element_size > 0) {
-			FreeDataRange(&Context.ObjectIndexBuffer, OldRange.index_buffer_offset, OldRange.index_element_size * OldRange.index_count);
+			FreeRenderbuffer(&Context.ObjectIndexBuffer, OldRange.index_buffer_offset, OldRange.index_element_size * OldRange.index_count);
 		}
 	}
 
@@ -901,11 +859,11 @@ void VulkanBackend::DestroyGeometry(Geometry* geometry) {
 		GeometryData* InternalData = &Context.Geometries[geometry->InternalID];
 
 		// Free vertex data.
-		FreeDataRange(&Context.ObjectVertexBuffer, InternalData->vertext_buffer_offset, InternalData->vertex_element_size * InternalData->vertex_count);
+		FreeRenderbuffer(&Context.ObjectVertexBuffer, InternalData->vertext_buffer_offset, InternalData->vertex_element_size * InternalData->vertex_count);
 
 		// Free index data.
 		if (InternalData->index_element_size > 0) {
-			FreeDataRange(&Context.ObjectIndexBuffer, InternalData->index_buffer_offset, InternalData->index_element_size * InternalData->index_count);
+			FreeRenderbuffer(&Context.ObjectIndexBuffer, InternalData->index_buffer_offset, InternalData->index_element_size * InternalData->index_count);
 		}
 
 		// Clean up date.
@@ -926,20 +884,17 @@ void VulkanBackend::DrawGeometry(GeometryRenderData* geometry) {
 	}
 
 	GeometryData* BufferData = &Context.Geometries[geometry->geometry->InternalID];
-	VulkanCommandBuffer* CmdBuffer = &Context.GraphicsCommandBuffers[Context.ImageIndex];
-
-	// Bind vertex buffer at offset
-	vk::DeviceSize offsets[1] = { BufferData->vertext_buffer_offset };
-	CmdBuffer->CommandBuffer.bindVertexBuffers(0, 1, &Context.ObjectVertexBuffer.Buffer, offsets);
-
-	// Draw index or non-index
-	if (BufferData->index_count > 0) {
-		// Bind index buffer at offset
-		CmdBuffer->CommandBuffer.bindIndexBuffer(Context.ObjectIndexBuffer.Buffer, BufferData->index_buffer_offset, vk::IndexType::eUint32);
-		CmdBuffer->CommandBuffer.drawIndexed(BufferData->index_count, 1, 0, 0, 0);
+	bool IncludIndexData = BufferData->index_count > 0;
+	if (!DrawRenderbuffer(&Context.ObjectVertexBuffer, BufferData->vertext_buffer_offset, BufferData->vertex_count, IncludIndexData)) {
+		LOG_ERROR("VulkanBackend::DrawGeometry() Failed to draw vertex buffer.");
+		return;
 	}
-	else {
-		CmdBuffer->CommandBuffer.draw(BufferData->vertex_count, 1, 0, 0);
+
+	if (IncludIndexData) {
+		if (!DrawRenderbuffer(&Context.ObjectIndexBuffer, BufferData->index_buffer_offset, BufferData->index_count, !IncludIndexData)) {
+			LOG_ERROR("VulkanBackend::DrawGeometry() Failed to draw index buffer.");
+			return;
+		}
 	}
 }
 
@@ -977,7 +932,9 @@ const uint32_t DESC_SET_INDEX_INSTANCE = 1;
 
 bool VulkanBackend::CreateShader(Shader* shader, const ShaderConfig* config, IRenderpass* pass, unsigned short stage_count,
 	const std::vector<char*>& stage_filenames, std::vector<ShaderStage>& stages) {
-	shader->InternalData = Memory::Allocate(sizeof(VulkanShader), MemoryType::eMemory_Type_Renderer);
+	VulkanShader* TS = (VulkanShader*)Memory::Allocate(sizeof(VulkanShader), MemoryType::eMemory_Type_Renderer);
+	TS = new(TS)VulkanShader();
+	shader->InternalData = TS;
 
 	// Translate stages.
 	vk::ShaderStageFlags VkStages[VULKAN_SHADER_MAX_STAGES];
@@ -1186,9 +1143,9 @@ bool VulkanBackend::DestroyShader(Shader* shader) {
 		}
 
 		// Uniform buffer.
-		Shader->UniformBuffer.UnlockMemory(&Context);
+		UnmapMemory(&Shader->UniformBuffer, 0, VK_WHOLE_SIZE);
 		Shader->MappedUniformBufferBlock = nullptr;
-		Shader->UniformBuffer.Destroy(&Context);
+		DestroyRenderbuffer(&Shader->UniformBuffer);
 
 		// Pipeline
 		Shader->Pipeline.Destroy(&Context);
@@ -1320,22 +1277,20 @@ bool VulkanBackend::InitializeShader(Shader* shader) {
 	vk::MemoryPropertyFlags DeviceLocalBits = Context.Device.GetIsSupportDeviceLocalHostVisible() ? vk::MemoryPropertyFlagBits::eDeviceLocal : vk::MemoryPropertyFlags();
 	// TODO: max count should be configurable, or perhaps long term support of buffer resizing.
 	size_t TotalBufferSize = shader->GlobalUboStride + (shader->UboStride * VULKAN_MAX_MATERIAL_COUNT);
-	if (!Shader->UniformBuffer.Create(&Context, TotalBufferSize,
-		vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eUniformBuffer,
-		vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent | DeviceLocalBits,
-		true, true)) {
+	if (!CreateRenderbuffer(RenderbufferType::eRenderbuffer_Type_Uniform, TotalBufferSize, true, &Shader->UniformBuffer)) {
 		LOG_ERROR("Vulkan buffer creation failed for object shader.");
 		return false;
 	}
+	BindRenderbuffer(&Shader->UniformBuffer, 0);
 
 	// Allocate space for the global UBO, which should occupy the _stride_ space, _not_ the actual size used.
-	if (!Shader->UniformBuffer.Allocate(shader->GlobalUboStride, &shader->GlobalUboOffset)) {
+	if (!AllocateRenderbuffer(&Shader->UniformBuffer, shader->GlobalUboStride, &shader->GlobalUboOffset)) {
 		LOG_ERROR("Failed to allocate space for the uniform buffer!");
 		return false;
 	}
 
 	// Map the entire buffer's memory.
-	Shader->MappedUniformBufferBlock = Shader->UniformBuffer.LockMemory(&Context, 0, TotalBufferSize/*TotalBufferSize*/, vk::MemoryMapFlags());
+	Shader->MappedUniformBufferBlock = MapMemory(&Shader->UniformBuffer, 0, TotalBufferSize/*TotalBufferSize*/);
 
 	// Allocate global descriptor sets, one per frame. Global is always the first set.
 	vk::DescriptorSetLayout GlobalLayouts[3] = {
@@ -1668,7 +1623,7 @@ uint32_t VulkanBackend::AcquireInstanceResource(Shader* shader, std::vector<Text
 	// Allocate some space in the UBO - by the stride, not the size.
 	uint32_t Size = (uint32_t)shader->UboStride;
 	if (Size > 0) {
-		if (!Internal->UniformBuffer.Allocate(Size, &InstanceState->offset)) {
+		if (!AllocateRenderbuffer(&Internal->UniformBuffer, Size, &InstanceState->offset)) {
 			LOG_ERROR("vulkan_material_shader_acquire_resources failed to acquire ubo space");
 			return INVALID_ID;
 		}
@@ -1730,7 +1685,7 @@ bool VulkanBackend::ReleaseInstanceResource(Shader* shader, uint32_t instance_id
 		InstanceState->instance_texture_maps.clear();
 	}
 
-	Internal->UniformBuffer.Free(shader->UboStride, InstanceState->offset);
+	FreeRenderbuffer(&Internal->UniformBuffer, shader->UboStride, InstanceState->offset);
 	InstanceState->offset = INVALID_ID;
 	InstanceState->id = INVALID_ID;
 
@@ -1885,4 +1840,234 @@ void VulkanBackend::DestroyRenderpass(IRenderpass* pass) {
 
 bool VulkanBackend::GetEnabledMultiThread() const {
 	return Context.EnableMultithreading;
+}
+
+bool VulkanBackend::CreateRenderbuffer(enum RenderbufferType type, size_t total_size, bool use_freelist, IRenderbuffer* buffer) {
+	if (buffer == nullptr) {
+		LOG_ERROR("IRenderer::CreateRenderbuffer() Requires a valid pointer to hold the created buffer.");
+		return false;
+	}
+
+	VulkanBuffer* VBuffer = (VulkanBuffer*)buffer;
+
+	VBuffer->TotalSize = total_size;
+	VBuffer->Type = type;
+	VBuffer->UseFreelist = use_freelist;
+
+	// Create freelist if needed.
+	if (use_freelist) {
+		VBuffer->BufferFreelist.Create(total_size);
+	}
+
+	// Create actual instance from the backend.
+	if (!CreateRenderbuffer(buffer)) {
+		LOG_FATAL("Unable to create backing buffer for renderbuffer, Application cannot continue.");
+		return false;
+	}
+
+	return true;
+}
+
+
+bool VulkanBackend::AllocateRenderbuffer(IRenderbuffer* buffer, size_t size, size_t* out_offset) {
+	if (buffer == nullptr || size == 0 || out_offset == nullptr) {
+		LOG_ERROR("IRenderer::AllocateRenderbuffer() Requires valid pointer, a non-zero size and valid pointer to hlod offset.");
+		return false;
+	}
+
+	if (!buffer->UseFreelist) {
+		LOG_WARN("IRenderer::AllocateRenderbuffer() Called on a buffer not using freelist. Offset will not be valid. Call LoadData() instead.");
+		*out_offset = 0;
+		return true;
+	}
+
+	return buffer->BufferFreelist.AllocateBlock(size, out_offset);
+}
+
+bool VulkanBackend::FreeRenderbuffer(IRenderbuffer* buffer, size_t size, size_t offset) {
+	if (buffer == nullptr || size == 0) {
+		LOG_ERROR("IRenderer::AllocateRenderbuffer() Requires valid pointer, a non-zero size.");
+		return false;
+	}
+
+	if (!buffer->UseFreelist) {
+		LOG_WARN("IRenderer::AllocateRenderbuffer() Called on a buffer not using freelist. Nothing was down.");
+		return true;
+	}
+
+	return buffer->BufferFreelist.FreeBlock(size, offset);
+}
+
+bool VulkanBackend::CreateRenderbuffer(IRenderbuffer* buffer) {
+	return ((VulkanBuffer*)buffer)->Create(&Context);
+}
+
+void VulkanBackend::DestroyRenderbuffer(IRenderbuffer* buffer) {
+	if (buffer == nullptr) {
+		return;
+	}
+
+	if (buffer->UseFreelist) {
+		buffer->BufferFreelist.Destroy();
+	}
+
+	((VulkanBuffer*)buffer)->Destroy(&Context);
+}
+
+bool VulkanBackend::ReadRenderbuffer(IRenderbuffer* buffer, size_t offset, size_t size, void** out_memory) {
+	vk::Device LogicalDevice = Context.Device.GetLogicalDevice();
+	VulkanBuffer* VBuffer = (VulkanBuffer*)buffer;
+	if (VBuffer->IsDeviceLocal() && !VBuffer->IsHostVisible()) {
+		// NOTE: If a read buffer is needed (i.e.) the target buffer's memory is not host visible but is device-local,
+		// create the read buffer, copy data to it, then read from that buffer.
+
+		// Create a host-visible staging buffer to copy to. Mark it as the destination of the transfer.
+		VulkanBuffer Read;
+		if (!CreateRenderbuffer(RenderbufferType::eRenderbuffer_Type_Read, size, false, &Read)) {
+			LOG_ERROR("VulkanBackend::ReadRenderbuffer() Failed to create read buffer.");
+			return false;
+		}
+
+		BindRenderbuffer(&Read, 0);
+		
+		// Perform the copy from device local to the read buffer.
+		CopyRange(VBuffer, offset, &Read, 0, size);
+
+		// Map/copy/unmap
+		void* MappedData = nullptr;
+		MappedData = Read.MapMemory(&Context, 0, size);
+		Memory::Copy(*out_memory, MappedData, size);
+		Read.UnmapMemory(&Context);
+
+		// Clean up the read buffer.
+		UnBindRenderbuffer(&Read);
+		DestroyRenderbuffer(&Read);
+	}
+	else {
+		// If no staging buffer is needed, map/copy/unmap.
+		void* DataPtr;
+		if (LogicalDevice.mapMemory(((VulkanBuffer*)buffer)->Memory, offset, size, vk::MemoryMapFlags(), &DataPtr) != vk::Result::eSuccess) {
+			LOG_ERROR("Map memory Failed.");
+			return false;
+		}
+
+		Memory::Copy(*out_memory, DataPtr, size);
+		LogicalDevice.unmapMemory(((VulkanBuffer*)buffer)->Memory);
+	}
+
+	return true;
+}
+bool VulkanBackend::ResizeRenderbuffer(IRenderbuffer* buffer, size_t new_size) {
+	VulkanBuffer* VBuffer = (VulkanBuffer*)buffer;
+
+	// Sanity check.
+	if (new_size < VBuffer->TotalSize) {
+		LOG_ERROR("IRenderer::ResizeRenderbuffer() Failed to resize renderbuffer. Can not resize a smaller buffer.");
+		return false;
+	}
+
+	if (VBuffer->UseFreelist) {
+		// Resize the freelist first if used.
+		if (!VBuffer->BufferFreelist.Resize(new_size)) {
+			LOG_ERROR("Failed to resize free list.");
+			return false;
+		}
+	}
+
+	bool Result = VBuffer->Resize(&Context, new_size);
+	if (Result) {
+		VBuffer->TotalSize = new_size;
+	}
+
+	return Result;
+}
+
+bool VulkanBackend::LoadRange(IRenderbuffer* buffer, size_t offset, size_t size, const void* data) {
+	VulkanBuffer* VBuffer = (VulkanBuffer*)buffer;
+	if (VBuffer->IsDeviceLocal() && !VBuffer->IsHostVisible()) {
+		// NOTE: If a staging buffer is needed (i.e.) the target buffer's memory is not host visible but is device-local,
+		// create a staging buffer to load the data into first. Then copy from it to the target buffer.
+
+		// Create a host-visible staging buffer to upload to. Mark it as the source of the transfer.
+		VulkanBuffer Staging;
+		if (!CreateRenderbuffer(RenderbufferType::eRenderbuffer_Type_Staging, size, false, &Staging)) {
+			LOG_ERROR("VulkanBackend::ReadRenderbuffer() Failed to create staging buffer.");
+			return false;
+		}
+
+		BindRenderbuffer(&Staging, 0);
+
+		// Load the data into the staging buffer.
+		LoadRange(&Staging, 0, size, data);
+
+		// Perform the copy from staging to the device local buffer.
+		CopyRange(&Staging, 0, VBuffer, offset, size);
+
+		// Clean up the staging buffer.
+		UnBindRenderbuffer(&Staging);
+		DestroyRenderbuffer(&Staging);
+	}
+	else {
+		// If no staging buffer is needed, map/copy/unmap.
+		void* DataPtr;
+		if (Context.Device.GetLogicalDevice().mapMemory(((VulkanBuffer*)buffer)->Memory, offset, size, vk::MemoryMapFlags(), &DataPtr) != vk::Result::eSuccess) {
+			LOG_ERROR("Map memory Failed.");
+			return false;
+		}
+		Memory::Copy(DataPtr, data, size);
+		Context.Device.GetLogicalDevice().unmapMemory(((VulkanBuffer*)buffer)->Memory);
+	}
+
+	return true;
+}
+
+bool VulkanBackend::CopyRange(IRenderbuffer* src, size_t src_offset, IRenderbuffer* dst, size_t dst_offset, size_t size) {
+	return dst->CopyRange(&Context, ((VulkanBuffer*)src)->Buffer, src_offset, ((VulkanBuffer*)dst)->Buffer, dst_offset, size);
+}
+
+bool VulkanBackend::DrawRenderbuffer(IRenderbuffer* buffer, size_t offset, uint32_t element_count, bool bind_only) {
+	VulkanCommandBuffer* CmdBuffer = &Context.GraphicsCommandBuffers[Context.ImageIndex];
+
+	if (buffer->Type == RenderbufferType::eRenderbuffer_Type_Vertex) {
+		// Bind vertex buffer at offset.
+		vk::DeviceSize Offsets[1] = { offset };
+		CmdBuffer->CommandBuffer.bindVertexBuffers(0, 1, &((VulkanBuffer*)buffer)->Buffer, Offsets);
+		if (!bind_only) {
+			CmdBuffer->CommandBuffer.draw(element_count, 1, 0, 0);
+		}
+		return true;
+	}
+	else if (buffer->Type == RenderbufferType::eRenderbuffer_Type_Index) {
+		// Bind index buffer at offset.
+		CmdBuffer->CommandBuffer.bindIndexBuffer(((VulkanBuffer*)buffer)->Buffer, offset, vk::IndexType::eUint32);
+		if (!bind_only) {
+			CmdBuffer->CommandBuffer.drawIndexed(element_count, 1, 0, 0, 0);
+		}
+		return true;
+	}
+	else {
+		LOG_ERROR("Can not draw buffer of type: %i.", buffer->Type);
+	}
+
+	return false;
+}
+
+bool VulkanBackend::BindRenderbuffer(IRenderbuffer* buffer, size_t offset) {
+	return ((VulkanBuffer*)buffer)->Bind(&Context, offset);
+}
+
+bool VulkanBackend::UnBindRenderbuffer(IRenderbuffer* buffer) {
+	return ((VulkanBuffer*)buffer)->UnBind(&Context);
+}
+
+void* VulkanBackend::MapMemory(IRenderbuffer* buffer, size_t offset, size_t size) {
+	return ((VulkanBuffer*)buffer)->MapMemory(&Context, offset, size);
+}
+
+void VulkanBackend::UnmapMemory(IRenderbuffer* buffer, size_t offset, size_t size) {
+	((VulkanBuffer*)buffer)->UnmapMemory(&Context);
+}
+
+bool VulkanBackend::FlushRenderbuffer(IRenderbuffer* buffer, size_t offset, size_t size) {
+	return ((VulkanBuffer*)buffer)->Flush(&Context, offset, size);
 }

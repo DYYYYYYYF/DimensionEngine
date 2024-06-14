@@ -19,13 +19,6 @@ enum RendererBackendType {
 	eRenderer_Backend_Type_DirecX
 };
 
-enum RenderpassClearFlags {
-	eRenderpass_Clear_None = 0x00,
-	eRenderpass_Clear_Color_Buffer = 0x01,
-	eRenderpass_Clear_Depth_Buffer = 0x02,
-	eRenderpass_Clear_Stencil_Buffer = 0x04
-};
-
 struct GeometryRenderData {
 	Matrix4 model;
 	class Geometry* geometry = nullptr;

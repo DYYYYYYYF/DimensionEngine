@@ -43,6 +43,23 @@ public:
 	virtual void CreateRenderpass(IRenderpass* out_renderpass, float depth, uint32_t stencil, bool has_prev_pass, bool has_next_pass) override;
 	virtual void DestroyRenderpass(IRenderpass* pass) override;
 
+	// Renderbuffer
+	virtual bool CreateRenderbuffer(enum RenderbufferType type, size_t total_size, bool use_freelist, IRenderbuffer* buffer) override;
+	virtual bool CreateRenderbuffer(IRenderbuffer* buffer) override;
+	virtual void DestroyRenderbuffer(IRenderbuffer* buffer) override;
+	virtual bool BindRenderbuffer(IRenderbuffer* buffer, size_t offset) override;
+	virtual bool UnBindRenderbuffer(IRenderbuffer* buffer) override;
+	virtual void* MapMemory(IRenderbuffer* buffer, size_t offset, size_t size) override;
+	virtual void UnmapMemory(IRenderbuffer* buffer, size_t offset, size_t size) override;
+	virtual bool FlushRenderbuffer(IRenderbuffer* buffer, size_t offset, size_t size) override;
+	virtual bool ReadRenderbuffer(IRenderbuffer* buffer, size_t offset, size_t size, void** out_memory) override;
+	virtual bool ResizeRenderbuffer(IRenderbuffer* buffer, size_t new_size) override;
+	virtual bool LoadRange(IRenderbuffer* buffer, size_t offset, size_t size, const void* data) override;
+	virtual bool CopyRange(IRenderbuffer* src, size_t src_offset, IRenderbuffer* dst, size_t dst_offset, size_t size) override;
+	virtual bool DrawRenderbuffer(IRenderbuffer* buffer, size_t offset, uint32_t element_count, bool bind_only) override;
+	virtual bool AllocateRenderbuffer(IRenderbuffer* buffer, size_t size, size_t* out_offset);
+	virtual bool FreeRenderbuffer(IRenderbuffer* buffer, size_t size, size_t offset);
+
 	// Shaders.
 	virtual bool CreateShader(Shader* shader, const ShaderConfig* config, IRenderpass* pass, unsigned short stage_count, const std::vector<char*>& stage_filenames, std::vector<ShaderStage>& stages) override;
 	virtual bool DestroyShader(Shader* shader) override;
@@ -61,10 +78,6 @@ public:
 	virtual bool GetEnabledMultiThread() const override;
 
 public:
-	virtual bool CreateBuffers();
-	virtual bool UploadDataRange(vk::CommandPool pool, vk::Fence fence, vk::Queue queue, VulkanBuffer* buffer, size_t* offset, size_t size, const void* data);
-	virtual void FreeDataRange(VulkanBuffer* buffer, size_t offset, size_t size);
-
 	virtual void CreateCommandBuffer();
 	virtual bool RecreateSwapchain();
 
