@@ -130,7 +130,11 @@ bool ApplicationCreate(SGame* game_instance){
 	// Init texture system
 	SResourceSystemConfig ResourceSystemConfig;
 	ResourceSystemConfig.max_loader_count = 32;
+#ifdef DPLATFORM_WIN32
 	ResourceSystemConfig.asset_base_path = "../Assets";
+#elif DPLATFORM_MACOS
+    ResourceSystemConfig.asset_base_path = "../../Assets";
+#endif
 	if (!ResourceSystem::Initialize(ResourceSystemConfig)) {
 		LOG_FATAL("Resource system failed to initialize!");
 		return false;
