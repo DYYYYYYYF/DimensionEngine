@@ -1,4 +1,5 @@
 #version 450
+#pragma clang diagnostic ignored "-Wmissing-prototypes"
 
 layout (location = 0) out vec4 FragColor;
 
@@ -7,39 +8,39 @@ layout (set = 1, binding = 0) uniform LocalUniformObject{
 	float shininess;
 }ObjectUbo;
 
-struct DirectionalLight{
-	vec3 direction;
-	vec4 color;
-};
+ struct DirectionalLight{
+ 	vec3 direction;
+ 	vec4 color;
+ };
 
-struct PointLight{
-	vec3 position;
-	vec4 color;
-	float constant;
-	float linear;
-	float quadratic;
-};
+ struct PointLight{
+ 	vec3 position;
+ 	vec4 color;
+ 	float constant;
+ 	float linear;
+ 	float quadratic;
+ };
 
-DirectionalLight dir_light = {
+DirectionalLight dir_light = DirectionalLight(
 	vec3(-0.57735f, -0.57735f, -0.57735f),
 	vec4(0.8f, 0.8f, 0.8f, 1.0f)
-};
+);
 
-PointLight point_light_0 = {
+PointLight point_light_0 = PointLight(
 	vec3(-5.5f, 0.0f, -5.5f),
 	vec4(0.0f, 1.0f, 0.0f, 1.0f),
 	1.0f,	// Constant
 	0.35f,	// Linear
 	0.44f	// Quadratic
-};
+);
 
-PointLight point_light_1 = {
+PointLight point_light_1 = PointLight(
 	vec3(5.5f, 0.0f, -5.5f),
 	vec4(1.0f, 0.0f, 0.0f, 1.0f),
 	1.0f,	// Constant
 	0.35f,	// Linear
 	0.44f	// Quadratic
-};
+);
 
 // Samplers£ºdiffuse, specular
 const int SAMP_DIFFUSE = 0;
@@ -74,10 +75,11 @@ void main(){
 	Normal = normalize(TBN * LocalNormal);
 
 	vec3 vViewDirection = normalize(in_dto.vViewPosition - in_dto.vFragPosition);
-	FragColor = CalculateDirectionalLight(dir_light, Normal, vViewDirection);
+	// FragColor = CalculateDirectionalLight(dir_light, Normal, vViewDirection);
+  FragColor = vec4(1.0f, 1.0f, 1.0f, 1.0f);
 
-	FragColor += CalculatePointLight(point_light_0, Normal, in_dto.vFragPosition, vViewDirection);
-	FragColor += CalculatePointLight(point_light_1, Normal, in_dto.vFragPosition, vViewDirection);
+	// FragColor += CalculatePointLight(point_light_0, Normal, in_dto.vFragPosition, vViewDirection);
+	// FragColor += CalculatePointLight(point_light_1, Normal, in_dto.vFragPosition, vViewDirection);
 }
 
 vec4 CalculateDirectionalLight(DirectionalLight light, vec3 normal, vec3 view_direction){
