@@ -32,6 +32,8 @@ enum MemoryType {
 	eMemory_Type_OpenGL,
 	// Representation of GPU-local
 	eMemory_Type_GPU_Local,
+	eMemory_Type_Bitmap_Font,
+	eMemory_Type_System_Font,
 	eMemory_Type_Max
 };
 
@@ -59,7 +61,9 @@ static const char* MemoryTypeStrings[eMemory_Type_Max]{
 	"Vulkan_EXT",
 	"Direct3D",
 	"OpenGL",
-	"GPU_Local"
+	"GPU_Local",
+	"BitMap_Font",
+	"System_Font"
 };
 
 struct DAPI SMemoryStats {

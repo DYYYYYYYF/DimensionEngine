@@ -71,8 +71,11 @@ public:
 		return(float)atof(this->Str);
 	}
 
+	uint32_t UTF8Length();
+	bool BytesToCodepoint(const char* bytes, uint32_t offset, int* out_codepoint, unsigned char* out_advance);
+
 public:
-	size_t GetLength() const { return Length; }
+	size_t Length() const { return Len; }
 	char* ToString() { return Str; }
 	const char* ToString() const { return Str; }
 
@@ -86,7 +89,7 @@ private:
 			}
 
 			Str = nullptr;
-			Length = 0;
+			Len = 0;
 		}
 	}
 
@@ -114,7 +117,7 @@ public:
 
 private:
 	char* Str;
-	size_t Length;
+	size_t Len;
 
 };
 
