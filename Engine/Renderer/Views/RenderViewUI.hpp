@@ -3,6 +3,8 @@
 #include "Defines.hpp"
 #include "Renderer/Interface/IRenderView.hpp"
 
+class Shader;
+
 class RenderViewUI : public IRenderView {
 public:
 	virtual void OnCreate() override;
@@ -14,8 +16,14 @@ public:
 
 private:
 	uint32_t ShaderID;
+	Shader* UsedShader;
 	float NearClip;
 	float FarClip;
 	Matrix4 ProjectionMatrix;
 	Matrix4 ViewMatrix;
+
+	// UI text
+	unsigned short DiffuseMapLocation;
+	unsigned short DiffuseColorLocation;
+	unsigned short ModelLocation;
 };

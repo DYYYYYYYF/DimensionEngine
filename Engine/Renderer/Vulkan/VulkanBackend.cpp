@@ -1844,8 +1844,7 @@ bool VulkanBackend::GetEnabledMultiThread() const {
 
 bool VulkanBackend::CreateRenderbuffer(enum RenderbufferType type, size_t total_size, bool use_freelist, IRenderbuffer* buffer) {
 	if (buffer == nullptr) {
-		LOG_ERROR("IRenderer::CreateRenderbuffer() Requires a valid pointer to hold the created buffer.");
-		return false;
+		buffer = new VulkanBuffer();
 	}
 
 	VulkanBuffer* VBuffer = (VulkanBuffer*)buffer;

@@ -48,6 +48,7 @@ bool BitmapFontLoader::Load(const char* name, void* params, Resource* resource) 
 	}
 
 	resource->FullPath = StringCopy(FullFilePath);
+	resource->Name = StringCopy(name);
 
 	BitmapFontResourceData ResourceData;
 	ResourceData.data.type = FontType::eFont_Type_Bitmap;
@@ -293,8 +294,7 @@ bool BitmapFontLoader::ReadDbfFile(FileHandle* file, BitmapFontResourceData* dat
 
 	// Write the resource header first.
 	ResourceHeader Header;
-	ReadSize = sizeof(ResourceHeader);
-	CLOSE_IF_FAILED(FileSystemRead(file, ReadSize, &Header, &BytesRead), file);
+	CLOSE_IF_FAILED(FileSystemRead(file, sizeof(ResourceHeader), &Header, &BytesRead), file);
 
 	// Verify hreader contents.
 	if (Header.magicNumber != RESOURCES_MAGIC && Header.resourceType == ResourceType::eResource_Type_Bitmap_Font) {
@@ -306,39 +306,32 @@ bool BitmapFontLoader::ReadDbfFile(FileHandle* file, BitmapFontResourceData* dat
 	// TODO: read in/process file version.
 
 	// Length of face string.
-	uint32_t FaceLength;
-	ReadSize = sizeof(uint32_t);
-	CLOSE_IF_FAILED(FileSystemRead(file, ReadSize, &FaceLength, &BytesRead), file);
+	uint32_t FaceLength = 0;
+	CLOSE_IF_FAILED(FileSystemRead(file, sizeof(uint32_t), &FaceLength, &BytesRead), file);
 
 	// Face string.
-	ReadSize = sizeof(char) * FaceLength + 1;
+	ReadSize = sizeof(char) * FaceLength;
 	CLOSE_IF_FAILED(FileSystemRead(file, ReadSize, data->data.face, &BytesRead), file);
 	// Ensure zero-termination
-	data->data.face[FaceLength] = '\0';
+	// data->data.face[FaceLength] = '\0';
 
 	// Font size.
-	ReadSize = sizeof(uint32_t);
-	CLOSE_IF_FAILED(FileSystemRead(file, ReadSize, &data->data.size, &BytesRead), file);
+	CLOSE_IF_FAILED(FileSystemRead(file, sizeof(uint32_t), &data->data.size, &BytesRead), file);
 
 	// line height
-	ReadSize = sizeof(int);
-	CLOSE_IF_FAILED(FileSystemRead(file, ReadSize, &data->data.lineHeight, &BytesRead), file);
+	CLOSE_IF_FAILED(FileSystemRead(file, sizeof(int), &data->data.lineHeight, &BytesRead), file);
 
 	// Baseline
-	ReadSize = sizeof(int);
-	CLOSE_IF_FAILED(FileSystemRead(file, ReadSize, &data->data.baseLine, &BytesRead), file);
+	CLOSE_IF_FAILED(FileSystemRead(file, sizeof(int), &data->data.baseLine, &BytesRead), file);
 
 	// Scale x
-	ReadSize = sizeof(int);
-	CLOSE_IF_FAILED(FileSystemRead(file, ReadSize, &data->data.atlasSizeX, &BytesRead), file);
+	CLOSE_IF_FAILED(FileSystemRead(file, sizeof(int), &data->data.atlasSizeX, &BytesRead), file);
 
 	// Scale Y
-	ReadSize = sizeof(int);
-	CLOSE_IF_FAILED(FileSystemRead(file, ReadSize, &data->data.atlasSizeY, &BytesRead), file);
+	CLOSE_IF_FAILED(FileSystemRead(file, sizeof(int), &data->data.atlasSizeY, &BytesRead), file);
 
 	// Page count
-	ReadSize = sizeof(uint32_t);
-	CLOSE_IF_FAILED(FileSystemRead(file, ReadSize, &data->pageCount, &BytesRead), file);
+	CLOSE_IF_FAILED(FileSystemRead(file, sizeof(uint32_t), &data->pageCount, &BytesRead), file);
 
 	// Allocate pages array.
 	data->Pages = (BitmapFontPage*)Memory::Allocate(sizeof(BitmapFontPage) * data->pageCount, MemoryType::eMemory_Type_Array);
@@ -346,31 +339,28 @@ bool BitmapFontLoader::ReadDbfFile(FileHandle* file, BitmapFontResourceData* dat
 	// Read pages.
 	for (uint32_t i = 0; i < data->pageCount; ++i) {
 		// Page id.
-		ReadSize = sizeof(char);
-		CLOSE_IF_FAILED(FileSystemRead(file, ReadSize, &data->Pages[i].id, &BytesRead), file);
+		CLOSE_IF_FAILED(FileSystemRead(file, sizeof(char), &data->Pages[i].id, &BytesRead), file);
 
 		// File name length
 		uint32_t FilenameLength = (uint32_t)strlen(data->Pages[i].file) + 1;
-		ReadSize = sizeof(uint32_t);
-		CLOSE_IF_FAILED(FileSystemRead(file, ReadSize, &FilenameLength, &BytesRead), file);
+		CLOSE_IF_FAILED(FileSystemRead(file, sizeof(uint32_t), &FilenameLength, &BytesRead), file);
 
 		// The file name
-		ReadSize = sizeof(char) * FilenameLength + 1;
+		ReadSize = sizeof(char) * FilenameLength;
 		CLOSE_IF_FAILED(FileSystemRead(file, ReadSize, data->Pages[i].file, &BytesRead), file);
 		// Ensure zero-termination.
-		data->Pages[i].file[FilenameLength] = '\0';
+		// data->Pages[i].file[FilenameLength] = '\0';
 	}
 
 	// Glyph count
-	ReadSize = sizeof(uint32_t);
-	CLOSE_IF_FAILED(FileSystemRead(file, ReadSize, &data->data.glyphCount, &BytesRead), file);
+	CLOSE_IF_FAILED(FileSystemRead(file, sizeof(uint32_t), &data->data.glyphCount, &BytesRead), file);
 
 	// Allocate glyphs array.
 	data->data.glyphs = (FontGlyph*)Memory::Allocate(sizeof(FontGlyph) * data->data.glyphCount, MemoryType::eMemory_Type_Array);
 
 	// Read glyphs.
 	ReadSize = sizeof(FontGlyph) * data->data.glyphCount;
-	CLOSE_IF_FAILED(FileSystemRead(file, ReadSize, &data->data.glyphs, &BytesRead), file);
+	CLOSE_IF_FAILED(FileSystemRead(file, ReadSize, data->data.glyphs, &BytesRead), file);
 
 	// Kerning count
 	ReadSize = sizeof(uint32_t);
@@ -383,7 +373,7 @@ bool BitmapFontLoader::ReadDbfFile(FileHandle* file, BitmapFontResourceData* dat
 
 		// No strings for kernings, so write the entire block.
 		ReadSize = sizeof(FontKerning) * data->data.kerningCount;
-		CLOSE_IF_FAILED(FileSystemWrite(file, ReadSize, data->data.kernings, &BytesRead), file);
+		CLOSE_IF_FAILED(FileSystemRead(file, ReadSize, data->data.kernings, &BytesRead), file);
 	}
 
 	// Done.
@@ -412,12 +402,12 @@ bool BitmapFontLoader::WriteDbfFile(const char* path, BitmapFontResourceData* da
 	CLOSE_IF_FAILED(FileSystemWrite(&file, WriteSize, &Header, &BytesWritten), &file);
 
 	// Length of face string.
-	uint32_t FaceLength = (uint32_t)strlen(data->data.face);
+	uint32_t FaceLength = (uint32_t)strlen(data->data.face) + 1;
 	WriteSize = sizeof(uint32_t);
 	CLOSE_IF_FAILED(FileSystemWrite(&file, WriteSize, &FaceLength, &BytesWritten), &file);
 
 	// Face string
-	WriteSize = sizeof(char) * FaceLength + 1;
+	WriteSize = sizeof(char) * FaceLength;
 	CLOSE_IF_FAILED(FileSystemWrite(&file, WriteSize, data->data.face, &BytesWritten), &file);
 
 	// Font size
@@ -456,7 +446,7 @@ bool BitmapFontLoader::WriteDbfFile(const char* path, BitmapFontResourceData* da
 		CLOSE_IF_FAILED(FileSystemWrite(&file, WriteSize, &FilenameLength, &BytesWritten), &file);
 
 		// File name
-		WriteSize = sizeof(char) * FilenameLength + 1;
+		WriteSize = sizeof(char) * FilenameLength;
 		CLOSE_IF_FAILED(FileSystemWrite(&file, WriteSize, data->Pages[i].file, &BytesWritten), &file);
 	}
 

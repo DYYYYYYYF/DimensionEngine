@@ -46,6 +46,13 @@ struct MeshPacketData {
 	std::vector<Mesh*> meshes;
 };
 
+struct UIPacketData {
+	MeshPacketData meshData;
+	// TODO: temp
+	uint32_t textCount;
+	std::vector<class UIText*> Textes;
+};
+
 struct SkyboxPacketData {
 	Skybox* sb = nullptr;
 };

@@ -28,7 +28,7 @@ public:
 	virtual bool Load(const char* name, void* params, Resource* resource) override;
 	virtual void Unload(Resource* resource) override;
 
-public:
+public: 
 	static bool ImportFntFile(FileHandle* fntFile, const char* outDbfFilename, BitmapFontResourceData* out_data);
 	static bool ReadDbfFile(FileHandle* file, BitmapFontResourceData* data);
 	static bool WriteDbfFile(const char* path, BitmapFontResourceData* data);

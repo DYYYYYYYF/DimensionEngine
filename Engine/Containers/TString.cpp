@@ -1,8 +1,5 @@
 #include "TString.hpp"
 
-#include "Core/DMemory.hpp"
-#include "Core/EngineLogger.hpp"
-
 String::String() {
 	this->Str = (char*)Memory::Allocate(sizeof(char), MemoryType::eMemory_Type_String);
 	this->Str[0] = '\0';

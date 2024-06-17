@@ -21,6 +21,7 @@
 #include "Systems/CameraSystem.h"
 #include "Systems/RenderViewSystem.hpp"
 #include "Systems/JobSystem.hpp"
+#include "Systems/FontSystem.hpp"
 
 #include "Math/GeometryUtils.hpp"
 #include "Resources/Mesh.hpp"
@@ -45,6 +46,7 @@ struct SApplicationState {
 	bool ModelsLoaded;
 
 	std::vector<Mesh> UIMeshes;
+	UIText TestText;
 
 };
 
@@ -225,6 +227,25 @@ bool ApplicationCreate(SGame* game_instance){
 		return false;
 	}
 
+	// Init font system.
+	BitmapFontConfig BmpFontConfig;
+	BmpFontConfig.name = "Ubuntu Mono 21px";
+	BmpFontConfig.resourceName = "UbuntuMono21px";
+	BmpFontConfig.size = 21;
+
+	FontSystemConfig FontSysConfig;
+	FontSysConfig.autoRelease = false;
+	FontSysConfig.defaultBitmapFontCount = 1;
+	FontSysConfig.bitmapFontConfigs = &BmpFontConfig;
+	FontSysConfig.defaultSystemFontCount = 0;
+	FontSysConfig.systemFontConfigs = nullptr;
+	FontSysConfig.maxBitmapFontCount = 100;
+	FontSysConfig.maxSystemFontCount = 100;
+	if (!FontSystem::Initialize(Renderer, &FontSysConfig)) {
+		LOG_FATAL("Font system failed to initialize!");
+		return false;
+	}
+
 	// Init camera system
 	SCameraSystemConfig CameraSystemConfig;
 	CameraSystemConfig.max_camera_count = 61;
@@ -288,6 +309,13 @@ bool ApplicationCreate(SGame* game_instance){
 	}
 
 	// TODO: Temp
+	// Create test ui text objects.
+	if (!AppState.TestText.Create(Renderer, UITextType::eUI_Text_Type_Bitmap, "Ubuntu Mono 21px", 21, "Test text 123, \nyooo!")) {
+		LOG_ERROR("Failed to load basic ui bitmap text.");
+		return false;
+	}
+	AppState.TestText.SetPosition(Vec3(50, 100, 0));
+
 	// Skybox
 	TextureMap* CubeMap = &AppState.SB.Cubemap;
 	CubeMap->filter_magnify = TextureFilter::eTexture_Filter_Mode_Linear;
@@ -507,11 +535,14 @@ bool ApplicationRun() {
 				}
 			}
 
-			MeshPacketData UIMeshData;
-			UIMeshData.meshes = UIMeshes;
-			UIMeshData.mesh_count = (uint32_t)UIMeshes.size();
+			UIPacketData UIPacket;
+			UIPacket.meshData.mesh_count = (uint32_t)UIMeshes.size();
+			UIPacket.meshData.meshes = UIMeshes;
+			UIPacket.textCount = 1;
+			std::vector<UIText*> Texts = { &AppState.TestText };
+			UIPacket.Textes = Texts;
 
-			if (!RenderViewSystem::BuildPacket(RenderViewSystem::Get("UI"), &UIMeshData, &Packet.views[2])) {
+			if (!RenderViewSystem::BuildPacket(RenderViewSystem::Get("UI"), &UIPacket, &Packet.views[2])) {
 				LOG_ERROR("Failed to build packet for view 'UI'.");
 				return false;
 			}
@@ -531,6 +562,8 @@ bool ApplicationRun() {
 			std::vector<Mesh*>().swap(Meshes);
 			UIMeshes.clear();
 			std::vector<Mesh*>().swap(UIMeshes);
+			Texts.clear();
+			std::vector<UIText*>().swap(Texts);
 
 			// Figure FPS
 			double FrameEndTime = Platform::PlatformGetAbsoluteTime();
@@ -566,16 +599,19 @@ bool ApplicationRun() {
 	Core::EventShutdown();
 	Core::InputShutdown();
 
+	// Temp
+	Renderer->ReleaseTextureMap(&AppState.SB.Cubemap);
+	AppState.TestText.Destroy();
+
 	RenderViewSystem::Shutdown();
 	CameraSystem::Shutdown();
+	FontSystem::Shutdown();
 	GeometrySystem::Shutdown();
 	MaterialSystem::Shutdown();
 	TextureSystem::Shutdown();
 	JobSystem::Shutdown();
 	ShaderSystem::Shutdown();
 
-	// Temp
-	Renderer->ReleaseTextureMap(&AppState.SB.Cubemap);
 	Renderer->Shutdown();
 	Memory::Free(Renderer, sizeof(IRenderer), MemoryType::eMemory_Type_Renderer);
 

@@ -1221,6 +1221,21 @@ struct Vertex {
 };
 
 struct Vertex2D {
+	Vertex2D() {
+		position = Vec2();
+		texcoord = Vec2();
+	}
+
+	Vertex2D(Vec2 pos) {
+		position = pos;
+		texcoord = Vec2();
+	}
+
+	Vertex2D(Vec2 pos, Vec2 tex) {
+		position = pos;
+		texcoord = tex;
+	}
+
 	Vec2 position;
 	Vec2 texcoord;
 };
