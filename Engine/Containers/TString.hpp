@@ -34,10 +34,10 @@ public:
 	friend bool operator>(const String& s1, const String& s2) { return strcmp(s1.Str, s2.Str) > 0; }
 	friend bool operator<(const String& s1, const String& s2) { return strcmp(s1.Str, s2.Str) < 0; }
 
-	char& String::operator[](int i) { return Str[i]; }
-	const char& String::operator[](int i) const { return Str[i]; }
-	char& String::operator[](size_t i) { return Str[i]; }
-	const char& String::operator[](size_t i) const { return Str[i]; }
+	char& operator[](int i) { return Str[i]; }
+	const char& operator[](int i) const { return Str[i]; }
+	char& operator[](size_t i) { return Str[i]; }
+	const char& operator[](size_t i) const { return Str[i]; }
 
 	friend std::ostream& operator<<(std::ostream& os, String& str) { os << str.Str; return os; }
 	friend std::istream& operator>>(std::istream& is, String& str) {

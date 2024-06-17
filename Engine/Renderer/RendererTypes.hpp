@@ -3,6 +3,7 @@
 #include "Defines.hpp"
 #include "Math/MathTypes.hpp"
 #include "Resources/Shader.hpp"
+#include "Renderer/Interface/IRenderbuffer.hpp"
 
 #include <vector>
 #include <functional>

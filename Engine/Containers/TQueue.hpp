@@ -24,7 +24,7 @@ public:
 		Head = q.Head;
 		Tail = q.Tail;
 		OwnsMemory = q.OwnsMemory;
-		Block = q.Block
+		Block = q.Block;
 	}
 
 	/**
