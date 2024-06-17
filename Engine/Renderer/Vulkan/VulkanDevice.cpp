@@ -260,12 +260,14 @@ bool VulkanDevice::MeetsRequirements(vk::PhysicalDevice device, vk::SurfaceKHR s
 	QueueFamilyInfo.transfer_index = -1;
 
 	// Is discrete GPU
+#if not defined(DPLATFORM_MACOS)
 	if (DeviceRequirements.discrete_gpu) {
 		if (properties->deviceType != vk::PhysicalDeviceType::eDiscreteGpu) {
 			LOG_ERROR("Device is not a discrete GPU. one is least. Skipping.");
 			return false;
 		}
 	}
+#endif
 
 	unsigned int QueueFamilyCount;
 	TArray<vk::QueueFamilyProperties> QueueFamilies;

@@ -30,9 +30,9 @@
 @class ContentView;
 
 struct SInternalState {
-  ApplicationDelegate* app_delegate;
+    ApplicationDelegate* app_delegate;
 	WindowDelegate* wnd_delegate;
-  NSWindow* window;
+    NSWindow* window;
 	ContentView* view;
 	CAMetalLayer* layer;
 
@@ -288,8 +288,12 @@ static const NSRange kEmptyRange = { NSNotFound, 0 };
 // Platform.hpp
 bool Platform::PlatformStartup(SPlatformState* platform_state, const char* application_name,
 	int x, int y, int width, int height){
-  SInternalState* state_ptr = (SInternalState*)platform_state->internalState;
-
+    platform_state->internalState = malloc(sizeof(SInternalState));
+    SInternalState* state_ptr = (SInternalState*)platform_state->internalState;
+    if (state_ptr == nullptr){
+        LOG_ERROR("Platform internal state is null!");
+        return false;
+    }
 
 
 	@autoreleasepool{
@@ -297,7 +301,7 @@ bool Platform::PlatformStartup(SPlatformState* platform_state, const char* appli
 	[NSApplication sharedApplication] ;
 
 	// App delegate creation
-	state_ptr->app_delegate = [[ApplicationDelegate alloc]init];
+	state_ptr->app_delegate = [[ApplicationDelegate alloc] init];
 	if (!state_ptr->app_delegate) {
 		LOG_ERROR("Failed to create application delegate")
 		return false;
@@ -518,7 +522,7 @@ bool PlatformCreateVulkanSurface(SPlatformState* plat_state, VulkanContext* cont
 }
 
 void GetPlatformRequiredExtensionNames(std::vector<const char*>& array){
-	array.push_back("VK_KHR_metal_surface");
+	array.push_back("VK_EXT_metal_surface");
 	array.push_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
 }
 

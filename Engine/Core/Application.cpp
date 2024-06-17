@@ -114,12 +114,15 @@ bool ApplicationCreate(SGame* game_instance){
 	Core::EventRegister(Core::eEvent_Code_Resize, 0, ApplicationOnResized);
 	Core::EventRegister(Core::eEvent_Code_Debug_0, 0, EventOnDebugEvent);
 
-	Platform::PlatformStartup(&AppState.platform,
-		game_instance->app_config.name, 
+	if (!Platform::PlatformStartup(&AppState.platform,
+		game_instance->app_config.name,
 		game_instance->app_config.start_x, 
 		game_instance->app_config.start_y, 
 		game_instance->app_config.start_width, 
-		game_instance->app_config.start_height);
+        game_instance->app_config.start_height)){
+        LOG_FATAL("Failed to startup platform. Application quit now!");
+        return false;
+    }
 
 	AppState.width = game_instance->app_config.start_width;
 	AppState.height = game_instance->app_config.start_height;
