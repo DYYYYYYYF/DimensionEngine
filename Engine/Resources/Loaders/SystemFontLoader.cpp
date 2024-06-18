@@ -23,8 +23,8 @@ bool SystemFontLoader::Load(const char* name, void* params, Resource* resource) 
 
 #define SUPPORTED_FILETYPE_COUNT 2
 	SupportedSystemFontFiletype SupportedFieTypes[SUPPORTED_FILETYPE_COUNT];
-	SupportedFieTypes[0] = SupportedSystemFontFiletype{ ".dbf", SystemFontFileType::eSystem_Font_File_Type_DSF, true };
-	SupportedFieTypes[1] = SupportedSystemFontFiletype{ ".fnt", SystemFontFileType::eSystem_Font_File_Type_Font_Config, false };
+	SupportedFieTypes[0] = SupportedSystemFontFiletype{ ".dsf", SystemFontFileType::eSystem_Font_File_Type_DSF, true };
+	SupportedFieTypes[1] = SupportedSystemFontFiletype{ ".fontcfg", SystemFontFileType::eSystem_Font_File_Type_Font_Config, false };
 
 	char FullFilePath[512];
 	SystemFontFileType Type = SystemFontFileType::eSystem_Font_File_Type_Not_Found;
@@ -247,13 +247,13 @@ bool SystemFontLoader::ReadDSFFile(FileHandle* file, SystemFontResourceData* dat
 	CLOSE_IF_FAILED(FileSystemRead(file, data->binarySize, &data->fontBinary, &BytesRead), file);
 
 	// The number of fonts
-	uint32_t FontCount = data->fonts.Size();
+	uint32_t FontCount = (uint32_t)data->fonts.Size();
 	CLOSE_IF_FAILED(FileSystemRead(file, sizeof(uint32_t), &FontCount, &BytesRead), file);
 
 	// Iterate faces metedata and output as well.
 	for (uint32_t i = 0; i < FontCount; ++i) {
 		// Length of face name string.
-		uint32_t FaceLength = strlen(data->fonts[i].name);
+		uint32_t FaceLength = (uint32_t)strlen(data->fonts[i].name);
 		CLOSE_IF_FAILED(FileSystemRead(file, sizeof(uint32_t), &FaceLength, &BytesRead), file);
 
 		// Face string.

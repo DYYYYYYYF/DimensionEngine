@@ -50,6 +50,7 @@ struct SApplicationState {
 
 	std::vector<Mesh> UIMeshes;
 	UIText TestText;
+	UIText TestSysText;
 
 };
 
@@ -243,12 +244,17 @@ bool ApplicationCreate(SGame* game_instance){
 	BmpFontConfig.resourceName = "UbuntuMono21px";
 	BmpFontConfig.size = 21;
 
+	SystemFontConfig SysFontConfig;
+	SysFontConfig.defaultSize = 20;
+	SysFontConfig.name = "Noto Sans";
+	SysFontConfig.resourceName = "NotoSansCJK";
+
 	FontSystemConfig FontSysConfig;
 	FontSysConfig.autoRelease = false;
 	FontSysConfig.defaultBitmapFontCount = 1;
 	FontSysConfig.bitmapFontConfigs = &BmpFontConfig;
-	FontSysConfig.defaultSystemFontCount = 0;
-	FontSysConfig.systemFontConfigs = nullptr;
+	FontSysConfig.defaultSystemFontCount = 1;
+	FontSysConfig.systemFontConfigs = &SysFontConfig;
 	FontSysConfig.maxBitmapFontCount = 100;
 	FontSysConfig.maxSystemFontCount = 100;
 	if (!FontSystem::Initialize(Renderer, &FontSysConfig)) {
@@ -325,6 +331,12 @@ bool ApplicationCreate(SGame* game_instance){
 		return false;
 	}
 	AppState.TestText.SetPosition(Vec3(100, -200, 0));
+
+	if (!AppState.TestSysText.Create(Renderer, UITextType::eUI_Text_Type_system, "Noto Sans CJK JP", 31, "Test system font.")) {
+		LOG_ERROR("Failed to load basic ui system text.");
+		return false;
+	}
+	AppState.TestSysText.SetPosition(Vec3(100, -400, 0));
 
 	// Skybox
 	TextureMap* CubeMap = &AppState.SB.Cubemap;
@@ -567,8 +579,8 @@ bool ApplicationRun() {
 			UIPacketData UIPacket;
 			UIPacket.meshData.mesh_count = (uint32_t)UIMeshes.size();
 			UIPacket.meshData.meshes = UIMeshes;
-			UIPacket.textCount = 1;
-			std::vector<UIText*> Texts = { &AppState.TestText };
+			UIPacket.textCount = 2;
+			std::vector<UIText*> Texts = { &AppState.TestText, &AppState.TestSysText };
 			UIPacket.Textes = Texts;
 
 			if (!RenderViewSystem::BuildPacket(RenderViewSystem::Get("UI"), &UIPacket, &Packet.views[2])) {
@@ -635,6 +647,7 @@ bool ApplicationRun() {
 	// Temp
 	Renderer->ReleaseTextureMap(&AppState.SB.Cubemap);
 	AppState.TestText.Destroy();
+	AppState.TestSysText.Destroy();
 
 	RenderViewSystem::Shutdown();
 	CameraSystem::Shutdown();
