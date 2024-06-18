@@ -18,10 +18,10 @@ enum TextureFilter {
 };
 
 enum TextureRepeat{
-	eTexture_Repeat_Repeat = 0x1,
-	eTexture_Repeat_Minrrored_Repeat = 0x2,
-	eTexture_Repeat_Clamp_To_Edge = 0x3,
-	eTexture_Repeat_Clamp_To_Border = 0x4,
+	eTexture_Repeat_Repeat = 0x0,
+	eTexture_Repeat_Minrrored_Repeat = 0x1,
+	eTexture_Repeat_Clamp_To_Edge = 0x2,
+	eTexture_Repeat_Clamp_To_Border = 0x3,
 };
 
 enum TextureFlagBits{
