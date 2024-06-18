@@ -616,9 +616,9 @@ bool ApplicationRun() {
 					Platform::PlatformSleep(RemainingMS - 1);
 				}
 
-				FrameCount++;
 			}
 
+            FrameCount++;
 			AppState.last_time = CurrentTime;
 
 			// Update FPS per 0.5s

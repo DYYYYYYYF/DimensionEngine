@@ -228,6 +228,8 @@ static const NSRange kEmptyRange = { NSNotFound, 0 };
     SInternalState* state_ptr = (SInternalState*)initState->internalState;
 		state_ptr->quit_flagged = false;
 	}
+    
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(windowDidResize:) name:NSWindowDidResizeNotification object:nil];
 
 	return self;
 }
@@ -255,8 +257,22 @@ static const NSRange kEmptyRange = { NSNotFound, 0 };
 	Core::EventFire(Core::eEvent_Code_Resize, 0, Context);
 }
 
+
+- (void)windowDidResize:(NSNotification *)notification {
+    SInternalState* state_ptr = (SInternalState*)state->internalState;
+    SEventContext Context;
+    CGSize viewSize = state_ptr->view.bounds.size;
+    NSSize newDrawableSize = [state_ptr->view convertSizeToBacking : viewSize];
+    state_ptr->layer.drawableSize = newDrawableSize;
+    state_ptr->layer.contentsScale = state_ptr->view.window.backingScaleFactor;
+
+    Context.data.u16[0] = (unsigned short)newDrawableSize.width;
+    Context.data.u16[1] = (unsigned short)newDrawableSize.height;
+    Core::EventFire(Core::eEvent_Code_Resize, 0, Context);
+}
+
 - (void)windowDidMiniaturize:(NSNotification*)notification {
-  SInternalState* state_ptr = (SInternalState*)state->internalState;
+    SInternalState* state_ptr = (SInternalState*)state->internalState;
 
 	// Send a size of 0, which tells the application it was minimized.
 	SEventContext Context;
