@@ -564,17 +564,15 @@ bool ApplicationRun() {
 			Vec3 Rot = WorldCamera->GetEulerAngles();
 
 			// TODO: Temp
-			if (AppState.EsapsedTime > 0.5) {
-				char FPS[512];
-				StringFormat(FPS, 512,
-					"Camera Pos: [%.3f %.3f %.3f]\nCamera Rot: [%.3f %.3f %.3f]\nFPS: %d\tDelta time: %.2f",
-					Pos.x, Pos.y, Pos.z,
-					Rad2Deg(Rot.x), Rad2Deg(Rot.y), Rad2Deg(Rot.z),
-					(int)AppState.FramePerSecond,
-					(float)DeltaTime * 1000
-				);
-				AppState.TestText.SetText(FPS);
-			}
+			char FPS[512];
+			StringFormat(FPS, 512,
+				"Camera Pos: [%.3f %.3f %.3f]\nCamera Rot: [%.3f %.3f %.3f]\nFPS: %d\tDelta time: %.2f",
+				Pos.x, Pos.y, Pos.z,
+				Rad2Deg(Rot.x), Rad2Deg(Rot.y), Rad2Deg(Rot.z),
+				(int)AppState.FramePerSecond,
+				(float)DeltaTime * 1000
+			);
+			AppState.TestText.SetText(FPS);
 
 			UIPacketData UIPacket;
 			UIPacket.meshData.mesh_count = (uint32_t)UIMeshes.size();
@@ -738,7 +736,7 @@ bool ApplicationOnResized(unsigned short code, void* sender, void* listener_inst
 				const float h = Height / 3.0f;
 				const float w = h * 200.0f / 470.0f;
 				const float x = 0.0f;
-				const float y = 0;
+				const float y = -Height;
 
 				Vertex2D UIVerts[4];
 				UIVerts[0].position.x = x;
