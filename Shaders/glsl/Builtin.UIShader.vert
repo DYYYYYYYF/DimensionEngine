@@ -19,6 +19,6 @@ layout (location = 1) out struct out_dto{
 }OutDto;
 
 void main(){
-	OutDto.tex_coord = vec2(vTexcoord.x, 1.0 - vTexcoord.y);
+	OutDto.tex_coord = vTexcoord;
 	gl_Position = GlobalUBO.projection * GlobalUBO.view * PushConstant.model * vec4(vPosition, 0.0f, 1.0f);
 }
