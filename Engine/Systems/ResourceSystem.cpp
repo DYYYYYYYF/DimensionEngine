@@ -9,6 +9,7 @@
 #include "Resources/Loaders/ShaderLoader.h"
 #include "Resources/Loaders/MeshLoader.h"
 #include "Resources/Loaders/BitmapFontLoader.hpp"
+#include "Resources/Loaders/SystemFontLoader.hpp"
 
 SResourceSystemConfig ResourceSystem::Config;
 TArray<IResourceLoader*> ResourceSystem::RegisteredLoaders = TArray<IResourceLoader*>();
@@ -42,6 +43,8 @@ bool ResourceSystem::Initialize(SResourceSystemConfig config) {
 	RegisterLoader(MesLoader);	
 	IResourceLoader* BitFontLoader = new BitmapFontLoader();
 	RegisterLoader(BitFontLoader);
+	IResourceLoader* SysFontLoader = new SystemFontLoader();
+	RegisterLoader(SysFontLoader);
 
 	Initilized = true;
 	LOG_INFO("Resource system initialize with base path: '%s'.", config.asset_base_path);

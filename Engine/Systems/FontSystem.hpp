@@ -4,6 +4,9 @@
 #include "Resources/ResourceTypes.hpp"
 #include "Renderer/RendererTypes.hpp"
 
+struct BitmapFontLookup;
+struct SystemFontLookup;
+
 struct SystemFontConfig {
 	char* name = nullptr;
 	unsigned short defaultSize;
@@ -26,19 +29,6 @@ struct FontSystemConfig {
 	bool autoRelease;
 };
 
-// Material system member
-struct BitmapFontInternalData {
-	Resource loadedResource;
-	// Casted pointer to resource data for convenience.
-	BitmapFontResourceData* resourceData = nullptr;
-};
-
-struct BitmapFontLookup {
-	unsigned short id;
-	unsigned short referenceCount;
-	BitmapFontInternalData font;
-};
-
 class FontSystem {
 public:
 	static bool Initialize(IRenderer* renderer, FontSystemConfig* config);
@@ -57,11 +47,19 @@ private:
 	static bool SetupFontData(FontData* font);
 	static void CleanupFontData(FontData* font);
 
+	// System fonts.
+	static bool CreateSystemFontVariant(SystemFontLookup* lookup, unsigned short size, const char* fontName, FontData* outVariant);
+	static bool RebuildSystemFontVariantAtlas(SystemFontLookup* lookip, FontData* variant);
+	static bool VerifySystemFontSizeVariant(SystemFontLookup* lookup, FontData* variant, const char* text);
+
 private:
 	static FontSystemConfig Config;
-	static HashTable BitmapLookup;
+	static HashTable BitFontLookup;
+	static HashTable SysFontLookup;
 	static BitmapFontLookup* BitmapFonts;
+	static SystemFontLookup* SystemFonts;
 	static void* BitmapHashTableBlock;
+	static void* SystemHashTableBlock;
 
 	static IRenderer* Renderer;
 	static bool Initilized;

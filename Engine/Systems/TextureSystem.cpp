@@ -240,6 +240,15 @@ bool TextureSystem::Resize(Texture* t, uint32_t width, uint32_t height, bool reg
 	return true;
 }
 
+bool TextureSystem::WriteData(Texture* t, uint32_t offset, uint32_t size, void* data) {
+	if (t == nullptr) {
+		return false;
+	}
+
+	Renderer->WriteTextureData(t, offset, size, (unsigned char*)data);
+	return true;
+}
+
 Texture* TextureSystem::GetDefaultTexture() {
 	if (Initilized) {
 		return &DefaultTexture;

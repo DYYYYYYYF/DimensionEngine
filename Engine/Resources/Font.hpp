@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Resource.hpp"
+#include "Containers/TArray.hpp"
 
 enum FontType {
 	eFont_Type_Bitmap,
@@ -52,4 +53,14 @@ struct BitmapFontResourceData {
 	FontData data;
 	unsigned int pageCount;
 	BitmapFontPage* Pages;
+};
+
+struct SystemFontFace {
+	char name[256];
+};
+
+struct SystemFontResourceData {
+	TArray<SystemFontFace> fonts;
+	size_t binarySize;
+	void* fontBinary;
 };

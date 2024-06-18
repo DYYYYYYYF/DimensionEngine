@@ -1,7 +1,5 @@
 #pragma once
 
-#pragma once
-
 #include "Resources/Loaders/IResourceLoader.hpp"
 #include "Systems/ResourceSystem.h"
 
@@ -29,8 +27,8 @@ public:
 	virtual void Unload(Resource* resource) override;
 
 public: 
-	static bool ImportFntFile(FileHandle* fntFile, const char* outDbfFilename, BitmapFontResourceData* out_data);
-	static bool ReadDbfFile(FileHandle* file, BitmapFontResourceData* data);
-	static bool WriteDbfFile(const char* path, BitmapFontResourceData* data);
+	bool ImportFntFile(FileHandle* fntFile, const char* outDbfFilename, BitmapFontResourceData* out_data);
+	bool ReadDbfFile(FileHandle* file, BitmapFontResourceData* data);
+	bool WriteDbfFile(const char* path, BitmapFontResourceData* data);
 
 };

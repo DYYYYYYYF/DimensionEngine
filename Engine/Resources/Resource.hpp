@@ -13,6 +13,7 @@ enum ResourceType {
 	eResource_type_Static_Mesh,
 	eResource_Type_Shader,
 	eResource_Type_Bitmap_Font,
+	eResource_Type_System_Font,
 	eResource_type_Custom,
 };
 
