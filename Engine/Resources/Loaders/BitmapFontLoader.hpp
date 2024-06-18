@@ -13,7 +13,7 @@ enum BitmapFontFileType {
 };
 
 struct SupportedBitmapFontFileType {
-	char* extension;
+	const char* extension;
 	BitmapFontFileType type;
 	bool isBinary;
 };

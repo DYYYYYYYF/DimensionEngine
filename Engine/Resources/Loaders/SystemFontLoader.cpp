@@ -18,7 +18,7 @@ bool SystemFontLoader::Load(const char* name, void* params, Resource* resource) 
 		return false;
 	}
 
-	char* FormatStr = "%s/%s/%s%s";
+	const char* FormatStr = "%s/%s/%s%s";
 	FileHandle f;
 
 #define SUPPORTED_FILETYPE_COUNT 2
@@ -169,7 +169,7 @@ bool SystemFontLoader::ImportFontconfigFile(FileHandle* f, const char* typePath,
             LOG_INFO("Test");
 		}
 		else if (StringEquali(TrimmedVarName, "file")) {
-			char* FormatStr = "%s/%s/%s";
+			const char* FormatStr = "%s/%s/%s";
 			char FullFilePath[512];
 			StringFormat(FullFilePath, 511, FormatStr, ResourceSystem::GetRootPath(), typePath, TrimmedValue);
 

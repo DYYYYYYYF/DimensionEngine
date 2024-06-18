@@ -19,7 +19,7 @@ bool BitmapFontLoader::Load(const char* name, void* params, Resource* resource) 
 		return false;
 	}
 
-	char* FormatStr = "%s/%s/%s%s";
+	const char* FormatStr = "%s/%s/%s%s";
 	FileHandle f;
 
 #define SUPPORTED_FILETYPE_COUNT 2

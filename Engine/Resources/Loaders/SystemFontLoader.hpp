@@ -13,7 +13,7 @@ enum SystemFontFileType {
 };
 
 struct SupportedSystemFontFiletype {
-	char* extension;
+	const char* extension;
 	SystemFontFileType type;
 	bool isBinary;
 };

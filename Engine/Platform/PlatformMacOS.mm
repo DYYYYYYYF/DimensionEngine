@@ -148,7 +148,7 @@ void HandleModifierKeys(uint32_t ns_keycode, uint32_t modifier_flags, SInternalS
 // Handle modifier keys since they are only registered via modifier flags
 - (void)flagsChanged : (NSEvent*)event {
   // TODO: Should get SInternalState point and pass here.
-  HandleModifierKeys([event keyCode], [event modifierFlags], nullptr);
+  HandleModifierKeys([event keyCode], (uint32_t)[event modifierFlags], nullptr);
 }
 
 - (void)keyDown : (NSEvent*)event {
@@ -507,14 +507,14 @@ void Platform::PlatformSleep(size_t ms){
 	nanosleep(&ts, 0);
 #else
 	if (ms >= 1000) {
-		sleep(ms / 1000);
+		sleep((unsigned int)ms / 1000);
 	}
 	usleep((ms % 1000) * 1000);
 #endif
 }
 
 int Platform::GetProcessorCount(){
-	return [[NSProcessInfo processInfo]processorCount];
+	return (int)[[NSProcessInfo processInfo]processorCount];
 }
 
 // Vulkan

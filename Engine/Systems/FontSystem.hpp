@@ -8,15 +8,15 @@ struct BitmapFontLookup;
 struct SystemFontLookup;
 
 struct SystemFontConfig {
-	char* name = nullptr;
+	const char* name = nullptr;
 	unsigned short defaultSize;
-	char* resourceName = nullptr;
+	const char* resourceName = nullptr;
 };
 
 struct BitmapFontConfig {
-	char* name = nullptr;
+	const char* name = nullptr;
 	unsigned short size;
-	char* resourceName = nullptr;
+	const char* resourceName = nullptr;
 };
 
 struct FontSystemConfig {
