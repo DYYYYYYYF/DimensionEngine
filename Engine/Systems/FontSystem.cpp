@@ -455,7 +455,7 @@ bool FontSystem::CreateSystemFontVariant(SystemFontLookup* lookup, unsigned shor
 	SystemFontVariantData* InternalData = (SystemFontVariantData*)outVariant->internalData;
 
 	// Push default codepoints (ascii 32-127) always, plus a -1 for unknown.
-	InternalData->codepoints.Resize(96);
+	InternalData->codepoints = TArray<int>(96);
 	InternalData->codepoints.Push(-1);
 	for (int i = 0; i < 95; ++i) {
 		InternalData->codepoints.Push(i + 32);
