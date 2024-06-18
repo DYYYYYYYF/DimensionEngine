@@ -736,7 +736,7 @@ bool ApplicationOnResized(unsigned short code, void* sender, void* listener_inst
 				const float h = Height / 3.0f;
 				const float w = h * 200.0f / 470.0f;
 				const float x = 0.0f;
-				const float y = -Height;
+				const float y = -(float)Height;
 
 				Vertex2D UIVerts[4];
 				UIVerts[0].position.x = x;
