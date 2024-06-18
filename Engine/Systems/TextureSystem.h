@@ -44,7 +44,7 @@ public:
 		bool has_transparency, bool is_writeable, bool register_texture, void* internal_data);
 	static bool SetInternal(Texture* t, void* internal_data);
 	static bool Resize(Texture* t, uint32_t width, uint32_t height, bool regenerate_internal_data);
-	static bool WriteData(Texture* t, uint32_t offset, uint32_t size, void* data) { return true; }
+	static bool WriteData(Texture* t, uint32_t offset, uint32_t size, void* data);
 
 	static Texture* GetDefaultTexture();
 	static Texture* GetDefaultDiffuseTexture();

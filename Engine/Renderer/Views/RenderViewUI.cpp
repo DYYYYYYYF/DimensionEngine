@@ -11,16 +11,21 @@
 #include "Renderer/RendererFrontend.hpp"
 #include "Renderer/Interface/IRenderpass.hpp"
 #include "Renderer/Interface/IRendererBackend.hpp"
+#include "Resources/UIText.hpp"
 
 void RenderViewUI::OnCreate() {
 	ShaderID = ShaderSystem::GetID(CustomShaderName ? CustomShaderName : "Shader.Builtin.UI");
+	UsedShader = ShaderSystem::GetByID(ShaderID);
+	DiffuseMapLocation = ShaderSystem::GetUniformIndex(UsedShader, "diffuse_texture");
+	DiffuseColorLocation = ShaderSystem::GetUniformIndex(UsedShader, "diffuse_color");
+	ModelLocation = ShaderSystem::GetUniformIndex(UsedShader, "model");
 
 	// TODO: Set from configurable.
 	NearClip = -100.0f;
 	FarClip = 100.0f;
 
 	// Default
-	ProjectionMatrix = Matrix4::Matrix4::Orthographic(0, 1280.0f, 720.0f, 0.0f, NearClip, FarClip);
+	ProjectionMatrix = Matrix4::Matrix4::Orthographic(0, 1280.0f, 720.0f, 0.0f, NearClip, FarClip, true);
 	ViewMatrix = Matrix4::Identity();
 }
 
@@ -36,7 +41,7 @@ void RenderViewUI::OnResize(uint32_t width, uint32_t height) {
 
 	Width = width;
 	Height = height;
-	ProjectionMatrix = Matrix4::Orthographic(0.0f, (float)Width, (float)Height, 0.0f, NearClip, FarClip);
+	ProjectionMatrix = Matrix4::Orthographic(0.0f, (float)Width, (float)Height, 0.0f, NearClip, FarClip, true);
 
 	for (uint32_t i = 0; i < RenderpassCount; ++i) {
 		Passes[i]->SetRenderArea(Vec4(0, 0, (float)Width, (float)Height));
@@ -49,17 +54,20 @@ bool RenderViewUI::OnBuildPacket(void* data, struct RenderViewPacket* out_packet
 		return false;
 	}
 
-	MeshPacketData* MeshData = (MeshPacketData*)data;
+	UIPacketData* PacketData = (UIPacketData*)data;
 	out_packet->view = this;
 
 	// Set matrix, etc.
 	out_packet->projection_matrix = ProjectionMatrix;
 	out_packet->view_matrix = ViewMatrix;
 
+	// TODO: Temp set extended data to the test text objects for now.
+	out_packet->extended_data = data;
+
 	// Obtain all geometries from the current scene.
 	// Iterate all meshes and them to the packet's geometries collection.
-	for (uint32_t i = 0; i < MeshData->mesh_count; ++i) {
-		Mesh* pMesh = MeshData->meshes[i];
+	for (uint32_t i = 0; i < PacketData->meshData.mesh_count; ++i) {
+		Mesh* pMesh = PacketData->meshData.meshes[i];
 		for (uint32_t j = 0; j < pMesh->geometry_count; j++) {
 			GeometryRenderData RenderData;
 			RenderData.geometry = pMesh->geometries[j];
@@ -123,6 +131,39 @@ bool RenderViewUI::OnRender(struct RenderViewPacket* packet, IRendererBackend* b
 
 			// Draw
 			back_renderer->DrawGeometry(&packet->geometries[i]);
+		}
+
+		// Draw bitmap text.
+		UIPacketData* PacketData = (UIPacketData*)packet->extended_data;
+		for (uint32_t i = 0; i < PacketData->textCount; ++i) {
+			UIText* Text = PacketData->Textes[i];
+			ShaderSystem::BindInstance(Text->InstanceID);
+
+			if (!ShaderSystem::SetUniformByIndex(DiffuseMapLocation, &Text->Data->atlas)) {
+				LOG_ERROR("Failed to apply bitmap font diffuse map uniform.");
+				return false;
+			}
+
+			// TODO: font color
+			static Vec4 WhiteColor = Vec4(1.0f, 1.0f, 1.0f, 1.0f);
+			if (!ShaderSystem::SetUniformByIndex(DiffuseColorLocation, &WhiteColor)) {
+				LOG_ERROR("Failed to apply bitmap font diffuse color uniform.");
+				return false;
+			}
+
+			bool NeedUpdate = Text->RenderFrameNumber != frame_number;
+			ShaderSystem::ApplyInstance(NeedUpdate);
+
+			// Sync frame number.
+			Text->RenderFrameNumber = frame_number;
+
+			// Apply the locals.
+			Matrix4 Model = Text->Trans.GetWorldTransform();
+			if (!ShaderSystem::SetUniformByIndex(ModelLocation, &Model)) {
+				LOG_ERROR("Failde to apply model matrix for text.");
+			}
+
+			Text->Draw();
 		}
 
 		Pass->End();

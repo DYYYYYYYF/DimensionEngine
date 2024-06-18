@@ -1243,9 +1243,9 @@ bool VulkanBackend::InitializeShader(Shader* shader) {
 	// Viewport.
 	vk::Viewport Viewport;
 	Viewport.setX(0.0f)
-		.setY(0.0f)
+		.setY((float)Context.FrameBufferHeight)
 		.setWidth((float)Context.FrameBufferWidth)
-		.setHeight((float)Context.FrameBufferHeight)
+		.setHeight(-(float)Context.FrameBufferHeight)
 		.setMinDepth(0.0f)
 		.setMaxDepth(1.0f);
 
@@ -1844,8 +1844,7 @@ bool VulkanBackend::GetEnabledMultiThread() const {
 
 bool VulkanBackend::CreateRenderbuffer(enum RenderbufferType type, size_t total_size, bool use_freelist, IRenderbuffer* buffer) {
 	if (buffer == nullptr) {
-		LOG_ERROR("IRenderer::CreateRenderbuffer() Requires a valid pointer to hold the created buffer.");
-		return false;
+		buffer = new VulkanBuffer();
 	}
 
 	VulkanBuffer* VBuffer = (VulkanBuffer*)buffer;

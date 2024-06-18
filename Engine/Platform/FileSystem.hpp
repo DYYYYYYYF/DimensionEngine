@@ -12,6 +12,13 @@ enum FileMode {
 	eFile_Mode_Write = 0x2
 };
 
+#define CLOSE_IF_FAILED(func, handle)			\
+	if (!func)	{								\
+		LOG_ERROR("File operation failed.");	\
+		FileSystemClose(handle);				\
+		return false;							\
+	}
+
 /*
 * Checks if a file with the given path exists.
 * @param path The path of the file to be checked.

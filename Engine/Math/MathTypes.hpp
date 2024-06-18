@@ -861,7 +861,7 @@ public:
 	* @param far_clip The far clipping plane distance.
 	* @return A new orthographic projection matrix.
 	*/
-	static Matrix4 Orthographic(float left, float right, float bottom, float top, float near_clip, float far_clip) {
+	static Matrix4 Orthographic(float left, float right, float bottom, float top, float near_clip, float far_clip, bool reverse_y = false) {
 		Matrix4 Matrix = Matrix4::Identity();
 
 		float lr = 1.0f / (left - right);
@@ -875,6 +875,10 @@ public:
 		Matrix.data[12] = (left + right) * lr;
 		Matrix.data[13] = (top + bottom) * bt;
 		Matrix.data[14] = (far_clip + near_clip) * nf;
+
+		if (reverse_y) {
+			Matrix.data[5] *= -1.0f;
+		}
 
 		return Matrix;
 	}
@@ -1221,6 +1225,21 @@ struct Vertex {
 };
 
 struct Vertex2D {
+	Vertex2D() {
+		position = Vec2();
+		texcoord = Vec2();
+	}
+
+	Vertex2D(Vec2 pos) {
+		position = pos;
+		texcoord = Vec2();
+	}
+
+	Vertex2D(Vec2 pos, Vec2 tex) {
+		position = pos;
+		texcoord = tex;
+	}
+
 	Vec2 position;
 	Vec2 texcoord;
 };

@@ -3,6 +3,7 @@
 #include "Defines.hpp"
 #include "Math/MathTypes.hpp"
 #include "Resources/Shader.hpp"
+#include "Renderer/Interface/IRenderbuffer.hpp"
 
 #include <vector>
 #include <functional>
@@ -44,6 +45,13 @@ struct RenderTarget {
 struct MeshPacketData {
 	uint32_t mesh_count;
 	std::vector<Mesh*> meshes;
+};
+
+struct UIPacketData {
+	MeshPacketData meshData;
+	// TODO: temp
+	uint32_t textCount;
+	std::vector<class UIText*> Textes;
 };
 
 struct SkyboxPacketData {
