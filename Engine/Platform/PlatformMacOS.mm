@@ -233,7 +233,7 @@ static const NSRange kEmptyRange = { NSNotFound, 0 };
 }
 
 - (BOOL)windowShouldClose:(id)sender {
-  SInternalState* state_ptr = (SInternalState*)state->internalState;
+    SInternalState* state_ptr = (SInternalState*)state->internalState;
 	state_ptr->quit_flagged = true;
 
 	SEventContext Data = {};
@@ -243,7 +243,7 @@ static const NSRange kEmptyRange = { NSNotFound, 0 };
 }
 
 - (void)windowDidChangeScreen:(NSNotification*)notification {
-  SInternalState* state_ptr = (SInternalState*)state->internalState;
+    SInternalState* state_ptr = (SInternalState*)state->internalState;
 	SEventContext Context;
 	CGSize viewSize = state_ptr->view.bounds.size;
 	NSSize newDrawableSize = [state_ptr->view convertSizeToBacking : viewSize];

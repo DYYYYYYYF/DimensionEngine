@@ -316,7 +316,7 @@ inline bool StringEquali(const char* str0, const char* str1) {
 #elif (defined _MSC_VER)
 	return _strcmpi(str0, str1) == 0;
 #endif
-	return false;
+	return strcasecmp(str0, str1) == 0;
 }
 
 inline bool StringNequal(const char* str0, const char* str1, size_t len) {
@@ -329,7 +329,7 @@ inline bool StringNequali(const char* str0, const char* str1, size_t len) {
 #elif (defined _MSC_VER)
 	return _strnicmp(str0, str1, len) == 0;
 #endif
-	return false;
+	return strncasecmp(str0, str1, len) == 0;
 }
 
 inline void StringDirectoryFromPath(char* dst, const char* path) {

@@ -166,6 +166,7 @@ bool SystemFontLoader::ImportFontconfigFile(FileHandle* f, const char* typePath,
 		// Process the variable.
 		if (StringEquali(TrimmedVarName, "version")) {
 			// TODO: version
+            LOG_INFO("Test");
 		}
 		else if (StringEquali(TrimmedVarName, "file")) {
 			char* FormatStr = "%s/%s/%s";
