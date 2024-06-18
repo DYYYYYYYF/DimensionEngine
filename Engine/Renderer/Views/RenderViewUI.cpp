@@ -25,7 +25,7 @@ void RenderViewUI::OnCreate() {
 	FarClip = 100.0f;
 
 	// Default
-	ProjectionMatrix = Matrix4::Matrix4::Orthographic(0, 1280.0f, 720.0f, 0.0f, NearClip, FarClip);
+	ProjectionMatrix = Matrix4::Matrix4::Orthographic(0, 1280.0f, 720.0f, 0.0f, NearClip, FarClip, true);
 	ViewMatrix = Matrix4::Identity();
 }
 
@@ -41,7 +41,7 @@ void RenderViewUI::OnResize(uint32_t width, uint32_t height) {
 
 	Width = width;
 	Height = height;
-	ProjectionMatrix = Matrix4::Orthographic(0.0f, (float)Width, (float)Height, 0.0f, NearClip, FarClip);
+	ProjectionMatrix = Matrix4::Orthographic(0.0f, (float)Width, (float)Height, 0.0f, NearClip, FarClip, true);
 
 	for (uint32_t i = 0; i < RenderpassCount; ++i) {
 		Passes[i]->SetRenderArea(Vec4(0, 0, (float)Width, (float)Height));

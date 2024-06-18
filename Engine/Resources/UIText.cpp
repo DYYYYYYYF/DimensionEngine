@@ -13,7 +13,7 @@
 
 
 bool UIText::Create(class IRenderer* renderer, UITextType type, const char* fontName, unsigned short fontSize, const char* textContent) {
-	if (fontName == nullptr || textContent == nullptr) {
+	if (fontName == nullptr || textContent == nullptr || textContent[0] == '\0') {
 		LOG_ERROR(" UIText::Create() Requires a valid pointer to fontName and textContent.");
 		return false;
 	}
@@ -115,7 +115,7 @@ void UIText::SetText(const char* text) {
 			return;
 		}
 
-		uint32_t TextLength = (uint32_t)strlen(Text);
+		uint32_t TextLength = (uint32_t)strlen(Text) + 1;
 		Memory::Free(Text, sizeof(char) * TextLength, MemoryType::eMemory_Type_String);
 		Text = StringCopy(text);
 
@@ -233,7 +233,7 @@ void UIText::RegenerateGeometry() {
 			float tMinY = (float)g->y / Data->atlasSizeY;
 			float tMaxY = (float)(g->y + g->height) / Data->atlasSizeY;
 			// Flip the y axis for system text
-			if (Type == UITextType::eUI_Text_Type_system) {
+			if (Type == UITextType::eUI_Text_Type_Bitmap) {
 				tMinY = 1.0f - tMinY;
 				tMaxY = 1.0f - tMaxY;
 			}
@@ -243,10 +243,10 @@ void UIText::RegenerateGeometry() {
 			Vertex2D p1 = Vertex2D(Vec2(MaxX, MaxY), Vec2(tMaxX, tMaxY));
 			Vertex2D p3 = Vertex2D(Vec2(MinX, MaxY), Vec2(tMinX, tMaxY));
 
-			VertexBufferData[(uc * 4) + 0] = p0;	// 0		3
+			VertexBufferData[(uc * 4) + 0] = p0;	// 0		2
 			VertexBufferData[(uc * 4) + 1] = p1;	//
 			VertexBufferData[(uc * 4) + 2] = p2;	//
-			VertexBufferData[(uc * 4) + 3] = p3;	// 2		1
+			VertexBufferData[(uc * 4) + 3] = p3;	// 3		1
 
 			// Try to find kerning
 			int Kerning = 0;
@@ -282,14 +282,14 @@ void UIText::RegenerateGeometry() {
 			continue;
 		}
 
-		// Index data 210301
-		IndexBufferData[(uc * 6) + 0] = (uc * 4) + 2;
+		// Index data 0, 2, 1, 0, 1, 3
+		IndexBufferData[(uc * 6) + 0] = (uc * 4) + 0;
 		IndexBufferData[(uc * 6) + 1] = (uc * 4) + 1;
-		IndexBufferData[(uc * 6) + 2] = (uc * 4) + 0;
-		IndexBufferData[(uc * 6) + 3] = (uc * 4) + 3;
-		IndexBufferData[(uc * 6) + 4] = (uc * 4) + 0;
+		IndexBufferData[(uc * 6) + 2] = (uc * 4) + 2;
+		IndexBufferData[(uc * 6) + 3] = (uc * 4) + 0;
+		IndexBufferData[(uc * 6) + 4] = (uc * 4) + 3;
 		IndexBufferData[(uc * 6) + 5] = (uc * 4) + 1;
-
+		
 		// Now advance c
 		c += Advance - 1;
 		uc++;

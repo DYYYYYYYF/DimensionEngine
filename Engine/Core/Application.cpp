@@ -11,6 +11,7 @@
 
 #include "Renderer/RendererFrontend.hpp"
 #include "Math/MathTypes.hpp"
+#include "Containers/TString.hpp"
 
 // Systems
 #include "Systems/TextureSystem.h"
@@ -36,6 +37,8 @@ struct SApplicationState {
 	short width;
 	short height;
 	double last_time;
+	double FramePerSecond;
+	double EsapsedTime;
 	SClock clock;
 
 	// Temp
@@ -130,7 +133,11 @@ bool ApplicationCreate(SGame* game_instance){
 	// Init texture system
 	SResourceSystemConfig ResourceSystemConfig;
 	ResourceSystemConfig.max_loader_count = 32;
+#ifdef DPLATFORM_WINDOWS
 	ResourceSystemConfig.asset_base_path = "../Assets";
+#elif DPLATFORM_MACOS
+    ResourceSystemConfig.asset_base_path = "../../Assets";
+#endif
 	if (!ResourceSystem::Initialize(ResourceSystemConfig)) {
 		LOG_FATAL("Resource system failed to initialize!");
 		return false;
@@ -313,11 +320,11 @@ bool ApplicationCreate(SGame* game_instance){
 
 	// TODO: Temp
 	// Create test ui text objects.
-	if (!AppState.TestText.Create(Renderer, UITextType::eUI_Text_Type_Bitmap, "Ubuntu Mono 21px", 21, "Test text 123, \nyooo!")) {
+	if (!AppState.TestText.Create(Renderer, UITextType::eUI_Text_Type_Bitmap, "Ubuntu Mono 21px", 21, "Test! \n Yooo!")) {
 		LOG_ERROR("Failed to load basic ui bitmap text.");
 		return false;
 	}
-	AppState.TestText.SetPosition(Vec3(50, 100, 0));
+	AppState.TestText.SetPosition(Vec3(100, -200, 0));
 
 	// Skybox
 	TextureMap* CubeMap = &AppState.SB.Cubemap;
@@ -400,28 +407,28 @@ bool ApplicationCreate(SGame* game_instance){
 	const float h = game_instance->app_config.start_height / 3.0f;
 	const float w = h * 200.0f / 470.0f;
 	const float x = 0.0f;
-	const float y = game_instance->app_config.start_height;
+	const float y = -(float)game_instance->app_config.start_height;
 
 	Vertex2D UIVerts[4];
 	UIVerts[0].position.x = x;
 	UIVerts[0].position.y = y;
 	UIVerts[0].texcoord.x = 0.0f;
-	UIVerts[0].texcoord.y = 0.0f;
+	UIVerts[0].texcoord.y = 1.0f;
 
 	UIVerts[1].position.x = x + h;
-	UIVerts[1].position.y = y - w;
+	UIVerts[1].position.y = y + w;
 	UIVerts[1].texcoord.x = 1.0f;
-	UIVerts[1].texcoord.y = 1.0f;
+	UIVerts[1].texcoord.y = 0.0f;
 
 	UIVerts[2].position.x = x;
-	UIVerts[2].position.y = y - w;
+	UIVerts[2].position.y = y + w;
 	UIVerts[2].texcoord.x = 0.0f;
-	UIVerts[2].texcoord.y = 1.0f;
+	UIVerts[2].texcoord.y = 0.0f;
 
 	UIVerts[3].position.x = x + h;
 	UIVerts[3].position.y = y;
 	UIVerts[3].texcoord.x = 1.0f;
-	UIVerts[3].texcoord.y = 0.0f;
+	UIVerts[3].texcoord.y = 1.0f;
 
 	UIConfig.vertices = UIVerts;
 
@@ -443,6 +450,7 @@ bool ApplicationCreate(SGame* game_instance){
 		return false;
 	}
 
+	AppState.FramePerSecond = 0;
 	AppState.game_instance->on_resize(AppState.game_instance, AppState.width, AppState.height);
 	Renderer->OnResize(AppState.width, AppState.height);
 
@@ -453,11 +461,12 @@ bool ApplicationCreate(SGame* game_instance){
 bool ApplicationRun() {
 	Clock::Start(&AppState.clock);
 	Clock::Update(&AppState.clock);
-	AppState.last_time = AppState.clock.elapsed;
+	AppState.last_time = AppState.clock.elapsed;	// Seconds
+	AppState.EsapsedTime = 0.0;
 
-	double RunningTime = 0;
+	double RunningTime = 0.0;
 	short FrameCount = 0;
-	double TargetFrameSeconds = 1.0f / 60;
+	double TargetFrameSeconds = 1.0 / 120.0;
 
 	LOG_DEBUG(Memory::GetMemoryUsageStr());
 
@@ -468,9 +477,9 @@ bool ApplicationRun() {
 
 		if (!AppState.is_suspended) {
 			Clock::Update(&AppState.clock);
-			double CurrentTime = AppState.clock.elapsed;
+			double CurrentTime = AppState.clock.elapsed;		// Seconds
 			double DeltaTime = (CurrentTime - AppState.last_time);
-			double FrameStartTime = Platform::PlatformGetAbsoluteTime();
+			AppState.EsapsedTime += DeltaTime;
 
 			JobSystem::Update();
 
@@ -538,6 +547,23 @@ bool ApplicationRun() {
 				}
 			}
 
+			Camera* WorldCamera = CameraSystem::GetDefault();
+			Vec3 Pos = WorldCamera->GetPosition();
+			Vec3 Rot = WorldCamera->GetEulerAngles();
+
+			// TODO: Temp
+			if (AppState.EsapsedTime > 0.5) {
+				char FPS[512];
+				StringFormat(FPS, 512,
+					"Camera Pos: [%.3f %.3f %.3f]\nCamera Rot: [%.3f %.3f %.3f]\nFPS: %d\tDelta time: %.2f",
+					Pos.x, Pos.y, Pos.z,
+					Rad2Deg(Rot.x), Rad2Deg(Rot.y), Rad2Deg(Rot.z),
+					(int)AppState.FramePerSecond,
+					(float)DeltaTime * 1000
+				);
+				AppState.TestText.SetText(FPS);
+			}
+
 			UIPacketData UIPacket;
 			UIPacket.meshData.mesh_count = (uint32_t)UIMeshes.size();
 			UIPacket.meshData.meshes = UIMeshes;
@@ -552,7 +578,6 @@ bool ApplicationRun() {
 
 			Renderer->DrawFrame(&Packet);
 
-			// TODO: Temp
 			// Cleanup the packet.
 			for (uint32_t i = 0; i < Packet.view_count; ++i) {
 				const IRenderView* RenderView = Packet.views[i].view;
@@ -569,15 +594,14 @@ bool ApplicationRun() {
 			std::vector<UIText*>().swap(Texts);
 
 			// Figure FPS
-			double FrameEndTime = Platform::PlatformGetAbsoluteTime();
-			double FrameEsapsedTime = FrameEndTime - FrameStartTime;
-			RunningTime += FrameEsapsedTime;
-			double RemainingSceonds = TargetFrameSeconds - FrameEsapsedTime;
+			RunningTime += DeltaTime;
+			double RemainingSceonds = TargetFrameSeconds - DeltaTime;
 
 			// Limit FPS
 			if (RemainingSceonds > 0) {
 				int RemainingMS = static_cast<int>(RemainingSceonds * 1000);
-				bool LimitFrames = false;
+				// TODO: Configurable
+				bool LimitFrames = true;
 				if (RemainingMS > 0 && LimitFrames) {
 					Platform::PlatformSleep(RemainingMS - 1);
 				}
@@ -585,10 +609,16 @@ bool ApplicationRun() {
 				FrameCount++;
 			}
 
-			Core::InputUpdate(DeltaTime);
-
-			// Update time
 			AppState.last_time = CurrentTime;
+
+			// Update FPS per 0.5s
+			if (AppState.EsapsedTime > 0.5) {
+				AppState.FramePerSecond = (double)FrameCount / AppState.EsapsedTime;
+				AppState.EsapsedTime = 0.0;
+				FrameCount = 0;
+			}
+
+			Core::InputUpdate(DeltaTime);
 		}
 	}
 
@@ -695,28 +725,28 @@ bool ApplicationOnResized(unsigned short code, void* sender, void* listener_inst
 				const float h = Height / 3.0f;
 				const float w = h * 200.0f / 470.0f;
 				const float x = 0.0f;
-				const float y = Height;
+				const float y = 0;
 
 				Vertex2D UIVerts[4];
 				UIVerts[0].position.x = x;
 				UIVerts[0].position.y = y;
 				UIVerts[0].texcoord.x = 0.0f;
-				UIVerts[0].texcoord.y = 0.0f;
+				UIVerts[0].texcoord.y = 1.0f;
 
 				UIVerts[1].position.x = x + h;
-				UIVerts[1].position.y = y - w;
+				UIVerts[1].position.y = y + w;
 				UIVerts[1].texcoord.x = 1.0f;
-				UIVerts[1].texcoord.y = 1.0f;
+				UIVerts[1].texcoord.y = 0.0f;
 
 				UIVerts[2].position.x = x;
-				UIVerts[2].position.y = y - w;
+				UIVerts[2].position.y = y + w;
 				UIVerts[2].texcoord.x = 0.0f;
-				UIVerts[2].texcoord.y = 1.0f;
+				UIVerts[2].texcoord.y = 0.0f;
 
 				UIVerts[3].position.x = x + h;
 				UIVerts[3].position.y = y;
 				UIVerts[3].texcoord.x = 1.0f;
-				UIVerts[3].texcoord.y = 0.0f;
+				UIVerts[3].texcoord.y = 1.0f;
 
 				UIConfig.vertices = UIVerts;
 

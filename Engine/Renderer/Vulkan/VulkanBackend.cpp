@@ -1243,9 +1243,9 @@ bool VulkanBackend::InitializeShader(Shader* shader) {
 	// Viewport.
 	vk::Viewport Viewport;
 	Viewport.setX(0.0f)
-		.setY(0.0f)
+		.setY((float)Context.FrameBufferHeight)
 		.setWidth((float)Context.FrameBufferWidth)
-		.setHeight((float)Context.FrameBufferHeight)
+		.setHeight(-(float)Context.FrameBufferHeight)
 		.setMinDepth(0.0f)
 		.setMaxDepth(1.0f);
 

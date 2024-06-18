@@ -120,7 +120,7 @@ bool VulkanBuffer::Resize(VulkanContext* context, size_t size) {
 
 	// Gather memory requirements
 	vk::MemoryRequirements MemRequirements;
-	MemRequirements = context->Device.GetLogicalDevice().getBufferMemoryRequirements(Buffer);
+	MemRequirements = context->Device.GetLogicalDevice().getBufferMemoryRequirements(NewBuffer);
 
 	// Allocate memory info
 	vk::MemoryAllocateInfo AllocateInfo;
@@ -135,7 +135,7 @@ bool VulkanBuffer::Resize(VulkanContext* context, size_t size) {
 	context->Device.GetLogicalDevice().bindBufferMemory(NewBuffer, NewMemory, 0);
 
 	// Copy over the data
-	CopyRange(context, Buffer, 0, NewBuffer, 0, TotalSize);
+	//CopyRange(context, Buffer, 0, NewBuffer, 0, TotalSize);
 	context->Device.GetLogicalDevice().waitIdle();
 
 	// Destroy the old
@@ -156,7 +156,6 @@ bool VulkanBuffer::Resize(VulkanContext* context, size_t size) {
 	Memory::AllocateReport(MemoryRequirements.size, IsDeviceMemory ? MemoryType::eMemory_Type_GPU_Local : MemoryType::eMemory_Type_Vulkan);
 
 	// Set new properties
-	TotalSize = size;
 	Memory = NewMemory;
 	Buffer = NewBuffer;
 

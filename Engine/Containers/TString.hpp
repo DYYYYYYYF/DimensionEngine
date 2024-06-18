@@ -13,7 +13,10 @@
 
 template<typename... Args>
 inline void StringFormat(char* dst, size_t size, const char* format, Args... args) {
-	snprintf(dst, size, format, args...);
+	size_t len = snprintf(NULL, 0, format, args...);
+	if (len > 0) {
+		snprintf(dst, len + 1, format, args...);
+	}
 }
 
 class DAPI String {
