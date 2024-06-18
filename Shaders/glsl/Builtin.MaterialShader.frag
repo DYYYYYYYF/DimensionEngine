@@ -75,11 +75,10 @@ void main(){
 	Normal = normalize(TBN * LocalNormal);
 
 	vec3 vViewDirection = normalize(in_dto.vViewPosition - in_dto.vFragPosition);
-	// FragColor = CalculateDirectionalLight(dir_light, Normal, vViewDirection);
-  FragColor = vec4(1.0f, 1.0f, 1.0f, 1.0f);
+	FragColor = CalculateDirectionalLight(dir_light, Normal, vViewDirection);
 
-	// FragColor += CalculatePointLight(point_light_0, Normal, in_dto.vFragPosition, vViewDirection);
-	// FragColor += CalculatePointLight(point_light_1, Normal, in_dto.vFragPosition, vViewDirection);
+	FragColor += CalculatePointLight(point_light_0, Normal, in_dto.vFragPosition, vViewDirection);
+	FragColor += CalculatePointLight(point_light_1, Normal, in_dto.vFragPosition, vViewDirection);
 }
 
 vec4 CalculateDirectionalLight(DirectionalLight light, vec3 normal, vec3 view_direction){
