@@ -229,7 +229,7 @@ static const NSRange kEmptyRange = { NSNotFound, 0 };
 		state_ptr->quit_flagged = false;
 	}
     
-    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(windowDidResize:) name:NSWindowDidResizeNotification object:nil];
+    //[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(windowDidResize:) name:NSWindowDidResizeNotification object:nil];
 
 	return self;
 }
