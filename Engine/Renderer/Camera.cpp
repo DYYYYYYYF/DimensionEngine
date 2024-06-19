@@ -25,7 +25,7 @@ Vec3 Camera::GetEulerAngles() {
 }
 
 void Camera::SetEulerAngles(Vec3 eular) {
-	EulerRotation = eular;
+    EulerRotation = eular;
 	IsDirty = true;
 }
 
@@ -91,6 +91,11 @@ void Camera::RotateYaw(float amount) {
 }
 
 void Camera::RotatePitch(float amount) {
+    // MacOS screen space needs fliter y.
+#ifdef DPLATFORM_APPLE
+    amount *= -1;
+#endif
+        
 	EulerRotation.x += amount;
 
 	// Clamp to avoid Gimball lock.
