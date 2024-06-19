@@ -25,6 +25,7 @@ struct VulkanPipelineConfig {
 	bool depth_test_enabled;
 	uint32_t push_constant_range_count;
 	Range* push_constant_ranges = nullptr;
+	ShaderFlagBits shaderFlags;
 };
 
 class VulkanPipeline {

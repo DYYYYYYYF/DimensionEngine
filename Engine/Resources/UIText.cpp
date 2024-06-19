@@ -2,6 +2,7 @@
 
 #include "Core/DMemory.hpp"
 #include "Core/EngineLogger.hpp"
+#include "Core/Identifier.hpp"
 #include "Containers/TString.hpp"
 #include "Math/MathTypes.hpp"
 #include "Math/Transform.hpp"
@@ -43,7 +44,7 @@ bool UIText::Create(class IRenderer* renderer, UITextType type, const char* font
 	}
 
 	// Acquire resource for font texture map.
-	Shader* UIShader = ShaderSystem::Get(BUILTIN_SHADER_NAME_UI);	// TODO: Text shader.
+	Shader* UIShader = ShaderSystem::Get("BUILTIN_SHADER_NAME_UI");	// TODO: Text shader.
 	std::vector<TextureMap*> FontMaps = { &Data->atlas };
 	InstanceID = renderer->AcquireInstanceResource(UIShader, FontMaps);
 	if (InstanceID == INVALID_ID) {
@@ -82,10 +83,17 @@ bool UIText::Create(class IRenderer* renderer, UITextType type, const char* font
 
 	// Generate geometry.
 	RegenerateGeometry();
+
+	// Get a unique identifier for the text object.
+	UniqueID = Identifier::AcquireNewID(this);
+
 	return true;
 }
 void UIText::Destroy() {
 	if (Text != nullptr) {
+		// Release the unique id.
+		Identifier::ReleaseID(UniqueID);
+
 		uint32_t TextLength = (uint32_t)strlen(Text);
 		Memory::Free(Text, sizeof(char) * TextLength, MemoryType::eMemory_Type_String);
 		Text = nullptr;
@@ -96,7 +104,7 @@ void UIText::Destroy() {
 	Renderer->DestroyRenderbuffer(&IndexBuffer);
 
 	// Release resources for font texture map.
-	Shader* UIShader = ShaderSystem::Get(BUILTIN_SHADER_NAME_UI);	// TODO: Text shader.
+	Shader* UIShader = ShaderSystem::Get("BUILTIN_SHADER_NAME_UI");	// TODO: Text shader.
 	if (!Renderer->ReleaseInstanceResource(UIShader, InstanceID)) {
 		LOG_FATAL("Unable to release shader resources for font texture map.");
 	}

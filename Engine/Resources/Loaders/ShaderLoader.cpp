@@ -40,7 +40,6 @@ bool ShaderLoader::Load(const char* name, void* params, Resource* resource) {
 	ResourceData->uniform_count = 0;
 	ResourceData->stage_cout = 0;
 	ResourceData->cull_mode = FaceCullMode::eFace_Cull_Mode_Back;
-	ResourceData->renderpass_name = nullptr;
 	ResourceData->name = nullptr;
 
 	// Read each line of the file.
@@ -89,7 +88,7 @@ bool ShaderLoader::Load(const char* name, void* params, Resource* resource) {
 			ResourceData->name = StringCopy(TrimmedValue);
 		}
 		else if (strcmp(RawVarName, "renderpass") == 0) {
-			ResourceData->renderpass_name = StringCopy(TrimmedValue);
+			// ResourceData->renderpass_name = StringCopy(TrimmedValue);
 		}
 		else if (strcmp(RawVarName, "stages") == 0) {
 			// Parse the stages.
@@ -142,6 +141,12 @@ bool ShaderLoader::Load(const char* name, void* params, Resource* resource) {
 			else if (strcmp(TrimmedValue, "none") == 0) {
 				ResourceData->cull_mode = FaceCullMode::eFace_Cull_Mode_None;
 			}
+		}
+		else if (strcmp(TrimmedVarName, "depth_test") == 0) {
+			ResourceData->depthTest = StringToBool(TrimmedValue);
+		}
+		else if (strcmp(TrimmedVarName, "depth_write") == 0) {
+			ResourceData->depthWrite = StringToBool(TrimmedValue);
 		}
 		else if (strcmp(TrimmedVarName, "attribute") == 0) {
 			// Parse attribute.
@@ -359,11 +364,6 @@ void ShaderLoader::Unload(Resource* resource) {
 	if (Data->name) {
 		Memory::Free(Data->name, sizeof(char) * (strlen(Data->name) + 1), MemoryType::eMemory_Type_String);
 		Data->name = nullptr;
-	}
-
-	if (Data->renderpass_name) {
-		Memory::Free(Data->renderpass_name, sizeof(char) * (strlen(Data->renderpass_name) + 1), MemoryType::eMemory_Type_String);
-		Data->renderpass_name = nullptr;
 	}
 
 	if (resource->Name) {

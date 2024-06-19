@@ -98,7 +98,7 @@ bool VulkanPipeline::Create(VulkanContext* context, const VulkanPipelineConfig& 
 	// Vertex input
 	vk::VertexInputBindingDescription BindingDescription;
 	BindingDescription.setBinding(0)
-		.setStride(stride)
+		.setStride(config.stride)
 		.setInputRate(vk::VertexInputRate::eVertex);
 
 	// Attributes

@@ -66,14 +66,6 @@ public:
 	virtual bool EndRenderpass(IRenderpass* pass);
 
 	/**
-	 * @brief Obtains a pointer of the renderpass with the given name.
-	 *
-	 * @param name The name of the renderpass whose identifier to obtain.
-	 * @return A pointer to a renderpass if found.
-	 */
-	virtual IRenderpass* GetRenderpass(const char* name);
-
-	/**
 	 * @brief Creates internal shader resources using the provided parameters.
 	 *
 	 * @param shader A pointer to the shader.
@@ -186,6 +178,9 @@ public:
 	 */
 	virtual void ReleaseTextureMap(TextureMap* map);
 
+	virtual void ReadTextureData(Texture* tex, uint32_t offset, uint32_t size, void** outMemeory);
+	virtual void ReadTexturePixel(Texture* tex, uint32_t x, uint32_t y, unsigned char** outRGBA);
+
 	// Renderbuffer
 	virtual bool CreateRenderbuffer(enum RenderbufferType type, size_t total_size, bool use_freelist, IRenderbuffer* buffer);
 	virtual void DestroyRenderbuffer(IRenderbuffer* buffer);
@@ -201,30 +196,28 @@ public:
 	virtual bool DrawRenderbuffer(IRenderbuffer* buffer, size_t offset, uint32_t element_count, bool bind_only);
 	virtual bool AllocateRenderbuffer(IRenderbuffer* buffer, size_t size, size_t* out_offset);
 	virtual bool FreeRenderbuffer(IRenderbuffer* buffer, size_t size, size_t offset);
+	
+	// Render target
+	virtual void SetViewport(Vec4 rect);
+	virtual void ResetViewport();
+	virtual void SetScissor(Vec4 rect);
+	virtual void ResetScissor();
 
 	// Renderpass
-	virtual void CreateRenderTarget(unsigned char attachment_count, std::vector<Texture*> attachments, IRenderpass* pass, uint32_t width, uint32_t height, RenderTarget* out_target) ;
+	virtual bool CreateRenderTarget(unsigned char attachment_count, std::vector<RenderTargetAttachment> attachments, IRenderpass* pass, uint32_t width, uint32_t height, RenderTarget* out_target);
 	virtual void DestroyRenderTarget(RenderTarget* target, bool free_internal_memory) ;
-	virtual void CreateRenderpass(IRenderpass* out_renderpass, float depth, uint32_t stencil, bool has_prev_pass, bool has_next_pass) ;
+	virtual bool CreateRenderpass(IRenderpass* out_renderpass, const RenderpassConfig* config);
 	virtual void DestroyRenderpass(IRenderpass* pass) ;
 	virtual IRendererBackend* GetRenderBackend() { return Backend; }
 
-private:
-	virtual void RegenerateRenderTargets();
+	virtual Texture* GetWindowAttachment(unsigned char index);
+	virtual unsigned char GetWindowAttachmentCount() const;
+	virtual Texture* GetDepthAttachment(unsigned char index);
+	virtual unsigned char GetWindowAttachmentIndex();
 
 protected:
 	RendererBackendType BackendType;
 	class IRendererBackend* Backend;
-
-	// Shaders
-	uint32_t SkyboxShaderID;
-	uint32_t MaterialShaderID;
-	uint32_t UISHaderID;
-
-	// Renderpasses
-	IRenderpass* SkyboxRenderpass;
-	IRenderpass* WorldRenderpass;
-	IRenderpass* UIRenderpass;
 
 	unsigned char WindowRenderTargetCount;
 	uint32_t FramebufferWidth;

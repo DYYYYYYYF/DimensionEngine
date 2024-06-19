@@ -36,7 +36,7 @@ public:
 	 *
 	 * @return True on success; otherwise false.
 	 */
-	static bool Create(ShaderConfig* config);
+	static bool Create(IRenderpass* pass, ShaderConfig* config);
 
 	/**
 	 * @brief Gets the identifier of a shader by name.

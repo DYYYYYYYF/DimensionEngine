@@ -68,3 +68,14 @@ inline float Deg2Rad(float degress) {
 inline float Rad2Deg(float radians) {
 	return radians * D_RAD2DEG_MULTIPLIER;
 }
+
+inline float RangeConvertfloat(float value, float old_min, float old_max, float new_min, float new_max) {
+	return (((value - old_min) * (new_max - new_min)) / (old_max - old_min)) + new_min;
+}
+
+inline void RGB2Uint(unsigned int r, unsigned int g, unsigned int b, unsigned int* rgb) {
+	*rgb = (((r & 0x0FF) << 16) | ((g & 0x0FF) << 8) | (b & 0xFF));
+}
+
+void RGBU2Float(unsigned int r, unsigned int g, unsigned int b, struct Vec3* rgb);
+void Vec2RGBU(struct Vec3 rgb, unsigned int* r, unsigned int* g, unsigned int* b);

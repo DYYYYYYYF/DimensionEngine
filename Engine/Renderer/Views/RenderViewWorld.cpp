@@ -6,10 +6,13 @@
 #include "Math/DMath.hpp"
 #include "Math/Transform.hpp"
 #include "Containers/TArray.hpp"
+#include "Containers/TString.hpp"
 
 #include "Systems/MaterialSystem.h"
 #include "Systems/ShaderSystem.h"
 #include "Systems/CameraSystem.h"
+#include "Systems/ResourceSystem.h"
+#include "Systems/RenderViewSystem.hpp"
 
 #include "Renderer/RendererFrontend.hpp"
 #include "Renderer/Interface/IRenderpass.hpp"
@@ -22,9 +25,67 @@ struct GeometryDistance {
 
 static void QuickSort(std::vector<GeometryDistance>& arr, int low_index, int high_index, bool ascending);
 
+static bool RenderViewWorldOnEvent(unsigned short code, void* sender, void* listenerInst, SEventContext context) {
+	IRenderView* self = (IRenderView*)listenerInst;
+	if (self == nullptr) {
+		return false;
+	}
 
-void RenderViewWorld::OnCreate() {
-	ShaderID = ShaderSystem::GetID(CustomShaderName ? CustomShaderName : "Shader.Builtin.Material");
+	switch (code)
+	{
+	case Core::eEvent_Code_Default_Rendertarget_Refresh_Required:
+		RenderViewSystem::RegenerateRendertargets(self);
+		return false;
+	}
+
+	return false;
+}
+
+RenderViewWorld::RenderViewWorld() {
+	// Builtin ui shader.
+	const char* ShaderName = "Shader.Builtin.Material";
+	Resource ConfigResource;
+	if (!ResourceSystem::Load(ShaderName, ResourceType::eResource_Type_Shader, nullptr, &ConfigResource)) {
+		LOG_ERROR("Failed to load builtin skybox shader.");
+		return;
+	}
+
+	ShaderConfig* Config = (ShaderConfig*)ConfigResource.Data;
+	// NOTE: Assuming the first pass since that's all this view has.
+	if (!ShaderSystem::Create(Passes[0], Config)) {
+		LOG_ERROR("Failed to load builtin ksybox shader.");
+		return;
+	}
+	ResourceSystem::Unload(&ConfigResource);
+}
+
+RenderViewWorld::RenderViewWorld(const RenderViewConfig& config) {
+	Type = config.type;
+	Name = StringCopy(config.name);
+	CustomShaderName = config.custom_shader_name;
+	RenderpassCount = config.pass_count;
+	Passes.resize(RenderpassCount);
+
+	// Builtin ui shader.
+	const char* ShaderName = "Shader.Builtin.Material";
+	Resource ConfigResource;
+	if (!ResourceSystem::Load(ShaderName, ResourceType::eResource_Type_Shader, nullptr, &ConfigResource)) {
+		LOG_ERROR("Failed to load builtin skybox shader.");
+		return;
+	}
+
+	ShaderConfig* Config = (ShaderConfig*)ConfigResource.Data;
+	// NOTE: Assuming the first pass since that's all this view has.
+	if (!ShaderSystem::Create(Passes[0], Config)) {
+		LOG_ERROR("Failed to load builtin ksybox shader.");
+		return;
+	}
+	ResourceSystem::Unload(&ConfigResource);
+}
+
+bool RenderViewWorld::OnCreate() {
+	const char* ShaderName = "Shader.Builtin.Material";
+	UsedShader = ShaderSystem::Get(CustomShaderName ? CustomShaderName : "Shader.Builtin.Material");
 	ReserveY = true;
 
 	// TODO: Set from configurable.
@@ -38,10 +99,17 @@ void RenderViewWorld::OnCreate() {
 
 	// TODO: Obtain from scene.
 	AmbientColor = Vec4(0.7f, 0.7f, 0.7f, 1.0f);
+
+	if (!Core::EventRegister(Core::eEvent_Code_Default_Rendertarget_Refresh_Required, this, RenderViewWorldOnEvent)) {
+		LOG_ERROR("Unable to listen for refresh required event, creation failed.");
+		return false;
+	}
+
+	return true;
 }
 
 void RenderViewWorld::OnDestroy() {
-
+	Core::EventUnregister(Core::eEvent_Code_Default_Rendertarget_Refresh_Required, this, RenderViewWorldOnEvent);
 }
 
 void RenderViewWorld::OnResize(uint32_t width, uint32_t height) {
@@ -134,8 +202,12 @@ void RenderViewWorld::OnDestroyPacket(struct RenderViewPacket* packet) const {
 	Memory::Zero(packet, sizeof(RenderViewPacket));
 }
 
+bool RenderViewWorld::RegenerateAttachmentTarget(uint32_t passIndex, RenderTargetAttachment* attachment) {
+	return false;
+}
+
 bool RenderViewWorld::OnRender(struct RenderViewPacket* packet, IRendererBackend* back_renderer, size_t frame_number, size_t render_target_index) const {
-	uint32_t SID = ShaderID;
+	uint32_t SID = UsedShader->ID;
 	for (uint32_t p = 0; p < RenderpassCount; ++p) {
 		IRenderpass* Pass = Passes[p];
 		Pass->Begin(&Pass->Targets[render_target_index]);

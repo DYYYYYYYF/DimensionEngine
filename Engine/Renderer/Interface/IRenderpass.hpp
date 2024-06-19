@@ -34,7 +34,7 @@ struct RenderpassConfig {
 	unsigned char clear_flags;
 
 	unsigned char renderTargetCount;
-	RenderTargetConfig target;
+	struct RenderTargetConfig target;
 };
 
 class IRenderpass {
@@ -42,7 +42,7 @@ public:
 	virtual bool Create(VulkanContext* context, const RenderpassConfig* config) = 0;
 	virtual void Destroy(VulkanContext* context) = 0;
 
-	virtual void Begin(RenderTarget* target) = 0;
+	virtual void Begin(struct RenderTarget* target) = 0;
 	virtual void End() = 0;
 
 public:
@@ -60,7 +60,7 @@ public:
 
 public:
 	unsigned char RenderTargetCount;
-	std::vector<RenderTarget> Targets;
+	std::vector<struct RenderTarget> Targets; 
 	void* Renderpass = nullptr;
 
 protected:

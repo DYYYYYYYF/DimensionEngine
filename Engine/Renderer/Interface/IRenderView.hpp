@@ -4,6 +4,9 @@
 #include <vector>
 #include <functional>
 
+struct RenderViewPacket;
+struct RenderTargetAttachment;
+
 enum RenderViewKnownType {
 	eRender_View_Known_Type_World = 0x01,
 	eRender_View_Known_Type_UI = 0x02,
@@ -30,14 +33,12 @@ struct RenderViewConfig {
 	RenderViewViewMatrixtSource view_matrix_source;
 	RenderViewProjectionMatrixSource projection_matrix_source;
 	unsigned char pass_count;
-	std::vector<RenderpassConfig> passes;
+	std::vector<struct RenderpassConfig> passes;
 };
-
-struct RenderViewPacket;
 
 class IRenderView {
 public:
-	virtual void OnCreate() = 0;
+	virtual bool OnCreate() = 0;
 	virtual void OnDestroy() = 0;
 	virtual void OnResize(uint32_t width, uint32_t height) = 0;
 	virtual bool OnBuildPacket(void* data, struct RenderViewPacket* out_packet) const = 0;
@@ -56,7 +57,7 @@ public:
 	unsigned short Height;
 	RenderViewKnownType Type;
 	unsigned char RenderpassCount;
-	std::vector<class IRenderpass> Passes;
+	std::vector<class IRenderpass*> Passes;
 	const char* CustomShaderName = nullptr;
 };
 

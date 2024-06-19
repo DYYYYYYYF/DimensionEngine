@@ -51,7 +51,7 @@ struct RenderTargetAttachmentConfig {
 
 struct RenderTargetConfig {
 	unsigned char attachmentCount;
-	RenderTargetAttachmentConfig* attachments;
+	RenderTargetAttachmentConfig* attachments = nullptr;
 };
 
 struct RenderTargetAttachment {
@@ -82,7 +82,7 @@ struct SRenderPacket {
 struct RenderTarget {
 	bool sync_to_window_size;
 	unsigned char attachment_count;
-	std::vector<RenderTargetAttachment*> attachments;
+	std::vector<struct RenderTargetAttachment> attachments;
 	void* internal_framebuffer = nullptr;
 };
 

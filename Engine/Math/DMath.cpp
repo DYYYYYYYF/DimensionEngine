@@ -1,4 +1,5 @@
 #include "DMath.hpp"
+#include "MathTypes.hpp"
 
 #include <math.h>
 #include <random>
@@ -51,3 +52,14 @@ float DRandom(float min, float max) {
 	return static_cast<float>(distribution(m_mt19937));
 }
 
+void RGBU2Float(unsigned int r, unsigned int g, unsigned int b, struct Vec3* rgb) {
+	rgb->r = r / 255.0f;
+	rgb->g = g / 255.0f;
+	rgb->b = b / 255.0f;
+}
+
+void Vec2RGBU(struct Vec3 rgb, unsigned int* r, unsigned int* g, unsigned int* b) {
+	*r = static_cast<int>(rgb.r * 255);
+	*g = static_cast<int>(rgb.g * 255);
+	*b = static_cast<int>(rgb.b * 255);
+}

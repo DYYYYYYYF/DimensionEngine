@@ -411,7 +411,7 @@ bool VulkanBackend::BeginFrame(double delta_time){
 	// Dynamic state
 	Context.ViewportRect = Vec4(0.0f, (float)Context.FrameBufferHeight, (float)Context.FrameBufferWidth, -(float)Context.FrameBufferHeight);
 	SetViewport(Context.ViewportRect);
-	Context.ScissorRect = Vec4(0.0f, 0.0f, Context.FrameBufferWidth, Context.FrameBufferHeight);
+	Context.ScissorRect = Vec4(0.0f, 0.0f, (float)Context.FrameBufferWidth, (float)Context.FrameBufferHeight);
 	SetScissor(Context.ScissorRect);
 
 	return true;
@@ -498,10 +498,10 @@ void VulkanBackend::ResetViewport() {
 
 void VulkanBackend::SetScissor(Vec4 rect) {
 	vk::Rect2D Scissor;
-	Scissor.offset.x = rect.x;
-	Scissor.offset.y = rect.y;
-	Scissor.extent.width = rect.z;
-	Scissor.extent.height = rect.w;
+	Scissor.offset.x = (uint32_t)rect.x;
+	Scissor.offset.y = (uint32_t)rect.y;
+	Scissor.extent.width = (uint32_t)rect.z;
+	Scissor.extent.height = (uint32_t)rect.w;
 
 	VulkanCommandBuffer* CmdBuffer = &Context.GraphicsCommandBuffers[Context.ImageIndex];
 	CmdBuffer->CommandBuffer.setScissor(0, 1, &Scissor);
@@ -580,7 +580,7 @@ bool VulkanBackend::RecreateSwapchain() {
 	}
 
 	// Tell the renderer that a refresh is required.
-	SEventContext EventContext;
+	SEventContext EventContext = SEventContext();
 	Core::EventFire(Core::eEvent_Code_Default_Rendertarget_Refresh_Required, nullptr, EventContext);
 
 	CreateCommandBuffer();
@@ -730,6 +730,14 @@ void VulkanBackend::WriteTextureData(Texture* tex, uint32_t offset, uint32_t siz
 	DestroyRenderbuffer(&Staging);
 
 	tex->Generation++;
+}
+
+void VulkanBackend::ReadTextureData(Texture* tex, uint32_t offset, uint32_t size, void** outMemeory) {
+
+}
+
+void VulkanBackend::ReadTexturePixel(Texture* tex, uint32_t x, uint32_t y, unsigned char** outRGBA) {
+
 }
 
 bool VulkanBackend::CreateGeometry(Geometry* geometry, uint32_t vertex_size, uint32_t vertex_count, 
@@ -1233,7 +1241,7 @@ bool VulkanBackend::InitializeShader(Shader* shader) {
 	VulkanPipelineConfig PipelineConfig;
 	PipelineConfig.renderpass = InternalShader->Renderpass;
 	PipelineConfig.stride = shader->AttributeStride;
-	PipelineConfig.attribute_count = shader->Attributes.size();
+	PipelineConfig.attribute_count = (uint32_t)shader->Attributes.size();
 	PipelineConfig.attributes = InternalShader->Config.attributes;
 	PipelineConfig.descriptor_set_layout_count = InternalShader->Config.descriptor_set_count;
 	PipelineConfig.descriptor_set_layout = InternalShader->DescriptorSetLayouts;
@@ -1243,7 +1251,7 @@ bool VulkanBackend::InitializeShader(Shader* shader) {
 	PipelineConfig.scissor = Scissor;
 	PipelineConfig.cull_mode = InternalShader->Config.cull_mode;
 	PipelineConfig.is_wireframe = false;
-	PipelineConfig.shaderFlags = shader->flags;
+	PipelineConfig.shaderFlags = shader->Flags;
 	PipelineConfig.push_constant_range_count = shader->PushConstantsRangeCount;
 	PipelineConfig.push_constant_ranges = shader->PushConstantsRanges;
 
@@ -1755,7 +1763,7 @@ bool VulkanBackend::CreateRenderTarget(unsigned char attachment_count, std::vect
 	}
 
 	for (uint32_t i = 0; i < attachments.size(); ++i) {
-		out_target->attachments.push_back(&attachments[i]);
+		out_target->attachments.push_back(attachments[i]);
 	}
 
 	vk::FramebufferCreateInfo FramebufferCreateInfo;
@@ -1769,7 +1777,10 @@ bool VulkanBackend::CreateRenderTarget(unsigned char attachment_count, std::vect
 	if (Context.Device.GetLogicalDevice().createFramebuffer(&FramebufferCreateInfo, Context.Allocator,
 		(vk::Framebuffer*)&out_target->internal_framebuffer) != vk::Result::eSuccess) {
 		LOG_ERROR("VulkanBackend::CreateRenderTarget() Failed to create framebuffers.");
+		return false;
 	}
+
+	return true;
 }
 
 void  VulkanBackend::DestroyRenderTarget(RenderTarget* target, bool free_internal_memory) {
@@ -1779,6 +1790,7 @@ void  VulkanBackend::DestroyRenderTarget(RenderTarget* target, bool free_interna
 		if (free_internal_memory) {
 			target->attachments.clear();
 			target->attachment_count = 0;
+			Memory::Zero(target, sizeof(RenderTarget));
 		}
 	}
 }
@@ -1811,7 +1823,7 @@ unsigned char VulkanBackend::GetWindowAttachmentCount() const {
 }
 
 bool VulkanBackend::CreateRenderpass(IRenderpass* out_renderpass, const RenderpassConfig* config) {
-	out_renderpass->Create(&Context, config);
+	return out_renderpass->Create(&Context, config);
 }
 
 void VulkanBackend::DestroyRenderpass(IRenderpass* pass) {

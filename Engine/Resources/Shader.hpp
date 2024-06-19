@@ -57,6 +57,14 @@ enum FaceCullMode {
 	eFace_Cull_Mode_Front_And_Back = 0x3,
 };
 
+enum ShaderFlags {
+	eShader_Flag_None = 0x0,
+	eShader_Flag_DepthTest = 0x1,
+	eShader_Flag_DepthWrite = 0x2,
+};
+
+typedef unsigned int ShaderFlagBits;
+
 struct MaterialShaderUniformLocations {
 	unsigned short projection;
 	unsigned short view;
@@ -153,10 +161,14 @@ struct ShaderConfig {
 
 	std::vector<char*> stage_names;
 	std::vector<char*> stage_filenames;
+
+	bool depthTest;
+	bool depthWrite;
 };
 
 class Shader {
 public:
+	ShaderFlagBits Flags;
 	uint32_t ID = INVALID_ID;
 	char* Name = nullptr;
 
@@ -185,6 +197,4 @@ public:
 	std::vector<ShaderAttribute> Attributes;
 	std::vector<TextureMap*> GlobalTextureMaps;
 
-	bool DepthTest;
-	bool DepthWrite;
 };

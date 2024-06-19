@@ -27,6 +27,7 @@ private:
 	void RegenerateGeometry();
 
 public:
+	uint32_t UniqueID;
 	IRenderer* Renderer;
 	UITextType Type;
 	struct FontData* Data;

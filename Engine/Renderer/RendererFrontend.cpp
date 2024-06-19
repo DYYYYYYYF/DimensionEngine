@@ -18,7 +18,7 @@
 #include "Core/Event.hpp"
 // TODO: temp
 
-IRenderer::IRenderer() : Backend(nullptr), WorldRenderpass(nullptr),UIRenderpass(nullptr){}
+IRenderer::IRenderer() : Backend(nullptr){}
 
 IRenderer::IRenderer(RendererBackendType type, struct SPlatformState* plat_state) : Backend(nullptr){
 	IRenderer();
@@ -55,102 +55,17 @@ bool IRenderer::Initialize(const char* application_name, struct SPlatformState* 
 
 	RenderBackendConfig RendererConfig;
 	RendererConfig.application_name = application_name;
-	RendererConfig.OnRenderTargetRefreshRequired = std::bind(&IRenderer::RegenerateRenderTargets, this);
-
-	// Renderpasses. TODO: Read config from file.
-	RendererConfig.renderpass_count = 3;
-	const char* SkyboxPassName = "Renderpass.Builtin.Skybox";
-	const char* WorldPassName = "Renderpass.Builtin.World";
-	const char* UIPassName = "Renderpass.Builtin.UI";
-	RenderpassConfig PassConfigs[3];
-	PassConfigs[0].name = SkyboxPassName;
-	PassConfigs[0].prev_name = nullptr;
-	PassConfigs[0].next_name = WorldPassName;
-	PassConfigs[0].render_area = Vec4(0.0f, 0.0f, 1280.0f, 720.0f);
-	PassConfigs[0].clear_color = Vec4(0.0f, 0.0f, 0.2f, 1.0f);
-	PassConfigs[0].clear_flags = RenderpassClearFlags::eRenderpass_Clear_Color_Buffer;
-
-	PassConfigs[1].name = WorldPassName;
-	PassConfigs[1].prev_name = SkyboxPassName;
-	PassConfigs[1].next_name = UIPassName;
-	PassConfigs[1].render_area = Vec4(0.0f, 0.0f, 1280.0f, 720.0f);
-	PassConfigs[1].clear_color = Vec4(0.0f, 0.0f, 0.2f, 1.0f);
-	PassConfigs[1].clear_flags = RenderpassClearFlags::eRenderpass_Clear_Depth_Buffer | RenderpassClearFlags::eRenderpass_Clear_Stencil_Buffer;
-
-	PassConfigs[2].name = UIPassName;
-	PassConfigs[2].prev_name = WorldPassName;
-	PassConfigs[2].next_name = nullptr;
-	PassConfigs[2].render_area = Vec4(0.0f, 0.0f, 1280.0f, 720.0f);
-	PassConfigs[2].clear_color = Vec4(0.0f, 0.0f, 0.2f, 1.0f);
-	PassConfigs[2].clear_flags = RenderpassClearFlags::eRenderpass_Clear_None;
-
-	RendererConfig.pass_config = PassConfigs;
 
 	if (!Backend->Initialize(&RendererConfig, &WindowRenderTargetCount, plat_state)) {
 		LOG_FATAL("Renderer backend init failed.");
 		return false;
 	}
 
-	// TODO: Will know how to get these when we define views.
-	SkyboxRenderpass = Backend->GetRenderpass(SkyboxPassName);
-	SkyboxRenderpass->RenderTargetCount = WindowRenderTargetCount;
-	SkyboxRenderpass->Targets.resize(WindowRenderTargetCount);
-
-	WorldRenderpass = Backend->GetRenderpass(WorldPassName);
-	WorldRenderpass->RenderTargetCount = WindowRenderTargetCount;
-	WorldRenderpass->Targets.resize(WindowRenderTargetCount);
-
-	UIRenderpass = Backend->GetRenderpass(UIPassName);
-	UIRenderpass->RenderTargetCount = WindowRenderTargetCount;
-	UIRenderpass->Targets.resize(WindowRenderTargetCount);
-
-	RegenerateRenderTargets();
-
-	// Update the main/world renderpass dimensions.
-	SkyboxRenderpass->SetRenderArea(Vec4(0, 0, (float)FramebufferWidth, (float)FramebufferHeight));
-	WorldRenderpass->SetRenderArea(Vec4(0, 0, (float)FramebufferWidth, (float)FramebufferHeight));
-	UIRenderpass->SetRenderArea(Vec4(0, 0, (float)FramebufferWidth, (float)FramebufferHeight));
-
-	// Shaders
-	Resource ConfigResource;
-	ShaderConfig* Config = nullptr;
-
-	// Builtin skybox shader.
-	ResourceSystem::Load(BUILTIN_SHADER_NAME_SKYBOX, ResourceType::eResource_Type_Shader, nullptr, &ConfigResource);
-	Config = (ShaderConfig*)ConfigResource.Data;
-	ShaderSystem::Create(Config);
-	ResourceSystem::Unload(&ConfigResource);
-	SkyboxShaderID = ShaderSystem::GetID(BUILTIN_SHADER_NAME_SKYBOX);
-	Config = nullptr;
-
-	// Builtin material shader.
-	ResourceSystem::Load(BUILTIN_SHADER_NAME_MATERIAL, ResourceType::eResource_Type_Shader, nullptr, &ConfigResource);
-	Config = (ShaderConfig*)ConfigResource.Data;
-	ShaderSystem::Create(Config);
-	ResourceSystem::Unload(&ConfigResource);
-	MaterialShaderID = ShaderSystem::GetID(BUILTIN_SHADER_NAME_MATERIAL);
-	Config = nullptr;
-
-	// Builtin ui shader.
-	ResourceSystem::Load(BUILTIN_SHADER_NAME_UI, ResourceType::eResource_Type_Shader, nullptr, &ConfigResource);
-	Config = (ShaderConfig*)ConfigResource.Data;
-	ShaderSystem::Create(Config);
-	ResourceSystem::Unload(&ConfigResource);
-	UISHaderID = ShaderSystem::GetID(BUILTIN_SHADER_NAME_UI);
-	Config = nullptr;
-
 	return true;
 }
 
 void IRenderer::Shutdown() {
 	if (Backend != nullptr) {
-
-		for (unsigned char i = 0; i < WindowRenderTargetCount; ++i) {
-			Backend->DestroyRenderTarget(&SkyboxRenderpass->Targets[i], true);
-			Backend->DestroyRenderTarget(&WorldRenderpass->Targets[i], true);
-			Backend->DestroyRenderTarget(&UIRenderpass->Targets[i], true);
-		}
-
 		Backend->Shutdown();
 		Memory::Free(Backend, sizeof(IRendererBackend), eMemory_Type_Renderer);
 	}
@@ -224,6 +139,22 @@ bool IRenderer::DrawFrame(SRenderPacket* packet) {
 	return true;
 }
 
+void IRenderer::SetViewport(Vec4 rect) {
+	Backend->SetViewport(rect);
+}
+
+void IRenderer::ResetViewport() {
+	Backend->ResetViewport();
+}
+
+void IRenderer::SetScissor(Vec4 rect) {
+	Backend->SetScissor(rect);
+}
+
+void IRenderer::ResetScissor() {
+	Backend->ResetScissor();
+}
+
 void IRenderer::CreateTexture(const unsigned char* pixels, Texture* texture) {
 	Backend->CreateTexture(pixels, texture);
 }
@@ -263,10 +194,6 @@ bool IRenderer::BeginRenderpass(IRenderpass* pass, RenderTarget* target) {
 
 bool IRenderer::EndRenderpass(IRenderpass* pass) {
 	return Backend->EndRenderpass(pass);
-}
-
-IRenderpass* IRenderer::GetRenderpass(const char* name) {
-	return Backend->GetRenderpass(name);
 }
 
 bool IRenderer::CreateRenderShader(Shader* shader, const ShaderConfig* config, IRenderpass* pass, unsigned short stage_count, std::vector<char*> stage_filenames, std::vector<ShaderStage> stages) {
@@ -321,46 +248,79 @@ void IRenderer::ReleaseTextureMap(TextureMap* map) {
 	Backend->ReleaseTextureMap(map);
 }
 
-void IRenderer::CreateRenderTarget(unsigned char attachment_count, std::vector<Texture*> attachments, IRenderpass* pass, uint32_t width, uint32_t height, RenderTarget* out_target) {
-	Backend->CreateRenderTarget(attachment_count, attachments, pass, width, height, out_target);
+void IRenderer::ReadTextureData(Texture* tex, uint32_t offset, uint32_t size, void** outMemeory) {
+	Backend->ReadTextureData(tex, offset, size, outMemeory);
+}
+
+void IRenderer::ReadTexturePixel(Texture* tex, uint32_t x, uint32_t y, unsigned char** outRGBA) {
+	Backend->ReadTexturePixel(tex, x, y, outRGBA);
+}
+
+bool IRenderer::CreateRenderTarget(unsigned char attachment_count, std::vector<RenderTargetAttachment> attachments, IRenderpass* pass, uint32_t width, uint32_t height, RenderTarget* out_target) {
+	return Backend->CreateRenderTarget(attachment_count, attachments, pass, width, height, out_target);
 }
 
 void IRenderer::DestroyRenderTarget(RenderTarget* target, bool free_internal_memory) {
 	Backend->DestroyRenderTarget(target, free_internal_memory);
 }
 
-void IRenderer::CreateRenderpass(IRenderpass* out_renderpass, float depth, uint32_t stencil, bool has_prev_pass, bool has_next_pass) {
-	Backend->CreateRenderpass(out_renderpass, depth, stencil, has_prev_pass, has_next_pass);
+Texture* IRenderer::GetWindowAttachment(unsigned char index) {
+	return Backend->GetWindowAttachment(index);
+}
+
+unsigned char IRenderer::GetWindowAttachmentCount() const {
+	return Backend->GetWindowAttachmentCount();
+}
+
+Texture* IRenderer::GetDepthAttachment(unsigned char index) {
+	return Backend->GetDepthAttachment(index);
+}
+
+unsigned char IRenderer::GetWindowAttachmentIndex() {
+	return Backend->GetWindowAttachmentIndex();
+}
+
+bool IRenderer::CreateRenderpass(IRenderpass* out_renderpass, const RenderpassConfig* config) {
+	if (config == nullptr) {
+		LOG_ERROR("Renderpass config is required.");
+		return false;
+	}
+
+	if (config->renderTargetCount == 0) {
+		LOG_ERROR("Can not have a renderpass target count of0.");
+		return false;
+	}
+
+	out_renderpass->RenderTargetCount = config->renderTargetCount;
+	out_renderpass->Targets.resize(out_renderpass->RenderTargetCount);
+	out_renderpass->SetClearColor(config->clear_color);
+	out_renderpass->SetClearFlags(config->clear_flags);
+	out_renderpass->SetRenderArea(config->render_area);
+
+	// Copy over config for each target.
+	for (uint32_t i = 0; i < out_renderpass->RenderTargetCount; ++i) {
+		RenderTarget* Target = &out_renderpass->Targets[i];
+		Target->attachment_count = config->renderTargetCount;
+		Target->attachments.resize(Target->attachment_count);
+
+		// Each attachment for the target.
+		for (uint32_t a = 0; a < Target->attachment_count; ++a) {
+			RenderTargetAttachment* Attachment = &Target->attachments[a];
+			RenderTargetAttachmentConfig* AttachmentConfig = &config->target.attachments[a];
+
+			Attachment->source = AttachmentConfig->source;
+			Attachment->type = AttachmentConfig->type;
+			Attachment->loadOperation = AttachmentConfig->loadOperation;
+			Attachment->storeOperation = AttachmentConfig->storeOperation;
+			Attachment->texture = nullptr;
+		}
+	}
+
+	return Backend->CreateRenderpass(out_renderpass, config);
 }
 
 void IRenderer::DestroyRenderpass(IRenderpass* pass) {
 	Backend->DestroyRenderpass(pass);
-}
-
-void IRenderer::RegenerateRenderTargets() {
-	// Create render targets for each. TODO: Should be configurable.
-	for (unsigned char i = 0; i < WindowRenderTargetCount; ++i) {
-		// Destroy the old first if exists.
-		Backend->DestroyRenderTarget(&SkyboxRenderpass->Targets[i], false);
-		Backend->DestroyRenderTarget(&WorldRenderpass->Targets[i], false);
-		Backend->DestroyRenderTarget(&UIRenderpass->Targets[i], false);
-
-		Texture* WindowTargetTexture = Backend->GetWindowAttachment(i);
-		Texture* DepthTargetTexture = Backend->GetDepthAttachment();
-
-		// Skybox render targets.
-		std::vector<Texture*> SkyboxAttachments = { WindowTargetTexture };
-		Backend->CreateRenderTarget(1, SkyboxAttachments, SkyboxRenderpass, FramebufferWidth, FramebufferHeight, &SkyboxRenderpass->Targets[i]);
-
-		// World render targets.
-		std::vector<Texture*> WorldAttachments = {WindowTargetTexture, DepthTargetTexture};
-		Backend->CreateRenderTarget(2, WorldAttachments, WorldRenderpass, FramebufferWidth, FramebufferHeight, &WorldRenderpass->Targets[i]);
-
-		// UI render targets.
-		std::vector<Texture*> UIAttachments = { WindowTargetTexture };
-		Backend->CreateRenderTarget(1, UIAttachments, UIRenderpass, FramebufferWidth, FramebufferHeight, &UIRenderpass->Targets[i]);
-
-	}
 }
 
 bool IRenderer::GetEnabledMutiThread() const {

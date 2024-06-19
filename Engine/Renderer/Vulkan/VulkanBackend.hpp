@@ -26,6 +26,8 @@ public:
 	virtual void CreateWriteableTexture(Texture* tex) override;
 	virtual void ResizeTexture(Texture* tex, uint32_t new_width, uint32_t new_height) override;
 	virtual void WriteTextureData(Texture* tex, uint32_t offset, uint32_t size, const unsigned char* pixels) override;
+	virtual void ReadTextureData(Texture* tex, uint32_t offset, uint32_t size, void** outMemeory) override;
+	virtual void ReadTexturePixel(Texture* tex, uint32_t x, uint32_t y, unsigned char** outRGBA) override;
 
 	virtual bool CreateGeometry(Geometry* geometry, uint32_t vertex_size, uint32_t vertex_count, 
 		const void* vertices, uint32_t index_size, uint32_t index_count, const void* indices) override;

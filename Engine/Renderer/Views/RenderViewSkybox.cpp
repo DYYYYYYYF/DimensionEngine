@@ -6,19 +6,79 @@
 #include "Math/DMath.hpp"
 #include "Math/Transform.hpp"
 #include "Containers/TArray.hpp"
+#include "Containers/TString.hpp"
 
 #include "Systems/MaterialSystem.h"
 #include "Systems/ShaderSystem.h"
 #include "Systems/CameraSystem.h"
+#include "Systems/ResourceSystem.h"
+#include "Systems/RenderViewSystem.hpp"
 
 #include "Renderer/RendererFrontend.hpp"
 #include "Renderer/Interface/IRenderpass.hpp"
 #include "Renderer/Interface/IRendererBackend.hpp"
 
-void RenderViewSkybox::OnCreate() {
+static bool RenderViewSkyboxOnEvent(unsigned short code, void* sender, void* listenerInst, SEventContext context) {
+	IRenderView* self = (IRenderView*)listenerInst;
+	if (self == nullptr) {
+		return false;
+	}
+
+	switch (code)
+	{
+	case Core::eEvent_Code_Default_Rendertarget_Refresh_Required:
+		RenderViewSystem::RegenerateRendertargets(self);
+		return false;
+	}
+
+	return false;
+}
+
+RenderViewSkybox::RenderViewSkybox() {
+	// Builtin skybox shader.
+	const char* ShaderName = "Shader.Builtin.Skybox";
+	Resource ConfigResource;
+	if (!ResourceSystem::Load(ShaderName, ResourceType::eResource_Type_Shader, nullptr, &ConfigResource)) {
+		LOG_ERROR("Failed to load builtin skybox shader.");
+		return;
+	}
+
+	ShaderConfig* Config = (ShaderConfig*)ConfigResource.Data;
+	// NOTE: Assuming the first pass since that's all this view has.
+	if (!ShaderSystem::Create(Passes[0], Config)) {
+		LOG_ERROR("Failed to load builtin ksybox shader.");
+		return;
+	}
+	ResourceSystem::Unload(&ConfigResource);
+}
+
+RenderViewSkybox::RenderViewSkybox(const RenderViewConfig& config) {
+	Type = config.type;
+	Name = StringCopy(config.name);
+	CustomShaderName = config.custom_shader_name;
+	RenderpassCount = config.pass_count;
+	Passes.resize(RenderpassCount);
+
+	const char* ShaderName = "Shader.Builtin.Skybox";
+	Resource ConfigResource;
+	if (!ResourceSystem::Load(ShaderName, ResourceType::eResource_Type_Shader, nullptr, &ConfigResource)) {
+		LOG_ERROR("Failed to load builtin skybox shader.");
+		return;
+	}
+
+	ShaderConfig* Config = (ShaderConfig*)ConfigResource.Data;
+	// NOTE: Assuming the first pass since that's all this view has.
+	if (!ShaderSystem::Create(Passes[0], Config)) {
+		LOG_ERROR("Failed to load builtin ksybox shader.");
+		return;
+	}
+	ResourceSystem::Unload(&ConfigResource);
+}
+
+bool RenderViewSkybox::OnCreate() {
 	// Get either the custom shader override or the defined default.
-	Shader* s = ShaderSystem::Get(CustomShaderName ? CustomShaderName : "Shader.Builtin.Skybox");
-	ShaderID = s->ID;
+	const char* ShaderName = "Shader.Builtin.Skybox";
+	Shader* s = ShaderSystem::Get(CustomShaderName ? CustomShaderName : ShaderName);
 	ProjectionLocation = ShaderSystem::GetUniformIndex(s, "projection");
 	ViewLocation = ShaderSystem::GetUniformIndex(s, "view");
 	CubeMapLocation = ShaderSystem::GetUniformIndex(s, "cube_texture");
@@ -34,10 +94,17 @@ void RenderViewSkybox::OnCreate() {
 	// Default
 	ProjectionMatrix = Matrix4::Perspective(Fov, 1280.0f / 720.0f, NearClip, FarClip, ReserveY);
 	WorldCamera = CameraSystem::GetDefault();
+
+	if (!Core::EventRegister(Core::eEvent_Code_Default_Rendertarget_Refresh_Required, this, RenderViewSkyboxOnEvent)) {
+		LOG_ERROR("Unable to listen for refresh required event, creation failed.");
+		return false;
+	}
+
+	return true;
 }
 
 void RenderViewSkybox::OnDestroy() {
-
+	Core::EventUnregister(Core::eEvent_Code_Default_Rendertarget_Refresh_Required, this, RenderViewSkyboxOnEvent);
 }
 
 void RenderViewSkybox::OnResize(uint32_t width, uint32_t height) {
@@ -80,8 +147,12 @@ void RenderViewSkybox::OnDestroyPacket(struct RenderViewPacket* packet) const {
 	Memory::Zero(packet, sizeof(RenderViewPacket));
 }
 
+bool RenderViewSkybox::RegenerateAttachmentTarget(uint32_t passIndex, RenderTargetAttachment* attachment) {
+	return false;
+}
+
 bool RenderViewSkybox::OnRender(struct RenderViewPacket* packet, IRendererBackend* back_renderer, size_t frame_number, size_t render_target_index) const {
-	uint32_t SID = ShaderID;
+	uint32_t SID = UsedShader->ID;
 	SkyboxPacketData* SkyboxData = (SkyboxPacketData*)packet->extended_data;
 	for (uint32_t p = 0; p < RenderpassCount; ++p) {
 		IRenderpass* Pass = Passes[p];

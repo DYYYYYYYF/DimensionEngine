@@ -13,10 +13,11 @@ public:
 	virtual ~VulkanRenderPass() {}
 
 public:
-	bool Create(VulkanContext* context, const RenderpassConfig* config) override;
+	virtual bool Create(VulkanContext* context, const RenderpassConfig* config) override;
+	virtual void Destroy(VulkanContext* context) override;
 
-	void Begin(RenderTarget* target) override;
-	void End() override;
+	virtual void Begin(RenderTarget* target) override;
+	virtual void End() override;
 
 	vk::RenderPass GetRenderPass() { return *(vk::RenderPass*)&Renderpass; }
 

@@ -171,8 +171,8 @@ void TextureSystem::DestroyTexture(Texture* t) {
 	t->Generation = INVALID_ID;
 }
 
-Texture* TextureSystem::WrapInternal(const char* name, uint32_t width, uint32_t height, 
-	unsigned char channel_count, bool has_transparency, bool is_writeable, bool register_texture, void* internal_data) {
+void TextureSystem::WrapInternal(const char* name, uint32_t width, uint32_t height, 
+	unsigned char channel_count, bool has_transparency, bool is_writeable, bool register_texture, void* internal_data, Texture* tex) {
 	uint32_t ID = INVALID_ID;
 	Texture* t = nullptr;
 	if (register_texture) {
@@ -180,14 +180,19 @@ Texture* TextureSystem::WrapInternal(const char* name, uint32_t width, uint32_t 
 		// resource are created and managed somewhere within the renderer internals.
 		if (!ProcessTextureReference(name, TextureType::eTexture_Type_2D, 1, false, true, &ID)) {
 			LOG_ERROR("TextureSystem::WrapInternal() fialed to obtain a new texture id.");
-			return nullptr;
+			return;
 		}
 
 		t = &RegisteredTextures[ID];
 	}
 	else {
-		t = (Texture*)Memory::Allocate(sizeof(Texture), MemoryType::eMemory_Type_Texture);
-		LOG_INFO("TextureSystem::WrapInternal() created texture '%s', but not registering, resulting in an allocation. It is up to the caller for free this memory.", name);
+		if (tex) {
+			t = tex;
+		}
+		else {
+			t = (Texture*)Memory::Allocate(sizeof(Texture), MemoryType::eMemory_Type_Texture);
+		}
+		// LOG_INFO("TextureSystem::WrapInternal() created texture '%s', but not registering, resulting in an allocation. It is up to the caller for free this memory.", name);
 	}
 
 	t->Id = ID;
@@ -202,7 +207,6 @@ Texture* TextureSystem::WrapInternal(const char* name, uint32_t width, uint32_t 
 	t->Flags |= TextureFlagBits::eTexture_Flag_Is_Wrapped;
 	t->InternalData = internal_data;
 
-	return t;
 }
 
 bool TextureSystem::SetInternal(Texture* t, void* internal_data) {

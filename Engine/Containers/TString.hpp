@@ -1,3 +1,5 @@
+#pragma once
+
 #include "string.h"
 #include "Core/DMemory.hpp"
 #include "Core/EngineLogger.hpp"

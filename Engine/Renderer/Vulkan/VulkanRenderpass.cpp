@@ -290,7 +290,7 @@ void VulkanRenderPass::Begin(RenderTarget* target) {
 	}
 	else {
 		for (uint32_t i = 0; i < target->attachment_count; ++i) {
-			if (target->attachments[i]->type == RenderTargetAttachmentType::eRender_Target_Attachment_Type_Depth) {
+			if (target->attachments[i].type == RenderTargetAttachmentType::eRender_Target_Attachment_Type_Depth) {
 				// If there is a depth attachment, make sure to add the clear count, but dont bother copying the data.
 				BeginInfo.clearValueCount++;
 			}
