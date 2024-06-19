@@ -3,8 +3,6 @@
 #include <vulkan/vulkan.hpp>
 #include "Renderer/RendererTypes.hpp"
 
-#define  VULKAN_MAX_REGISTERED_RENDERPASSES 31
-
 class VulkanContext;
 class VulkanCommandBuffer;
 
@@ -25,20 +23,23 @@ enum RenderpassClearFlags {
 };
 
 struct RenderpassConfig {
-	const char* name;
-	const char* prev_name;
-	const char* next_name;
+	const char* name = nullptr;
+
+	float depth;
+	uint32_t stencil;
+
 	Vec4 render_area;
 	Vec4 clear_color;
 
 	unsigned char clear_flags;
+
+	unsigned char renderTargetCount;
+	RenderTargetConfig target;
 };
 
 class IRenderpass {
 public:
-	virtual void Create(VulkanContext* context,
-		float depth, uint32_t stencil,
-		bool has_prev_pass, bool has_next_pass) = 0;
+	virtual bool Create(VulkanContext* context, const RenderpassConfig* config) = 0;
 	virtual void Destroy(VulkanContext* context) = 0;
 
 	virtual void Begin(RenderTarget* target) = 0;

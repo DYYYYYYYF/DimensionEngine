@@ -53,7 +53,9 @@ void* DynamicAllocator::AllocateAligned(size_t size, unsigned short alignment) {
 	if (size > 0 && alignment > 0) {
 		// The size required is based on the requested size, plus the alignment, header and a u32 to hold
 		// the size for quick/easy lookups.
-		size_t RequiredSize = alignment + sizeof(AllocHeader) + DSIZE_STORAGE + size;
+		size_t HeaderSize = sizeof(AllocHeader);
+		size_t StorageSize = DSIZE_STORAGE;
+		size_t RequiredSize = alignment + HeaderSize + StorageSize + size;
 
 		// NOTE: This cast will really only be an issue on allocations over ~4GiB, so... don't do that.
 		ASSERT(RequiredSize < 4294967295U);
@@ -132,4 +134,9 @@ size_t DynamicAllocator::GetTotalSpace() {
 
 size_t DynamicAllocator::GetFreeSpace() {
 	return List.GetFreeSpace();
+}
+
+size_t DynamicAllocator::AllocatorHeaderSize() {
+	// Enough space for a header and size storage.
+	return sizeof(AllocHeader) + DSIZE_STORAGE;
 }

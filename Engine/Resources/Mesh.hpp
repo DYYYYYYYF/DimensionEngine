@@ -44,6 +44,7 @@ private:
 
 
 public:
+	uint32_t UniqueID;
 	unsigned char Generation;
 	unsigned short geometry_count;
 	Geometry** geometries = nullptr;

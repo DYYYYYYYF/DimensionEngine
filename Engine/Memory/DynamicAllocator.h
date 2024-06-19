@@ -87,6 +87,11 @@ public:
 	 */
 	size_t GetTotalSpace();
 
+	/**
+	 * Obtains the size of the internal allocation header. This is readlly only used for unit testing purposes. 
+	 */
+	size_t AllocatorHeaderSize();
+
 private:
 	size_t TotalSize;
 	Freelist List;

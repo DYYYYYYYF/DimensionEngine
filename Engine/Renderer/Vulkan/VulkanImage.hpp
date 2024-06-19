@@ -32,6 +32,28 @@ public:
 	*/
 	void CopyFromBuffer(VulkanContext* context, TextureType type, vk::Buffer buffer, VulkanCommandBuffer* command_buffer);
 
+	/**
+	 * @brief Copies data in the provided image to the given buffer.
+	 * 
+	 * @param context The Vulkan context.
+	 * @param type The type of texture. Provides hint to layer count.
+	 * @param buffer The buffer to copy to.
+	 * @param commandBuffer The command buffer to be used for the copy.
+	 */
+	void CopyToBuffer(VulkanContext* context, TextureType type, vk::Buffer buffer, VulkanCommandBuffer* commandBuffer);
+
+	/**
+	 * @brief Copies data in the provided image to the given buffer.
+	 *
+	 * @param context The Vulkan context.
+	 * @param type The type of texture. Provides hint to layer count.
+	 * @param buffer The buffer to copy to.
+	 * @param x The x-coordinate of the pixel to copy.
+	 * @param y The y-coordinate of the pixel to copy.
+	 * @param commandBuffer The command buffer to be used for the copy.
+	 */
+	void CopyPixelToBuffer(VulkanContext* context, TextureType type, vk::Buffer buffer, uint32_t x, uint32_t y, VulkanCommandBuffer* commandBuffer);
+
 public:
 	vk::Image Image;
 	vk::DeviceMemory DeviceMemory;

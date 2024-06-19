@@ -21,10 +21,6 @@ enum RenderViewProjectionMatrixSource {
 	eRender_View_Projection_Matrix_Source_Default_Orthographic = 0x02,
 };
 
-struct RenderViewPassConfig {
-	const char* name = nullptr;
-};
-
 struct RenderViewConfig {
 	const char* name = nullptr;
 	const char* custom_shader_name = nullptr;
@@ -34,7 +30,7 @@ struct RenderViewConfig {
 	RenderViewViewMatrixtSource view_matrix_source;
 	RenderViewProjectionMatrixSource projection_matrix_source;
 	unsigned char pass_count;
-	std::vector<RenderViewPassConfig> passes;
+	std::vector<RenderpassConfig> passes;
 };
 
 struct RenderViewPacket;
@@ -47,6 +43,7 @@ public:
 	virtual bool OnBuildPacket(void* data, struct RenderViewPacket* out_packet) const = 0;
 	virtual void OnDestroyPacket(struct RenderViewPacket* packet) const = 0;
 	virtual bool OnRender(struct RenderViewPacket* packet, class IRendererBackend* back_renderer, size_t frame_number, size_t render_target_index) const = 0;
+	virtual bool RegenerateAttachmentTarget(uint32_t passIndex, RenderTargetAttachment* attachment) = 0;
 
 public:
 	virtual unsigned short GetID() { return ID; }
@@ -59,7 +56,7 @@ public:
 	unsigned short Height;
 	RenderViewKnownType Type;
 	unsigned char RenderpassCount;
-	std::vector<class IRenderpass*> Passes;
+	std::vector<class IRenderpass> Passes;
 	const char* CustomShaderName = nullptr;
 };
 

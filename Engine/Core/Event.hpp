@@ -83,6 +83,19 @@ namespace Core {
 		 * unsigned short height = data.data.u16[1];
 		 */
 		eEvent_Code_Resize = 0x00,
+	
+		/**
+		* @brief The hoverd-over object id, if there is one.
+		* Context usage:
+		* int id = data.data.u32[0];
+		*/
+		eEvent_Code_Object_Hover_ID_Changed = 0x09,
+
+		/**
+		* @breif An event fired by the renderer backend to indicate when any render
+		* targets associated with the default window resource need to be refreshed.
+		*/
+		eEvent_Code_Default_Rendertarget_Refresh_Required = 0x10,
 
 		eEvent_Code_Debug_0 = 0x08,
 

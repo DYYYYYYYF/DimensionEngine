@@ -27,7 +27,8 @@ enum TextureRepeat{
 enum TextureFlagBits{
 	eTexture_Flag_Has_Transparency = 0x1,
 	eTexture_Flag_Is_Writeable = 0x2,
-	eTexture_Flag_Is_Wrapped = 0x4
+	eTexture_Flag_Is_Wrapped = 0x4,
+	eTexture_Flag_Depth = 0x8
 };
 typedef unsigned char TextureFlag;
 

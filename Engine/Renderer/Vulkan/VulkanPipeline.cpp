@@ -1,35 +1,31 @@
 #include "VulkanPipeline.hpp"
 #include "VulkanContext.hpp"
 
+#include "Systems/ShaderSystem.h"
+
 #include "Core/EngineLogger.hpp"
 #include "Math/MathTypes.hpp"
 
-bool VulkanPipeline::Create(VulkanContext* context, VulkanRenderPass* renderpass, uint32_t stride,
-	uint32_t attribute_count, vk::VertexInputAttributeDescription* attributes,
-	uint32_t descriptor_set_layout_count, vk::DescriptorSetLayout* descriptor_set_layout,
-	uint32_t stage_count, vk::PipelineShaderStageCreateInfo* stages,
-	vk::Viewport viewport, vk::Rect2D scissor, FaceCullMode cull_mode,
-	bool is_wireframe, bool depth_test_enabled,
-	uint32_t push_constant_range_count, Range* push_constant_ranges){
+bool VulkanPipeline::Create(VulkanContext* context, const VulkanPipelineConfig& config){
 	// Viewport state
 	vk::PipelineViewportStateCreateInfo ViewportState;
 	ViewportState.setViewportCount(1)
-		.setPViewports(&viewport)
+		.setPViewports(&config.viewport)
 		.setScissorCount(1)
-		.setPScissors(&scissor);
+		.setPScissors(&config.scissor);
 
 	// Rasterizer
 	vk::PipelineRasterizationStateCreateInfo RasterizerCreateInfo;
 	RasterizerCreateInfo.setDepthClampEnable(VK_FALSE)
 		.setRasterizerDiscardEnable(VK_FALSE)
-		.setPolygonMode(is_wireframe ? vk::PolygonMode::eLine : vk::PolygonMode::eFill)
+		.setPolygonMode(config.is_wireframe ? vk::PolygonMode::eLine : vk::PolygonMode::eFill)
 		.setLineWidth(1.0f)
 		.setFrontFace(vk::FrontFace::eCounterClockwise)
 		.setDepthBiasEnable(VK_FALSE)
 		.setDepthBiasConstantFactor(0.0f)
 		.setDepthBiasClamp(0.0f)
 		.setDepthBiasSlopeFactor(0.0f);
-	switch (cull_mode)
+	switch (config.cull_mode)
 	{
 	case eFace_Cull_Mode_None:
 		RasterizerCreateInfo.setCullMode(vk::CullModeFlagBits::eNone);
@@ -56,10 +52,12 @@ bool VulkanPipeline::Create(VulkanContext* context, VulkanRenderPass* renderpass
 
 	// Depth and stencil testing
 	vk::PipelineDepthStencilStateCreateInfo DepthStencil;
-	if (depth_test_enabled) {
-		DepthStencil.setDepthTestEnable(VK_TRUE)
-			.setDepthWriteEnable(VK_TRUE)
-			.setDepthCompareOp(vk::CompareOp::eLess)
+	if (config.shaderFlags & eShader_Flag_DepthTest) {
+		DepthStencil.setDepthTestEnable(VK_TRUE);
+		if (config.shaderFlags & eShader_Flag_DepthWrite) {
+			DepthStencil.setDepthWriteEnable(VK_TRUE);
+		}
+		DepthStencil.setDepthCompareOp(vk::CompareOp::eLess)
 			.setDepthBoundsTestEnable(VK_FALSE)
 			.setStencilTestEnable(VK_FALSE);
 	}
@@ -107,8 +105,8 @@ bool VulkanPipeline::Create(VulkanContext* context, VulkanRenderPass* renderpass
 	vk::PipelineVertexInputStateCreateInfo VertexInputInfo;
 	VertexInputInfo.setVertexBindingDescriptionCount(1)
 		.setPVertexBindingDescriptions(&BindingDescription)
-		.setVertexAttributeDescriptionCount(attribute_count)
-		.setPVertexAttributeDescriptions(attributes);
+		.setVertexAttributeDescriptionCount(config.attribute_count)
+		.setPVertexAttributeDescriptions(config.attributes);
 
 	// Input assembly
 	vk::PipelineInputAssemblyStateCreateInfo InputAssembly;
@@ -118,21 +116,21 @@ bool VulkanPipeline::Create(VulkanContext* context, VulkanRenderPass* renderpass
 	//Push constants
 	vk::PipelineLayoutCreateInfo LayoutCreateInfo;
 	vk::PushConstantRange Ranges[32];
-	if (push_constant_range_count > 0) {
-		if (push_constant_range_count > 32) {
+	if (config.push_constant_range_count > 0) {
+		if (config.push_constant_range_count > 32) {
 			LOG_ERROR("Vulkan graphics pipeline create: can not have more push constants.");
 			return false;
 		}
 
 		// NOTE: 32 is the max number of ranges we can ever have.
 		Memory::Zero(Ranges, sizeof(vk::PushConstantRange) * 32);
-		for(uint32_t i = 0; i < push_constant_range_count; ++i) {
+		for(uint32_t i = 0; i < config.push_constant_range_count; ++i) {
 			Ranges[i].setStageFlags(vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment)
-				.setOffset((uint32_t)push_constant_ranges[i].offset)
-				.setSize((uint32_t)push_constant_ranges[i].size);
+				.setOffset((uint32_t)config.push_constant_ranges[i].offset)
+				.setSize((uint32_t)config.push_constant_ranges[i].size);
 		}
 
-		LayoutCreateInfo.setPushConstantRangeCount(push_constant_range_count)
+		LayoutCreateInfo.setPushConstantRangeCount(config.push_constant_range_count)
 			.setPPushConstantRanges(Ranges);
 	}
 	else {
@@ -141,8 +139,8 @@ bool VulkanPipeline::Create(VulkanContext* context, VulkanRenderPass* renderpass
 	}
 
 	// Pipeline layout
-	LayoutCreateInfo.setSetLayoutCount(descriptor_set_layout_count)
-		.setPSetLayouts(descriptor_set_layout);
+	LayoutCreateInfo.setSetLayoutCount(config.descriptor_set_layout_count)
+		.setPSetLayouts(config.descriptor_set_layout);
 
 	// Create pipeline layout
 	PipelineLayout = context->Device.GetLogicalDevice().createPipelineLayout(LayoutCreateInfo, context->Allocator);
@@ -150,22 +148,22 @@ bool VulkanPipeline::Create(VulkanContext* context, VulkanRenderPass* renderpass
 
 	// Create the pipeline
 	vk::GraphicsPipelineCreateInfo PipelineCreateInfo;
-	PipelineCreateInfo.setStageCount(stage_count)
-		.setPStages(stages)
+	PipelineCreateInfo.setStageCount(config.stage_count)
+		.setPStages(config.stages)
 		.setPVertexInputState(&VertexInputInfo)
 		.setPInputAssemblyState(&InputAssembly)
 
 		.setPViewportState(&ViewportState)
 		.setPRasterizationState(&RasterizerCreateInfo)
 		.setPMultisampleState(&MultisamplingCreateInfo)
-		.setPDepthStencilState(depth_test_enabled ? &DepthStencil : nullptr)
+		.setPDepthStencilState(config.shaderFlags & eShader_Flag_DepthTest ? &DepthStencil : nullptr)
 		.setPColorBlendState(&ColorBlendStateCreateInfo)
 		.setPDynamicState(&DynamicStateCreateInfo)
 		.setPTessellationState(nullptr)
 
 		.setLayout(PipelineLayout)
 
-		.setRenderPass(renderpass->GetRenderPass())
+		.setRenderPass(config.renderpass->GetRenderPass())
 		.setSubpass(0)
 		.setBasePipelineHandle(nullptr)
 		.setBasePipelineIndex(-1);

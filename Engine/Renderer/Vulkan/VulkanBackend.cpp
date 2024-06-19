@@ -4,6 +4,7 @@
 #include "VulkanImage.hpp"
 #include "VulkanAllocator.hpp"
 
+#include "Core/Event.hpp"
 #include "Core/EngineLogger.hpp"
 #include "Containers/TArray.hpp"
 #include "Platform/Platform.hpp"
@@ -62,8 +63,6 @@ VulkanBackend::~VulkanBackend() {
 }
 
 bool VulkanBackend::Initialize(const RenderBackendConfig* config, unsigned char* out_window_render_target_count, struct SPlatformState* plat_state) {
-	Context.OnRenderTargetRefreshRequired = config->OnRenderTargetRefreshRequired;
-
 	// NOTE: Custom allocator;
 #if DVULKAN_USE_CUSTOM_ALLOCATOR == 1
 	Context.Allocator = (vk::AllocationCallbacks*)Memory::Allocate(sizeof(vk::AllocationCallbacks), MemoryType::eMemory_Type_Renderer);
@@ -251,60 +250,6 @@ bool VulkanBackend::Initialize(const RenderBackendConfig* config, unsigned char*
 	// Save off the number of images we have as the number of render targets needed.
 	*out_window_render_target_count = Context.Swapchain.ImageCount;
 
-	// Hold registered renderpasses.
-	for (uint32_t i = 0; i < VULKAN_MAX_REGISTERED_RENDERPASSES; ++i) {
-		Context.RegisteredPasses[i].SetID(INVALID_ID_U16);
-	}
-
-	// The renderpass table will be a lookup of array indices. Start off every index with an invalid id.
-	Context.RenderpassTableBlock = Memory::Allocate(sizeof(uint32_t) * VULKAN_MAX_REGISTERED_RENDERPASSES, MemoryType::eMemory_Type_Renderer);
-	Context.RenderpassTable.Create(sizeof(uint32_t), VULKAN_MAX_REGISTERED_RENDERPASSES, Context.RenderpassTableBlock, false);
-	uint32_t Value = INVALID_ID;
-	Context.RenderpassTable.Fill(&Value);
-
-	// Renderpasses
-	for (uint32_t i = 0; i < config->renderpass_count; ++i) {
-		// TODO: move to a function for reusability.
-		// Make sure there are no collisions with the name first.
-		uint32_t ID = INVALID_ID;
-		Context.RenderpassTable.Get(config->pass_config[i].name, &ID);
-		if (ID != INVALID_ID) {
-			LOG_ERROR("Collision with renderpass named '%s'. Initialization failed.", config->pass_config[i].name);
-			return false;
-		}
-
-		// Snip up a new id.
-		for (uint32_t j = 0; j < VULKAN_MAX_REGISTERED_RENDERPASSES; ++j) {
-			if (Context.RegisteredPasses[j].GetID() == INVALID_ID_U16) {
-				// Found.
-				Context.RegisteredPasses[j].SetID(j);
-				ID = j;
-				break;
-			}
-		}
-
-		// Verify we got an id
-		if (ID == INVALID_ID) {
-			LOG_ERROR("No space was found for a new renderpass. Increase VULKAN_MAX_REGISTERED_RENDERPASSES. Initialization failed.");
-			return false;
-		}
-
-		// Set up renderpass.
-		Context.RegisteredPasses[ID].SetClearColor(config->pass_config[i].clear_color);
-		Context.RegisteredPasses[ID].SetClearFlags(config->pass_config[i].clear_flags);
-		Context.RegisteredPasses[ID].SetRenderArea(config->pass_config[i].render_area);
-
-		bool HasPrev = config->pass_config[i].prev_name != nullptr;
-		bool HasNext = config->pass_config[i].next_name != nullptr;
-		Context.RegisteredPasses[ID].Create(&Context, 1.0f, 0, HasPrev, HasNext);
-
-		// Update table with the new id.
-		Context.RenderpassTable.Set(config->pass_config[i].name, &ID);
-	}
-
-	// Command buffers
-	CreateCommandBuffer();
-
 	// Sync objects
 	Context.ImageAvailableSemaphores.resize(Context.Swapchain.MaxFramesInFlight);
 	Context.QueueCompleteSemaphores.resize(Context.Swapchain.MaxFramesInFlight);
@@ -388,13 +333,6 @@ void VulkanBackend::Shutdown() {
 		}
 	}
 
-	LOG_DEBUG("Destroying renderpasses.");
-	for (uint32_t i = 0; i < VULKAN_MAX_REGISTERED_RENDERPASSES; ++i) {
-		if (Context.RegisteredPasses[i].GetID() != INVALID_ID_U16) {
-			DestroyRenderpass(&Context.RegisteredPasses[i]);
-		}
-	}
-
 	LOG_DEBUG("Destroying swapchain.");
 	Context.Swapchain.Destroy(&Context);
 
@@ -471,21 +409,10 @@ bool VulkanBackend::BeginFrame(double delta_time){
 	CommandBuffer->BeginCommand(false, false, false);
 
 	// Dynamic state
-	vk::Viewport Viewport;
-	Viewport.setX(0.0f)
-		.setY(0.0f)
-		.setWidth((float)Context.FrameBufferWidth)
-		.setHeight((float)Context.FrameBufferHeight)
-		.setMinDepth(0.0f)
-		.setMaxDepth(1.0f);
-
-	// Scissor
-	vk::Rect2D Scissor;
-	Scissor.setOffset({ 0, 0 })
-		.setExtent({ Context.FrameBufferWidth, Context.FrameBufferHeight });
-
-	CommandBuffer->CommandBuffer.setViewport(0, 1, &Viewport);
-	CommandBuffer->CommandBuffer.setScissor(0, 1, &Scissor);
+	Context.ViewportRect = Vec4(0.0f, (float)Context.FrameBufferHeight, (float)Context.FrameBufferWidth, -(float)Context.FrameBufferHeight);
+	SetViewport(Context.ViewportRect);
+	Context.ScissorRect = Vec4(0.0f, 0.0f, Context.FrameBufferWidth, Context.FrameBufferHeight);
+	SetScissor(Context.ScissorRect);
 
 	return true;
 }
@@ -549,6 +476,39 @@ bool VulkanBackend::EndFrame(double delta_time) {
 		Context.QueueCompleteSemaphores[Context.CurrentFrame], Context.ImageIndex);
 
 	return true;
+}
+
+void VulkanBackend::SetViewport(Vec4 rect) {
+	// Dynamic state
+	vk::Viewport Viewport;
+	Viewport.x = rect.x;
+	Viewport.y = rect.y;
+	Viewport.width = rect.z;
+	Viewport.height = rect.w;
+	Viewport.minDepth = 0.0f;
+	Viewport.maxDepth = 1.0f;
+
+	VulkanCommandBuffer* CmdBuffer = &Context.GraphicsCommandBuffers[Context.ImageIndex];
+	CmdBuffer->CommandBuffer.setViewport(0, 1, &Viewport);
+}
+
+void VulkanBackend::ResetViewport() {
+	SetViewport(Context.ViewportRect);
+}
+
+void VulkanBackend::SetScissor(Vec4 rect) {
+	vk::Rect2D Scissor;
+	Scissor.offset.x = rect.x;
+	Scissor.offset.y = rect.y;
+	Scissor.extent.width = rect.z;
+	Scissor.extent.height = rect.w;
+
+	VulkanCommandBuffer* CmdBuffer = &Context.GraphicsCommandBuffers[Context.ImageIndex];
+	CmdBuffer->CommandBuffer.setScissor(0, 1, &Scissor);
+}
+
+void VulkanBackend::ResetScissor() {
+	SetScissor(Context.ScissorRect);
 }
 
 void VulkanBackend::Resize(unsigned short width, unsigned short height) {
@@ -620,9 +580,8 @@ bool VulkanBackend::RecreateSwapchain() {
 	}
 
 	// Tell the renderer that a refresh is required.
-	if (Context.OnRenderTargetRefreshRequired) {
-		Context.OnRenderTargetRefreshRequired();
-	}
+	SEventContext EventContext;
+	Core::EventFire(Core::eEvent_Code_Default_Rendertarget_Refresh_Required, nullptr, EventContext);
 
 	CreateCommandBuffer();
 
@@ -692,12 +651,23 @@ void VulkanBackend::CreateWriteableTexture(Texture* tex) {
 	tex->InternalData = (VulkanImage*)Memory::Allocate(sizeof(VulkanImage), MemoryType::eMemory_Type_Texture);
 	VulkanImage* Image = (VulkanImage*)tex->InternalData;
 
-	vk::Format ImageFormat = ChannelCountToFormat(tex->ChannelCount, vk::Format::eR8G8B8A8Unorm);
-	// TODO: Lots of assumptions here, different texture types will require.
-	// different options here.
+	vk::ImageUsageFlags Usage;
+	vk::ImageAspectFlags Aspect;
+	vk::Format ImageFormat;
+	if (tex->Flags & TextureFlagBits::eTexture_Flag_Depth) {
+		Usage = vk::ImageUsageFlagBits::eDepthStencilAttachment;
+		Aspect = vk::ImageAspectFlagBits::eDepth;
+		ImageFormat = Context.Device.GetDepthFormat();
+	}
+	else {
+		Usage = vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst
+			| vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eColorAttachment;
+		Aspect = vk::ImageAspectFlagBits::eColor;
+		ImageFormat = ChannelCountToFormat(tex->ChannelCount, vk::Format::eR8G8B8A8Unorm);
+	}
+
 	Image->CreateImage(&Context, tex->Type, tex->Width,  tex->Height, ImageFormat, vk::ImageTiling::eOptimal,
-		vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eColorAttachment,
-		vk::MemoryPropertyFlagBits::eDeviceLocal, true, vk::ImageAspectFlagBits::eColor);
+		Usage, vk::MemoryPropertyFlagBits::eDeviceLocal, true, Aspect);
 
 	tex->Generation++;
 }
@@ -1172,13 +1142,13 @@ bool VulkanBackend::DestroyShader(Shader* shader) {
 bool VulkanBackend::InitializeShader(Shader* shader) {
 	vk::Device LogicalDevice = Context.Device.GetLogicalDevice();
 	vk::AllocationCallbacks* VkAllocator = Context.Allocator;
-	VulkanShader* Shader = (VulkanShader*)shader->InternalData;
+	VulkanShader* InternalShader = (VulkanShader*)shader->InternalData;
 
 	// Create a module for each stage.
-	Memory::Zero(Shader->Stages, sizeof(VulkanShaderStage) * VULKAN_SHADER_MAX_STAGES);
-	for (uint32_t i = 0; i < Shader->Config.stage_count; ++i) {
-		if (!CreateModule(Shader, Shader->Config.stages[i], &Shader->Stages[i])) {
-			LOG_ERROR("Unable to create %s shader module for '%s'. Shader will be destroyed.", Shader->Config.stages[i].filename, shader->Name);
+	Memory::Zero(InternalShader->Stages, sizeof(VulkanShaderStage) * VULKAN_SHADER_MAX_STAGES);
+	for (uint32_t i = 0; i < InternalShader->Config.stage_count; ++i) {
+		if (!CreateModule(InternalShader, InternalShader->Config.stages[i], &InternalShader->Stages[i])) {
+			LOG_ERROR("Unable to create %s shader module for '%s'. Shader will be destroyed.", InternalShader->Config.stages[i].filename, shader->Name);
 			return false;
 		}
 	}
@@ -1212,30 +1182,30 @@ bool VulkanBackend::InitializeShader(Shader* shader) {
 			.setFormat(Types[shader->Attributes[i].type]);
 
 		// Push into the config's attribute collection and add to the stride.
-		Shader->Config.attributes[i] = Attribute;
+		InternalShader->Config.attributes[i] = Attribute;
 		Offset += shader->Attributes[i].size;
 	}
 
 	// Descriptor pool.
 	vk::DescriptorPoolCreateInfo PoolInfo;
 	PoolInfo.setPoolSizeCount(2)
-		.setPPoolSizes(Shader->Config.pool_sizes)
-		.setMaxSets(Shader->Config.max_descriptor_set_count)
+		.setPPoolSizes(InternalShader->Config.pool_sizes)
+		.setMaxSets(InternalShader->Config.max_descriptor_set_count)
 		.setFlags(vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet);
 
 	// Create descriptor pool.
-	Shader->DescriptorPool = LogicalDevice.createDescriptorPool(PoolInfo, VkAllocator);
-	ASSERT(Shader->DescriptorPool);
+	InternalShader->DescriptorPool = LogicalDevice.createDescriptorPool(PoolInfo, VkAllocator);
+	ASSERT(InternalShader->DescriptorPool);
 
 	// Create descriptor set layouts.
-	Memory::Zero(Shader->DescriptorSetLayouts, sizeof(vk::DescriptorSetLayout) * Shader->Config.descriptor_set_count);
-	for (uint32_t i = 0; i < Shader->Config.descriptor_set_count; ++i) {
+	Memory::Zero(InternalShader->DescriptorSetLayouts, sizeof(vk::DescriptorSetLayout) * InternalShader->Config.descriptor_set_count);
+	for (uint32_t i = 0; i < InternalShader->Config.descriptor_set_count; ++i) {
 
 		vk::DescriptorSetLayoutCreateInfo LayoutInfo;
-		LayoutInfo.setBindingCount(Shader->Config.descriptor_sets[i].binding_count)
-			.setPBindings(Shader->Config.descriptor_sets[i].bindings);
-		Shader->DescriptorSetLayouts[i] = LogicalDevice.createDescriptorSetLayout(LayoutInfo, VkAllocator);
-		ASSERT(Shader->DescriptorSetLayouts[i]);
+		LayoutInfo.setBindingCount(InternalShader->Config.descriptor_sets[i].binding_count)
+			.setPBindings(InternalShader->Config.descriptor_sets[i].bindings);
+		InternalShader->DescriptorSetLayouts[i] = LogicalDevice.createDescriptorSetLayout(LayoutInfo, VkAllocator);
+		ASSERT(InternalShader->DescriptorSetLayouts[i]);
 	}
 
 	// TODO: This feels wrong to have these here, at least in this fashion. Should probably
@@ -1256,12 +1226,28 @@ bool VulkanBackend::InitializeShader(Shader* shader) {
 
 	vk::PipelineShaderStageCreateInfo StageCreateInfos[VULKAN_SHADER_MAX_STAGES];
 	Memory::Zero(StageCreateInfos, sizeof(vk::PipelineShaderStageCreateInfo) * VULKAN_SHADER_MAX_STAGES);
-	for (uint32_t i = 0; i < Shader->Config.stage_count; ++i) {
-		StageCreateInfos[i] = Shader->Stages[i].shader_stage_create_info;
+	for (uint32_t i = 0; i < InternalShader->Config.stage_count; ++i) {
+		StageCreateInfos[i] = InternalShader->Stages[i].shader_stage_create_info;
 	}
 
-	if (!Shader->Pipeline.Create(&Context, Shader->Renderpass, shader->AttributeStride, (uint32_t)shader->Attributes.size(), Shader->Config.attributes, Shader->Config.descriptor_set_count,
-		Shader->DescriptorSetLayouts, Shader->Config.stage_count, StageCreateInfos, Viewport, Scissor, Shader->Config.cull_mode, false, true, shader->PushConstantsRangeCount, shader->PushConstantsRanges)){
+	VulkanPipelineConfig PipelineConfig;
+	PipelineConfig.renderpass = InternalShader->Renderpass;
+	PipelineConfig.stride = shader->AttributeStride;
+	PipelineConfig.attribute_count = shader->Attributes.size();
+	PipelineConfig.attributes = InternalShader->Config.attributes;
+	PipelineConfig.descriptor_set_layout_count = InternalShader->Config.descriptor_set_count;
+	PipelineConfig.descriptor_set_layout = InternalShader->DescriptorSetLayouts;
+	PipelineConfig.stage_count = InternalShader->Config.stage_count;
+	PipelineConfig.stages = StageCreateInfos;
+	PipelineConfig.viewport = Viewport;
+	PipelineConfig.scissor = Scissor;
+	PipelineConfig.cull_mode = InternalShader->Config.cull_mode;
+	PipelineConfig.is_wireframe = false;
+	PipelineConfig.shaderFlags = shader->flags;
+	PipelineConfig.push_constant_range_count = shader->PushConstantsRangeCount;
+	PipelineConfig.push_constant_ranges = shader->PushConstantsRanges;
+
+	if (!InternalShader->Pipeline.Create(&Context, PipelineConfig)){
 		LOG_ERROR("Failed to load graphics pipeline for object shader.");
 		return false;
 	}
@@ -1277,33 +1263,33 @@ bool VulkanBackend::InitializeShader(Shader* shader) {
 	vk::MemoryPropertyFlags DeviceLocalBits = Context.Device.GetIsSupportDeviceLocalHostVisible() ? vk::MemoryPropertyFlagBits::eDeviceLocal : vk::MemoryPropertyFlags();
 	// TODO: max count should be configurable, or perhaps long term support of buffer resizing.
 	size_t TotalBufferSize = shader->GlobalUboStride + (shader->UboStride * VULKAN_MAX_MATERIAL_COUNT);
-	if (!CreateRenderbuffer(RenderbufferType::eRenderbuffer_Type_Uniform, TotalBufferSize, true, &Shader->UniformBuffer)) {
+	if (!CreateRenderbuffer(RenderbufferType::eRenderbuffer_Type_Uniform, TotalBufferSize, true, &InternalShader->UniformBuffer)) {
 		LOG_ERROR("Vulkan buffer creation failed for object shader.");
 		return false;
 	}
-	BindRenderbuffer(&Shader->UniformBuffer, 0);
+	BindRenderbuffer(&InternalShader->UniformBuffer, 0);
 
 	// Allocate space for the global UBO, which should occupy the _stride_ space, _not_ the actual size used.
-	if (!AllocateRenderbuffer(&Shader->UniformBuffer, shader->GlobalUboStride, &shader->GlobalUboOffset)) {
+	if (!AllocateRenderbuffer(&InternalShader->UniformBuffer, shader->GlobalUboStride, &shader->GlobalUboOffset)) {
 		LOG_ERROR("Failed to allocate space for the uniform buffer!");
 		return false;
 	}
 
 	// Map the entire buffer's memory.
-	Shader->MappedUniformBufferBlock = MapMemory(&Shader->UniformBuffer, 0, TotalBufferSize/*TotalBufferSize*/);
+	InternalShader->MappedUniformBufferBlock = MapMemory(&InternalShader->UniformBuffer, 0, TotalBufferSize/*TotalBufferSize*/);
 
 	// Allocate global descriptor sets, one per frame. Global is always the first set.
 	vk::DescriptorSetLayout GlobalLayouts[3] = {
-		Shader->DescriptorSetLayouts[DESC_SET_INDEX_GLOBAL],
-		Shader->DescriptorSetLayouts[DESC_SET_INDEX_GLOBAL],
-		Shader->DescriptorSetLayouts[DESC_SET_INDEX_GLOBAL]
+		InternalShader->DescriptorSetLayouts[DESC_SET_INDEX_GLOBAL],
+		InternalShader->DescriptorSetLayouts[DESC_SET_INDEX_GLOBAL],
+		InternalShader->DescriptorSetLayouts[DESC_SET_INDEX_GLOBAL]
 	};
 
 	vk::DescriptorSetAllocateInfo AllocInfo;
-	AllocInfo.setDescriptorPool(Shader->DescriptorPool)
+	AllocInfo.setDescriptorPool(InternalShader->DescriptorPool)
 		.setDescriptorSetCount(3)
 		.setPSetLayouts(GlobalLayouts);
-	if (LogicalDevice.allocateDescriptorSets(&AllocInfo, Shader->GlobalDescriptorSets)
+	if (LogicalDevice.allocateDescriptorSets(&AllocInfo, InternalShader->GlobalDescriptorSets)
 		!= vk::Result::eSuccess) {
 		LOG_ERROR("Allocate descriptor sets failed.");
 		return false;
@@ -1609,14 +1595,18 @@ uint32_t VulkanBackend::AcquireInstanceResource(Shader* shader, std::vector<Text
 	VulkanShaderInstanceState* InstanceState = &Internal->InstanceStates[OutInstanceID];
 	unsigned char SamplerBindingIndex = Internal->Config.descriptor_sets[DESC_SET_INDEX_INSTANCE].sampler_binding_index;
 	uint32_t InstanceTextureCount = Internal->Config.descriptor_sets[DESC_SET_INDEX_INSTANCE].bindings[SamplerBindingIndex].descriptorCount;
-	// Wipe out the memory for the entire array, even if it isn't all used.
-	InstanceState->instance_texture_maps.resize(shader->InstanceTextureCount);
-	Texture* DefaultTexture = TextureSystem::GetDefaultTexture();
-	// Set all the texture pointers to default until assigned.
-	for (uint32_t i = 0; i < InstanceTextureCount; ++i) {
-		InstanceState->instance_texture_maps[i] = maps[i];
-		if (!InstanceState->instance_texture_maps[i]->texture) {
-			InstanceState->instance_texture_maps[i]->texture = DefaultTexture;
+	
+	// Only setup if the shader actually requires it.
+	if (shader->InstanceTextureCount > 0) {
+		// Wipe out the memory for the entire array, even if it isn't all used.
+		InstanceState->instance_texture_maps.resize(shader->InstanceTextureCount);
+		Texture* DefaultTexture = TextureSystem::GetDefaultTexture();
+		// Set all the texture pointers to default until assigned.
+		for (uint32_t i = 0; i < InstanceTextureCount; ++i) {
+			InstanceState->instance_texture_maps[i] = maps[i];
+			if (!InstanceState->instance_texture_maps[i]->texture) {
+				InstanceState->instance_texture_maps[i]->texture = DefaultTexture;
+			}
 		}
 	}
 
@@ -1757,36 +1747,15 @@ bool VulkanBackend::CreateModule(VulkanShader* Shader, VulkanShaderStageConfig c
 	return true;
 }
 
-IRenderpass* VulkanBackend::GetRenderpass(const char* name) {
-	if (name == nullptr || name[0] == '\0') {
-		LOG_ERROR("VulkanBackend::GetRenderpass() requires a name. nullptr will be returned.");
-		return nullptr;
-	}
-
-	uint32_t ID = INVALID_ID;
-	Context.RenderpassTable.Get(name, &ID);
-	if (ID == INVALID_ID) {
-		LOG_WARN("There is no registered renderpass named '%s'.", name);
-		return nullptr;
-	}
-
-	return &Context.RegisteredPasses[ID];
-}
-
-void VulkanBackend::CreateRenderTarget(unsigned char attachment_count, std::vector<Texture*> attachments, IRenderpass* pass, uint32_t width, uint32_t height, RenderTarget* out_target) {
+bool VulkanBackend::CreateRenderTarget(unsigned char attachment_count, std::vector<RenderTargetAttachment> attachments, IRenderpass* pass, uint32_t width, uint32_t height, RenderTarget* out_target) {
 	// Max number of attachments.
 	vk::ImageView AttachmentViews[32];
 	for (uint32_t i = 0; i < attachment_count; ++i) {
-		AttachmentViews[i] = ((VulkanImage*)attachments[i]->InternalData)->ImageView;
+		AttachmentViews[i] = ((VulkanImage*)attachments[i].texture->InternalData)->ImageView;
 	}
 
-	// Take a copy of the attachments and count.
-	out_target->attachment_count = attachment_count;
-	if (out_target->attachments.empty()) {
-		out_target->attachments.resize(attachment_count);
-	}
-	for (const auto& att : attachments) {
-		out_target->attachments.push_back(att);
+	for (uint32_t i = 0; i < attachments.size(); ++i) {
+		out_target->attachments.push_back(&attachments[i]);
 	}
 
 	vk::FramebufferCreateInfo FramebufferCreateInfo;
@@ -1816,22 +1785,33 @@ void  VulkanBackend::DestroyRenderTarget(RenderTarget* target, bool free_interna
 
 Texture* VulkanBackend::GetWindowAttachment(unsigned char index) {
 	if (index >= Context.Swapchain.ImageCount) {
-		LOG_FATAL("Attempting to get attachment index out of range: %d. Attachment count: %d.", index, Context.Swapchain.ImageCount);
+		LOG_FATAL("Attempting to get color attachment index out of range: %d. Attachment count: %d.", index, Context.Swapchain.ImageCount);
 		return nullptr;
 	}
 
-	return Context.Swapchain.RenderTextures[index];
+	return &Context.Swapchain.RenderTextures[index];
 }
 
-Texture* VulkanBackend::GetDepthAttachment() {
-	return Context.Swapchain.DepthTexture;
+Texture* VulkanBackend::GetDepthAttachment(unsigned char index) {
+	if (index >= Context.Swapchain.ImageCount) {
+		LOG_FATAL("Attempting to get depth attachment index out of range: %d. Attachment count: %d.", index, Context.Swapchain.ImageCount);
+		return nullptr;
+	}
+
+
+	return &Context.Swapchain.DepthTexture[index];
 }
+
 unsigned char VulkanBackend::GetWindowAttachmentIndex() {
 	return (unsigned char)Context.ImageIndex;
 }
 
-void VulkanBackend::CreateRenderpass(IRenderpass* out_renderpass, float depth, uint32_t stencil, bool has_prev_pass, bool has_next_pass) {
-	out_renderpass->Create(&Context, depth, stencil, has_prev_pass, has_next_pass);
+unsigned char VulkanBackend::GetWindowAttachmentCount() const {
+	return (unsigned char)Context.Swapchain.ImageCount;
+}
+
+bool VulkanBackend::CreateRenderpass(IRenderpass* out_renderpass, const RenderpassConfig* config) {
+	out_renderpass->Create(&Context, config);
 }
 
 void VulkanBackend::DestroyRenderpass(IRenderpass* pass) {

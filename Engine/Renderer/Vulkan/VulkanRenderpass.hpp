@@ -13,10 +13,7 @@ public:
 	virtual ~VulkanRenderPass() {}
 
 public:
-	void Create(VulkanContext* context,
-		float depth, uint32_t stencil,
-		bool has_prev_pass, bool has_next_pass) override;
-	void Destroy(VulkanContext* context) override;
+	bool Create(VulkanContext* context, const RenderpassConfig* config) override;
 
 	void Begin(RenderTarget* target) override;
 	void End() override;
@@ -36,8 +33,5 @@ private:
 	float Depth;
 	uint32_t Stencil;
 
-	bool HasPrevPass;
-	bool HasNextPass;
-	
 	VulkanRenderPassState State;
 };

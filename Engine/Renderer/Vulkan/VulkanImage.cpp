@@ -149,10 +149,8 @@ void VulkanImage::TransitionLayout(VulkanContext* context, TextureType type, Vul
 	if (old_layout == vk::ImageLayout::eUndefined && new_layout == vk::ImageLayout::eTransferDstOptimal) {
 		Barrier.setSrcAccessMask(vk::AccessFlagBits::eNone)
 			.setDstAccessMask(vk::AccessFlagBits::eTransferWrite);
-
 		// Dont't care what stage the pipeline is in at the start.
 		SrcStage = vk::PipelineStageFlagBits::eTopOfPipe;
-
 		// Used for copying
 		DstStage = vk::PipelineStageFlagBits::eTransfer;
 	}
@@ -160,10 +158,26 @@ void VulkanImage::TransitionLayout(VulkanContext* context, TextureType type, Vul
 		// Transition from a transfer destination layout to a shader-readonly layout
 		Barrier.setSrcAccessMask(vk::AccessFlagBits::eTransferWrite)
 			.setDstAccessMask(vk::AccessFlagBits::eShaderRead);
-
 		// From a copying stage to.
 		SrcStage = vk::PipelineStageFlagBits::eTransfer;
-
+		// The fragment stage.
+		DstStage = vk::PipelineStageFlagBits::eFragmentShader;
+	}
+	else if (old_layout == vk::ImageLayout::eUndefined && new_layout == vk::ImageLayout::eTransferSrcOptimal) {
+		// Transition from a transfer destination layout to a shader-readonly layout
+		Barrier.setSrcAccessMask(vk::AccessFlagBits::eNone)
+			.setDstAccessMask(vk::AccessFlagBits::eTransferRead);
+		// From a copying stage to.
+		SrcStage = vk::PipelineStageFlagBits::eTopOfPipe;
+		// The transfer stage.
+		DstStage = vk::PipelineStageFlagBits::eTransfer;
+	}
+	else if (old_layout == vk::ImageLayout::eTransferSrcOptimal && new_layout == vk::ImageLayout::eShaderReadOnlyOptimal) {
+		// Transition from a transfer destination layout to a shader-readonly layout
+		Barrier.setSrcAccessMask(vk::AccessFlagBits::eTransferRead)
+			.setDstAccessMask(vk::AccessFlagBits::eShaderRead);
+		// From a copying stage to.
+		SrcStage = vk::PipelineStageFlagBits::eTransfer;
 		// The fragment stage.
 		DstStage = vk::PipelineStageFlagBits::eFragmentShader;
 	}
@@ -199,4 +213,53 @@ void VulkanImage::CopyFromBuffer(VulkanContext* context, TextureType type, vk::B
 	Region.setImageExtent(Extent);
 
 	command_buffer->CommandBuffer.copyBufferToImage(buffer, Image, vk::ImageLayout::eTransferDstOptimal, 1, &Region);
+}
+
+void VulkanImage::CopyToBuffer(VulkanContext* context, TextureType type, vk::Buffer buffer, VulkanCommandBuffer* commandBuffer) {
+	vk::BufferImageCopy Region;
+	Region.setBufferOffset(0)
+		.setBufferRowLength(0)
+		.setBufferImageHeight(0);
+
+	// Subresouce
+	vk::ImageSubresourceLayers Subresource;
+	Subresource.setAspectMask(vk::ImageAspectFlagBits::eColor)
+		.setMipLevel(0)
+		.setBaseArrayLayer(0)
+		.setLayerCount(type == TextureType::eTexture_Type_Cube ? 6 : 1);
+	Region.setImageSubresource(Subresource);
+
+	// Extent
+	vk::Extent3D Extent;
+	Extent.setWidth(Width)
+		.setHeight(Height)
+		.setDepth(1);
+	Region.setImageExtent(Extent);
+
+	commandBuffer->CommandBuffer.copyBufferToImage(buffer, Image, vk::ImageLayout::eTransferSrcOptimal, 1, &Region);
+}
+
+void VulkanImage::CopyPixelToBuffer(VulkanContext* context, TextureType type, vk::Buffer buffer, uint32_t x, uint32_t y, VulkanCommandBuffer* commandBuffer) {
+	vk::BufferImageCopy Region;
+	Region.setBufferOffset(0)
+		.setBufferRowLength(0)
+		.setBufferImageHeight(0);
+
+	// Subresouce
+	vk::ImageSubresourceLayers Subresource;
+	Subresource.setAspectMask(vk::ImageAspectFlagBits::eColor)
+		.setMipLevel(0)
+		.setBaseArrayLayer(0)
+		.setLayerCount(type == TextureType::eTexture_Type_Cube ? 6 : 1);
+	Region.setImageSubresource(Subresource);
+
+	// Extent
+	vk::Extent3D Extent;
+	Extent.setWidth(1)
+		.setHeight(1)
+		.setDepth(1);
+	Region.setImageExtent(Extent)
+		.setImageOffset({ x, y });
+
+	commandBuffer->CommandBuffer.copyBufferToImage(buffer, Image, vk::ImageLayout::eTransferSrcOptimal, 1, &Region);
 }

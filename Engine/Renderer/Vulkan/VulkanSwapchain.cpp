@@ -111,7 +111,7 @@ void VulkanSwapchain::Create(VulkanContext* context, unsigned int width, unsigne
 			char TexName[38] = "__internal_vulkan_swapchain_image_0__";
 			TexName[34] = '0' + (char)i;
 
-			RenderTextures[i] = TextureSystem::WrapInternal(
+			TextureSystem::WrapInternal(
 				TexName,
 				SwapchainExtent.width,
 				SwapchainExtent.height,
@@ -119,8 +119,10 @@ void VulkanSwapchain::Create(VulkanContext* context, unsigned int width, unsigne
 				false,
 				true,
 				false,
-				InternalData);
-			if (!RenderTextures[i]) {
+				InternalData,
+				&RenderTextures[i]
+			);
+			if (RenderTextures[i].InternalData == nullptr) {
 				LOG_FATAL("Failed to generate new swapchain image texture.");
 				return;
 			}
@@ -128,7 +130,7 @@ void VulkanSwapchain::Create(VulkanContext* context, unsigned int width, unsigne
 	}
 	else {
 		for (uint32_t i = 0; i < ImageCount; ++i) {
-			TextureSystem::Resize(RenderTextures[i], SwapchainExtent.width, SwapchainExtent.height, false);
+			TextureSystem::Resize(&RenderTextures[i], SwapchainExtent.width, SwapchainExtent.height, false);
 		}
 	}
 
@@ -140,7 +142,7 @@ void VulkanSwapchain::Create(VulkanContext* context, unsigned int width, unsigne
 
 	for (uint32_t i = 0; i < ImageCount; ++i) {
 		// Update the internal image for each.
-		VulkanImage* Image = (VulkanImage*)RenderTextures[i]->InternalData;
+		VulkanImage* Image = (VulkanImage*)RenderTextures[i].InternalData;
 		Image->Image = SwapchainImages[i];
 		Image->Width = SwapchainExtent.width;
 		Image->Height = SwapchainExtent.height;
@@ -148,7 +150,7 @@ void VulkanSwapchain::Create(VulkanContext* context, unsigned int width, unsigne
 
 	// Image views
 	for (uint32_t i = 0; i < ImageCount; ++i) {
-		VulkanImage* Image = (VulkanImage*)RenderTextures[i]->InternalData;
+		VulkanImage* Image = (VulkanImage*)RenderTextures[i].InternalData;
 
 		vk::ImageSubresourceRange Range;
 		Range.setAspectMask(vk::ImageAspectFlagBits::eColor)
@@ -173,19 +175,29 @@ void VulkanSwapchain::Create(VulkanContext* context, unsigned int width, unsigne
 		LOG_FATAL("Failed to find a supported format!");
 	};
 
-	// Create depth image and view
-	VulkanImage* DepthImage = (VulkanImage*)Memory::Allocate(sizeof(VulkanImage), MemoryType::eMemory_Type_Texture);
-	DepthImage->CreateImage(context, TextureType::eTexture_Type_2D, SwapchainExtent.width, SwapchainExtent.height, context->Device.GetDepthFormat(),
-		vk::ImageTiling::eOptimal, vk::ImageUsageFlagBits::eDepthStencilAttachment, vk::MemoryPropertyFlagBits::eDeviceLocal, true, vk::ImageAspectFlagBits::eDepth);
+	if (DepthTexture.size() == 0) {
+		DepthTexture.resize(ImageCount);
 
-	// Wrap it in a texture.
-	context->Swapchain.DepthTexture = TextureSystem::WrapInternal(
-		"__default_depth_texture__",
-		SwapchainExtent.width,
-		SwapchainExtent.height,
-		context->Device.GetDepthChannelCount(),
-		false, true, false, DepthImage);
+	}
 
+	for (uint32_t i = 0; i < ImageCount; ++i) {
+		// Create depth image and view
+		VulkanImage* DepthImage = (VulkanImage*)Memory::Allocate(sizeof(VulkanImage), MemoryType::eMemory_Type_Texture);
+		DepthImage->CreateImage(context, TextureType::eTexture_Type_2D, SwapchainExtent.width, SwapchainExtent.height, context->Device.GetDepthFormat(),
+			vk::ImageTiling::eOptimal, vk::ImageUsageFlagBits::eDepthStencilAttachment, vk::MemoryPropertyFlagBits::eDeviceLocal, true, vk::ImageAspectFlagBits::eDepth);
+
+		// Wrap it in a texture.
+		TextureSystem::WrapInternal(
+			"__default_depth_texture__",
+			SwapchainExtent.width,
+			SwapchainExtent.height,
+			context->Device.GetDepthChannelCount(),
+			false, true, false, DepthImage,
+			&context->Swapchain.DepthTexture[i]
+		);
+
+	}
+	
 	LOG_INFO("Create swapchain successful.");
 }
 
@@ -196,16 +208,20 @@ void VulkanSwapchain::Recreate(VulkanContext* context, unsigned int width, unsig
 
 bool VulkanSwapchain::Destroy(VulkanContext* context) {
 	context->Device.GetLogicalDevice().waitIdle();
-	((VulkanImage*)DepthTexture->InternalData)->Destroy(context);
-	Memory::Free(DepthTexture->InternalData, sizeof(VulkanImage), MemoryType::eMemory_Type_Texture);
-	DepthTexture->InternalData = nullptr;
+	for (uint32_t i = 0; i < ImageCount; ++i) {
+		VulkanImage* Image = (VulkanImage*)DepthTexture[i].InternalData;
+		Image->Destroy(context);
+		Image = nullptr;
+	}
+	DepthTexture.clear();
 
 	// Only destroy views, not the images, since those are owned by swapchain and are thus destroyed when it is.
 	vk::Device LogicalDevice = context->Device.GetLogicalDevice();
 	for (uint32_t i = 0; i < ImageCount; ++i) {
-		VulkanImage* Image = (VulkanImage*)RenderTextures[i]->InternalData;
+		VulkanImage* Image = (VulkanImage*)RenderTextures[i].InternalData;
 		LogicalDevice.destroyImageView(Image->ImageView, context->Allocator);
 	}
+	RenderTextures.clear();
 
 	LogicalDevice.destroySwapchainKHR(Handle, context->Allocator);
 	Handle = nullptr;

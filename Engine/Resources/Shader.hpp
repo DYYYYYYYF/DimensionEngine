@@ -5,10 +5,6 @@
 #include "Containers/THashTable.hpp"
 #include "Math/MathTypes.hpp"
 
-#define BUILTIN_SHADER_NAME_MATERIAL "Shader.Builtin.Material"
-#define BUILTIN_SHADER_NAME_SKYBOX "Shader.Builtin.Skybox"
-#define BUILTIN_SHADER_NAME_UI "Shader.Builtin.UI"
-
 struct TextureMap;
 
 enum ShaderState {
@@ -152,8 +148,6 @@ struct ShaderConfig {
 	unsigned short uniform_count;
 	std::vector<ShaderUniformConfig> uniforms;
 
-	char* renderpass_name = nullptr;
-
 	unsigned short stage_cout;
 	std::vector<ShaderStage> stages;
 
@@ -190,4 +184,7 @@ public:
 	std::vector<ShaderUniform> Uniforms;
 	std::vector<ShaderAttribute> Attributes;
 	std::vector<TextureMap*> GlobalTextureMaps;
+
+	bool DepthTest;
+	bool DepthWrite;
 };

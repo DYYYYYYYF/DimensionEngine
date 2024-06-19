@@ -34,13 +34,13 @@ public:
 	// Renderpass
 	virtual bool BeginRenderpass(IRenderpass* pass, RenderTarget* target) override;
 	virtual bool EndRenderpass(IRenderpass* pass) override;
-	virtual IRenderpass* GetRenderpass(const char* name) override;
-	virtual void CreateRenderTarget(unsigned char attachment_count, std::vector<Texture*> attachments, IRenderpass* pass, uint32_t width, uint32_t height, RenderTarget* out_target) override;
+	virtual bool CreateRenderTarget(unsigned char attachment_count, std::vector<RenderTargetAttachment> attachments, IRenderpass* pass, uint32_t width, uint32_t height, RenderTarget* out_target) override;
 	virtual void DestroyRenderTarget(RenderTarget* target, bool free_internal_memory) override;
 	virtual Texture* GetWindowAttachment(unsigned char index) override;
-	virtual Texture* GetDepthAttachment() override;
+	virtual unsigned char GetWindowAttachmentCount() const override;
+	virtual Texture* GetDepthAttachment(unsigned char index) override;
 	virtual unsigned char GetWindowAttachmentIndex() override;
-	virtual void CreateRenderpass(IRenderpass* out_renderpass, float depth, uint32_t stencil, bool has_prev_pass, bool has_next_pass) override;
+	virtual bool CreateRenderpass(IRenderpass* out_renderpass, const RenderpassConfig* config) override;
 	virtual void DestroyRenderpass(IRenderpass* pass) override;
 
 	// Renderbuffer
@@ -59,6 +59,12 @@ public:
 	virtual bool DrawRenderbuffer(IRenderbuffer* buffer, size_t offset, uint32_t element_count, bool bind_only) override;
 	virtual bool AllocateRenderbuffer(IRenderbuffer* buffer, size_t size, size_t* out_offset);
 	virtual bool FreeRenderbuffer(IRenderbuffer* buffer, size_t size, size_t offset);
+
+	// Render target
+	virtual void SetViewport(Vec4 rect) override;
+	virtual void ResetViewport() override;
+	virtual void SetScissor(Vec4 rect) override;
+	virtual void ResetScissor() override;
 
 	// Shaders.
 	virtual bool CreateShader(Shader* shader, const ShaderConfig* config, IRenderpass* pass, unsigned short stage_count, const std::vector<char*>& stage_filenames, std::vector<ShaderStage>& stages) override;

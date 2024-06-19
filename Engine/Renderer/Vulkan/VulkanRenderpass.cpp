@@ -6,14 +6,10 @@
 #include "Core/DMemory.hpp"
 #include "Core/EngineLogger.hpp"
 
-void VulkanRenderPass::Create(VulkanContext* context,
-	float depth, uint32_t stencil,
-	bool has_prev_pass, bool has_next_pass) {
+bool VulkanRenderPass::Create(VulkanContext* context, const RenderpassConfig* config) {
 
-	Depth = depth;
-	Stencil = stencil;
-	HasPrevPass = has_prev_pass;
-	HasNextPass = has_next_pass;
+	Depth = config->depth;
+	Stencil = config->stencil;
 	Context = context;
 
 	// Main subpass
@@ -23,71 +19,178 @@ void VulkanRenderPass::Create(VulkanContext* context,
 	// Attachments TODO: make this configurable.
 	uint32_t AttachmentDescriptionCount = 0;
 	std::vector<vk::AttachmentDescription> AttachmentDescriptions;
+	std::vector<vk::AttachmentDescription> ColorAttachmentDescriptions;
+	std::vector<vk::AttachmentDescription> DepthAttachmentDescriptions;
 
-	// Color attachment
-	bool IsNeedClearColor = (ClearFlags & eRenderpass_Clear_Color_Buffer) != 0;
-	vk::AttachmentDescription ColorAttachment;
-	ColorAttachment.setFormat(context->Swapchain.ImageFormat.format)
-		.setSamples(vk::SampleCountFlagBits::e1)
-		.setLoadOp(IsNeedClearColor ? vk::AttachmentLoadOp::eClear : vk::AttachmentLoadOp::eLoad)
-		.setStoreOp(vk::AttachmentStoreOp::eStore)
-		.setStencilLoadOp(vk::AttachmentLoadOp::eDontCare)
-		.setStencilStoreOp(vk::AttachmentStoreOp::eDontCare);
-	// If coming from a previous pass, should already be vk::ImageLayout::eColorAttachmentOptimal. Otherwise undefined.
-	ColorAttachment.setInitialLayout(HasPrevPass ? vk::ImageLayout::eColorAttachmentOptimal : vk::ImageLayout::eUndefined);
-	// If going to another pass, use vk::ImageLayout::eColorAttachmentOptimal. Otherwise vk::ImageLayout::ePresentSrcKHR.
-	ColorAttachment.setFinalLayout(HasNextPass ? vk::ImageLayout::eColorAttachmentOptimal : vk::ImageLayout::ePresentSrcKHR);
+	// Can alwasy just look at the first target since they are all the same(one per frame).
+	// render target* taget = &Targets[0]
+	for (uint32_t i = 0; i < config->target.attachmentCount; ++i) {
+		RenderTargetAttachmentConfig* AttachmentConfig = &config->target.attachments[i];
+		vk::AttachmentDescription AttachmentDesc;
+		if (AttachmentConfig->type == RenderTargetAttachmentType::eRender_Target_Attachment_Type_Color) {
+			// Color attachment
+			bool IsNeedClearColor = (ClearFlags & eRenderpass_Clear_Color_Buffer) != 0;
 
-	AttachmentDescriptions.push_back(ColorAttachment);
-	AttachmentDescriptionCount++;
+			if (AttachmentConfig->source == RenderTargetAttachmentSource::eRender_Target_Attachment_Source_Default) {
+				AttachmentDesc.setFormat(context->Swapchain.ImageFormat.format);
+			}
+			else {
+				// TODO: configurable
+				AttachmentDesc.setFormat(vk::Format::eR8G8B8A8Unorm);
+			}
 
-	// Color attachment reference
-	vk::AttachmentReference ColorAttachmentReference;
-	ColorAttachmentReference.setAttachment(0);
-	ColorAttachmentReference.setLayout(vk::ImageLayout::eColorAttachmentOptimal);
+			AttachmentDesc.setSamples(vk::SampleCountFlagBits::e1);
 
-	Subpass.setColorAttachmentCount(1);
-	Subpass.setPColorAttachments(&ColorAttachmentReference);
+			// Determine which load operation to use.
+			if (AttachmentConfig->loadOperation == RenderTargetAttachmentLoadOperation::eRender_Target_Attachment_Load_Operation_DontCare) {
+				// We dont care, they only other thing that needs checking is if the attachment is being cleared.
+				AttachmentDesc.setLoadOp(IsNeedClearColor ? vk::AttachmentLoadOp::eClear : vk::AttachmentLoadOp::eLoad);
+			}
+			else {
+				// If we loading, check if we are also clearing. This combination doesn't make sense, and should be warned about.
+				if (AttachmentConfig->loadOperation == RenderTargetAttachmentLoadOperation::eRender_Target_Attachment_Load_Operation_Load) {
+					if (IsNeedClearColor) {
+						LOG_WARN("Color attachment load operation set to load, but is also set to clear. This combination is invalid.");
+						AttachmentDesc.setLoadOp(vk::AttachmentLoadOp::eClear);
+					}
+					else {
+						AttachmentDesc.setLoadOp(vk::AttachmentLoadOp::eLoad);
+					}
+				}
+				else {
+					LOG_FATAL("Invalid and unsupported combination of load operation (0x%x) and clear flags (0x%x) for color attachment.", AttachmentDesc.loadOp, ClearFlags);
+					return false;
+				}
+			}
 
-	// Depth attachment, if there is one
-	bool IsNeedClearDepth = (ClearFlags & eRenderpass_Clear_Depth_Buffer) != 0;
-	
-	// NOTE: Put out of block, it will release memory when release mode and cause unknown break!
-	vk::AttachmentDescription DepthAttachment;
-	vk::AttachmentReference DepthAttachmentReference;
+			// Determine which store operation to use.
+			if (AttachmentConfig->storeOperation == RenderTargetAttachmentStoreOperation::eRender_Target_Attachment_Store_Operation_DontCare) {
+				AttachmentDesc.setStoreOp(vk::AttachmentStoreOp::eDontCare);
+			}
+			else if (AttachmentConfig->storeOperation == RenderTargetAttachmentStoreOperation::eRender_Target_Attachment_Store_Operation_Store) {
+				AttachmentDesc.setStoreOp(vk::AttachmentStoreOp::eStore);
+			}
+			else {
+				LOG_FATAL("Invalid store operation  (0x%x) for depth attachment. Check onfiguration.", AttachmentConfig->storeOperation);
+				return false;
+			}
 
-	if (IsNeedClearDepth) {
-		DepthAttachment.setFormat(context->Device.GetDepthFormat())
-			.setSamples(vk::SampleCountFlagBits::e1)
-			.setStoreOp(vk::AttachmentStoreOp::eDontCare)
-			.setStencilLoadOp(vk::AttachmentLoadOp::eDontCare)
-			.setStencilStoreOp(vk::AttachmentStoreOp::eDontCare)
-			.setInitialLayout(vk::ImageLayout::eUndefined)
-			.setFinalLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal);
-		if (has_prev_pass) {
-			DepthAttachment.setLoadOp(IsNeedClearDepth ? vk::AttachmentLoadOp::eClear : vk::AttachmentLoadOp::eLoad);
+			// NOTE: These will never be used on a color attachment.
+			AttachmentDesc.setStencilLoadOp(vk::AttachmentLoadOp::eDontCare);
+			AttachmentDesc.setStencilStoreOp(vk::AttachmentStoreOp::eDontCare);
+			
+			// If loading, that means coming from another pass, meaning the format should be  vk::ImageLayout::eColorAttachmentOptimal.
+			AttachmentDesc.setInitialLayout(AttachmentConfig->loadOperation ==
+				RenderTargetAttachmentLoadOperation::eRender_Target_Attachment_Load_Operation_Load ? vk::ImageLayout::eColorAttachmentOptimal : vk::ImageLayout::eUndefined);
+			// If this is the last pass writing to this attachment, present after should be set to true.
+			AttachmentDesc.setFinalLayout(AttachmentConfig->presentAfter ? vk::ImageLayout::ePresentSrcKHR : vk::ImageLayout::eColorAttachmentOptimal);
+
+			// Push to co
+			AttachmentDescriptions.push_back(AttachmentDesc);
+		}	// Color attachment
+		else if (AttachmentConfig->type == RenderTargetAttachmentType::eRender_Target_Attachment_Type_Depth) {
+			// Depth attachment
+			bool IsNeedClearDepth = (ClearFlags & eRenderpass_Clear_Depth_Buffer) != 0;
+
+			if (AttachmentConfig->source == RenderTargetAttachmentSource::eRender_Target_Attachment_Source_Default) {
+				AttachmentDesc.setFormat(Context->Device.GetDepthFormat());
+			}
+			else {
+				// TODO: There may be a more optimal format to use when not the default depth target.
+				AttachmentDesc.setFormat(Context->Device.GetDepthFormat());
+			}
+
+			AttachmentDesc.setSamples(vk::SampleCountFlagBits::e1);
+			// Determine which load operation to use.
+			if (AttachmentConfig->loadOperation == RenderTargetAttachmentLoadOperation::eRender_Target_Attachment_Load_Operation_DontCare) {
+				// If we dont care, they only other thing that needs checking is if the attachment is being cleared.
+				AttachmentDesc.setLoadOp(IsNeedClearDepth ? vk::AttachmentLoadOp::eClear : vk::AttachmentLoadOp::eDontCare);
+			}
+			else {
+				// If we loading, check if we are also clearing. This combination doesn't make sense, and should be warned about.
+				if (AttachmentConfig->loadOperation == RenderTargetAttachmentLoadOperation::eRender_Target_Attachment_Load_Operation_Load) {
+					if (IsNeedClearDepth) {
+						LOG_WARN("Depth attachment load operation set to load, but is also set to clear. This combination is invalid.");
+						AttachmentDesc.setLoadOp(vk::AttachmentLoadOp::eClear);
+					}
+					else {
+						AttachmentDesc.setLoadOp(vk::AttachmentLoadOp::eLoad);
+					}
+				}
+				else {
+					LOG_FATAL("Invalid and unsupported combination of load operation (0x%x) and clear flags (0x%x) for depth attachment.", AttachmentDesc.loadOp, ClearFlags);
+					return false;
+				}
+			}
+
+			// Determine which store operation to use.
+			if (AttachmentConfig->storeOperation == RenderTargetAttachmentStoreOperation::eRender_Target_Attachment_Store_Operation_DontCare) {
+				AttachmentDesc.setStoreOp(vk::AttachmentStoreOp::eDontCare);
+			}
+			else if (AttachmentConfig->storeOperation == RenderTargetAttachmentStoreOperation::eRender_Target_Attachment_Store_Operation_Store) {
+				AttachmentDesc.setStoreOp(vk::AttachmentStoreOp::eStore);
+			}
+			else {
+				LOG_FATAL("Invalid store operation  (0x%x) for depth attachment. Check onfiguration.", AttachmentConfig->storeOperation);
+				return false;
+			}
+
+			// TODO: COnfigurable for stencil attachments.
+			AttachmentDesc.setStencilLoadOp(vk::AttachmentLoadOp::eDontCare);
+			AttachmentDesc.setStencilStoreOp(vk::AttachmentStoreOp::eDontCare);
+
+			// If loading, that means coming from another pass, meaning the format should be  vk::ImageLayout::eStencilAttachmentOptimal.
+			AttachmentDesc.setInitialLayout(AttachmentConfig->loadOperation ==
+				RenderTargetAttachmentLoadOperation::eRender_Target_Attachment_Load_Operation_Load ? vk::ImageLayout::eStencilAttachmentOptimal : vk::ImageLayout::eUndefined);
+			// Final layout for depth stencil attachments is always this.
+			AttachmentDesc.setFinalLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal);
+
+			// Push to co
+			AttachmentDescriptions.push_back(AttachmentDesc);
+		}// Depth attachment
+
+	}
+
+	// Setup the attachment references.
+	uint32_t AttachmentsAdded = 0;
+	// Color attachment reference.
+	std::vector<vk::AttachmentReference> ColorAttachmentReferences;
+	uint32_t ColorAttachmentCount = (uint32_t)ColorAttachmentDescriptions.size();
+	if (ColorAttachmentCount > 0) {
+		ColorAttachmentReferences.resize(ColorAttachmentCount);
+		for (uint32_t i = 0; i < ColorAttachmentCount; ++i) {
+			ColorAttachmentReferences[i].setAttachment(AttachmentsAdded);	// Attachment description array index
+			ColorAttachmentReferences[i].setLayout(vk::ImageLayout::eColorAttachmentOptimal);
+			AttachmentsAdded++;
 		}
-		else {
-			DepthAttachment.setLoadOp(vk::AttachmentLoadOp::eDontCare);
-		}
 
-		AttachmentDescriptions.push_back(DepthAttachment);
-		AttachmentDescriptionCount++;
-
-		// Depth attachment reference
-		DepthAttachmentReference.setAttachment(1);
-		DepthAttachmentReference.setLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal);
-
-		// TODO: other attachment types (input, resolve, preserve)
-
-		// Depth stencil data
-		Subpass.setPDepthStencilAttachment(&DepthAttachmentReference);
+		Subpass.setColorAttachmentCount(ColorAttachmentCount);
+		Subpass.setColorAttachments(ColorAttachmentReferences);
 	}
 	else {
-		// Memory::Zero(&AttachmentDescriptions[AttachmentDescriptionCount], sizeof(vk::AttachmentDescription));
+		Subpass.setColorAttachmentCount(ColorAttachmentCount);
+		Subpass.setColorAttachments(nullptr);
+	}
+
+	// Depth attachment reference.
+	std::vector<vk::AttachmentReference> DepthAttachmentReferences;
+	uint32_t DepthAttachmentCount = (uint32_t)DepthAttachmentDescriptions.size();
+	if (DepthAttachmentCount > 0) {
+		ASSERT(DepthAttachmentCount == 1);	// Multiple depth attachments not supported.
+		DepthAttachmentReferences.resize(DepthAttachmentCount);
+		for (uint32_t i = 0; i < DepthAttachmentCount; ++i) {
+			DepthAttachmentReferences[i].setAttachment(AttachmentsAdded);
+			DepthAttachmentReferences[i].setLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal);
+			AttachmentsAdded++;
+		}
+
+		// Depth stencil data.
+		Subpass.setPDepthStencilAttachment(DepthAttachmentReferences.data());
+	}
+	else {
 		Subpass.setPDepthStencilAttachment(nullptr);
 	}
-	
+
 	// Input from a shader
 	Subpass.setInputAttachmentCount(0);
 	Subpass.setPInputAttachments(nullptr);
@@ -111,7 +214,7 @@ void VulkanRenderPass::Create(VulkanContext* context,
 
 	// Render pass create
 	vk::RenderPassCreateInfo CreateInfo;
-	CreateInfo.setAttachmentCount(AttachmentDescriptionCount)
+	CreateInfo.setAttachmentCount((uint32_t)AttachmentDescriptions.size())
 		.setAttachments(AttachmentDescriptions)
 		.setSubpassCount(1)
 		.setPSubpasses(&Subpass)
@@ -123,6 +226,24 @@ void VulkanRenderPass::Create(VulkanContext* context,
 		context->Allocator, (vk::RenderPass*)&Renderpass) != vk::Result::eSuccess) {
 		LOG_ERROR("VulkanRenderPass::Create() Failed to create renderpass.");
 	}
+
+	// Clean up
+	if (!AttachmentDescriptions.empty()) {
+		AttachmentDescriptions.clear();
+		std::vector<vk::AttachmentDescription>().swap(AttachmentDescriptions);
+	}
+
+	if (!ColorAttachmentDescriptions.empty()) {
+		ColorAttachmentDescriptions.clear();
+		std::vector<vk::AttachmentDescription>().swap(ColorAttachmentDescriptions);
+	}
+
+	if (!DepthAttachmentDescriptions.empty()) {
+		DepthAttachmentDescriptions.clear();
+		std::vector<vk::AttachmentDescription>().swap(DepthAttachmentDescriptions);
+	}
+
+	return true;
 }
 
 void VulkanRenderPass::Destroy(VulkanContext* context) {
@@ -166,6 +287,14 @@ void VulkanRenderPass::Begin(RenderTarget* target) {
 		bool IsNeedClearStencil = (ClearFlags & eRenderpass_Clear_Stencil_Buffer) != 0;
 		ClearValues[BeginInfo.clearValueCount].depthStencil.stencil = IsNeedClearStencil ? Stencil : 0;
 		BeginInfo.clearValueCount++;
+	}
+	else {
+		for (uint32_t i = 0; i < target->attachment_count; ++i) {
+			if (target->attachments[i]->type == RenderTargetAttachmentType::eRender_Target_Attachment_Type_Depth) {
+				// If there is a depth attachment, make sure to add the clear count, but dont bother copying the data.
+				BeginInfo.clearValueCount++;
+			}
+		}
 	}
 
 	BeginInfo.setPClearValues(BeginInfo.clearValueCount > 0 ? ClearValues : nullptr);
