@@ -311,12 +311,12 @@ inline bool StringEqual(const char* str0, const char* str1) {
 
 // Case-insensitive string comparison.
 inline bool StringEquali(const char* str0, const char* str1) {
-#if defined(__GUNC__)
+#if defined(__GNUC__)
 	return strcasecmp(str0, str1) == 0;
 #elif (defined _MSC_VER)
 	return _strcmpi(str0, str1) == 0;
 #endif
-	return strcasecmp(str0, str1) == 0;
+	return false;
 }
 
 inline bool StringNequal(const char* str0, const char* str1, size_t len) {
@@ -324,12 +324,12 @@ inline bool StringNequal(const char* str0, const char* str1, size_t len) {
 }
 
 inline bool StringNequali(const char* str0, const char* str1, size_t len) {
-#if defined(__GUNC__)
+#if defined(__GNUC__)
 	return strncasecmp(str0, str1, len) == 0;
 #elif (defined _MSC_VER)
 	return _strnicmp(str0, str1, len) == 0;
 #endif
-	return strncasecmp(str0, str1, len) == 0;
+	return false;
 }
 
 inline void StringDirectoryFromPath(char* dst, const char* path) {
