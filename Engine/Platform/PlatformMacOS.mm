@@ -153,12 +153,12 @@ void HandleModifierKeys(uint32_t ns_keycode, uint32_t modifier_flags, SInternalS
 
 - (void)keyDown : (NSEvent*)event {
 	enum Keys key = TranslateKeyCode((uint32_t)[event keyCode]);
-  Core::InputProcessKey(key, true);
+    Core::InputProcessKey(key, true);
 }
 
 - (void)keyUp : (NSEvent*)event {
-	enum Keys key = TranslateKeyCode((uint32_t)[event keyCode]);
-  Core::InputProcessKey(key, true);
+    enum Keys key = TranslateKeyCode((uint32_t)[event keyCode]);
+    Core::InputProcessKey(key, false);
 }
 
 - (void)scrollWheel : (NSEvent*)event {
