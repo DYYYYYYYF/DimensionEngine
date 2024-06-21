@@ -67,6 +67,8 @@ elseif(${WIN32})
     link_directories(${Vulkan_LIBRARY_DIRS} ${UD_LOGGER_DIR}/lib/Windows/${CMAKE_BUILD_TYPE})
 endif()
 
+source_group(TREE ${CMAKE_SOURCE_DIR} FILES ${ALL_SRCS})
+
 add_subdirectory(3rd)
 add_subdirectory(engine)
 add_subdirectory(Editor)
