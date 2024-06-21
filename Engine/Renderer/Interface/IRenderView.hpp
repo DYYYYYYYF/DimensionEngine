@@ -1,5 +1,6 @@
 #pragma once
 #include "Math/MathTypes.hpp"
+#include "Renderer/Vulkan/VulkanRenderpass.hpp"
 
 #include <vector>
 #include <functional>
@@ -38,7 +39,7 @@ struct RenderViewConfig {
 
 class IRenderView {
 public:
-	virtual bool OnCreate() = 0;
+	virtual bool OnCreate(const RenderViewConfig& config) = 0;
 	virtual void OnDestroy() = 0;
 	virtual void OnResize(uint32_t width, uint32_t height) = 0;
 	virtual bool OnBuildPacket(void* data, struct RenderViewPacket* out_packet) const = 0;
@@ -57,7 +58,7 @@ public:
 	unsigned short Height;
 	RenderViewKnownType Type;
 	unsigned char RenderpassCount;
-	std::vector<class IRenderpass*> Passes;
+	std::vector<class VulkanRenderPass> Passes;
 	const char* CustomShaderName = nullptr;
 };
 

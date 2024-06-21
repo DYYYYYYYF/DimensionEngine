@@ -247,6 +247,8 @@ bool VulkanBackend::Initialize(const RenderBackendConfig* config, unsigned char*
 	// Swapchain
 	Context.Swapchain.Create(&Context, Context.FrameBufferWidth, Context.FrameBufferHeight);
 
+	CreateCommandBuffer();
+
 	// Save off the number of images we have as the number of render targets needed.
 	*out_window_render_target_count = Context.Swapchain.ImageCount;
 
@@ -1823,6 +1825,32 @@ unsigned char VulkanBackend::GetWindowAttachmentCount() const {
 }
 
 bool VulkanBackend::CreateRenderpass(IRenderpass* out_renderpass, const RenderpassConfig* config) {
+
+	out_renderpass->RenderTargetCount = config->renderTargetCount;
+	out_renderpass->Targets.resize(out_renderpass->RenderTargetCount);
+	out_renderpass->SetClearColor(config->clear_color);
+	out_renderpass->SetClearFlags(config->clear_flags);
+	out_renderpass->SetRenderArea(config->render_area);
+
+	// Copy over config for each target.
+	for (uint32_t i = 0; i < out_renderpass->RenderTargetCount; ++i) {
+		RenderTarget* Target = &out_renderpass->Targets[i];
+		Target->attachment_count = config->target.attachmentCount;
+		Target->attachments.resize(Target->attachment_count);
+
+		// Each attachment for the target.
+		for (uint32_t a = 0; a < Target->attachment_count; ++a) {
+			RenderTargetAttachment* Attachment = &Target->attachments[a];
+			RenderTargetAttachmentConfig* AttachmentConfig = &config->target.attachments[a];
+
+			Attachment->source = AttachmentConfig->source;
+			Attachment->type = AttachmentConfig->type;
+			Attachment->loadOperation = AttachmentConfig->loadOperation;
+			Attachment->storeOperation = AttachmentConfig->storeOperation;
+			Attachment->texture = nullptr;
+		}
+	}
+
 	return out_renderpass->Create(&Context, config);
 }
 

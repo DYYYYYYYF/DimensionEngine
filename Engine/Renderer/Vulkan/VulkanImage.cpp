@@ -236,7 +236,7 @@ void VulkanImage::CopyToBuffer(VulkanContext* context, TextureType type, vk::Buf
 		.setDepth(1);
 	Region.setImageExtent(Extent);
 
-	commandBuffer->CommandBuffer.copyBufferToImage(buffer, Image, vk::ImageLayout::eTransferSrcOptimal, 1, &Region);
+	commandBuffer->CommandBuffer.copyImageToBuffer(Image, vk::ImageLayout::eTransferSrcOptimal, buffer, 1, &Region);
 }
 
 void VulkanImage::CopyPixelToBuffer(VulkanContext* context, TextureType type, vk::Buffer buffer, uint32_t x, uint32_t y, VulkanCommandBuffer* commandBuffer) {
@@ -261,5 +261,5 @@ void VulkanImage::CopyPixelToBuffer(VulkanContext* context, TextureType type, vk
 	Region.setImageExtent(Extent)
 		.setImageOffset({ (int)x, (int)y });
 
-	commandBuffer->CommandBuffer.copyBufferToImage(buffer, Image, vk::ImageLayout::eTransferSrcOptimal, 1, &Region);
+	commandBuffer->CommandBuffer.copyImageToBuffer(Image, vk::ImageLayout::eTransferSrcOptimal, buffer, 1, &Region);
 }

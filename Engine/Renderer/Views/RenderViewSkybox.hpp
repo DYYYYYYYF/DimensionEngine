@@ -10,7 +10,7 @@ class RenderViewSkybox : public IRenderView {
 public:
 	RenderViewSkybox();
 	RenderViewSkybox(const RenderViewConfig& config);
-	virtual bool OnCreate() override;
+	virtual bool OnCreate(const RenderViewConfig& config) override;
 	virtual void OnDestroy() override;
 	virtual void OnResize(uint32_t width, uint32_t height) override;
 	virtual bool OnBuildPacket(void* data, struct RenderViewPacket* out_packet) const override;

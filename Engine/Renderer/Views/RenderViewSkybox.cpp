@@ -35,21 +35,7 @@ static bool RenderViewSkyboxOnEvent(unsigned short code, void* sender, void* lis
 }
 
 RenderViewSkybox::RenderViewSkybox() {
-	// Builtin skybox shader.
-	const char* ShaderName = "Shader.Builtin.Skybox";
-	Resource ConfigResource;
-	if (!ResourceSystem::Load(ShaderName, ResourceType::eResource_Type_Shader, nullptr, &ConfigResource)) {
-		LOG_ERROR("Failed to load builtin skybox shader.");
-		return;
-	}
-
-	ShaderConfig* Config = (ShaderConfig*)ConfigResource.Data;
-	// NOTE: Assuming the first pass since that's all this view has.
-	if (!ShaderSystem::Create(Passes[0], Config)) {
-		LOG_ERROR("Failed to load builtin ksybox shader.");
-		return;
-	}
-	ResourceSystem::Unload(&ConfigResource);
+	
 }
 
 RenderViewSkybox::RenderViewSkybox(const RenderViewConfig& config) {
@@ -58,30 +44,29 @@ RenderViewSkybox::RenderViewSkybox(const RenderViewConfig& config) {
 	CustomShaderName = config.custom_shader_name;
 	RenderpassCount = config.pass_count;
 	Passes.resize(RenderpassCount);
+}
 
+bool RenderViewSkybox::OnCreate(const RenderViewConfig& config) {
 	const char* ShaderName = "Shader.Builtin.Skybox";
 	Resource ConfigResource;
 	if (!ResourceSystem::Load(ShaderName, ResourceType::eResource_Type_Shader, nullptr, &ConfigResource)) {
 		LOG_ERROR("Failed to load builtin skybox shader.");
-		return;
+		return false;
 	}
 
 	ShaderConfig* Config = (ShaderConfig*)ConfigResource.Data;
 	// NOTE: Assuming the first pass since that's all this view has.
-	if (!ShaderSystem::Create(Passes[0], Config)) {
+	if (!ShaderSystem::Create(&Passes[0], Config)) {
 		LOG_ERROR("Failed to load builtin ksybox shader.");
-		return;
+		return false;
 	}
 	ResourceSystem::Unload(&ConfigResource);
-}
 
-bool RenderViewSkybox::OnCreate() {
 	// Get either the custom shader override or the defined default.
-	const char* ShaderName = "Shader.Builtin.Skybox";
-	Shader* s = ShaderSystem::Get(CustomShaderName ? CustomShaderName : ShaderName);
-	ProjectionLocation = ShaderSystem::GetUniformIndex(s, "projection");
-	ViewLocation = ShaderSystem::GetUniformIndex(s, "view");
-	CubeMapLocation = ShaderSystem::GetUniformIndex(s, "cube_texture");
+	UsedShader = ShaderSystem::Get(CustomShaderName ? CustomShaderName : ShaderName);
+	ProjectionLocation = ShaderSystem::GetUniformIndex(UsedShader, "projection");
+	ViewLocation = ShaderSystem::GetUniformIndex(UsedShader, "view");
+	CubeMapLocation = ShaderSystem::GetUniformIndex(UsedShader, "cube_texture");
 	
 	// TODO: Configurable.
 	ReserveY = true;
@@ -92,7 +77,7 @@ bool RenderViewSkybox::OnCreate() {
 	Fov = Deg2Rad(45.0f);
 
 	// Default
-	ProjectionMatrix = Matrix4::Perspective(Fov, 1280.0f / 720.0f, NearClip, FarClip, ReserveY);
+	ProjectionMatrix = Matrix4::Perspective(Fov, 1280.0f / 720.0f, NearClip, FarClip);
 	WorldCamera = CameraSystem::GetDefault();
 
 	if (!Core::EventRegister(Core::eEvent_Code_Default_Rendertarget_Refresh_Required, this, RenderViewSkyboxOnEvent)) {
@@ -115,10 +100,10 @@ void RenderViewSkybox::OnResize(uint32_t width, uint32_t height) {
 
 	Width = width;
 	Height = height;
-	ProjectionMatrix = Matrix4::Perspective(Fov, (float)Width / (float)Height, NearClip, FarClip, ReserveY);
+	ProjectionMatrix = Matrix4::Perspective(Fov, (float)Width / (float)Height, NearClip, FarClip);
 
 	for (uint32_t i = 0; i < RenderpassCount; ++i) {
-		Passes[i]->SetRenderArea(Vec4(0, 0, (float)Width, (float)Height));
+		Passes[i].SetRenderArea(Vec4(0, 0, (float)Width, (float)Height));
 	}
 }
 
@@ -155,7 +140,7 @@ bool RenderViewSkybox::OnRender(struct RenderViewPacket* packet, IRendererBacken
 	uint32_t SID = UsedShader->ID;
 	SkyboxPacketData* SkyboxData = (SkyboxPacketData*)packet->extended_data;
 	for (uint32_t p = 0; p < RenderpassCount; ++p) {
-		IRenderpass* Pass = Passes[p];
+		IRenderpass* Pass = (IRenderpass*)&Passes[p];
 		Pass->Begin(&Pass->Targets[render_target_index]);
 
 		if (!ShaderSystem::UseByID(SID)) {

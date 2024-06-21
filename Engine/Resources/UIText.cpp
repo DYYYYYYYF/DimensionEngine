@@ -44,7 +44,7 @@ bool UIText::Create(class IRenderer* renderer, UITextType type, const char* font
 	}
 
 	// Acquire resource for font texture map.
-	Shader* UIShader = ShaderSystem::Get("BUILTIN_SHADER_NAME_UI");	// TODO: Text shader.
+	Shader* UIShader = ShaderSystem::Get("Shader.Builtin.UI");	// TODO: Text shader.
 	std::vector<TextureMap*> FontMaps = { &Data->atlas };
 	InstanceID = renderer->AcquireInstanceResource(UIShader, FontMaps);
 	if (InstanceID == INVALID_ID) {

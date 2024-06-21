@@ -291,31 +291,6 @@ bool IRenderer::CreateRenderpass(IRenderpass* out_renderpass, const RenderpassCo
 		return false;
 	}
 
-	out_renderpass->RenderTargetCount = config->renderTargetCount;
-	out_renderpass->Targets.resize(out_renderpass->RenderTargetCount);
-	out_renderpass->SetClearColor(config->clear_color);
-	out_renderpass->SetClearFlags(config->clear_flags);
-	out_renderpass->SetRenderArea(config->render_area);
-
-	// Copy over config for each target.
-	for (uint32_t i = 0; i < out_renderpass->RenderTargetCount; ++i) {
-		RenderTarget* Target = &out_renderpass->Targets[i];
-		Target->attachment_count = config->renderTargetCount;
-		Target->attachments.resize(Target->attachment_count);
-
-		// Each attachment for the target.
-		for (uint32_t a = 0; a < Target->attachment_count; ++a) {
-			RenderTargetAttachment* Attachment = &Target->attachments[a];
-			RenderTargetAttachmentConfig* AttachmentConfig = &config->target.attachments[a];
-
-			Attachment->source = AttachmentConfig->source;
-			Attachment->type = AttachmentConfig->type;
-			Attachment->loadOperation = AttachmentConfig->loadOperation;
-			Attachment->storeOperation = AttachmentConfig->storeOperation;
-			Attachment->texture = nullptr;
-		}
-	}
-
 	return Backend->CreateRenderpass(out_renderpass, config);
 }
 

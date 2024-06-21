@@ -24,9 +24,9 @@ bool VulkanRenderPass::Create(VulkanContext* context, const RenderpassConfig* co
 
 	// Can alwasy just look at the first target since they are all the same(one per frame).
 	// render target* taget = &Targets[0]
+	vk::AttachmentDescription AttachmentDesc;
 	for (uint32_t i = 0; i < config->target.attachmentCount; ++i) {
 		RenderTargetAttachmentConfig* AttachmentConfig = &config->target.attachments[i];
-		vk::AttachmentDescription AttachmentDesc;
 		if (AttachmentConfig->type == RenderTargetAttachmentType::eRender_Target_Attachment_Type_Color) {
 			// Color attachment
 			bool IsNeedClearColor = (ClearFlags & eRenderpass_Clear_Color_Buffer) != 0;
@@ -44,7 +44,7 @@ bool VulkanRenderPass::Create(VulkanContext* context, const RenderpassConfig* co
 			// Determine which load operation to use.
 			if (AttachmentConfig->loadOperation == RenderTargetAttachmentLoadOperation::eRender_Target_Attachment_Load_Operation_DontCare) {
 				// We dont care, they only other thing that needs checking is if the attachment is being cleared.
-				AttachmentDesc.setLoadOp(IsNeedClearColor ? vk::AttachmentLoadOp::eClear : vk::AttachmentLoadOp::eLoad);
+				AttachmentDesc.setLoadOp(IsNeedClearColor ? vk::AttachmentLoadOp::eClear : vk::AttachmentLoadOp::eDontCare);
 			}
 			else {
 				// If we loading, check if we are also clearing. This combination doesn't make sense, and should be warned about.
@@ -86,7 +86,7 @@ bool VulkanRenderPass::Create(VulkanContext* context, const RenderpassConfig* co
 			AttachmentDesc.setFinalLayout(AttachmentConfig->presentAfter ? vk::ImageLayout::ePresentSrcKHR : vk::ImageLayout::eColorAttachmentOptimal);
 
 			// Push to co
-			AttachmentDescriptions.push_back(AttachmentDesc);
+			ColorAttachmentDescriptions.push_back(AttachmentDesc);
 		}	// Color attachment
 		else if (AttachmentConfig->type == RenderTargetAttachmentType::eRender_Target_Attachment_Type_Depth) {
 			// Depth attachment
@@ -135,18 +135,18 @@ bool VulkanRenderPass::Create(VulkanContext* context, const RenderpassConfig* co
 				return false;
 			}
 
-			// TODO: COnfigurable for stencil attachments.
+			// TODO: Configurable for stencil attachments.
 			AttachmentDesc.setStencilLoadOp(vk::AttachmentLoadOp::eDontCare);
 			AttachmentDesc.setStencilStoreOp(vk::AttachmentStoreOp::eDontCare);
 
-			// If loading, that means coming from another pass, meaning the format should be  vk::ImageLayout::eStencilAttachmentOptimal.
+			// If loading, that means coming from another pass, meaning the format should be  vk::ImageLayout::eDepthStencilAttachmentOptimal.
 			AttachmentDesc.setInitialLayout(AttachmentConfig->loadOperation ==
-				RenderTargetAttachmentLoadOperation::eRender_Target_Attachment_Load_Operation_Load ? vk::ImageLayout::eStencilAttachmentOptimal : vk::ImageLayout::eUndefined);
+				RenderTargetAttachmentLoadOperation::eRender_Target_Attachment_Load_Operation_Load ? vk::ImageLayout::eDepthStencilAttachmentOptimal : vk::ImageLayout::eUndefined);
 			// Final layout for depth stencil attachments is always this.
 			AttachmentDesc.setFinalLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal);
 
 			// Push to co
-			AttachmentDescriptions.push_back(AttachmentDesc);
+			DepthAttachmentDescriptions.push_back(AttachmentDesc);
 		}// Depth attachment
 
 	}
@@ -162,6 +162,7 @@ bool VulkanRenderPass::Create(VulkanContext* context, const RenderpassConfig* co
 			ColorAttachmentReferences[i].setAttachment(AttachmentsAdded);	// Attachment description array index
 			ColorAttachmentReferences[i].setLayout(vk::ImageLayout::eColorAttachmentOptimal);
 			AttachmentsAdded++;
+			AttachmentDescriptions.push_back(ColorAttachmentDescriptions[i]);
 		}
 
 		Subpass.setColorAttachmentCount(ColorAttachmentCount);
@@ -182,6 +183,7 @@ bool VulkanRenderPass::Create(VulkanContext* context, const RenderpassConfig* co
 			DepthAttachmentReferences[i].setAttachment(AttachmentsAdded);
 			DepthAttachmentReferences[i].setLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal);
 			AttachmentsAdded++;
+			AttachmentDescriptions.push_back(DepthAttachmentDescriptions[i]);
 		}
 
 		// Depth stencil data.

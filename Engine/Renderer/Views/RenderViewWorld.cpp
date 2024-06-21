@@ -42,21 +42,7 @@ static bool RenderViewWorldOnEvent(unsigned short code, void* sender, void* list
 }
 
 RenderViewWorld::RenderViewWorld() {
-	// Builtin ui shader.
-	const char* ShaderName = "Shader.Builtin.Material";
-	Resource ConfigResource;
-	if (!ResourceSystem::Load(ShaderName, ResourceType::eResource_Type_Shader, nullptr, &ConfigResource)) {
-		LOG_ERROR("Failed to load builtin skybox shader.");
-		return;
-	}
-
-	ShaderConfig* Config = (ShaderConfig*)ConfigResource.Data;
-	// NOTE: Assuming the first pass since that's all this view has.
-	if (!ShaderSystem::Create(Passes[0], Config)) {
-		LOG_ERROR("Failed to load builtin ksybox shader.");
-		return;
-	}
-	ResourceSystem::Unload(&ConfigResource);
+	
 }
 
 RenderViewWorld::RenderViewWorld(const RenderViewConfig& config) {
@@ -65,26 +51,26 @@ RenderViewWorld::RenderViewWorld(const RenderViewConfig& config) {
 	CustomShaderName = config.custom_shader_name;
 	RenderpassCount = config.pass_count;
 	Passes.resize(RenderpassCount);
+}
+
+bool RenderViewWorld::OnCreate(const RenderViewConfig& config) {
 
 	// Builtin ui shader.
 	const char* ShaderName = "Shader.Builtin.Material";
 	Resource ConfigResource;
 	if (!ResourceSystem::Load(ShaderName, ResourceType::eResource_Type_Shader, nullptr, &ConfigResource)) {
 		LOG_ERROR("Failed to load builtin skybox shader.");
-		return;
+		return false;
 	}
 
 	ShaderConfig* Config = (ShaderConfig*)ConfigResource.Data;
 	// NOTE: Assuming the first pass since that's all this view has.
-	if (!ShaderSystem::Create(Passes[0], Config)) {
+	if (!ShaderSystem::Create(&Passes[0], Config)) {
 		LOG_ERROR("Failed to load builtin ksybox shader.");
-		return;
+		return false;
 	}
 	ResourceSystem::Unload(&ConfigResource);
-}
 
-bool RenderViewWorld::OnCreate() {
-	const char* ShaderName = "Shader.Builtin.Material";
 	UsedShader = ShaderSystem::Get(CustomShaderName ? CustomShaderName : "Shader.Builtin.Material");
 	ReserveY = true;
 
@@ -94,7 +80,7 @@ bool RenderViewWorld::OnCreate() {
 	Fov = Deg2Rad(45.0f);
 
 	// Default
-	ProjectionMatrix = Matrix4::Perspective(Fov, 1280.0f / 720.0f, NearClip, FarClip, ReserveY);
+	ProjectionMatrix = Matrix4::Perspective(Fov, 1280.0f / 720.0f, NearClip, FarClip);
 	WorldCamera = CameraSystem::GetDefault();
 
 	// TODO: Obtain from scene.
@@ -120,10 +106,10 @@ void RenderViewWorld::OnResize(uint32_t width, uint32_t height) {
 
 	Width = width;
 	Height = height;
-	ProjectionMatrix = Matrix4::Perspective(Fov, (float)Width / (float)Height, NearClip, FarClip, ReserveY);
+	ProjectionMatrix = Matrix4::Perspective(Fov, (float)Width / (float)Height, NearClip, FarClip);
 
 	for (uint32_t i = 0; i < RenderpassCount; ++i) {
-		Passes[i]->SetRenderArea(Vec4(0, 0, (float)Width, (float)Height));
+		Passes[i].SetRenderArea(Vec4(0, 0, (float)Width, (float)Height));
 	}
 }
 
@@ -209,7 +195,7 @@ bool RenderViewWorld::RegenerateAttachmentTarget(uint32_t passIndex, RenderTarge
 bool RenderViewWorld::OnRender(struct RenderViewPacket* packet, IRendererBackend* back_renderer, size_t frame_number, size_t render_target_index) const {
 	uint32_t SID = UsedShader->ID;
 	for (uint32_t p = 0; p < RenderpassCount; ++p) {
-		IRenderpass* Pass = Passes[p];
+		IRenderpass* Pass = (IRenderpass*)&Passes[p];
 		Pass->Begin(&Pass->Targets[render_target_index]);
 
 		if (!ShaderSystem::UseByID(SID)) {

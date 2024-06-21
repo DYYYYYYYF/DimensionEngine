@@ -32,24 +32,7 @@ static bool RenderViewUIOnEvent(unsigned short code, void* sender, void* listene
 	return false;
 }
 
-RenderViewUI::RenderViewUI() {
-	// Builtin ui shader.
-	const char* ShaderName = "Shader.Builtin.UI";
-	Resource ConfigResource;
-	if (!ResourceSystem::Load(ShaderName, ResourceType::eResource_Type_Shader, nullptr, &ConfigResource)) {
-		LOG_ERROR("Failed to load builtin skybox shader.");
-		return;
-	}
-
-	ShaderConfig* Config = (ShaderConfig*)ConfigResource.Data;
-	// NOTE: Assuming the first pass since that's all this view has.
-	if (!ShaderSystem::Create(Passes[0], Config)) {
-		LOG_ERROR("Failed to load builtin ksybox shader.");
-		return;
-	}
-	ResourceSystem::Unload(&ConfigResource);
-
-}
+RenderViewUI::RenderViewUI() {}
 
 RenderViewUI::RenderViewUI(const RenderViewConfig& config) {
 	Type = config.type;
@@ -57,26 +40,25 @@ RenderViewUI::RenderViewUI(const RenderViewConfig& config) {
 	CustomShaderName = config.custom_shader_name;
 	RenderpassCount = config.pass_count;
 	Passes.resize(RenderpassCount);
+}
 
+bool RenderViewUI::OnCreate(const RenderViewConfig& config) {
 	// Builtin ui shader.
 	const char* ShaderName = "Shader.Builtin.UI";
 	Resource ConfigResource;
 	if (!ResourceSystem::Load(ShaderName, ResourceType::eResource_Type_Shader, nullptr, &ConfigResource)) {
 		LOG_ERROR("Failed to load builtin skybox shader.");
-		return;
+		return false;
 	}
 
 	ShaderConfig* Config = (ShaderConfig*)ConfigResource.Data;
 	// NOTE: Assuming the first pass since that's all this view has.
-	if (!ShaderSystem::Create(Passes[0], Config)) {
+	if (!ShaderSystem::Create(&Passes[0], Config)) {
 		LOG_ERROR("Failed to load builtin ksybox shader.");
-		return;
+		return false;
 	}
 	ResourceSystem::Unload(&ConfigResource);
-}
 
-bool RenderViewUI::OnCreate() {
-	const char* ShaderName = "Shader.Builtin.UI";
 	UsedShader = ShaderSystem::Get(CustomShaderName ? CustomShaderName : ShaderName);
 	DiffuseMapLocation = ShaderSystem::GetUniformIndex(UsedShader, "diffuse_texture");
 	DiffuseColorLocation = ShaderSystem::GetUniformIndex(UsedShader, "diffuse_color");
@@ -87,7 +69,7 @@ bool RenderViewUI::OnCreate() {
 	FarClip = 100.0f;
 
 	// Default
-	ProjectionMatrix = Matrix4::Matrix4::Orthographic(0, 1280.0f, 720.0f, 0.0f, NearClip, FarClip, true);
+	ProjectionMatrix = Matrix4::Matrix4::Orthographic(0, 1280.0f, 720.0f, 0.0f, NearClip, FarClip);
 	ViewMatrix = Matrix4::Identity();
 
 	if (!Core::EventRegister(Core::eEvent_Code_Default_Rendertarget_Refresh_Required, this, RenderViewUIOnEvent)) {
@@ -110,10 +92,10 @@ void RenderViewUI::OnResize(uint32_t width, uint32_t height) {
 
 	Width = width;
 	Height = height;
-	ProjectionMatrix = Matrix4::Orthographic(0.0f, (float)Width, (float)Height, 0.0f, NearClip, FarClip, true);
+	ProjectionMatrix = Matrix4::Orthographic(0.0f, (float)Width, (float)Height, 0.0f, NearClip, FarClip);
 
 	for (uint32_t i = 0; i < RenderpassCount; ++i) {
-		Passes[i]->SetRenderArea(Vec4(0, 0, (float)Width, (float)Height));
+		Passes[i].SetRenderArea(Vec4(0, 0, (float)Width, (float)Height));
 	}
 }
 
@@ -164,7 +146,7 @@ bool RenderViewUI::RegenerateAttachmentTarget(uint32_t passIndex, RenderTargetAt
 bool RenderViewUI::OnRender(struct RenderViewPacket* packet, IRendererBackend* back_renderer, size_t frame_number, size_t render_target_index) const {
 	uint32_t SID = UsedShader->ID;
 	for (uint32_t p = 0; p < RenderpassCount; ++p) {
-		IRenderpass* Pass = Passes[p];
+		IRenderpass* Pass = (IRenderpass*) & Passes[p];
 		Pass->Begin(&Pass->Targets[render_target_index]);
 
 		if (!ShaderSystem::UseByID(SID)) {

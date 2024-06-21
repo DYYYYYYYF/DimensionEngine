@@ -9,7 +9,7 @@ class VulkanCommandBuffer;
 
 class VulkanRenderPass : public IRenderpass{
 public:
-	VulkanRenderPass() {}
+	VulkanRenderPass() : Context(nullptr) {}
 	virtual ~VulkanRenderPass() {}
 
 public:
