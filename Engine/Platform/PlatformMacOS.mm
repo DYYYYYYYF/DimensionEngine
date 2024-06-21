@@ -65,21 +65,23 @@ void HandleModifierKeys(uint32_t ns_keycode, uint32_t modifier_flags, SInternalS
 @end	// Window Delegate
 
 @interface ContentView : NSView <NSTextInputClient> {
+    struct SPlatformState* state;
 	NSWindow* window;
 	NSTrackingArea* trackingArea;
 	NSMutableAttributedString* markedText;
 };
 
--(instancetype)initWithWindow:(NSWindow*)initWindow;
+-(instancetype)initWithWindow:(NSWindow*)initWindow :(struct SPlatformState*)initState;
 
 @end	// Content view
 
 @implementation ContentView
 
-- (instancetype)initWithWindow:(NSWindow*)initWindow {
+- (instancetype)initWithWindow:(NSWindow*)initWindow :(struct SPlatformState*)initState {
 	self = [super init];
 	if (self != nil) {
 		window = initWindow;
+        state = initState;
 	}
 
 	return self;
@@ -117,14 +119,13 @@ void HandleModifierKeys(uint32_t ns_keycode, uint32_t modifier_flags, SInternalS
 - (void)mouseMoved : (NSEvent*)event {
 	const NSPoint pos = [event locationInWindow];
 
-	// Invert Y on MacOS, since origin is bottom-left.
-	// Also need to scale the mouse position by the device pixel ratio so screen lookups are correct.
-	SInternalState* state_ptr = (SInternalState*)initState->internalState;
-	NSSize WindowSize = state_ptr->layer.drawableSize;
-	unsigned short x = pos.x * state_ptr->layer.contentsScale;
-	unsigned short y = WindowSize.height - (pos.y * state_ptr->layer.contentsScale);
-
-  Core::InputProcessMouseMove(x, y);
+    // Invert Y on MacOS, since origin is bottom-left.
+    // Also need to scale the mouse position by the device pixel ratio so screen lookups are correct.
+    SInternalState* state_ptr = (SInternalState*)state->internalState;
+    NSSize WindowSize = state_ptr->layer.drawableSize;
+    unsigned short x = pos.x * state_ptr->layer.contentsScale;
+    unsigned short y = WindowSize.height - (pos.y * state_ptr->layer.contentsScale);
+    Core::InputProcessMouseMove(x, y);
 }
 
 - (void)rightMouseDown : (NSEvent*)event {
@@ -351,7 +352,7 @@ bool Platform::PlatformStartup(SPlatformState* platform_state, const char* appli
 	}
 
 	// View creation
-	state_ptr->view = [[ContentView alloc]initWithWindow:state_ptr->window];
+	state_ptr->view = [[ContentView alloc]initWithWindow:state_ptr->window : platform_state];
 	[state_ptr->view setWantsLayer : YES] ;
 
 	// Layer creation
