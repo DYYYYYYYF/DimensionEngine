@@ -49,6 +49,24 @@ bool RenderViewSystem::Initialize(IRenderer* renderer, SRenderViewSystemConfig c
 }
 
 void RenderViewSystem::Shutdown() {
+	// Renderview
+	for (uint32_t i = 0; i < RegisteredViews.Size(); ++i) {
+		IRenderView* View = RegisteredViews[i];
+		if (View == nullptr) {
+			continue;
+		}
+
+		// Renderpass & Rendertarget
+		for (uint32_t j = 0; j < View->Passes.size(); ++j) {
+			for (uint32_t t = 0; t < View->Passes[j].RenderTargetCount; ++t) {
+				Renderer->DestroyRenderTarget(&View->Passes[j].Targets[t], true);
+			}
+			View->Passes[j].Targets.clear();
+			View->Passes[j].Destroy();
+		}
+		RegisteredViews[i]->Passes.clear();
+		RegisteredViews[i]->OnDestroy();
+	}
 	RegisteredViews.Clear();
 }
 

@@ -104,7 +104,7 @@ void UIText::Destroy() {
 	Renderer->DestroyRenderbuffer(&IndexBuffer);
 
 	// Release resources for font texture map.
-	Shader* UIShader = ShaderSystem::Get("BUILTIN_SHADER_NAME_UI");	// TODO: Text shader.
+	Shader* UIShader = ShaderSystem::Get("Shader.Builtin.UI");	// TODO: Text shader.
 	if (!Renderer->ReleaseInstanceResource(UIShader, InstanceID)) {
 		LOG_FATAL("Unable to release shader resources for font texture map.");
 	}

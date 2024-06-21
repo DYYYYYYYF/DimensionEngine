@@ -149,6 +149,7 @@ bool VulkanRenderPass::Create(VulkanContext* context, const RenderpassConfig* co
 			DepthAttachmentDescriptions.push_back(AttachmentDesc);
 		}// Depth attachment
 
+		AttachmentDescriptions.push_back(AttachmentDesc);
 	}
 
 	// Setup the attachment references.
@@ -162,7 +163,6 @@ bool VulkanRenderPass::Create(VulkanContext* context, const RenderpassConfig* co
 			ColorAttachmentReferences[i].setAttachment(AttachmentsAdded);	// Attachment description array index
 			ColorAttachmentReferences[i].setLayout(vk::ImageLayout::eColorAttachmentOptimal);
 			AttachmentsAdded++;
-			AttachmentDescriptions.push_back(ColorAttachmentDescriptions[i]);
 		}
 
 		Subpass.setColorAttachmentCount(ColorAttachmentCount);
@@ -183,7 +183,6 @@ bool VulkanRenderPass::Create(VulkanContext* context, const RenderpassConfig* co
 			DepthAttachmentReferences[i].setAttachment(AttachmentsAdded);
 			DepthAttachmentReferences[i].setLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal);
 			AttachmentsAdded++;
-			AttachmentDescriptions.push_back(DepthAttachmentDescriptions[i]);
 		}
 
 		// Depth stencil data.
@@ -248,9 +247,9 @@ bool VulkanRenderPass::Create(VulkanContext* context, const RenderpassConfig* co
 	return true;
 }
 
-void VulkanRenderPass::Destroy(VulkanContext* context) {
+void VulkanRenderPass::Destroy() {
 	if (Renderpass) {
-		context->Device.GetLogicalDevice().destroyRenderPass(GetRenderPass(), context->Allocator);
+		Context->Device.GetLogicalDevice().destroyRenderPass(GetRenderPass(), Context->Allocator);
 		Renderpass = nullptr;
 	}
 }

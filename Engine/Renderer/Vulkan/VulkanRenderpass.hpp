@@ -14,7 +14,7 @@ public:
 
 public:
 	virtual bool Create(VulkanContext* context, const RenderpassConfig* config) override;
-	virtual void Destroy(VulkanContext* context) override;
+	virtual void Destroy() override;
 
 	virtual void Begin(RenderTarget* target) override;
 	virtual void End() override;

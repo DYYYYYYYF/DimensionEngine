@@ -40,7 +40,7 @@ struct RenderpassConfig {
 class IRenderpass {
 public:
 	virtual bool Create(VulkanContext* context, const RenderpassConfig* config) = 0;
-	virtual void Destroy(VulkanContext* context) = 0;
+	virtual void Destroy() = 0;
 
 	virtual void Begin(struct RenderTarget* target) = 0;
 	virtual void End() = 0;

@@ -33,7 +33,7 @@ enum RenderTargetAttachmentSource {
 
 enum RenderTargetAttachmentLoadOperation {
 	eRender_Target_Attachment_Load_Operation_DontCare = 0x0,
-	eRender_Target_Attachment_Load_Operation_Load = 0x0
+	eRender_Target_Attachment_Load_Operation_Load = 0x1
 };
 
 enum RenderTargetAttachmentStoreOperation {

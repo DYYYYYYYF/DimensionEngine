@@ -85,6 +85,10 @@ bool EventOnDebugEvent(unsigned short code, void* sender, void* listener_instanc
 
 		return true;
 	}
+	else if (code == Core::eEvent_Code_Object_Hover_ID_Changed) {
+		AppState.HoveredObjectID = context.data.u32[0];
+		return true;
+	}
 
 	return false;
 }
@@ -554,6 +558,7 @@ bool ApplicationRun() {
 	Clock::Update(&AppState.clock);
 	AppState.last_time = AppState.clock.elapsed;	// Seconds
 	AppState.EsapsedTime = 0.0;
+	AppState.HoveredObjectID = INVALID_ID;
 
 	double RunningTime = 0.0;
 	short FrameCount = 0;
@@ -638,16 +643,36 @@ bool ApplicationRun() {
 				}
 			}
 
+			// Text
 			Camera* WorldCamera = CameraSystem::GetDefault();
 			Vec3 Pos = WorldCamera->GetPosition();
 			Vec3 Rot = WorldCamera->GetEulerAngles();
 
+			// Mouse state
+			bool LeftDown = Core::InputeIsButtonDown(eButton_Left);
+			bool RightDown = Core::InputeIsButtonDown(eButton_Right);
+			int MouseX, MouseY;
+			Core::InputGetMousePosition(MouseX, MouseY);
+
+			// Convert to NDC.
+			float MouseX_NDC = RangeConvertfloat((float)MouseX, 0.0f, (float)AppState.width, -1.0f, 1.0f);
+			float MouseY_NDC = RangeConvertfloat((float)MouseY, 0.0f, (float)AppState.height, -1.0f, 1.0f);
+
 			// TODO: Temp
 			char FPS[512];
 			StringFormat(FPS, 512,
-				"Camera Pos: [%.3f %.3f %.3f]\nCamera Rot: [%.3f %.3f %.3f]\nFPS: %d\tDelta time: %.2f",
+				"\
+Camera Pos: [%.3f %.3f %.3f]\n\
+Camera Rot: [%.3f %.3f %.3f]\n\
+L=%s R=%s\tNDC: x=%.2f, y=%.2f\n\
+Hovered: %s%u\n\
+FPS: %d\tDelta time: %.2f",
 				Pos.x, Pos.y, Pos.z,
 				Rad2Deg(Rot.x), Rad2Deg(Rot.y), Rad2Deg(Rot.z),
+				LeftDown ? "Y" : "N", RightDown ? "Y" : "N",
+				MouseX_NDC, MouseY_NDC,
+				AppState.HoveredObjectID == INVALID_ID ? "None" : "",
+				AppState.HoveredObjectID == INVALID_ID ? 0 : AppState.HoveredObjectID,
 				(int)AppState.FramePerSecond,
 				(float)DeltaTime * 1000
 			);
@@ -718,9 +743,6 @@ bool ApplicationRun() {
 	Core::EventUnregister(Core::eEvent_Code_Key_Pressed, 0, ApplicationOnKey);
 	Core::EventUnregister(Core::eEvent_Code_Key_Released, 0, ApplicationOnKey);
 
-	Core::EventShutdown();
-	Core::InputShutdown();
-
 	// Temp
 	Renderer->ReleaseTextureMap(&AppState.SB.Cubemap);
 	AppState.TestText.Destroy();
@@ -737,6 +759,9 @@ bool ApplicationRun() {
 
 	Renderer->Shutdown();
 	Memory::Free(Renderer, sizeof(IRenderer), MemoryType::eMemory_Type_Renderer);
+
+	Core::EventShutdown();
+	Core::InputShutdown();
 
 	ResourceSystem::Shutdown();
 	Platform::PlatformShutdown(&AppState.platform);

@@ -735,11 +735,80 @@ void VulkanBackend::WriteTextureData(Texture* tex, uint32_t offset, uint32_t siz
 }
 
 void VulkanBackend::ReadTextureData(Texture* tex, uint32_t offset, uint32_t size, void** outMemeory) {
+	VulkanImage* Image = (VulkanImage*)tex->InternalData;
 
+	vk::Format ImageFormat = ChannelCountToFormat(tex->ChannelCount, vk::Format::eR8G8Unorm);
+
+	// Create a staging buffer and load data into it.
+	VulkanBuffer Staging;
+	if (!CreateRenderbuffer(RenderbufferType::eRenderbuffer_Type_Staging, size, false, &Staging)) {
+		LOG_ERROR("Failed to create staging buffer for texture read.");
+		return;
+	}
+	BindRenderbuffer(&Staging, 0);
+
+	VulkanCommandBuffer TempBuffer;
+	vk::CommandPool Pool = Context.Device.GetGraphicsCommandPool();
+	vk::Queue Queue = Context.Device.GetGraphicsQueue();
+	TempBuffer.AllocateAndBeginSingleUse(&Context, Pool);
+
+	// NOTE: transition to VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
+	// Transition the layout from whatever it is currently to optimal for handing out data.
+	Image->TransitionLayout(&Context, tex->Type, &TempBuffer, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferSrcOptimal);
+
+	// Copy the data to the buffer.
+	Image->CopyToBuffer(&Context, tex->Type, Staging.Buffer, &TempBuffer);
+
+	Image->TransitionLayout(&Context, tex->Type, &TempBuffer, vk::ImageLayout::eTransferSrcOptimal, vk::ImageLayout::eShaderReadOnlyOptimal);
+
+	TempBuffer.EndSingleUse(&Context, Pool, Queue);
+	
+	/*if (!Staging.ReadData()) {
+		LOG_ERROR("Failed to read.");
+	}*/
+
+	Staging.UnBind(&Context);
+	Staging.Destroy(&Context);
 }
 
 void VulkanBackend::ReadTexturePixel(Texture* tex, uint32_t x, uint32_t y, unsigned char** outRGBA) {
+	VulkanImage* Image = (VulkanImage*)tex->InternalData;
 
+	vk::Format ImageFormat = ChannelCountToFormat(tex->ChannelCount, vk::Format::eR8G8Unorm);
+
+	// TODO: creating a buffer every time isn't great. Could optimize this by creating a buffer once
+	// and just reusing it.
+	// 
+	// Create a staging buffer and load data into it.
+	VulkanBuffer Staging;
+	if (!CreateRenderbuffer(RenderbufferType::eRenderbuffer_Type_Staging, sizeof(unsigned char) * 4, false, &Staging)) {
+		LOG_ERROR("Failed to create staging buffer for pixel read.");
+		return;
+	}
+	BindRenderbuffer(&Staging, 0);
+
+	VulkanCommandBuffer TempBuffer;
+	vk::CommandPool Pool = Context.Device.GetGraphicsCommandPool();
+	vk::Queue Queue = Context.Device.GetGraphicsQueue();
+	TempBuffer.AllocateAndBeginSingleUse(&Context, Pool);
+
+	// NOTE: transition to VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
+	// Transition the layout from whatever it is currently to optimal for handing out data.
+	Image->TransitionLayout(&Context, tex->Type, &TempBuffer, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferSrcOptimal);
+
+	// Copy the data to the buffer.
+	Image->CopyPixelToBuffer(&Context, tex->Type, Staging.Buffer, x, y,  &TempBuffer);
+
+	Image->TransitionLayout(&Context, tex->Type, &TempBuffer, vk::ImageLayout::eTransferSrcOptimal, vk::ImageLayout::eShaderReadOnlyOptimal);
+
+	TempBuffer.EndSingleUse(&Context, Pool, Queue);
+
+	/*if (!Staging.ReadData()) {
+		LOG_ERROR("Failed to read.");
+	}*/
+
+	Staging.UnBind(&Context);
+	Staging.Destroy(&Context);
 }
 
 bool VulkanBackend::CreateGeometry(Geometry* geometry, uint32_t vertex_size, uint32_t vertex_count, 
@@ -1855,7 +1924,7 @@ bool VulkanBackend::CreateRenderpass(IRenderpass* out_renderpass, const Renderpa
 }
 
 void VulkanBackend::DestroyRenderpass(IRenderpass* pass) {
-	pass->Destroy(&Context);
+	pass->Destroy();
 }
 
 bool VulkanBackend::GetEnabledMultiThread() const {
@@ -1863,10 +1932,6 @@ bool VulkanBackend::GetEnabledMultiThread() const {
 }
 
 bool VulkanBackend::CreateRenderbuffer(enum RenderbufferType type, size_t total_size, bool use_freelist, IRenderbuffer* buffer) {
-	if (buffer == nullptr) {
-		buffer = new VulkanBuffer();
-	}
-
 	VulkanBuffer* VBuffer = (VulkanBuffer*)buffer;
 
 	VBuffer->TotalSize = total_size;
