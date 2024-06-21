@@ -25,7 +25,7 @@ Vec3 Camera::GetEulerAngles() {
 }
 
 void Camera::SetEulerAngles(Vec3 eular) {
-    EulerRotation = eular;
+	EulerRotation = eular;
 	IsDirty = true;
 }
 

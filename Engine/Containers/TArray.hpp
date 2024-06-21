@@ -153,7 +153,6 @@ public:
 
 	template<typename IntegerType>
 	ElementType& operator[](const IntegerType& i) {
-		ASSERT(i <= Length);
 		return *((ElementType*)((char*)ArrayMemory + i * Stride));
 	}
 

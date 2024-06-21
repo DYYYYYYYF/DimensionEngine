@@ -112,8 +112,8 @@ bool Freelist::FreeBlock(size_t size, size_t offset) {
 	else
 	{
 		while (Node != nullptr) {
-			if (Node->offset == offset) {
-				// Can just be appended to this node.
+			if (Node->offset + Node->size == offset) {
+				// Can just be appended to right of this node.
 				Node->size += size;
 
 				// Check if this then connects the range between this and the next node,
@@ -125,6 +125,12 @@ bool Freelist::FreeBlock(size_t size, size_t offset) {
 					ResetNode(Next);
 				}
 				return true;
+			}
+			else if (Node->offset == offset) {
+				// If there is a exact match, this means the exact block of memory
+				// that is already free is being freed again.
+				LOG_FATAL("Attemping to free already-freed block of memory at offset %llu.", Node->offset);
+				return false;
 			}
 			else if (Node->offset > offset) {
 				// Iterated beyond the space to be freed. Need a new node.
@@ -158,6 +164,18 @@ bool Freelist::FreeBlock(size_t size, size_t offset) {
 					Prev->next = Rubbish->next;
 					ResetNode(Rubbish);
 				}
+
+				return true;
+			}
+
+			// If on the last node and the last node's offset+size < the free offset,
+			// a new node is required.
+			if (!Node->next && Node->offset + Node->size < offset) {
+				FreelistNode* NewNode = AcquireFreeNode();
+				NewNode->offset = offset;
+				NewNode->size = size;
+				NewNode->next = nullptr;
+				Node->next = NewNode;
 
 				return true;
 			}

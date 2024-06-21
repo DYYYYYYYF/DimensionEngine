@@ -40,8 +40,8 @@ public:
 	static Texture* AcquireWriteable(const char* name, uint32_t width, uint32_t height, unsigned char channel_count, bool has_transparency);
 	static void Release(const char* name);
 
-	static Texture* WrapInternal(const char* name, uint32_t width, uint32_t height, unsigned char channel_count,
-		bool has_transparency, bool is_writeable, bool register_texture, void* internal_data);
+	static void WrapInternal(const char* name, uint32_t width, uint32_t height, unsigned char channel_count,
+		bool has_transparency, bool is_writeable, bool register_texture, void* internal_data, Texture* tex);
 	static bool SetInternal(Texture* t, void* internal_data);
 	static bool Resize(Texture* t, uint32_t width, uint32_t height, bool regenerate_internal_data);
 	static bool WriteData(Texture* t, uint32_t offset, uint32_t size, void* data);

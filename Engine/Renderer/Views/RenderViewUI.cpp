@@ -6,16 +6,60 @@
 #include "Math/DMath.hpp"
 #include "Math/Transform.hpp"
 #include "Containers/TArray.hpp"
+#include "Containers/TString.hpp"
 #include "Systems/MaterialSystem.h"
 #include "Systems/ShaderSystem.h"
+#include "Systems/ResourceSystem.h"
+#include "Systems/RenderViewSystem.hpp"
 #include "Renderer/RendererFrontend.hpp"
 #include "Renderer/Interface/IRenderpass.hpp"
 #include "Renderer/Interface/IRendererBackend.hpp"
 #include "Resources/UIText.hpp"
 
-void RenderViewUI::OnCreate() {
-	ShaderID = ShaderSystem::GetID(CustomShaderName ? CustomShaderName : "Shader.Builtin.UI");
-	UsedShader = ShaderSystem::GetByID(ShaderID);
+static bool RenderViewUIOnEvent(unsigned short code, void* sender, void* listenerInst, SEventContext context) {
+	IRenderView* self = (IRenderView*)listenerInst;
+	if (self == nullptr) {
+		return false;
+	}
+
+	switch (code)
+	{
+	case Core::eEvent_Code_Default_Rendertarget_Refresh_Required:
+		RenderViewSystem::RegenerateRendertargets(self);
+		return false;
+	}
+
+	return false;
+}
+
+RenderViewUI::RenderViewUI() {}
+
+RenderViewUI::RenderViewUI(const RenderViewConfig& config) {
+	Type = config.type;
+	Name = StringCopy(config.name);
+	CustomShaderName = config.custom_shader_name;
+	RenderpassCount = config.pass_count;
+	Passes.resize(RenderpassCount);
+}
+
+bool RenderViewUI::OnCreate(const RenderViewConfig& config) {
+	// Builtin ui shader.
+	const char* ShaderName = "Shader.Builtin.UI";
+	Resource ConfigResource;
+	if (!ResourceSystem::Load(ShaderName, ResourceType::eResource_Type_Shader, nullptr, &ConfigResource)) {
+		LOG_ERROR("Failed to load builtin skybox shader.");
+		return false;
+	}
+
+	ShaderConfig* Config = (ShaderConfig*)ConfigResource.Data;
+	// NOTE: Assuming the first pass since that's all this view has.
+	if (!ShaderSystem::Create(&Passes[0], Config)) {
+		LOG_ERROR("Failed to load builtin ksybox shader.");
+		return false;
+	}
+	ResourceSystem::Unload(&ConfigResource);
+
+	UsedShader = ShaderSystem::Get(CustomShaderName ? CustomShaderName : ShaderName);
 	DiffuseMapLocation = ShaderSystem::GetUniformIndex(UsedShader, "diffuse_texture");
 	DiffuseColorLocation = ShaderSystem::GetUniformIndex(UsedShader, "diffuse_color");
 	ModelLocation = ShaderSystem::GetUniformIndex(UsedShader, "model");
@@ -25,12 +69,19 @@ void RenderViewUI::OnCreate() {
 	FarClip = 100.0f;
 
 	// Default
-	ProjectionMatrix = Matrix4::Matrix4::Orthographic(0, 1280.0f, 720.0f, 0.0f, NearClip, FarClip, true);
+	ProjectionMatrix = Matrix4::Matrix4::Orthographic(0, 1280.0f, 720.0f, 0.0f, NearClip, FarClip);
 	ViewMatrix = Matrix4::Identity();
+
+	if (!Core::EventRegister(Core::eEvent_Code_Default_Rendertarget_Refresh_Required, this, RenderViewUIOnEvent)) {
+		LOG_ERROR("Unable to listen for refresh required event, creation failed.");
+		return false;
+	}
+
+	return true;
 }
 
 void RenderViewUI::OnDestroy() {
-
+	Core::EventUnregister(Core::eEvent_Code_Default_Rendertarget_Refresh_Required, this, RenderViewUIOnEvent);
 }
 
 void RenderViewUI::OnResize(uint32_t width, uint32_t height) {
@@ -41,10 +92,10 @@ void RenderViewUI::OnResize(uint32_t width, uint32_t height) {
 
 	Width = width;
 	Height = height;
-	ProjectionMatrix = Matrix4::Orthographic(0.0f, (float)Width, (float)Height, 0.0f, NearClip, FarClip, true);
+	ProjectionMatrix = Matrix4::Orthographic(0.0f, (float)Width, (float)Height, 0.0f, NearClip, FarClip);
 
 	for (uint32_t i = 0; i < RenderpassCount; ++i) {
-		Passes[i]->SetRenderArea(Vec4(0, 0, (float)Width, (float)Height));
+		Passes[i].SetRenderArea(Vec4(0, 0, (float)Width, (float)Height));
 	}
 }
 
@@ -88,10 +139,14 @@ void RenderViewUI::OnDestroyPacket(struct RenderViewPacket* packet) const {
 	Memory::Zero(packet, sizeof(RenderViewPacket));
 }
 
+bool RenderViewUI::RegenerateAttachmentTarget(uint32_t passIndex, RenderTargetAttachment* attachment) {
+	return false;
+}
+
 bool RenderViewUI::OnRender(struct RenderViewPacket* packet, IRendererBackend* back_renderer, size_t frame_number, size_t render_target_index) const {
-	uint32_t SID = ShaderID;
+	uint32_t SID = UsedShader->ID;
 	for (uint32_t p = 0; p < RenderpassCount; ++p) {
-		IRenderpass* Pass = Passes[p];
+		IRenderpass* Pass = (IRenderpass*) & Passes[p];
 		Pass->Begin(&Pass->Targets[render_target_index]);
 
 		if (!ShaderSystem::UseByID(SID)) {

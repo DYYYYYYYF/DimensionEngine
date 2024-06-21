@@ -5,6 +5,7 @@
 #include "Core/EngineLogger.hpp"
 #include "Core/DMemory.hpp"
 #include "Renderer/RendererFrontend.hpp"
+#include "Renderer/Interface/IRenderpass.hpp"
 
 // TODO: temp
 #include "Renderer/Views/RenderViewUI.hpp"
@@ -48,6 +49,24 @@ bool RenderViewSystem::Initialize(IRenderer* renderer, SRenderViewSystemConfig c
 }
 
 void RenderViewSystem::Shutdown() {
+	// Renderview
+	for (uint32_t i = 0; i < RegisteredViews.Size(); ++i) {
+		IRenderView* View = RegisteredViews[i];
+		if (View == nullptr) {
+			continue;
+		}
+
+		// Renderpass & Rendertarget
+		for (uint32_t j = 0; j < View->Passes.size(); ++j) {
+			for (uint32_t t = 0; t < View->Passes[j].RenderTargetCount; ++t) {
+				Renderer->DestroyRenderTarget(&View->Passes[j].Targets[t], true);
+			}
+			View->Passes[j].Targets.clear();
+			View->Passes[j].Destroy();
+		}
+		RegisteredViews[i]->Passes.clear();
+		RegisteredViews[i]->OnDestroy();
+	}
 	RegisteredViews.Clear();
 }
 
@@ -86,37 +105,72 @@ bool RenderViewSystem::Create(const RenderViewConfig& config) {
 	// TODO: Assign these function pointers to known functions based on the view type.
 	// TODO: Refactor pattern.
 	if (config.type == RenderViewKnownType::eRender_View_Known_Type_World) {
-		RegisteredViews[ID] = new RenderViewWorld();
+		RegisteredViews[ID] = new RenderViewWorld(config);
 	}
 	else if (config.type == RenderViewKnownType::eRender_View_Known_Type_UI) {
-		RegisteredViews[ID] = new RenderViewUI();
+		RegisteredViews[ID] = new RenderViewUI(config);
 	}
 	else if (config.type == RenderViewKnownType::eRender_View_Known_Type_Skybox) {
-		RegisteredViews[ID] = new RenderViewSkybox();
+		RegisteredViews[ID] = new RenderViewSkybox(config);
 	}
 
 	IRenderView* View = RegisteredViews[ID];
 	View->ID = ID;
-	View->Type = config.type;
-	View->Name = StringCopy(config.name);
-	View->CustomShaderName = config.custom_shader_name;
-	View->RenderpassCount = config.pass_count;
-	View->Passes.resize(View->RenderpassCount);
 
 	for (uint32_t i = 0; i < View->RenderpassCount; ++i) {
-		View->Passes[i] = Renderer->GetRenderpass(config.passes[i].name);
-		if (!View->Passes[i]) {
+		if (!Renderer->CreateRenderpass(&View->Passes[i], &config.passes[i])) {
 			LOG_FATAL("RenderViewSystem::Create() Renderpass not found: '%s'.", config.passes[i].name);
 			return false;
 		}
 	}
 
-	View->OnCreate();
+	View->OnCreate(config);
+	RegenerateRendertargets(View);
 
 	// Update the hashtable entry.
 	Lookup.Set(config.name, &ID);
 
 	return true;
+}
+
+void RenderViewSystem::RegenerateRendertargets(IRenderView* view) {
+	// Create render target for each.
+	for (size_t r = 0; r < view->RenderpassCount; ++r) {
+		IRenderpass* Pass = &view->Passes[r];
+
+		for (unsigned char i = 0; i < Pass->RenderTargetCount; ++i) {
+			RenderTarget* Target = &Pass->Targets[i];
+			// Destroy the old if exists.
+			// TODO: check if a resize is actually needed for this target.
+			Renderer->DestroyRenderTarget(Target, false);
+
+			for (uint32_t a = 0; a < Target->attachment_count; ++a) {
+				RenderTargetAttachment* Attachment = &Target->attachments[a];
+				if (Attachment->source == RenderTargetAttachmentSource::eRender_Target_Attachment_Source_Default) {
+					if (Attachment->type == RenderTargetAttachmentType::eRender_Target_Attachment_Type_Color) {
+						Attachment->texture = Renderer->GetWindowAttachment(i);
+					}
+					else if (Attachment->type == RenderTargetAttachmentType::eRender_Target_Attachment_Type_Depth) {
+						Attachment->texture = Renderer->GetDepthAttachment(i);
+					}
+					else {
+						LOG_FATAL("Unsupported attachment type: 0x%x", Attachment->type);
+						continue;
+					}
+				}
+				else if (Attachment->source == RenderTargetAttachmentSource::eRender_Target_Attachment_Source_View) {
+					if (!view->RegenerateAttachmentTarget((uint32_t)r, Attachment)) {
+						LOG_ERROR("View failed to regenerate attachment target for attachment type: 0x%x.", Attachment->type);
+					}
+				}
+			}
+
+			// Create the render target.
+			Renderer->CreateRenderTarget(Target->attachment_count, Target->attachments,
+				Pass, Target->attachments[0].texture->Width, Target->attachments[0].texture->Height,
+				&Pass->Targets[i]);
+		}
+	}
 }
 
 void RenderViewSystem::OnWindowResize(uint32_t width, uint32_t height) {

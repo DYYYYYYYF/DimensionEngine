@@ -6,22 +6,67 @@
 #include "Math/DMath.hpp"
 #include "Math/Transform.hpp"
 #include "Containers/TArray.hpp"
+#include "Containers/TString.hpp"
 
 #include "Systems/MaterialSystem.h"
 #include "Systems/ShaderSystem.h"
 #include "Systems/CameraSystem.h"
+#include "Systems/ResourceSystem.h"
+#include "Systems/RenderViewSystem.hpp"
 
 #include "Renderer/RendererFrontend.hpp"
 #include "Renderer/Interface/IRenderpass.hpp"
 #include "Renderer/Interface/IRendererBackend.hpp"
 
-void RenderViewSkybox::OnCreate() {
+static bool RenderViewSkyboxOnEvent(unsigned short code, void* sender, void* listenerInst, SEventContext context) {
+	IRenderView* self = (IRenderView*)listenerInst;
+	if (self == nullptr) {
+		return false;
+	}
+
+	switch (code)
+	{
+	case Core::eEvent_Code_Default_Rendertarget_Refresh_Required:
+		RenderViewSystem::RegenerateRendertargets(self);
+		return false;
+	}
+
+	return false;
+}
+
+RenderViewSkybox::RenderViewSkybox() {
+	
+}
+
+RenderViewSkybox::RenderViewSkybox(const RenderViewConfig& config) {
+	Type = config.type;
+	Name = StringCopy(config.name);
+	CustomShaderName = config.custom_shader_name;
+	RenderpassCount = config.pass_count;
+	Passes.resize(RenderpassCount);
+}
+
+bool RenderViewSkybox::OnCreate(const RenderViewConfig& config) {
+	const char* ShaderName = "Shader.Builtin.Skybox";
+	Resource ConfigResource;
+	if (!ResourceSystem::Load(ShaderName, ResourceType::eResource_Type_Shader, nullptr, &ConfigResource)) {
+		LOG_ERROR("Failed to load builtin skybox shader.");
+		return false;
+	}
+
+	ShaderConfig* Config = (ShaderConfig*)ConfigResource.Data;
+	// NOTE: Assuming the first pass since that's all this view has.
+	if (!ShaderSystem::Create(&Passes[0], Config)) {
+		LOG_ERROR("Failed to load builtin ksybox shader.");
+		return false;
+	}
+	ResourceSystem::Unload(&ConfigResource);
+
 	// Get either the custom shader override or the defined default.
-	Shader* s = ShaderSystem::Get(CustomShaderName ? CustomShaderName : "Shader.Builtin.Skybox");
-	ShaderID = s->ID;
-	ProjectionLocation = ShaderSystem::GetUniformIndex(s, "projection");
-	ViewLocation = ShaderSystem::GetUniformIndex(s, "view");
-	CubeMapLocation = ShaderSystem::GetUniformIndex(s, "cube_texture");
+	UsedShader = ShaderSystem::Get(CustomShaderName ? CustomShaderName : ShaderName);
+	ProjectionLocation = ShaderSystem::GetUniformIndex(UsedShader, "projection");
+	ViewLocation = ShaderSystem::GetUniformIndex(UsedShader, "view");
+	CubeMapLocation = ShaderSystem::GetUniformIndex(UsedShader, "cube_texture");
 	
 	// TODO: Configurable.
 	ReserveY = true;
@@ -32,12 +77,19 @@ void RenderViewSkybox::OnCreate() {
 	Fov = Deg2Rad(45.0f);
 
 	// Default
-	ProjectionMatrix = Matrix4::Perspective(Fov, 1280.0f / 720.0f, NearClip, FarClip, ReserveY);
+	ProjectionMatrix = Matrix4::Perspective(Fov, 1280.0f / 720.0f, NearClip, FarClip);
 	WorldCamera = CameraSystem::GetDefault();
+
+	if (!Core::EventRegister(Core::eEvent_Code_Default_Rendertarget_Refresh_Required, this, RenderViewSkyboxOnEvent)) {
+		LOG_ERROR("Unable to listen for refresh required event, creation failed.");
+		return false;
+	}
+
+	return true;
 }
 
 void RenderViewSkybox::OnDestroy() {
-
+	Core::EventUnregister(Core::eEvent_Code_Default_Rendertarget_Refresh_Required, this, RenderViewSkyboxOnEvent);
 }
 
 void RenderViewSkybox::OnResize(uint32_t width, uint32_t height) {
@@ -48,10 +100,10 @@ void RenderViewSkybox::OnResize(uint32_t width, uint32_t height) {
 
 	Width = width;
 	Height = height;
-	ProjectionMatrix = Matrix4::Perspective(Fov, (float)Width / (float)Height, NearClip, FarClip, ReserveY);
+	ProjectionMatrix = Matrix4::Perspective(Fov, (float)Width / (float)Height, NearClip, FarClip);
 
 	for (uint32_t i = 0; i < RenderpassCount; ++i) {
-		Passes[i]->SetRenderArea(Vec4(0, 0, (float)Width, (float)Height));
+		Passes[i].SetRenderArea(Vec4(0, 0, (float)Width, (float)Height));
 	}
 }
 
@@ -80,11 +132,15 @@ void RenderViewSkybox::OnDestroyPacket(struct RenderViewPacket* packet) const {
 	Memory::Zero(packet, sizeof(RenderViewPacket));
 }
 
+bool RenderViewSkybox::RegenerateAttachmentTarget(uint32_t passIndex, RenderTargetAttachment* attachment) {
+	return false;
+}
+
 bool RenderViewSkybox::OnRender(struct RenderViewPacket* packet, IRendererBackend* back_renderer, size_t frame_number, size_t render_target_index) const {
-	uint32_t SID = ShaderID;
+	uint32_t SID = UsedShader->ID;
 	SkyboxPacketData* SkyboxData = (SkyboxPacketData*)packet->extended_data;
 	for (uint32_t p = 0; p < RenderpassCount; ++p) {
-		IRenderpass* Pass = Passes[p];
+		IRenderpass* Pass = (IRenderpass*)&Passes[p];
 		Pass->Begin(&Pass->Targets[render_target_index]);
 
 		if (!ShaderSystem::UseByID(SID)) {

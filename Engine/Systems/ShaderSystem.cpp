@@ -77,7 +77,7 @@ void ShaderSystem::Shutdown() {
 	}
 }
 
-bool ShaderSystem::Create(ShaderConfig* config) {
+bool ShaderSystem::Create(IRenderpass* pass, ShaderConfig* config) {
 	uint32_t ID = NewShaderID();
 	Shader* OutShader = &Shaders[ID];
 	Memory::Zero(OutShader, sizeof(Shader));
@@ -119,13 +119,17 @@ bool ShaderSystem::Create(ShaderConfig* config) {
 	OutShader->PushConstantsStride = 128;
 	OutShader->PushConstantsSize = 0;
 
-	IRenderpass* Pass = Renderer->GetRenderpass(config->renderpass_name);
-	if (Pass == nullptr) {
-		LOG_ERROR("Unable to find renderpass '%s'", config->renderpass_name);
-		return false;
+	// Process flags.
+	OutShader->Flags = 0;
+	if (config->depthTest) {
+		OutShader->Flags |= ShaderFlags::eShader_Flag_DepthTest;
+	}
+	if (config->depthWrite) {
+		OutShader->Flags |= ShaderFlags::eShader_Flag_DepthWrite;
 	}
 
-	if (!Renderer->CreateRenderShader(OutShader, config, Pass, config->stage_cout, config->stage_filenames, config->stages)) {
+
+	if (!Renderer->CreateRenderShader(OutShader, config, pass, config->stage_cout, config->stage_filenames, config->stages)) {
 		LOG_ERROR("Error creating shader.");
 		return false;
 	}

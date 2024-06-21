@@ -3,7 +3,7 @@
 #include "Math/MathTypes.hpp"
 #include "Resources/Texture.hpp"
 
-#define DEFAULT_MATERIAL_NAME "default"
+#define DEFAULT_MATERIAL_NAME "Builtin.Material.Default"
 #define VULKAN_MAX_MATERIAL_COUNT 1024
 #define MATERIAL_NAME_MAX_LENGTH 256
 

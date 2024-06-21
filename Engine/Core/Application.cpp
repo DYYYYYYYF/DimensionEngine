@@ -5,11 +5,14 @@
 #include "Input.hpp"
 #include "DMemory.hpp"
 #include "Clock.hpp"
+#include "Identifier.hpp"
+#include "UID.hpp"
 
 #include "GameType.hpp"
 #include "Platform/Platform.hpp"
 
 #include "Renderer/RendererFrontend.hpp"
+#include "Renderer/Interface/IRenderpass.hpp"
 #include "Math/MathTypes.hpp"
 #include "Containers/TString.hpp"
 
@@ -52,6 +55,7 @@ struct SApplicationState {
 	UIText TestText;
 	UIText TestSysText;
 
+	uint32_t HoveredObjectID;
 };
 
 static bool Initialized = false;
@@ -81,6 +85,10 @@ bool EventOnDebugEvent(unsigned short code, void* sender, void* listener_instanc
 
 		return true;
 	}
+	else if (code == Core::eEvent_Code_Object_Hover_ID_Changed) {
+		AppState.HoveredObjectID = context.data.u32[0];
+		return true;
+	}
 
 	return false;
 }
@@ -101,6 +109,8 @@ bool ApplicationCreate(SGame* game_instance){
 	LOG_WARN("Test Warn");
 	LOG_FATAL("Test Fatal");
 
+	UID::Seed(101);
+
 	AppState.is_running = true;
 	AppState.is_suspended = false;
 
@@ -117,6 +127,7 @@ bool ApplicationCreate(SGame* game_instance){
 	Core::EventRegister(Core::eEvent_Code_Key_Released, 0, ApplicationOnKey);
 	Core::EventRegister(Core::eEvent_Code_Resize, 0, ApplicationOnResized);
 	Core::EventRegister(Core::eEvent_Code_Debug_0, 0, EventOnDebugEvent);
+	Core::EventRegister(Core::eEvent_Code_Object_Hover_ID_Changed, 0, ApplicationOnEvent);
 
 	if (!Platform::PlatformStartup(&AppState.platform,
 		game_instance->app_config.name,
@@ -222,22 +233,6 @@ bool ApplicationCreate(SGame* game_instance){
 		return false;
 	}
 
-	// Init material system
-	SMaterialSystemConfig MaterialSystemConfig;
-	MaterialSystemConfig.max_material_count = 4096;
-	if (!MaterialSystem::Initialize(Renderer, MaterialSystemConfig)) {
-		LOG_FATAL("Material system failed to initialize!");
-		return false;
-	}
-
-	// Init geometry system
-	SGeometrySystemConfig GeometrySystemConfig;
-	GeometrySystemConfig.max_geometry_count = 4096;
-	if (!GeometrySystem::Initialize(Renderer, GeometrySystemConfig)) {
-		LOG_FATAL("Geometry system failed to initialize!");
-		return false;
-	}
-
 	// Init font system.
 	BitmapFontConfig BmpFontConfig;
 	BmpFontConfig.name = "Ubuntu Mono 21px";
@@ -285,26 +280,72 @@ bool ApplicationCreate(SGame* game_instance){
 	SkyboxConfig.height = 0;
 	SkyboxConfig.name = "Skybox";
 	SkyboxConfig.pass_count = 1;
-	std::vector<RenderViewPassConfig> SkyboxPasses(1);
-	SkyboxPasses[0].name = "Renderpass.Builtin.Skybox";
-	SkyboxConfig.passes = SkyboxPasses;
 	SkyboxConfig.view_matrix_source = RenderViewViewMatrixtSource::eRender_View_View_Matrix_Source_Scene_Camera;
+
+	// Renderpass config.
+	std::vector<RenderpassConfig> SkyboxPasses(1);
+	SkyboxPasses[0].name = "Renderpass.Builtin.Skybox";
+	SkyboxPasses[0].render_area = Vec4(0, 0, 1280, 720);
+	SkyboxPasses[0].clear_color = Vec4(0, 0, 0.2f, 1.0f);
+	SkyboxPasses[0].clear_flags = RenderpassClearFlags::eRenderpass_Clear_Color_Buffer;
+	SkyboxPasses[0].depth = 1.0f;
+	SkyboxPasses[0].stencil = 0;
+
+	RenderTargetAttachmentConfig SkyboxTargetAttachment;
+	// Color attachment.
+	SkyboxTargetAttachment.type = RenderTargetAttachmentType::eRender_Target_Attachment_Type_Color;
+	SkyboxTargetAttachment.source = RenderTargetAttachmentSource::eRender_Target_Attachment_Source_Default;
+	SkyboxTargetAttachment.loadOperation = RenderTargetAttachmentLoadOperation::eRender_Target_Attachment_Load_Operation_DontCare;
+	SkyboxTargetAttachment.storeOperation = RenderTargetAttachmentStoreOperation::eRender_Target_Attachment_Store_Operation_Store;
+	SkyboxTargetAttachment.presentAfter = false;
+
+	SkyboxPasses[0].target.attachmentCount = 1;
+	SkyboxPasses[0].target.attachments = &SkyboxTargetAttachment;
+	SkyboxPasses[0].renderTargetCount = Renderer->GetWindowAttachmentCount();
+
+	SkyboxConfig.passes = SkyboxPasses;
 	if (!RenderViewSystem::Create(SkyboxConfig)) {
 		LOG_FATAL("Failed to create skybox view. Aborting application.");
 		return false;
 	}
 
-	RenderViewConfig OpaqueWorldConfig;
-	OpaqueWorldConfig.type = RenderViewKnownType::eRender_View_Known_Type_World;
-	OpaqueWorldConfig.width = 0;
-	OpaqueWorldConfig.height = 0;
-	OpaqueWorldConfig.name = "World_Opaque";
-	OpaqueWorldConfig.pass_count = 1;
-	std::vector<RenderViewPassConfig> Passes(1);
-	Passes[0].name = "Renderpass.Builtin.World";
-	OpaqueWorldConfig.passes = Passes;
-	OpaqueWorldConfig.view_matrix_source = RenderViewViewMatrixtSource::eRender_View_View_Matrix_Source_Scene_Camera;
-	if (!RenderViewSystem::Create(OpaqueWorldConfig)) {
+	// World view
+	RenderViewConfig WorldViewConfig;
+	WorldViewConfig.type = RenderViewKnownType::eRender_View_Known_Type_World;
+	WorldViewConfig.width = 0;
+	WorldViewConfig.height = 0;
+	WorldViewConfig.name = "World";
+	WorldViewConfig.pass_count = 1;
+	WorldViewConfig.view_matrix_source = RenderViewViewMatrixtSource::eRender_View_View_Matrix_Source_Scene_Camera;
+
+	// Renderpass config.
+	std::vector<RenderpassConfig> WorldPasses(1);
+	WorldPasses[0].name = "Renderpass.Builtin.World";
+	WorldPasses[0].render_area = Vec4(0, 0, 1280, 720);
+	WorldPasses[0].clear_color = Vec4(0, 0.2f, 0, 1.0f);
+	WorldPasses[0].clear_flags = RenderpassClearFlags::eRenderpass_Clear_Stencil_Buffer | RenderpassClearFlags::eRenderpass_Clear_Depth_Buffer;
+	WorldPasses[0].depth = 1.0f;
+	WorldPasses[0].stencil = 0;
+
+	RenderTargetAttachmentConfig WorldTargetAttachments[2];
+	WorldTargetAttachments[0].type = RenderTargetAttachmentType::eRender_Target_Attachment_Type_Color;
+	WorldTargetAttachments[0].source = RenderTargetAttachmentSource::eRender_Target_Attachment_Source_Default;
+	WorldTargetAttachments[0].loadOperation = RenderTargetAttachmentLoadOperation::eRender_Target_Attachment_Load_Operation_Load;
+	WorldTargetAttachments[0].storeOperation = RenderTargetAttachmentStoreOperation::eRender_Target_Attachment_Store_Operation_Store;
+	WorldTargetAttachments[0].presentAfter = false;
+
+	WorldTargetAttachments[1].type = RenderTargetAttachmentType::eRender_Target_Attachment_Type_Depth;
+	WorldTargetAttachments[1].source = RenderTargetAttachmentSource::eRender_Target_Attachment_Source_Default;
+	WorldTargetAttachments[1].loadOperation = RenderTargetAttachmentLoadOperation::eRender_Target_Attachment_Load_Operation_DontCare;
+	WorldTargetAttachments[1].storeOperation = RenderTargetAttachmentStoreOperation::eRender_Target_Attachment_Store_Operation_Store;
+	WorldTargetAttachments[1].presentAfter = false;
+
+	WorldPasses[0].target.attachmentCount = 2;
+	WorldPasses[0].target.attachments = WorldTargetAttachments;
+	WorldPasses[0].renderTargetCount = Renderer->GetWindowAttachmentCount();
+
+	WorldViewConfig.passes = WorldPasses;
+	if (!RenderViewSystem::Create(WorldViewConfig)) {
 		LOG_FATAL("Failed to create world view. Aborting application.");
 		return false;
 	}
@@ -315,12 +356,48 @@ bool ApplicationCreate(SGame* game_instance){
 	UIViewConfig.height = 0;
 	UIViewConfig.name = "UI";
 	UIViewConfig.pass_count = 1;
-	std::vector<RenderViewPassConfig> UIPasses(1);
-	UIPasses[0].name = "Renderpass.Builtin.UI";
-	UIViewConfig.passes = UIPasses;
 	UIViewConfig.view_matrix_source = RenderViewViewMatrixtSource::eRender_View_View_Matrix_Source_Scene_Camera;
+
+	// Renderpass config
+	std::vector<RenderpassConfig> UIPasses(1);
+	UIPasses[0].name = "Renderpass.Builtin.UI";
+	WorldPasses[0].render_area = Vec4(0, 0, 1280, 720);
+	WorldPasses[0].clear_color = Vec4(0, 0, 0.2f, 1.0f);
+	WorldPasses[0].clear_flags = RenderpassClearFlags::eRenderpass_Clear_None;
+	WorldPasses[0].depth = 1.0f;
+	WorldPasses[0].stencil = 0;
+
+	RenderTargetAttachmentConfig UITargetAttachment;
+	// Color attachment.
+	UITargetAttachment.type = RenderTargetAttachmentType::eRender_Target_Attachment_Type_Color;
+	UITargetAttachment.source = RenderTargetAttachmentSource::eRender_Target_Attachment_Source_Default;
+	UITargetAttachment.loadOperation = RenderTargetAttachmentLoadOperation::eRender_Target_Attachment_Load_Operation_Load;
+	UITargetAttachment.storeOperation = RenderTargetAttachmentStoreOperation::eRender_Target_Attachment_Store_Operation_Store;
+	UITargetAttachment.presentAfter = true;
+
+	UIPasses[0].target.attachmentCount = 1;
+	UIPasses[0].target.attachments = &UITargetAttachment;
+	UIPasses[0].renderTargetCount = Renderer->GetWindowAttachmentCount();
+
+	UIViewConfig.passes = UIPasses;
 	if (!RenderViewSystem::Create(UIViewConfig)) {
 		LOG_FATAL("Failed to create ui view. Aborting application.");
+		return false;
+	}
+
+	// Init material system
+	SMaterialSystemConfig MaterialSystemConfig;
+	MaterialSystemConfig.max_material_count = 4096;
+	if (!MaterialSystem::Initialize(Renderer, MaterialSystemConfig)) {
+		LOG_FATAL("Material system failed to initialize!");
+		return false;
+	}
+
+	// Init geometry system
+	SGeometrySystemConfig GeometrySystemConfig;
+	GeometrySystemConfig.max_geometry_count = 4096;
+	if (!GeometrySystem::Initialize(Renderer, GeometrySystemConfig)) {
+		LOG_FATAL("Geometry system failed to initialize!");
 		return false;
 	}
 
@@ -330,13 +407,13 @@ bool ApplicationCreate(SGame* game_instance){
 		LOG_ERROR("Failed to load basic ui bitmap text.");
 		return false;
 	}
-	AppState.TestText.SetPosition(Vec3(100, -200, 0));
+	AppState.TestText.SetPosition(Vec3(100, 200, 0));
 
 	if (!AppState.TestSysText.Create(Renderer, UITextType::eUI_Text_Type_system, "Noto Sans CJK JP", 31, "Test system font.")) {
 		LOG_ERROR("Failed to load basic ui system text.");
 		return false;
 	}
-	AppState.TestSysText.SetPosition(Vec3(100, -400, 0));
+	AppState.TestSysText.SetPosition(Vec3(100, 400, 0));
 
 	// Skybox
 	TextureMap* CubeMap = &AppState.SB.Cubemap;
@@ -353,7 +430,7 @@ bool ApplicationCreate(SGame* game_instance){
 	SkyboxCubeConfig.material_name[0] = '\0';
 	AppState.SB.g = GeometrySystem::AcquireFromConfig(SkyboxCubeConfig, true);
 	AppState.SB.RenderFrameNumber = INVALID_ID_U64;
-	Shader* SkyboxShader = ShaderSystem::Get(BUILTIN_SHADER_NAME_SKYBOX);
+	Shader* SkyboxShader = ShaderSystem::Get("Shader.Builtin.Skybox");
 	std::vector<TextureMap*> Maps = { &AppState.SB.Cubemap };
 
 	AppState.SB.InstanceID = Renderer->AcquireInstanceResource(SkyboxShader, Maps);
@@ -376,6 +453,7 @@ bool ApplicationCreate(SGame* game_instance){
 	SGeometryConfig GeoConfig = GeometrySystem::GenerateCubeConfig(10.0f, 10.0f, 10.0f, 1.0f, 1.0f, "TestCube", "Material.World");
 	CubeMesh->geometries[0] = GeometrySystem::AcquireFromConfig(GeoConfig, true);
 	CubeMesh->Generation = 0;
+	CubeMesh->UniqueID = Identifier::AcquireNewID(CubeMesh);
 	CubeMesh->Transform = Transform();
 
 	Mesh* CubeMesh2 = &AppState.Meshes[1];
@@ -385,6 +463,7 @@ bool ApplicationCreate(SGame* game_instance){
 	CubeMesh2->geometries[0] = GeometrySystem::AcquireFromConfig(GeoConfig2, true);
 	CubeMesh2->Transform = Transform(Vec3(10.0f, 0.0f, 1.0f));
 	CubeMesh2->Generation = 0;
+	CubeMesh2->UniqueID = Identifier::AcquireNewID(CubeMesh2);
 	CubeMesh2->Transform.SetParentTransform(&CubeMesh->Transform);
 
 	Mesh* CubeMesh3 = &AppState.Meshes[2];
@@ -394,6 +473,7 @@ bool ApplicationCreate(SGame* game_instance){
 	CubeMesh3->geometries[0] = GeometrySystem::AcquireFromConfig(GeoConfig3, true);
 	CubeMesh3->Transform = Transform(Vec3(5.0f, 0.0f, 1.0f));
 	CubeMesh3->Generation = 0;
+	CubeMesh3->UniqueID = Identifier::AcquireNewID(CubeMesh3);
 	CubeMesh3->Transform.SetParentTransform(&CubeMesh2->Transform);
 
 	// Clean up the allocations for the geometry config.
@@ -403,9 +483,11 @@ bool ApplicationCreate(SGame* game_instance){
 
 	AppState.CarMesh = &AppState.Meshes[3];
 	AppState.CarMesh->Transform = Transform(Vec3(15.0f, 0.0f, 1.0f));
+	AppState.CarMesh->UniqueID = Identifier::AcquireNewID(AppState.CarMesh);
 
 	AppState.SponzaMesh = &AppState.Meshes[4];
 	AppState.SponzaMesh->Transform = Transform(Vec3(0.0f, -10.0f, 0.0f), Quaternion(Vec3(0.0f, 90.0f, 0.0f)), Vec3(0.1f, 0.1f, 0.1f));
+	AppState.SponzaMesh->UniqueID = Identifier::AcquireNewID(AppState.SponzaMesh);
 
 	// Load up some test UI geometry.
 	SGeometryConfig UIConfig;
@@ -419,7 +501,7 @@ bool ApplicationCreate(SGame* game_instance){
 	const float h = game_instance->app_config.start_height / 3.0f;
 	const float w = h * 200.0f / 470.0f;
 	const float x = 0.0f;
-	const float y = -(float)game_instance->app_config.start_height;
+	const float y = 0.0f;
 
 	Vertex2D UIVerts[4];
 	UIVerts[0].position.x = x;
@@ -454,6 +536,7 @@ bool ApplicationCreate(SGame* game_instance){
 	UIMesh->geometries = (Geometry**)Memory::Allocate(sizeof(Geometry*), MemoryType::eMemory_Type_Array);
 	UIMesh->geometries[0] = GeometrySystem::AcquireFromConfig(UIConfig, true);
 	UIMesh->Generation = 0;
+	UIMesh->UniqueID = Identifier::AcquireNewID(UIMesh);
 	UIMesh->Transform = Transform();
 
 	// Init Game
@@ -475,6 +558,7 @@ bool ApplicationRun() {
 	Clock::Update(&AppState.clock);
 	AppState.last_time = AppState.clock.elapsed;	// Seconds
 	AppState.EsapsedTime = 0.0;
+	AppState.HoveredObjectID = INVALID_ID;
 
 	double RunningTime = 0.0;
 	short FrameCount = 0;
@@ -545,8 +629,8 @@ bool ApplicationRun() {
 			WorldMeshData.meshes = Meshes;
 			WorldMeshData.mesh_count = (uint32_t)Meshes.size();
 
-			if (!RenderViewSystem::BuildPacket(RenderViewSystem::Get("World_Opaque"), &WorldMeshData, &Packet.views[1])) {
-				LOG_ERROR("Failed to build packet for view 'World_Opaque'.");
+			if (!RenderViewSystem::BuildPacket(RenderViewSystem::Get("World"), &WorldMeshData, &Packet.views[1])) {
+				LOG_ERROR("Failed to build packet for view 'World'.");
 				return false;
 			}
 
@@ -559,16 +643,36 @@ bool ApplicationRun() {
 				}
 			}
 
+			// Text
 			Camera* WorldCamera = CameraSystem::GetDefault();
 			Vec3 Pos = WorldCamera->GetPosition();
 			Vec3 Rot = WorldCamera->GetEulerAngles();
 
+			// Mouse state
+			bool LeftDown = Core::InputeIsButtonDown(eButton_Left);
+			bool RightDown = Core::InputeIsButtonDown(eButton_Right);
+			int MouseX, MouseY;
+			Core::InputGetMousePosition(MouseX, MouseY);
+
+			// Convert to NDC.
+			float MouseX_NDC = RangeConvertfloat((float)MouseX, 0.0f, (float)AppState.width, -1.0f, 1.0f);
+			float MouseY_NDC = RangeConvertfloat((float)MouseY, 0.0f, (float)AppState.height, -1.0f, 1.0f);
+
 			// TODO: Temp
 			char FPS[512];
 			StringFormat(FPS, 512,
-				"Camera Pos: [%.3f %.3f %.3f]\nCamera Rot: [%.3f %.3f %.3f]\nFPS: %d\tDelta time: %.2f",
+				"\
+Camera Pos: [%.3f %.3f %.3f]\n\
+Camera Rot: [%.3f %.3f %.3f]\n\
+L=%s R=%s\tNDC: x=%.2f, y=%.2f\n\
+Hovered: %s%u\n\
+FPS: %d\tDelta time: %.2f",
 				Pos.x, Pos.y, Pos.z,
 				Rad2Deg(Rot.x), Rad2Deg(Rot.y), Rad2Deg(Rot.z),
+				LeftDown ? "Y" : "N", RightDown ? "Y" : "N",
+				MouseX_NDC, MouseY_NDC,
+				AppState.HoveredObjectID == INVALID_ID ? "None" : "",
+				AppState.HoveredObjectID == INVALID_ID ? 0 : AppState.HoveredObjectID,
 				(int)AppState.FramePerSecond,
 				(float)DeltaTime * 1000
 			);
@@ -639,9 +743,6 @@ bool ApplicationRun() {
 	Core::EventUnregister(Core::eEvent_Code_Key_Pressed, 0, ApplicationOnKey);
 	Core::EventUnregister(Core::eEvent_Code_Key_Released, 0, ApplicationOnKey);
 
-	Core::EventShutdown();
-	Core::InputShutdown();
-
 	// Temp
 	Renderer->ReleaseTextureMap(&AppState.SB.Cubemap);
 	AppState.TestText.Destroy();
@@ -658,6 +759,9 @@ bool ApplicationRun() {
 
 	Renderer->Shutdown();
 	Memory::Free(Renderer, sizeof(IRenderer), MemoryType::eMemory_Type_Renderer);
+
+	Core::EventShutdown();
+	Core::InputShutdown();
 
 	ResourceSystem::Shutdown();
 	Platform::PlatformShutdown(&AppState.platform);
@@ -736,7 +840,7 @@ bool ApplicationOnResized(unsigned short code, void* sender, void* listener_inst
 				const float h = Height / 3.0f;
 				const float w = h * 200.0f / 470.0f;
 				const float x = 0.0f;
-				const float y = -(float)Height;
+				const float y = 0.0f;
 
 				Vertex2D UIVerts[4];
 				UIVerts[0].position.x = x;

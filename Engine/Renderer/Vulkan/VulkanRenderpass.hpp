@@ -9,17 +9,15 @@ class VulkanCommandBuffer;
 
 class VulkanRenderPass : public IRenderpass{
 public:
-	VulkanRenderPass() {}
+	VulkanRenderPass() : Context(nullptr) {}
 	virtual ~VulkanRenderPass() {}
 
 public:
-	void Create(VulkanContext* context,
-		float depth, uint32_t stencil,
-		bool has_prev_pass, bool has_next_pass) override;
-	void Destroy(VulkanContext* context) override;
+	virtual bool Create(VulkanContext* context, const RenderpassConfig* config) override;
+	virtual void Destroy() override;
 
-	void Begin(RenderTarget* target) override;
-	void End() override;
+	virtual void Begin(RenderTarget* target) override;
+	virtual void End() override;
 
 	vk::RenderPass GetRenderPass() { return *(vk::RenderPass*)&Renderpass; }
 
@@ -36,8 +34,5 @@ private:
 	float Depth;
 	uint32_t Stencil;
 
-	bool HasPrevPass;
-	bool HasNextPass;
-	
 	VulkanRenderPassState State;
 };

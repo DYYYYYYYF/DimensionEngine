@@ -20,9 +20,53 @@ enum RendererBackendType {
 	eRenderer_Backend_Type_DirecX
 };
 
+enum RenderTargetAttachmentType {
+	eRender_Target_Attachment_Type_Color = 0x01,
+	eRender_Target_Attachment_Type_Depth = 0x02,
+	eRender_Target_Attachment_Type_Stencil = 0x04
+};
+
+enum RenderTargetAttachmentSource {
+	eRender_Target_Attachment_Source_Default = 0x1,
+	eRender_Target_Attachment_Source_View = 0x2
+};
+
+enum RenderTargetAttachmentLoadOperation {
+	eRender_Target_Attachment_Load_Operation_DontCare = 0x0,
+	eRender_Target_Attachment_Load_Operation_Load = 0x1
+};
+
+enum RenderTargetAttachmentStoreOperation {
+	eRender_Target_Attachment_Store_Operation_DontCare = 0x0,
+	eRender_Target_Attachment_Store_Operation_Store = 0x1
+};
+
+struct RenderTargetAttachmentConfig {
+	RenderTargetAttachmentType type;
+	RenderTargetAttachmentSource source;
+	RenderTargetAttachmentLoadOperation loadOperation;
+	RenderTargetAttachmentStoreOperation storeOperation;
+	bool presentAfter;
+};
+
+struct RenderTargetConfig {
+	unsigned char attachmentCount;
+	RenderTargetAttachmentConfig* attachments = nullptr;
+};
+
+struct RenderTargetAttachment {
+	RenderTargetAttachmentType type;
+	RenderTargetAttachmentSource source;
+	RenderTargetAttachmentLoadOperation loadOperation;
+	RenderTargetAttachmentStoreOperation storeOperation;
+	bool presentAfter;
+	class Texture* texture = nullptr;
+};
+
 struct GeometryRenderData {
 	Matrix4 model;
 	class Geometry* geometry = nullptr;
+	uint32_t uniqueID;
 };
 
 struct SRenderViewPassConfig {
@@ -38,7 +82,7 @@ struct SRenderPacket {
 struct RenderTarget {
 	bool sync_to_window_size;
 	unsigned char attachment_count;
-	std::vector<class Texture*> attachments;
+	std::vector<struct RenderTargetAttachment> attachments;
 	void* internal_framebuffer = nullptr;
 };
 
@@ -60,9 +104,4 @@ struct SkyboxPacketData {
 
 struct RenderBackendConfig {
 	const char* application_name = nullptr;
-	unsigned short renderpass_count;
-	RenderpassConfig* pass_config = nullptr	;
-
-	// Function
-	std::function<void()> OnRenderTargetRefreshRequired;
 };

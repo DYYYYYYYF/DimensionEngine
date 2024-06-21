@@ -40,7 +40,8 @@ public:
 	virtual void CreateWriteableTexture(Texture* tex) = 0;
 	virtual void ResizeTexture(Texture* tex, uint32_t new_width, uint32_t new_height) = 0;
 	virtual void WriteTextureData(Texture* tex, uint32_t offset, uint32_t size, const unsigned char* pixels) = 0;
-
+	virtual void ReadTextureData(Texture* tex, uint32_t offset, uint32_t size, void** outMemeory) = 0;
+	virtual void ReadTexturePixel(Texture* tex, uint32_t x, uint32_t y, unsigned char** outRGBA) = 0;
 
 	// Geometry
 	virtual bool CreateGeometry(Geometry* geometry, uint32_t vertex_size, uint32_t vertex_count, const void* vertices, uint32_t index_size, uint32_t index_count, const void* indices) = 0;
@@ -49,13 +50,13 @@ public:
 	// Renderpass
 	virtual bool BeginRenderpass(IRenderpass* pass, RenderTarget* target) = 0;
 	virtual bool EndRenderpass(IRenderpass* pass) = 0;
-	virtual IRenderpass* GetRenderpass(const char* name) = 0;
-	virtual void CreateRenderTarget(unsigned char attachment_count, std::vector<Texture*> attachments, IRenderpass* pass, uint32_t width, uint32_t height, RenderTarget* out_target) = 0;
+	virtual bool CreateRenderTarget(unsigned char attachment_count, std::vector<RenderTargetAttachment> attachments, IRenderpass* pass, uint32_t width, uint32_t height, RenderTarget* out_target) = 0;
 	virtual void DestroyRenderTarget(RenderTarget* target, bool free_internal_memory) = 0;
-	virtual void CreateRenderpass(IRenderpass* out_renderpass, float depth, uint32_t stencil, bool has_prev_pass, bool has_next_pass) = 0;
+	virtual bool CreateRenderpass(IRenderpass* out_renderpass,const RenderpassConfig* config) = 0;
 	virtual void DestroyRenderpass(IRenderpass* pass) = 0;
 	virtual Texture* GetWindowAttachment(unsigned char index) = 0;
-	virtual Texture* GetDepthAttachment() = 0;
+	virtual unsigned char GetWindowAttachmentCount() const = 0;
+	virtual Texture* GetDepthAttachment(unsigned char index) = 0;
 	virtual unsigned char GetWindowAttachmentIndex() = 0;
 
 	// Renderbuffer
@@ -72,6 +73,12 @@ public:
 	virtual bool LoadRange(IRenderbuffer* buffer, size_t offset, size_t size, const void* data) = 0;
 	virtual bool CopyRange(IRenderbuffer* src, size_t src_offset, IRenderbuffer* dst, size_t dst_offset, size_t size) = 0;
 	virtual bool DrawRenderbuffer(IRenderbuffer* buffer, size_t offset, uint32_t element_count, bool bind_only) = 0;
+
+	// Render target
+	virtual void SetViewport(Vec4 rect) = 0;
+	virtual void ResetViewport() = 0;
+	virtual void SetScissor(Vec4 rect) = 0;
+	virtual void ResetScissor() = 0;
 
 	// Shader
 	virtual bool CreateShader(Shader* shader, const ShaderConfig* config, IRenderpass* pass, unsigned short stage_count, const std::vector<char*>& stage_filenames, std::vector<ShaderStage>& stages) = 0;

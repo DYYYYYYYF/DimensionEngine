@@ -118,7 +118,7 @@ void HandleModifierKeys(uint32_t ns_keycode, uint32_t modifier_flags, SInternalS
 
 - (void)mouseMoved : (NSEvent*)event {
 	const NSPoint pos = [event locationInWindow];
-    
+
     // Invert Y on MacOS, since origin is bottom-left.
     // Also need to scale the mouse position by the device pixel ratio so screen lookups are correct.
     SInternalState* state_ptr = (SInternalState*)state->internalState;
@@ -162,11 +162,11 @@ void HandleModifierKeys(uint32_t ns_keycode, uint32_t modifier_flags, SInternalS
 
 - (void)keyDown : (NSEvent*)event {
 	enum Keys key = TranslateKeyCode((uint32_t)[event keyCode]);
-    Core::InputProcessKey(key, true);
+  Core::InputProcessKey(key, true);
 }
 
 - (void)keyUp : (NSEvent*)event {
-    enum Keys key = TranslateKeyCode((uint32_t)[event keyCode]);
+	enum Keys key = TranslateKeyCode((uint32_t)[event keyCode]);
     Core::InputProcessKey(key, false);
 }
 

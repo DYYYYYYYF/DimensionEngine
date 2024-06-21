@@ -15,7 +15,7 @@ class Texture;
 
 class VulkanContext {
 public:
-	VulkanContext(): Allocator(nullptr), Shaders(nullptr), GraphicsCommandBuffers(nullptr), RenderpassTableBlock(nullptr){}
+	VulkanContext(): Allocator(nullptr), Shaders(nullptr), GraphicsCommandBuffers(nullptr){}
 	virtual ~VulkanContext() {}
 
 public:
@@ -48,6 +48,9 @@ public:
 	uint32_t CurrentFrame;
 	bool RecreatingSwapchain;
 
+	Vec4 ViewportRect;
+	Vec4 ScissorRect;
+
 	vk::Instance Instance;
 	vk::AllocationCallbacks* Allocator;
 	vk::SurfaceKHR Surface;
@@ -70,9 +73,6 @@ public:
 	VulkanDevice Device;
 	VulkanSwapchain Swapchain;
 
-	void* RenderpassTableBlock;
-	HashTable RenderpassTable;
-	VulkanRenderPass RegisteredPasses[VULKAN_MAX_REGISTERED_RENDERPASSES];
 	// Shaders
 	Shader MaterialShader;
 	Shader UIShader;
@@ -90,6 +90,4 @@ public:
 
 	// TODO: Make dynamic
 	GeometryData Geometries[GEOMETRY_MAX_COUNT];
-
-	std::function<void()> OnRenderTargetRefreshRequired;
 };

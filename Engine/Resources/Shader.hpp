@@ -5,10 +5,6 @@
 #include "Containers/THashTable.hpp"
 #include "Math/MathTypes.hpp"
 
-#define BUILTIN_SHADER_NAME_MATERIAL "Shader.Builtin.Material"
-#define BUILTIN_SHADER_NAME_SKYBOX "Shader.Builtin.Skybox"
-#define BUILTIN_SHADER_NAME_UI "Shader.Builtin.UI"
-
 struct TextureMap;
 
 enum ShaderState {
@@ -60,6 +56,14 @@ enum FaceCullMode {
 	eFace_Cull_Mode_Back = 0x2,
 	eFace_Cull_Mode_Front_And_Back = 0x3,
 };
+
+enum ShaderFlags {
+	eShader_Flag_None = 0x0,
+	eShader_Flag_DepthTest = 0x1,
+	eShader_Flag_DepthWrite = 0x2,
+};
+
+typedef unsigned int ShaderFlagBits;
 
 struct MaterialShaderUniformLocations {
 	unsigned short projection;
@@ -152,17 +156,19 @@ struct ShaderConfig {
 	unsigned short uniform_count;
 	std::vector<ShaderUniformConfig> uniforms;
 
-	char* renderpass_name = nullptr;
-
 	unsigned short stage_cout;
 	std::vector<ShaderStage> stages;
 
 	std::vector<char*> stage_names;
 	std::vector<char*> stage_filenames;
+
+	bool depthTest;
+	bool depthWrite;
 };
 
 class Shader {
 public:
+	ShaderFlagBits Flags;
 	uint32_t ID = INVALID_ID;
 	char* Name = nullptr;
 
@@ -190,4 +196,5 @@ public:
 	std::vector<ShaderUniform> Uniforms;
 	std::vector<ShaderAttribute> Attributes;
 	std::vector<TextureMap*> GlobalTextureMaps;
+
 };
