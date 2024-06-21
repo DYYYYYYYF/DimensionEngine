@@ -1,7 +1,7 @@
 ## Dimension Engine
 3D-Rendering of Vulkan 
 
-CMake Files: (MacOS required Vulkan)
+git clone --recursive git@github.com:DYYYYYYYF/DimensionEngine.git  
 
 create a floder named build
 
