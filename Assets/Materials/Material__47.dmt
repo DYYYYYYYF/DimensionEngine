@@ -1,7 +1,0 @@
-#material file
-
-version=0.1
-name=Material__47
-diffuse_color=0.470400 0.470400 0.470400 1.000000
-shininess=7.843137
-shader=Shader.Builtin.Material

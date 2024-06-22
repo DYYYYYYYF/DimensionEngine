@@ -7,4 +7,4 @@ shininess=64.0
 #diffuse_map_name=transparent_test
 diffuse_map_name=OrangeLines512
 specular_map_name=OrangeLines512SPEC
-shader=Shader.Builtin.Material
+shader=Shader.Builtin.World

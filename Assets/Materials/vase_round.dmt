@@ -1,8 +1,0 @@
-#material file
-
-version=0.1
-name=vase_round
-diffuse_color=0.470400 0.470400 0.470400 1.000000
-shininess=7.843137
-diffuse_map_name=vase_round
-shader=Shader.Builtin.Material

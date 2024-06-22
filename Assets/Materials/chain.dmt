@@ -1,8 +1,0 @@
-#material file
-
-version=0.1
-name=chain
-diffuse_color=0.470400 0.470400 0.470400 1.000000
-shininess=7.843137
-diffuse_map_name=chain_texture
-shader=Shader.Builtin.Material

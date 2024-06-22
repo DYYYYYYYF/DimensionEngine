@@ -1,8 +1,0 @@
-#material file
-
-version=0.1
-name=fabric_c
-diffuse_color=0.470400 0.470400 0.470400 1.000000
-shininess=7.843137
-diffuse_map_name=sponza_curtain_diff
-shader=Shader.Builtin.Material
