@@ -385,6 +385,68 @@ bool ApplicationCreate(SGame* game_instance){
 		return false;
 	}
 
+	// Pick pass
+	RenderViewConfig PickViewConfig;
+	PickViewConfig.type = RenderViewKnownType::eRender_View_Known_Type_Pick;
+	PickViewConfig.width = 0;
+	PickViewConfig.height = 0;
+	PickViewConfig.name = "Pick";
+	PickViewConfig.pass_count = 2;
+	PickViewConfig.view_matrix_source = RenderViewViewMatrixtSource::eRender_View_View_Matrix_Source_Scene_Camera;
+	
+	// Renderpass config.
+	std::vector<RenderpassConfig>PickPasses(2);
+	// World pick pass
+	PickPasses[0].name = "Renderpass.Builtin.WorldPick";
+	PickPasses[0].render_area = Vec4(0, 0, 1280, 720);
+	PickPasses[0].clear_color = Vec4(1.0f, 1.0f, 1.0f, 1.0f);
+	PickPasses[0].clear_flags = RenderpassClearFlags::eRenderpass_Clear_Color_Buffer | RenderpassClearFlags::eRenderpass_Clear_Depth_Buffer;
+	PickPasses[0].depth = 1.0f;
+	PickPasses[0].stencil = 0;
+
+	RenderTargetAttachmentConfig WorldPickTargetAttachments[2];
+	WorldPickTargetAttachments[0].type = RenderTargetAttachmentType::eRender_Target_Attachment_Type_Color;
+	WorldPickTargetAttachments[0].source = RenderTargetAttachmentSource::eRender_Target_Attachment_Source_View;
+	WorldPickTargetAttachments[0].loadOperation = RenderTargetAttachmentLoadOperation::eRender_Target_Attachment_Load_Operation_DontCare;
+	WorldPickTargetAttachments[0].storeOperation = RenderTargetAttachmentStoreOperation::eRender_Target_Attachment_Store_Operation_Store;
+	WorldPickTargetAttachments[0].presentAfter = false;
+
+	WorldPickTargetAttachments[1].type = RenderTargetAttachmentType::eRender_Target_Attachment_Type_Depth;
+	WorldPickTargetAttachments[1].source = RenderTargetAttachmentSource::eRender_Target_Attachment_Source_View;
+	WorldPickTargetAttachments[1].loadOperation = RenderTargetAttachmentLoadOperation::eRender_Target_Attachment_Load_Operation_DontCare;
+	WorldPickTargetAttachments[1].storeOperation = RenderTargetAttachmentStoreOperation::eRender_Target_Attachment_Store_Operation_Store;
+	WorldPickTargetAttachments[1].presentAfter = false;
+
+	PickPasses[0].target.attachmentCount = 2;
+	PickPasses[0].target.attachments = WorldPickTargetAttachments;
+	PickPasses[0].renderTargetCount = 1;
+
+	// UI pick pass
+	PickPasses[1].name = "Renderpass.Builtin.UIPick";
+	PickPasses[1].render_area = Vec4(0, 0, 1280, 720);
+	PickPasses[1].clear_color = Vec4(1.0f, 1.0f, 1.0f, 1.0f);
+	PickPasses[1].clear_flags = RenderpassClearFlags::eRenderpass_Clear_None;
+	PickPasses[1].depth = 1.0f;
+	PickPasses[1].stencil = 0;
+
+	RenderTargetAttachmentConfig UIPickTargetAttachments[1];
+	UIPickTargetAttachments[0].type = RenderTargetAttachmentType::eRender_Target_Attachment_Type_Color;
+	UIPickTargetAttachments[0].source = RenderTargetAttachmentSource::eRender_Target_Attachment_Source_View;
+	UIPickTargetAttachments[0].loadOperation = RenderTargetAttachmentLoadOperation::eRender_Target_Attachment_Load_Operation_Load;
+	UIPickTargetAttachments[0].storeOperation = RenderTargetAttachmentStoreOperation::eRender_Target_Attachment_Store_Operation_Store;
+	UIPickTargetAttachments[0].presentAfter = false;
+
+	PickPasses[1].target.attachmentCount = 1;
+	PickPasses[1].target.attachments = UIPickTargetAttachments;
+	PickPasses[1].renderTargetCount = 1;
+
+	PickViewConfig.passes = PickPasses;
+	if (!RenderViewSystem::Create(PickViewConfig)) {
+		LOG_FATAL("Failed to create pick view. Aborting application.");
+		return false;
+	}
+
+
 	// Init material system
 	SMaterialSystemConfig MaterialSystemConfig;
 	MaterialSystemConfig.max_material_count = 4096;
@@ -603,7 +665,7 @@ bool ApplicationRun() {
 			Packet.delta_time = DeltaTime;
 
 			// TODO: Read from config.
-			Packet.view_count = 3;
+			Packet.view_count = 4;
 			std::vector<RenderViewPacket> Views;
 			Views.resize(Packet.view_count);
 			Packet.views = Views;
@@ -690,11 +752,23 @@ FPS: %d\tDelta time: %.2f",
 				return false;
 			}
 
+			// Pick uses both world and ui packet data.
+			PickPacketData PickPacket;
+			PickPacket.UIMeshData = UIPacket.meshData;
+			PickPacket.WorldMeshData = WorldMeshData;
+			PickPacket.Texts = UIPacket.Textes;
+			PickPacket.TextCount = UIPacket.textCount;
+
+			if (!RenderViewSystem::BuildPacket(RenderViewSystem::Get("Pick"), &PickPacket, &Packet.views[3])) {
+				LOG_ERROR("Failed to build packet for view 'ui'.");
+				return false;
+			}
+
 			Renderer->DrawFrame(&Packet);
 
 			// Cleanup the packet.
 			for (uint32_t i = 0; i < Packet.view_count; ++i) {
-				const IRenderView* RenderView = Packet.views[i].view;
+				IRenderView* RenderView = Packet.views[i].view;
 				RenderView->OnDestroyPacket(&Packet.views[i]);
 			}
 

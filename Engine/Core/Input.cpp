@@ -73,8 +73,8 @@ void InputProcessMouseMove(short x, short y) {
 
 		//Fire the event
 		SEventContext context;
-		context.data.u16[0] = x;
-		context.data.u16[1] = y;
+		context.data.i16[0] = x;
+		context.data.i16[1] = y;
 		Core::EventFire(Core::eEvent_Code_Mouse_Moved, 0, context);
 	}
 }

@@ -1,9 +1,9 @@
 # Dimension shader config file
 version=1.0
-name=Shader.Builtin.Material
-renderpass=Renderpass.Builtin.World
+name=Shader.Builtin.WorldPick
+renderpass=Renderpass.Builtin.WorldPick
 stages=vertex,fragment
-stagefiles=Shaders/Builtin.MaterialShader.vert.spv,Shaders/Builtin.MaterialShader.frag.spv
+stagefiles=Shaders/Builtin.WorldPickShader.vert.spv,Shaders/Builtin.WorldPickShader.frag.spv
 depth_test=1
 depth_write=1
 
@@ -18,11 +18,5 @@ attribute=vec4,in_tangent
 # NOTE: For scope: 0=global, 1=instance, 2=local
 uniform=mat4,0,projection
 uniform=mat4,0,view
-uniform=vec4,0,ambient_color
-uniform=vec3,0,view_position
-uniform=vec4,1,diffuse_color
-uniform=samp,1,diffuse_texture
-uniform=samp,1,specular_texture
-uniform=samp,1,normal_texture
-uniform=float,1,shininess
+uniform=vec3,1,id_color
 uniform=mat4,2,model

@@ -160,7 +160,7 @@ Material* MaterialSystem::AcquireFromConfig(SMaterialConfig config) {
 			// Get the uniform indices.
 			Shader* s = ShaderSystem::GetByID(m->ShaderID);
 			// Save off the locations for known types for quick lookups.
-			if (MaterialShaderID == INVALID_ID && strcmp(config.shader_name, "Shader.Builtin.Material") == 0) {
+			if (MaterialShaderID == INVALID_ID && strcmp(config.shader_name, "Shader.Builtin.World") == 0) {
 				MaterialShaderID = s->ID;
 				MaterialLocations.projection = ShaderSystem::GetUniformIndex(s, "projection");
 				MaterialLocations.view = ShaderSystem::GetUniformIndex(s, "view");
@@ -412,7 +412,7 @@ bool MaterialSystem::CreateDefaultMaterial() {
 
 	std::vector<TextureMap*> Maps = { &DefaultMaterial.DiffuseMap, &DefaultMaterial.SpecularMap, &DefaultMaterial.NormalMap };
 
-	Shader* s = ShaderSystem::Get("Shader.Builtin.Material");
+	Shader* s = ShaderSystem::Get("Shader.Builtin.World");
 	ASSERT(s);
 
 	DefaultMaterial.InternalId = Renderer->AcquireInstanceResource(s, Maps);

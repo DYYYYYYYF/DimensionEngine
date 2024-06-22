@@ -11,6 +11,7 @@
 #include "Renderer/Views/RenderViewUI.hpp"
 #include "Renderer/Views/RenderViewWorld.hpp"
 #include "Renderer/Views/RenderViewSkybox.hpp"
+#include "Renderer/Views/RenderViewPick.hpp"
 
 HashTable RenderViewSystem::Lookup;
 void* RenderViewSystem::TableBlock = nullptr;
@@ -113,6 +114,9 @@ bool RenderViewSystem::Create(const RenderViewConfig& config) {
 	else if (config.type == RenderViewKnownType::eRender_View_Known_Type_Skybox) {
 		RegisteredViews[ID] = new RenderViewSkybox(config);
 	}
+	else if (config.type == RenderViewKnownType::eRender_View_Known_Type_Pick) {
+		RegisteredViews[ID] = new RenderViewPick(config, Renderer);
+	}
 
 	IRenderView* View = RegisteredViews[ID];
 	View->ID = ID;
@@ -195,7 +199,7 @@ IRenderView* RenderViewSystem::Get(const char* name) {
 	return nullptr;
 }
 
-bool RenderViewSystem::BuildPacket(const IRenderView* view, void* data, struct RenderViewPacket* out_packet) {
+bool RenderViewSystem::BuildPacket(IRenderView* view, void* data, struct RenderViewPacket* out_packet) {
 	if (out_packet && view) {
 		return view->OnBuildPacket(data, out_packet);
 	}
@@ -203,7 +207,7 @@ bool RenderViewSystem::BuildPacket(const IRenderView* view, void* data, struct R
 	return false;
 }
 
-bool RenderViewSystem::OnRender(const IRenderView* view, RenderViewPacket* packet, size_t frame_number, size_t render_target_index) {
+bool RenderViewSystem::OnRender(IRenderView* view, RenderViewPacket* packet, size_t frame_number, size_t render_target_index) {
 	if (view && Renderer) {
 		return view->OnRender(packet, Renderer->GetRenderBackend(), frame_number, render_target_index);
 	}

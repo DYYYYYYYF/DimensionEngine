@@ -107,7 +107,7 @@ void RenderViewSkybox::OnResize(uint32_t width, uint32_t height) {
 	}
 }
 
-bool RenderViewSkybox::OnBuildPacket(void* data, struct RenderViewPacket* out_packet) const {
+bool RenderViewSkybox::OnBuildPacket(void* data, struct RenderViewPacket* out_packet) {
 	if (data == nullptr || out_packet == nullptr) {
 		LOG_WARN("RenderViewSkybox::OnBuildPacke() Requires valid pointer to packet and data.");
 		return false;
@@ -127,7 +127,7 @@ bool RenderViewSkybox::OnBuildPacket(void* data, struct RenderViewPacket* out_pa
 	return true;
 }
 
-void RenderViewSkybox::OnDestroyPacket(struct RenderViewPacket* packet) const {
+void RenderViewSkybox::OnDestroyPacket(struct RenderViewPacket* packet) {
 	// No much to do here, just zero mem.
 	Memory::Zero(packet, sizeof(RenderViewPacket));
 }
@@ -136,7 +136,7 @@ bool RenderViewSkybox::RegenerateAttachmentTarget(uint32_t passIndex, RenderTarg
 	return false;
 }
 
-bool RenderViewSkybox::OnRender(struct RenderViewPacket* packet, IRendererBackend* back_renderer, size_t frame_number, size_t render_target_index) const {
+bool RenderViewSkybox::OnRender(struct RenderViewPacket* packet, IRendererBackend* back_renderer, size_t frame_number, size_t render_target_index) {
 	uint32_t SID = UsedShader->ID;
 	SkyboxPacketData* SkyboxData = (SkyboxPacketData*)packet->extended_data;
 	for (uint32_t p = 0; p < RenderpassCount; ++p) {

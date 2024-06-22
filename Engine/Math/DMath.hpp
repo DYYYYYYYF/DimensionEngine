@@ -77,5 +77,11 @@ inline void RGB2Uint(unsigned int r, unsigned int g, unsigned int b, unsigned in
 	*rgb = (((r & 0x0FF) << 16) | ((g & 0x0FF) << 8) | (b & 0xFF));
 }
 
-void RGBU2Float(unsigned int r, unsigned int g, unsigned int b, struct Vec3* rgb);
-void Vec2RGBU(struct Vec3 rgb, unsigned int* r, unsigned int* g, unsigned int* b);
+inline void UInt2RGB(unsigned int rgb, unsigned int* r, unsigned int* g, unsigned int* b) {
+	*r = (rgb >> 16) & 0x0FF;
+	*g = (rgb >> 8) & 0x0FF;
+	*b = (rgb) & 0x0FF;
+}
+
+void RGB2Vec(unsigned int r, unsigned int g, unsigned int b, struct Vec3* rgb);
+void Vec2RGB(struct Vec3 rgb, unsigned int* r, unsigned int* g, unsigned int* b);

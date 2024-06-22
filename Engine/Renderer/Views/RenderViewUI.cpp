@@ -99,7 +99,7 @@ void RenderViewUI::OnResize(uint32_t width, uint32_t height) {
 	}
 }
 
-bool RenderViewUI::OnBuildPacket(void* data, struct RenderViewPacket* out_packet) const{
+bool RenderViewUI::OnBuildPacket(void* data, struct RenderViewPacket* out_packet) {
 	if (data == nullptr || out_packet == nullptr) {
 		LOG_WARN("RenderViewUI::OnBuildPacke() Requires valid pointer to packet and data.");
 		return false;
@@ -131,7 +131,7 @@ bool RenderViewUI::OnBuildPacket(void* data, struct RenderViewPacket* out_packet
 	return true;
 }
 
-void RenderViewUI::OnDestroyPacket(struct RenderViewPacket* packet) const {
+void RenderViewUI::OnDestroyPacket(struct RenderViewPacket* packet) {
 	// No much to do here, just zero mem.
 	packet->geometries.clear();
 	std::vector<GeometryRenderData>().swap(packet->geometries);
@@ -143,7 +143,7 @@ bool RenderViewUI::RegenerateAttachmentTarget(uint32_t passIndex, RenderTargetAt
 	return false;
 }
 
-bool RenderViewUI::OnRender(struct RenderViewPacket* packet, IRendererBackend* back_renderer, size_t frame_number, size_t render_target_index) const {
+bool RenderViewUI::OnRender(struct RenderViewPacket* packet, IRendererBackend* back_renderer, size_t frame_number, size_t render_target_index) {
 	uint32_t SID = UsedShader->ID;
 	for (uint32_t p = 0; p < RenderpassCount; ++p) {
 		IRenderpass* Pass = (IRenderpass*) & Passes[p];

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Renderer//Camera.hpp"
+#include "Renderer/Camera.hpp"
 #include "Containers/THashTable.hpp"
 
 class IRenderer;

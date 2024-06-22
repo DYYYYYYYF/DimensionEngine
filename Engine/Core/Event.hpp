@@ -66,8 +66,8 @@ namespace Core {
 
 		// Mouse moved
 		/* Context usage:
-		 * unsigned short x = data.data.u16[0];
-		 * unsigned short y = data.data.u16[1];
+		 * short x = data.data.i16[0];
+		 * short y = data.data.i16[1];
 		 */
 		eEvent_Code_Mouse_Moved = 0x06,
 

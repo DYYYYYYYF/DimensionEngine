@@ -22,8 +22,8 @@ public:
 
 	static IRenderView* Get(const char* name);
 
-	static bool BuildPacket(const IRenderView* view, void* data, struct RenderViewPacket* out_packet);
-	static bool OnRender(const IRenderView* view, RenderViewPacket* packet, size_t frame_number, size_t render_target_index);
+	static bool BuildPacket(IRenderView* view, void* data, struct RenderViewPacket* out_packet);
+	static bool OnRender(IRenderView* view, RenderViewPacket* packet, size_t frame_number, size_t render_target_index);
 
 	static void RegenerateRendertargets(IRenderView* view);
 

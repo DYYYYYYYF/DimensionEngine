@@ -627,7 +627,7 @@ bool MeshLoader::ImportObjMaterialLibraryFile(const char* mtl_file_path) {
 
 				// NOTE: Hardcoding default material shader name because all objects imported this way
 				// will be treated same.
-				CurrentConfig.shader_name = "Shader.Builtin.Material";
+				CurrentConfig.shader_name = "Shader.Builtin.World";
 				// NOTE:Shininess of 0 will cause problems in the shader. Use default.
 				if (CurrentConfig.shininess == 0.0f) {
 					CurrentConfig.shininess = 8.0f;
@@ -653,7 +653,7 @@ bool MeshLoader::ImportObjMaterialLibraryFile(const char* mtl_file_path) {
 	// Write out the remaining dmt file.
 	// NOTE: Hardcoding default material shader name because all objects imported this way
 	// will be treated same.
-	CurrentConfig.shader_name = "Shader.Builtin.Material";
+	CurrentConfig.shader_name = "Shader.Builtin.World";
 	// NOTE:Shininess of 0 will cause problems in the shader. Use default.
 	if (CurrentConfig.shininess == 0.0f) {
 		CurrentConfig.shininess = 8.0f;
