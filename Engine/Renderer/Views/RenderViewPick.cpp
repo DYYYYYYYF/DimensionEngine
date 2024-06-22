@@ -175,6 +175,10 @@ bool RenderViewPick::OnCreate(const RenderViewConfig& config) {
 void RenderViewPick::OnDestroy() {
 	Core::EventUnregister(Core::eEvent_Code_Default_Rendertarget_Refresh_Required, this, RenderViewPickOnEvent);
 	Core::EventUnregister(Core::eEvent_Code_Mouse_Moved, this, RenderViewPickOnEvent);
+
+	ReleaseShaderInstance();
+	Renderer->DestroyTexture(&ColorTargetAttachment);
+	Renderer->DestroyTexture(&DepthTargetAttachment);
 }
 
 void RenderViewPick::OnResize(uint32_t width, uint32_t height) {
