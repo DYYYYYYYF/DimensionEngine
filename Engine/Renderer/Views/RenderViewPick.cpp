@@ -148,10 +148,10 @@ bool RenderViewPick::OnCreate(const RenderViewConfig& config) {
 	WorlShaderInfo.ProjectionLocation = ShaderSystem::GetUniformIndex(UIShaderInfo.UsedShader, "projection");
 	WorlShaderInfo.ViewLocation = ShaderSystem::GetUniformIndex(UIShaderInfo.UsedShader, "view");
 
-	// Default UI properties.
-	WorlShaderInfo.NearClip = -100.0f;
-	WorlShaderInfo.FarClip = 100.0f;
-	WorlShaderInfo.Fov = 0;
+	// Default World properties.
+	WorlShaderInfo.NearClip = 0.1f;
+	WorlShaderInfo.FarClip = 1000.0f;
+	WorlShaderInfo.Fov = Deg2Rad(45.0f);
 	WorlShaderInfo.ProjectionMatrix = Matrix4::Perspective(WorlShaderInfo.Fov, 1280 / 720.f, WorlShaderInfo.NearClip, WorlShaderInfo.FarClip);
 	WorlShaderInfo.ViewMatrix = Matrix4::Identity();
 
@@ -406,7 +406,7 @@ bool RenderViewPick::OnRender(struct RenderViewPacket* packet, IRendererBackend*
 		Pass->Begin(&Pass->Targets[render_target_index]);
 
 		// UI
-		if (ShaderSystem::UseByID(UIShaderInfo.UsedShader->ID)) {
+		if (!ShaderSystem::UseByID(UIShaderInfo.UsedShader->ID)) {
 			LOG_ERROR("Failed to use material shader. Render frame failed.");
 			return false;
 		}
@@ -421,7 +421,7 @@ bool RenderViewPick::OnRender(struct RenderViewPacket* packet, IRendererBackend*
 		ShaderSystem::ApplyGlobal();
 
 		// Draw geometries. Start off where world geometries left off.
-		for (uint32_t i = PacketData->WorldGeometryCount; i < packet->geometry_count; ++i) {
+		for (uint32_t i = PacketData->WorldGeometryCount; i < PacketData->UIGeometryCount + PacketData->WorldGeometryCount; ++i) {
 			GeometryRenderData* Geo = &packet->geometries[i];
 			CurrentInstanceID = Geo->uniqueID;
 
@@ -451,7 +451,7 @@ bool RenderViewPick::OnRender(struct RenderViewPacket* packet, IRendererBackend*
 		}
 
 		// Draw bitmap text.
-		for (uint32_t i = 0; i < PacketData->TextCount; ++i) {
+ 		for (uint32_t i = 0; i < PacketData->TextCount; ++i) {
 			UIText* Text = PacketData->Texts[i];
 			ShaderSystem::BindInstance(Text->InstanceID);
 
@@ -473,6 +473,8 @@ bool RenderViewPick::OnRender(struct RenderViewPacket* packet, IRendererBackend*
 
 			Text->Draw();
 		}
+
+		Pass->End();
 	}
 
 	// Read pixel data.
@@ -483,7 +485,7 @@ bool RenderViewPick::OnRender(struct RenderViewPacket* packet, IRendererBackend*
 
 	// Clamp to image size.
 	unsigned short CoordX = CLAMP(MouseX, 0, Width - 1);
-	unsigned short CoordY = CLAMP(MouseY, 0, Width - 1);
+	unsigned short CoordY = CLAMP(MouseY, 0, Height - 1);
 	Renderer->ReadTexturePixel(t, CoordX, CoordY, &Pixel);
 
 	// Extract the id from the sampled color.
