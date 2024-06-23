@@ -741,7 +741,7 @@ void VulkanBackend::ReadTextureData(Texture* tex, uint32_t offset, uint32_t size
 
 	// Create a staging buffer and load data into it.
 	VulkanBuffer Staging;
-	if (!CreateRenderbuffer(RenderbufferType::eRenderbuffer_Type_Staging, size, false, &Staging)) {
+	if (!CreateRenderbuffer(RenderbufferType::eRenderbuffer_Type_Read, size, false, &Staging)) {
 		LOG_ERROR("Failed to create staging buffer for texture read.");
 		return;
 	}
@@ -781,7 +781,7 @@ void VulkanBackend::ReadTexturePixel(Texture* tex, uint32_t x, uint32_t y, unsig
 	// 
 	// Create a staging buffer and load data into it.
 	VulkanBuffer Staging;
-	if (!CreateRenderbuffer(RenderbufferType::eRenderbuffer_Type_Staging, sizeof(unsigned char) * 4, false, &Staging)) {
+	if (!CreateRenderbuffer(RenderbufferType::eRenderbuffer_Type_Read, sizeof(unsigned char) * 4, false, &Staging)) {
 		LOG_ERROR("Failed to create staging buffer for pixel read.");
 		return;
 	}
