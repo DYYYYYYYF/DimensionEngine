@@ -85,10 +85,6 @@ bool EventOnDebugEvent(unsigned short code, void* sender, void* listener_instanc
 
 		return true;
 	}
-	else if (code == Core::eEvent_Code_Object_Hover_ID_Changed) {
-		AppState.HoveredObjectID = context.data.u32[0];
-		return true;
-	}
 
 	return false;
 }
@@ -850,7 +846,11 @@ bool ApplicationOnEvent(unsigned short code, void* sender, void* listener_instan
 		AppState.is_running = false;
 		return true;
 	}
+	case Core::eEvent_Code_Object_Hover_ID_Changed: {
+		AppState.HoveredObjectID = context.data.u32[0];
+		return true;
 	}
+	}	// Switch
 
 	return false;
 }
