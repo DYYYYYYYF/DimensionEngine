@@ -763,9 +763,9 @@ void VulkanBackend::ReadTextureData(Texture* tex, uint32_t offset, uint32_t size
 
 	TempBuffer.EndSingleUse(&Context, Pool, Queue);
 	
-	/*if (!Staging.ReadData()) {
+	if (!ReadRenderbuffer(&Staging, offset, size, outMemeory)) {
 		LOG_ERROR("Failed to read.");
-	}*/
+	}
 
 	Staging.UnBind(&Context);
 	Staging.Destroy(&Context);
@@ -803,9 +803,10 @@ void VulkanBackend::ReadTexturePixel(Texture* tex, uint32_t x, uint32_t y, unsig
 
 	TempBuffer.EndSingleUse(&Context, Pool, Queue);
 
-	/*if (!Staging.ReadData()) {
+	
+	if (!ReadRenderbuffer(&Staging, 0, sizeof(unsigned char) * 4, (void**)outRGBA)) {
 		LOG_ERROR("Failed to read.");
-	}*/
+	}
 
 	Staging.UnBind(&Context);
 	Staging.Destroy(&Context);
