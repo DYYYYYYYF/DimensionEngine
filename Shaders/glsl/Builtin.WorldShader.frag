@@ -16,7 +16,7 @@ layout (set = 1, binding = 0) uniform LocalUniformObject{
  struct PointLight{
  	vec3 position;
  	vec4 color;
- 	float constant;
+ 	float fconstant;
  	float linear;
  	float quadratic;
  };
@@ -108,7 +108,7 @@ vec4 CalculatePointLight(PointLight light, vec3 normal, vec3 frag_position, vec3
 
 	// Calculate attenuation, or light falloff over distance.
 	float Distance = length(light.position - frag_position);
-	float Attenuation = 1.0f / (light.constant + light.linear * Distance + light.quadratic * (Distance * Distance));
+	float Attenuation = 1.0f / (light.fconstant + light.linear * Distance + light.quadratic * (Distance * Distance));
 
 	vec4 Ambient = in_dto.vAmbientColor;
 	vec4 Diffuse = light.color * Diff;
