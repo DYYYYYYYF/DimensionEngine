@@ -7,7 +7,7 @@ VSOutput main(VSInput input)
 {
     VSOutput output = (VSOutput) 0;
     output.outPosition = mul(ubo.proj, mul(ubo.view, mul(push_constants.model, float4(input.vPosition, 0.0f, 1.0f))));
-    output.texCoord = float2(input.vTexCoord.x, 1.0 - input.vTexCoord.y);
+    output.texCoord = input.vTexCoord;
     output.outColor = float4(1, 1, 1, 1);
 
     return output;
