@@ -70,7 +70,7 @@ void RenderViewPick::AcquireShaderInstance() {
 }
 
 void RenderViewPick::ReleaseShaderInstance() {
-	for (uint32_t i = 0; i < InstanceCount; ++i) {
+	for (int i = 0; i < InstanceCount; ++i) {
 		// UI Shader
 		if (!Renderer->ReleaseInstanceResource(UIShaderInfo.UsedShader, i)) {
 			LOG_ERROR("Failed to release shader resource.");
