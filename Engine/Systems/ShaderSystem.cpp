@@ -13,7 +13,7 @@ HashTable ShaderSystem::Lookup;
 void* ShaderSystem::LookupMemory = nullptr;
 
 uint32_t ShaderSystem::CurrentShaderID;
-Shader* ShaderSystem::Shaders;
+Shader* ShaderSystem::Shaders = nullptr;
 bool ShaderSystem::Initilized = false;
 
 bool ShaderSystem::Initialize(IRenderer* renderer, SShaderSystemConfig config) {
@@ -407,7 +407,7 @@ bool ShaderSystem::AddSampler(Shader* shader, ShaderUniformConfig& config) {
 		// NOTE: This allocation is only done for global texture maps.
 		TextureMap* Map = (TextureMap*)Memory::Allocate(sizeof(TextureMap), MemoryType::eMemory_Type_Renderer);
 		*Map = DefaultMap;
-		Map->texture = TextureSystem::GetDefaultTexture();
+		Map->texture = TextureSystem::GetDefaultDiffuseTexture();
 		shader->GlobalTextureMaps.push_back(Map);
 	}
 	else {

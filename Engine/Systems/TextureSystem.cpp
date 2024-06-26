@@ -10,7 +10,6 @@
 #include "Renderer/RendererFrontend.hpp"
 
 STextureSystemConfig TextureSystem::TextureSystemConfig;
-Texture TextureSystem::DefaultTexture;
 Texture TextureSystem::DefaultDiffuseTexture;
 Texture TextureSystem::DefaultSpecularTexture;
 Texture TextureSystem::DefaultNormalTexture;
@@ -88,9 +87,19 @@ void TextureSystem::Shutdown() {
 
 Texture* TextureSystem::Acquire(const char* name, bool auto_release) {
 	// Return default texture, but warn about it since this should be returned via GetDefaultTexture()
-	if (strcmp(name, DEFAULT_TEXTURE_NAME) == 0) {
-		LOG_WARN("Texture acquire return default texture. Use GetDefaultTexture() for texture 'default'");
-		return &DefaultTexture;
+	if (StringEquali(name, DEFAULT_DIFFUSE_TEXTURE_NAME)) {
+		LOG_WARN("Texture acquire return default texture. Use GetDefaultTexture() for texture 'DEFAULT_DIFFUSE_TEXTURE_NAME'");
+		return &DefaultDiffuseTexture;
+	}
+
+	if (StringEquali(name, DEFAULT_NORMAL_TEXTURE_NAME)) {
+		LOG_WARN("Texture acquire return default texture. Use GetDefaultTexture() for texture 'DEFAULT_NORMAL_TEXTURE_NAME'");
+		return &DefaultNormalTexture;
+	}
+
+	if (StringEquali(name, DEFAULT_SPECULAR_TEXTURE_NAME)) {
+		LOG_WARN("Texture acquire return default texture. Use GetDefaultTexture() for texture 'DEFAULT_SPECULAR_TEXTURE_NAME'");
+		return &DefaultSpecularTexture;
 	}
 
 	uint32_t ID = INVALID_ID;
@@ -105,9 +114,9 @@ Texture* TextureSystem::Acquire(const char* name, bool auto_release) {
 
 Texture* TextureSystem::AcquireCube(const char* name, bool auto_release) {
 	// Return default texture, but warn about it since this should be returned via GetDefaultTexture()
-	if (strcmp(name, DEFAULT_TEXTURE_NAME) == 0) {
-		LOG_WARN("Texture acquire cube return default texture. Use GetDefaultTexture() for texture 'default'");
-		return &DefaultTexture;
+	if (strcmp(name, DEFAULT_DIFFUSE_TEXTURE_NAME) == 0) {
+		LOG_WARN("Texture acquire cube return default texture. Use GetDefaultDiffuseTexture() for texture 'default'");
+		return &DefaultDiffuseTexture;
 	}
 
 	uint32_t ID = INVALID_ID;
@@ -147,8 +156,7 @@ Texture* TextureSystem::AcquireWriteable(const char* name, uint32_t width, uint3
 
 void TextureSystem::Release(const char* name) {
 	// Ignore release requests for the default texture.
-	if (strcmp(name, DEFAULT_TEXTURE_NAME) == 0 ||
-		strcmp(name, DEFAULT_DIFFUSE_TEXTURE_NAME) == 0 ||
+	if (strcmp(name, DEFAULT_DIFFUSE_TEXTURE_NAME) == 0 ||
 		strcmp(name, DEFAULT_SPECULAR_TEXTURE_NAME) == 0 ||
 		strcmp(name, DEFAULT_NORMAL_TEXTURE_NAME) == 0 ) {
 		return;
@@ -253,14 +261,6 @@ bool TextureSystem::WriteData(Texture* t, uint32_t offset, uint32_t size, void* 
 	return true;
 }
 
-Texture* TextureSystem::GetDefaultTexture() {
-	if (Initilized) {
-		return &DefaultTexture;
-	}
-	
-	return nullptr;
-}
-
 Texture* TextureSystem::GetDefaultDiffuseTexture() {
 	if (Initilized) {
 		return &DefaultDiffuseTexture;
@@ -317,31 +317,14 @@ bool TextureSystem::CreateDefaultTexture() {
 		}
 	}
 
-	strncpy(DefaultTexture.Name, DEFAULT_TEXTURE_NAME, TEXTURE_NAME_MAX_LENGTH);
-	DefaultTexture.Width = TexDimension;
-	DefaultTexture.Height = TexDimension;
-	DefaultTexture.ChannelCount = 4;
-	DefaultTexture.Generation = INVALID_ID;
-	DefaultTexture.Flags = 0;
-	DefaultTexture.Type = TextureType::eTexture_Type_2D;
-	Renderer->CreateTexture(Pixels, &DefaultTexture);
-	LOG_INFO("Default texture created.");
-	// Manually set the texture generation to invalid since this is a default texture.
-	DefaultTexture.Generation = INVALID_ID;
-
-	// Diffuse texture.
-	LOG_INFO("Creating default diffuse texture...");
-	unsigned char DiffusePixels[16 * 16 * 4];
-	// Default spec map is black (no specular).
-	Memory::Set(DiffusePixels, 255, sizeof(unsigned char) * 16 * 16 * 4);
 	strncpy(DefaultDiffuseTexture.Name, DEFAULT_DIFFUSE_TEXTURE_NAME, TEXTURE_NAME_MAX_LENGTH);
-	DefaultDiffuseTexture.Width = 16;
-	DefaultDiffuseTexture.Height = 16;
+	DefaultDiffuseTexture.Width = TexDimension;
+	DefaultDiffuseTexture.Height = TexDimension;
 	DefaultDiffuseTexture.ChannelCount = 4;
 	DefaultDiffuseTexture.Generation = INVALID_ID;
 	DefaultDiffuseTexture.Flags = 0;
 	DefaultDiffuseTexture.Type = TextureType::eTexture_Type_2D;
-	Renderer->CreateTexture(DiffusePixels, &DefaultDiffuseTexture);
+	Renderer->CreateTexture(Pixels, &DefaultDiffuseTexture);
 	LOG_INFO("Default diffuse texture created.");
 	// Manually set the texture generation to invalid since this is a default texture.
 	DefaultDiffuseTexture.Generation = INVALID_ID;
@@ -398,7 +381,6 @@ bool TextureSystem::CreateDefaultTexture() {
 }
 
 void TextureSystem::DestroyDefaultTexture() {
-	DestroyTexture(&DefaultTexture);
 	DestroyTexture(&DefaultDiffuseTexture);
 	DestroyTexture(&DefaultSpecularTexture);
 	DestroyTexture(&DefaultNormalTexture);
@@ -608,7 +590,7 @@ bool TextureSystem::ProcessTextureReference(const char* name, TextureType type ,
 				// Reset the reference.
 				Ref.handle = INVALID_ID;
 				Ref.auto_release = false;
-				LOG_INFO("Released texture '%s', Texture unloaded because count=0 and auto_release=true.", NameCopy);
+				LOG_DEBUG("Released texture '%s', Texture unloaded because count=0 and auto_release=true.", NameCopy);
 			}
 		}
 		else {

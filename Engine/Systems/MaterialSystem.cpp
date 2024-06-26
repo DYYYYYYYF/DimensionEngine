@@ -1,6 +1,7 @@
 #include "MaterialSystem.h"
 
 #include "Core/EngineLogger.hpp"
+#include "Containers/TString.hpp"
 #include "Math/MathTypes.hpp"
 #include "Renderer/RendererFrontend.hpp"
 
@@ -94,6 +95,10 @@ void MaterialSystem::Shutdown() {
 }
 
 Material* MaterialSystem::Acquire(const char* name) {
+	if (StringEquali(name, DEFAULT_MATERIAL_NAME)) {
+		return &DefaultMaterial;
+	}
+
 	// Load the given material configuration from disk.
 	Resource MatResource;
 	if (!ResourceSystem::Load(name, eResource_type_Material, nullptr, &MatResource)) {
@@ -120,7 +125,7 @@ Material* MaterialSystem::Acquire(const char* name) {
 
 Material* MaterialSystem::AcquireFromConfig(SMaterialConfig config) {
 	// Return default material.
-	if (strcmp(config.name, DEFAULT_MATERIAL_NAME) == 0) {
+	if (StringEquali(config.name, DEFAULT_MATERIAL_NAME)) {
 		return &DefaultMaterial;
 	}
 
@@ -402,12 +407,27 @@ bool MaterialSystem::CreateDefaultMaterial() {
 	auto res = strncpy(DefaultMaterial.Name, DEFAULT_MATERIAL_NAME, MATERIAL_NAME_MAX_LENGTH);
 	DefaultMaterial.DiffuseColor = Vec4{1.0f, 1.0f, 1.0f, 1.0f};
 	DefaultMaterial.DiffuseMap.usage = TextureUsage::eTexture_Usage_Map_Diffuse;
-	DefaultMaterial.DiffuseMap.texture = TextureSystem::GetDefaultTexture();
+	DefaultMaterial.DiffuseMap.filter_magnify = TextureFilter::eTexture_Filter_Mode_Linear;
+	DefaultMaterial.DiffuseMap.filter_minify = TextureFilter::eTexture_Filter_Mode_Linear;
+	DefaultMaterial.DiffuseMap.repeat_u = eTexture_Repeat_Repeat;
+	DefaultMaterial.DiffuseMap.repeat_v = eTexture_Repeat_Repeat;
+	DefaultMaterial.DiffuseMap.repeat_w = eTexture_Repeat_Repeat;
+	DefaultMaterial.DiffuseMap.texture = TextureSystem::GetDefaultDiffuseTexture();
 
 	DefaultMaterial.SpecularMap.usage = TextureUsage::eTexture_Usage_Map_Specular;
+	DefaultMaterial.SpecularMap.filter_magnify = TextureFilter::eTexture_Filter_Mode_Linear;
+	DefaultMaterial.SpecularMap.filter_minify = TextureFilter::eTexture_Filter_Mode_Linear;
+	DefaultMaterial.SpecularMap.repeat_u = eTexture_Repeat_Repeat;
+	DefaultMaterial.SpecularMap.repeat_v = eTexture_Repeat_Repeat;
+	DefaultMaterial.SpecularMap.repeat_w = eTexture_Repeat_Repeat;
 	DefaultMaterial.SpecularMap.texture = TextureSystem::GetDefaultSpecularTexture();
 
 	DefaultMaterial.NormalMap.usage = TextureUsage::eTexture_Usage_Map_Normal;
+	DefaultMaterial.NormalMap.filter_magnify = TextureFilter::eTexture_Filter_Mode_Linear;
+	DefaultMaterial.NormalMap.filter_minify = TextureFilter::eTexture_Filter_Mode_Linear;
+	DefaultMaterial.NormalMap.repeat_u = eTexture_Repeat_Repeat;
+	DefaultMaterial.NormalMap.repeat_v = eTexture_Repeat_Repeat;
+	DefaultMaterial.NormalMap.repeat_w = eTexture_Repeat_Repeat;
 	DefaultMaterial.NormalMap.texture = TextureSystem::GetDefaultNormalTexture();
 
 	std::vector<TextureMap*> Maps = { &DefaultMaterial.DiffuseMap, &DefaultMaterial.SpecularMap, &DefaultMaterial.NormalMap };

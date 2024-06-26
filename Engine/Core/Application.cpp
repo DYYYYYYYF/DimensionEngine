@@ -735,12 +735,12 @@ FPS: %d\tDelta time: %.2f",
 				(float)DeltaTime * 1000
 			);
 			AppState.TestText.SetText(FPS);
+			std::vector<UIText*> Texts = { &AppState.TestText, &AppState.TestSysText };
 
 			UIPacketData UIPacket;
 			UIPacket.meshData.mesh_count = (uint32_t)UIMeshes.size();
 			UIPacket.meshData.meshes = UIMeshes;
 			UIPacket.textCount = 2;
-			std::vector<UIText*> Texts = { &AppState.TestText, &AppState.TestSysText };
 			UIPacket.Textes = Texts;
 
 			if (!RenderViewSystem::BuildPacket(RenderViewSystem::Get("UI"), &UIPacket, &Packet.views[2])) {
@@ -756,7 +756,7 @@ FPS: %d\tDelta time: %.2f",
 			PickPacket.TextCount = UIPacket.textCount;
 
 			if (!RenderViewSystem::BuildPacket(RenderViewSystem::Get("Pick"), &PickPacket, &Packet.views[3])) {
-				LOG_ERROR("Failed to build packet for view 'ui'.");
+				LOG_ERROR("Failed to build packet for view 'Pick'.");
 				return false;
 			}
 

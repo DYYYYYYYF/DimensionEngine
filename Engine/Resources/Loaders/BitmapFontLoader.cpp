@@ -313,7 +313,7 @@ bool BitmapFontLoader::ReadDbfFile(FileHandle* file, BitmapFontResourceData* dat
 	ReadSize = sizeof(char) * FaceLength;
 	CLOSE_IF_FAILED(FileSystemRead(file, ReadSize, data->data.face, &BytesRead), file);
 	// Ensure zero-termination
-	// data->data.face[FaceLength] = '\0';
+	data->data.face[FaceLength] = '\0';
 
 	// Font size.
 	CLOSE_IF_FAILED(FileSystemRead(file, sizeof(uint32_t), &data->data.size, &BytesRead), file);
@@ -342,14 +342,14 @@ bool BitmapFontLoader::ReadDbfFile(FileHandle* file, BitmapFontResourceData* dat
 		CLOSE_IF_FAILED(FileSystemRead(file, sizeof(char), &data->Pages[i].id, &BytesRead), file);
 
 		// File name length
-		uint32_t FilenameLength = (uint32_t)strlen(data->Pages[i].file) + 1;
+		uint32_t FilenameLength = (uint32_t)strlen(data->Pages[i].file);
 		CLOSE_IF_FAILED(FileSystemRead(file, sizeof(uint32_t), &FilenameLength, &BytesRead), file);
 
 		// The file name
 		ReadSize = sizeof(char) * FilenameLength;
 		CLOSE_IF_FAILED(FileSystemRead(file, ReadSize, data->Pages[i].file, &BytesRead), file);
 		// Ensure zero-termination.
-		// data->Pages[i].file[FilenameLength] = '\0';
+		data->Pages[i].file[FilenameLength] = '\0';
 	}
 
 	// Glyph count
@@ -376,8 +376,6 @@ bool BitmapFontLoader::ReadDbfFile(FileHandle* file, BitmapFontResourceData* dat
 		CLOSE_IF_FAILED(FileSystemRead(file, ReadSize, data->data.kernings, &BytesRead), file);
 	}
 
-	// Done.
-	FileSystemClose(file);
 	return true;
 }
 
@@ -402,7 +400,7 @@ bool BitmapFontLoader::WriteDbfFile(const char* path, BitmapFontResourceData* da
 	CLOSE_IF_FAILED(FileSystemWrite(&file, WriteSize, &Header, &BytesWritten), &file);
 
 	// Length of face string.
-	uint32_t FaceLength = (uint32_t)strlen(data->data.face) + 1;
+	uint32_t FaceLength = (uint32_t)strlen(data->data.face);
 	WriteSize = sizeof(uint32_t);
 	CLOSE_IF_FAILED(FileSystemWrite(&file, WriteSize, &FaceLength, &BytesWritten), &file);
 
@@ -441,7 +439,7 @@ bool BitmapFontLoader::WriteDbfFile(const char* path, BitmapFontResourceData* da
 		CLOSE_IF_FAILED(FileSystemWrite(&file, WriteSize, &data->Pages[i].id, &BytesWritten), &file);
 
 		// File name length
-		uint32_t FilenameLength = (uint32_t)strlen(data->Pages[i].file) + 1;
+		uint32_t FilenameLength = (uint32_t)strlen(data->Pages[i].file);
 		WriteSize = sizeof(uint32_t);
 		CLOSE_IF_FAILED(FileSystemWrite(&file, WriteSize, &FilenameLength, &BytesWritten), &file);
 

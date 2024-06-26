@@ -66,7 +66,7 @@ bool RenderViewWorld::OnCreate(const RenderViewConfig& config) {
 	ShaderConfig* Config = (ShaderConfig*)ConfigResource.Data;
 	// NOTE: Assuming the first pass since that's all this view has.
 	if (!ShaderSystem::Create(&Passes[0], Config)) {
-		LOG_ERROR("Failed to load builtin ksybox shader.");
+		LOG_ERROR("Failed to load builtin world shader.");
 		return false;
 	}
 	ResourceSystem::Unload(&ConfigResource);
@@ -220,6 +220,10 @@ bool RenderViewWorld::OnRender(struct RenderViewPacket* packet, IRendererBackend
 				Mat = MaterialSystem::GetDefaultMaterial();
 			}
 
+			// Update the material if it hasn't already been this frame. This keeps the
+			// same material from being updated multiple times. It still needs to be bound
+			// either way, so this check result gets passed to the backend which either
+			// updates the internal shader bindings and binds them, or only binds them.
 			bool IsNeedUpdate = Mat->RenderFrameNumer != frame_number;
 			if (!MaterialSystem::ApplyInstance(Mat, IsNeedUpdate)) {
 				LOG_WARN("Failed to apply material '%s'. Skipping draw.", Mat->Name);

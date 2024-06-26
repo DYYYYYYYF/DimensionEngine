@@ -595,7 +595,6 @@ bool VulkanBackend::RecreateSwapchain() {
 
 void VulkanBackend::CreateTexture(const unsigned char* pixels, Texture* texture) {
 	// Internal data creation.
-	// TODO: Use an allocator for this.
 	texture->InternalData = (VulkanImage*)Memory::Allocate(sizeof(VulkanImage), MemoryType::eMemory_Type_Texture);
 	VulkanImage* Image = (VulkanImage*)texture->InternalData;
 	vk::DeviceSize ImageSize = texture->Width * texture->Height * texture->ChannelCount * (texture->Type == TextureType::eTexture_Type_Cube ? 6 : 1);
@@ -1544,7 +1543,7 @@ bool VulkanBackend::ApplyInstanceShader(Shader* shader, bool need_update) {
 						break;
 					default:
 						LOG_WARN("Undefined texture use %d.", map->usage);
-						t = TextureSystem::GetDefaultTexture();
+						t = TextureSystem::GetDefaultDiffuseTexture();
 						break;
 					}
 				}
@@ -1680,7 +1679,7 @@ uint32_t VulkanBackend::AcquireInstanceResource(Shader* shader, std::vector<Text
 	if (shader->InstanceTextureCount > 0) {
 		// Wipe out the memory for the entire array, even if it isn't all used.
 		InstanceState->instance_texture_maps.resize(shader->InstanceTextureCount);
-		Texture* DefaultTexture = TextureSystem::GetDefaultTexture();
+		Texture* DefaultTexture = TextureSystem::GetDefaultDiffuseTexture();
 		// Set all the texture pointers to default until assigned.
 		for (uint32_t i = 0; i < InstanceTextureCount; ++i) {
 			InstanceState->instance_texture_maps[i] = maps[i];

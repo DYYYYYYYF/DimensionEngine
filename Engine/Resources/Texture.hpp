@@ -50,11 +50,11 @@ struct TextureMap {
 
 class Texture {
 public:
-	Texture() {}
+	Texture() : InternalData(nullptr), Id(INVALID_ID){}
 	virtual ~Texture() {}
 
 public:
-	uint32_t Id;
+	uint32_t Id = INVALID_ID;
 	TextureType Type;
 	uint32_t Width;
 	uint32_t Height;
