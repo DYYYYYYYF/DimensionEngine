@@ -280,6 +280,9 @@ bool RenderViewPick::OnBuildPacket(void* data, struct RenderViewPacket* out_pack
 
 void RenderViewPick::OnDestroyPacket(struct RenderViewPacket* packet) {
 	// No much to do here, just zero mem.
+	for (uint32_t i = 0; i < packet->geometry_count; ++i) {
+		packet->geometries[i].geometry = nullptr;
+	}
 	packet->geometries.clear();
 	std::vector<GeometryRenderData>().swap(packet->geometries);
 

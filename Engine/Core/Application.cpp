@@ -651,9 +651,7 @@ bool ApplicationRun() {
 
 			Quaternion Rotation = QuaternionFromAxisAngle(Vec3(0.0f, 1.0f, 0.0f), 0.5f * (float)DeltaTime, false);
 			AppState.Meshes[0].Transform.Rotate(Rotation);
-			
 			AppState.Meshes[1].Transform.Rotate(Rotation);
-			
 			AppState.Meshes[2].Transform.Rotate(Rotation);
 
 			// TODO: Refactor packet creation.
@@ -767,8 +765,8 @@ FPS: %d\tDelta time: %.2f",
 				RenderView->OnDestroyPacket(&Packet.views[i]);
 			}
 
-			Packet.views.clear();
-			std::vector<RenderViewPacket>().swap(Packet.views);
+			Views.clear();
+			std::vector<RenderViewPacket>().swap(Views);
 			Meshes.clear();
 			std::vector<Mesh*>().swap(Meshes);
 			UIMeshes.clear();

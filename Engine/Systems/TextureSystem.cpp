@@ -493,8 +493,8 @@ bool TextureSystem::LoadJobStart(void* params, void* result_data) {
 	LoadParams->temp_texture.Width = ResourceData->width;
 	LoadParams->temp_texture.Height = ResourceData->height;
 	LoadParams->temp_texture.ChannelCount = ResourceData->channel_count;
-
 	LoadParams->temp_texture.Type = LoadParams->out_texture->Type;
+	strncpy(LoadParams->temp_texture.Name, LoadParams->resource_name, strlen(LoadParams->resource_name) + 1);
 	LoadParams->current_generation = LoadParams->out_texture->Generation;
 	LoadParams->out_texture->Generation = INVALID_ID;
 
