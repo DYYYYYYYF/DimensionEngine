@@ -291,7 +291,7 @@ size_t Freelist::GetFreeSpace() {
 	FreelistNode* Node = Head;
 	while (Node != nullptr) {
 		RunningTotal += Node->size;
-		Node = Nodes->next;
+		Node = Node->next;
 	}
 
 	return RunningTotal;

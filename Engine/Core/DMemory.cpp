@@ -186,7 +186,7 @@ char* Memory::GetMemoryUsageStr() {
 
 		double PercentUsed = (double)UsedSpace / (double)TotalSpace;
 
-		int Length = snprintf(buffer + offset, 8000, "Total memory usage: %.2f%s of %.2f%s (%.2f%%)\n", UsedAmount, UsedUnit, TotalAmount, TotalUnit, PercentUsed);
+		int Length = snprintf(buffer + offset, 8000, "Total memory usage: %.2f%s of %.2f%s (%d%%%%)\n", UsedAmount, UsedUnit, TotalAmount, TotalUnit, (int)(PercentUsed * 100));
 		offset += Length;
 	}
 

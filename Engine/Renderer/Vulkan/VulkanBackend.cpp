@@ -53,7 +53,7 @@ VulkanBackend::VulkanBackend() {
 	Context.Allocator = nullptr;
 
 	// TODO: Implement muti-thread
-	Context.EnableMultithreading = false;
+	Context.EnableMultithreading = Platform::GetProcessorCount() > 1;
 	Context.FrameBufferWidth = 800;
 	Context.FrameBufferHeight = 600;
 }

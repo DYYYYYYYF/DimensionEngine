@@ -28,12 +28,12 @@ private:
 
 public:
 	uint32_t UniqueID;
-	IRenderer* Renderer = nullptr;
+	IRenderer* Renderer;
 	UITextType Type;
-	struct FontData* Data = nullptr;
+	struct FontData* Data;
 	VulkanBuffer VertexBuffer;
 	VulkanBuffer IndexBuffer;
-	char* Text = nullptr;
+	char* Text;
 	Transform Trans;
 	uint32_t InstanceID;
 	size_t RenderFrameNumber;

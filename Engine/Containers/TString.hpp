@@ -396,7 +396,7 @@ inline uint32_t StringUTF8Length(const char* Str) {
 			i += 2;
 		}
 		else if ((C & 0xF8) == 0xF0) {
-			// 4-byte character, incre,ent thrice more.
+			// 4-byte character, increment thrice more.
 			i += 3;
 		}
 		else {

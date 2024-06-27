@@ -140,13 +140,13 @@ void RenderViewUI::OnDestroyPacket(struct RenderViewPacket* packet) {
 }
 
 bool RenderViewUI::RegenerateAttachmentTarget(uint32_t passIndex, RenderTargetAttachment* attachment) {
-	return false;
+	return true;
 }
 
 bool RenderViewUI::OnRender(struct RenderViewPacket* packet, IRendererBackend* back_renderer, size_t frame_number, size_t render_target_index) {
 	uint32_t SID = UsedShader->ID;
 	for (uint32_t p = 0; p < RenderpassCount; ++p) {
-		IRenderpass* Pass = (IRenderpass*) & Passes[p];
+		IRenderpass* Pass = (IRenderpass*)&Passes[p];
 		Pass->Begin(&Pass->Targets[render_target_index]);
 
 		if (!ShaderSystem::UseByID(SID)) {

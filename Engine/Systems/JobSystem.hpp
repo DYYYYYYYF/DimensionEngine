@@ -115,7 +115,7 @@ struct JobThread {
 struct JobResultEntry {
 	unsigned short id;
 	PFN_OnJobComplete callback = nullptr;
-	size_t param_size;
+	uint32_t param_size;
 	void* params = nullptr;
 };
 

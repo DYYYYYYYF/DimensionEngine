@@ -54,7 +54,7 @@ public:
 	virtual ~Texture() {}
 
 public:
-	uint32_t Id = INVALID_ID;
+	uint32_t Id;
 	TextureType Type;
 	uint32_t Width;
 	uint32_t Height;
@@ -65,7 +65,7 @@ public:
 
 	uint32_t Generation;
 	char Name[TEXTURE_NAME_MAX_LENGTH];
-	void* InternalData = nullptr;
+	void* InternalData;
 };
 
 class Skybox {

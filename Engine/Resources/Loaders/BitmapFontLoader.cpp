@@ -81,7 +81,7 @@ bool BitmapFontLoader::Load(const char* name, void* params, Resource* resource) 
 		return false;
 	}
 
-	resource->Data = Memory::Allocate(sizeof(BitmapFontResourceData), MemoryType::eMemory_Type_Resource);
+	resource->Data = Memory::Allocate(sizeof(BitmapFontResourceData), MemoryType::eMemory_Type_Bitmap_Font);
 	Memory::Copy(resource->Data, &ResourceData, sizeof(BitmapFontResourceData));
 	resource->DataSize = sizeof(BitmapFontResourceData);
 
@@ -120,7 +120,7 @@ void BitmapFontLoader::Unload(Resource* resource) {
 			Data->Pages = nullptr;
 		}
 
-		Memory::Free(resource->Data, resource->DataSize * resource->DataCount, MemoryType::eMemory_Type_Texture);
+		Memory::Free(resource->Data, resource->DataSize * resource->DataCount, MemoryType::eMemory_Type_Bitmap_Font);
 		resource->Data = nullptr;
 		resource->DataSize = 0;
 		resource->DataCount = 0;

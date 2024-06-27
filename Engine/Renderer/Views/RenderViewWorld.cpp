@@ -189,7 +189,7 @@ void RenderViewWorld::OnDestroyPacket(struct RenderViewPacket* packet) {
 }
 
 bool RenderViewWorld::RegenerateAttachmentTarget(uint32_t passIndex, RenderTargetAttachment* attachment) {
-	return false;
+	return true;
 }
 
 bool RenderViewWorld::OnRender(struct RenderViewPacket* packet, IRendererBackend* back_renderer, size_t frame_number, size_t render_target_index) {

@@ -77,7 +77,7 @@ bool SystemFontLoader::Load(const char* name, void* params, Resource* resource) 
 		return false;
 	}
 
-	resource->Data = Memory::Allocate(sizeof(SystemFontResourceData), MemoryType::eMemory_Type_Resource);
+	resource->Data = Memory::Allocate(sizeof(SystemFontResourceData), MemoryType::eMemory_Type_System_Font);
 	Memory::Copy(resource->Data, &ResourceData, sizeof(SystemFontResourceData));
 	resource->DataSize = sizeof(SystemFontResourceData);
 
@@ -111,7 +111,7 @@ void SystemFontLoader::Unload(Resource* resource) {
 			Data->binarySize = 0;
 		}
 
-		Memory::Free(resource->Data, resource->DataSize * resource->DataCount, MemoryType::eMemory_Type_Texture);
+		Memory::Free(resource->Data, resource->DataSize * resource->DataCount, MemoryType::eMemory_Type_System_Font);
 		resource->Data = nullptr;
 		resource->DataSize = 0;
 		resource->DataCount = 0;

@@ -686,7 +686,6 @@ bool ApplicationRun() {
 			MeshPacketData WorldMeshData;
 			WorldMeshData.meshes = Meshes;
 			WorldMeshData.mesh_count = (uint32_t)Meshes.size();
-
 			if (!RenderViewSystem::BuildPacket(RenderViewSystem::Get("World"), &WorldMeshData, &Packet.views[1])) {
 				LOG_ERROR("Failed to build packet for view 'World'.");
 				return false;
@@ -740,7 +739,7 @@ FPS: %d\tDelta time: %.2f",
 			UIPacketData UIPacket;
 			UIPacket.meshData.mesh_count = (uint32_t)UIMeshes.size();
 			UIPacket.meshData.meshes = UIMeshes;
-			UIPacket.textCount = 2;
+			UIPacket.textCount = (uint32_t)Texts.size();
 			UIPacket.Textes = Texts;
 
 			if (!RenderViewSystem::BuildPacket(RenderViewSystem::Get("UI"), &UIPacket, &Packet.views[2])) {
