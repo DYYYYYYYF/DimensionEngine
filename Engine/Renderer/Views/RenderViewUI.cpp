@@ -47,14 +47,14 @@ bool RenderViewUI::OnCreate(const RenderViewConfig& config) {
 	const char* ShaderName = "Shader.Builtin.UI";
 	Resource ConfigResource;
 	if (!ResourceSystem::Load(ShaderName, ResourceType::eResource_Type_Shader, nullptr, &ConfigResource)) {
-		LOG_ERROR("Failed to load builtin skybox shader.");
+		LOG_ERROR("Failed to load builtin UI shader.");
 		return false;
 	}
 
 	ShaderConfig* Config = (ShaderConfig*)ConfigResource.Data;
 	// NOTE: Assuming the first pass since that's all this view has.
 	if (!ShaderSystem::Create(&Passes[0], Config)) {
-		LOG_ERROR("Failed to load builtin ksybox shader.");
+		LOG_ERROR("Failed to load builtin UI shader.");
 		return false;
 	}
 	ResourceSystem::Unload(&ConfigResource);

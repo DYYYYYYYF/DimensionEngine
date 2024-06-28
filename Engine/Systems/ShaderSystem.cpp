@@ -120,7 +120,7 @@ bool ShaderSystem::Create(IRenderpass* pass, ShaderConfig* config) {
 	OutShader->PushConstantsSize = 0;
 
 	// Process flags.
-	OutShader->Flags = 0;
+	OutShader->Flags = ShaderFlags::eShader_Flag_None;
 	if (config->depthTest) {
 		OutShader->Flags |= ShaderFlags::eShader_Flag_DepthTest;
 	}

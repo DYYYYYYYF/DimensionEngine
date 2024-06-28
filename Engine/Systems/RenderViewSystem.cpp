@@ -105,17 +105,19 @@ bool RenderViewSystem::Create(const RenderViewConfig& config) {
 
 	// TODO: Assign these function pointers to known functions based on the view type.
 	// TODO: Refactor pattern.
-	if (config.type == RenderViewKnownType::eRender_View_Known_Type_World) {
-		RegisteredViews[ID] = new RenderViewWorld(config);
-	}
-	else if (config.type == RenderViewKnownType::eRender_View_Known_Type_UI) {
-		RegisteredViews[ID] = new RenderViewUI(config);
-	}
-	else if (config.type == RenderViewKnownType::eRender_View_Known_Type_Skybox) {
-		RegisteredViews[ID] = new RenderViewSkybox(config);
-	}
-	else if (config.type == RenderViewKnownType::eRender_View_Known_Type_Pick) {
-		RegisteredViews[ID] = new RenderViewPick(config, Renderer);
+	if (RegisteredViews[ID] == nullptr) {
+		if (config.type == RenderViewKnownType::eRender_View_Known_Type_World) {
+			RegisteredViews[ID] = new RenderViewWorld(config);
+		}
+		else if (config.type == RenderViewKnownType::eRender_View_Known_Type_UI) {
+			RegisteredViews[ID] = new RenderViewUI(config);
+		}
+		else if (config.type == RenderViewKnownType::eRender_View_Known_Type_Skybox) {
+			RegisteredViews[ID] = new RenderViewSkybox(config);
+		}
+		else if (config.type == RenderViewKnownType::eRender_View_Known_Type_Pick) {
+			RegisteredViews[ID] = new RenderViewPick(config, Renderer);
+		}
 	}
 
 	IRenderView* View = RegisteredViews[ID];

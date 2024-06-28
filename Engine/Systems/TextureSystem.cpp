@@ -568,9 +568,8 @@ bool TextureSystem::ProcessTextureReference(const char* name, TextureType type ,
 				}
 			}
 		}
-		if (reference_diff != 0) {
-			Ref.reference_count += reference_diff;
-		}
+
+		Ref.reference_count += reference_diff;
 
 		// Take a copy of the name since it would be wiped out if destroyed,
 		// (as passed in name is generally a pointer to the actual texture's name).

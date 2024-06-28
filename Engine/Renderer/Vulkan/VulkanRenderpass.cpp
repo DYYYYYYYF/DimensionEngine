@@ -16,13 +16,13 @@ bool VulkanRenderPass::Create(VulkanContext* context, const RenderpassConfig* co
 	vk::SubpassDescription Subpass;
 	Subpass.setPipelineBindPoint(vk::PipelineBindPoint::eGraphics);
 
-	// Attachments TODO: make this configurable.
+	// Attachments TODO:
 	uint32_t AttachmentDescriptionCount = 0;
 	std::vector<vk::AttachmentDescription> AttachmentDescriptions;
 	std::vector<vk::AttachmentDescription> ColorAttachmentDescriptions;
 	std::vector<vk::AttachmentDescription> DepthAttachmentDescriptions;
 
-	// Can alwasy just look at the first target since they are all the same(one per frame).
+	// Can always just look at the first target since they are all the same(one per frame).
 	// render target* taget = &Targets[0]
 	vk::AttachmentDescription AttachmentDesc;
 	for (uint32_t i = 0; i < config->target.attachmentCount; ++i) {
@@ -103,7 +103,7 @@ bool VulkanRenderPass::Create(VulkanContext* context, const RenderpassConfig* co
 			AttachmentDesc.setSamples(vk::SampleCountFlagBits::e1);
 			// Determine which load operation to use.
 			if (AttachmentConfig->loadOperation == RenderTargetAttachmentLoadOperation::eRender_Target_Attachment_Load_Operation_DontCare) {
-				// If we dont care, they only other thing that needs checking is if the attachment is being cleared.
+				// If we don't care, they only other thing that needs checking is if the attachment is being cleared.
 				AttachmentDesc.setLoadOp(IsNeedClearDepth ? vk::AttachmentLoadOp::eClear : vk::AttachmentLoadOp::eDontCare);
 			}
 			else {
@@ -169,7 +169,7 @@ bool VulkanRenderPass::Create(VulkanContext* context, const RenderpassConfig* co
 		Subpass.setColorAttachments(ColorAttachmentReferences);
 	}
 	else {
-		Subpass.setColorAttachmentCount(ColorAttachmentCount);
+		Subpass.setColorAttachmentCount(0);
 		Subpass.setColorAttachments(nullptr);
 	}
 
@@ -242,6 +242,16 @@ bool VulkanRenderPass::Create(VulkanContext* context, const RenderpassConfig* co
 	if (!DepthAttachmentDescriptions.empty()) {
 		DepthAttachmentDescriptions.clear();
 		std::vector<vk::AttachmentDescription>().swap(DepthAttachmentDescriptions);
+	}
+
+	if (!ColorAttachmentReferences.empty()) {
+		ColorAttachmentReferences.clear();
+		std::vector<vk::AttachmentReference>().swap(ColorAttachmentReferences);
+	}
+
+	if (!DepthAttachmentReferences.empty()) {
+		DepthAttachmentReferences.clear();
+		std::vector<vk::AttachmentReference>().swap(DepthAttachmentReferences);
 	}
 
 	return true;

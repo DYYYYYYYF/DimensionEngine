@@ -19,7 +19,6 @@ public:
 	virtual bool RegenerateAttachmentTarget(uint32_t passIndex, RenderTargetAttachment* attachment) override;
 
 private:
-	bool ReserveY;
 	Shader* UsedShader;
 	float Fov;
 	float NearClip;

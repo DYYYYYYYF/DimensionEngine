@@ -98,12 +98,12 @@ bool IRenderer::DrawFrame(SRenderPacket* packet) {
 			float Width = (float)FramebufferWidth;
 			float Height = (float)FramebufferHeight;
 
-			RenderViewSystem::OnWindowResize(FramebufferWidth, FramebufferHeight);
-
 			Backend->Resize(
 				static_cast<unsigned short>(Width), 
 				static_cast<unsigned short>(Height)
 			);
+
+			RenderViewSystem::OnWindowResize(FramebufferWidth, FramebufferHeight);
 
 			FrameSinceResize = 0;
 			Resizing = false;

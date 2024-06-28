@@ -19,7 +19,7 @@ void JobSystem::StoreResult(PFN_OnJobComplete callback, void* params, size_t par
 	// Create the new entry.
 	JobResultEntry Entry;
 	Entry.id = INVALID_ID_U16;
-	Entry.param_size = param_size;
+	Entry.param_size = (uint32_t)param_size;
 	Entry.callback = callback;
 
 	if (Entry.param_size > 0) {

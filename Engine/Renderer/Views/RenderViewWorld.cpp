@@ -71,7 +71,7 @@ bool RenderViewWorld::OnCreate(const RenderViewConfig& config) {
 	}
 	ResourceSystem::Unload(&ConfigResource);
 
-	UsedShader = ShaderSystem::Get(CustomShaderName ? CustomShaderName : "Shader.Builtin.World");
+	UsedShader = ShaderSystem::Get(CustomShaderName ? CustomShaderName : ShaderName);
 	ReserveY = true;
 
 	// TODO: Set from configurable.

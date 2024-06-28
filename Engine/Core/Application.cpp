@@ -61,7 +61,6 @@ struct SApplicationState {
 static bool Initialized = false;
 static SApplicationState AppState;
 static IRenderer* Renderer = nullptr;
-static TextureSystem TextureManager;
 
 // Init logger
 static EngineLogger* GlobalLogger = new EngineLogger();
@@ -76,9 +75,9 @@ bool EventOnDebugEvent(unsigned short code, void* sender, void* listener_instanc
 				LOG_ERROR("Failed to load falcon mesh!");
 			}
 
-			if (!AppState.SponzaMesh->LoadFromResource("sponza")) {
+			/*if (!AppState.SponzaMesh->LoadFromResource("sponza")) {
 				LOG_ERROR("Failed to load sponza mesh!");
-			}
+			}*/
 
 			AppState.ModelsLoaded = true;
 		}
@@ -346,6 +345,7 @@ bool ApplicationCreate(SGame* game_instance){
 		return false;
 	}
 
+	// UI view
 	RenderViewConfig UIViewConfig;
 	UIViewConfig.type = RenderViewKnownType::eRender_View_Known_Type_UI;
 	UIViewConfig.width = 0;
@@ -357,11 +357,11 @@ bool ApplicationCreate(SGame* game_instance){
 	// Renderpass config
 	std::vector<RenderpassConfig> UIPasses(1);
 	UIPasses[0].name = "Renderpass.Builtin.UI";
-	WorldPasses[0].render_area = Vec4(0, 0, 1280, 720);
-	WorldPasses[0].clear_color = Vec4(0, 0, 0.2f, 1.0f);
-	WorldPasses[0].clear_flags = RenderpassClearFlags::eRenderpass_Clear_None;
-	WorldPasses[0].depth = 1.0f;
-	WorldPasses[0].stencil = 0;
+	UIPasses[0].render_area = Vec4(0, 0, 1280, 720);
+	UIPasses[0].clear_color = Vec4(0, 0, 0.2f, 1.0f);
+	UIPasses[0].clear_flags = RenderpassClearFlags::eRenderpass_Clear_None;
+	UIPasses[0].depth = 1.0f;
+	UIPasses[0].stencil = 0;
 
 	RenderTargetAttachmentConfig UITargetAttachment;
 	// Color attachment.
