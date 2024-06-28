@@ -15,6 +15,7 @@ CMakeSettings.json
 *.spv
 Documents
 
+Assets/Fonts/*.dbf
 Assets/Models/*.dsm
 Assets/Materials/*.dmt
 !Assets/Materials/Material.UI.dmt
