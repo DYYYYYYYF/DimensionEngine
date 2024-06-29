@@ -812,7 +812,9 @@ FPS: %d\tDelta time: %.2f",
 	Core::EventUnregister(Core::eEvent_Code_Application_Quit, 0, ApplicationOnEvent);
 	Core::EventUnregister(Core::eEvent_Code_Key_Pressed, 0, ApplicationOnKey);
 	Core::EventUnregister(Core::eEvent_Code_Key_Released, 0, ApplicationOnKey);
-
+	Core::EventUnregister(Core::eEvent_Code_Resize, 0, ApplicationOnResized);
+	Core::EventUnregister(Core::eEvent_Code_Debug_0, 0, EventOnDebugEvent);
+	Core::EventUnregister(Core::eEvent_Code_Object_Hover_ID_Changed, 0, ApplicationOnEvent);
 	// Temp
 	Renderer->ReleaseTextureMap(&AppState.SB.Cubemap);
 	AppState.TestText.Destroy();
