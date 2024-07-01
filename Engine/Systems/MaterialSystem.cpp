@@ -433,7 +433,11 @@ bool MaterialSystem::CreateDefaultMaterial() {
 	std::vector<TextureMap*> Maps = { &DefaultMaterial.DiffuseMap, &DefaultMaterial.SpecularMap, &DefaultMaterial.NormalMap };
 
 	Shader* s = ShaderSystem::Get("Shader.Builtin.World");
-	ASSERT(s);
+	if (s == nullptr) {
+		ASSERT(s);
+		LOG_ERROR("Can't get default shader. Application quit now!");
+		return false;
+	}
 
 	DefaultMaterial.InternalId = Renderer->AcquireInstanceResource(s, Maps);
 	if (DefaultMaterial.InternalId == INVALID_ID) {
