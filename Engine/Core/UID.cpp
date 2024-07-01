@@ -23,11 +23,12 @@ UID::UID() {
 			s[i] = '-';
 		}
 		else {
-			int offset = DRandom() % 16;
+			int offset = DRandom(0, INT_MAX) % 16;
 			s[i] = v[offset];
 		}
 	}
 
+	s[36] = '\0';
 	Value = s;
 #endif
 }
