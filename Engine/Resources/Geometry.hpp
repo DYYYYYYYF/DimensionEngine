@@ -8,10 +8,6 @@ class Material;
 
 class Geometry {
 public:
-	Geometry() : Material(nullptr) {}
-	virtual ~Geometry(){}
-
-public:
 	uint32_t ID;
 	uint32_t InternalID;
 	uint32_t Generation;

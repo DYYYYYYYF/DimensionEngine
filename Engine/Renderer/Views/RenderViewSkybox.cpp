@@ -68,9 +68,6 @@ bool RenderViewSkybox::OnCreate(const RenderViewConfig& config) {
 	ViewLocation = ShaderSystem::GetUniformIndex(UsedShader, "view");
 	CubeMapLocation = ShaderSystem::GetUniformIndex(UsedShader, "cube_texture");
 	
-	// TODO: Configurable.
-	ReserveY = true;
-
 	// TODO: Set from configurable.
 	NearClip = 0.1f;
 	FarClip = 1000.0f;

@@ -15,11 +15,11 @@ Mutex JobSystem::HighPriQueueMutex;
 JobResultEntry JobSystem::PendingResults[MAX_JOB_RESULTS];
 Mutex JobSystem::ResultMutex;
 
-void JobSystem::StoreResult(PFN_OnJobComplete callback, void* params, uint32_t param_size) {
+void JobSystem::StoreResult(PFN_OnJobComplete callback, void* params, size_t param_size) {
 	// Create the new entry.
 	JobResultEntry Entry;
 	Entry.id = INVALID_ID_U16;
-	Entry.param_size = param_size;
+	Entry.param_size = (uint32_t)param_size;
 	Entry.callback = callback;
 
 	if (Entry.param_size > 0) {
@@ -137,8 +137,7 @@ bool JobSystem::Initialize(unsigned char job_thread_count, unsigned int type_mas
 		PendingResults[i].id = INVALID_ID_U16;
 	}
 
-	LOG_DEBUG("Main thread id is: %#x.", Thread::GetThreadID());
-
+	LOG_INFO("Main thread id is: %#x.", Thread::GetThreadID());
 	LOG_DEBUG("Spawning %i job threads.", ThreadCount);
 
 	for (unsigned char i = 0; i < ThreadCount; ++i) {
@@ -347,7 +346,7 @@ void JobSystem::Submit(JobInfo info) {
 }
 
 JobInfo JobSystem::CreateJob(PFN_OnJobStart entry, PFN_OnJobComplete on_success, PFN_OnJobComplete on_failed,
-	void* param_data, unsigned int param_data_size, unsigned int result_data_size, JobType type, JobPriority priority) {
+	void* param_data, size_t param_data_size, size_t result_data_size, JobType type, JobPriority priority) {
 	JobInfo Job;
 	Job.entry_point = entry;
 	Job.on_success = on_success;

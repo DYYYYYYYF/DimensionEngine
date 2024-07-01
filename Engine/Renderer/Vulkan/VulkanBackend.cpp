@@ -19,6 +19,7 @@
 #include "Systems/TextureSystem.h"
 #include "Systems/ShaderSystem.h"
 
+#ifdef LEVEL_DEBUG
 /*
 * Vulkan debug callback
 */
@@ -46,6 +47,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL VulkanDebugCallback(
 
 	return VK_FALSE;
 }
+#endif
 
 
 VulkanBackend::VulkanBackend() {
@@ -53,7 +55,7 @@ VulkanBackend::VulkanBackend() {
 	Context.Allocator = nullptr;
 
 	// TODO: Implement muti-thread
-	Context.EnableMultithreading = false;
+	Context.EnableMultithreading = Platform::GetProcessorCount() > 1;
 	Context.FrameBufferWidth = 800;
 	Context.FrameBufferHeight = 600;
 }
@@ -495,6 +497,7 @@ void VulkanBackend::SetViewport(Vec4 rect) {
 }
 
 void VulkanBackend::ResetViewport() {
+	// Just set the current viewport rect.
 	SetViewport(Context.ViewportRect);
 }
 
@@ -510,6 +513,7 @@ void VulkanBackend::SetScissor(Vec4 rect) {
 }
 
 void VulkanBackend::ResetScissor() {
+	// Just set the current scissor rect.
 	SetScissor(Context.ScissorRect);
 }
 
@@ -595,7 +599,6 @@ bool VulkanBackend::RecreateSwapchain() {
 
 void VulkanBackend::CreateTexture(const unsigned char* pixels, Texture* texture) {
 	// Internal data creation.
-	// TODO: Use an allocator for this.
 	texture->InternalData = (VulkanImage*)Memory::Allocate(sizeof(VulkanImage), MemoryType::eMemory_Type_Texture);
 	VulkanImage* Image = (VulkanImage*)texture->InternalData;
 	vk::DeviceSize ImageSize = texture->Width * texture->Height * texture->ChannelCount * (texture->Type == TextureType::eTexture_Type_Cube ? 6 : 1);
@@ -627,6 +630,7 @@ void VulkanBackend::DestroyTexture(Texture* texture) {
 		Image->Destroy(&Context);
 		Memory::Zero(Image, sizeof(VulkanImage));
 		Memory::Free(texture->InternalData, sizeof(VulkanImage), MemoryType::eMemory_Type_Texture);
+		texture->InternalData = nullptr;
 	}
 
 	Memory::Zero(texture, sizeof(Texture));
@@ -774,7 +778,7 @@ void VulkanBackend::ReadTextureData(Texture* tex, uint32_t offset, uint32_t size
 void VulkanBackend::ReadTexturePixel(Texture* tex, uint32_t x, uint32_t y, unsigned char** outRGBA) {
 	VulkanImage* Image = (VulkanImage*)tex->InternalData;
 
-	vk::Format ImageFormat = ChannelCountToFormat(tex->ChannelCount, vk::Format::eR8G8Unorm);
+	vk::Format ImageFormat = ChannelCountToFormat(tex->ChannelCount, vk::Format::eR8G8B8A8Unorm);
 
 	// TODO: creating a buffer every time isn't great. Could optimize this by creating a buffer once
 	// and just reusing it.
@@ -1101,7 +1105,7 @@ bool VulkanBackend::CreateShader(Shader* shader, const ShaderConfig* config, IRe
 
 		// Global UBO binding is first, if present.
 		if (OutShader->GlobalUniformCount > 0) {
-			unsigned short BindingIndex = SetConfig->binding_count;
+			unsigned char BindingIndex = (unsigned char)SetConfig->binding_count;
 			SetConfig->bindings[BindingIndex].setBinding(BindingIndex);
 			SetConfig->bindings[BindingIndex].setDescriptorCount(1);
 			SetConfig->bindings[BindingIndex].setDescriptorType(vk::DescriptorType::eUniformBuffer);
@@ -1111,12 +1115,12 @@ bool VulkanBackend::CreateShader(Shader* shader, const ShaderConfig* config, IRe
 
 		// Add a binding for samplers if used.
 		if (OutShader->GlobalUniformSamplerCount > 0) {
-			unsigned short BindingIndex = SetConfig->binding_count;
+			unsigned char BindingIndex = (unsigned char)SetConfig->binding_count;
 			SetConfig->bindings[BindingIndex].setBinding(BindingIndex);
 			SetConfig->bindings[BindingIndex].setDescriptorCount(OutShader->GlobalUniformSamplerCount);
 			SetConfig->bindings[BindingIndex].setDescriptorType(vk::DescriptorType::eCombinedImageSampler);
 			SetConfig->bindings[BindingIndex].setStageFlags(vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment);
-			SetConfig->sampler_binding_index = (unsigned char)BindingIndex;
+			SetConfig->sampler_binding_index = BindingIndex;
 			SetConfig->binding_count++;
 		}
 
@@ -1544,7 +1548,7 @@ bool VulkanBackend::ApplyInstanceShader(Shader* shader, bool need_update) {
 						break;
 					default:
 						LOG_WARN("Undefined texture use %d.", map->usage);
-						t = TextureSystem::GetDefaultTexture();
+						t = TextureSystem::GetDefaultDiffuseTexture();
 						break;
 					}
 				}
@@ -1679,12 +1683,11 @@ uint32_t VulkanBackend::AcquireInstanceResource(Shader* shader, std::vector<Text
 	// Only setup if the shader actually requires it.
 	if (shader->InstanceTextureCount > 0) {
 		// Wipe out the memory for the entire array, even if it isn't all used.
-		InstanceState->instance_texture_maps.resize(shader->InstanceTextureCount);
-		Texture* DefaultTexture = TextureSystem::GetDefaultTexture();
-		// Set all the texture pointers to default until assigned.
+		Texture* DefaultTexture = TextureSystem::GetDefaultDiffuseTexture();
+		InstanceState->instance_texture_maps = maps;
+		// Set unassigned texture pointers to default until assigned.
 		for (uint32_t i = 0; i < InstanceTextureCount; ++i) {
-			InstanceState->instance_texture_maps[i] = maps[i];
-			if (!InstanceState->instance_texture_maps[i]->texture) {
+			if (maps[i]->texture == nullptr) {
 				InstanceState->instance_texture_maps[i]->texture = DefaultTexture;
 			}
 		}

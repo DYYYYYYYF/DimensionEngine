@@ -9,7 +9,6 @@ struct SPlatformState{
 class Platform {
 public:
 	Platform() {};
-	virtual ~Platform() {};
 
 public:
 	static bool PlatformStartup(SPlatformState* platform_state, const char* application_name,

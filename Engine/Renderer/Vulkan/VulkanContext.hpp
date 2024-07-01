@@ -16,7 +16,6 @@ class Texture;
 class VulkanContext {
 public:
 	VulkanContext(): Allocator(nullptr), Shaders(nullptr), GraphicsCommandBuffers(nullptr){}
-	virtual ~VulkanContext() {}
 
 public:
 	virtual uint32_t FindMemoryIndex(uint32_t type_filter, vk::MemoryPropertyFlags property_flags) {

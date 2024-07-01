@@ -20,7 +20,7 @@ public:
 
 private:
 	bool ReserveY;
-	Shader* UsedShader;
+	Shader* UsedShader = nullptr;
 	float NearClip;
 	float FarClip;
 	float Fov;

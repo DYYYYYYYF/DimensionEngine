@@ -35,7 +35,7 @@ bool MaterialLoader::Load(const char* name, void* params, Resource* resource) {
 	SMaterialConfig* ResourceData = (SMaterialConfig*)Memory::Allocate(sizeof(SMaterialConfig), MemoryType::eMemory_Type_Material_Instance);
 	// Set defaults.
 	ResourceData->auto_release = true;
-	ResourceData->shader_name = "Builtin.Material";
+	ResourceData->shader_name = "Builtin.World";
 	ResourceData->diffuse_color = Vec4(1.0f);	// White
 	ResourceData->diffuse_map_name[0] = '\0';
 	ResourceData->shininess = 32.0f;
@@ -146,7 +146,7 @@ void MaterialLoader::Unload(Resource* resource) {
 	}
 
 	if (resource->Data) {
-		Memory::Free(resource->Data, resource->DataSize * resource->DataCount, MemoryType::eMemory_Type_Texture);
+		Memory::Free(resource->Data, resource->DataSize * resource->DataCount, MemoryType::eMemory_Type_Material_Instance);
 		resource->Data = nullptr;
 		resource->DataSize = 0;
 		resource->DataCount = 0;

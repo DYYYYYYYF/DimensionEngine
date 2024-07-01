@@ -50,10 +50,6 @@ struct TextureMap {
 
 class Texture {
 public:
-	Texture() {}
-	virtual ~Texture() {}
-
-public:
 	uint32_t Id;
 	TextureType Type;
 	uint32_t Width;

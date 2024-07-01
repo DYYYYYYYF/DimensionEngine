@@ -96,10 +96,10 @@ public:
 	PFN_OnJobComplete on_failed = nullptr;
 
 	void* param_data = nullptr;
-	unsigned int param_data_size;
+	size_t param_data_size;
 
 	void* result_data = nullptr;
-	unsigned int result_data_size;
+	size_t result_data_size;
 };
 
 struct JobThread {
@@ -139,11 +139,11 @@ public:
 	 * @brief Creates a new job with default type
 	 */
 	static DAPI JobInfo CreateJob(PFN_OnJobStart entry, PFN_OnJobComplete on_success, PFN_OnJobComplete on_failed, 
-		void* param_data, unsigned int param_data_size, unsigned int result_data_size, 
+		void* param_data, size_t param_data_size, size_t result_data_size,
 		JobType type = JobType::eGeneral, JobPriority priority = JobPriority::eNormal);
 
 private:
-	static void StoreResult(PFN_OnJobComplete callback, void* params, uint32_t param_size);
+	static void StoreResult(PFN_OnJobComplete callback, void* params, size_t param_size);
 	static uint32_t RunJobThread(void* params);
 	static void ProcessQueue(RingQueue<JobInfo>* queue, Mutex* queue_mutex);
 

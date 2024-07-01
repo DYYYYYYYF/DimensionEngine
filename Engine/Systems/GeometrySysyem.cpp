@@ -229,9 +229,10 @@ bool GeometrySystem::CreateGeometry(SGeometryConfig config, Geometry* geometry) 
 	geometry->Center = config.center;
 	geometry->Extents.min = config.min_extents;
 	geometry->Extents.max = config.max_extents;
+	strncpy(geometry->name, config.name, GEOMETRY_NAME_MAX_LENGTH);
 
 	// Acquire the material.
-	if (strlen(config.name) > 0) {
+	if (strlen(config.material_name) > 0) {
 		geometry->Material = MaterialSystem::Acquire(config.material_name);
 		if (geometry->Material == nullptr) {
 			geometry->Material = MaterialSystem::GetDefaultMaterial();

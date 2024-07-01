@@ -4,7 +4,7 @@
 
 class IResourceLoader {
 public:
-	IResourceLoader() : Id(INVALID_ID), CustomType(nullptr), TypePath(nullptr) {}
+	IResourceLoader() : CustomType(nullptr), TypePath(nullptr) {}
 
 public:
 	virtual bool Load(const char* name, void* params, Resource* resource) = 0;

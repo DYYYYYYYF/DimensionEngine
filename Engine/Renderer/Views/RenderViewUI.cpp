@@ -47,14 +47,14 @@ bool RenderViewUI::OnCreate(const RenderViewConfig& config) {
 	const char* ShaderName = "Shader.Builtin.UI";
 	Resource ConfigResource;
 	if (!ResourceSystem::Load(ShaderName, ResourceType::eResource_Type_Shader, nullptr, &ConfigResource)) {
-		LOG_ERROR("Failed to load builtin skybox shader.");
+		LOG_ERROR("Failed to load builtin UI shader.");
 		return false;
 	}
 
 	ShaderConfig* Config = (ShaderConfig*)ConfigResource.Data;
 	// NOTE: Assuming the first pass since that's all this view has.
 	if (!ShaderSystem::Create(&Passes[0], Config)) {
-		LOG_ERROR("Failed to load builtin ksybox shader.");
+		LOG_ERROR("Failed to load builtin UI shader.");
 		return false;
 	}
 	ResourceSystem::Unload(&ConfigResource);
@@ -140,13 +140,13 @@ void RenderViewUI::OnDestroyPacket(struct RenderViewPacket* packet) {
 }
 
 bool RenderViewUI::RegenerateAttachmentTarget(uint32_t passIndex, RenderTargetAttachment* attachment) {
-	return false;
+	return true;
 }
 
 bool RenderViewUI::OnRender(struct RenderViewPacket* packet, IRendererBackend* back_renderer, size_t frame_number, size_t render_target_index) {
 	uint32_t SID = UsedShader->ID;
 	for (uint32_t p = 0; p < RenderpassCount; ++p) {
-		IRenderpass* Pass = (IRenderpass*) & Passes[p];
+		IRenderpass* Pass = (IRenderpass*)&Passes[p];
 		Pass->Begin(&Pass->Targets[render_target_index]);
 
 		if (!ShaderSystem::UseByID(SID)) {

@@ -5,7 +5,6 @@
 #include "Resources/Resource.hpp"
 #include "Containers/THashTable.hpp"
 
-#define DEFAULT_TEXTURE_NAME "default"
 #define DEFAULT_DIFFUSE_TEXTURE_NAME "default_diffuse"
 #define DEFAULT_SPECULAR_TEXTURE_NAME "default_specular"
 #define DEFAULT_NORMAL_TEXTURE_NAME "default_normal"
@@ -23,8 +22,8 @@ struct STextureReference {
 };
 
 struct TextureLoadParams {
-	char* resource_name;
-	Texture* out_texture;
+	char* resource_name = nullptr;
+	Texture* out_texture = nullptr;
 	Texture temp_texture;
 	uint32_t current_generation;
 	Resource ImageResource;
@@ -46,7 +45,6 @@ public:
 	static bool Resize(Texture* t, uint32_t width, uint32_t height, bool regenerate_internal_data);
 	static bool WriteData(Texture* t, uint32_t offset, uint32_t size, void* data);
 
-	static Texture* GetDefaultTexture();
 	static Texture* GetDefaultDiffuseTexture();
 	static Texture* GetDefaultSpecularTexture();
 	static Texture* GetDefaultNormalTexture();
@@ -66,7 +64,6 @@ private:
 
 private:
 	static STextureSystemConfig TextureSystemConfig;
-	static Texture DefaultTexture;
 	static Texture DefaultDiffuseTexture;
 	static Texture DefaultSpecularTexture;
 	static Texture DefaultNormalTexture;

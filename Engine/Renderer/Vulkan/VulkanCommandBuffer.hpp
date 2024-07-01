@@ -15,10 +15,6 @@ class VulkanContext;
 
 class VulkanCommandBuffer {
 public:
-	VulkanCommandBuffer() {}
-	virtual ~VulkanCommandBuffer(){}
-
-public:
 	void Allocate(VulkanContext* context, vk::CommandPool pool, bool is_primary);
 	void Free(VulkanContext* context, vk::CommandPool pool);
 

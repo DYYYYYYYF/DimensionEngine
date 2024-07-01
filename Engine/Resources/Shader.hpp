@@ -169,7 +169,7 @@ struct ShaderConfig {
 class Shader {
 public:
 	ShaderFlagBits Flags;
-	uint32_t ID = INVALID_ID;
+	uint32_t ID;
 	char* Name = nullptr;
 
 	size_t RenderFrameNumber;

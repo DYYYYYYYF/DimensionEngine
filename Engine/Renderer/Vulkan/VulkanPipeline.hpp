@@ -10,7 +10,7 @@ class VulkanCommandBuffer;
 struct Range;
 
 struct VulkanPipelineConfig {
-	VulkanRenderPass* renderpass;
+	VulkanRenderPass* renderpass = nullptr;
 	uint32_t stride;
 	uint32_t attribute_count;
 	vk::VertexInputAttributeDescription* attributes = nullptr;
@@ -30,17 +30,13 @@ struct VulkanPipelineConfig {
 
 class VulkanPipeline {
 public:
-	VulkanPipeline() {}
-	virtual ~VulkanPipeline() {}
-
-public:
 	bool Create(VulkanContext* context, const VulkanPipelineConfig& config);
 
 	void Destroy(VulkanContext* context);
 	void Bind(VulkanCommandBuffer* command_buffer, vk::PipelineBindPoint bind_point);
 
 public:
-	vk::Pipeline Handle;
-	vk::PipelineLayout PipelineLayout;
+	vk::Pipeline Handle = nullptr;
+	vk::PipelineLayout PipelineLayout = nullptr;
 
 };

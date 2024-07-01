@@ -36,12 +36,12 @@ struct FontData {
 	int atlasSizeY;
 	struct TextureMap atlas;
 	unsigned int glyphCount;
-	FontGlyph* glyphs;
+	FontGlyph* glyphs = nullptr;
 	unsigned int kerningCount;
-	FontKerning* kernings;
+	FontKerning* kernings = nullptr;
 	float tabXAdvance;
 	unsigned int internalDataSize;
-	void* internalData;
+	void* internalData = nullptr;
 };
 
 struct BitmapFontPage {
@@ -52,7 +52,7 @@ struct BitmapFontPage {
 struct BitmapFontResourceData {
 	FontData data;
 	unsigned int pageCount;
-	BitmapFontPage* Pages;
+	BitmapFontPage* Pages = nullptr;
 };
 
 struct SystemFontFace {
@@ -62,5 +62,5 @@ struct SystemFontFace {
 struct SystemFontResourceData {
 	TArray<SystemFontFace> fonts;
 	size_t binarySize;
-	void* fontBinary;
+	void* fontBinary = nullptr;
 };

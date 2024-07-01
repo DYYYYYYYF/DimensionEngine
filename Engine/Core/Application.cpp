@@ -61,7 +61,6 @@ struct SApplicationState {
 static bool Initialized = false;
 static SApplicationState AppState;
 static IRenderer* Renderer = nullptr;
-static TextureSystem TextureManager;
 
 // Init logger
 static EngineLogger* GlobalLogger = new EngineLogger();
@@ -346,6 +345,7 @@ bool ApplicationCreate(SGame* game_instance){
 		return false;
 	}
 
+	// UI view
 	RenderViewConfig UIViewConfig;
 	UIViewConfig.type = RenderViewKnownType::eRender_View_Known_Type_UI;
 	UIViewConfig.width = 0;
@@ -357,11 +357,11 @@ bool ApplicationCreate(SGame* game_instance){
 	// Renderpass config
 	std::vector<RenderpassConfig> UIPasses(1);
 	UIPasses[0].name = "Renderpass.Builtin.UI";
-	WorldPasses[0].render_area = Vec4(0, 0, 1280, 720);
-	WorldPasses[0].clear_color = Vec4(0, 0, 0.2f, 1.0f);
-	WorldPasses[0].clear_flags = RenderpassClearFlags::eRenderpass_Clear_None;
-	WorldPasses[0].depth = 1.0f;
-	WorldPasses[0].stencil = 0;
+	UIPasses[0].render_area = Vec4(0, 0, 1280, 720);
+	UIPasses[0].clear_color = Vec4(0, 0, 0.2f, 1.0f);
+	UIPasses[0].clear_flags = RenderpassClearFlags::eRenderpass_Clear_None;
+	UIPasses[0].depth = 1.0f;
+	UIPasses[0].stencil = 0;
 
 	RenderTargetAttachmentConfig UITargetAttachment;
 	// Color attachment.
@@ -651,9 +651,7 @@ bool ApplicationRun() {
 
 			Quaternion Rotation = QuaternionFromAxisAngle(Vec3(0.0f, 1.0f, 0.0f), 0.5f * (float)DeltaTime, false);
 			AppState.Meshes[0].Transform.Rotate(Rotation);
-			
 			AppState.Meshes[1].Transform.Rotate(Rotation);
-			
 			AppState.Meshes[2].Transform.Rotate(Rotation);
 
 			// TODO: Refactor packet creation.
@@ -686,7 +684,6 @@ bool ApplicationRun() {
 			MeshPacketData WorldMeshData;
 			WorldMeshData.meshes = Meshes;
 			WorldMeshData.mesh_count = (uint32_t)Meshes.size();
-
 			if (!RenderViewSystem::BuildPacket(RenderViewSystem::Get("World"), &WorldMeshData, &Packet.views[1])) {
 				LOG_ERROR("Failed to build packet for view 'World'.");
 				return false;
@@ -735,12 +732,12 @@ FPS: %d\tDelta time: %.2f",
 				(float)DeltaTime * 1000
 			);
 			AppState.TestText.SetText(FPS);
+			std::vector<UIText*> Texts = { &AppState.TestText, &AppState.TestSysText };
 
 			UIPacketData UIPacket;
 			UIPacket.meshData.mesh_count = (uint32_t)UIMeshes.size();
 			UIPacket.meshData.meshes = UIMeshes;
-			UIPacket.textCount = 2;
-			std::vector<UIText*> Texts = { &AppState.TestText, &AppState.TestSysText };
+			UIPacket.textCount = (uint32_t)Texts.size();
 			UIPacket.Textes = Texts;
 
 			if (!RenderViewSystem::BuildPacket(RenderViewSystem::Get("UI"), &UIPacket, &Packet.views[2])) {
@@ -756,7 +753,7 @@ FPS: %d\tDelta time: %.2f",
 			PickPacket.TextCount = UIPacket.textCount;
 
 			if (!RenderViewSystem::BuildPacket(RenderViewSystem::Get("Pick"), &PickPacket, &Packet.views[3])) {
-				LOG_ERROR("Failed to build packet for view 'ui'.");
+				LOG_ERROR("Failed to build packet for view 'Pick'.");
 				return false;
 			}
 
@@ -768,8 +765,8 @@ FPS: %d\tDelta time: %.2f",
 				RenderView->OnDestroyPacket(&Packet.views[i]);
 			}
 
-			Packet.views.clear();
-			std::vector<RenderViewPacket>().swap(Packet.views);
+			Views.clear();
+			std::vector<RenderViewPacket>().swap(Views);
 			Meshes.clear();
 			std::vector<Mesh*>().swap(Meshes);
 			UIMeshes.clear();
@@ -815,6 +812,7 @@ FPS: %d\tDelta time: %.2f",
 	Core::EventUnregister(Core::eEvent_Code_Resize, 0, ApplicationOnResized);
 	Core::EventUnregister(Core::eEvent_Code_Debug_0, 0, EventOnDebugEvent);
 	Core::EventUnregister(Core::eEvent_Code_Object_Hover_ID_Changed, 0, ApplicationOnEvent);
+
 	// Temp
 	Renderer->ReleaseTextureMap(&AppState.SB.Cubemap);
 	AppState.TestText.Destroy();

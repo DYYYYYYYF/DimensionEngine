@@ -18,7 +18,7 @@ public:
 	virtual bool RegenerateAttachmentTarget(uint32_t passIndex, RenderTargetAttachment* attachment) override;
 
 private:
-	Shader* UsedShader;
+	Shader* UsedShader = nullptr;
 	float NearClip;
 	float FarClip;
 	Matrix4 ProjectionMatrix;
