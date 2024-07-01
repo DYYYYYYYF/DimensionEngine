@@ -448,7 +448,9 @@ void TextureSystem::LoadJobSuccess(void* params) {
 	Texture Old = *TextureParams->out_texture;
 
 	// Assign the temp texture to the pointer.
+	uint32_t ID = TextureParams->out_texture->Id;
 	*TextureParams->out_texture = TextureParams->temp_texture;
+	TextureParams->out_texture->Id = ID;
 
 	// Destroy the old texture.
 	Renderer->DestroyTexture(&Old);

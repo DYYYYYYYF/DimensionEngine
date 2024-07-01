@@ -9,10 +9,6 @@ class VulkanCommandBuffer;
 
 class VulkanRenderPass : public IRenderpass{
 public:
-	VulkanRenderPass() : Context(nullptr) {}
-	virtual ~VulkanRenderPass() {}
-
-public:
 	virtual bool Create(VulkanContext* context, const RenderpassConfig* config) override;
 	virtual void Destroy() override;
 
@@ -29,7 +25,7 @@ public:
 	void SetY(float y) { RenderArea.y = y; }
 
 private:
-	VulkanContext* Context;
+	VulkanContext* Context = nullptr;
 
 	float Depth;
 	uint32_t Stencil;

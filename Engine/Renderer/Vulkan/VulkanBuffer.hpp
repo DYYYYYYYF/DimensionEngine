@@ -8,10 +8,6 @@ class VulkanContext;
 
 class VulkanBuffer : public IRenderbuffer {
 public:
-	VulkanBuffer() {}
-	virtual ~VulkanBuffer() {}
-
-public:
 	virtual bool Create(VulkanContext* context) override;
 	virtual void Destroy(VulkanContext* context) override;
 	virtual bool Resize(VulkanContext* context, size_t size) override;

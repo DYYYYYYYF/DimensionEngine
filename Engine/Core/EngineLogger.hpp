@@ -22,7 +22,6 @@ char* AppendLogMessage(const char* format, Args ... args)
 class EngineLogger{
 public:
     EngineLogger();
-    virtual ~EngineLogger(){}
 };
 
 // Logger

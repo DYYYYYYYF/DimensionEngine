@@ -50,10 +50,6 @@ struct TextureMap {
 
 class Texture {
 public:
-	Texture() : InternalData(nullptr), Id(INVALID_ID){}
-	virtual ~Texture() {}
-
-public:
 	uint32_t Id;
 	TextureType Type;
 	uint32_t Width;
@@ -65,7 +61,7 @@ public:
 
 	uint32_t Generation;
 	char Name[TEXTURE_NAME_MAX_LENGTH];
-	void* InternalData;
+	void* InternalData = nullptr;
 };
 
 class Skybox {

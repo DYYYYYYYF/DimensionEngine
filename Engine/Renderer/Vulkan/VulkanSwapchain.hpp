@@ -10,7 +10,6 @@ class Texture;
 class VulkanSwapchain {
 public:
 	VulkanSwapchain() : MaxFramesInFlight(0), ImageCount(0){}
-	virtual ~VulkanSwapchain() {}
 
 public:
 	void Create(VulkanContext* context, unsigned int width, unsigned int height);

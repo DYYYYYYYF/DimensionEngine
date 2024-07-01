@@ -33,7 +33,7 @@ struct MeshGroupData {
 
 class Mesh {
 public:
-	Mesh() : geometries(nullptr), Generation(INVALID_ID_U8), geometry_count(0) {}
+	Mesh() : geometries(nullptr), geometry_count(0) {}
 	bool LoadFromResource(const char* resource_name);
 	void Unload();
 

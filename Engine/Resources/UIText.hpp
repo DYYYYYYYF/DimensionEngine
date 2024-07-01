@@ -13,8 +13,6 @@ enum UITextType {
 
 class UIText {
 public:
-	UIText() : Renderer(nullptr), Data(nullptr), Text(nullptr), InstanceID(INVALID_ID), RenderFrameNumber(0) {}
-
 	bool Create(class IRenderer* renderer, UITextType type, const char* fontName, unsigned short fontSize, const char* textContent);
 	void Destroy();
 
@@ -28,12 +26,12 @@ private:
 
 public:
 	uint32_t UniqueID;
-	IRenderer* Renderer;
+	IRenderer* Renderer = nullptr;
 	UITextType Type;
-	struct FontData* Data;
+	struct FontData* Data = nullptr;
 	VulkanBuffer VertexBuffer;
 	VulkanBuffer IndexBuffer;
-	char* Text;
+	char* Text = nullptr;
 	Transform Trans;
 	uint32_t InstanceID;
 	size_t RenderFrameNumber;

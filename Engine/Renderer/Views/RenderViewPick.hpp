@@ -8,8 +8,8 @@ class Shader;
 class IREnderer;
 
 struct RenderviewPickShaderInfo {
-	Shader* UsedShader;
-	VulkanRenderPass* Pass;
+	Shader* UsedShader = nullptr;
+	VulkanRenderPass* Pass = nullptr;
 	float NearClip;
 	float FarClip;
 	float Fov;
@@ -44,7 +44,7 @@ public:
 	void SetMouseY(short y) { MouseY = y; }
 
 private:
-	IRenderer* Renderer;
+	IRenderer* Renderer = nullptr;
 	RenderviewPickShaderInfo UIShaderInfo;
 	RenderviewPickShaderInfo WorlShaderInfo;
 
