@@ -11,7 +11,7 @@
 #include <Systems/GeometrySystem.h>
 #include <Systems/TextureSystem.h>
 #include <Systems/ShaderSystem.h>
-#include <Systems/RenderviewSystem.hpp>
+#include <Systems/RenderViewSystem.hpp>
 #include <Core/Identifier.hpp>
 #include <Renderer/RendererFrontend.hpp>
 
@@ -120,7 +120,7 @@ bool GameInitialize(SGame* game_instance) {
 	SGameState* State = (SGameState*)game_instance->state;
 
 	// Load python script
-	State->TestPython.SetPythonFile("Test");
+	State->TestPython.SetPythonFile("compile_shader");
 
 	State->WorldCamera = CameraSystem::GetDefault();
 	State->WorldCamera->SetPosition(Vec3(0.0f, 0.0f, -40.0f));
@@ -333,8 +333,8 @@ bool GameUpdate(SGame* game_instance, float delta_time) {
 	}
 
 	// TODO: Remove
-	if (Core::InputIsKeyDown(Keys::eKeys_T)) {
-		State->TestPython.ExecuteFunc("Test");
+	if (Core::InputIsKeyUp(eKeys_T) && Core::InputWasKeyDown(eKeys_T)) {
+		State->TestPython.ExecuteFunc("CompileShaders", "glsl");
 	}
 
 	int px, py, cx, cy;
