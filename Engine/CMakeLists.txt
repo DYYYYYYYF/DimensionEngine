@@ -1,5 +1,12 @@
 message("-- Generating Engine Library")
 
+# Load CPython
+message("-- Load CPython")
+find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
+include_directories(${Python3_INCLUDE_DIRS})
+message("-- Python3 include path: ${Python3_INCLUDE_DIRS}")
+message("-- Python3 libraries: ${Python3_LIBRARIES}")
+
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${UD_LOGGER_DIR}/include
@@ -24,7 +31,7 @@ target_include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${UD_LOGGER_DIR}/include
     ${STB_DIR}
-    ${Python3_LIBRARIES}
+    ${Python3_INCLUDE_DIRS}
 )
 
 if(${APPLE})
@@ -47,5 +54,7 @@ elseif(${WIN32})
     target_link_libraries(engine PUBLIC "Logger.lib")
     target_link_libraries(engine PUBLIC "vulkan-1.lib")
 endif()
+
+target_link_libraries(engine PUBLIC ${Python3_LIBRARIES})
 
 message("-- Generated Engine Library\n")

@@ -3,6 +3,7 @@
 #include <Defines.hpp>
 #include <GameType.hpp>
 #include <Math/MathTypes.hpp>
+#include <Core/CPython.hpp>
 
 class Camera;
 
@@ -24,6 +25,7 @@ struct SGameState {
 	UIText TestSysText;
 
 	uint32_t HoveredObjectID;
+	CPythonModule TestPython;
 	// TODO: end temp
 
 };

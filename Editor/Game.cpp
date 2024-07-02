@@ -119,6 +119,9 @@ bool GameInitialize(SGame* game_instance) {
 
 	SGameState* State = (SGameState*)game_instance->state;
 
+	// Load python script
+	State->TestPython.SetPythonFile("Test");
+
 	State->WorldCamera = CameraSystem::GetDefault();
 	State->WorldCamera->SetPosition(Vec3(0.0f, 0.0f, -40.0f));
 
@@ -327,6 +330,11 @@ bool GameUpdate(SGame* game_instance, float delta_time) {
 	if (Core::InputIsKeyUp(eKeys_O) && Core::InputWasKeyDown(eKeys_O)) {
 		SEventContext Context = {};
 		Core::EventFire(Core::eEvent_Code_Debug_0, game_instance, Context);
+	}
+
+	// TODO: Remove
+	if (Core::InputIsKeyDown(Keys::eKeys_T)) {
+		State->TestPython.ExecuteFunc("Test");
 	}
 
 	int px, py, cx, cy;
