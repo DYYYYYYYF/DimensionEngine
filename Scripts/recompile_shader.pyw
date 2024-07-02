@@ -17,18 +17,18 @@ def CheckGlslc():
     global compile_command
 
     compile_check_command     = compile_command + "--version"
-    if os.system(compile_check_command) != 0:
+    if os.popen(compile_check_command) != 0:
         compile_check_command = file_path + "glslc.exe -c "
         
-        if os.system(compile_check_command) != 0:
+        if os.popen(compile_check_command) != 0:
             # Not set global command
-            os.system("cls")
+            os.popen("cls")
             compile_command = vulkanPath + "/Bin/glslc.exe -c "
             compile_check_command = compile_command + "--version "
             
-            if os.system(compile_check_command) != 0:
+            if os.popen(compile_check_command) != 0:
                 # Not set right vulkan path
-                os.system("cls")
+                os.popen("cls")
                 print("Please set vulkan path!")
                 quit()
 
@@ -41,7 +41,7 @@ def Compile(sub_file_path, file, filename, shader_language):
         print("Compiling " + sub_file_path + "/" + filename[0] + filename[1])
 
         ## Execute compile command
-        if os.system(cmd) != 0:
+        if os.popen(cmd) != 0:
             failed_shaders.append(file)
 
     elif filename[1] == ".hlsl" and shader_language == "hlsl":
@@ -54,7 +54,7 @@ def Compile(sub_file_path, file, filename, shader_language):
         print("Compiling " + sub_file_path + "/" + filename[0] + filename[1])
 
         ## Execute compile command
-        if os.system(cmd) != 0:
+        if os.popen(cmd) != 0:
             failed_shaders.append(file)
 
 
@@ -80,7 +80,7 @@ def CompileShaders(shader_language):
 
     # Windows platform
     # Check glslc command
-    if platform.system().lower() == "windows":
+    if platform.popen().lower() == "windows":
         CheckGlslc()
 
     print("Shader direction: " + file_path + "\n")
