@@ -1,6 +1,9 @@
 #pragma once
 
 #include "Defines.hpp"
+#include "Resources/Skybox.hpp"
+#include "Systems/FontSystem.hpp"
+#include "Renderer/Interface/IRenderView.hpp"
 
 struct SGame;
 struct SEventContext;
@@ -12,6 +15,9 @@ struct SApplicationConfig {
 	short start_height;
 
 	const char* name = nullptr;
+
+	FontSystemConfig FontConfig;
+	std::vector<RenderViewConfig> Renderviews;
 };
 
 DAPI bool ApplicationCreate(struct SGame* game_instance);
@@ -21,5 +27,4 @@ void GetFramebufferSize(unsigned int* width, unsigned int* height);
 
 // Event handlers
 bool ApplicationOnEvent(unsigned short code, void* sender, void* listener_instance, SEventContext context);
-bool ApplicationOnKey(unsigned short code, void* sender, void* listener_instance, SEventContext context);
 bool ApplicationOnResized(unsigned short code, void* sender, void* listener_instance, SEventContext context);
