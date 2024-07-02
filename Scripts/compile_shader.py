@@ -5,8 +5,8 @@ import sys, getopt  # Command line argvs
 # Common values
 vulkanPath       = "D:/C_Library/VulkanSDK"
 compile_command  = "glslc -c "
-file_path        = os.path.abspath(".") + "/Shaders/"
-target_path      = os.path.abspath(".") + "/Assets/Shaders/"
+file_path        = os.path.abspath("..") + "/Shaders/"
+target_path      = os.path.abspath("..") + "/Assets/Shaders/"
 
 # compile failed files
 failed_shaders = []

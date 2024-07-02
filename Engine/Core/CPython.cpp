@@ -33,9 +33,9 @@ void CPythonModule::ExecuteFunc(const char* funcName, const char* shaderLanguage
     PyObject* PyParams = PyTuple_New(1);
     
     /**
-     * s: string
-     * i: int
-     */
+	 * s: string
+	 * i: int
+	 */
     PyTuple_SetItem(PyParams, 0, Py_BuildValue("s", shaderLanguage));
 
 	PyObject_CallObject(PyFunc, PyParams);
