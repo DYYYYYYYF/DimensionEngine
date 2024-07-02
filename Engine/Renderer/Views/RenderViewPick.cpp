@@ -218,7 +218,7 @@ bool RenderViewPick::OnBuildPacket(void* data, struct RenderViewPacket* out_pack
 	// Set the pick packet data to extended data.
 	PacketData->WorldGeometryCount = 0;
 	PacketData->UIGeometryCount = 0;
-	out_packet->extended_data = data;
+	out_packet->extended_data = Memory::Allocate(sizeof(PickPacketData), MemoryType::eMemory_Type_Renderer);
 
 	uint32_t HighestInstanceID = 0;
 	// Iterate all meshes in world data.
@@ -275,6 +275,9 @@ bool RenderViewPick::OnBuildPacket(void* data, struct RenderViewPacket* out_pack
 		}
 	}
 
+	// Copy over the packet data.
+	Memory::Copy(out_packet->extended_data, PacketData, sizeof(PickPacketData));
+
 	return true;
 }
 
@@ -285,6 +288,11 @@ void RenderViewPick::OnDestroyPacket(struct RenderViewPacket* packet) {
 	}
 	packet->geometries.clear();
 	std::vector<GeometryRenderData>().swap(packet->geometries);
+
+	if (packet->extended_data) {
+		Memory::Free(packet->extended_data, sizeof(PickPacketData), eMemory_Type_Renderer);
+		packet->extended_data = nullptr;
+	}
 
 	Memory::Zero(packet, sizeof(RenderViewPacket));
 }
@@ -308,9 +316,8 @@ bool RenderViewPick::RegenerateAttachmentTarget(uint32_t passIndex, RenderTarget
 	}
 
 	// Destroy current attachment if it exists.
-	if (attachment->texture->InternalData){
+	if (attachment->texture){
 		Renderer->DestroyTexture(attachment->texture);
-		Memory::Zero(attachment->texture, sizeof(Texture));
 	}
 
 	// Setup a new texture.

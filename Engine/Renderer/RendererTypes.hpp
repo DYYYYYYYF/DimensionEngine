@@ -51,7 +51,7 @@ struct RenderTargetAttachmentConfig {
 
 struct RenderTargetConfig {
 	unsigned char attachmentCount;
-	RenderTargetAttachmentConfig* attachments = nullptr;
+	std::vector<RenderTargetAttachmentConfig> attachments;
 };
 
 struct RenderTargetAttachment {
@@ -88,14 +88,14 @@ struct RenderTarget {
 
 struct MeshPacketData {
 	uint32_t mesh_count;
-	std::vector<Mesh*> meshes;
+	Mesh** meshes = nullptr;
 };
 
 struct UIPacketData {
 	MeshPacketData meshData;
 	// TODO: temp
 	uint32_t textCount;
-	std::vector<class UIText*> Textes;
+	class UIText** Textes = nullptr;
 };
 
 struct PickPacketData {
@@ -105,7 +105,7 @@ struct PickPacketData {
 	uint32_t UIGeometryCount;
 	// TODO: Temp.
 	uint32_t TextCount;
-	std::vector<class UIText*> Texts;
+	class UIText** Texts = nullptr;
 };
 
 struct SkyboxPacketData {

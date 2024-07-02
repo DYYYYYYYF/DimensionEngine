@@ -434,8 +434,8 @@ bool MaterialSystem::CreateDefaultMaterial() {
 
 	Shader* s = ShaderSystem::Get("Shader.Builtin.World");
 	if (s == nullptr) {
+		LOG_FATAL("Shader.Builtin.World shader is nullptr.");
 		ASSERT(s);
-		LOG_ERROR("Can't get default shader. Application quit now!");
 		return false;
 	}
 

@@ -15,11 +15,11 @@ size_t(unsigned long long) stride = size of each element in bytes
 void* elements
 */
 template<typename ElementType>
-class TArray {
+class DAPI TArray {
 public:
 	TArray() {
 		size_t ArrayMemSize = ARRAY_DEFAULT_CAPACITY * sizeof(ElementType);
-		ArrayMemory = (ElementType*)Platform::PlatformAllocate(ArrayMemSize, false);
+		ArrayMemory = Platform::PlatformAllocate(ArrayMemSize, false);
 		Platform::PlatformSetMemory(ArrayMemory, 0, ArrayMemSize);
 
 		Capacity = ARRAY_DEFAULT_CAPACITY;
@@ -36,7 +36,7 @@ public:
 
 	TArray(size_t size) {
 		size_t ArrayMemSize = size * sizeof(ElementType);
-		ArrayMemory = (ElementType*)Platform::PlatformAllocate(ArrayMemSize, false);
+		ArrayMemory = Platform::PlatformAllocate(ArrayMemSize, false);
 		Platform::PlatformSetMemory(ArrayMemory, 0, ArrayMemSize);
 
 		Capacity = size;
@@ -52,7 +52,7 @@ public:
 
 	void Resize(size_t size = 0) {
 		size_t NewCapacity = size > 0 ? size : Capacity * ARRAY_DEFAULT_RESIZE_FACTOR;
-		ElementType* TempMemory = (ElementType*)Platform::PlatformAllocate(NewCapacity * Stride, false);
+		void* TempMemory = Platform::PlatformAllocate(NewCapacity * Stride, false);
 
 		Platform::PlatformCopyMemory(TempMemory, ArrayMemory, Length * Stride);
 		Platform::PlatformFree(ArrayMemory, false);
@@ -153,12 +153,12 @@ public:
 
 	template<typename IntegerType>
 	ElementType& operator[](const IntegerType& i) {
-		return ArrayMemory[i];
+		return *((ElementType*)((char*)ArrayMemory + i * Stride));
 	}
 
 
 private:
-	ElementType* ArrayMemory;
+	void* ArrayMemory;
 
 	size_t Capacity;		
 	size_t Stride;

@@ -16,6 +16,8 @@ extern bool CreateGame(SGame* out_game) {
     out_game->app_config.start_height = 720;
     out_game->app_config.name = "Dimension Editor";
 
+    out_game->boot = GameBoot;
+    out_game->shutdown = GameShutdown;
     out_game->update = GameUpdate;
     out_game->render = GameRender;
     out_game->initialize = GameInitialize;

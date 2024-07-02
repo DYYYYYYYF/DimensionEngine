@@ -113,7 +113,8 @@ bool RenderViewUI::OnBuildPacket(void* data, struct RenderViewPacket* out_packet
 	out_packet->view_matrix = ViewMatrix;
 
 	// TODO: Temp set extended data to the test text objects for now.
-	out_packet->extended_data = data;
+	out_packet->extended_data = Memory::Allocate(sizeof(UIPacketData), MemoryType::eMemory_Type_Renderer);
+	Memory::Copy(out_packet->extended_data, PacketData, sizeof(UIPacketData));
 
 	// Obtain all geometries from the current scene.
 	// Iterate all meshes and them to the packet's geometries collection.
@@ -135,6 +136,11 @@ void RenderViewUI::OnDestroyPacket(struct RenderViewPacket* packet) {
 	// No much to do here, just zero mem.
 	packet->geometries.clear();
 	std::vector<GeometryRenderData>().swap(packet->geometries);
+
+	if (packet->extended_data) {
+		Memory::Free(packet->extended_data, sizeof(UIPacketData), eMemory_Type_Renderer);
+		packet->extended_data = nullptr;
+	}
 
 	Memory::Zero(packet, sizeof(RenderViewPacket));
 }

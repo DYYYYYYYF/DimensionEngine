@@ -31,7 +31,7 @@ struct MeshGroupData {
 	std::vector<MeshFaceData> Faces;
 };
 
-class Mesh {
+class DAPI Mesh {
 public:
 	Mesh() : geometries(nullptr), geometry_count(0) {}
 	bool LoadFromResource(const char* resource_name);

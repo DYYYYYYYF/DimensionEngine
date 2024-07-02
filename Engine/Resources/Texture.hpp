@@ -48,7 +48,7 @@ struct TextureMap {
 	void* internal_data = nullptr;
 };
 
-class Texture {
+class DAPI Texture {
 public:
 	uint32_t Id;
 	TextureType Type;
@@ -62,12 +62,4 @@ public:
 	uint32_t Generation;
 	char Name[TEXTURE_NAME_MAX_LENGTH];
 	void* InternalData = nullptr;
-};
-
-class Skybox {
-public:
-	TextureMap Cubemap;
-	class Geometry* g = nullptr;
-	uint32_t InstanceID;
-	size_t RenderFrameNumber;
 };

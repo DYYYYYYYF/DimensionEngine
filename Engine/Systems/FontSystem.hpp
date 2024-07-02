@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Math/MathTypes.hpp"
+#include "Containers/TString.hpp"
 #include "Resources/ResourceTypes.hpp"
 #include "Renderer/RendererTypes.hpp"
 
@@ -8,15 +9,29 @@ struct BitmapFontLookup;
 struct SystemFontLookup;
 
 struct SystemFontConfig {
-	const char* name = nullptr;
+	SystemFontConfig() {}
+	SystemFontConfig(const SystemFontConfig& s) {
+		name = s.name;
+		defaultSize = s.defaultSize;
+		resourceName = s.resourceName;
+	}
+
+	const char* name;
 	unsigned short defaultSize;
-	const char* resourceName = nullptr;
+	const char* resourceName;
 };
 
 struct BitmapFontConfig {
-	const char* name = nullptr;
+	BitmapFontConfig() {}
+	BitmapFontConfig(const BitmapFontConfig& b) {
+		name = b.name;
+		size = b.size;
+		resourceName = b.resourceName;
+	}
+
+	const char* name;
 	unsigned short size;
-	const char* resourceName = nullptr;
+	const char* resourceName;
 };
 
 struct FontSystemConfig {

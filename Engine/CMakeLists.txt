@@ -24,6 +24,7 @@ target_include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${UD_LOGGER_DIR}/include
     ${STB_DIR}
+    ${Python3_LIBRARIES}
 )
 
 if(${APPLE})

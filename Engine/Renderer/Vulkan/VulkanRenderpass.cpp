@@ -26,7 +26,7 @@ bool VulkanRenderPass::Create(VulkanContext* context, const RenderpassConfig* co
 	// render target* taget = &Targets[0]
 	vk::AttachmentDescription AttachmentDesc;
 	for (uint32_t i = 0; i < config->target.attachmentCount; ++i) {
-		RenderTargetAttachmentConfig* AttachmentConfig = &config->target.attachments[i];
+		const RenderTargetAttachmentConfig* AttachmentConfig = &config->target.attachments[i];
 		if (AttachmentConfig->type == RenderTargetAttachmentType::eRender_Target_Attachment_Type_Color) {
 			// Color attachment
 			bool IsNeedClearColor = (ClearFlags & eRenderpass_Clear_Color_Buffer) != 0;

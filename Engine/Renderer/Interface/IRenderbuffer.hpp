@@ -14,7 +14,7 @@ enum RenderbufferType {
 	eRenderbuffer_Type_Storage		// Buffer is used for data storage.
 };
 
-class IRenderbuffer {
+class DAPI IRenderbuffer {
 public:
 	virtual bool Create(VulkanContext* context) = 0;
 	virtual void Destroy(VulkanContext* context) = 0;

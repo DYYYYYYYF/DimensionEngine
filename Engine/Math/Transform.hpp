@@ -1,16 +1,16 @@
 #pragma once
 #include "MathTypes.hpp"
 
-class Transform {
+class DAPI Transform {
 public:
 	/**
 	 * @brief Creates and returns a new transform, using a zero vector for position,
 	 * identity quaternion for rotation, and a one vector for scale. Also has a nullptr
 	 * parent. Marked dirty by default.
 	 */
-	DAPI Transform();
+	Transform();
 
-	DAPI Transform(const Transform& trans);
+	Transform(const Transform& trans);
 
 	/**
 	 * @brief Creates a transform from the given position.
@@ -18,7 +18,7 @@ public:
 	 * 
 	 * @param position The position to be used.
 	 */
-	DAPI Transform(Vec3 position);
+	Transform(Vec3 position);
 
 	/**
 	 * @brief Creates a transform from the given rotation.
@@ -26,7 +26,7 @@ public:
 	 *
 	 * @param rotation The rotation to be used.
 	 */
-	DAPI Transform(Quaternion rotation);
+	Transform(Quaternion rotation);
 
 	/**
 	 * @brief Creates a transform from the given rotation and position.
@@ -35,7 +35,7 @@ public:
 	 * @param position The position to be used.
 	 * @param rotation The rotation to be used.
 	 */
-	DAPI Transform(Vec3 position, Quaternion rotation);
+	Transform(Vec3 position, Quaternion rotation);
 
 	/**
 	 * @brief Creates a transform.
@@ -44,32 +44,32 @@ public:
 	 * @param rotation The rotation to be used.
 	 * @param scale The scale to be used.
 	 */
-	DAPI Transform(Vec3 position, Quaternion rotation, Vec3 scale);
+	Transform(Vec3 position, Quaternion rotation, Vec3 scale);
 
 public:
-	DAPI void SetParentTransform(Transform* t) { Parent = t; IsDirty = true; }
-	DAPI Transform* GetParentTransform() { return Parent; }
+	void SetParentTransform(Transform* t) { Parent = t; IsDirty = true; }
+	Transform* GetParentTransform() { return Parent; }
 
-	DAPI void SetPosition(Vec3 pos) { vPosition = pos; IsDirty = true; }
-	DAPI const Vec3& GetPosition() const { return vPosition; }
+	void SetPosition(Vec3 pos) { vPosition = pos; IsDirty = true; }
+	const Vec3& GetPosition() const { return vPosition; }
 
-	DAPI void SetScale(Vec3 scale) { vScale = scale; IsDirty = true; }
-	DAPI const Vec3& GetScale() const { return vScale; }
+	void SetScale(Vec3 scale) { vScale = scale; IsDirty = true; }
+	const Vec3& GetScale() const { return vScale; }
 
-	DAPI void SetRotation(Quaternion quat) { vRotation = quat; IsDirty = true; }
-	DAPI const Quaternion& GetRotation() const { return vRotation; }
+	void SetRotation(Quaternion quat) { vRotation = quat; IsDirty = true; }
+	const Quaternion& GetRotation() const { return vRotation; }
 
 
-	DAPI void Translate(const Vec3& translation);
-	DAPI void Rotate(const Quaternion& rotation);
-	DAPI void Scale(const Vec3& scale);
+	void Translate(const Vec3& translation);
+	void Rotate(const Quaternion& rotation);
+	void Scale(const Vec3& scale);
 
-	DAPI void SetPR(const Vec3& pos, const Quaternion& rotation);
-	DAPI void SetPRS(const Vec3& pos, const Quaternion& rotation, const Vec3& scale);
-	DAPI void TransformRotate(const Vec3& translation, const Quaternion& rotation);
+	void SetPR(const Vec3& pos, const Quaternion& rotation);
+	void SetPRS(const Vec3& pos, const Quaternion& rotation, const Vec3& scale);
+	void TransformRotate(const Vec3& translation, const Quaternion& rotation);
 
-	DAPI Matrix4 GetLocal();
-	DAPI Matrix4 GetWorldTransform();
+	Matrix4 GetLocal();
+	Matrix4 GetWorldTransform();
 
 private:
 	Vec3 vPosition;

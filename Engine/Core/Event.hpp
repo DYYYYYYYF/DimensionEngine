@@ -30,8 +30,8 @@ namespace Core {
 	bool EventInitialize();
 	void EventShutdown();
 
-	bool EventRegister(unsigned short code, void* listener, PFN_on_event on_event);
-	bool EventUnregister(unsigned short code, void* listener, PFN_on_event on_event);
+	DAPI bool EventRegister(unsigned short code, void* listener, PFN_on_event on_event);
+	DAPI bool EventUnregister(unsigned short code, void* listener, PFN_on_event on_event);
 
 	DAPI bool EventFire(unsigned short code, void* sender, SEventContext context);
 

@@ -12,7 +12,7 @@ struct SRenderViewSystemConfig {
 	unsigned short max_view_count;
 };
 
-class RenderViewSystem {
+class DAPI RenderViewSystem {
 public:
 	static bool Initialize(IRenderer* renderer, SRenderViewSystemConfig config);
 	static void Shutdown();

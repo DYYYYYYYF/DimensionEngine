@@ -214,6 +214,7 @@ bool VulkanSwapchain::Destroy(VulkanContext* context) {
 		Image = nullptr;
 	}
 	DepthTexture.clear();
+	std::vector<Texture>().swap(DepthTexture);
 
 	// Only destroy views, not the images, since those are owned by swapchain and are thus destroyed when it is.
 	vk::Device LogicalDevice = context->Device.GetLogicalDevice();
@@ -222,6 +223,7 @@ bool VulkanSwapchain::Destroy(VulkanContext* context) {
 		LogicalDevice.destroyImageView(Image->ImageView, context->Allocator);
 	}
 	RenderTextures.clear();
+	std::vector<Texture>().swap(RenderTextures);
 
 	LogicalDevice.destroySwapchainKHR(Handle, context->Allocator);
 	Handle = nullptr;

@@ -53,24 +53,28 @@ bool UIText::Create(class IRenderer* renderer, UITextType type, const char* font
 	}
 
 	// Generate the vertex buffer.
-	if (!renderer->CreateRenderbuffer(RenderbufferType::eRenderbuffer_Type_Vertex, TextLength * QuadSize, false, &VertexBuffer)) {
+	VertexBuffer = (VulkanBuffer*)Memory::Allocate(sizeof(VulkanBuffer), MemoryType::eMemory_Type_Vulkan);
+	VertexBuffer = new (VertexBuffer)VulkanBuffer();
+	if (!renderer->CreateRenderbuffer(RenderbufferType::eRenderbuffer_Type_Vertex, TextLength * QuadSize, false, VertexBuffer)) {
 		LOG_ERROR("UIText::Create() Failed to create vertex renderbuffer.");
 		return false;
 	}
 
-	if (!renderer->BindRenderbuffer(&VertexBuffer, 0)) {
+	if (!renderer->BindRenderbuffer(VertexBuffer, 0)) {
 		LOG_ERROR("UIText::Create() Failed to bind vertex renderbuffer.");
 		return false;
 	}
 
 	// Generate an index buffer.
+	IndexBuffer = (VulkanBuffer*)Memory::Allocate(sizeof(VulkanBuffer), MemoryType::eMemory_Type_Vulkan);
+	IndexBuffer = new (IndexBuffer)VulkanBuffer();
 	static const unsigned char QuadIndexSize = sizeof(uint32_t) * 6;
-	if (!renderer->CreateRenderbuffer(RenderbufferType::eRenderbuffer_Type_Index, TextLength * QuadIndexSize, false, &IndexBuffer)) {
+	if (!renderer->CreateRenderbuffer(RenderbufferType::eRenderbuffer_Type_Index, TextLength * QuadIndexSize, false, IndexBuffer)) {
 		LOG_ERROR("UIText::Create() Failed to create index renderbuffer.");
 		return false;
 	}
 
-	if (!renderer->BindRenderbuffer(&IndexBuffer, 0)) {
+	if (!renderer->BindRenderbuffer(IndexBuffer, 0)) {
 		LOG_ERROR("UIText::Create() Failed to bind index renderbuffer.");
 		return false;
 	}
@@ -100,8 +104,8 @@ void UIText::Destroy() {
 	}
 
 	// Destroy buffers.
-	Renderer->DestroyRenderbuffer(&VertexBuffer);
-	Renderer->DestroyRenderbuffer(&IndexBuffer);
+	Renderer->DestroyRenderbuffer(VertexBuffer);
+	Renderer->DestroyRenderbuffer(IndexBuffer);
 
 	// Release resources for font texture map.
 	Shader* UIShader = ShaderSystem::Get("Shader.Builtin.UI");	// TODO: Text shader.
@@ -140,12 +144,12 @@ void UIText::Draw() {
 	// TODO: utf8 length.
 	uint32_t TextLength = (uint32_t)strlen(Text);
 	static const size_t QuadVertCount = 4;
-	if (!Renderer->DrawRenderbuffer(&VertexBuffer, 0, TextLength * QuadVertCount, true)) {
+	if (!Renderer->DrawRenderbuffer(VertexBuffer, 0, TextLength * QuadVertCount, true)) {
 		LOG_ERROR("Failed to draw ui font vertex buffer.");
 	}
 
 	static const unsigned char QuadIndexCount = 6;
-	if (!Renderer->DrawRenderbuffer(&IndexBuffer, 0, TextLength * QuadIndexCount, false)) {
+	if (!Renderer->DrawRenderbuffer(IndexBuffer, 0, TextLength * QuadIndexCount, false)) {
 		LOG_ERROR("Failed to draw ui font index buffer.");
 	}
 }
@@ -163,16 +167,16 @@ void UIText::RegenerateGeometry() {
 	size_t tIndexBufferSize = sizeof(uint32_t) * IndicesPerQuad * TextLengthUTF8;
 
 	// Resize the vertex buffer, but only if larger.
-	if (tVertexBufferSize > VertexBuffer.TotalSize) {
-		if (!Renderer->ResizeRenderbuffer(&VertexBuffer, tVertexBufferSize)) {
+	if (tVertexBufferSize > VertexBuffer->TotalSize) {
+		if (!Renderer->ResizeRenderbuffer(VertexBuffer, tVertexBufferSize)) {
 			LOG_ERROR("UIText::RegenerateGeometry() failed to resize vertex renderbuffer.");
 			return;
 		}
 	}
 
 	// Resize the index buffer, but only if larger.
-	if (tIndexBufferSize > IndexBuffer.TotalSize) {
-		if (!Renderer->ResizeRenderbuffer(&IndexBuffer, tIndexBufferSize)) {
+	if (tIndexBufferSize > IndexBuffer->TotalSize) {
+		if (!Renderer->ResizeRenderbuffer(IndexBuffer, tIndexBufferSize)) {
 			LOG_ERROR("UIText::RegenerateGeometry() failed to resize index renderbuffer.");
 			return;
 		}
@@ -304,8 +308,8 @@ void UIText::RegenerateGeometry() {
 	}
 
 	// Load up the data.
-	bool VertexLoadResult = Renderer->LoadRange(&VertexBuffer, 0, tVertexBufferSize, VertexBufferData);
-	bool IndexLoadResult = Renderer->LoadRange(&IndexBuffer, 0, tIndexBufferSize, IndexBufferData);
+	bool VertexLoadResult = Renderer->LoadRange(VertexBuffer, 0, tVertexBufferSize, VertexBufferData);
+	bool IndexLoadResult = Renderer->LoadRange(IndexBuffer, 0, tIndexBufferSize, IndexBufferData);
 
 	// Clean up.
 	Memory::Free(VertexBufferData, tVertexBufferSize, MemoryType::eMemory_Type_Array);

@@ -20,7 +20,7 @@ struct GeometryData {
 	size_t index_buffer_offset;
 };
 
-struct SGeometryConfig {
+struct DAPI SGeometryConfig {
 	// Vertices
 	uint32_t vertex_size;
 	uint32_t vertex_count;
@@ -53,7 +53,7 @@ struct SGeometrySystemConfig {
 	uint32_t max_geometry_count;
 };
 
-class GeometrySystem {
+class DAPI GeometrySystem {
 public:
 	static bool Initialize(IRenderer* renderer, SGeometrySystemConfig config);
 	static void Shutdown();

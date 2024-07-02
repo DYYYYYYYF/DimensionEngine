@@ -3,6 +3,9 @@
 #include "Core/DMemory.hpp"
 #include "GameType.hpp"
 
+// Init logger
+static EngineLogger* GlobalLogger = new EngineLogger();
+
 extern bool CreateGame(SGame* out_game);
 
 int main(void) {

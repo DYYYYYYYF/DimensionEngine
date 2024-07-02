@@ -13,7 +13,7 @@ struct SShaderSystemConfig {
 	unsigned short max_instance_textures;
 };
 
-class ShaderSystem {
+class DAPI ShaderSystem {
 public:
 	/**
 	 * @brief Initializes the shader system using the supplied configuration.

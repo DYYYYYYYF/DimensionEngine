@@ -11,7 +11,7 @@ enum UITextType {
 	eUI_Text_Type_system
 };
 
-class UIText {
+class DAPI UIText {
 public:
 	bool Create(class IRenderer* renderer, UITextType type, const char* fontName, unsigned short fontSize, const char* textContent);
 	void Destroy();
@@ -29,8 +29,8 @@ public:
 	IRenderer* Renderer = nullptr;
 	UITextType Type;
 	struct FontData* Data = nullptr;
-	VulkanBuffer VertexBuffer;
-	VulkanBuffer IndexBuffer;
+	IRenderbuffer* VertexBuffer = nullptr;
+	IRenderbuffer* IndexBuffer = nullptr;
 	char* Text = nullptr;
 	Transform Trans;
 	uint32_t InstanceID;

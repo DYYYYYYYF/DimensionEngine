@@ -7,6 +7,7 @@
 #include "Math/Transform.hpp"
 #include "Containers/TArray.hpp"
 #include "Containers/TString.hpp"
+#include "Resources/Skybox.hpp"
 
 #include "Systems/MaterialSystem.h"
 #include "Systems/ShaderSystem.h"
@@ -119,12 +120,19 @@ bool RenderViewSkybox::OnBuildPacket(void* data, struct RenderViewPacket* out_pa
 	out_packet->view_position = WorldCamera->GetPosition();
 
 	// Just set the extended data to the skybox data.
-	out_packet->extended_data = SkyboxData;
+	out_packet->extended_data = Memory::Allocate(sizeof(SkyboxPacketData), MemoryType::eMemory_Type_Renderer);
+	// Copy over the packet data.
+	Memory::Copy(out_packet->extended_data, SkyboxData, sizeof(SkyboxPacketData));
 
 	return true;
 }
 
 void RenderViewSkybox::OnDestroyPacket(struct RenderViewPacket* packet) {
+	if (packet->extended_data) {
+		Memory::Free(packet->extended_data, sizeof(SkyboxPacketData), eMemory_Type_Renderer);
+		packet->extended_data = nullptr;
+	}
+
 	// No much to do here, just zero mem.
 	Memory::Zero(packet, sizeof(RenderViewPacket));
 }
@@ -168,7 +176,7 @@ bool RenderViewSkybox::OnRender(struct RenderViewPacket* packet, IRendererBacken
 
 		// Instance.
 		ShaderSystem::BindInstance(SkyboxData->sb->InstanceID);
-		if (!ShaderSystem::SetUniformByIndex(CubeMapLocation, &SkyboxData->sb->Cubemap)) {
+		if (!ShaderSystem::SetUniformByIndex(CubeMapLocation, &SkyboxData->sb->CubeMap)) {
 			LOG_ERROR("RenderViewSkybox::OnRender() Failed to apply cube map uniform.");
 			return false;
 		}

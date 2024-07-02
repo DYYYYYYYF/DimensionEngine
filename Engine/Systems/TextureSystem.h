@@ -29,7 +29,7 @@ struct TextureLoadParams {
 	Resource ImageResource;
 };
 
-class TextureSystem {
+class DAPI TextureSystem {
 public:
 	static bool Initialize(IRenderer* renderer, STextureSystemConfig config);
 	static void Shutdown();

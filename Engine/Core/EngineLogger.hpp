@@ -19,7 +19,7 @@ char* AppendLogMessage(const char* format, Args ... args)
 	return nullptr;
 }
 
-class EngineLogger{
+class DAPI EngineLogger{
 public:
     EngineLogger();
 };

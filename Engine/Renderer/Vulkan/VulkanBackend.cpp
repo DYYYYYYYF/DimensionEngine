@@ -628,7 +628,6 @@ void VulkanBackend::DestroyTexture(Texture* texture) {
 
 	if (Image != nullptr) {
 		Image->Destroy(&Context);
-		Memory::Zero(Image, sizeof(VulkanImage));
 		Memory::Free(texture->InternalData, sizeof(VulkanImage), MemoryType::eMemory_Type_Texture);
 		texture->InternalData = nullptr;
 	}
@@ -1914,7 +1913,7 @@ bool VulkanBackend::CreateRenderpass(IRenderpass* out_renderpass, const Renderpa
 		// Each attachment for the target.
 		for (uint32_t a = 0; a < Target->attachment_count; ++a) {
 			RenderTargetAttachment* Attachment = &Target->attachments[a];
-			RenderTargetAttachmentConfig* AttachmentConfig = &config->target.attachments[a];
+			const RenderTargetAttachmentConfig* AttachmentConfig = &config->target.attachments[a];
 
 			Attachment->source = AttachmentConfig->source;
 			Attachment->type = AttachmentConfig->type;
@@ -1936,8 +1935,12 @@ bool VulkanBackend::GetEnabledMultiThread() const {
 }
 
 bool VulkanBackend::CreateRenderbuffer(enum RenderbufferType type, size_t total_size, bool use_freelist, IRenderbuffer* buffer) {
-	VulkanBuffer* VBuffer = (VulkanBuffer*)buffer;
+	if (buffer == nullptr) {
+		buffer = (VulkanBuffer*)Memory::Allocate(sizeof(VulkanBuffer), MemoryType::eMemory_Type_Vulkan);
+		buffer = new (buffer)VulkanBuffer();
+	}
 
+	VulkanBuffer* VBuffer = (VulkanBuffer*)buffer;
 	VBuffer->TotalSize = total_size;
 	VBuffer->Type = type;
 	VBuffer->UseFreelist = use_freelist;
