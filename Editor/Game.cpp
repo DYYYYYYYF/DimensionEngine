@@ -120,7 +120,7 @@ bool GameInitialize(SGame* game_instance) {
 	SGameState* State = (SGameState*)game_instance->state;
 
 	// Load python script
-	State->TestPython.SetPythonFile("compile_shader");
+	State->TestPython.SetPythonFile("recompile_shader");
 
 	State->WorldCamera = CameraSystem::GetDefault();
 	State->WorldCamera->SetPosition(Vec3(0.0f, 0.0f, -40.0f));
