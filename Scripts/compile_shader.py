@@ -5,8 +5,8 @@ import sys, getopt  # Command line argvs
 # Common values
 vulkanPath       = "D:/C_Library/VulkanSDK"
 compile_command  = "glslc -c "
-file_path        = os.path.abspath("..") + "/Shaders/"
-target_path      = os.path.abspath("..") + "/Assets/Shaders/"
+file_path        = os.path.abspath(".") + "/Shaders/"
+target_path      = os.path.abspath(".") + "/Assets/Shaders/"
 
 # compile failed files
 failed_shaders = []
@@ -18,7 +18,7 @@ def CheckGlslc():
 
     compile_check_command     = compile_command + "--version"
     if os.system(compile_check_command) != 0:
-        compile_check_command = file_path + "glslc.exe -c "
+        compile_check_command = file_path + "tools/glslc.exe -c "
         
         if os.system(compile_check_command) != 0:
             # Not set global command
