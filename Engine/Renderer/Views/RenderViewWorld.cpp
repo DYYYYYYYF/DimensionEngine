@@ -35,7 +35,29 @@ static bool RenderViewWorldOnEvent(unsigned short code, void* sender, void* list
 	{
 	case Core::eEvent_Code_Default_Rendertarget_Refresh_Required:
 		RenderViewSystem::RegenerateRendertargets(self);
-		return false;
+		return true;
+
+	case Core::eEvent_Code_Set_Render_Mode:
+		int RenderMode = context.data.i32[0];
+		switch (RenderMode)
+		{
+		case ShaderRenderMode::eShader_Render_Mode_Default:
+			self->render_mode = ShaderRenderMode::eShader_Render_Mode_Default;
+			LOG_DEBUG("Change render mode: eShader_Render_Mode_Default.");
+			break;
+
+		case ShaderRenderMode::eShader_Render_Mode_Lighting:
+			self->render_mode = ShaderRenderMode::eShader_Render_Mode_Lighting;
+			LOG_DEBUG("Change render mode: eShader_Render_Mode_Lighting.");
+			break;
+
+		case ShaderRenderMode::eShader_Render_Mode_Normals:
+			self->render_mode = ShaderRenderMode::eShader_Render_Mode_Normals;
+			LOG_DEBUG("Change render mode: eShader_Render_Mode_Normals.");
+			break;
+
+		}
+		return true;
 	}
 
 	return false;
@@ -124,6 +146,10 @@ bool RenderViewWorld::OnCreate(const RenderViewConfig& config) {
 		LOG_ERROR("Unable to listen for refresh required event, creation failed.");
 		return false;
 	}
+	if (!Core::EventRegister(Core::eEvent_Code_Set_Render_Mode, this, RenderViewWorldOnEvent)) {
+		LOG_ERROR("Unable to listen for refresh required event, creation failed.");
+		return false;
+	}
 	
 	return true;
 }
@@ -131,6 +157,7 @@ bool RenderViewWorld::OnCreate(const RenderViewConfig& config) {
 void RenderViewWorld::OnDestroy() {
 	Core::EventUnregister(Core::eEvent_Code_Default_Rendertarget_Refresh_Required, this, RenderViewWorldOnEvent);
 	Core::EventUnregister(Core::eEvent_Code_Reload_Shader_Module, this, ReloadShader);
+	Core::EventUnregister(Core::eEvent_Code_Set_Render_Mode, this, RenderViewWorldOnEvent);
 }
 
 void RenderViewWorld::OnResize(uint32_t width, uint32_t height) {
@@ -237,7 +264,7 @@ bool RenderViewWorld::OnRender(struct RenderViewPacket* packet, IRendererBackend
 		}
 
 		// Apply globals.
-		if (!MaterialSystem::ApplyGlobal(SID, frame_number, packet->projection_matrix, packet->view_matrix, packet->ambient_color, packet->view_position)) {
+		if (!MaterialSystem::ApplyGlobal(SID, frame_number, packet->projection_matrix, packet->view_matrix, packet->ambient_color, packet->view_position, render_mode)) {
 			LOG_ERROR("RenderViewUI::OnRender() Failed to use global shader. Render frame failed.");
 			return false;
 		}

@@ -11,12 +11,14 @@ layout (set = 0, binding = 0, std140) uniform GlobalUniformObject{
 	mat4 view;
 	vec4 ambient_color;
 	vec3 view_position;
+	int mode;
 }GlobalUBO;
 
 layout (push_constant) uniform PushConstants{
 	mat4 model;
 }PushConstant;
 
+layout (location = 0) out int out_mode;
 layout (location = 1) out struct out_dto{
 	vec2 vTexcoord;
 	vec3 vNormal;
@@ -35,6 +37,8 @@ void main(){
 	OutDto.vFragPosition = vec3(PushConstant.model * vec4(vPosition, 1.0f));
 	OutDto.vNormal = normalize(mat3(PushConstant.model) * vNormal);
 	OutDto.vTangent = vec4(normalize(mat3(PushConstant.model) * vTangent.xyz), vTangent.w);
+
+	out_mode = GlobalUBO.mode;
 
 	gl_Position = GlobalUBO.projection * GlobalUBO.view * PushConstant.model * vec4(vPosition, 1.0f);
 }

@@ -7,6 +7,12 @@
 
 struct TextureMap;
 
+enum ShaderRenderMode {
+	eShader_Render_Mode_Default,
+	eShader_Render_Mode_Lighting,
+	eShader_Render_Mode_Normals
+};
+
 enum ShaderState {
 	eShader_State_Not_Created,
 	eShader_State_Uninitialized,
@@ -76,6 +82,7 @@ struct MaterialShaderUniformLocations {
 	unsigned short shininess;
 	unsigned short view_position;
 	unsigned short model;
+	unsigned short render_mode;
 };
 
 struct UIShaderUniformLocations {

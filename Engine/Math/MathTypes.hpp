@@ -245,8 +245,7 @@ public:
 	* @return The distance between this vector and the other.
 	*/
 	float Dot(const Vec3& vec) const {
-		Vec3 t = Vec3(x, y, z);
-		return t.x * vec.x + t.y * vec.y + t.z * vec.z;
+		return x * vec.x + y * vec.y + z * vec.z;
 	}
 
 	/*
@@ -256,11 +255,10 @@ public:
 	* @return The cross product result of this vector and the other.
 	*/
 	Vec3 Cross(const Vec3& vec) const {
-		Vec3 t = Vec3(x, y, z);
 		return Vec3{
-			t.y * vec.z - t.z * vec.y,
-			t.z * vec.x - t.x * vec.z,
-			t.x * vec.y - t.y * vec.x
+			y* vec.z - z * vec.y,
+			z* vec.x - x * vec.z,
+			x* vec.y - y * vec.x
 		};
 	}
 
@@ -270,7 +268,7 @@ public:
 	* @param vec Another vector.
 	* @return The distance between this vector and the other.
 	*/
-	float Distance(const Vec3& vec) {
+	float Distance(const Vec3& vec) const {
 		Vec3 d{ x - vec.x, y - vec.y, z - vec.z };
 		return d.Length();
 	}
@@ -1081,9 +1079,11 @@ public:
 	 * @return The transformed vector.
 	 */
 	friend DAPI Vec3 operator*(const Matrix4& m, const Vec3& v) {
-		return Vec3(v.x * m.data[0] + v.y * m.data[1] + v.z * m.data[2] + m.data[3],
+		return Vec3(
+			v.x * m.data[0] + v.y * m.data[1] + v.z * m.data[2] + m.data[3],
 			v.x * m.data[4] + v.y * m.data[5] + v.z * m.data[6] + m.data[7],
-			v.x * m.data[8] + v.y * m.data[9] + v.z * m.data[10] + m.data[11]);
+			v.x * m.data[8] + v.y * m.data[9] + v.z * m.data[10] + m.data[11]
+		);
 	}
 
 	/**
@@ -1094,9 +1094,11 @@ public:
 	 * @return The transformed vector.
 	 */
 	friend DAPI Vec3 operator*(const Vec3& v, const Matrix4& m) {
-		return Vec3(v.x * m.data[0] + v.y * m.data[4] + v.z * m.data[8] + m.data[12],
+		return Vec3(
+			v.x * m.data[0] + v.y * m.data[4] + v.z * m.data[8] + m.data[12],
 			v.x * m.data[1] + v.y * m.data[5] + v.z * m.data[9] + m.data[13],
-			v.x * m.data[2] + v.y * m.data[6] + v.z * m.data[10] + m.data[14]);
+			v.x * m.data[2] + v.y * m.data[6] + v.z * m.data[10] + m.data[14]
+		);
 	}
 
 	/**
@@ -1107,10 +1109,12 @@ public:
 	 * @return The transformed vector.
 	 */
 	friend DAPI Vec4 operator*(const Matrix4& m, const Vec4& v) {
-		return Vec4(v.x * m.data[0] + v.y * m.data[1] + v.z * m.data[2] + v.w * m.data[3],
+		return Vec4(
+			v.x * m.data[0] + v.y * m.data[1] + v.z * m.data[2] + v.w * m.data[3],
 			v.x * m.data[4] + v.y * m.data[5] + v.z * m.data[6] + v.w * m.data[7],
 			v.x * m.data[8] + v.y * m.data[9] + v.z * m.data[10] + v.w * m.data[11],
-			v.x * m.data[12] + v.y * m.data[13] + v.z * m.data[14] + v.w * m.data[15]);
+			v.x * m.data[12] + v.y * m.data[13] + v.z * m.data[14] + v.w * m.data[15]
+		);
 	}
 
 	/**
@@ -1121,10 +1125,12 @@ public:
 	 * @return The transformed vector.
 	 */
 	friend DAPI Vec4 operator*(const Vec4& v, const Matrix4& m) {
-		return Vec4(v.x * m.data[0] + v.y * m.data[4] + v.z * m.data[8] + v.w * m.data[12],
+		return Vec4(
+			v.x * m.data[0] + v.y * m.data[4] + v.z * m.data[8] + v.w * m.data[12],
 			v.x * m.data[1] + v.y * m.data[5] + v.z * m.data[9] + v.w * m.data[13],
 			v.x * m.data[2] + v.y * m.data[6] + v.z * m.data[10] + v.w * m.data[14],
-			v.x * m.data[3] + v.y * m.data[7] + v.z * m.data[11] + v.w * m.data[15]);
+			v.x * m.data[3] + v.y * m.data[7] + v.z * m.data[11] + v.w * m.data[15]
+		);
 	}
 
 };
@@ -1372,9 +1378,7 @@ public:
 
 class DAPI Frustum {
 public:
-	Frustum() {
-
-	}
+	Frustum() {}
 
 	/**
 	 * @brief Creates and returns a frustum based on the provided position, direction vectors, aspect, field of view,
@@ -1394,14 +1398,16 @@ public:
 		const float HalfH = HalfV * aspect;
 		const Vec3 fwd = forward;
 		const Vec3 ForwardFar = fwd * far;
+		const Vec3 RightHalfH = right * HalfH;
+		const Vec3 UpHalfV = up * HalfV;
 
 		// Top bottom right left far near
-		Sides[0] = Plane3D(fwd * near + position, fwd);
+		Sides[0] = Plane3D(position + fwd * near, fwd);
 		Sides[1] = Plane3D(position + ForwardFar, fwd * -1.0f);
-		Sides[2] = Plane3D(position, up.Cross(ForwardFar + right * HalfH));
-		Sides[3] = Plane3D(position, (ForwardFar - right * HalfH).Cross(up));
-		Sides[4] = Plane3D(position, right.Cross(ForwardFar - up * HalfV));
-		Sides[5] = Plane3D(position, (ForwardFar + up * HalfV).Cross(right));
+		Sides[2] = Plane3D(position, up.Cross(ForwardFar + RightHalfH));
+		Sides[3] = Plane3D(position, (ForwardFar - RightHalfH).Cross(up));
+		Sides[4] = Plane3D(position, right.Cross(ForwardFar - UpHalfV));
+		Sides[5] = Plane3D(position, (ForwardFar + UpHalfV).Cross(right));
 	}
 
 	/**

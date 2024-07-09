@@ -40,12 +40,24 @@ bool MaterialSystem::Initialize(IRenderer* renderer, SMaterialSystemConfig confi
 	Renderer = renderer;
 
 	MaterialShaderID = INVALID_ID;
-	MaterialLocations.diffuse_color = INVALID_ID_U16;
+	MaterialLocations.projection = INVALID_ID_U16;
+	MaterialLocations.view = INVALID_ID_U16;
+	MaterialLocations.ambient_color= INVALID_ID_U16;
+	MaterialLocations.diffuse_color= INVALID_ID_U16;
 	MaterialLocations.diffuse_texture = INVALID_ID_U16;
+	MaterialLocations.normal_texture = INVALID_ID_U16;
+	MaterialLocations.specular_texture = INVALID_ID_U16;
+	MaterialLocations.shininess = INVALID_ID_U16;
+	MaterialLocations.view_position = INVALID_ID_U16;
+	MaterialLocations.model = INVALID_ID_U16;
+	MaterialLocations.render_mode = INVALID_ID_U16;
 
 	UIShaderID = INVALID_ID;
+	UILocations.projection = INVALID_ID_U16;
+	UILocations.view = INVALID_ID_U16;
 	UILocations.diffuse_color = INVALID_ID_U16;
 	UILocations.diffuse_texture = INVALID_ID_U16;
+	UILocations.model = INVALID_ID_U16;
 
 	// Block of memory will block for array, then block for hashtable.
 	size_t ArraryRequirement = sizeof(Material) * MaterialSystemConfig.max_material_count;
@@ -177,6 +189,7 @@ Material* MaterialSystem::AcquireFromConfig(SMaterialConfig config) {
 				MaterialLocations.view_position = ShaderSystem::GetUniformIndex(s, "view_position");
 				MaterialLocations.shininess = ShaderSystem::GetUniformIndex(s, "shininess");
 				MaterialLocations.model = ShaderSystem::GetUniformIndex(s, "model");
+				MaterialLocations.render_mode = ShaderSystem::GetUniformIndex(s, "mode");
 			}
 			else if (UIShaderID == INVALID_ID && strcmp(config.shader_name, "Shader.Builtin.UI") == 0) {
 				UIShaderID = s->ID;
@@ -463,7 +476,7 @@ bool MaterialSystem::CreateDefaultMaterial() {
         return false;                                 \
     }
 
-bool MaterialSystem::ApplyGlobal(uint32_t shader_id, size_t renderer_frame_number, const Matrix4& projection, const Matrix4& view, const Vec4& ambient_color, const Vec3& view_position) {
+bool MaterialSystem::ApplyGlobal(uint32_t shader_id, size_t renderer_frame_number, const Matrix4& projection, const Matrix4& view, const Vec4& ambient_color, const Vec3& view_position, uint32_t render_mode) {
 	Shader* s = ShaderSystem::GetByID(shader_id);
 	if (s == nullptr) {
 		return false;
@@ -478,6 +491,7 @@ bool MaterialSystem::ApplyGlobal(uint32_t shader_id, size_t renderer_frame_numbe
 		MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(MaterialLocations.view, &view));
 		MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(MaterialLocations.ambient_color, &ambient_color));
 		MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(MaterialLocations.view_position, &view_position));
+		MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(MaterialLocations.render_mode, &render_mode));
 	}
 	else if (shader_id == UIShaderID) {
 		MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(UILocations.projection, &projection));

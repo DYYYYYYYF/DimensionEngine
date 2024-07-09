@@ -254,7 +254,6 @@ bool GameInitialize(SGame* game_instance) {
 	Core::EventRegister(Core::eEvent_Code_Key_Pressed, game_instance, GameOnKey);
 	Core::EventRegister(Core::eEvent_Code_Key_Released, game_instance, GameOnKey);
 
-	// Memory::Zero(&game_instance->FrameData, sizeof(GameFrameData));
 	return true;
 }
 
@@ -285,9 +284,6 @@ bool GameUpdate(SGame* game_instance, float delta_time) {
 		std::vector<GeometryRenderData>().swap(game_instance->FrameData.WorldGeometries);
 	}
 
-	// Clear frame data.
-	// Memory::Zero(&game_instance->FrameData, sizeof(GameFrameData));
-
 	static size_t AllocCount = 0;
 	size_t PrevAllocCount = AllocCount;
 	AllocCount = Memory::GetAllocateCount();
@@ -299,6 +295,23 @@ bool GameUpdate(SGame* game_instance, float delta_time) {
 	}
 
 	SGameState* State = (SGameState*)game_instance->state;
+
+	// Temp shader debug
+	if (Core::InputIsKeyUp(eKeys_F1) && Core::InputWasKeyDown(eKeys_F1)) {
+		SEventContext Context;
+		Context.data.i32[0] = ShaderRenderMode::eShader_Render_Mode_Default;
+		Core::EventFire(Core::eEvent_Code_Set_Render_Mode, nullptr, Context);
+	}
+	if (Core::InputIsKeyUp(eKeys_F2) && Core::InputWasKeyDown(eKeys_F2)) {
+		SEventContext Context;
+		Context.data.i32[0] = ShaderRenderMode::eShader_Render_Mode_Lighting;
+		Core::EventFire(Core::eEvent_Code_Set_Render_Mode, nullptr, Context);
+	}
+	if (Core::InputIsKeyUp(eKeys_F3) && Core::InputWasKeyDown(eKeys_F3)) {
+		SEventContext Context;
+		Context.data.i32[0] = ShaderRenderMode::eShader_Render_Mode_Normals;
+		Core::EventFire(Core::eEvent_Code_Set_Render_Mode, nullptr, Context);
+	}
 
 	if (Core::InputIsKeyDown(eKeys_Left)) {
 		State->WorldCamera->RotateYaw(1.0f * delta_time);
@@ -411,33 +424,37 @@ bool GameUpdate(SGame* game_instance, float delta_time) {
 	Vec3 Right = State->WorldCamera->Right();
 	Vec3 Up = State->WorldCamera->Up();
 	// TODO: Get camera fov, aspect etc.
-	State->CameraFrustum = Frustum(State->WorldCamera->GetPosition(), Forward, Right, Up, (float)State->Width / State->Height, Deg2Rad(45.0f), 0.1f, 1000.0f);
+	State->CameraFrustum = Frustum(State->WorldCamera->GetPosition(), Forward, Right, Up, (float)State->Width / (float)State->Height, Deg2Rad(45.0f), 0.1f, 1000.0f);
 
 	// NOTE: starting at a reasonable default to avoid too many realloc.
 	uint32_t DrawCount = 0;
 	game_instance->FrameData.WorldGeometries.reserve(512);
 	for (uint32_t i = 0; i < 10; ++i) {
 		Mesh* m = &State->Meshes[i];
+		if (m == nullptr) {
+			continue;
+		}
+
 		if (m->Generation != INVALID_ID_U8) {
 			Matrix4 Model = m->Transform.GetWorldTransform();
 
 			for (uint32_t j = 0; j < m->geometry_count; j++) {
 				Geometry* g = m->geometries[j];
-				// AABB calculation
+
+				// Bounding sphere calculation
 				{
-					// Translate/scale the extents.
-					// vec3 extents_min = vec3_mul_mat4(g->extents.min, model);
-					Vec3 ExtentsMax = g->Extents.max * Model;
+					Vec3 ExtensMin = g->Extents.min.Transform(Model);
+					Vec3 ExtensMax = g->Extents.max.Transform(Model);
+
+					float Min = DMIN(DMIN(ExtensMin.x, ExtensMin.y), ExtensMin.z);
+					float Max = DMIN(DMIN(ExtensMax.x, ExtensMax.y), ExtensMax.z);
+					float Diff = Dabs(Max - Min);
+					float Radius = Diff / 2.0f;
 
 					// Translate/scale the center.
-					Vec3 Center = g->Center * Model;
-					Vec3 HalfExtents = {
-						Dabs(ExtentsMax.x - Center.x),
-						Dabs(ExtentsMax.y - Center.y),
-						Dabs(ExtentsMax.z - Center.z)
-					};
+					Vec3 Center = g->Center.Transform(Model);
 
-					if (State->CameraFrustum.IntersectsAABB(Center, HalfExtents)) {
+					if (State->CameraFrustum.IntersectsSphere(Center, Radius)) {
 						// Add it to the list to be rendered.
 						GeometryRenderData Data;
 						Data.model = Model;
@@ -447,6 +464,30 @@ bool GameUpdate(SGame* game_instance, float delta_time) {
 						DrawCount++;
 					}
 				}
+
+				// AABB calculation
+				//{
+				//	// Translate/scale the extents.
+				//	Vec3 ExtentsMax = g->Extents.max * Model;
+
+				//	// Translate/scale the center.
+				//	Vec3 Center = g->Center * Model;
+				//	Vec3 HalfExtents = {
+				//		Dabs(ExtentsMax.x - Center.x),
+				//		Dabs(ExtentsMax.y - Center.y),
+				//		Dabs(ExtentsMax.z - Center.z)
+				//	};
+
+				//	if (State->CameraFrustum.IntersectsAABB(Center, HalfExtents)) {
+				//		// Add it to the list to be rendered.
+				//		GeometryRenderData Data;
+				//		Data.model = Model;
+				//		Data.geometry = g;
+				//		Data.uniqueID = m->UniqueID;
+				//		game_instance->FrameData.WorldGeometries.push_back(Data);
+				//		DrawCount++;
+				//	}
+				//}
 			}
 		}
 	}

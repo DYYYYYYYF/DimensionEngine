@@ -97,6 +97,11 @@ namespace Core {
 		*/
 		eEvent_Code_Default_Rendertarget_Refresh_Required = 0x09,
 
+		/**
+		* @breif Change the render mode for debugging purposes.
+		*/
+		eEvent_Code_Set_Render_Mode = 0x0A,
+
 		eEvent_Code_Reload_Shader_Module = 0x10,
 
 		eEvent_Code_Debug_0 = 0xFD,
