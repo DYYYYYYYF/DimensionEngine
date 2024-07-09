@@ -37,13 +37,6 @@ namespace Core {
 
 	// System internal event codes. Application should use codes beyond 255.
 	enum SystemEventCode {
-		// Resized / resolution changed from the OS.
-		/* Context usage:
-		 * unsigned short width = data.data.u16[0];
-		 * unsigned short height = data.data.u16[1];
-		 */
-		eEvent_Code_Resize = 0x00,
-
 		// Shuts the application down on the next frame.
 		eEvent_Code_Application_Quit = 0x01,
 
@@ -84,21 +77,27 @@ namespace Core {
 		 */
 		eEvent_Code_Mouse_Wheel = 0x07,
 
+		// Resized / resolution changed from the OS.
+		/* Context usage:
+		 * unsigned short width = data.data.u16[0];
+		 * unsigned short height = data.data.u16[1];
+		 */
+		eEvent_Code_Resize = 0x00,
+	
 		/**
 		* @brief The hoverd-over object id, if there is one.
 		* Context usage:
 		* int id = data.data.u32[0];
 		*/
-		eEvent_Code_Object_Hover_ID_Changed = 0x08,
+		eEvent_Code_Object_Hover_ID_Changed = 0x09,
 
 		/**
 		* @breif An event fired by the renderer backend to indicate when any render
 		* targets associated with the default window resource need to be refreshed.
 		*/
-		eEvent_Code_Default_Rendertarget_Refresh_Required = 0x09,
+		eEvent_Code_Default_Rendertarget_Refresh_Required = 0x10,
 
-		eEvent_Code_Debug_0 = 0xFD,
-		eEvent_Code_Debug_1 = 0xFE,
+		eEvent_Code_Debug_0 = 0x08,
 
 		eEvent_Code_Max = 0xFF
 	};

@@ -67,6 +67,5 @@ void Mesh::Unload() {
 	geometries = nullptr;
 
 	// For good measure. Invalidate the geometry so it doesn't attemp to be renderer.
-	geometry_count = 0;
 	Generation = INVALID_ID_U8;
 }

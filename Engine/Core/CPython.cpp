@@ -20,14 +20,12 @@ void CPythonModule::ExecuteFunc(const char* funcName, const char* shaderLanguage
 	PyObject* PyMoudle = PyImport_ImportModule(FileName);
 	if (PyMoudle == nullptr) {
 		LOG_WARN("No such python script named '%s'.", FileName);
-		Py_Finalize();
 		return;
 	}
 
 	PyObject* PyFunc = PyObject_GetAttrString(PyMoudle, funcName);
 	if (!PyFunc || !PyCallable_Check(PyFunc)) {
 		LOG_WARN("No such function '%s' in python script '%s'.", funcName, FileName);
-		Py_Finalize();
 		return;
 	}
     
@@ -42,6 +40,4 @@ void CPythonModule::ExecuteFunc(const char* funcName, const char* shaderLanguage
 
 	PyObject_CallObject(PyFunc, PyParams);
 	Py_Finalize();
-
-	// TODO: Reload shader module.
 }

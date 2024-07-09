@@ -263,7 +263,7 @@ void GeometrySystem::DestroyGeometry(Geometry* geometry) {
 	geometry->name[0] = '0';
 
 	// Release the material.
-	if (geometry->Material && strlen(geometry->Material->Name) > 0) {
+	if (geometry->Material && strlen(geometry->name) > 0) {
 		MaterialSystem::Release(geometry->Material->Name);
 		geometry->Material = nullptr;
 	}

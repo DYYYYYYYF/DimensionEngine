@@ -308,7 +308,7 @@ bool ApplicationRun() {
 			if (RemainingSceonds > 0) {
 				int RemainingMS = static_cast<int>(RemainingSceonds * 1000);
 				// TODO: Configurable
-				bool LimitFrames = false;
+				bool LimitFrames = true;
 				if (RemainingMS > 0 && LimitFrames) {
 					Platform::PlatformSleep(RemainingMS - 1);
 				}

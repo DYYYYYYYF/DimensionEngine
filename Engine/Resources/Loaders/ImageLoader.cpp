@@ -107,9 +107,6 @@ bool ImageLoader::Load(const char* name, void* params, Resource* resource) {
 	resource->DataSize = sizeof(ImageResourceData);
 	resource->DataCount = 1;
 
-	Memory::Free(RawData, FileSize, MemoryType::eMemory_Type_Texture);
-	RawData = nullptr;
-
 	return true;
 }
 

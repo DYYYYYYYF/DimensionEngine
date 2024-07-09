@@ -53,19 +53,6 @@ bool GameOnDebugEvent(unsigned short code, void* sender, void* listener_instance
 
 		return true;
 	}
-	else if (code == Core::eEvent_Code_Debug_1) {
-		if (State->ModelsLoaded) {
-			LOG_DEBUG("Unloading models...");
-
-			State->CarMesh->Unload();
-			State->SponzaMesh->Unload();
-			State->ModelsLoaded = false;
-
-			SEventContext Context = {};
-			Core::EventFire(Core::eEvent_Code_Debug_0, listener_instance, Context);
-			return true;
-		}
-	}
 
 	return false;
 }
@@ -84,7 +71,6 @@ bool GameOnKey(unsigned short code, void* sender, void* listener_instance, SEven
 		}
 	}
 	else if (code == Core::eEvent_Code_Key_Released) {
-		unsigned short KeyCode = context.data.u16[0];
 
 		return true;
 	}
@@ -144,13 +130,13 @@ bool GameInitialize(SGame* game_instance) {
 		LOG_ERROR("Failed to load basic ui bitmap text.");
 		return false;
 	}
-	State->TestText.SetPosition(Vec3(150, 450, 0));
+	State->TestText.SetPosition(Vec3(100, 200, 0));
 
-	if (!State->TestSysText.Create(Renderer, UITextType::eUI_Text_Type_system, "Noto Sans CJK JP", 26, "Keyboard map:\nO: Load sponza & car models.\nT: Recompile glsl shaders.\nM: Watch memory usage.")) {
+	if (!State->TestSysText.Create(Renderer, UITextType::eUI_Text_Type_system, "Noto Sans CJK JP", 31, "Test system font.")) {
 		LOG_ERROR("Failed to load basic ui system text.");
 		return false;
 	}
-	State->TestSysText.SetPosition(Vec3(100, 200, 0));
+	State->TestSysText.SetPosition(Vec3(100, 400, 0));
 
 	// Skybox
 	if (!State->SB.Create("SkyboxCube", Renderer)) {
@@ -260,7 +246,6 @@ bool GameInitialize(SGame* game_instance) {
 
 	// TODO: TEMP
 	Core::EventRegister(Core::eEvent_Code_Debug_0, game_instance, GameOnDebugEvent);
-	Core::EventRegister(Core::eEvent_Code_Debug_1, game_instance, GameOnDebugEvent);
 	Core::EventRegister(Core::eEvent_Code_Object_Hover_ID_Changed, game_instance, GameOnEvent);
 	// TEMP
 
@@ -281,7 +266,6 @@ void GameShutdown(SGame* gameInstance) {
 
 	// TODO: TEMP
 	Core::EventUnregister(Core::eEvent_Code_Debug_0, gameInstance, GameOnDebugEvent);
-	Core::EventUnregister(Core::eEvent_Code_Debug_1, gameInstance, GameOnDebugEvent);
 	Core::EventUnregister(Core::eEvent_Code_Object_Hover_ID_Changed, gameInstance, GameOnEvent);
 	// TEMP
 
@@ -343,32 +327,15 @@ bool GameUpdate(SGame* game_instance, float delta_time) {
 		State->WorldCamera->Reset();
 	}
 
-	// TODO: Remove
 	if (Core::InputIsKeyUp(eKeys_O) && Core::InputWasKeyDown(eKeys_O)) {
 		SEventContext Context = {};
 		Core::EventFire(Core::eEvent_Code_Debug_0, game_instance, Context);
 	}
 
-	if (Core::InputIsKeyUp(eKeys_P) && Core::InputWasKeyDown(eKeys_P)) {
-		SEventContext Context = {};
-		Core::EventFire(Core::eEvent_Code_Debug_1, game_instance, Context);
-	}
-
-	if (Core::InputIsKeyUp(eKeys_G) && Core::InputWasKeyDown(eKeys_G)) {
+	// TODO: Remove
+	if (Core::InputIsKeyUp(eKeys_T) && Core::InputWasKeyDown(eKeys_T)) {
 		State->TestPython.ExecuteFunc("CompileShaders", "glsl");
-
-		// Reload
-		SEventContext Context = {};
-		Core::EventFire(Core::eEvent_Code_Debug_1, game_instance, Context);
 	}
-	if (Core::InputIsKeyUp(eKeys_H) && Core::InputWasKeyDown(eKeys_H)) {
-		State->TestPython.ExecuteFunc("CompileShaders", "hlsl");
-
-		// Reload
-		SEventContext Context = {};
-		Core::EventFire(Core::eEvent_Code_Debug_1, game_instance, Context);
-	}
-	// Remove
 
 	int px, py, cx, cy;
 	Core::InputGetMousePosition(cx, cy);
@@ -410,8 +377,10 @@ bool GameUpdate(SGame* game_instance, float delta_time) {
 	char FPSText[512];
 	StringFormat(FPSText, 512,
 		"\
-	Camera Pos: [%.3f %.3f %.3f]\tCamera Rot: [%.3f %.3f %.3f]\n\
-	L=%s R=%s\tNDC: x=%.2f, y=%.2f\tHovered: %s%u\n\
+	Camera Pos: [%.3f %.3f %.3f]\n\
+	Camera Rot: [%.3f %.3f %.3f]\n\
+	L=%s R=%s\tNDC: x=%.2f, y=%.2f\n\
+	Hovered: %s%u\n\
 	FPS: %d\tDelta time: %.2f",
 		Pos.x, Pos.y, Pos.z,
 		Rad2Deg(Rot.x), Rad2Deg(Rot.y), Rad2Deg(Rot.z),
@@ -511,9 +480,6 @@ void GameOnResize(SGame* game_instance, unsigned int width, unsigned int height)
 
 	State->Width = width;
 	State->Height = height;
-
-	State->TestText.SetPosition(Vec3(180, (float)height - 150, 0));
-	State->TestSysText.SetPosition(Vec3(100, (float)height - 400, 0));
 
 	// TODO: Temp
 	SGeometryConfig UIConfig;

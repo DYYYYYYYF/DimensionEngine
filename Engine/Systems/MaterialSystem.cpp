@@ -219,13 +219,10 @@ void MaterialSystem::Release(const char* name) {
 		return;
 	}
 
-	// Take a copy of name, it will be zero-out in DestroyMaterial();
-	char* CopyMatName = StringCopy(name);
-
 	SMaterialReference Ref;
-	if (RegisteredMaterialTable.Get(CopyMatName, &Ref)) {
+	if (RegisteredMaterialTable.Get(name, &Ref)) {
 		if (Ref.reference_count == 0) {
-			LOG_WARN("Tried to release non-existent material: %s", CopyMatName);
+			LOG_WARN("Tried to release non-existent material: %s", name);
 			return;
 		}
 
@@ -239,18 +236,15 @@ void MaterialSystem::Release(const char* name) {
 			// Reset the reference.
 			Ref.handle = INVALID_ID;
 			Ref.auto_release = false;
-			LOG_INFO("Released material '%s'. Material unloaded.", CopyMatName);
+			LOG_INFO("Released material '%s'. Material unloaded.", name);
 		}
 
 		// Update the entry.
-		RegisteredMaterialTable.Set(CopyMatName, &Ref);
+		RegisteredMaterialTable.Set(name, &Ref);
 	}
 	else {
-		LOG_ERROR("Material release failed to release material '%s'.", CopyMatName);
+		LOG_ERROR("Material release failed to release material '%s'.", name);
 	}
-
-	Memory::Free(CopyMatName, sizeof(char) * strlen(CopyMatName) + 1, MemoryType::eMemory_Type_String);
-	CopyMatName = nullptr;
 }
 
 Material* MaterialSystem::GetDefaultMaterial() {
