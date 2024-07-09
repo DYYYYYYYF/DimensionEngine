@@ -912,11 +912,11 @@ void VulkanBackend::DestroyGeometry(Geometry* geometry) {
 		GeometryData* InternalData = &Context.Geometries[geometry->InternalID];
 
 		// Free vertex data.
-		FreeRenderbuffer(&Context.ObjectVertexBuffer, InternalData->vertext_buffer_offset, InternalData->vertex_element_size * InternalData->vertex_count);
+		FreeRenderbuffer(&Context.ObjectVertexBuffer, InternalData->vertex_element_size * InternalData->vertex_count, InternalData->vertext_buffer_offset);
 
 		// Free index data.
 		if (InternalData->index_element_size > 0) {
-			FreeRenderbuffer(&Context.ObjectIndexBuffer, InternalData->index_buffer_offset, InternalData->index_element_size * InternalData->index_count);
+			FreeRenderbuffer(&Context.ObjectIndexBuffer, InternalData->index_element_size * InternalData->index_count, InternalData->index_buffer_offset);
 		}
 
 		// Clean up date.

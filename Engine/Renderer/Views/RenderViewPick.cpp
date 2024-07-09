@@ -290,6 +290,11 @@ void RenderViewPick::OnDestroyPacket(struct RenderViewPacket* packet) {
 	std::vector<GeometryRenderData>().swap(packet->geometries);
 
 	if (packet->extended_data) {
+		PickPacketData* PacketData = (PickPacketData*)packet->extended_data;
+		if (PacketData->WorldMeshData.meshes) {
+			Memory::Free(PacketData->WorldMeshData.meshes, sizeof(Mesh) * 10, MemoryType::eMemory_Type_Array);
+		}
+
 		Memory::Free(packet->extended_data, sizeof(PickPacketData), eMemory_Type_Renderer);
 		packet->extended_data = nullptr;
 	}

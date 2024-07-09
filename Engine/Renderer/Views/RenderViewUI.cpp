@@ -138,6 +138,15 @@ void RenderViewUI::OnDestroyPacket(struct RenderViewPacket* packet) {
 	std::vector<GeometryRenderData>().swap(packet->geometries);
 
 	if (packet->extended_data) {
+		UIPacketData* PacketData = (UIPacketData*)packet->extended_data;
+		if (PacketData->Textes != nullptr) {
+			Memory::Free(PacketData->Textes, sizeof(UIText) * 2, MemoryType::eMemory_Type_Array);
+		}
+
+		if (PacketData->meshData.meshes != nullptr) {
+			Memory::Free(PacketData->meshData.meshes, sizeof(Mesh) * 10, MemoryType::eMemory_Type_Array);
+		}
+
 		Memory::Free(packet->extended_data, sizeof(UIPacketData), eMemory_Type_Renderer);
 		packet->extended_data = nullptr;
 	}
