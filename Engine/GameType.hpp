@@ -4,6 +4,11 @@
 
 static IRenderer* Renderer = nullptr;
 
+class GameFrameData {
+public:
+	std::vector<GeometryRenderData> WorldGeometries;
+};
+
 struct SGame {
 	SApplicationConfig app_config;
 
@@ -17,4 +22,5 @@ struct SGame {
 	void (*on_resize)(struct SGame* game_instance, unsigned int width, unsigned int height);
 
 	void* state = nullptr;
+	GameFrameData FrameData;
 };

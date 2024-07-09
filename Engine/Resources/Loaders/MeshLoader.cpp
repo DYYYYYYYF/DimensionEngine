@@ -436,13 +436,13 @@ void MeshLoader::ProcessSubobject(std::vector<Vec3>& positions, std::vector<Vec3
 			}
 
 			// Check extents - max
-			if (Pos.x >out_data->min_extents.x || !ExtentSet) {
+			if (Pos.x >out_data->max_extents.x || !ExtentSet) {
 				out_data->max_extents.x = Pos.x;
 			}
-			if (Pos.y > out_data->min_extents.y || !ExtentSet) {
+			if (Pos.y > out_data->max_extents.y || !ExtentSet) {
 				out_data->max_extents.y = Pos.y;
 			}
-			if (Pos.z > out_data->min_extents.z || !ExtentSet) {
+			if (Pos.z > out_data->max_extents.z || !ExtentSet) {
 				out_data->max_extents.z = Pos.z;
 			}
 

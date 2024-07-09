@@ -30,6 +30,7 @@ bool ShaderLoader::Load(const char* name, void* params, Resource* resource) {
 		return false;
 	}
 	resource->FullPath = StringCopy(FullFilePath);
+	resource->Name = StringCopy(name);
 
 	// Set some defaults, create arrays.
 	ShaderConfig* ResourceData = (ShaderConfig*)Memory::Allocate(sizeof(ShaderConfig), MemoryType::eMemory_Type_Resource);

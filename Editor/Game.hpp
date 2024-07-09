@@ -12,6 +12,8 @@ struct SGameState {
 	Camera* WorldCamera = nullptr;
 	short Width, Height;
 
+	Frustum CameraFrustum;
+
 	// TODO: temp
 	Skybox SB;
 

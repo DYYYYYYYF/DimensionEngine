@@ -52,6 +52,7 @@ public:
 public:
 	virtual unsigned short GetID() { return ID; }
 	virtual void SetID(unsigned short id) { ID = id; }
+	virtual std::vector<class VulkanRenderPass>& GetRenderpass() { return Passes; }
 
 public:
 	unsigned short ID;

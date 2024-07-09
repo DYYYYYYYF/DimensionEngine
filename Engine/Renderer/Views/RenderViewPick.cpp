@@ -216,26 +216,19 @@ bool RenderViewPick::OnBuildPacket(void* data, struct RenderViewPacket* out_pack
 	WorlShaderInfo.ViewMatrix = WorldCamera->GetViewMatrix();
 
 	// Set the pick packet data to extended data.
-	PacketData->WorldGeometryCount = 0;
 	PacketData->UIGeometryCount = 0;
 	out_packet->extended_data = Memory::Allocate(sizeof(PickPacketData), MemoryType::eMemory_Type_Renderer);
 
+	uint32_t WorldGeometryCount = (uint32_t)PacketData->WorldMeshData.size();
+
 	uint32_t HighestInstanceID = 0;
-	// Iterate all meshes in world data.
-	for (uint32_t i = 0; i < PacketData->WorldMeshData.mesh_count; ++i) {
-		Mesh* m = PacketData->WorldMeshData.meshes[i];
-		for (uint32_t j = 0; j < m->geometry_count; j++) {
-			GeometryRenderData RenderData;
-			RenderData.geometry = m->geometries[j];
-			RenderData.model = m->Transform.GetWorldTransform();
-			RenderData.uniqueID = m->UniqueID;
-			out_packet->geometries.push_back(RenderData);
-			PacketData->WorldGeometryCount++;
-		}
+	// Iterate all geometries in world data.
+	for (uint32_t i = 0; i < WorldGeometryCount; ++i) {
+		out_packet->geometries.push_back(PacketData->WorldMeshData[i]);
 
 		// Count all geometries as a single id.
-		if (m->UniqueID > HighestInstanceID) {
-			HighestInstanceID = m->UniqueID;
+		if (PacketData->WorldMeshData[i].uniqueID > HighestInstanceID) {
+			HighestInstanceID = PacketData->WorldMeshData[i].uniqueID;
 		}
 	}
 
@@ -290,6 +283,13 @@ void RenderViewPick::OnDestroyPacket(struct RenderViewPacket* packet) {
 	std::vector<GeometryRenderData>().swap(packet->geometries);
 
 	if (packet->extended_data) {
+		PickPacketData* PacketData = (PickPacketData*)packet->extended_data;
+		if (!PacketData->WorldMeshData.empty()) {
+			/*Memory::Free(PacketData->WorldMeshData.meshes, sizeof(Mesh) * 10, MemoryType::eMemory_Type_Array);*/
+			/*PacketData->WorldMeshData.clear();
+			std::vector<GeometryRenderData>().swap(PacketData->WorldMeshData);*/
+		}
+
 		Memory::Free(packet->extended_data, sizeof(PickPacketData), eMemory_Type_Renderer);
 		packet->extended_data = nullptr;
 	}
@@ -378,7 +378,8 @@ bool RenderViewPick::OnRender(struct RenderViewPacket* packet, IRendererBackend*
 		ShaderSystem::ApplyGlobal();
 
 		// Draw geometries. Start from 0 since world geometries are added first, and stop at the world geometry count.
-		for (uint32_t i = 0; i < PacketData->WorldGeometryCount; ++i) {
+		uint32_t WorldGeometryCount = (uint32_t)PacketData->WorldMeshData.size();
+		for (uint32_t i = 0; i < WorldGeometryCount; ++i) {
 			GeometryRenderData* Geo = &packet->geometries[i];
 			CurrentInstanceID = Geo->uniqueID;
 
@@ -431,7 +432,7 @@ bool RenderViewPick::OnRender(struct RenderViewPacket* packet, IRendererBackend*
 		ShaderSystem::ApplyGlobal();
 
 		// Draw geometries. Start off where world geometries left off.
-		for (uint32_t i = PacketData->WorldGeometryCount; i < PacketData->UIGeometryCount + PacketData->WorldGeometryCount; ++i) {
+		for (uint32_t i = WorldGeometryCount; i < packet->geometry_count; ++i) {
 			GeometryRenderData* Geo = &packet->geometries[i];
 			CurrentInstanceID = Geo->uniqueID;
 

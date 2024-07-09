@@ -100,22 +100,44 @@ public:
 	/**
 	 * @brief Get forward vector of view.
 	 */
-	Vec3 Forward() { return ViewMatrix.Forward(); }
+	Vec3 Forward() { 
+		const Matrix4& View = GetViewMatrix();
+		return View.Forward();
+	}
 
 	/**
 	 * @brief Get backward vector of view.
 	 */
-	Vec3 Backward() { return ViewMatrix.Backward(); }
+	Vec3 Backward() { 
+		const Matrix4& View = GetViewMatrix();
+		return View.Backward();
+	}
 
 	/**
 	 * @brief Get left vector of view.
 	 */
-	Vec3 Left() { return ViewMatrix.Left(); }
+	Vec3 Left() {
+		const Matrix4& View = GetViewMatrix();
+		return View.Left();
+	}
 
 	/**
 	 * @brief Get right vector of view.
 	 */
-	Vec3 Right() { return ViewMatrix.Right(); }
+	Vec3 Right() {
+		const Matrix4& View = GetViewMatrix();
+		return View.Right();
+	}
+
+	/**
+	 * @brief Returns a copy of the camera's up vector.
+	 *
+	 * @return A copy of the camera's up vector.
+	 */
+	Vec3 Up() {
+		const Matrix4& View = GetViewMatrix();
+		return View.Up();
+	}
 
 private:
 	/**

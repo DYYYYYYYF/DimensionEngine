@@ -34,8 +34,8 @@ Matrix4 Camera::GetViewMatrix() {
 		Matrix4 Rotation = Matrix4::EulerXYZ(EulerRotation.x, EulerRotation.y, EulerRotation.z);
 		Matrix4 Translation = Matrix4::FromTranslation(Position);
 
-		ViewMatrix = Translation.Multiply(Rotation);
-		ViewMatrix.Inverse();
+		ViewMatrix = Rotation.Multiply(Translation);
+		ViewMatrix = ViewMatrix.Inverse();
 
 		IsDirty = false;
 	}
@@ -44,43 +44,43 @@ Matrix4 Camera::GetViewMatrix() {
 }
 
 void Camera::MoveForward(float amount) {
-	Vec3 Direction = ViewMatrix.Forward();
-	Direction = Direction * -amount;
+	Vec3 Direction = Forward();
+	Direction = Direction * amount;
 	Position = Position + Direction;
 	IsDirty = true;
 }
 
 void Camera::MoveBackward(float amount) {
-	Vec3 Direction = ViewMatrix.Backward();
-	Direction = Direction * -amount;
+	Vec3 Direction = Backward();
+	Direction = Direction * amount;
 	Position = Position + Direction;
 	IsDirty = true;
 }
 
 void Camera::MoveLeft(float amount) {
-	Vec3 Direction = ViewMatrix.Left();
-	Direction = Direction * -amount;
+	Vec3 Direction = Left();
+	Direction = Direction * amount;
 	Position = Position + Direction;
 	IsDirty = true;
 }
 
 void Camera::MoveRight(float amount) {
-	Vec3 Direction = ViewMatrix.Right();
-	Direction = Direction * -amount;
+	Vec3 Direction = Right();
+	Direction = Direction * amount;
 	Position = Position + Direction;
 	IsDirty = true;
 }
 
 void Camera::MoveUp(float amount) {
 	Vec3 Direction = Vec3::Up();
-	Direction = Direction * -amount;
+	Direction = Direction * amount;
 	Position = Position + Direction;
 	IsDirty = true;
 }
 
 void Camera::MoveDown(float amount) {
 	Vec3 Direction = Vec3::Down();
-	Direction = Direction * -amount;
+	Direction = Direction * amount;
 	Position = Position + Direction;
 	IsDirty = true;
 }
