@@ -464,7 +464,8 @@ bool RenderViewPick::OnRender(struct RenderViewPacket* packet, IRendererBackend*
 		// Draw bitmap text.
  		for (uint32_t i = 0; i < PacketData->TextCount; ++i) {
 			UIText* Text = PacketData->Texts[i];
-			ShaderSystem::BindInstance(Text->InstanceID);
+			CurrentInstanceID = Text->UniqueID;
+			ShaderSystem::BindInstance(CurrentInstanceID);
 
 			// Get color based on id
 			Vec3 IDColor;
@@ -475,6 +476,8 @@ bool RenderViewPick::OnRender(struct RenderViewPacket* packet, IRendererBackend*
 				LOG_ERROR("Failed to apply id colour uniform.");
 				return false;
 			}
+
+			ShaderSystem::ApplyInstance(true);
 
 			// Apply the locals.
 			Matrix4 Model = Text->Trans.GetWorldTransform();
@@ -492,7 +495,7 @@ bool RenderViewPick::OnRender(struct RenderViewPacket* packet, IRendererBackend*
 	Texture* t = &ColorTargetAttachment;
 	// Read the pixel at the mouse coordinate.
 	unsigned char PixelRGBA[4] = { 0 };
-	unsigned char* Pixel = PixelRGBA;
+	unsigned char* Pixel = &PixelRGBA[0];
 
 	// Clamp to image size.
 	unsigned short CoordX = CLAMP(MouseX, 0, Width - 1);
@@ -502,7 +505,7 @@ bool RenderViewPick::OnRender(struct RenderViewPacket* packet, IRendererBackend*
 	// Extract the id from the sampled color.
 	uint32_t ID = INVALID_ID;
 	RGB2Uint(Pixel[0], Pixel[1], Pixel[2], &ID);
-	if (ID == 0x0FFFFFF) {
+	if (ID == 0x00FFFFFF) {
 		// This is pure white.
 		ID = INVALID_ID;
 	}
