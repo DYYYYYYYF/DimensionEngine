@@ -226,6 +226,76 @@ Material* MaterialSystem::AcquireFromConfig(SMaterialConfig config) {
 	return nullptr;
 }
 
+Material* MaterialSystem::Reload(const char* mat_name) {
+	if (StringEquali(mat_name, DEFAULT_MATERIAL_NAME)) {
+		return &DefaultMaterial;
+	}
+
+	// Load the given material configuration from disk.
+	Resource MatResource;
+	if (!ResourceSystem::Load(mat_name, eResource_type_Material, nullptr, &MatResource)) {
+		LOG_ERROR("Failed to load material resource, returning nullptr.");
+		return nullptr;
+	}
+
+	// Now acquire from loaded config.
+	Material* Mat = nullptr;
+	if (MatResource.Data) {
+		SMaterialReference Ref;
+		SMaterialConfig config = (*(SMaterialConfig*)MatResource.Data);
+		if (!RegisteredMaterialTable.Get(config.name, &Ref)) {
+			return nullptr;
+		}
+
+		if (Ref.handle == INVALID_ID) {
+			return Acquire(mat_name);
+		}
+
+		// Reload new material.
+		Mat = &RegisteredMaterials[Ref.handle];
+		if (!LoadMaterial(config, Mat)) {
+			LOG_ERROR("Load %s material failed.", config.name);
+			return nullptr;
+		}
+
+		// Get the uniform indices.
+		Shader* s = ShaderSystem::GetByID(Mat->ShaderID);
+		// Save off the locations for known types for quick lookups.
+		if (strcmp(config.shader_name, "Shader.Builtin.World") == 0) {
+			MaterialShaderID = s->ID;
+			MaterialLocations.projection = ShaderSystem::GetUniformIndex(s, "projection");
+			MaterialLocations.view = ShaderSystem::GetUniformIndex(s, "view");
+			MaterialLocations.ambient_color = ShaderSystem::GetUniformIndex(s, "ambient_color");
+			MaterialLocations.diffuse_color = ShaderSystem::GetUniformIndex(s, "diffuse_color");
+			MaterialLocations.diffuse_texture = ShaderSystem::GetUniformIndex(s, "diffuse_texture");
+			MaterialLocations.specular_texture = ShaderSystem::GetUniformIndex(s, "specular_texture");
+			MaterialLocations.normal_texture = ShaderSystem::GetUniformIndex(s, "normal_texture");
+			MaterialLocations.view_position = ShaderSystem::GetUniformIndex(s, "view_position");
+			MaterialLocations.shininess = ShaderSystem::GetUniformIndex(s, "shininess");
+			MaterialLocations.model = ShaderSystem::GetUniformIndex(s, "model");
+			MaterialLocations.render_mode = ShaderSystem::GetUniformIndex(s, "mode");
+		}
+		else if (strcmp(config.shader_name, "Shader.Builtin.UI") == 0) {
+			UIShaderID = s->ID;
+			UILocations.projection = ShaderSystem::GetUniformIndex(s, "projection");
+			UILocations.view = ShaderSystem::GetUniformIndex(s, "view");
+			UILocations.diffuse_color = ShaderSystem::GetUniformIndex(s, "diffuse_color");
+			UILocations.diffuse_texture = ShaderSystem::GetUniformIndex(s, "diffuse_texture");
+			UILocations.model = ShaderSystem::GetUniformIndex(s, "model");
+		}
+	}
+
+	// Clean up 
+	ResourceSystem::Unload(&MatResource);
+
+	if (Mat == nullptr) {
+		LOG_ERROR("Failed to load material resource, returning nullptr.");
+		return nullptr;
+	}
+
+	return Mat;
+}
+
 void MaterialSystem::Release(const char* name) {
 	// Ignore release requests for the default material.
 	if (strcmp(name, DEFAULT_MATERIAL_NAME) == 0) {

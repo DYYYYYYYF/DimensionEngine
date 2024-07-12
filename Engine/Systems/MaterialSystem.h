@@ -23,6 +23,7 @@ public:
 
 	static Material* Acquire(const char* name);
 	static Material* AcquireFromConfig(SMaterialConfig config);
+	static Material* Reload(const char* mat_name);
 
 	static void Release(const char* name);
 

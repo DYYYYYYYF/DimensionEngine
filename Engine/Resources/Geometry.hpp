@@ -6,7 +6,10 @@
 
 class Material;
 
-class Geometry {
+class DAPI Geometry {
+public:
+	void ReloadMaterial(const char* mat_name = nullptr);
+
 public:
 	uint32_t ID;
 	uint32_t InternalID;

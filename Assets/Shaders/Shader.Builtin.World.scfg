@@ -4,8 +4,13 @@ name=Shader.Builtin.World
 renderpass=Renderpass.Builtin.World
 stages=vertex,fragment
 stagefiles=Shaders/Builtin.WorldShader.vert.spv,Shaders/Builtin.WorldShader.frag.spv
+
+# 1=enable, 0=disable
 depth_test=1
 depth_write=1
+
+# line / fill
+polygon_mode=line
 
 # Attributes: type,name
 attribute=vec3,in_position

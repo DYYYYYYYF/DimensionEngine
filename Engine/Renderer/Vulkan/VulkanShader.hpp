@@ -38,6 +38,7 @@ struct VulkanShaderConfig {
 	vk::VertexInputAttributeDescription attributes[VULKAN_SHADER_MAX_ATTRIBUTES];
 
 	FaceCullMode cull_mode;
+	PolygonMode pology_mode;
 };
 
 struct VulkanDescriptorState {

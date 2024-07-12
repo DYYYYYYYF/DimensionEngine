@@ -1120,7 +1120,7 @@ public:
 	/**
 	 * @brief Performs v * m
 	 *
-	 * @param v The vector to bemultiplied.
+	 * @param v The vector to be multiplied.
 	 * @param m The matrix to be multiply by.
 	 * @return The transformed vector.
 	 */
@@ -1326,10 +1326,7 @@ struct Vertex2D {
 // Frustum culling
 class DAPI Plane3D {
 public:
-	Plane3D() {
-		Normal = Vec3(1, 0, 0);
-		Distance = Normal.Dot(Vec3(0, 0, 1));
-	}
+	Plane3D() {}
 
 	Plane3D(Vec3 p1, Vec3 Norm) {
 		Normal = Norm.Normalize();
@@ -1401,7 +1398,7 @@ public:
 		const Vec3 RightHalfH = right * HalfH;
 		const Vec3 UpHalfV = up * HalfV;
 
-		// Top bottom right left far near
+		// near, far, right, left, bottom. top
 		Sides[0] = Plane3D(position + fwd * near, fwd);
 		Sides[1] = Plane3D(position + ForwardFar, fwd * -1.0f);
 		Sides[2] = Plane3D(position, up.Cross(ForwardFar + RightHalfH));

@@ -51,7 +51,8 @@ bool VulkanDevice::Create(VulkanContext* context, vk::SurfaceKHR surface) {
 	// Request device features
 	// TODO: should be config driven
 	vk::PhysicalDeviceFeatures DeviceFeatures;
-	DeviceFeatures.setSamplerAnisotropy(true);
+	DeviceFeatures.setSamplerAnisotropy(true)	// It will not append on modern device, but not sure.
+		.setFillModeNonSolid(true);	// It should be true when Pipeline's PolygonMode set on eLine or ePoint.
 
 	const char* ExtensionName = VK_KHR_SWAPCHAIN_EXTENSION_NAME;
 	vk::DeviceCreateInfo DeviceCreateInfo;

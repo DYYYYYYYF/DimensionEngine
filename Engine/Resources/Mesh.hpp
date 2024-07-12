@@ -36,6 +36,7 @@ public:
 	Mesh() : geometries(nullptr), geometry_count(0) {}
 	bool LoadFromResource(const char* resource_name);
 	void Unload();
+	void ReloadMaterial(const char* mat_name = nullptr);
 
 private:
 	static void LoadJobSuccess(void* params);

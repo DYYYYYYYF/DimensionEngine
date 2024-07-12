@@ -33,11 +33,14 @@ static bool RenderViewWorldOnEvent(unsigned short code, void* sender, void* list
 
 	switch (code)
 	{
-	case Core::eEvent_Code_Default_Rendertarget_Refresh_Required:
+	case Core::eEvent_Code_Default_Rendertarget_Refresh_Required: 
+	{
 		RenderViewSystem::RegenerateRendertargets(self);
 		return true;
+	}
 
 	case Core::eEvent_Code_Set_Render_Mode:
+	{
 		int RenderMode = context.data.i32[0];
 		switch (RenderMode)
 		{
@@ -59,6 +62,10 @@ static bool RenderViewWorldOnEvent(unsigned short code, void* sender, void* list
 		}
 		return true;
 	}
+	
+		return true;
+	}	// switch
+
 
 	return false;
 }
@@ -68,8 +75,6 @@ bool ReloadShader(unsigned short code, void* sender, void* listenerInst, SEventC
 	if (self == nullptr) {
 		return false;
 	}
-
-	ShaderSystem::Destroy(self->GetShaderName());
 
 	// Builtin world shader.
 	const char* ShaderName = "Shader.Builtin.World";

@@ -63,6 +63,11 @@ enum FaceCullMode {
 	eFace_Cull_Mode_Front_And_Back = 0x3,
 };
 
+enum PolygonMode {
+	ePology_Mode_Fill = 0x0,
+	ePology_Mode_Line = 0x1,
+};
+
 enum ShaderFlags {
 	eShader_Flag_None = 0x0,
 	eShader_Flag_DepthTest = 0x1,
@@ -156,6 +161,7 @@ struct MaterialShaderInstanceUbo {
 struct ShaderConfig {
 	char* name = nullptr;
 	FaceCullMode cull_mode;
+	PolygonMode polygon_mode;
 
 	unsigned short attribute_count;
 	std::vector<ShaderAttributeConfig> attributes;

@@ -70,3 +70,13 @@ void Mesh::Unload() {
 	geometry_count = 0;
 	Generation = INVALID_ID_U8;
 }
+
+void Mesh::ReloadMaterial(const char* mat_name) {
+	if (geometry_count == 0 || geometries == nullptr) {
+		return;
+	}
+
+	for (uint32_t i = 0; i < geometry_count; ++i) {
+		geometries[i]->ReloadMaterial(mat_name);
+	}
+}

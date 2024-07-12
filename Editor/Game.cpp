@@ -23,9 +23,18 @@ bool GameOnEvent(unsigned short code, void* sender, void* listender_inst, SEvent
 
 	switch (code)
 	{
-	case Core::eEvent_Code_Object_Hover_ID_Changed: {
+	case Core::eEvent_Code_Object_Hover_ID_Changed: 
+	{
 		State->HoveredObjectID = context.data.u32[0];
 		return true;
+	}break;
+	case Core::eEvent_Code_Reload_Shader_Module:
+	{
+		for (uint32_t i = 0; i < 10; ++i) {
+			if (State->Meshes[i].Generation != INVALID_ID_U8) {
+				State->Meshes[i].ReloadMaterial();
+			}
+		}
 	}
 	}
 
@@ -133,7 +142,14 @@ bool GameInitialize(SGame* game_instance) {
 	}
 	State->TestText.SetPosition(Vec3(150, 450, 0));
 
-	if (!State->TestSysText.Create(Renderer, UITextType::eUI_Text_Type_system, "Noto Sans CJK JP", 26, "Keyboard map:\nO: Load sponza & car models.\nT: Recompile glsl shaders.\nM: Watch memory usage.")) {
+	if (!State->TestSysText.Create(Renderer, UITextType::eUI_Text_Type_system, 
+		"Noto Sans CJK JP", 26, "Keyboard map:\
+		\nO: Load sponza & car models.\
+		\nM: Watch memory usage.\
+		\nF1: Default shader mode.\
+		\nF2: Lighting shader mode.\
+		\nF3: Normals shader mode."))
+	{
 		LOG_ERROR("Failed to load basic ui system text.");
 		return false;
 	}
@@ -249,6 +265,7 @@ bool GameInitialize(SGame* game_instance) {
 	Core::EventRegister(Core::eEvent_Code_Debug_0, game_instance, GameOnDebugEvent);
 	Core::EventRegister(Core::eEvent_Code_Debug_1, game_instance, GameOnDebugEvent);
 	Core::EventRegister(Core::eEvent_Code_Object_Hover_ID_Changed, game_instance, GameOnEvent);
+	Core::EventRegister(Core::eEvent_Code_Reload_Shader_Module, game_instance, GameOnEvent);
 	// TEMP
 
 	Core::EventRegister(Core::eEvent_Code_Key_Pressed, game_instance, GameOnKey);
@@ -270,6 +287,7 @@ void GameShutdown(SGame* gameInstance) {
 	Core::EventUnregister(Core::eEvent_Code_Debug_0, gameInstance, GameOnDebugEvent);
 	Core::EventUnregister(Core::eEvent_Code_Debug_1, gameInstance, GameOnDebugEvent);
 	Core::EventUnregister(Core::eEvent_Code_Object_Hover_ID_Changed, gameInstance, GameOnEvent);
+	Core::EventUnregister(Core::eEvent_Code_Reload_Shader_Module, gameInstance, GameOnEvent);
 	// TEMP
 
 	Core::EventUnregister(Core::eEvent_Code_Key_Pressed, gameInstance, GameOnKey);
@@ -371,7 +389,6 @@ bool GameUpdate(SGame* game_instance, float delta_time) {
 		// Reload
 		SEventContext Context = {};
 		Core::EventFire(Core::eEvent_Code_Reload_Shader_Module, game_instance, Context);
-		Core::EventFire(Core::eEvent_Code_Resize, nullptr, Context);
 	}
 	if (Core::InputIsKeyUp(eKeys_H) && Core::InputWasKeyDown(eKeys_H)) {
 		State->TestPython.ExecuteFunc("CompileShaders", "hlsl");
@@ -379,7 +396,6 @@ bool GameUpdate(SGame* game_instance, float delta_time) {
 		// Reload
 		SEventContext Context = {};
 		Core::EventFire(Core::eEvent_Code_Reload_Shader_Module, game_instance, Context);
-		Core::EventFire(Core::eEvent_Code_Resize, nullptr, Context);
 	}
 	// Remove
 
@@ -436,49 +452,28 @@ bool GameUpdate(SGame* game_instance, float delta_time) {
 		}
 
 		if (m->Generation != INVALID_ID_U8) {
+			Transform Trans = m->Transform;
+			Trans.SetRotation(Quaternion(0));
+
 			Matrix4 Model = m->Transform.GetWorldTransform();
 
 			for (uint32_t j = 0; j < m->geometry_count; j++) {
 				Geometry* g = m->geometries[j];
 
 				// Bounding sphere calculation
-				{
-					Vec3 ExtensMin = g->Extents.min.Transform(Model);
-					Vec3 ExtensMax = g->Extents.max.Transform(Model);
-
-					float Min = DMIN(DMIN(ExtensMin.x, ExtensMin.y), ExtensMin.z);
-					float Max = DMIN(DMIN(ExtensMax.x, ExtensMax.y), ExtensMax.z);
-					float Diff = Dabs(Max - Min);
-					float Radius = Diff / 2.0f;
-
-					// Translate/scale the center.
-					Vec3 Center = g->Center.Transform(Model);
-
-					if (State->CameraFrustum.IntersectsSphere(Center, Radius)) {
-						// Add it to the list to be rendered.
-						GeometryRenderData Data;
-						Data.model = Model;
-						Data.geometry = g;
-						Data.uniqueID = m->UniqueID;
-						game_instance->FrameData.WorldGeometries.push_back(Data);
-						DrawCount++;
-					}
-				}
-
-				// AABB calculation
 				//{
-				//	// Translate/scale the extents.
-				//	Vec3 ExtentsMax = g->Extents.max * Model;
+				//	Vec3 ExtensMin = g->Extents.min.Transform(Model);
+				//	Vec3 ExtensMax = g->Extents.max.Transform(Model);
+
+				//	float Min = DMIN(DMIN(ExtensMin.x, ExtensMin.y), ExtensMin.z);
+				//	float Max = DMIN(DMIN(ExtensMax.x, ExtensMax.y), ExtensMax.z);
+				//	float Diff = Dabs(Max - Min);
+				//	float Radius = Diff / 2.0f;
 
 				//	// Translate/scale the center.
-				//	Vec3 Center = g->Center * Model;
-				//	Vec3 HalfExtents = {
-				//		Dabs(ExtentsMax.x - Center.x),
-				//		Dabs(ExtentsMax.y - Center.y),
-				//		Dabs(ExtentsMax.z - Center.z)
-				//	};
+				//	Vec3 Center = g->Center.Transform(Model);
 
-				//	if (State->CameraFrustum.IntersectsAABB(Center, HalfExtents)) {
+				//	if (State->CameraFrustum.IntersectsSphere(Center, Radius)) {
 				//		// Add it to the list to be rendered.
 				//		GeometryRenderData Data;
 				//		Data.model = Model;
@@ -488,6 +483,30 @@ bool GameUpdate(SGame* game_instance, float delta_time) {
 				//		DrawCount++;
 				//	}
 				//}
+
+				// AABB calculation
+				{
+					// Translate/scale the extents.
+					Vec3 ExtentsMax = g->Extents.max.Transform(Model);
+
+					// Translate/scale the center.
+					Vec3 Center = g->Center.Transform(Model);
+					Vec3 HalfExtents = {                                     
+						Dabs(ExtentsMax.x - Center.x),
+						Dabs(ExtentsMax.y - Center.y),
+						Dabs(ExtentsMax.z - Center.z)
+					};
+
+					if (State->CameraFrustum.IntersectsAABB(Center, HalfExtents)) {
+						// Add it to the list to be rendered.
+						GeometryRenderData Data;
+						Data.model = Model;
+						Data.geometry = g;
+						Data.uniqueID = m->UniqueID;
+						game_instance->FrameData.WorldGeometries.push_back(Data);
+						DrawCount++;
+					}
+				}
 			}
 		}
 	}
