@@ -137,11 +137,12 @@ bool MeshLoader::ImportObjFile(FileHandle* obj_file, const char* out_dsm_filenam
 	std::vector<MeshGroupData> Groups;
 	Groups.reserve(10);
 
-	char MaterialFileName[512] = "";
+	// Default name is filename.
+	char name[512] = "";
 
-	char name[512];
+	char MaterialFileName[512] = "";
 	unsigned short CurrentMatNameCount = 0;
-	char MaterialNames[32][64];
+	char MaterialNames[32][64] = {0};
 
 	char LineBuf[512] = "";
 	char* p = &LineBuf[0];
@@ -217,12 +218,38 @@ bool MeshLoader::ImportObjFile(FileHandle* obj_file, const char* out_dsm_filenam
 
 			size_t NormalCount = Normals.size();
 			size_t TexcoordCount = Texcoords.size();
-			if (NormalCount == 0 || TexcoordCount == 0) {
+			if (NormalCount == 0 && TexcoordCount == 0) {
 				int Result = sscanf(LineBuf, "%s %d %d %d", 
 					t, 
 					&Face.vertices[0].position_index, 
 					&Face.vertices[1].position_index,
 					&Face.vertices[2].position_index);
+				if (Result == -1) {
+					LOG_ERROR("Mesh loader ImportObjFile: sscanf failed. succeed num: %i  Line: %s", Result, LineBuf);
+				}
+			}
+			else if (NormalCount == 0) {
+				int Result = sscanf(LineBuf, "%s %d/%d %d/%d %d/%d",
+					t,
+					&Face.vertices[0].position_index,
+					&Face.vertices[0].texcoord_index,
+					&Face.vertices[1].position_index,
+					&Face.vertices[1].texcoord_index,
+					&Face.vertices[2].position_index,
+					&Face.vertices[2].texcoord_index);
+				if (Result == -1) {
+					LOG_ERROR("Mesh loader ImportObjFile: sscanf failed. succeed num: %i  Line: %s", Result, LineBuf);
+				}
+			}
+			else if (TexcoordCount == 0) {
+				int Result = sscanf(LineBuf, "%s %d//%d %d//%d %d//%d",
+					t,
+					&Face.vertices[0].position_index,
+					&Face.vertices[0].normal_index,
+					&Face.vertices[1].position_index,
+					&Face.vertices[1].normal_index,
+					&Face.vertices[2].position_index,
+					&Face.vertices[2].normal_index);
 				if (Result == -1) {
 					LOG_ERROR("Mesh loader ImportObjFile: sscanf failed. succeed num: %i  Line: %s", Result, LineBuf);
 				}
@@ -246,6 +273,10 @@ bool MeshLoader::ImportObjFile(FileHandle* obj_file, const char* out_dsm_filenam
 				}
 			}
 
+			size_t GroupSize = Groups.size();
+			if (GroupSize == 0) {
+				Groups.resize(1);
+			}
 			size_t GroupIndex = Groups.size() - 1;
 			Groups[GroupIndex].Faces.push_back(Face);
 		}break;
@@ -326,7 +357,7 @@ bool MeshLoader::ImportObjFile(FileHandle* obj_file, const char* out_dsm_filenam
 		strncpy(NewData.name, name, 255);
 
 		if (i > 0) {
-			String::Append(NewData.name, GEOMETRY_NAME_MAX_LENGTH,NewData.name, (int)i);
+			String::Append(NewData.name, GEOMETRY_NAME_MAX_LENGTH, NewData.name, (int)i);
 		}
 		strncpy(NewData.material_name, MaterialNames[i], 255);
 

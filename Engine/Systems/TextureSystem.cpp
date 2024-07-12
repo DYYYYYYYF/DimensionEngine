@@ -618,7 +618,7 @@ bool TextureSystem::ProcessTextureReference(const char* name, TextureType type ,
 					t->Type = type;
 					// Create new texture.
 					if (skip_load) {
-						LOG_INFO("Load skipped for texture '%s'. This is expected behaviour.", name);
+						LOG_DEBUG("Load skipped for texture '%s'. This is expected behaviour.", name);
 					}
 					else {
 						if (type == TextureType::eTexture_Type_2D) {

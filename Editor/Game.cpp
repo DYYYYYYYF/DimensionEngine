@@ -15,6 +15,8 @@
 #include <Core/Identifier.hpp>
 #include <Renderer/RendererFrontend.hpp>
 
+static bool EnableFrustumCulling = false;
+
 bool ConfigureRenderviews(SApplicationConfig* config);
 
 bool GameOnEvent(unsigned short code, void* sender, void* listender_inst, SEventContext context) {
@@ -46,18 +48,45 @@ bool GameOnDebugEvent(unsigned short code, void* sender, void* listener_instance
 	SGameState* State = (SGameState*)GameInstance->state;
 
 	if (code == Core::eEvent_Code_Debug_0) {
-		if (!State->ModelsLoaded) {
-			LOG_DEBUG("Loading models...");
-
-			if (!State->CarMesh->LoadFromResource("falcon")) {
-				LOG_ERROR("Failed to load falcon mesh!");
-			}
+		if (State->SponzaMesh->Generation == INVALID_ID_U8) {
+			LOG_DEBUG("Loading sponza...");
 
 			if (!State->SponzaMesh->LoadFromResource("sponza")) {
 				LOG_ERROR("Failed to load sponza mesh!");
 			}
+		}
 
-			State->ModelsLoaded = true;
+		return true;
+	}
+	else if (code == Core::eEvent_Code_Debug_1) {
+		if (State->CarMesh->Generation == INVALID_ID_U8) {
+			LOG_DEBUG("Loading falcon...");
+
+			if (!State->CarMesh->LoadFromResource("falcon")) {
+				LOG_ERROR("Failed to load falcon mesh!");
+			}
+		}
+
+		return true;
+	}
+	else if (code == Core::eEvent_Code_Debug_2) {
+		if (State->BunnyMesh->Generation == INVALID_ID_U8) {
+			LOG_DEBUG("Loading bunny...");
+
+			if (!State->BunnyMesh->LoadFromResource("bunny")) {
+				LOG_ERROR("Failed to load falcon mesh!");
+			}
+		}
+
+		return true;
+	}
+	else if (code == Core::eEvent_Code_Debug_3) {
+		if (State->DragonMesh->Generation == INVALID_ID_U8) {
+			LOG_DEBUG("Loading dragon...");
+
+			if (!State->DragonMesh->LoadFromResource("dragon")) {
+				LOG_ERROR("Failed to load falcon mesh!");
+			}
 		}
 
 		return true;
@@ -144,7 +173,9 @@ bool GameInitialize(SGame* game_instance) {
 
 	if (!State->TestSysText.Create(Renderer, UITextType::eUI_Text_Type_system, 
 		"Noto Sans CJK JP", 26, "Keyboard map:\
-		\nO: Load sponza & car models.\
+		\nLoad models:\
+		\n\tO: sponza P: car\
+		\n\tK: dragon L: bunny\
 		\nM: Watch memory usage.\
 		\nF1: Default shader mode.\
 		\nF2: Lighting shader mode.\
@@ -204,12 +235,20 @@ bool GameInitialize(SGame* game_instance) {
 	GeometrySystem::ConfigDispose(&GeoConfig3);
 
 	State->CarMesh = &State->Meshes[3];
-	State->CarMesh->Transform = Transform(Vec3(15.0f, 0.0f, 1.0f));
+	State->CarMesh->Transform = Transform(Vec3(15.0f, 0.0f, -15.0f));
 	State->CarMesh->UniqueID = Identifier::AcquireNewID(State->CarMesh);
 
 	State->SponzaMesh = &State->Meshes[4];
-	State->SponzaMesh->Transform = Transform(Vec3(0.0f, -10.0f, 0.0f), Quaternion(Vec3(0.0f, 90.0f, 0.0f)), Vec3(0.1f, 0.1f, 0.1f));
+	State->SponzaMesh->Transform = Transform(Vec3(0.0f, -10.0f, 0.0f), Quaternion(Vec3(0.0f, 90.0f, 0.0f)), Vec3(0.1f));
 	State->SponzaMesh->UniqueID = Identifier::AcquireNewID(State->SponzaMesh);
+
+	State->BunnyMesh = &State->Meshes[5];
+	State->BunnyMesh->Transform = Transform(Vec3(30.0f, 0.0f, -30.0f), Quaternion(Vec3(0.0f, 0.0f, 0.0f)), Vec3(5.0f));
+	State->BunnyMesh->UniqueID = Identifier::AcquireNewID(State->BunnyMesh);
+
+	State->DragonMesh = &State->Meshes[6];
+	State->DragonMesh->Transform = Transform(Vec3(45.0f, 0.0f, -45.0f), Quaternion(Vec3(0.0f, 0.0f, 0.0f)), Vec3(1.0f));
+	State->DragonMesh->UniqueID = Identifier::AcquireNewID(State->DragonMesh);
 
 	// Load up some test UI geometry.
 	SGeometryConfig UIConfig;
@@ -264,6 +303,8 @@ bool GameInitialize(SGame* game_instance) {
 	// TODO: TEMP
 	Core::EventRegister(Core::eEvent_Code_Debug_0, game_instance, GameOnDebugEvent);
 	Core::EventRegister(Core::eEvent_Code_Debug_1, game_instance, GameOnDebugEvent);
+	Core::EventRegister(Core::eEvent_Code_Debug_2, game_instance, GameOnDebugEvent);
+	Core::EventRegister(Core::eEvent_Code_Debug_3, game_instance, GameOnDebugEvent);
 	Core::EventRegister(Core::eEvent_Code_Object_Hover_ID_Changed, game_instance, GameOnEvent);
 	Core::EventRegister(Core::eEvent_Code_Reload_Shader_Module, game_instance, GameOnEvent);
 	// TEMP
@@ -286,12 +327,16 @@ void GameShutdown(SGame* gameInstance) {
 	// TODO: TEMP
 	Core::EventUnregister(Core::eEvent_Code_Debug_0, gameInstance, GameOnDebugEvent);
 	Core::EventUnregister(Core::eEvent_Code_Debug_1, gameInstance, GameOnDebugEvent);
+	Core::EventUnregister(Core::eEvent_Code_Debug_2, gameInstance, GameOnDebugEvent);
+	Core::EventUnregister(Core::eEvent_Code_Debug_3, gameInstance, GameOnDebugEvent);
 	Core::EventUnregister(Core::eEvent_Code_Object_Hover_ID_Changed, gameInstance, GameOnEvent);
 	Core::EventUnregister(Core::eEvent_Code_Reload_Shader_Module, gameInstance, GameOnEvent);
 	// TEMP
 
 	Core::EventUnregister(Core::eEvent_Code_Key_Pressed, gameInstance, GameOnKey);
 	Core::EventUnregister(Core::eEvent_Code_Key_Released, gameInstance, GameOnKey);
+
+	State = nullptr;
 }
 
 bool GameUpdate(SGame* game_instance, float delta_time) {
@@ -378,6 +423,16 @@ bool GameUpdate(SGame* game_instance, float delta_time) {
 		Core::EventFire(Core::eEvent_Code_Debug_0, game_instance, Context);
 	}
 
+	if (Core::InputIsKeyUp(eKeys_L) && Core::InputWasKeyDown(eKeys_L)) {
+		SEventContext Context = {};
+		Core::EventFire(Core::eEvent_Code_Debug_2, game_instance, Context);
+	}
+
+	if (Core::InputIsKeyUp(eKeys_K) && Core::InputWasKeyDown(eKeys_K)) {
+		SEventContext Context = {};
+		Core::EventFire(Core::eEvent_Code_Debug_3, game_instance, Context);
+	}
+
 	if (Core::InputIsKeyUp(eKeys_P) && Core::InputWasKeyDown(eKeys_P)) {
 		SEventContext Context = {};
 		Core::EventFire(Core::eEvent_Code_Debug_1, game_instance, Context);
@@ -452,13 +507,13 @@ bool GameUpdate(SGame* game_instance, float delta_time) {
 		}
 
 		if (m->Generation != INVALID_ID_U8) {
-			Transform Trans = m->Transform;
-			Trans.SetRotation(Quaternion(0));
-
 			Matrix4 Model = m->Transform.GetWorldTransform();
 
 			for (uint32_t j = 0; j < m->geometry_count; j++) {
 				Geometry* g = m->geometries[j];
+				if (g == nullptr) {
+					continue;
+				}
 
 				// Bounding sphere calculation
 				//{
@@ -497,7 +552,16 @@ bool GameUpdate(SGame* game_instance, float delta_time) {
 						Dabs(ExtentsMax.z - Center.z)
 					};
 
-					if (State->CameraFrustum.IntersectsAABB(Center, HalfExtents)) {
+					if (State->CameraFrustum.IntersectsAABB(Center, HalfExtents) && EnableFrustumCulling) {
+						// Add it to the list to be rendered.
+						GeometryRenderData Data;
+						Data.model = Model;
+						Data.geometry = g;
+						Data.uniqueID = m->UniqueID;
+						game_instance->FrameData.WorldGeometries.push_back(Data);
+						DrawCount++;
+					}
+					else if (!EnableFrustumCulling){
 						// Add it to the list to be rendered.
 						GeometryRenderData Data;
 						Data.model = Model;

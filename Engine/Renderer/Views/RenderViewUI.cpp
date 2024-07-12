@@ -77,6 +77,7 @@ bool RenderViewUI::OnCreate(const RenderViewConfig& config) {
 		return false;
 	}
 
+	LOG_INFO("Renderview ui created.");
 	return true;
 }
 

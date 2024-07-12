@@ -169,6 +169,7 @@ bool RenderViewPick::OnCreate(const RenderViewConfig& config) {
 		return false;
 	}
 
+	LOG_INFO("Renderview pick created.");
 	return true;
 }
 

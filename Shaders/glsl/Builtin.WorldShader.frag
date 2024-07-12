@@ -74,7 +74,7 @@ void main(){
 
 	// Update the normal to use a sample from the normal map.
 	vec3 LocalNormal = 2.0 * texture(Samplers[SAMP_NORMAL], in_dto.vTexcoord).rgb - 1.0f;
-	Normal = normalize(TBN * LocalNormal);
+	// Normal = normalize(TBN * in_dto.vNormal);
 
 	if (in_mode == 0 || in_mode == 1){
 		vec3 vViewDirection = normalize(in_dto.vViewPosition - in_dto.vFragPosition);

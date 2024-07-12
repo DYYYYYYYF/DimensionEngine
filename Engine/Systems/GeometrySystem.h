@@ -47,7 +47,7 @@ struct SGeometryReference {
 
 struct SGeometrySystemConfig {
 	// Max number of geometries that can be loaded at once.
-	// NOTO: Should be significantly greater than the numver of static meshes because
+	// NOTO: Should be significantly greater than the number of static meshes because
 	// the there can and will be more than one of ehese per mesh.
 	// Take other system into account as will.
 	uint32_t max_geometry_count;

@@ -18,9 +18,10 @@ struct SGameState {
 	Skybox SB;
 
 	std::vector<Mesh> Meshes;
-	Mesh* CarMesh;
-	Mesh* SponzaMesh;
-	bool ModelsLoaded;
+	Mesh* CarMesh = nullptr;
+	Mesh* SponzaMesh = nullptr;
+	Mesh* DragonMesh = nullptr;
+	Mesh* BunnyMesh = nullptr;
 
 	std::vector<Mesh> UIMeshes;
 	UIText TestText;

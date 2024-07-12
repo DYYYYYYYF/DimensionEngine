@@ -178,7 +178,6 @@ bool VulkanPipeline::Create(VulkanContext* context, const VulkanPipelineConfig& 
 	Handle = Result.value;
 	ASSERT(Handle);
 
-	LOG_DEBUG("Graphics pipeline created.");
 	return true;
 }
 

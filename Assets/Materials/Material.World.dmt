@@ -1,7 +1,7 @@
 #material file
 
 version=0.1
-name=TestMaterial
+name=Material.World
 diffuse_color=1.0 1.0 1.0 1.0
 shininess=64.0
 #diffuse_map_name=transparent_test

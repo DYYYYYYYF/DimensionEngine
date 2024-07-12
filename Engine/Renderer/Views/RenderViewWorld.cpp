@@ -156,6 +156,7 @@ bool RenderViewWorld::OnCreate(const RenderViewConfig& config) {
 		return false;
 	}
 	
+	LOG_INFO("Renderview world created.");
 	return true;
 }
 

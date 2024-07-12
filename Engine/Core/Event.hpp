@@ -104,8 +104,10 @@ namespace Core {
 
 		eEvent_Code_Reload_Shader_Module = 0x10,
 
-		eEvent_Code_Debug_0 = 0xFD,
-		eEvent_Code_Debug_1 = 0xFE,
+		eEvent_Code_Debug_0 = 0xFC,
+		eEvent_Code_Debug_1 = 0xFB,
+		eEvent_Code_Debug_2 = 0xFD,
+		eEvent_Code_Debug_3 = 0xFE,
 
 		eEvent_Code_Max = 0xFF
 	};

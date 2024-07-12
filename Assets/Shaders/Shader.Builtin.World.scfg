@@ -10,7 +10,7 @@ depth_test=1
 depth_write=1
 
 # line / fill
-polygon_mode=line
+polygon_mode=fill
 
 # Attributes: type,name
 attribute=vec3,in_position

@@ -280,20 +280,22 @@ bool VulkanBackend::Initialize(const RenderBackendConfig* config, unsigned char*
 	}
 
 	// Geometry vertex buffer
-	const size_t VertexBufferSize = sizeof(Vertex) * 1024 * 1024;
+	const size_t VertexBufferSize = sizeof(Vertex) * 1024 * 1024 * 2;
 	if (!CreateRenderbuffer(RenderbufferType::eRenderbuffer_Type_Vertex, VertexBufferSize, true, &Context.ObjectVertexBuffer)) {
 		LOG_ERROR("Error creating vertex buffer.");
 		return false;
 	}
 	BindRenderbuffer(&Context.ObjectVertexBuffer, 0);
+	LOG_INFO("VulkanBackend::CreateRenderbuffer(): Success allocated memory %llu bytes. Enable freelist: %s", VertexBufferSize, "true");
 
 	// Geometry index buffer
-	const size_t IndexBufferSize = sizeof(uint32_t) * 1024 * 1024;
+	const size_t IndexBufferSize = sizeof(uint32_t) * 1024 * 1024 * 2;
 	if (!CreateRenderbuffer(RenderbufferType::eRenderbuffer_Type_Index, IndexBufferSize, true, &Context.ObjectIndexBuffer)) {
 		LOG_ERROR("Error creating index buffer.");
 		return false;
 	}
 	BindRenderbuffer(&Context.ObjectIndexBuffer, 0);
+	LOG_INFO("VulkanBackend::CreateRenderbuffer(): Success allocated memory %llu bytes. Enable freelist: %s", IndexBufferSize, "true");
 
 	// Mark all geometry as invalid.
 	for (uint32_t i = 0; i < GEOMETRY_MAX_COUNT; ++i) {

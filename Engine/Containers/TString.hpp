@@ -372,7 +372,9 @@ inline void StringFilenameNoExtensionFromPath(char* dst, const char* path) {
 		}
 	}
 
-	StringMid(dst, path, Start, static_cast<int>(End - Start));
+	size_t FilenameLength = End - Start;
+	StringMid(dst, path, Start, static_cast<int>(FilenameLength));
+	dst[FilenameLength] = '\0';
 }
 
 inline uint32_t StringUTF8Length(const char* Str) {

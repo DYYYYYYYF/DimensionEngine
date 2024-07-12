@@ -83,6 +83,7 @@ bool RenderViewSkybox::OnCreate(const RenderViewConfig& config) {
 		return false;
 	}
 
+	LOG_INFO("Renderview skybox created.");
 	return true;
 }
 
