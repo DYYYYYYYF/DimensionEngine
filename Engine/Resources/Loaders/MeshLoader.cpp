@@ -436,7 +436,7 @@ void MeshLoader::ProcessSubobject(std::vector<Vec3>& positions, std::vector<Vec3
 	bool SkipTexcoord = false;
 
 	if (NormalCount == 0) {
-		LOG_WARN("No normals are present in this model.");
+		LOG_WARN("No normals are present in this model. Generating normals...");
 		SkipNormal = true;
 	}
 
@@ -446,6 +446,24 @@ void MeshLoader::ProcessSubobject(std::vector<Vec3>& positions, std::vector<Vec3
 	}
 
 	for (size_t f = 0; f < FaceCount; ++f) {
+		// 如果没有发现信息则手动生成。
+		Vec3 DefaultNormal = Vec3(0, 0, 1);
+		if (SkipNormal) {
+			MeshVertexIndexData IndexData1 = faces[f].vertices[0];
+			MeshVertexIndexData IndexData2 = faces[f].vertices[1];
+			MeshVertexIndexData IndexData3 = faces[f].vertices[2];
+
+			Vec3 Pos1 = positions[IndexData1.position_index - 1];
+			Vec3 Pos2 = positions[IndexData2.position_index - 1];
+			Vec3 Pos3 = positions[IndexData3.position_index - 1];
+
+			Vec3 Edge1 = Pos2 - Pos1;
+			Vec3 Edge2 = Pos3 - Pos2;
+			Vec3 Edge3 = Pos1 - Pos3;
+
+			DefaultNormal = (Edge1.Cross(Edge2)).Normalize();
+		}
+
 		// Each vertex
 		for (size_t i = 0; i < 3; ++i) {
 			MeshVertexIndexData IndexData = faces[f].vertices[i];
@@ -480,7 +498,7 @@ void MeshLoader::ProcessSubobject(std::vector<Vec3>& positions, std::vector<Vec3
 			ExtentSet = true;
 
 			if (SkipNormal) {
-				Vert.normal = Vec3(0, 0, 1);
+				Vert.normal = DefaultNormal;
 			}
 			else {
 				Vert.normal = normals[IndexData.normal_index - 1];
