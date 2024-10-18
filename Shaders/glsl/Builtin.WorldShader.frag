@@ -48,6 +48,8 @@ const int SAMP_SPECULAR = 1;
 const int SAMP_NORMAL = 2;
 layout (set = 1, binding = 1) uniform sampler2D Samplers[3];
 
+layout (location = 0) flat in int in_mode;
+
 layout (location = 1) in struct dto{
 	vec2 vTexcoord;
 	vec3 vNormal;
@@ -72,13 +74,21 @@ void main(){
 
 	// Update the normal to use a sample from the normal map.
 	vec3 LocalNormal = 2.0 * texture(Samplers[SAMP_NORMAL], in_dto.vTexcoord).rgb - 1.0f;
-	Normal = normalize(TBN * LocalNormal);
+	// Normal = normalize(TBN * in_dto.vNormal);
 
-	vec3 vViewDirection = normalize(in_dto.vViewPosition - in_dto.vFragPosition);
-	FragColor = CalculateDirectionalLight(dir_light, Normal, vViewDirection);
+	if (in_mode == 0 || in_mode == 1){
+		vec3 vViewDirection = normalize(in_dto.vViewPosition - in_dto.vFragPosition);
+		FragColor = CalculateDirectionalLight(dir_light, Normal, vViewDirection);
 
-	FragColor += CalculatePointLight(point_light_0, Normal, in_dto.vFragPosition, vViewDirection);
-	FragColor += CalculatePointLight(point_light_1, Normal, in_dto.vFragPosition, vViewDirection);
+		FragColor += CalculatePointLight(point_light_0, Normal, in_dto.vFragPosition, vViewDirection);
+		FragColor += CalculatePointLight(point_light_1, Normal, in_dto.vFragPosition, vViewDirection);
+	}
+	else if (in_mode == 2){
+		FragColor = vec4(abs(Normal), 1.0f);
+	} 
+	else {
+		FragColor = vec4(1.0f, 1.0f, 1.0f, 1.0f);
+	}
 }
 
 vec4 CalculateDirectionalLight(DirectionalLight light, vec3 normal, vec3 view_direction){
@@ -92,9 +102,11 @@ vec4 CalculateDirectionalLight(DirectionalLight light, vec3 normal, vec3 view_di
 	vec4 Diffuse = vec4(vec3(light.color * fDiffuseFactor), DiffSamp.a);
 	vec4 Specular = vec4(vec3(light.color * SpecularFactor), DiffSamp.a);
 
-	Ambient *= DiffSamp;
-	Diffuse *= DiffSamp;
-	Specular *= vec4(texture(Samplers[SAMP_SPECULAR], in_dto.vTexcoord).rgb, Diffuse.a);
+	if (in_mode == 0){
+		Ambient *= DiffSamp;
+		Diffuse *= DiffSamp;
+		Specular *= vec4(texture(Samplers[SAMP_SPECULAR], in_dto.vTexcoord).rgb, Diffuse.a);
+	}
 
 	return (Ambient + Diffuse + Specular);
 }

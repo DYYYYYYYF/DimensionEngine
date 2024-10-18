@@ -169,6 +169,7 @@ bool RenderViewPick::OnCreate(const RenderViewConfig& config) {
 		return false;
 	}
 
+	LOG_INFO("Renderview pick created.");
 	return true;
 }
 
@@ -216,26 +217,19 @@ bool RenderViewPick::OnBuildPacket(void* data, struct RenderViewPacket* out_pack
 	WorlShaderInfo.ViewMatrix = WorldCamera->GetViewMatrix();
 
 	// Set the pick packet data to extended data.
-	PacketData->WorldGeometryCount = 0;
 	PacketData->UIGeometryCount = 0;
 	out_packet->extended_data = Memory::Allocate(sizeof(PickPacketData), MemoryType::eMemory_Type_Renderer);
 
+	uint32_t WorldGeometryCount = (uint32_t)PacketData->WorldMeshData.size();
+
 	uint32_t HighestInstanceID = 0;
-	// Iterate all meshes in world data.
-	for (uint32_t i = 0; i < PacketData->WorldMeshData.mesh_count; ++i) {
-		Mesh* m = PacketData->WorldMeshData.meshes[i];
-		for (uint32_t j = 0; j < m->geometry_count; j++) {
-			GeometryRenderData RenderData;
-			RenderData.geometry = m->geometries[j];
-			RenderData.model = m->Transform.GetWorldTransform();
-			RenderData.uniqueID = m->UniqueID;
-			out_packet->geometries.push_back(RenderData);
-			PacketData->WorldGeometryCount++;
-		}
+	// Iterate all geometries in world data.
+	for (uint32_t i = 0; i < WorldGeometryCount; ++i) {
+		out_packet->geometries.push_back(PacketData->WorldMeshData[i]);
 
 		// Count all geometries as a single id.
-		if (m->UniqueID > HighestInstanceID) {
-			HighestInstanceID = m->UniqueID;
+		if (PacketData->WorldMeshData[i].uniqueID > HighestInstanceID) {
+			HighestInstanceID = PacketData->WorldMeshData[i].uniqueID;
 		}
 	}
 
@@ -290,6 +284,13 @@ void RenderViewPick::OnDestroyPacket(struct RenderViewPacket* packet) {
 	std::vector<GeometryRenderData>().swap(packet->geometries);
 
 	if (packet->extended_data) {
+		PickPacketData* PacketData = (PickPacketData*)packet->extended_data;
+		if (!PacketData->WorldMeshData.empty()) {
+			/*Memory::Free(PacketData->WorldMeshData.meshes, sizeof(Mesh) * 10, MemoryType::eMemory_Type_Array);*/
+			/*PacketData->WorldMeshData.clear();
+			std::vector<GeometryRenderData>().swap(PacketData->WorldMeshData);*/
+		}
+
 		Memory::Free(packet->extended_data, sizeof(PickPacketData), eMemory_Type_Renderer);
 		packet->extended_data = nullptr;
 	}
@@ -378,7 +379,8 @@ bool RenderViewPick::OnRender(struct RenderViewPacket* packet, IRendererBackend*
 		ShaderSystem::ApplyGlobal();
 
 		// Draw geometries. Start from 0 since world geometries are added first, and stop at the world geometry count.
-		for (uint32_t i = 0; i < PacketData->WorldGeometryCount; ++i) {
+		uint32_t WorldGeometryCount = (uint32_t)PacketData->WorldMeshData.size();
+		for (uint32_t i = 0; i < WorldGeometryCount; ++i) {
 			GeometryRenderData* Geo = &packet->geometries[i];
 			CurrentInstanceID = Geo->uniqueID;
 
@@ -431,7 +433,7 @@ bool RenderViewPick::OnRender(struct RenderViewPacket* packet, IRendererBackend*
 		ShaderSystem::ApplyGlobal();
 
 		// Draw geometries. Start off where world geometries left off.
-		for (uint32_t i = PacketData->WorldGeometryCount; i < PacketData->UIGeometryCount + PacketData->WorldGeometryCount; ++i) {
+		for (uint32_t i = WorldGeometryCount; i < packet->geometry_count; ++i) {
 			GeometryRenderData* Geo = &packet->geometries[i];
 			CurrentInstanceID = Geo->uniqueID;
 
@@ -463,7 +465,8 @@ bool RenderViewPick::OnRender(struct RenderViewPacket* packet, IRendererBackend*
 		// Draw bitmap text.
  		for (uint32_t i = 0; i < PacketData->TextCount; ++i) {
 			UIText* Text = PacketData->Texts[i];
-			ShaderSystem::BindInstance(Text->InstanceID);
+			CurrentInstanceID = Text->UniqueID;
+			ShaderSystem::BindInstance(CurrentInstanceID);
 
 			// Get color based on id
 			Vec3 IDColor;
@@ -474,6 +477,8 @@ bool RenderViewPick::OnRender(struct RenderViewPacket* packet, IRendererBackend*
 				LOG_ERROR("Failed to apply id colour uniform.");
 				return false;
 			}
+
+			ShaderSystem::ApplyInstance(true);
 
 			// Apply the locals.
 			Matrix4 Model = Text->Trans.GetWorldTransform();
@@ -491,7 +496,7 @@ bool RenderViewPick::OnRender(struct RenderViewPacket* packet, IRendererBackend*
 	Texture* t = &ColorTargetAttachment;
 	// Read the pixel at the mouse coordinate.
 	unsigned char PixelRGBA[4] = { 0 };
-	unsigned char* Pixel = PixelRGBA;
+	unsigned char* Pixel = &PixelRGBA[0];
 
 	// Clamp to image size.
 	unsigned short CoordX = CLAMP(MouseX, 0, Width - 1);
@@ -501,7 +506,7 @@ bool RenderViewPick::OnRender(struct RenderViewPacket* packet, IRendererBackend*
 	// Extract the id from the sampled color.
 	uint32_t ID = INVALID_ID;
 	RGB2Uint(Pixel[0], Pixel[1], Pixel[2], &ID);
-	if (ID == 0x0FFFFFF) {
+	if (ID == 0x00FFFFFF) {
 		// This is pure white.
 		ID = INVALID_ID;
 	}

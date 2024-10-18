@@ -30,6 +30,7 @@ bool ShaderLoader::Load(const char* name, void* params, Resource* resource) {
 		return false;
 	}
 	resource->FullPath = StringCopy(FullFilePath);
+	resource->Name = StringCopy(name);
 
 	// Set some defaults, create arrays.
 	ShaderConfig* ResourceData = (ShaderConfig*)Memory::Allocate(sizeof(ShaderConfig), MemoryType::eMemory_Type_Resource);
@@ -40,6 +41,7 @@ bool ShaderLoader::Load(const char* name, void* params, Resource* resource) {
 	ResourceData->uniform_count = 0;
 	ResourceData->stage_cout = 0;
 	ResourceData->cull_mode = FaceCullMode::eFace_Cull_Mode_Back;
+	ResourceData->polygon_mode = PolygonMode::ePology_Mode_Fill;
 	ResourceData->name = nullptr;
 
 	// Read each line of the file.
@@ -140,6 +142,14 @@ bool ShaderLoader::Load(const char* name, void* params, Resource* resource) {
 			}
 			else if (strcmp(TrimmedValue, "none") == 0) {
 				ResourceData->cull_mode = FaceCullMode::eFace_Cull_Mode_None;
+			}
+		}
+		else if (strcmp(TrimmedVarName, "polygon_mode") == 0) {
+			if (strcmp(TrimmedValue, "line") == 0) {
+				ResourceData->polygon_mode = PolygonMode::ePology_Mode_Line;
+			}
+			else if (strcmp(TrimmedValue, "fill") == 0) {
+				ResourceData->polygon_mode = PolygonMode::ePology_Mode_Fill;
 			}
 		}
 		else if (strcmp(TrimmedVarName, "depth_test") == 0) {

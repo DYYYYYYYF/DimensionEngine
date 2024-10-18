@@ -14,7 +14,7 @@ include_directories(
 )
 
 file(GLOB ENGINE_SOURCE_FILES *.cpp */*.cpp */*/*.cpp */*/*/*.cpp Platform/PlatformMacOS.mm)
-add_library(engine SHARED ${ENGINE_SOURCE_FILES})
+add_library(engine SHARED ${ENGINE_SOURCE_FILES} "Resources/Geometry.cpp")
 
 # Output .dll to bin directly.
 set_target_properties(engine PROPERTIES

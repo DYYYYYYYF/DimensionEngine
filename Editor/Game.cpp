@@ -15,6 +15,8 @@
 #include <Core/Identifier.hpp>
 #include <Renderer/RendererFrontend.hpp>
 
+static bool EnableFrustumCulling = false;
+
 bool ConfigureRenderviews(SApplicationConfig* config);
 
 bool GameOnEvent(unsigned short code, void* sender, void* listender_inst, SEventContext context) {
@@ -23,9 +25,18 @@ bool GameOnEvent(unsigned short code, void* sender, void* listender_inst, SEvent
 
 	switch (code)
 	{
-	case Core::eEvent_Code_Object_Hover_ID_Changed: {
+	case Core::eEvent_Code_Object_Hover_ID_Changed: 
+	{
 		State->HoveredObjectID = context.data.u32[0];
 		return true;
+	}break;
+	case Core::eEvent_Code_Reload_Shader_Module:
+	{
+		for (uint32_t i = 0; i < 10; ++i) {
+			if (State->Meshes[i].Generation != INVALID_ID_U8) {
+				State->Meshes[i].ReloadMaterial();
+			}
+		}
 	}
 	}
 
@@ -37,18 +48,45 @@ bool GameOnDebugEvent(unsigned short code, void* sender, void* listener_instance
 	SGameState* State = (SGameState*)GameInstance->state;
 
 	if (code == Core::eEvent_Code_Debug_0) {
-		if (!State->ModelsLoaded) {
-			LOG_DEBUG("Loading models...");
-
-			if (!State->CarMesh->LoadFromResource("falcon")) {
-				LOG_ERROR("Failed to load falcon mesh!");
-			}
+		if (State->SponzaMesh->Generation == INVALID_ID_U8) {
+			LOG_DEBUG("Loading sponza...");
 
 			if (!State->SponzaMesh->LoadFromResource("sponza")) {
 				LOG_ERROR("Failed to load sponza mesh!");
 			}
+		}
 
-			State->ModelsLoaded = true;
+		return true;
+	}
+	else if (code == Core::eEvent_Code_Debug_1) {
+		if (State->CarMesh->Generation == INVALID_ID_U8) {
+			LOG_DEBUG("Loading falcon...");
+
+			if (!State->CarMesh->LoadFromResource("falcon")) {
+				LOG_ERROR("Failed to load falcon mesh!");
+			}
+		}
+
+		return true;
+	}
+	else if (code == Core::eEvent_Code_Debug_2) {
+		if (State->BunnyMesh->Generation == INVALID_ID_U8) {
+			LOG_DEBUG("Loading bunny...");
+
+			if (!State->BunnyMesh->LoadFromResource("bunny")) {
+				LOG_ERROR("Failed to load falcon mesh!");
+			}
+		}
+
+		return true;
+	}
+	else if (code == Core::eEvent_Code_Debug_3) {
+		if (State->DragonMesh->Generation == INVALID_ID_U8) {
+			LOG_DEBUG("Loading dragon...");
+
+			if (!State->DragonMesh->LoadFromResource("dragon")) {
+				LOG_ERROR("Failed to load falcon mesh!");
+			}
 		}
 
 		return true;
@@ -71,6 +109,7 @@ bool GameOnKey(unsigned short code, void* sender, void* listener_instance, SEven
 		}
 	}
 	else if (code == Core::eEvent_Code_Key_Released) {
+		unsigned short KeyCode = context.data.u16[0];
 
 		return true;
 	}
@@ -120,23 +159,32 @@ bool GameInitialize(SGame* game_instance) {
 	SGameState* State = (SGameState*)game_instance->state;
 
 	// Load python script
-	State->TestPython.SetPythonFile("compile_shader");
+	State->TestPython.SetPythonFile("recompile_shader");
 
 	State->WorldCamera = CameraSystem::GetDefault();
-	State->WorldCamera->SetPosition(Vec3(0.0f, 0.0f, -40.0f));
+	State->WorldCamera->SetPosition(Vec3(0.0f, 0.0f, 40.0f));
 
 	// Create test ui text objects.
 	if (!State->TestText.Create(Renderer, UITextType::eUI_Text_Type_Bitmap, "Ubuntu Mono 21px", 21, "Test! \n Yooo!")) {
 		LOG_ERROR("Failed to load basic ui bitmap text.");
 		return false;
 	}
-	State->TestText.SetPosition(Vec3(100, 200, 0));
+	State->TestText.SetPosition(Vec3(150, 450, 0));
 
-	if (!State->TestSysText.Create(Renderer, UITextType::eUI_Text_Type_system, "Noto Sans CJK JP", 31, "Test system font.")) {
+	if (!State->TestSysText.Create(Renderer, UITextType::eUI_Text_Type_system, 
+		"Noto Sans CJK JP", 26, "Keyboard map:\
+		\nLoad models:\
+		\n\tO: sponza P: car\
+		\n\tK: dragon L: bunny\
+		\nM: Watch memory usage.\
+		\nF1: Default shader mode.\
+		\nF2: Lighting shader mode.\
+		\nF3: Normals shader mode."))
+	{
 		LOG_ERROR("Failed to load basic ui system text.");
 		return false;
 	}
-	State->TestSysText.SetPosition(Vec3(100, 400, 0));
+	State->TestSysText.SetPosition(Vec3(100, 200, 0));
 
 	// Skybox
 	if (!State->SB.Create("SkyboxCube", Renderer)) {
@@ -187,12 +235,20 @@ bool GameInitialize(SGame* game_instance) {
 	GeometrySystem::ConfigDispose(&GeoConfig3);
 
 	State->CarMesh = &State->Meshes[3];
-	State->CarMesh->Transform = Transform(Vec3(15.0f, 0.0f, 1.0f));
+	State->CarMesh->Transform = Transform(Vec3(15.0f, 0.0f, -15.0f));
 	State->CarMesh->UniqueID = Identifier::AcquireNewID(State->CarMesh);
 
 	State->SponzaMesh = &State->Meshes[4];
-	State->SponzaMesh->Transform = Transform(Vec3(0.0f, -10.0f, 0.0f), Quaternion(Vec3(0.0f, 90.0f, 0.0f)), Vec3(0.1f, 0.1f, 0.1f));
+	State->SponzaMesh->Transform = Transform(Vec3(0.0f, -10.0f, 0.0f), Quaternion(Vec3(0.0f, 90.0f, 0.0f)), Vec3(0.1f));
 	State->SponzaMesh->UniqueID = Identifier::AcquireNewID(State->SponzaMesh);
+
+	State->BunnyMesh = &State->Meshes[5];
+	State->BunnyMesh->Transform = Transform(Vec3(30.0f, 0.0f, -30.0f), Quaternion(Vec3(0.0f, 0.0f, 0.0f)), Vec3(5.0f));
+	State->BunnyMesh->UniqueID = Identifier::AcquireNewID(State->BunnyMesh);
+
+	State->DragonMesh = &State->Meshes[6];
+	State->DragonMesh->Transform = Transform(Vec3(45.0f, 0.0f, -45.0f), Quaternion(Vec3(0.0f, 0.0f, 0.0f)), Vec3(1.0f));
+	State->DragonMesh->UniqueID = Identifier::AcquireNewID(State->DragonMesh);
 
 	// Load up some test UI geometry.
 	SGeometryConfig UIConfig;
@@ -246,7 +302,11 @@ bool GameInitialize(SGame* game_instance) {
 
 	// TODO: TEMP
 	Core::EventRegister(Core::eEvent_Code_Debug_0, game_instance, GameOnDebugEvent);
+	Core::EventRegister(Core::eEvent_Code_Debug_1, game_instance, GameOnDebugEvent);
+	Core::EventRegister(Core::eEvent_Code_Debug_2, game_instance, GameOnDebugEvent);
+	Core::EventRegister(Core::eEvent_Code_Debug_3, game_instance, GameOnDebugEvent);
 	Core::EventRegister(Core::eEvent_Code_Object_Hover_ID_Changed, game_instance, GameOnEvent);
+	Core::EventRegister(Core::eEvent_Code_Reload_Shader_Module, game_instance, GameOnEvent);
 	// TEMP
 
 	Core::EventRegister(Core::eEvent_Code_Key_Pressed, game_instance, GameOnKey);
@@ -266,14 +326,27 @@ void GameShutdown(SGame* gameInstance) {
 
 	// TODO: TEMP
 	Core::EventUnregister(Core::eEvent_Code_Debug_0, gameInstance, GameOnDebugEvent);
+	Core::EventUnregister(Core::eEvent_Code_Debug_1, gameInstance, GameOnDebugEvent);
+	Core::EventUnregister(Core::eEvent_Code_Debug_2, gameInstance, GameOnDebugEvent);
+	Core::EventUnregister(Core::eEvent_Code_Debug_3, gameInstance, GameOnDebugEvent);
 	Core::EventUnregister(Core::eEvent_Code_Object_Hover_ID_Changed, gameInstance, GameOnEvent);
+	Core::EventUnregister(Core::eEvent_Code_Reload_Shader_Module, gameInstance, GameOnEvent);
 	// TEMP
 
 	Core::EventUnregister(Core::eEvent_Code_Key_Pressed, gameInstance, GameOnKey);
 	Core::EventUnregister(Core::eEvent_Code_Key_Released, gameInstance, GameOnKey);
+
+	State = nullptr;
 }
 
 bool GameUpdate(SGame* game_instance, float delta_time) {
+	// Ensure this is cleaned up to avoid leaking memory.
+	// TODO: Need a version of this that uses the frame allocator.
+	if (!game_instance->FrameData.WorldGeometries.empty()) {
+		game_instance->FrameData.WorldGeometries.clear();
+		std::vector<GeometryRenderData>().swap(game_instance->FrameData.WorldGeometries);
+	}
+
 	static size_t AllocCount = 0;
 	size_t PrevAllocCount = AllocCount;
 	AllocCount = Memory::GetAllocateCount();
@@ -286,17 +359,34 @@ bool GameUpdate(SGame* game_instance, float delta_time) {
 
 	SGameState* State = (SGameState*)game_instance->state;
 
-	if (Core::InputIsKeyDown(eKeys_Left)) {
-		State->WorldCamera->RotateYaw(-1.0f * delta_time);
+	// Temp shader debug
+	if (Core::InputIsKeyUp(eKeys_F1) && Core::InputWasKeyDown(eKeys_F1)) {
+		SEventContext Context;
+		Context.data.i32[0] = ShaderRenderMode::eShader_Render_Mode_Default;
+		Core::EventFire(Core::eEvent_Code_Set_Render_Mode, nullptr, Context);
 	}
-	if (Core::InputIsKeyDown(eKeys_Right)) {
+	if (Core::InputIsKeyUp(eKeys_F2) && Core::InputWasKeyDown(eKeys_F2)) {
+		SEventContext Context;
+		Context.data.i32[0] = ShaderRenderMode::eShader_Render_Mode_Lighting;
+		Core::EventFire(Core::eEvent_Code_Set_Render_Mode, nullptr, Context);
+	}
+	if (Core::InputIsKeyUp(eKeys_F3) && Core::InputWasKeyDown(eKeys_F3)) {
+		SEventContext Context;
+		Context.data.i32[0] = ShaderRenderMode::eShader_Render_Mode_Normals;
+		Core::EventFire(Core::eEvent_Code_Set_Render_Mode, nullptr, Context);
+	}
+
+	if (Core::InputIsKeyDown(eKeys_Left)) {
 		State->WorldCamera->RotateYaw(1.0f * delta_time);
 	}
+	if (Core::InputIsKeyDown(eKeys_Right)) {
+		State->WorldCamera->RotateYaw(-1.0f * delta_time);
+	}
 	if (Core::InputIsKeyDown(Keys::eKeys_Up)) {
-		State->WorldCamera->RotatePitch(-1.0f * delta_time);
+		State->WorldCamera->RotatePitch(1.0f * delta_time);
 	}
 	if (Core::InputIsKeyDown(Keys::eKeys_Down)) {
-		State->WorldCamera->RotatePitch(1.0f * delta_time);
+		State->WorldCamera->RotatePitch(-1.0f * delta_time);
 	}
 
 	float TempMoveSpeed = 50.0f;
@@ -327,15 +417,42 @@ bool GameUpdate(SGame* game_instance, float delta_time) {
 		State->WorldCamera->Reset();
 	}
 
+	// TODO: Remove
 	if (Core::InputIsKeyUp(eKeys_O) && Core::InputWasKeyDown(eKeys_O)) {
 		SEventContext Context = {};
 		Core::EventFire(Core::eEvent_Code_Debug_0, game_instance, Context);
 	}
 
-	// TODO: Remove
-	if (Core::InputIsKeyUp(eKeys_T) && Core::InputWasKeyDown(eKeys_T)) {
-		State->TestPython.ExecuteFunc("CompileShaders", "glsl");
+	if (Core::InputIsKeyUp(eKeys_L) && Core::InputWasKeyDown(eKeys_L)) {
+		SEventContext Context = {};
+		Core::EventFire(Core::eEvent_Code_Debug_2, game_instance, Context);
 	}
+
+	if (Core::InputIsKeyUp(eKeys_K) && Core::InputWasKeyDown(eKeys_K)) {
+		SEventContext Context = {};
+		Core::EventFire(Core::eEvent_Code_Debug_3, game_instance, Context);
+	}
+
+	if (Core::InputIsKeyUp(eKeys_P) && Core::InputWasKeyDown(eKeys_P)) {
+		SEventContext Context = {};
+		Core::EventFire(Core::eEvent_Code_Debug_1, game_instance, Context);
+	}
+
+	if (Core::InputIsKeyUp(eKeys_G) && Core::InputWasKeyDown(eKeys_G)) {
+		State->TestPython.ExecuteFunc("CompileShaders", "glsl");
+
+		// Reload
+		SEventContext Context = {};
+		Core::EventFire(Core::eEvent_Code_Reload_Shader_Module, game_instance, Context);
+	}
+	if (Core::InputIsKeyUp(eKeys_H) && Core::InputWasKeyDown(eKeys_H)) {
+		State->TestPython.ExecuteFunc("CompileShaders", "hlsl");
+
+		// Reload
+		SEventContext Context = {};
+		Core::EventFire(Core::eEvent_Code_Reload_Shader_Module, game_instance, Context);
+	}
+	// Remove
 
 	int px, py, cx, cy;
 	Core::InputGetMousePosition(cx, cy);
@@ -343,10 +460,10 @@ bool GameUpdate(SGame* game_instance, float delta_time) {
 	float MouseMoveSpeed = 0.005f;
 	if (Core::InputeIsButtonDown(eButton_Right)) {
 		if (cx != px) {
-			State->WorldCamera->RotateYaw((cx - px) * MouseMoveSpeed);
+			State->WorldCamera->RotateYaw((px - cx) * MouseMoveSpeed);
 		}
 		if (cy != py) {
-			State->WorldCamera->RotatePitch((cy - py) * MouseMoveSpeed);
+			State->WorldCamera->RotatePitch((py - cy) * MouseMoveSpeed);
 		}
 	}
 
@@ -373,15 +490,100 @@ bool GameUpdate(SGame* game_instance, float delta_time) {
 	double FPS, FrameTime;
 	Metrics::Frame(&FPS, &FrameTime);
 
+	// Update the frustum.
+	Vec3 Forward = State->WorldCamera->Forward();
+	Vec3 Right = State->WorldCamera->Right();
+	Vec3 Up = State->WorldCamera->Up();
+	// TODO: Get camera fov, aspect etc.
+	State->CameraFrustum = Frustum(State->WorldCamera->GetPosition(), Forward, Right, Up, (float)State->Width / (float)State->Height, Deg2Rad(45.0f), 0.1f, 1000.0f);
+
+	// NOTE: starting at a reasonable default to avoid too many realloc.
+	uint32_t DrawCount = 0;
+	game_instance->FrameData.WorldGeometries.reserve(512);
+	for (uint32_t i = 0; i < 10; ++i) {
+		Mesh* m = &State->Meshes[i];
+		if (m == nullptr) {
+			continue;
+		}
+
+		if (m->Generation != INVALID_ID_U8) {
+			Matrix4 Model = m->Transform.GetWorldTransform();
+
+			for (uint32_t j = 0; j < m->geometry_count; j++) {
+				Geometry* g = m->geometries[j];
+				if (g == nullptr) {
+					continue;
+				}
+
+				// Bounding sphere calculation
+				//{
+				//	Vec3 ExtensMin = g->Extents.min.Transform(Model);
+				//	Vec3 ExtensMax = g->Extents.max.Transform(Model);
+
+				//	float Min = DMIN(DMIN(ExtensMin.x, ExtensMin.y), ExtensMin.z);
+				//	float Max = DMIN(DMIN(ExtensMax.x, ExtensMax.y), ExtensMax.z);
+				//	float Diff = Dabs(Max - Min);
+				//	float Radius = Diff / 2.0f;
+
+				//	// Translate/scale the center.
+				//	Vec3 Center = g->Center.Transform(Model);
+
+				//	if (State->CameraFrustum.IntersectsSphere(Center, Radius)) {
+				//		// Add it to the list to be rendered.
+				//		GeometryRenderData Data;
+				//		Data.model = Model;
+				//		Data.geometry = g;
+				//		Data.uniqueID = m->UniqueID;
+				//		game_instance->FrameData.WorldGeometries.push_back(Data);
+				//		DrawCount++;
+				//	}
+				//}
+
+				// AABB calculation
+				{
+					// Translate/scale the extents.
+					Vec3 ExtentsMax = g->Extents.max.Transform(Model);
+
+					// Translate/scale the center.
+					Vec3 Center = g->Center.Transform(Model);
+					Vec3 HalfExtents = {                                     
+						Dabs(ExtentsMax.x - Center.x),
+						Dabs(ExtentsMax.y - Center.y),
+						Dabs(ExtentsMax.z - Center.z)
+					};
+
+					if (State->CameraFrustum.IntersectsAABB(Center, HalfExtents) && EnableFrustumCulling) {
+						// Add it to the list to be rendered.
+						GeometryRenderData Data;
+						Data.model = Model;
+						Data.geometry = g;
+						Data.uniqueID = m->UniqueID;
+						game_instance->FrameData.WorldGeometries.push_back(Data);
+						DrawCount++;
+					}
+					else if (!EnableFrustumCulling){
+						// Add it to the list to be rendered.
+						GeometryRenderData Data;
+						Data.model = Model;
+						Data.geometry = g;
+						Data.uniqueID = m->UniqueID;
+						game_instance->FrameData.WorldGeometries.push_back(Data);
+						DrawCount++;
+					}
+				}
+			}
+		}
+	}
+
+
 	// TODO: Temp
 	char FPSText[512];
 	StringFormat(FPSText, 512,
 		"\
-	Camera Pos: [%.3f %.3f %.3f]\n\
-	Camera Rot: [%.3f %.3f %.3f]\n\
-	L=%s R=%s\tNDC: x=%.2f, y=%.2f\n\
-	Hovered: %s%u\n\
-	FPS: %d\tDelta time: %.2f",
+	Camera Pos: [%.3f %.3f %.3f]\tCamera Rot: [%.3f %.3f %.3f]\n\
+	L=%s R=%s\tNDC: x=%.2f, y=%.2f\tHovered: %s%u\n\
+	FPS: %d\tDelta time: %.2f\n\
+	Drawn Count: %-5u",
 		Pos.x, Pos.y, Pos.z,
 		Rad2Deg(Rot.x), Rad2Deg(Rot.y), Rad2Deg(Rot.z),
 		LeftDown ? "Y" : "N", RightDown ? "Y" : "N",
@@ -389,7 +591,8 @@ bool GameUpdate(SGame* game_instance, float delta_time) {
 		State->HoveredObjectID == INVALID_ID ? "None" : "",
 		State->HoveredObjectID == INVALID_ID ? 0 : State->HoveredObjectID,
 		(int)FPS,
-		(float)FrameTime
+		(float)FrameTime,
+		DrawCount
 	);
 	State->TestText.SetText(FPSText);
 
@@ -414,21 +617,7 @@ bool GameRender(SGame* game_instance, SRenderPacket* packet, float delta_time) {
 	}
 
 	// World
-	uint32_t MeshCount = 0;
-	Mesh** Meshes = (Mesh**)Memory::Allocate(sizeof(Mesh*) * 10, MemoryType::eMemory_Type_Array);
-	// TODO: Flexible size array.
-	for (uint32_t i = 0; i < 10; ++i) {
-		if (State->Meshes[i].Generation != INVALID_ID_U8) {
-			Mesh* M = &State->Meshes[i];
-			Meshes[MeshCount] = M;
-			MeshCount++;
-		}
-	}
-
-	MeshPacketData WorldMeshData;
-	WorldMeshData.meshes = Meshes;
-	WorldMeshData.mesh_count = MeshCount;
-	if (!RenderViewSystem::BuildPacket(RenderViewSystem::Get("World"), &WorldMeshData, &packet->views[1])) {
+	if (!RenderViewSystem::BuildPacket(RenderViewSystem::Get("World"), &game_instance->FrameData.WorldGeometries, &packet->views[1])) {
 		LOG_ERROR("Failed to build packet for view 'World'.");
 		return false;
 	}
@@ -463,7 +652,7 @@ bool GameRender(SGame* game_instance, SRenderPacket* packet, float delta_time) {
 	// Pick uses both world and ui packet data.
 	PickPacketData PickPacket;
 	PickPacket.UIMeshData = UIPacket.meshData;
-	PickPacket.WorldMeshData = WorldMeshData;
+	PickPacket.WorldMeshData = game_instance->FrameData.WorldGeometries;
 	PickPacket.Texts = UIPacket.Textes;
 	PickPacket.TextCount = UIPacket.textCount;
 
@@ -480,6 +669,9 @@ void GameOnResize(SGame* game_instance, unsigned int width, unsigned int height)
 
 	State->Width = width;
 	State->Height = height;
+
+	State->TestText.SetPosition(Vec3(180, (float)height - 150, 0));
+	State->TestSysText.SetPosition(Vec3(100, (float)height - 400, 0));
 
 	// TODO: Temp
 	SGeometryConfig UIConfig;

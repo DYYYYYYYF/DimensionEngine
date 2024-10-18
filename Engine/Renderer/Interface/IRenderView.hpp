@@ -52,6 +52,9 @@ public:
 public:
 	virtual unsigned short GetID() { return ID; }
 	virtual void SetID(unsigned short id) { ID = id; }
+	virtual ShaderRenderMode GetRenderMode() const { return render_mode; }
+	virtual void SetRenderMode(ShaderRenderMode mode) { render_mode = mode; }
+	virtual std::vector<class VulkanRenderPass>& GetRenderpass() { return Passes; }
 
 public:
 	unsigned short ID;
@@ -62,6 +65,8 @@ public:
 	unsigned char RenderpassCount;
 	std::vector<class VulkanRenderPass> Passes;
 	const char* CustomShaderName = nullptr;
+	ShaderRenderMode render_mode = ShaderRenderMode::eShader_Render_Mode_Default;
+
 };
 
 struct RenderViewPacket {

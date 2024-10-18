@@ -5,8 +5,8 @@ import sys, getopt  # Command line argvs
 # Common values
 vulkanPath       = "D:/C_Library/VulkanSDK"
 compile_command  = "glslc -c "
-file_path        = os.path.abspath(".") + "/Shaders/"
-target_path      = os.path.abspath(".") + "/Assets/Shaders/"
+file_path        = os.path.abspath("..") + "/Shaders/"
+target_path      = os.path.abspath("..") + "/Assets/Shaders/"
 
 # compile failed files
 failed_shaders = []
@@ -15,22 +15,17 @@ glsl_list = [".vert", ".frag", "geom", "tesc", "tese", "comp"]
 def CheckGlslc():
     # global value will be changed, so we need define the value inside func
     global compile_command
-
-    compile_check_command     = compile_command + "--version"
+    compile_check_command = file_path + "tools/glslc.exe --version "
+    compile_command = file_path + "tools/glslc.exe -c "
     if os.system(compile_check_command) != 0:
-        compile_check_command = file_path + "tools/glslc.exe -c "
+        # Not set global command
+        compile_command = vulkanPath + "/Bin/glslc.exe -c "
+        compile_check_command = compile_command + "--version "
         
         if os.system(compile_check_command) != 0:
-            # Not set global command
-            os.system("cls")
-            compile_command = vulkanPath + "/Bin/glslc.exe -c "
-            compile_check_command = compile_command + "--version "
-            
-            if os.system(compile_check_command) != 0:
-                # Not set right vulkan path
-                os.system("cls")
-                print("Please set vulkan path!")
-                quit()
+            # Not set right vulkan path
+            print("Please set vulkan path!")
+            quit()
 
 
 def Compile(sub_file_path, file, filename, shader_language):
@@ -77,7 +72,6 @@ def CompileShaders(shader_language):
         print(target_path + " is not exists. mkdir...")
         os.mkdir(target_path)
 
-
     # Windows platform
     # Check glslc command
     if platform.system().lower() == "windows":
@@ -85,32 +79,3 @@ def CompileShaders(shader_language):
 
     print("Shader direction: " + file_path + "\n")
     SearchShaderFiles(file_path, shader_language)
-
-    LogCompileResult()
-    
-
-def LogCompileResult():
-    if len(failed_shaders) == 0:
-        print("\nAll shaders compiled successful...")
-        print("The spv files directories: " + target_path)
-    else:
-        print("\nComile failed shaders:")
-        for fail_hader in failed_shaders:
-            print(fail_hader)
-
-
-if __name__ == '__main__':
-    try:
-        opts, args = getopt.getopt(sys.argv[1:], "hl:", ["help", "language="])
-        default_shader_language = "glsl"
-        for opt, arg in opts:
-            if opt in ("-h", "--help"):
-                print('-l [glsl/hlsl]: shader language')
-                sys.exit()
-            elif opt in ("-l", "--language"):
-                default_shader_language = arg
-
-        CompileShaders(default_shader_language)
-
-    except getopt.GetoptError:
-        print('compile_shader.py -l <language>')

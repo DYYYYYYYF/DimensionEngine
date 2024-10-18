@@ -22,10 +22,10 @@ struct SInputState {
 };
 
 static bool Initialized = false;
-static SInputState state = {};
+static SInputState InputState = {};
 
 void InputInitialize() {
-	Memory::Zero(&state, sizeof(SInputState));
+	Memory::Zero(&InputState, sizeof(SInputState));
 	Initialized = true;
 	LOG_INFO("Input system initialized.");
 }
@@ -41,13 +41,13 @@ void InputUpdate(double delta_time) {
 	}
 
 	// Copy states
-	Memory::Copy(&state.keyboard_previous, &state.keyboard_current, sizeof(SKeyboardState));
-	Memory::Copy(&state.mouse_previous, &state.mouse_current, sizeof(SMouseState));
+	Memory::Copy(&InputState.keyboard_previous, &InputState.keyboard_current, sizeof(SKeyboardState));
+	Memory::Copy(&InputState.mouse_previous, &InputState.mouse_current, sizeof(SMouseState));
 }
 
 void InputProcessKey(Keys key, bool pressed) {
-	if (state.keyboard_current.keys[key] != pressed) {
-		state.keyboard_current.keys[key] = pressed;
+	if (InputState.keyboard_current.keys[key] != pressed) {
+		InputState.keyboard_current.keys[key] = pressed;
 
 		SEventContext context;
 		context.data.u16[0] = key;
@@ -56,8 +56,8 @@ void InputProcessKey(Keys key, bool pressed) {
 }
 
 void InputProcessButton(Buttons button, bool pressed) {
-	if (state.mouse_current.buttons[button] != pressed) {
-		state.mouse_current.buttons[button] = pressed;
+	if (InputState.mouse_current.buttons[button] != pressed) {
+		InputState.mouse_current.buttons[button] = pressed;
 
 		SEventContext context;
 		context.data.u16[0] = button;
@@ -66,10 +66,10 @@ void InputProcessButton(Buttons button, bool pressed) {
 }
 
 void InputProcessMouseMove(short x, short y) {
-	if (state.mouse_current.x != x || state.mouse_current.y != y) {
+	if (InputState.mouse_current.x != x || InputState.mouse_current.y != y) {
 		// Update
-		state.mouse_current.x = x;
-		state.mouse_current.y = y;
+		InputState.mouse_current.x = x;
+		InputState.mouse_current.y = y;
 
 		//Fire the event
 		SEventContext context;
@@ -93,7 +93,7 @@ bool InputIsKeyDown(Keys key) {
 		return false;
 	}
 
-	return state.keyboard_current.keys[key] == true;
+	return InputState.keyboard_current.keys[key] == true;
 }
 
 bool InputIsKeyUp(Keys key) {
@@ -101,7 +101,7 @@ bool InputIsKeyUp(Keys key) {
 		return false;
 	}
 
-	return state.keyboard_current.keys[key] == false;
+	return InputState.keyboard_current.keys[key] == false;
 }
 
 bool InputWasKeyDown(Keys key) {
@@ -109,7 +109,7 @@ bool InputWasKeyDown(Keys key) {
 		return false;
 	}
 
-	return state.keyboard_previous.keys[key] == true;
+	return InputState.keyboard_previous.keys[key] == true;
 }
 
 bool InputWasKeyUp(Keys key) {
@@ -117,7 +117,7 @@ bool InputWasKeyUp(Keys key) {
 		return false;
 	}
 
-	return state.keyboard_previous.keys[key] == false;
+	return InputState.keyboard_previous.keys[key] == false;
 }
 
 bool InputeIsButtonDown(Buttons button) {
@@ -125,7 +125,7 @@ bool InputeIsButtonDown(Buttons button) {
 		return false;
 	}
 
-	return state.mouse_current.buttons[button] == true;
+	return InputState.mouse_current.buttons[button] == true;
 }
 
 bool InputIsButtonUp(Buttons button) {
@@ -133,7 +133,7 @@ bool InputIsButtonUp(Buttons button) {
 		return false;
 	}
 
-	return state.mouse_current.buttons[button] == false;
+	return InputState.mouse_current.buttons[button] == false;
 }
 
 bool InputWasButtonDown(Buttons button) {
@@ -141,7 +141,7 @@ bool InputWasButtonDown(Buttons button) {
 		return false;
 	}
 
-	return state.mouse_previous.buttons[button] == true;
+	return InputState.mouse_previous.buttons[button] == true;
 }
 
 bool InputWasButtonUp(Buttons button) {
@@ -149,7 +149,7 @@ bool InputWasButtonUp(Buttons button) {
 		return false;
 	}
 
-	return state.mouse_previous.buttons[button] == false;
+	return InputState.mouse_previous.buttons[button] == false;
 }
 
 void InputGetMousePosition(int& x, int& y) {
@@ -159,8 +159,8 @@ void InputGetMousePosition(int& x, int& y) {
 		return;
 	}
 
-	x = state.mouse_current.x;
-	y = state.mouse_current.y;
+	x = InputState.mouse_current.x;
+	y = InputState.mouse_current.y;
 }
 void InputGetPreviousMousePosition(int& x, int& y) {
 	if (!Initialized) {
@@ -169,8 +169,8 @@ void InputGetPreviousMousePosition(int& x, int& y) {
 		return;
 	}
 
-	x = state.mouse_previous.x;
-	y = state.mouse_previous.y;
+	x = InputState.mouse_previous.x;
+	y = InputState.mouse_previous.y;
 }
 
 

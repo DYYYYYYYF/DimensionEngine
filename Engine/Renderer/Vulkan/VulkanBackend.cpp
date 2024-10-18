@@ -122,7 +122,7 @@ bool VulkanBackend::Initialize(const RenderBackendConfig* config, unsigned char*
 		for (uint32_t j = 0; j < AvailableExtensionsCount; j++) {
 			if (strcmp(RequiredExtensions[i], AvailableExtensions[j].extensionName) == 0) {
 				Found = true;
-				LOG_INFO("Required extension found: %s.", RequiredExtensions[i]);
+				LOG_DEBUG("Required extension found: %s.", RequiredExtensions[i]);
 				break;
 			}
 		}
@@ -160,13 +160,13 @@ bool VulkanBackend::Initialize(const RenderBackendConfig* config, unsigned char*
 
 	// Verify all required layers are available.
 	for (uint32_t i = 0; i < RequiredValidationLayerName.size(); i++) {
-		LOG_INFO("Searching for layer: %s...", RequiredValidationLayerName[i]);
+		LOG_DEBUG("Searching for layer: %s...", RequiredValidationLayerName[i]);
 		
 		bool IsFound = false;
 		for (uint32_t j = 0; j < AvailableLayersCount; j++) {
 			if (strcmp(RequiredValidationLayerName[i], AvailableLayers[j].layerName.data()) == 0) {
 				IsFound = true;
-				LOG_INFO("Found.");
+				LOG_DEBUG("Found.");
 				break;
 			}
 		}
@@ -280,20 +280,22 @@ bool VulkanBackend::Initialize(const RenderBackendConfig* config, unsigned char*
 	}
 
 	// Geometry vertex buffer
-	const size_t VertexBufferSize = sizeof(Vertex) * 1024 * 1024;
+	const size_t VertexBufferSize = sizeof(Vertex) * 1024 * 1024 * 2;
 	if (!CreateRenderbuffer(RenderbufferType::eRenderbuffer_Type_Vertex, VertexBufferSize, true, &Context.ObjectVertexBuffer)) {
 		LOG_ERROR("Error creating vertex buffer.");
 		return false;
 	}
 	BindRenderbuffer(&Context.ObjectVertexBuffer, 0);
+	LOG_INFO("VulkanBackend::CreateRenderbuffer(): Success allocated memory %llu bytes. Enable freelist: %s", VertexBufferSize, "true");
 
 	// Geometry index buffer
-	const size_t IndexBufferSize = sizeof(uint32_t) * 1024 * 1024;
+	const size_t IndexBufferSize = sizeof(uint32_t) * 1024 * 1024 * 2;
 	if (!CreateRenderbuffer(RenderbufferType::eRenderbuffer_Type_Index, IndexBufferSize, true, &Context.ObjectIndexBuffer)) {
 		LOG_ERROR("Error creating index buffer.");
 		return false;
 	}
 	BindRenderbuffer(&Context.ObjectIndexBuffer, 0);
+	LOG_INFO("VulkanBackend::CreateRenderbuffer(): Success allocated memory %llu bytes. Enable freelist: %s", IndexBufferSize, "true");
 
 	// Mark all geometry as invalid.
 	for (uint32_t i = 0; i < GEOMETRY_MAX_COUNT; ++i) {
@@ -912,11 +914,11 @@ void VulkanBackend::DestroyGeometry(Geometry* geometry) {
 		GeometryData* InternalData = &Context.Geometries[geometry->InternalID];
 
 		// Free vertex data.
-		FreeRenderbuffer(&Context.ObjectVertexBuffer, InternalData->vertext_buffer_offset, InternalData->vertex_element_size * InternalData->vertex_count);
+		FreeRenderbuffer(&Context.ObjectVertexBuffer, InternalData->vertex_element_size * InternalData->vertex_count, InternalData->vertext_buffer_offset);
 
 		// Free index data.
 		if (InternalData->index_element_size > 0) {
-			FreeRenderbuffer(&Context.ObjectIndexBuffer, InternalData->index_buffer_offset, InternalData->index_element_size * InternalData->index_count);
+			FreeRenderbuffer(&Context.ObjectIndexBuffer, InternalData->index_element_size * InternalData->index_count, InternalData->index_buffer_offset);
 		}
 
 		// Clean up date.
@@ -1166,6 +1168,7 @@ bool VulkanBackend::CreateShader(Shader* shader, const ShaderConfig* config, IRe
 
 	// Keep a copy of the cull mode.
 	OutShader->Config.cull_mode = config->cull_mode;
+	OutShader->Config.pology_mode = config->polygon_mode;
 
 	return true;
 }
@@ -1325,7 +1328,7 @@ bool VulkanBackend::InitializeShader(Shader* shader) {
 	PipelineConfig.viewport = Viewport;
 	PipelineConfig.scissor = Scissor;
 	PipelineConfig.cull_mode = InternalShader->Config.cull_mode;
-	PipelineConfig.is_wireframe = false;
+	PipelineConfig.is_wireframe = InternalShader->Config.pology_mode == ePology_Mode_Fill ? ePology_Mode_Fill : ePology_Mode_Line;
 	PipelineConfig.shaderFlags = shader->Flags;
 	PipelineConfig.push_constant_range_count = shader->PushConstantsRangeCount;
 	PipelineConfig.push_constant_ranges = shader->PushConstantsRanges;
@@ -1674,7 +1677,7 @@ uint32_t VulkanBackend::AcquireInstanceResource(Shader* shader, std::vector<Text
 		LOG_ERROR("vulkan_shader_acquire_instance_resources failed to acquire new id");
 		return INVALID_ID;
 	}
-
+	
 	VulkanShaderInstanceState* InstanceState = &Internal->InstanceStates[OutInstanceID];
 	unsigned char SamplerBindingIndex = Internal->Config.descriptor_sets[DESC_SET_INDEX_INSTANCE].sampler_binding_index;
 	uint32_t InstanceTextureCount = Internal->Config.descriptor_sets[DESC_SET_INDEX_INSTANCE].bindings[SamplerBindingIndex].descriptorCount;

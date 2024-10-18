@@ -99,8 +99,7 @@ struct UIPacketData {
 };
 
 struct PickPacketData {
-	MeshPacketData WorldMeshData;
-	uint32_t WorldGeometryCount;
+	std::vector<GeometryRenderData> WorldMeshData;
 	MeshPacketData UIMeshData;
 	uint32_t UIGeometryCount;
 	// TODO: Temp.

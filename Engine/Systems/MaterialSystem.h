@@ -23,6 +23,7 @@ public:
 
 	static Material* Acquire(const char* name);
 	static Material* AcquireFromConfig(SMaterialConfig config);
+	static Material* Reload(const char* mat_name);
 
 	static void Release(const char* name);
 
@@ -40,7 +41,7 @@ public:
 	 * @param view A constant pointer to a view matrix.
 	 * @return True on success; otherwise false.
 	 */
-	static bool ApplyGlobal(uint32_t shader_id, size_t renderer_frame_number, const Matrix4& projection, const Matrix4& view, const Vec4& ambient_color, const Vec3& view_position);
+	static bool ApplyGlobal(uint32_t shader_id, size_t renderer_frame_number, const Matrix4& projection, const Matrix4& view, const Vec4& ambient_color, const Vec3& view_position, uint32_t render_mode);
 
 	/**
 	 * @brief Applies instance-level material data for the given material.

@@ -1,8 +1,8 @@
 #include "RenderViewWorld.hpp"
 
 #include "Core/EngineLogger.hpp"
-#include "Core/DMemory.hpp"
 #include "Core/Event.hpp"
+#include "Core/DMemory.hpp"
 #include "Math/DMath.hpp"
 #include "Math/Transform.hpp"
 #include "Containers/TArray.hpp"
@@ -33,12 +33,70 @@ static bool RenderViewWorldOnEvent(unsigned short code, void* sender, void* list
 
 	switch (code)
 	{
-	case Core::eEvent_Code_Default_Rendertarget_Refresh_Required:
+	case Core::eEvent_Code_Default_Rendertarget_Refresh_Required: 
+	{
 		RenderViewSystem::RegenerateRendertargets(self);
+		return true;
+	}
+
+	case Core::eEvent_Code_Set_Render_Mode:
+	{
+		int RenderMode = context.data.i32[0];
+		switch (RenderMode)
+		{
+		case ShaderRenderMode::eShader_Render_Mode_Default:
+			self->render_mode = ShaderRenderMode::eShader_Render_Mode_Default;
+			LOG_DEBUG("Change render mode: eShader_Render_Mode_Default.");
+			break;
+
+		case ShaderRenderMode::eShader_Render_Mode_Lighting:
+			self->render_mode = ShaderRenderMode::eShader_Render_Mode_Lighting;
+			LOG_DEBUG("Change render mode: eShader_Render_Mode_Lighting.");
+			break;
+
+		case ShaderRenderMode::eShader_Render_Mode_Normals:
+			self->render_mode = ShaderRenderMode::eShader_Render_Mode_Normals;
+			LOG_DEBUG("Change render mode: eShader_Render_Mode_Normals.");
+			break;
+
+		}
+		return true;
+	}
+	
+		return true;
+	}	// switch
+
+
+	return false;
+}
+
+bool ReloadShader(unsigned short code, void* sender, void* listenerInst, SEventContext context) {
+	RenderViewWorld* self = (RenderViewWorld*)listenerInst;
+	if (self == nullptr) {
 		return false;
 	}
 
-	return false;
+	// Builtin world shader.
+	const char* ShaderName = "Shader.Builtin.World";
+	Resource ConfigResource;
+	if (!ResourceSystem::Load(ShaderName, ResourceType::eResource_Type_Shader, nullptr, &ConfigResource)) {
+		LOG_ERROR("Failed to load builtin skybox shader.");
+		return false;
+	}
+
+	ShaderConfig* Config = (ShaderConfig*)ConfigResource.Data;
+	// NOTE: Assuming the first pass since that's all this view has.
+	if (!ShaderSystem::Create(&self->GetRenderpass()[0], Config)) {
+		LOG_ERROR("Failed to load builtin world shader.");
+		return false;
+	}
+	ResourceSystem::Unload(&ConfigResource);
+
+	Shader* s = ShaderSystem::Get(ShaderName);
+	self->SetShader(s);
+	RenderViewSystem::RegenerateRendertargets(self);
+
+	return true;
 }
 
 RenderViewWorld::RenderViewWorld() {
@@ -54,8 +112,7 @@ RenderViewWorld::RenderViewWorld(const RenderViewConfig& config) {
 }
 
 bool RenderViewWorld::OnCreate(const RenderViewConfig& config) {
-
-	// Builtin ui shader.
+	// Builtin world shader.
 	const char* ShaderName = "Shader.Builtin.World";
 	Resource ConfigResource;
 	if (!ResourceSystem::Load(ShaderName, ResourceType::eResource_Type_Shader, nullptr, &ConfigResource)) {
@@ -90,12 +147,23 @@ bool RenderViewWorld::OnCreate(const RenderViewConfig& config) {
 		LOG_ERROR("Unable to listen for refresh required event, creation failed.");
 		return false;
 	}
-
+	if (!Core::EventRegister(Core::eEvent_Code_Reload_Shader_Module, this, ReloadShader)) {
+		LOG_ERROR("Unable to listen for refresh required event, creation failed.");
+		return false;
+	}
+	if (!Core::EventRegister(Core::eEvent_Code_Set_Render_Mode, this, RenderViewWorldOnEvent)) {
+		LOG_ERROR("Unable to listen for refresh required event, creation failed.");
+		return false;
+	}
+	
+	LOG_INFO("Renderview world created.");
 	return true;
 }
 
 void RenderViewWorld::OnDestroy() {
 	Core::EventUnregister(Core::eEvent_Code_Default_Rendertarget_Refresh_Required, this, RenderViewWorldOnEvent);
+	Core::EventUnregister(Core::eEvent_Code_Reload_Shader_Module, this, ReloadShader);
+	Core::EventUnregister(Core::eEvent_Code_Set_Render_Mode, this, RenderViewWorldOnEvent);
 }
 
 void RenderViewWorld::OnResize(uint32_t width, uint32_t height) {
@@ -119,7 +187,7 @@ bool RenderViewWorld::OnBuildPacket(void* data, struct RenderViewPacket* out_pac
 		return false;
 	}
 
-	MeshPacketData* MeshData = (MeshPacketData*)data;
+	std::vector<GeometryRenderData>* GeometryData = (std::vector<GeometryRenderData>*)data;
 	out_packet->view = this;
 
 	// Set matrix, etc.
@@ -132,34 +200,32 @@ bool RenderViewWorld::OnBuildPacket(void* data, struct RenderViewPacket* out_pac
 
 	std::vector<GeometryDistance> GeometryDistances;
 
-	for (uint32_t i = 0; i < MeshData->mesh_count; ++i) {
-		Mesh* pMesh = MeshData->meshes[i];
-		Matrix4 Model = pMesh->Transform.GetWorldTransform();
+	uint32_t GeometryDataCount = (uint32_t)GeometryData->size();
+	for (uint32_t i = 0; i < GeometryDataCount; ++i) {
+		GeometryRenderData* GData = &(*GeometryData)[i];
+		if (GData->geometry == nullptr) {
+			continue;
+		}
 
-		for (uint32_t j = 0; j < pMesh->geometry_count; j++) {
-			GeometryRenderData RenderData;
-			RenderData.geometry = pMesh->geometries[j];
-			RenderData.model = Model;
+		// TODO: Add something to material to check for transparency.
+		if ((GData->geometry->Material->DiffuseMap.texture->Flags & TextureFlagBits::eTexture_Flag_Has_Transparency) == 0) {
+			// Only add meshes with _no_ transparency.
+			out_packet->geometries.push_back((*GeometryData)[i]);
+			out_packet->geometry_count++;
+		}
+		else {
+			// For meshes _with_ transparency, add them to a separate list to be sorted by distance later.
+			// Get the center, extract the global position from the model matrix and add it to the center,
+			// then calculate the distance between it and the camera, and finally save it to a list to be sorted.
+			// NOTE: This isn't perfect for translucent meshes that intersect, but is enough for our purposes now.
+			Vec3 Center = (*GeometryData)[i].geometry->Center.Transform(GData->model);
+			float Distance = Center.Distance(WorldCamera->GetPosition());
 
-			if ((pMesh->geometries[j]->Material->DiffuseMap.texture->Flags & TextureFlagBits::eTexture_Flag_Has_Transparency) == 0) {
-				// Only add meshes with _no_ transparency.
-				out_packet->geometries.push_back(RenderData);
-				out_packet->geometry_count++;
-			}
-			else {
-				// For meshes _with_ transparency, add them to a separate list to be sorted by distance later.
-				// Get the center, extract the global position from the model matrix and add it to the center,
-				// then calculate the distance between it and the camera, and finally save it to a list to be sorted.
-				// NOTE: This isn't perfect for translucent meshes that intersect, but is enough for our purposes now.
-				Vec3 Center = RenderData.geometry->Center.Transform(Model);
-				float Distance = Center.Distance(WorldCamera->GetPosition());
+			GeometryDistance gDist;
+			gDist.distance = Dabs(Distance);
+			gDist.g = (*GeometryData)[i];
 
-				GeometryDistance gDist;
-				gDist.distance = Dabs(Distance);
-				gDist.g = RenderData;
-
-				GeometryDistances.push_back(gDist);
-			}
+			GeometryDistances.push_back(gDist);
 		}
 	}
 
@@ -204,7 +270,7 @@ bool RenderViewWorld::OnRender(struct RenderViewPacket* packet, IRendererBackend
 		}
 
 		// Apply globals.
-		if (!MaterialSystem::ApplyGlobal(SID, frame_number, packet->projection_matrix, packet->view_matrix, packet->ambient_color, packet->view_position)) {
+		if (!MaterialSystem::ApplyGlobal(SID, frame_number, packet->projection_matrix, packet->view_matrix, packet->ambient_color, packet->view_position, render_mode)) {
 			LOG_ERROR("RenderViewUI::OnRender() Failed to use global shader. Render frame failed.");
 			return false;
 		}

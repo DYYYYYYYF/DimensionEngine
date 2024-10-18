@@ -70,6 +70,9 @@
 #define CLAMP(value, min, max) (value <= min) ? min : (value >= max) ? max : value;
 #endif
 
+#define DMIN(x, y) (x < y ? x : y)
+#define DMAX(x, y) (x > y ? x : y)
+
 #define GIBIBYTES(amount) (amount * 1024 * 1024 * 1024)
 #define MEBIBYTES(amount) (amount * 1024 * 1024)
 #define KIBIBYTES(amount) (amount * 1024)

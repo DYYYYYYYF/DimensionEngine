@@ -4,8 +4,13 @@ name=Shader.Builtin.World
 renderpass=Renderpass.Builtin.World
 stages=vertex,fragment
 stagefiles=Shaders/Builtin.WorldShader.vert.spv,Shaders/Builtin.WorldShader.frag.spv
+
+# 1=enable, 0=disable
 depth_test=1
 depth_write=1
+
+# line / fill
+polygon_mode=fill
 
 # Attributes: type,name
 attribute=vec3,in_position
@@ -20,6 +25,7 @@ uniform=mat4,0,projection
 uniform=mat4,0,view
 uniform=vec4,0,ambient_color
 uniform=vec3,0,view_position
+uniform=u32,0,mode
 uniform=vec4,1,diffuse_color
 uniform=samp,1,diffuse_texture
 uniform=samp,1,specular_texture

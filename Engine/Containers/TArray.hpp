@@ -31,7 +31,10 @@ public:
 		Capacity = arr.Capacity;
 		Stride = arr.Stride;
 		Length = arr.Length;
-		ArrayMemory = arr.ArrayMemory;
+
+		size_t ArrayMemSize = Capacity * Stride;
+		ArrayMemory = Platform::PlatformAllocate(ArrayMemSize, false);
+		Platform::PlatformSetMemory(ArrayMemory, 0, ArrayMemSize);
 	}
 
 	TArray(size_t size) {
@@ -44,7 +47,13 @@ public:
 		Length = size;
 	}
 
-	virtual ~TArray() {}
+	virtual ~TArray() {
+		//Platform::PlatformFree(ArrayMemory, false);
+		//ArrayMemory = nullptr;
+		//Capacity = 0;
+		//Stride = 0;
+		//Length = 0;
+	}
 
 public:
 	size_t GetField(size_t field) {}

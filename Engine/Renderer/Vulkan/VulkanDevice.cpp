@@ -51,7 +51,8 @@ bool VulkanDevice::Create(VulkanContext* context, vk::SurfaceKHR surface) {
 	// Request device features
 	// TODO: should be config driven
 	vk::PhysicalDeviceFeatures DeviceFeatures;
-	DeviceFeatures.setSamplerAnisotropy(true);
+	DeviceFeatures.setSamplerAnisotropy(true)	// It will not append on modern device, but not sure.
+		.setFillModeNonSolid(true);	// It should be true when Pipeline's PolygonMode set on eLine or ePoint.
 
 	const char* ExtensionName = VK_KHR_SWAPCHAIN_EXTENSION_NAME;
 	vk::DeviceCreateInfo DeviceCreateInfo;
@@ -262,6 +263,7 @@ bool VulkanDevice::MeetsRequirements(vk::PhysicalDevice device, vk::SurfaceKHR s
 	// Is discrete GPU
 #if !defined(DPLATFORM_MACOS)
 	if (DeviceRequirements.discrete_gpu) {
+		LOG_WARN("MacOS device may be a Discrete Gpu. Allow selected.");
 		if (properties->deviceType != vk::PhysicalDeviceType::eDiscreteGpu) {
 			LOG_ERROR("Device is not a discrete GPU. one is least. Skipping.");
 			return false;
@@ -313,7 +315,7 @@ if (SupportedPresent) {
 }
 	}
 
-	LOG_INFO("        %d |        %d |       %d |        %d | %s",
+	LOG_INFO("    %d    |    %d    |    %d    |    %d     | %s",
 		QueueFamilyInfo.graphics_index != -1,
 		QueueFamilyInfo.present_index != -1,
 		QueueFamilyInfo.compute_index != -1,
@@ -325,11 +327,11 @@ if (SupportedPresent) {
 		(!DeviceRequirements.present || (DeviceRequirements.present && QueueFamilyInfo.present_index != -1)) &&
 		(!DeviceRequirements.compute || (DeviceRequirements.compute && QueueFamilyInfo.compute_index != -1)) &&
 		(!DeviceRequirements.transfer || (DeviceRequirements.transfer && QueueFamilyInfo.transfer_index != -1))) {
-		LOG_INFO("Device meets queue requirements.");
-		LOG_INFO("Graphics Family Index: %i", QueueFamilyInfo.graphics_index);
-		LOG_INFO("Present Family Index: %i", QueueFamilyInfo.present_index);
-		LOG_INFO("Compute Family Index: %i", QueueFamilyInfo.compute_index);
-		LOG_INFO("Transfer Family Index: %i", QueueFamilyInfo.transfer_index);
+		LOG_DEBUG("Device meets queue requirements.");
+		LOG_DEBUG("Graphics Family Index: %i", QueueFamilyInfo.graphics_index);
+		LOG_DEBUG("Present Family Index: %i", QueueFamilyInfo.present_index);
+		LOG_DEBUG("Compute Family Index: %i", QueueFamilyInfo.compute_index);
+		LOG_DEBUG("Transfer Family Index: %i", QueueFamilyInfo.transfer_index);
 
 		QuerySwapchainSupport(device, surface, &SwapchainSupport);
 

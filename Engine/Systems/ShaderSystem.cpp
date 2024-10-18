@@ -78,7 +78,14 @@ void ShaderSystem::Shutdown() {
 }
 
 bool ShaderSystem::Create(IRenderpass* pass, ShaderConfig* config) {
-	uint32_t ID = NewShaderID();
+	uint32_t ID = GetShaderID(config->name);
+	if (ID == INVALID_ID) {
+		ID = NewShaderID();
+	}
+	else {
+		LOG_WARN("Shader named '%s' already create. It will be covered.", config->name);
+	}
+
 	Shader* OutShader = &Shaders[ID];
 	Memory::Zero(OutShader, sizeof(Shader));
 	OutShader = new (OutShader)Shader();

@@ -151,6 +151,7 @@ void Platform::PlatformConsoleWrite(const char* message, unsigned char color) {
 	unsigned long long Length = strlen(message);
 	LPDWORD NumberWritten = 0;
 	WriteConsoleA(GetStdHandle(STD_OUTPUT_HANDLE), message, (DWORD)Length, NumberWritten, 0);
+	SetConsoleTextAttribute(ConsoleHandle, 8);
 }
 
 void Platform::PlatformConsoleWriteError(const char* message, unsigned char color) {
@@ -161,6 +162,7 @@ void Platform::PlatformConsoleWriteError(const char* message, unsigned char colo
 	unsigned long long Length = strlen(message);
 	LPDWORD NumberWritten = 0;
 	WriteConsoleA(GetStdHandle(STD_ERROR_HANDLE), message, (DWORD)Length, NumberWritten, 0);
+	SetConsoleTextAttribute(ConsoleHandle, 8);
 }
 
 double Platform::PlatformGetAbsoluteTime() {

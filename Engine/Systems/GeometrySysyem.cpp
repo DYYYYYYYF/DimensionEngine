@@ -77,7 +77,7 @@ Geometry* GeometrySystem::AcquireFromConfig(SGeometryConfig config, bool auto_re
 	}
 
 	if (!CreateGeometry(config, geometry)) {
-		LOG_ERROR("Failed to create geometry. Returning nullptr.");
+		LOG_ERROR("Failed to create geometry '%s'. Returning nullptr.", config.name);
 		return nullptr;
 	}
 
@@ -234,9 +234,11 @@ bool GeometrySystem::CreateGeometry(SGeometryConfig config, Geometry* geometry) 
 	// Acquire the material.
 	if (strlen(config.material_name) > 0) {
 		geometry->Material = MaterialSystem::Acquire(config.material_name);
-		if (geometry->Material == nullptr) {
-			geometry->Material = MaterialSystem::GetDefaultMaterial();
-		}
+	}
+
+	if (geometry->Material == nullptr) {
+		LOG_WARN("Default use default material.");
+		geometry->Material = MaterialSystem::GetDefaultMaterial();
 	}
 
 	return true;
@@ -263,7 +265,7 @@ void GeometrySystem::DestroyGeometry(Geometry* geometry) {
 	geometry->name[0] = '0';
 
 	// Release the material.
-	if (geometry->Material && strlen(geometry->name) > 0) {
+	if (geometry->Material && strlen(geometry->Material->Name) > 0) {
 		MaterialSystem::Release(geometry->Material->Name);
 		geometry->Material = nullptr;
 	}

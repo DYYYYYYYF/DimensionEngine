@@ -244,7 +244,7 @@ public:
 	* @param vec Another vector.
 	* @return The distance between this vector and the other.
 	*/
-	float Dot(const Vec3& vec) {
+	float Dot(const Vec3& vec) const {
 		return x * vec.x + y * vec.y + z * vec.z;
 	}
 
@@ -254,11 +254,11 @@ public:
 	* @param vec Another vector.
 	* @return The cross product result of this vector and the other.
 	*/
-	Vec3 Cross(const Vec3& vec) {
+	Vec3 Cross(const Vec3& vec) const {
 		return Vec3{
-			y * vec.z - z * vec.y,
-			z * vec.x - x * vec.z,
-			x * vec.y - y * vec.x
+			y* vec.z - z * vec.y,
+			z* vec.x - x * vec.z,
+			x* vec.y - y * vec.x
 		};
 	}
 
@@ -268,7 +268,7 @@ public:
 	* @param vec Another vector.
 	* @return The distance between this vector and the other.
 	*/
-	float Distance(const Vec3& vec) {
+	float Distance(const Vec3& vec) const {
 		Vec3 d{ x - vec.x, y - vec.y, z - vec.z };
 		return d.Length();
 	}
@@ -311,22 +311,36 @@ public:
 		return Vec3{ x + v.x, y + v.y, z + v.z };
 	}
 
+	friend Vec3 operator+(const Vec3& v1, const Vec3& v2) {
+		return Vec3(v1.x + v2.x, v1.y + v2.y, v1.z + v2.z);
+	}
+
 	// Sub
 	Vec3 operator-(const Vec3& v) {
 		return Vec3{ x - v.x, y - v.y, z - v.z };
 	}
 
-	// Mut
-	Vec3 operator*(const Vec3& v) {
-		return Vec3{ x * v.x, y * v.y, z * v.z };
+	friend Vec3  operator-(const Vec3& v1, const Vec3& v2) {
+		return Vec3{ v1.x - v2.x, v1.y - v2.y, v1.z - v2.z };
 	}
 
-	Vec3 operator*(int num) {
-		return Vec3{ x * num, y * num, z * num };
+	// Mut
+	Vec3 operator*(const Vec3& v) {
+		Vec3 t = Vec3(x, y, z);
+		return Vec3{ t.x * v.x, t.y * v.y, t.z * v.z };
+	}
+
+	friend Vec3 operator*(const Vec3& v1, const Vec3& v2) {
+		return Vec3{ v1.x * v2.x, v1.y * v2.y, v1.z * v2.z };
 	}
 
 	Vec3 operator*(float num) {
-		return Vec3{ x * num, y * num, z * num };
+		Vec3 t = Vec3(x, y, z);
+		return Vec3{ t.x * num, t.y * num, t.z * num };
+	}
+
+	friend Vec3 operator*(const Vec3& v, float num) {
+		return Vec3{ v.x * num, v.y * num, v.z * num };
 	}
 
 	Vec3 operator/(const Vec3& v) {
@@ -675,7 +689,7 @@ public:
 	* 
 	* @return A inverted copy of the matrix.
 	*/
-	Matrix4 Inverse() {
+	Matrix4 Inverse() const {
 		float t0 = data[10] * data[15];
 		float t1 = data[14] * data[11];
 		float t2 = data[6] * data[15];
@@ -697,7 +711,7 @@ public:
 		float t18 = data[0] * data[13];
 		float t19 = data[12] * data[1];
 		float t20 = data[0] * data[9];
-		float t21 = data[9] * data[1];
+		float t21 = data[8] * data[1];
 		float t22 = data[0] * data[5];
 		float t23 = data[4] * data[1];
 
@@ -707,7 +721,7 @@ public:
 		o[0] = (t0 * data[5] + t3 * data[9] + t4 * data[13]) - (t1 * data[5] + t2 * data[9] + t5 * data[13]);
 		o[1] = (t1 * data[1] + t6 * data[9] + t9 * data[13]) - (t0 * data[1] + t7 * data[9] + t8 * data[13]);
 		o[2] = (t2 * data[1] + t7 * data[5] + t10 * data[13]) - (t3 * data[1] + t6 * data[5] + t11 * data[13]);
-		o[3] = (t3 * data[1] + t8 * data[5] + t11 * data[9]) - (t4 * data[1] + t9 * data[5] + t10 * data[9]);
+		o[3] = (t5 * data[1] + t8 * data[5] + t11 * data[9]) - (t4 * data[1] + t9 * data[5] + t10 * data[9]);
 
 		float d = 1.0f / (data[0] * o[0] + data[4] * o[1] + data[8] * o[2] + data[12] * o[3]);
 
@@ -715,6 +729,7 @@ public:
 		o[1] = d * o[1];
 		o[2] = d * o[2];
 		o[3] = d * o[3];
+
 		o[4] = d * ((t1 * data[4] + t2 * data[8] + t5 * data[12]) - (t0 * data[4] + t3 * data[8] + t4 * data[12]));
 		o[5] = d * ((t0 * data[0] + t7 * data[8] + t8 * data[12]) - (t1 * data[0] + t6 * data[8] + t9 * data[12]));
 		o[6] = d * ((t3 * data[0] + t6 * data[4] + t11 * data[12]) - (t2 * data[0] + t7 * data[4] + t10 * data[12]));
@@ -1011,8 +1026,8 @@ public:
 		Matrix4 my = Matrix4::EulerY(y_radians);
 		Matrix4 mz = Matrix4::EulerZ(z_radians);
 
-		Matrix = my.Multiply(mx);
-		Matrix = mz.Multiply(Matrix);
+		Matrix = mx.Multiply(my);
+		Matrix = Matrix.Multiply(mz);
 
 		return Matrix;
 	}
@@ -1054,6 +1069,70 @@ public:
 			<< mat[2] << " " << mat[6] << " " << mat[10] << " " << mat[14] << "\n"
 			<< mat[3] << " " << mat[7] << " " << mat[11] << " " << mat[15] << "\n";
 	}
+
+
+	/**
+	 * @brief Performs m * v
+	 *
+	 * @param m The matrix to be multiplied.
+	 * @param v The vector to multiply by.
+	 * @return The transformed vector.
+	 */
+	friend DAPI Vec3 operator*(const Matrix4& m, const Vec3& v) {
+		return Vec3(
+			v.x * m.data[0] + v.y * m.data[1] + v.z * m.data[2] + m.data[3],
+			v.x * m.data[4] + v.y * m.data[5] + v.z * m.data[6] + m.data[7],
+			v.x * m.data[8] + v.y * m.data[9] + v.z * m.data[10] + m.data[11]
+		);
+	}
+
+	/**
+	 * @brief Performs v * m
+	 *
+	 * @param v The vector to be multiplied.
+	 * @param m The matrix to be multiply by.
+	 * @return The transformed vector.
+	 */
+	friend DAPI Vec3 operator*(const Vec3& v, const Matrix4& m) {
+		return Vec3(
+			v.x * m.data[0] + v.y * m.data[4] + v.z * m.data[8] + m.data[12],
+			v.x * m.data[1] + v.y * m.data[5] + v.z * m.data[9] + m.data[13],
+			v.x * m.data[2] + v.y * m.data[6] + v.z * m.data[10] + m.data[14]
+		);
+	}
+
+	/**
+	 * @brief Performs m * v
+	 *
+	 * @param m The matrix to be multiplied.
+	 * @param v The vector to multiply by.
+	 * @return The transformed vector.
+	 */
+	friend DAPI Vec4 operator*(const Matrix4& m, const Vec4& v) {
+		return Vec4(
+			v.x * m.data[0] + v.y * m.data[1] + v.z * m.data[2] + v.w * m.data[3],
+			v.x * m.data[4] + v.y * m.data[5] + v.z * m.data[6] + v.w * m.data[7],
+			v.x * m.data[8] + v.y * m.data[9] + v.z * m.data[10] + v.w * m.data[11],
+			v.x * m.data[12] + v.y * m.data[13] + v.z * m.data[14] + v.w * m.data[15]
+		);
+	}
+
+	/**
+	 * @brief Performs v * m
+	 *
+	 * @param v The vector to be multiplied.
+	 * @param m The matrix to be multiply by.
+	 * @return The transformed vector.
+	 */
+	friend DAPI Vec4 operator*(const Vec4& v, const Matrix4& m) {
+		return Vec4(
+			v.x * m.data[0] + v.y * m.data[4] + v.z * m.data[8] + v.w * m.data[12],
+			v.x * m.data[1] + v.y * m.data[5] + v.z * m.data[9] + v.w * m.data[13],
+			v.x * m.data[2] + v.y * m.data[6] + v.z * m.data[10] + v.w * m.data[14],
+			v.x * m.data[3] + v.y * m.data[7] + v.z * m.data[11] + v.w * m.data[15]
+		);
+	}
+
 };
 
 inline Matrix4 QuatToMatrix(const Quaternion& q) {
@@ -1168,7 +1247,7 @@ inline Quaternion QuaternionSlerp(Quaternion q0, Quaternion q1, float percentage
 
 }
 
-inline Vec3 Vec3::Transform(struct Matrix4 m) {
+DAPI inline Vec3 Vec3::Transform(struct Matrix4 m) {
 	Vec3 out;
 	out.x = x * m.data[0 + 0] + y * m.data[4 + 0] + z * m.data[8 + 0] + 1.0f * m.data[12 + 0];
 	out.y = x * m.data[0 + 1] + y * m.data[4 + 1] + z * m.data[8 + 1] + 1.0f * m.data[12 + 1];
@@ -1242,4 +1321,127 @@ struct Vertex2D {
 
 	Vec2 position;
 	Vec2 texcoord;
+};
+
+// Frustum culling
+class DAPI Plane3D {
+public:
+	Plane3D() {}
+
+	Plane3D(Vec3 p1, Vec3 Norm) {
+		Normal = Norm.Normalize();
+		Distance = Normal.Dot(p1);
+	}
+
+	/**
+	 * @brief Obtains the signed distance between the plane p and the provided position.
+	 *
+	 * @param position A constant pointer to a position.
+	 * @return The signed distance from the point to the plane.
+	 */
+	float SignedDistance(const Vec3& position) const {
+		return Normal.Dot(position) - Distance;
+	}
+
+	/**
+	 * @brief Indicates if plane p intersects a sphere constructed via center and radius.
+	 *
+	 * @param center A constant pointer to a position representing the center of a sphere.
+	 * @param radius The radius of the sphere.
+	 * @return True if the sphere intersects the plane; otherwise false.
+	 */
+	bool IntersectsSphere(const Vec3& center, float radius) {
+		return SignedDistance(center) > -radius;
+	}
+
+	/**
+	 * @brief Indicates if plane p intersects an axis-aligned bounding box constructed via center and extents.
+	 *
+	 * @param center A constant pointer to a position representing the center of an axis-aligned bounding box.
+	 * @param extents The half-extents of an axis-aligned bounding box.
+	 * @return True if the axis-aligned bounding box intersects the plane; otherwise false.
+	 */
+	bool IntersectsAABB(const Vec3& center, const Vec3& extents) {
+		float r = extents.x * Dabs(Normal.x) +
+			extents.y * Dabs(Normal.y) +
+			extents.z * Dabs(Normal.z);
+		return -r <= SignedDistance(center);
+	}
+
+public:
+	Vec3 Normal;
+	float Distance;
+};
+
+class DAPI Frustum {
+public:
+	Frustum() {}
+
+	/**
+	 * @brief Creates and returns a frustum based on the provided position, direction vectors, aspect, field of view,
+	 * and near/far clipping planes (typically obtained from a camera). This is typically used for frustum culling.
+	 *
+	 * @param position A constant pointer to the position to be used.
+	 * @param forward A constant pointer to the forward vector to be used.
+	 * @param right A constant pointer to the right vector to be used.
+	 * @param up A constant pointer to the up vector to be used.
+	 * @param aspect The aspect ratio.
+	 * @param fov The vertical field of view.
+	 * @param near The near clipping plane distance.
+	 * @param far The far clipping plane distance.
+	 */
+	Frustum(const Vec3& position, const Vec3& forward, const Vec3& right, const Vec3& up, float aspect, float fov, float near, float far) {
+		const float HalfV = far * tanf(fov * 0.5f);
+		const float HalfH = HalfV * aspect;
+		const Vec3 fwd = forward;
+		const Vec3 ForwardFar = fwd * far;
+		const Vec3 RightHalfH = right * HalfH;
+		const Vec3 UpHalfV = up * HalfV;
+
+		// near, far, right, left, bottom. top
+		Sides[0] = Plane3D(position + fwd * near, fwd);
+		Sides[1] = Plane3D(position + ForwardFar, fwd * -1.0f);
+		Sides[2] = Plane3D(position, up.Cross(ForwardFar + RightHalfH));
+		Sides[3] = Plane3D(position, (ForwardFar - RightHalfH).Cross(up));
+		Sides[4] = Plane3D(position, right.Cross(ForwardFar - UpHalfV));
+		Sides[5] = Plane3D(position, (ForwardFar + UpHalfV).Cross(right));
+	}
+
+	/**
+	 * @brief Indicates if the frustum intersects (or contains) a sphere constructed via center and radius.
+	 *
+	 * @param center A constant pointer to a position representing the center of a sphere.
+	 * @param radius The radius of the sphere.
+	 * @return True if the sphere is intersected by or contained within the frustum f; otherwise false.
+	 */
+	bool IntersectsSphere(const Vec3& center, float radius) {
+		for (unsigned char i = 0; i < 6; ++i) {
+			if (!Sides[i].IntersectsSphere(center, radius)) {
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	/**
+	 * @brief Indicates if frustum f intersects an axis-aligned bounding box constructed via center and extents.
+	 *
+	 * @param center A constant pointer to a position representing the center of an axis-aligned bounding box.
+	 * @param extents The half-extents of an axis-aligned bounding box.
+	 * @return True if the axis-aligned bounding box is intersected by or contained within the frustum f; otherwise false.
+	 */
+	bool IntersectsAABB(const Vec3& center, const Vec3& extents) {
+		for (unsigned char i = 0; i < 6; ++i) {
+			if (!Sides[i].IntersectsAABB(center, extents)) {
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+public:
+	// Top bottom right left far near
+	Plane3D Sides[6];
 };

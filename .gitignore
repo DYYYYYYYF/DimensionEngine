@@ -5,6 +5,7 @@
 # 以方括号“[]”包含单个字符的匹配列表；
 # 以叹号“!”表示不忽略(跟踪)匹配到的文件或目录；
 
+# Core
 bin/
 build/
 library/
@@ -15,10 +16,12 @@ CMakeSettings.json
 *.spv
 Documents
 
+# Assets
 Assets/Fonts/*.dbf
 Assets/Models/*.dsm
 Assets/Materials/*.dmt
 !Assets/Materials/Material.UI.dmt
 !Assets/Materials/Material.World.dmt
 
-
+# python midden files
+Scripts/__pycache__

@@ -77,6 +77,7 @@ bool RenderViewUI::OnCreate(const RenderViewConfig& config) {
 		return false;
 	}
 
+	LOG_INFO("Renderview ui created.");
 	return true;
 }
 
@@ -138,6 +139,15 @@ void RenderViewUI::OnDestroyPacket(struct RenderViewPacket* packet) {
 	std::vector<GeometryRenderData>().swap(packet->geometries);
 
 	if (packet->extended_data) {
+		UIPacketData* PacketData = (UIPacketData*)packet->extended_data;
+		if (PacketData->Textes != nullptr) {
+			Memory::Free(PacketData->Textes, sizeof(UIText) * 2, MemoryType::eMemory_Type_Array);
+		}
+
+		if (PacketData->meshData.meshes != nullptr) {
+			Memory::Free(PacketData->meshData.meshes, sizeof(Mesh) * 10, MemoryType::eMemory_Type_Array);
+		}
+
 		Memory::Free(packet->extended_data, sizeof(UIPacketData), eMemory_Type_Renderer);
 		packet->extended_data = nullptr;
 	}
@@ -161,7 +171,7 @@ bool RenderViewUI::OnRender(struct RenderViewPacket* packet, IRendererBackend* b
 		}
 
 		// Apply globals.
-		if (!MaterialSystem::ApplyGlobal(SID, frame_number, packet->projection_matrix, packet->view_matrix, Vec4(0), Vec3(0))) {
+		if (!MaterialSystem::ApplyGlobal(SID, frame_number, packet->projection_matrix, packet->view_matrix, Vec4(0), Vec3(0), render_mode)) {
 			LOG_ERROR("RenderViewUI::OnRender() Failed to use global shader. Render frame failed.");
 			return false;
 		}

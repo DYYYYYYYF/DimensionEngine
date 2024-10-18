@@ -18,6 +18,19 @@ public:
 	virtual bool OnRender(struct RenderViewPacket* packet, IRendererBackend* back_renderer, size_t frame_number, size_t render_target_index) override;
 	virtual bool RegenerateAttachmentTarget(uint32_t passIndex, RenderTargetAttachment* attachment) override;
 
+public:
+	const char* GetShaderName() const {
+		if (UsedShader->Name == nullptr) {
+			return nullptr;
+		}
+
+		return CustomShaderName ? CustomShaderName : UsedShader->Name;
+	}
+
+	void SetShader(Shader* shader) { UsedShader = shader; }
+	const Shader* GetShader() const { return UsedShader; }
+
+
 private:
 	bool ReserveY;
 	Shader* UsedShader = nullptr;
