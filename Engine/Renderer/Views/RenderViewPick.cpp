@@ -18,7 +18,7 @@
 #include "Renderer/Interface/IRendererBackend.hpp"
 #include "Resources/UIText.hpp"
 
-static bool RenderViewPickOnEvent(unsigned short code, void* sender, void* listenerInst, SEventContext context) {
+static bool RenderViewPickOnEvent(eEventCode code, void* sender, void* listenerInst, SEventContext context) {
 	IRenderView* self = (IRenderView*)listenerInst;
 	if (self == nullptr) {
 		return false;
@@ -26,7 +26,7 @@ static bool RenderViewPickOnEvent(unsigned short code, void* sender, void* liste
 
 	switch (code)
 	{
-	case Core::eEvent_Code_Default_Rendertarget_Refresh_Required:
+	case eEventCode::eEvent_Code_Default_Rendertarget_Refresh_Required:
 		RenderViewSystem::RegenerateRendertargets(self);
 		return false;
 	}
@@ -34,8 +34,8 @@ static bool RenderViewPickOnEvent(unsigned short code, void* sender, void* liste
 	return false;
 }
 
-static bool OnMouseMoved(unsigned short code, void* sender, void* listenerInst, SEventContext context) {
-	if (code == Core::eEvent_Code_Mouse_Moved) {
+static bool OnMouseMoved(eEventCode code, void* sender, void* listenerInst, SEventContext context) {
+	if (code == eEventCode::eEvent_Code_Mouse_Moved) {
 		RenderViewPick* self = (RenderViewPick*)listenerInst;
 		
 		// Update position and regenerate the projection matrix.
@@ -159,12 +159,12 @@ bool RenderViewPick::OnCreate(const RenderViewConfig& config) {
 	Memory::Zero(&ColorTargetAttachment, sizeof(Texture));
 	Memory::Zero(&DepthTargetAttachment, sizeof(Texture));
 
-	if (!Core::EventRegister(Core::eEvent_Code_Mouse_Moved, this, OnMouseMoved)) {
+	if (!EngineEvent::Register(eEventCode::eEvent_Code_Mouse_Moved, this, OnMouseMoved)) {
 		LOG_ERROR("Unable to listen for mouse moved event, creation failed.");
 		return false;
 	}
 
-	if (!Core::EventRegister(Core::eEvent_Code_Default_Rendertarget_Refresh_Required, this, RenderViewPickOnEvent)) {
+	if (!EngineEvent::Register(eEventCode::eEvent_Code_Default_Rendertarget_Refresh_Required, this, RenderViewPickOnEvent)) {
 		LOG_ERROR("Unable to listen for refresh required event, creation failed.");
 		return false;
 	}
@@ -174,8 +174,8 @@ bool RenderViewPick::OnCreate(const RenderViewConfig& config) {
 }
 
 void RenderViewPick::OnDestroy() {
-	Core::EventUnregister(Core::eEvent_Code_Default_Rendertarget_Refresh_Required, this, RenderViewPickOnEvent);
-	Core::EventUnregister(Core::eEvent_Code_Mouse_Moved, this, RenderViewPickOnEvent);
+	EngineEvent::Unregister(eEventCode::eEvent_Code_Default_Rendertarget_Refresh_Required, this, RenderViewPickOnEvent);
+	EngineEvent::Unregister(eEventCode::eEvent_Code_Mouse_Moved, this, RenderViewPickOnEvent);
 
 	ReleaseShaderInstance();
 	Renderer->DestroyTexture(&ColorTargetAttachment);
@@ -513,7 +513,7 @@ bool RenderViewPick::OnRender(struct RenderViewPacket* packet, IRendererBackend*
 
 	SEventContext Context;
 	Context.data.u32[0] = ID;
-	Core::EventFire(Core::eEvent_Code_Object_Hover_ID_Changed, 0, Context);
+	EngineEvent::Fire(eEventCode::eEvent_Code_Object_Hover_ID_Changed, 0, Context);
 
 	return true;
 }

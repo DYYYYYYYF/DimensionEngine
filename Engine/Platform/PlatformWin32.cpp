@@ -315,7 +315,7 @@ LRESULT CALLBACK win32_process_message(HWND hwnd, UINT32 msg, WPARAM w_param, LP
 			return 1;
 		case WM_CLOSE:
 			SEventContext Context = SEventContext();
-			Core::EventFire(Core::SystemEventCode::eEvent_Code_Application_Quit, 0, Context);
+			EngineEvent::Fire(eEventCode::eEvent_Code_Application_Quit, 0, Context);
 			return 1;
 		case WM_DESTROY:
 			PostQuitMessage(0);
@@ -331,7 +331,7 @@ LRESULT CALLBACK win32_process_message(HWND hwnd, UINT32 msg, WPARAM w_param, LP
 			SEventContext Context = SEventContext();
 			Context.data.u16[0] = (unsigned short)Width;
 			Context.data.u16[1] = (unsigned short)Height;
-			Core::EventFire(Core::SystemEventCode::eEvent_Code_Resize, 0, Context);
+			EngineEvent::Fire(eEventCode::Resize, 0, Context);
 			break;
 		}
 		case WM_KEYDOWN:

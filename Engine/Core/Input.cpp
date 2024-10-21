@@ -51,7 +51,7 @@ void InputProcessKey(Keys key, bool pressed) {
 
 		SEventContext context;
 		context.data.u16[0] = key;
-		EventFire(pressed ? Core::eEvent_Code_Key_Pressed : Core::eEvent_Code_Key_Released, 0, context);
+		EngineEvent::Fire(pressed ? eEventCode::eEvent_Code_Key_Pressed : eEventCode::eEvent_Code_Key_Released, 0, context);
 	}
 }
 
@@ -61,7 +61,7 @@ void InputProcessButton(Buttons button, bool pressed) {
 
 		SEventContext context;
 		context.data.u16[0] = button;
-		EventFire(pressed ? Core::eEvent_Code_Button_Pressed : Core::eEvent_Code_Button_Released, 0, context);
+		EngineEvent::Fire(pressed ? eEventCode::eEvent_Code_Button_Pressed : eEventCode::eEvent_Code_Button_Released, 0, context);
 	}
 }
 
@@ -75,7 +75,7 @@ void InputProcessMouseMove(short x, short y) {
 		SEventContext context;
 		context.data.i16[0] = x;
 		context.data.i16[1] = y;
-		Core::EventFire(Core::eEvent_Code_Mouse_Moved, 0, context);
+		EngineEvent::Fire(eEventCode::eEvent_Code_Mouse_Moved, 0, context);
 	}
 }
 
@@ -85,7 +85,7 @@ void InputProcessMouseWheel(char z_delta) {
 	// Dispatch
 	SEventContext context;
 	context.data.u8[0] = z_delta;
-	Core::EventFire(Core::eEvent_Code_Mouse_Wheel, 0, context);
+	EngineEvent::Fire(eEventCode::eEvent_Code_Mouse_Wheel, 0, context);
 }
 
 bool InputIsKeyDown(Keys key) {

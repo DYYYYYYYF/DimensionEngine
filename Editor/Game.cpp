@@ -19,17 +19,17 @@ static bool EnableFrustumCulling = false;
 
 bool ConfigureRenderviews(Application::SConfig* config);
 
-bool GameOnEvent(unsigned short code, void* sender, void* listender_inst, SEventContext context) {
+bool GameOnEvent(eEventCode code, void* sender, void* listender_inst, SEventContext context) {
 	GameInstance* GameInst = (GameInstance*)listender_inst;
 
 	switch (code)
 	{
-	case Core::eEvent_Code_Object_Hover_ID_Changed: 
+	case eEventCode::eEvent_Code_Object_Hover_ID_Changed: 
 	{
 		GameInst->HoveredObjectID = context.data.u32[0];
 		return true;
 	}break;
-	case Core::eEvent_Code_Reload_Shader_Module:
+	case eEventCode::eEvent_Code_Reload_Shader_Module:
 	{
 		for (uint32_t i = 0; i < 10; ++i) {
 			if (GameInst->Meshes[i].Generation != INVALID_ID_U8) {
@@ -42,10 +42,10 @@ bool GameOnEvent(unsigned short code, void* sender, void* listender_inst, SEvent
 	return false;
 }
 
-bool GameOnDebugEvent(unsigned short code, void* sender, void* listener_instance, SEventContext context) {
+bool GameOnDebugEvent(eEventCode code, void* sender, void* listener_instance, SEventContext context) {
 	GameInstance* GameInst = (GameInstance*)listener_instance;
 
-	if (code == Core::eEvent_Code_Debug_0) {
+	if (code == eEventCode::eEvent_Code_Debug_0) {
 		if (GameInst->SponzaMesh->Generation == INVALID_ID_U8) {
 			LOG_DEBUG("Loading sponza...");
 
@@ -56,7 +56,7 @@ bool GameOnDebugEvent(unsigned short code, void* sender, void* listener_instance
 
 		return true;
 	}
-	else if (code == Core::eEvent_Code_Debug_1) {
+	else if (code == eEventCode::eEvent_Code_Debug_1) {
 		if (GameInst->CarMesh->Generation == INVALID_ID_U8) {
 			LOG_DEBUG("Loading falcon...");
 
@@ -67,7 +67,7 @@ bool GameOnDebugEvent(unsigned short code, void* sender, void* listener_instance
 
 		return true;
 	}
-	else if (code == Core::eEvent_Code_Debug_2) {
+	else if (code == eEventCode::eEvent_Code_Debug_2) {
 		if (GameInst->BunnyMesh->Generation == INVALID_ID_U8) {
 			LOG_DEBUG("Loading bunny...");
 
@@ -78,7 +78,7 @@ bool GameOnDebugEvent(unsigned short code, void* sender, void* listener_instance
 
 		return true;
 	}
-	else if (code == Core::eEvent_Code_Debug_3) {
+	else if (code == eEventCode::eEvent_Code_Debug_3) {
 		if (GameInst->DragonMesh->Generation == INVALID_ID_U8) {
 			LOG_DEBUG("Loading dragon...");
 
@@ -94,19 +94,19 @@ bool GameOnDebugEvent(unsigned short code, void* sender, void* listener_instance
 }
 
 
-bool GameOnKey(unsigned short code, void* sender, void* listener_instance, SEventContext context) {
-	if (code == Core::eEvent_Code_Key_Pressed) {
+bool GameOnKey(eEventCode code, void* sender, void* listener_instance, SEventContext context) {
+	if (code == eEventCode::eEvent_Code_Key_Pressed) {
 		unsigned short KeyCode = context.data.u16[0];
 		if (KeyCode == eKeys_Escape) {
 			// NOTE: Technically dispatch an event to itself, but there may be other listeners.
 			SEventContext data = {};
-			Core::EventFire(Core::eEvent_Code_Application_Quit, 0, data);
+			EngineEvent::Fire(eEventCode::eEvent_Code_Application_Quit, 0, data);
 
 			// Block anything else from processing this.
 			return true;
 		}
 	}
-	else if (code == Core::eEvent_Code_Key_Released) {
+	else if (code == eEventCode::eEvent_Code_Key_Released) {
 		unsigned short KeyCode = context.data.u16[0];
 
 		return true;
@@ -296,16 +296,16 @@ bool GameInstance::Initialize() {
 	UIMesh->Transform = Transform();
 
 	// TODO: TEMP
-	Core::EventRegister(Core::eEvent_Code_Debug_0, this, GameOnDebugEvent);
-	Core::EventRegister(Core::eEvent_Code_Debug_1, this, GameOnDebugEvent);
-	Core::EventRegister(Core::eEvent_Code_Debug_2, this, GameOnDebugEvent);
-	Core::EventRegister(Core::eEvent_Code_Debug_3, this, GameOnDebugEvent);
-	Core::EventRegister(Core::eEvent_Code_Object_Hover_ID_Changed, this, GameOnEvent);
-	Core::EventRegister(Core::eEvent_Code_Reload_Shader_Module, this, GameOnEvent);
+	EngineEvent::Register(eEventCode::eEvent_Code_Debug_0, this, GameOnDebugEvent);
+	EngineEvent::Register(eEventCode::eEvent_Code_Debug_1, this, GameOnDebugEvent);
+	EngineEvent::Register(eEventCode::eEvent_Code_Debug_2, this, GameOnDebugEvent);
+	EngineEvent::Register(eEventCode::eEvent_Code_Debug_3, this, GameOnDebugEvent);
+	EngineEvent::Register(eEventCode::eEvent_Code_Object_Hover_ID_Changed, this, GameOnEvent);
+	EngineEvent::Register(eEventCode::eEvent_Code_Reload_Shader_Module, this, GameOnEvent);
 	// TEMP
 
-	Core::EventRegister(Core::eEvent_Code_Key_Pressed, this, GameOnKey);
-	Core::EventRegister(Core::eEvent_Code_Key_Released, this, GameOnKey);
+	EngineEvent::Register(eEventCode::eEvent_Code_Key_Pressed, this, GameOnKey);
+	EngineEvent::Register(eEventCode::eEvent_Code_Key_Released, this, GameOnKey);
 
 	return true;
 }
@@ -318,16 +318,16 @@ void GameInstance::Shutdown() {
 	TestSysText.Destroy();
 
 	// TODO: TEMP
-	Core::EventUnregister(Core::eEvent_Code_Debug_0, this, GameOnDebugEvent);
-	Core::EventUnregister(Core::eEvent_Code_Debug_1, this, GameOnDebugEvent);
-	Core::EventUnregister(Core::eEvent_Code_Debug_2, this, GameOnDebugEvent);
-	Core::EventUnregister(Core::eEvent_Code_Debug_3, this, GameOnDebugEvent);
-	Core::EventUnregister(Core::eEvent_Code_Object_Hover_ID_Changed, this, GameOnEvent);
-	Core::EventUnregister(Core::eEvent_Code_Reload_Shader_Module, this, GameOnEvent);
+	EngineEvent::Unregister(eEventCode::eEvent_Code_Debug_0, this, GameOnDebugEvent);
+	EngineEvent::Unregister(eEventCode::eEvent_Code_Debug_1, this, GameOnDebugEvent);
+	EngineEvent::Unregister(eEventCode::eEvent_Code_Debug_2, this, GameOnDebugEvent);
+	EngineEvent::Unregister(eEventCode::eEvent_Code_Debug_3, this, GameOnDebugEvent);
+	EngineEvent::Unregister(eEventCode::eEvent_Code_Object_Hover_ID_Changed, this, GameOnEvent);
+	EngineEvent::Unregister(eEventCode::eEvent_Code_Reload_Shader_Module, this, GameOnEvent);
 	// TEMP
 
-	Core::EventUnregister(Core::eEvent_Code_Key_Pressed, this, GameOnKey);
-	Core::EventUnregister(Core::eEvent_Code_Key_Released, this, GameOnKey);
+	EngineEvent::Unregister(eEventCode::eEvent_Code_Key_Pressed, this, GameOnKey);
+	EngineEvent::Unregister(eEventCode::eEvent_Code_Key_Released, this, GameOnKey);
 }
 
 bool GameInstance::Update(float delta_time) {
@@ -352,17 +352,17 @@ bool GameInstance::Update(float delta_time) {
 	if (Core::InputIsKeyUp(eKeys_F1) && Core::InputWasKeyDown(eKeys_F1)) {
 		SEventContext Context;
 		Context.data.i32[0] = ShaderRenderMode::eShader_Render_Mode_Default;
-		Core::EventFire(Core::eEvent_Code_Set_Render_Mode, nullptr, Context);
+		EngineEvent::Fire(eEventCode::eEvent_Code_Set_Render_Mode, nullptr, Context);
 	}
 	if (Core::InputIsKeyUp(eKeys_F2) && Core::InputWasKeyDown(eKeys_F2)) {
 		SEventContext Context;
 		Context.data.i32[0] = ShaderRenderMode::eShader_Render_Mode_Lighting;
-		Core::EventFire(Core::eEvent_Code_Set_Render_Mode, nullptr, Context);
+		EngineEvent::Fire(eEventCode::eEvent_Code_Set_Render_Mode, nullptr, Context);
 	}
 	if (Core::InputIsKeyUp(eKeys_F3) && Core::InputWasKeyDown(eKeys_F3)) {
 		SEventContext Context;
 		Context.data.i32[0] = ShaderRenderMode::eShader_Render_Mode_Normals;
-		Core::EventFire(Core::eEvent_Code_Set_Render_Mode, nullptr, Context);
+		EngineEvent::Fire(eEventCode::eEvent_Code_Set_Render_Mode, nullptr, Context);
 	}
 
 	if (Core::InputIsKeyDown(eKeys_Left)) {
@@ -409,22 +409,22 @@ bool GameInstance::Update(float delta_time) {
 	// TODO: Remove
 	if (Core::InputIsKeyUp(eKeys_O) && Core::InputWasKeyDown(eKeys_O)) {
 		SEventContext Context = {};
-		Core::EventFire(Core::eEvent_Code_Debug_0, this, Context);
+		EngineEvent::Fire(eEventCode::eEvent_Code_Debug_0, this, Context);
 	}
 
 	if (Core::InputIsKeyUp(eKeys_L) && Core::InputWasKeyDown(eKeys_L)) {
 		SEventContext Context = {};
-		Core::EventFire(Core::eEvent_Code_Debug_2, this, Context);
+		EngineEvent::Fire(eEventCode::eEvent_Code_Debug_2, this, Context);
 	}
 
 	if (Core::InputIsKeyUp(eKeys_K) && Core::InputWasKeyDown(eKeys_K)) {
 		SEventContext Context = {};
-		Core::EventFire(Core::eEvent_Code_Debug_3, this, Context);
+		EngineEvent::Fire(eEventCode::eEvent_Code_Debug_3, this, Context);
 	}
 
 	if (Core::InputIsKeyUp(eKeys_P) && Core::InputWasKeyDown(eKeys_P)) {
 		SEventContext Context = {};
-		Core::EventFire(Core::eEvent_Code_Debug_1, this, Context);
+		EngineEvent::Fire(eEventCode::eEvent_Code_Debug_1, this, Context);
 	}
 
 	if (Core::InputIsKeyUp(eKeys_G) && Core::InputWasKeyDown(eKeys_G)) {
@@ -432,14 +432,14 @@ bool GameInstance::Update(float delta_time) {
 
 		// Reload
 		SEventContext Context = {};
-		Core::EventFire(Core::eEvent_Code_Reload_Shader_Module, this, Context);
+		EngineEvent::Fire(eEventCode::eEvent_Code_Reload_Shader_Module, this, Context);
 	}
 	if (Core::InputIsKeyUp(eKeys_H) && Core::InputWasKeyDown(eKeys_H)) {
 		TestPython.ExecuteFunc("CompileShaders", "hlsl");
 
 		// Reload
 		SEventContext Context = {};
-		Core::EventFire(Core::eEvent_Code_Reload_Shader_Module, this, Context);
+		EngineEvent::Fire(eEventCode::eEvent_Code_Reload_Shader_Module, this, Context);
 	}
 	// Remove
 

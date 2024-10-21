@@ -25,21 +25,21 @@ struct GeometryDistance {
 
 static void QuickSort(std::vector<GeometryDistance>& arr, int low_index, int high_index, bool ascending);
 
-static bool RenderViewWorldOnEvent(unsigned short code, void* sender, void* listenerInst, SEventContext context) {
+static bool RenderViewWorldOnEvent(eEventCode code, void* sender, void* listenerInst, SEventContext context) {
 	IRenderView* self = (IRenderView*)listenerInst;
 	if (self == nullptr) {
 		return false;
 	}
 
-	switch (code)
+	switch ((eEventCode)code)
 	{
-	case Core::eEvent_Code_Default_Rendertarget_Refresh_Required: 
+	case eEventCode::eEvent_Code_Default_Rendertarget_Refresh_Required: 
 	{
 		RenderViewSystem::RegenerateRendertargets(self);
 		return true;
 	}
 
-	case Core::eEvent_Code_Set_Render_Mode:
+	case eEventCode::eEvent_Code_Set_Render_Mode:
 	{
 		int RenderMode = context.data.i32[0];
 		switch (RenderMode)
@@ -70,7 +70,7 @@ static bool RenderViewWorldOnEvent(unsigned short code, void* sender, void* list
 	return false;
 }
 
-bool ReloadShader(unsigned short code, void* sender, void* listenerInst, SEventContext context) {
+bool ReloadShader(eEventCode code, void* sender, void* listenerInst, SEventContext context) {
 	RenderViewWorld* self = (RenderViewWorld*)listenerInst;
 	if (self == nullptr) {
 		return false;
@@ -143,15 +143,15 @@ bool RenderViewWorld::OnCreate(const RenderViewConfig& config) {
 	// TODO: Obtain from scene.
 	AmbientColor = Vec4(0.7f, 0.7f, 0.7f, 1.0f);
 
-	if (!Core::EventRegister(Core::eEvent_Code_Default_Rendertarget_Refresh_Required, this, RenderViewWorldOnEvent)) {
+	if (!EngineEvent::Register(eEventCode::eEvent_Code_Default_Rendertarget_Refresh_Required, this, RenderViewWorldOnEvent)) {
 		LOG_ERROR("Unable to listen for refresh required event, creation failed.");
 		return false;
 	}
-	if (!Core::EventRegister(Core::eEvent_Code_Reload_Shader_Module, this, ReloadShader)) {
+	if (!EngineEvent::Register(eEventCode::eEvent_Code_Reload_Shader_Module, this, ReloadShader)) {
 		LOG_ERROR("Unable to listen for refresh required event, creation failed.");
 		return false;
 	}
-	if (!Core::EventRegister(Core::eEvent_Code_Set_Render_Mode, this, RenderViewWorldOnEvent)) {
+	if (!EngineEvent::Register(eEventCode::eEvent_Code_Set_Render_Mode, this, RenderViewWorldOnEvent)) {
 		LOG_ERROR("Unable to listen for refresh required event, creation failed.");
 		return false;
 	}
@@ -161,9 +161,9 @@ bool RenderViewWorld::OnCreate(const RenderViewConfig& config) {
 }
 
 void RenderViewWorld::OnDestroy() {
-	Core::EventUnregister(Core::eEvent_Code_Default_Rendertarget_Refresh_Required, this, RenderViewWorldOnEvent);
-	Core::EventUnregister(Core::eEvent_Code_Reload_Shader_Module, this, ReloadShader);
-	Core::EventUnregister(Core::eEvent_Code_Set_Render_Mode, this, RenderViewWorldOnEvent);
+	EngineEvent::Unregister(eEventCode::eEvent_Code_Default_Rendertarget_Refresh_Required, this, RenderViewWorldOnEvent);
+	EngineEvent::Unregister(eEventCode::eEvent_Code_Reload_Shader_Module, this, ReloadShader);
+	EngineEvent::Unregister(eEventCode::eEvent_Code_Set_Render_Mode, this, RenderViewWorldOnEvent);
 }
 
 void RenderViewWorld::OnResize(uint32_t width, uint32_t height) {

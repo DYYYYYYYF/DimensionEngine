@@ -2,19 +2,29 @@
 
 #include "Defines.hpp"
 
-struct SClock {
-	double start_time;
-	double elapsed;
-};
+class Clock {
+public:
+	Clock() : StartTime(0.0), Elapsed(0.0) {}
 
-namespace Clock {
+public:
 	// Updates the provided clock, should be called just before checking elapsed time
 	// Has no effect on non-started clocks
-	void Update(SClock* clock);
+	void Update();
 
 	// Starts the provided clock. Resets elapsed time.
-	void Start(SClock* clock);
+	void Start();
 
 	// Stop the provided clock. Does not reset elapsed time.
-	void Stop(SClock* clock);
-}
+	void Stop();
+
+	double GetStartTime() const { return StartTime; }
+	void SetStartTime(double t) { StartTime = t; }
+
+	double GetElapsedTime() const { return Elapsed; }
+	void SetElapsedTime(double t) { Elapsed = t; }
+
+private:
+	double StartTime;
+	double Elapsed;
+
+};

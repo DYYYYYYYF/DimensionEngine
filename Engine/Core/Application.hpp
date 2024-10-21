@@ -2,6 +2,7 @@
 
 #include "Defines.hpp"
 #include "Clock.hpp"
+#include "Event.hpp"
 #include "Resources/Skybox.hpp"
 #include "Systems/FontSystem.hpp"
 #include "Renderer/Interface/IRenderView.hpp"
@@ -9,7 +10,7 @@
 class IGame;
 struct SEventContext;
 
-class DAPI Application {
+class Application {
 public:
 	struct SConfig {
 		short start_x;
@@ -24,17 +25,18 @@ public:
 	};
 
 public:
-	Application(IGame* gameInstance);
+	DAPI Application() : GameInst(nullptr) {}
+	DAPI Application(IGame* gameInstance) { GameInst = gameInstance; }
 	~Application() {};
 
 public:
-	bool Initialize();
-	bool Run();
+	DAPI bool Initialize();
+	DAPI bool Run();
 	void GetFramebufferSize(unsigned int* width, unsigned int* height);
 
 	// Event handlers
-	bool OnEvent(unsigned short code, void* sender, void* listener_instance, SEventContext context);
-	bool OnResized(unsigned short code, void* sender, void* listener_instance, SEventContext context);
+	bool OnEvent(eEventCode code, void* sender, void* listener_instance, SEventContext context);
+	bool OnResized(eEventCode code, void* sender, void* listener_instance, SEventContext context);
 
 public:
 	// Instance
@@ -48,7 +50,7 @@ public:
 	short height;
 
 	// Timer
-	SClock clock;
+	Clock AppClock;
 	double last_time;
 
 	bool Initialized = false;

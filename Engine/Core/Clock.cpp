@@ -2,19 +2,19 @@
 
 #include "Platform/Platform.hpp"
 
-void Clock::Update(SClock* clock) {
-	if (clock->start_time != 0) {
-		clock->elapsed = Platform::PlatformGetAbsoluteTime() - clock->start_time;
+void Clock::Update() {
+	if (StartTime != 0) {
+		Elapsed = Platform::PlatformGetAbsoluteTime() - StartTime;
 	}
 }
 
-void Clock::Start(SClock* clock) {
-	clock->start_time = Platform::PlatformGetAbsoluteTime();
-	clock->elapsed = 0;
+void Clock::Start() {
+	StartTime = Platform::PlatformGetAbsoluteTime();
+	Elapsed = 0;
 }
 
-void Clock::Stop(SClock* clock) {
-	clock->start_time = 0;
+void Clock::Stop() {
+	StartTime = 0;
 }
 
 

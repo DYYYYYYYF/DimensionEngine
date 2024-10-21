@@ -27,16 +27,14 @@
 #include "Systems/JobSystem.hpp"
 #include "Systems/FontSystem.hpp"
 
-Application::Application(IGame* game_instance) {
-	GameInst = nullptr;
-	if (game_instance) {
-		GameInst = game_instance;
-	}
-}
-
 bool Application::Initialize(){
 	if (Initialized) {
 		LOG_ERROR("Create application more than once!");
+		return false;
+	}
+
+	if (GameInst == nullptr) {
+		LOG_ERROR("Create application failed! Game instance is nullptr!");
 		return false;
 	}
 
@@ -51,15 +49,15 @@ bool Application::Initialize(){
 	is_suspended = false;
 
 	// Input
-	if (!Core::EventInitialize()) {
+	if (!EngineEvent::Initialize()) {
 		LOG_ERROR("Event system init failed. Application can not start.");
 		return false;
 	}
 
 	// Register for engine-level events.
-	Core::EventRegister(Core::eEvent_Code_Application_Quit, nullptr, 
+	EngineEvent::Register(eEventCode::eEvent_Code_Application_Quit, nullptr,
 		std::bind(&Application::OnEvent, this, std::placeholders::_1, this, std::placeholders::_3, std::placeholders::_4));
-	Core::EventRegister(Core::eEvent_Code_Resize, nullptr, 
+	EngineEvent::Register(eEventCode::Resize, nullptr,
 		std::bind(&Application::OnResized, this, std::placeholders::_1, this, std::placeholders::_3, std::placeholders::_4));
 
 	// Platform
@@ -234,9 +232,9 @@ bool Application::Initialize(){
 }
 
 bool Application::Run() {
-	Clock::Start(&clock);
-	Clock::Update(&clock);
-	last_time = clock.elapsed;	// Seconds
+	AppClock.Start();
+	AppClock.Update();
+	last_time = AppClock.GetElapsedTime();	// Seconds
 
 	short FrameCount = 0;
 	double FrameElapsedTime = 0.0;
@@ -250,8 +248,8 @@ bool Application::Run() {
 		}
 
 		if (!is_suspended) {
-			Clock::Update(&clock);
-			double CurrentTime = clock.elapsed;		// Seconds
+			AppClock.Update();
+			double CurrentTime = AppClock.GetElapsedTime();		// Seconds
 			double DeltaTime = (CurrentTime - last_time);
 			double FrameStartTime = Platform::PlatformGetAbsoluteTime();
 
@@ -313,9 +311,9 @@ bool Application::Run() {
 	GameInst->Shutdown();
 
 	// Shutdown event system
-	Core::EventUnregister(Core::eEvent_Code_Application_Quit, nullptr, 
+	EngineEvent::Unregister(eEventCode::eEvent_Code_Application_Quit, nullptr,
 		std::bind(&Application::OnEvent, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
-	Core::EventUnregister(Core::eEvent_Code_Resize, nullptr, 
+	EngineEvent::Unregister(eEventCode::Resize, nullptr,
 		std::bind(&Application::OnResized, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
 
 	RenderViewSystem::Shutdown();
@@ -330,7 +328,7 @@ bool Application::Run() {
 	Renderer->Shutdown();
 	Memory::Free(Renderer, sizeof(IRenderer), MemoryType::eMemory_Type_Renderer);
 
-	Core::EventShutdown();
+	EngineEvent::Shutdown();
 	Core::InputShutdown();
 
 	ResourceSystem::Shutdown();
@@ -339,9 +337,9 @@ bool Application::Run() {
 	return true;
 }
 
-bool Application::OnEvent(unsigned short code, void* sender, void* listener_instance, SEventContext context) {
+bool Application::OnEvent(eEventCode code, void* sender, void* listener_instance, SEventContext context) {
 	switch (code){
-	case Core::eEvent_Code_Application_Quit: {
+	case eEventCode::eEvent_Code_Application_Quit: {
 		LOG_INFO("Application quit now.");
 		is_running = false;
 		return true;
@@ -351,12 +349,12 @@ bool Application::OnEvent(unsigned short code, void* sender, void* listener_inst
 	return false;
 }
 
-bool Application::OnResized(unsigned short code, void* sender, void* listener_instance, SEventContext context) {
+bool Application::OnResized(eEventCode code, void* sender, void* listener_instance, SEventContext context) {
 	if (Renderer == nullptr) {
 		return false;
 	}
 
-	if (code == Core::eEvent_Code_Resize) {
+	if (code == eEventCode::Resize) {
 		unsigned short Width = context.data.u16[0];
 		unsigned short Height = context.data.u16[1];
 
