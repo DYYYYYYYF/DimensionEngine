@@ -742,8 +742,6 @@ void VulkanBackend::WriteTextureData(Texture* tex, uint32_t offset, uint32_t siz
 void VulkanBackend::ReadTextureData(Texture* tex, uint32_t offset, uint32_t size, void** outMemeory) {
 	VulkanImage* Image = (VulkanImage*)tex->InternalData;
 
-	vk::Format ImageFormat = ChannelCountToFormat(tex->ChannelCount, vk::Format::eR8G8Unorm);
-
 	// Create a staging buffer and load data into it.
 	VulkanBuffer Staging;
 	if (!CreateRenderbuffer(RenderbufferType::eRenderbuffer_Type_Read, size, false, &Staging)) {

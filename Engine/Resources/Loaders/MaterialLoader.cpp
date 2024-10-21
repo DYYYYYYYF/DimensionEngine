@@ -102,8 +102,6 @@ bool MaterialLoader::Load(const char* name, void* params, Resource* resource) {
 			ResourceData->diffuse_color = Vec4::StringToVec4(TrimmedValue);
 		}
 		else if (strcmp(TrimmedVarName, "shader") == 0) {
-			// Take a copy of the material name.
-			size_t StrLen = strlen(TrimmedValue);
 			ResourceData->shader_name = StringCopy(TrimmedValue);
 		}
 		else if (strcmp(TrimmedVarName, "shininess") == 0){

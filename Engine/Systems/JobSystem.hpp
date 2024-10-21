@@ -78,10 +78,12 @@ public:
 		if (param_data) {
 			Memory::Free(param_data, param_data_size, MemoryType::eMemory_Type_Job);
 			param_data = nullptr;
+            param_data_size = 0;
 		}
 		if (result_data) {
 			Memory::Free(result_data, result_data_size, MemoryType::eMemory_Type_Job);
 			result_data = nullptr;
+            result_data_size = 0;
 		}
 
 		entry_point = nullptr;

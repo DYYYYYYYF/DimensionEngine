@@ -365,6 +365,8 @@ bool FontSystem::Release(class UIText* text) {
 }
 
 bool FontSystem::VerifyAtlas(struct FontData* font, const char* text) {
+    if (font == nullptr || text == nullptr){ return false;}
+    
 	if (font->type == FontType::eFont_Type_Bitmap) {
 		// Bitmaps don't need verification since they are already generated.
 		return true;

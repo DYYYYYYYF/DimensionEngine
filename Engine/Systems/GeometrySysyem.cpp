@@ -93,7 +93,6 @@ void GeometrySystem::Release(Geometry* geometry) {
 		SGeometryReference* Ref = &RegisteredGeometries[geometry->ID];
 
 		// Take a copy of id.
-		uint32_t id = geometry->ID;
 		if (Ref->geometry.ID == geometry->ID) {
 			if (Ref->reference_count > 0) {
 				Ref->reference_count--;

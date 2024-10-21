@@ -187,11 +187,22 @@ void JobSystem::Shutdown() {
 	for (uint32_t i = 0; i < LowPriorityQueue.GetLength(); ++i) {
 		JobInfo* Temp = nullptr;
 		LowPriorityQueue.Dequeue(Temp);
-		Temp->Release();
+        if (Temp != nullptr){
+            Temp->Release();
+            Temp = nullptr;
+        }
+
 		NormalPriorityQueue.Dequeue(Temp);
-		Temp->Release();
+        if (Temp != nullptr){
+            Temp->Release();
+            Temp = nullptr;
+        }
+        
 		HighPriorityQueue.Dequeue(Temp);
-		Temp->Release();
+        if (Temp != nullptr){
+            Temp->Release();
+            Temp = nullptr;
+        }
 	}
 
 	// Destroy mutexes
@@ -316,7 +327,6 @@ void JobSystem::Submit(JobInfo info) {
 					LOG_INFO("Job immediately submitted on thread %i.", thread->index);
 					thread->info = info;
 					Found = true;
-					return;
 				}
 				if (!thread->info_mutex.UnLock()) {
 					LOG_ERROR("Failed to release lock on job thread mutex!");

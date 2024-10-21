@@ -108,7 +108,6 @@ bool GameOnKey(eEventCode code, void* sender, void* listener_instance, SEventCon
 		}
 	}
 	else if (code == eEventCode::eEvent_Code_Key_Released) {
-		unsigned short KeyCode = context.data.u16[0];
 
 		return true;
 	}
@@ -342,11 +341,12 @@ bool GameInstance::Update(float delta_time) {
 	static size_t AllocCount = 0;
 	size_t PrevAllocCount = AllocCount;
 	AllocCount = Memory::GetAllocateCount();
+    size_t UsedMemory = AllocCount - PrevAllocCount;
 	if (Core::InputIsKeyUp(eKeys_M) && Core::InputWasKeyDown(eKeys_M)) {
 		char* Usage = Memory::GetMemoryUsageStr();
 		LOG_INFO(Usage);
 		StringFree(Usage);
-		LOG_DEBUG("Allocations: %llu (%llu this frame)", AllocCount, AllocCount - PrevAllocCount);
+		LOG_DEBUG("Allocations: %llu (%llu this frame)", AllocCount, UsedMemory);
 	}
 
 	// Temp shader debug

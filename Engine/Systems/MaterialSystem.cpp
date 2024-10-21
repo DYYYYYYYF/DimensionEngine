@@ -119,7 +119,7 @@ Material* MaterialSystem::Acquire(const char* name) {
 	}
 
 	// Now acquire from loaded config.
-	Material* Mat;
+	Material* Mat = nullptr;
 	if (MatResource.Data) {
 		Mat = AcquireFromConfig(*(SMaterialConfig*)MatResource.Data);
 	}

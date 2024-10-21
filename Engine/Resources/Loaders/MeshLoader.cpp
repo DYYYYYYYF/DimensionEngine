@@ -459,7 +459,6 @@ void MeshLoader::ProcessSubobject(std::vector<Vec3>& positions, std::vector<Vec3
 
 			Vec3 Edge1 = Pos2 - Pos1;
 			Vec3 Edge2 = Pos3 - Pos2;
-			Vec3 Edge3 = Pos1 - Pos3;
 
 			DefaultNormal = (Edge1.Cross(Edge2)).Normalize();
 		}
