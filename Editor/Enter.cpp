@@ -10,11 +10,11 @@
 
 extern bool CreateGame(IGame* out_game) {
 	// Create Game state
-    out_game->app_config.start_x = 100;
-    out_game->app_config.start_y = 100;
-    out_game->app_config.start_width = 1280;
-    out_game->app_config.start_height = 720;
-    out_game->app_config.name = "Dimension Editor";
+    out_game->AppConfig.start_x = 100;
+    out_game->AppConfig.start_y = 100;
+    out_game->AppConfig.start_width = 1280;
+    out_game->AppConfig.start_height = 720;
+    out_game->AppConfig.name = "Dimension Editor";
 
     return true;
 }

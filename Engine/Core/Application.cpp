@@ -27,33 +27,18 @@
 #include "Systems/JobSystem.hpp"
 #include "Systems/FontSystem.hpp"
 
-struct SApplicationState {
-	// Instance
-	IGame* game_instance = nullptr;
-	SPlatformState platform;
+Application::Application(IGame* game_instance) {
+	GameInst = nullptr;
+	if (game_instance) {
+		GameInst = game_instance;
+	}
+}
 
-	// Run
-	bool is_running;
-	bool is_suspended;
-	short width;
-	short height;
-
-	// Timer
-	SClock clock;
-	double last_time;
-
-};
-
-static SApplicationState AppState;
-static bool Initialized = false;
-
-bool ApplicationCreate(IGame* game_instance){
+bool Application::Initialize(){
 	if (Initialized) {
 		LOG_ERROR("Create application more than once!");
 		return false;
 	}
-
-	AppState.game_instance = game_instance;
 
 	Core::InputInitialize();
 
@@ -62,8 +47,8 @@ bool ApplicationCreate(IGame* game_instance){
 	// Metrics
 	Metrics::Initialize();
 
-	AppState.is_running = true;
-	AppState.is_suspended = false;
+	is_running = true;
+	is_suspended = false;
 
 	// Input
 	if (!Core::EventInitialize()) {
@@ -72,22 +57,24 @@ bool ApplicationCreate(IGame* game_instance){
 	}
 
 	// Register for engine-level events.
-	Core::EventRegister(Core::eEvent_Code_Application_Quit, 0, ApplicationOnEvent);
-	Core::EventRegister(Core::eEvent_Code_Resize, 0, ApplicationOnResized);
+	Core::EventRegister(Core::eEvent_Code_Application_Quit, nullptr, 
+		std::bind(&Application::OnEvent, this, std::placeholders::_1, this, std::placeholders::_3, std::placeholders::_4));
+	Core::EventRegister(Core::eEvent_Code_Resize, nullptr, 
+		std::bind(&Application::OnResized, this, std::placeholders::_1, this, std::placeholders::_3, std::placeholders::_4));
 
 	// Platform
-	if (!Platform::PlatformStartup(&AppState.platform,
-		game_instance->app_config.name,
-		game_instance->app_config.start_x, 
-		game_instance->app_config.start_y, 
-		game_instance->app_config.start_width, 
-        game_instance->app_config.start_height)){
+	if (!Platform::PlatformStartup(&platform,
+		GameInst->AppConfig.name,
+		GameInst->AppConfig.start_x, 
+		GameInst->AppConfig.start_y, 
+		GameInst->AppConfig.start_width, 
+        GameInst->AppConfig.start_height)){
         LOG_FATAL("Failed to startup platform. Application quit now!");
-        return false;
+		return false;
     }
 
-	AppState.width = game_instance->app_config.start_width;
-	AppState.height = game_instance->app_config.start_height;
+	width = GameInst->AppConfig.start_width;
+	height = GameInst->AppConfig.start_height;
 
 	// Init texture system
 	SResourceSystemConfig ResourceSystemConfig;
@@ -105,7 +92,7 @@ bool ApplicationCreate(IGame* game_instance){
 	// Init Renderer
 	if (Renderer == nullptr) {
 		void* TempRenderer = (IRenderer*)Memory::Allocate(sizeof(IRenderer), MemoryType::eMemory_Type_Renderer);
-		Renderer = new(TempRenderer)IRenderer(eRenderer_Backend_Type_Vulkan, &AppState.platform);
+		Renderer = new(TempRenderer)IRenderer(eRenderer_Backend_Type_Vulkan, &platform);
 		ASSERT(Renderer);
 	}
 
@@ -125,7 +112,6 @@ bool ApplicationCreate(IGame* game_instance){
 	int ThreadCount = Platform::GetProcessorCount() - 1;
 	if (ThreadCount < 1) {
 		LOG_FATAL("Error: Platform reported processor count (minus one for main thread) as %i. Need at least one additional thread for the job system.", ThreadCount);
-		return false;
 	}
 	else {
 		LOG_INFO("Available threads: %i.", ThreadCount);
@@ -167,13 +153,13 @@ bool ApplicationCreate(IGame* game_instance){
 	}
 
 	// Render system.
-	if (!Renderer->Initialize(game_instance->app_config.name, &AppState.platform)) {
+	if (!Renderer->Initialize(GameInst->AppConfig.name, &platform)) {
 		LOG_FATAL("Renderer failed to initialize!");
 		return false;
 	}
 
 	// Perform the game's boot sequence.
-	if (!game_instance->Boot(Renderer)) {
+	if (!GameInst->Boot(Renderer)) {
 		LOG_FATAL("Game boot sequence failed!");
 		return false;
 	}
@@ -195,7 +181,7 @@ bool ApplicationCreate(IGame* game_instance){
 	}
 
 	// Init font system.
-	if (!FontSystem::Initialize(Renderer, &game_instance->app_config.FontConfig)) {
+	if (!FontSystem::Initialize(Renderer, &GameInst->AppConfig.FontConfig)) {
 		LOG_FATAL("Font system failed to initialize!");
 		return false;
 	}
@@ -209,9 +195,9 @@ bool ApplicationCreate(IGame* game_instance){
 	}
 
 	// Load render views from app config.
-	uint32_t ViewCount = (uint32_t)game_instance->app_config.Renderviews.size();
+	uint32_t ViewCount = (uint32_t)GameInst->AppConfig.Renderviews.size();
 	for (uint32_t v = 0; v < ViewCount; ++v) {
-		const RenderViewConfig& View = game_instance->app_config.Renderviews[v];
+		const RenderViewConfig& View = GameInst->AppConfig.Renderviews[v];
 		if (!RenderViewSystem::Create(View)) {
 			LOG_FATAL("Failed to create view '%s'.", View.name);
 			return false;
@@ -235,22 +221,22 @@ bool ApplicationCreate(IGame* game_instance){
 	}
 
 	// Init Game
-	if (!AppState.game_instance->Initialize()) {
+	if (!GameInst->Initialize()) {
 		LOG_FATAL("Game failed to initialize!");
 		return false;
 	}
 
-	AppState.game_instance->OnResize(AppState.width, AppState.height);
-	Renderer->OnResize(AppState.width, AppState.height);
+	GameInst->OnResize(width, height);
+	Renderer->OnResize(width, height);
 
 	Initialized = true;
 	return true;
 }
 
-bool ApplicationRun() {
-	Clock::Start(&AppState.clock);
-	Clock::Update(&AppState.clock);
-	AppState.last_time = AppState.clock.elapsed;	// Seconds
+bool Application::Run() {
+	Clock::Start(&clock);
+	Clock::Update(&clock);
+	last_time = clock.elapsed;	// Seconds
 
 	short FrameCount = 0;
 	double FrameElapsedTime = 0.0;
@@ -258,15 +244,15 @@ bool ApplicationRun() {
 
 	LOG_DEBUG(Memory::GetMemoryUsageStr());
 
-	while (AppState.is_running) {
-		if (!Platform::PlatformPumpMessage(&AppState.platform)) {
-			AppState.is_running = false;
+	while (is_running) {
+		if (!Platform::PlatformPumpMessage(&platform)) {
+			is_running = false;
 		}
 
-		if (!AppState.is_suspended) {
-			Clock::Update(&AppState.clock);
-			double CurrentTime = AppState.clock.elapsed;		// Seconds
-			double DeltaTime = (CurrentTime - AppState.last_time);
+		if (!is_suspended) {
+			Clock::Update(&clock);
+			double CurrentTime = clock.elapsed;		// Seconds
+			double DeltaTime = (CurrentTime - last_time);
 			double FrameStartTime = Platform::PlatformGetAbsoluteTime();
 
 			// Update Job system.
@@ -275,9 +261,9 @@ bool ApplicationRun() {
 			// Update metrics.
 			Metrics::Update(FrameElapsedTime);
 
-			if (!AppState.game_instance->Update((float)DeltaTime)) {
+			if (!GameInst->Update((float)DeltaTime)) {
 				LOG_FATAL("Game update failed!");
-				AppState.is_running = false;
+				is_running = false;
 				break;
 			}
 
@@ -286,9 +272,9 @@ bool ApplicationRun() {
 			Packet.delta_time = DeltaTime;
 
 			// Call the game's render routine.
-			if (!AppState.game_instance->Render(&Packet, (float)DeltaTime)) {
+			if (!GameInst->Render(&Packet, (float)DeltaTime)) {
 				LOG_FATAL("Game render faield. shutting down.");
-				AppState.is_running = false;
+				is_running = false;
 				break;
 			}
 
@@ -316,19 +302,21 @@ bool ApplicationRun() {
 				FrameCount++;
 			}
 
-			AppState.last_time = CurrentTime;
+			last_time = CurrentTime;
 			Core::InputUpdate(DeltaTime);
 		}
 	}
 
-	AppState.is_running = false;
+	is_running = false;
 
 	// Shut down the game.
-	AppState.game_instance->Shutdown();
+	GameInst->Shutdown();
 
 	// Shutdown event system
-	Core::EventUnregister(Core::eEvent_Code_Application_Quit, 0, ApplicationOnEvent);
-	Core::EventUnregister(Core::eEvent_Code_Resize, 0, ApplicationOnResized);
+	Core::EventUnregister(Core::eEvent_Code_Application_Quit, nullptr, 
+		std::bind(&Application::OnEvent, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
+	Core::EventUnregister(Core::eEvent_Code_Resize, nullptr, 
+		std::bind(&Application::OnResized, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
 
 	RenderViewSystem::Shutdown();
 	CameraSystem::Shutdown();
@@ -346,16 +334,16 @@ bool ApplicationRun() {
 	Core::InputShutdown();
 
 	ResourceSystem::Shutdown();
-	Platform::PlatformShutdown(&AppState.platform);
+	Platform::PlatformShutdown(&platform);
 
 	return true;
 }
 
-bool ApplicationOnEvent(unsigned short code, void* sender, void* listener_instance, SEventContext context) {
+bool Application::OnEvent(unsigned short code, void* sender, void* listener_instance, SEventContext context) {
 	switch (code){
 	case Core::eEvent_Code_Application_Quit: {
 		LOG_INFO("Application quit now.");
-		AppState.is_running = false;
+		is_running = false;
 		return true;
 	}
 	}	// Switch
@@ -363,7 +351,7 @@ bool ApplicationOnEvent(unsigned short code, void* sender, void* listener_instan
 	return false;
 }
 
-bool ApplicationOnResized(unsigned short code, void* sender, void* listener_instance, SEventContext context) {
+bool Application::OnResized(unsigned short code, void* sender, void* listener_instance, SEventContext context) {
 	if (Renderer == nullptr) {
 		return false;
 	}
@@ -373,24 +361,24 @@ bool ApplicationOnResized(unsigned short code, void* sender, void* listener_inst
 		unsigned short Height = context.data.u16[1];
 
 		//Check if different. If so, trigger a resize event.
-		if (Width != AppState.width || Height != AppState.height) {
-			AppState.width = Width;
-			AppState.height = Height;
+		if (Width != width || Height != height) {
+			width = Width;
+			height = Height;
 			LOG_DEBUG("Window resize: %i %i", Width, Height);
 
 			// Handle minimization
 			if (Width == 0 || Height == 0) {
 				LOG_INFO("Window minimized, suspending application.");
-				AppState.is_suspended = true;
+				is_suspended = true;
 				return true;
 			}
 			else {
-				if (AppState.is_suspended) {
+				if (is_suspended) {
 					LOG_INFO("Window restored, resuming application.");
-					AppState.is_suspended = false;
+					is_suspended = false;
 				}
 
-				AppState.game_instance->OnResize(Width, Height);
+				GameInst->OnResize(Width, Height);
 				Renderer->OnResize(Width, Height);
 
 				return true;
@@ -401,7 +389,7 @@ bool ApplicationOnResized(unsigned short code, void* sender, void* listener_inst
 	return true;
 }
 
-void GetFramebufferSize(unsigned int* width, unsigned int* height) {
-	*width = AppState.width;
-	*height = AppState.height;
+void Application::GetFramebufferSize(unsigned int* width, unsigned int* height) {
+	*width = this->width;
+	*height = this->height;
 }

@@ -17,7 +17,7 @@
 
 static bool EnableFrustumCulling = false;
 
-bool ConfigureRenderviews(SApplicationConfig* config);
+bool ConfigureRenderviews(Application::SConfig* config);
 
 bool GameOnEvent(unsigned short code, void* sender, void* listender_inst, SEventContext context) {
 	GameInstance* GameInst = (GameInstance*)listender_inst;
@@ -119,7 +119,6 @@ bool GameInstance::Boot(IRenderer* renderer) {
 	LOG_INFO("Booting...");
 
 	Renderer = renderer;
-	SApplicationConfig* Config = &app_config;
 	
 	// Configure fonts.
 	BitmapFontConfig BmpFontConfig;
@@ -132,18 +131,18 @@ bool GameInstance::Boot(IRenderer* renderer) {
 	SysFontConfig.name = "Noto Sans";
 	SysFontConfig.resourceName = "NotoSansCJK";
 
-	Config->FontConfig.autoRelease = false;
-	Config->FontConfig.defaultBitmapFontCount = 1;
-	Config->FontConfig.bitmapFontConfigs = (BitmapFontConfig*)Memory::Allocate(sizeof(BitmapFontConfig) * 1, MemoryType::eMemory_Type_Array);
-	Config->FontConfig.bitmapFontConfigs[0] = BmpFontConfig;
-	Config->FontConfig.defaultSystemFontCount = 1;
-	Config->FontConfig.systemFontConfigs = (SystemFontConfig*)Memory::Allocate(sizeof(SystemFontConfig) * 1, MemoryType::eMemory_Type_Array);
-	Config->FontConfig.systemFontConfigs[0] = SysFontConfig;
-	Config->FontConfig.maxBitmapFontCount = 100;
-	Config->FontConfig.maxSystemFontCount = 100;
+	AppConfig.FontConfig.autoRelease = false;
+	AppConfig.FontConfig.defaultBitmapFontCount = 1;
+	AppConfig.FontConfig.bitmapFontConfigs = (BitmapFontConfig*)Memory::Allocate(sizeof(BitmapFontConfig) * 1, MemoryType::eMemory_Type_Array);
+	AppConfig.FontConfig.bitmapFontConfigs[0] = BmpFontConfig;
+	AppConfig.FontConfig.defaultSystemFontCount = 1;
+	AppConfig.FontConfig.systemFontConfigs = (SystemFontConfig*)Memory::Allocate(sizeof(SystemFontConfig) * 1, MemoryType::eMemory_Type_Array);
+	AppConfig.FontConfig.systemFontConfigs[0] = SysFontConfig;
+	AppConfig.FontConfig.maxBitmapFontCount = 100;
+	AppConfig.FontConfig.maxSystemFontCount = 100;
 
 	// Configure render views.  TODO: read from file.
-	if (!ConfigureRenderviews(Config)) {
+	if (!ConfigureRenderviews(&AppConfig)) {
 		LOG_ERROR("Failed to configure renderer views. Aborting application.");
 		return false;
 	}
@@ -255,7 +254,7 @@ bool GameInstance::Initialize() {
 	strncpy(UIConfig.material_name, "Material.UI", MATERIAL_NAME_MAX_LENGTH);
 	strncpy(UIConfig.name, "Material.UI", MATERIAL_NAME_MAX_LENGTH);
 
-	const float h = app_config.start_height / 3.0f;
+	const float h = AppConfig.start_height / 3.0f;
 	const float w = h * 200.0f / 470.0f;
 	const float x = 0.0f;
 	const float y = 0.0f;
@@ -704,7 +703,7 @@ void GameInstance::OnResize(unsigned int width, unsigned int height) {
 	UIMeshes[0].geometries[0] = GeometrySystem::AcquireFromConfig(UIConfig, true);
 }
 
-bool ConfigureRenderviews(SApplicationConfig* config) {
+bool ConfigureRenderviews(Application::SConfig* config) {
 	RenderViewConfig SkyboxConfig;
 	SkyboxConfig.type = RenderViewKnownType::eRender_View_Known_Type_Skybox;
 	SkyboxConfig.width = 0;

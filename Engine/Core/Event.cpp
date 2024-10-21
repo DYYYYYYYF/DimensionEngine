@@ -5,7 +5,7 @@
 namespace Core {
 	struct SRegisterEvent {
 		void* listener;
-		PFN_on_event callback;
+		PFN_OnEvent callback;
 	};
 
 	struct SEventCodeEntry {
@@ -56,7 +56,7 @@ void Core::EventShutdown() {
 	}
 }
 
-bool Core::EventRegister(unsigned short code, void* listener, PFN_on_event on_event) {
+bool Core::EventRegister(unsigned short code, void* listener, PFN_OnEvent on_event) {
 	if (IsInitialized == false) {
 		return false;
 	}
@@ -64,7 +64,9 @@ bool Core::EventRegister(unsigned short code, void* listener, PFN_on_event on_ev
 	size_t RegisterCount = EventState.registered[code].events.size();
 	for (size_t i = 0; i < RegisterCount; ++i) {
 		if (EventState.registered[code].events[i].listener == listener && 
-			EventState.registered[code].events[i].callback == on_event) {
+			EventState.registered[code].events[i].
+				callback.target<bool(unsigned short code, void* sender, void* listener_instance, SEventContext data)>() == 
+				on_event.target<bool(unsigned short code, void* sender, void* listener_instance, SEventContext data)>()) {
 			LOG_WARN("The event callback has been registered.");
 			return false;
 		}
@@ -80,7 +82,7 @@ bool Core::EventRegister(unsigned short code, void* listener, PFN_on_event on_ev
 	return true;
 }
 
-bool Core::EventUnregister(unsigned short code, void* listener, PFN_on_event on_event) {
+bool Core::EventUnregister(unsigned short code, void* listener, PFN_OnEvent on_event) {
 	if (IsInitialized == false) {
 		return false;
 	}
@@ -98,7 +100,9 @@ bool Core::EventUnregister(unsigned short code, void* listener, PFN_on_event on_
 	size_t RegisterCount = EventState.registered[code].events.size();
 	for (size_t i = 0; i < RegisterCount; ++i) {
 		const SRegisterEvent& event = EventState.registered[code].events[i];
-		if (event.listener == listener && event.callback == on_event) {
+		if (event.listener == listener && EventState.registered[code].events[i].
+			callback.target<bool(unsigned short code, void* sender, void* listener_instance, SEventContext data)>() ==
+			on_event.target<bool(unsigned short code, void* sender, void* listener_instance, SEventContext data)>()) {
 			EventState.registered[code].events.erase(EventState.registered[code].events.begin() + i);
 			return true;
 		}

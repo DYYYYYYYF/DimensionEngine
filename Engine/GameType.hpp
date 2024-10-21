@@ -22,6 +22,6 @@ public:
 	virtual void OnResize(unsigned int width, unsigned int height) = 0;
 
 public:
-	SApplicationConfig app_config;
+	Application::SConfig AppConfig;
 	GameFrameData FrameData;
 };

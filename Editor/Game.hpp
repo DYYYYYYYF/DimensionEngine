@@ -9,6 +9,10 @@ class Camera;
 
 class GameInstance : public IGame {
 public:
+	GameInstance() : WorldCamera(nullptr) {}
+	virtual ~GameInstance() {};
+
+public:
 	virtual bool Boot(IRenderer* renderer) override;
 	virtual void Shutdown() override;
 	virtual bool Initialize() override;
@@ -18,7 +22,7 @@ public:
 
 public:
 	float delta_time;
-	Camera* WorldCamera = nullptr;
+	Camera* WorldCamera;
 	short Width, Height;
 
 	Frustum CameraFrustum;

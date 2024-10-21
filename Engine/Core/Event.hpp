@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Defines.hpp"
+#include <functional>
 
 struct SEventContext {
 	// 128 Bytes
@@ -23,15 +24,14 @@ struct SEventContext {
 	}data;
 };
 
+typedef std::function<bool(unsigned short code, void* sender, void* listener_instance, SEventContext data)> PFN_OnEvent;
+
 namespace Core {
-
-	typedef bool (*PFN_on_event)(unsigned short code, void* sender, void* listener_instance, SEventContext data);
-
 	bool EventInitialize();
 	void EventShutdown();
 
-	DAPI bool EventRegister(unsigned short code, void* listener, PFN_on_event on_event);
-	DAPI bool EventUnregister(unsigned short code, void* listener, PFN_on_event on_event);
+	DAPI bool EventRegister(unsigned short code, void* listener, PFN_OnEvent on_event);
+	DAPI bool EventUnregister(unsigned short code, void* listener, PFN_OnEvent on_event);
 
 	DAPI bool EventFire(unsigned short code, void* sender, SEventContext context);
 
