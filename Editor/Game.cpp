@@ -20,21 +20,20 @@ static bool EnableFrustumCulling = false;
 bool ConfigureRenderviews(SApplicationConfig* config);
 
 bool GameOnEvent(unsigned short code, void* sender, void* listender_inst, SEventContext context) {
-	SGame* GameInstance = (SGame*)listender_inst;
-	SGameState* State = (SGameState*)GameInstance->state;
+	GameInstance* GameInst = (GameInstance*)listender_inst;
 
 	switch (code)
 	{
 	case Core::eEvent_Code_Object_Hover_ID_Changed: 
 	{
-		State->HoveredObjectID = context.data.u32[0];
+		GameInst->HoveredObjectID = context.data.u32[0];
 		return true;
 	}break;
 	case Core::eEvent_Code_Reload_Shader_Module:
 	{
 		for (uint32_t i = 0; i < 10; ++i) {
-			if (State->Meshes[i].Generation != INVALID_ID_U8) {
-				State->Meshes[i].ReloadMaterial();
+			if (GameInst->Meshes[i].Generation != INVALID_ID_U8) {
+				GameInst->Meshes[i].ReloadMaterial();
 			}
 		}
 	}
@@ -44,14 +43,13 @@ bool GameOnEvent(unsigned short code, void* sender, void* listender_inst, SEvent
 }
 
 bool GameOnDebugEvent(unsigned short code, void* sender, void* listener_instance, SEventContext context) {
-	SGame* GameInstance = (SGame*)listener_instance;
-	SGameState* State = (SGameState*)GameInstance->state;
+	GameInstance* GameInst = (GameInstance*)listener_instance;
 
 	if (code == Core::eEvent_Code_Debug_0) {
-		if (State->SponzaMesh->Generation == INVALID_ID_U8) {
+		if (GameInst->SponzaMesh->Generation == INVALID_ID_U8) {
 			LOG_DEBUG("Loading sponza...");
 
-			if (!State->SponzaMesh->LoadFromResource("sponza")) {
+			if (!GameInst->SponzaMesh->LoadFromResource("sponza")) {
 				LOG_ERROR("Failed to load sponza mesh!");
 			}
 		}
@@ -59,10 +57,10 @@ bool GameOnDebugEvent(unsigned short code, void* sender, void* listener_instance
 		return true;
 	}
 	else if (code == Core::eEvent_Code_Debug_1) {
-		if (State->CarMesh->Generation == INVALID_ID_U8) {
+		if (GameInst->CarMesh->Generation == INVALID_ID_U8) {
 			LOG_DEBUG("Loading falcon...");
 
-			if (!State->CarMesh->LoadFromResource("falcon")) {
+			if (!GameInst->CarMesh->LoadFromResource("falcon")) {
 				LOG_ERROR("Failed to load falcon mesh!");
 			}
 		}
@@ -70,10 +68,10 @@ bool GameOnDebugEvent(unsigned short code, void* sender, void* listener_instance
 		return true;
 	}
 	else if (code == Core::eEvent_Code_Debug_2) {
-		if (State->BunnyMesh->Generation == INVALID_ID_U8) {
+		if (GameInst->BunnyMesh->Generation == INVALID_ID_U8) {
 			LOG_DEBUG("Loading bunny...");
 
-			if (!State->BunnyMesh->LoadFromResource("bunny")) {
+			if (!GameInst->BunnyMesh->LoadFromResource("bunny")) {
 				LOG_ERROR("Failed to load falcon mesh!");
 			}
 		}
@@ -81,10 +79,10 @@ bool GameOnDebugEvent(unsigned short code, void* sender, void* listener_instance
 		return true;
 	}
 	else if (code == Core::eEvent_Code_Debug_3) {
-		if (State->DragonMesh->Generation == INVALID_ID_U8) {
+		if (GameInst->DragonMesh->Generation == INVALID_ID_U8) {
 			LOG_DEBUG("Loading dragon...");
 
-			if (!State->DragonMesh->LoadFromResource("dragon")) {
+			if (!GameInst->DragonMesh->LoadFromResource("dragon")) {
 				LOG_ERROR("Failed to load falcon mesh!");
 			}
 		}
@@ -117,11 +115,11 @@ bool GameOnKey(unsigned short code, void* sender, void* listener_instance, SEven
 	return false;
 }
 
-bool GameBoot(SGame* gameInstance, IRenderer* renderer) {
+bool GameInstance::Boot(IRenderer* renderer) {
 	LOG_INFO("Booting...");
 
 	Renderer = renderer;
-	SApplicationConfig* Config = &gameInstance->app_config;
+	SApplicationConfig* Config = &app_config;
 	
 	// Configure fonts.
 	BitmapFontConfig BmpFontConfig;
@@ -153,25 +151,23 @@ bool GameBoot(SGame* gameInstance, IRenderer* renderer) {
 	return true;
 }
 
-bool GameInitialize(SGame* game_instance) {
+bool GameInstance::Initialize() {
 	LOG_DEBUG("GameInitialize() called.");
 
-	SGameState* State = (SGameState*)game_instance->state;
-
 	// Load python script
-	State->TestPython.SetPythonFile("recompile_shader");
+	TestPython.SetPythonFile("recompile_shader");
 
-	State->WorldCamera = CameraSystem::GetDefault();
-	State->WorldCamera->SetPosition(Vec3(0.0f, 0.0f, 40.0f));
+	WorldCamera = CameraSystem::GetDefault();
+	WorldCamera->SetPosition(Vec3(0.0f, 0.0f, 40.0f));
 
 	// Create test ui text objects.
-	if (!State->TestText.Create(Renderer, UITextType::eUI_Text_Type_Bitmap, "Ubuntu Mono 21px", 21, "Test! \n Yooo!")) {
+	if (!TestText.Create(Renderer, UITextType::eUI_Text_Type_Bitmap, "Ubuntu Mono 21px", 21, "Test! \n Yooo!")) {
 		LOG_ERROR("Failed to load basic ui bitmap text.");
 		return false;
 	}
-	State->TestText.SetPosition(Vec3(150, 450, 0));
+	TestText.SetPosition(Vec3(150, 450, 0));
 
-	if (!State->TestSysText.Create(Renderer, UITextType::eUI_Text_Type_system, 
+	if (!TestSysText.Create(Renderer, UITextType::eUI_Text_Type_system, 
 		"Noto Sans CJK JP", 26, "Keyboard map:\
 		\nLoad models:\
 		\n\tO: sponza P: car\
@@ -184,23 +180,23 @@ bool GameInitialize(SGame* game_instance) {
 		LOG_ERROR("Failed to load basic ui system text.");
 		return false;
 	}
-	State->TestSysText.SetPosition(Vec3(100, 200, 0));
+	TestSysText.SetPosition(Vec3(100, 200, 0));
 
 	// Skybox
-	if (!State->SB.Create("SkyboxCube", Renderer)) {
+	if (!SB.Create("SkyboxCube", Renderer)) {
 		LOG_ERROR("Failed to create skybox. Exiting...");
 		return false;
 	}
 
 	// World meshes
-	State->Meshes.resize(10);
-	State->UIMeshes.resize(10);
+	Meshes.resize(10);
+	UIMeshes.resize(10);
 	for (uint32_t i = 0; i < 10; ++i) {
-		State->Meshes[i].Generation = INVALID_ID_U8;
-		State->UIMeshes[i].Generation = INVALID_ID_U8;
+		Meshes[i].Generation = INVALID_ID_U8;
+		UIMeshes[i].Generation = INVALID_ID_U8;
 	}
 
-	Mesh* CubeMesh = &State->Meshes[0];
+	Mesh* CubeMesh = &Meshes[0];
 	CubeMesh->geometry_count = 1;
 	CubeMesh->geometries = (Geometry**)Memory::Allocate(sizeof(Geometry*) * CubeMesh->geometry_count, MemoryType::eMemory_Type_Array);
 	SGeometryConfig GeoConfig = GeometrySystem::GenerateCubeConfig(10.0f, 10.0f, 10.0f, 1.0f, 1.0f, "TestCube", "Material.World");
@@ -209,7 +205,7 @@ bool GameInitialize(SGame* game_instance) {
 	CubeMesh->UniqueID = Identifier::AcquireNewID(CubeMesh);
 	CubeMesh->Transform = Transform();
 
-	Mesh* CubeMesh2 = &State->Meshes[1];
+	Mesh* CubeMesh2 = &Meshes[1];
 	CubeMesh2->geometry_count = 1;
 	CubeMesh2->geometries = (Geometry**)Memory::Allocate(sizeof(Geometry*) * CubeMesh2->geometry_count, MemoryType::eMemory_Type_Array);
 	SGeometryConfig GeoConfig2 = GeometrySystem::GenerateCubeConfig(5.0f, 5.0f, 5.0f, 1.0f, 1.0f, "TestCube2", "Material.World");
@@ -219,7 +215,7 @@ bool GameInitialize(SGame* game_instance) {
 	CubeMesh2->UniqueID = Identifier::AcquireNewID(CubeMesh2);
 	CubeMesh2->Transform.SetParentTransform(&CubeMesh->Transform);
 
-	Mesh* CubeMesh3 = &State->Meshes[2];
+	Mesh* CubeMesh3 = &Meshes[2];
 	CubeMesh3->geometry_count = 1;
 	CubeMesh3->geometries = (Geometry**)Memory::Allocate(sizeof(Geometry*) * CubeMesh3->geometry_count, MemoryType::eMemory_Type_Array);
 	SGeometryConfig GeoConfig3 = GeometrySystem::GenerateCubeConfig(2.0f, 2.0f, 2.0f, 1.0f, 1.0f, "TestCube3", "Material.World");
@@ -234,21 +230,21 @@ bool GameInitialize(SGame* game_instance) {
 	GeometrySystem::ConfigDispose(&GeoConfig2);
 	GeometrySystem::ConfigDispose(&GeoConfig3);
 
-	State->CarMesh = &State->Meshes[3];
-	State->CarMesh->Transform = Transform(Vec3(15.0f, 0.0f, -15.0f));
-	State->CarMesh->UniqueID = Identifier::AcquireNewID(State->CarMesh);
+	CarMesh = &Meshes[3];
+	CarMesh->Transform = Transform(Vec3(15.0f, 0.0f, -15.0f));
+	CarMesh->UniqueID = Identifier::AcquireNewID(CarMesh);
 
-	State->SponzaMesh = &State->Meshes[4];
-	State->SponzaMesh->Transform = Transform(Vec3(0.0f, -10.0f, 0.0f), Quaternion(Vec3(0.0f, 90.0f, 0.0f)), Vec3(0.1f));
-	State->SponzaMesh->UniqueID = Identifier::AcquireNewID(State->SponzaMesh);
+	SponzaMesh = &Meshes[4];
+	SponzaMesh->Transform = Transform(Vec3(0.0f, -10.0f, 0.0f), Quaternion(Vec3(0.0f, 90.0f, 0.0f)), Vec3(0.1f));
+	SponzaMesh->UniqueID = Identifier::AcquireNewID(SponzaMesh);
 
-	State->BunnyMesh = &State->Meshes[5];
-	State->BunnyMesh->Transform = Transform(Vec3(30.0f, 0.0f, -30.0f), Quaternion(Vec3(0.0f, 0.0f, 0.0f)), Vec3(5.0f));
-	State->BunnyMesh->UniqueID = Identifier::AcquireNewID(State->BunnyMesh);
+	BunnyMesh = &Meshes[5];
+	BunnyMesh->Transform = Transform(Vec3(30.0f, 0.0f, -30.0f), Quaternion(Vec3(0.0f, 0.0f, 0.0f)), Vec3(5.0f));
+	BunnyMesh->UniqueID = Identifier::AcquireNewID(BunnyMesh);
 
-	State->DragonMesh = &State->Meshes[6];
-	State->DragonMesh->Transform = Transform(Vec3(45.0f, 0.0f, -45.0f), Quaternion(Vec3(0.0f, 0.0f, 0.0f)), Vec3(1.0f));
-	State->DragonMesh->UniqueID = Identifier::AcquireNewID(State->DragonMesh);
+	DragonMesh = &Meshes[6];
+	DragonMesh->Transform = Transform(Vec3(45.0f, 0.0f, -45.0f), Quaternion(Vec3(0.0f, 0.0f, 0.0f)), Vec3(1.0f));
+	DragonMesh->UniqueID = Identifier::AcquireNewID(DragonMesh);
 
 	// Load up some test UI geometry.
 	SGeometryConfig UIConfig;
@@ -259,7 +255,7 @@ bool GameInitialize(SGame* game_instance) {
 	strncpy(UIConfig.material_name, "Material.UI", MATERIAL_NAME_MAX_LENGTH);
 	strncpy(UIConfig.name, "Material.UI", MATERIAL_NAME_MAX_LENGTH);
 
-	const float h = game_instance->app_config.start_height / 3.0f;
+	const float h = app_config.start_height / 3.0f;
 	const float w = h * 200.0f / 470.0f;
 	const float x = 0.0f;
 	const float y = 0.0f;
@@ -292,7 +288,7 @@ bool GameInitialize(SGame* game_instance) {
 	UIConfig.indices = UIIndices;
 
 	// Get UI geometry from config.
-	Mesh* UIMesh = &State->UIMeshes[0];
+	Mesh* UIMesh = &UIMeshes[0];
 	UIMesh->geometry_count = 1;
 	UIMesh->geometries = (Geometry**)Memory::Allocate(sizeof(Geometry*), MemoryType::eMemory_Type_Array);
 	UIMesh->geometries[0] = GeometrySystem::AcquireFromConfig(UIConfig, true);
@@ -301,50 +297,46 @@ bool GameInitialize(SGame* game_instance) {
 	UIMesh->Transform = Transform();
 
 	// TODO: TEMP
-	Core::EventRegister(Core::eEvent_Code_Debug_0, game_instance, GameOnDebugEvent);
-	Core::EventRegister(Core::eEvent_Code_Debug_1, game_instance, GameOnDebugEvent);
-	Core::EventRegister(Core::eEvent_Code_Debug_2, game_instance, GameOnDebugEvent);
-	Core::EventRegister(Core::eEvent_Code_Debug_3, game_instance, GameOnDebugEvent);
-	Core::EventRegister(Core::eEvent_Code_Object_Hover_ID_Changed, game_instance, GameOnEvent);
-	Core::EventRegister(Core::eEvent_Code_Reload_Shader_Module, game_instance, GameOnEvent);
+	Core::EventRegister(Core::eEvent_Code_Debug_0, this, GameOnDebugEvent);
+	Core::EventRegister(Core::eEvent_Code_Debug_1, this, GameOnDebugEvent);
+	Core::EventRegister(Core::eEvent_Code_Debug_2, this, GameOnDebugEvent);
+	Core::EventRegister(Core::eEvent_Code_Debug_3, this, GameOnDebugEvent);
+	Core::EventRegister(Core::eEvent_Code_Object_Hover_ID_Changed, this, GameOnEvent);
+	Core::EventRegister(Core::eEvent_Code_Reload_Shader_Module, this, GameOnEvent);
 	// TEMP
 
-	Core::EventRegister(Core::eEvent_Code_Key_Pressed, game_instance, GameOnKey);
-	Core::EventRegister(Core::eEvent_Code_Key_Released, game_instance, GameOnKey);
+	Core::EventRegister(Core::eEvent_Code_Key_Pressed, this, GameOnKey);
+	Core::EventRegister(Core::eEvent_Code_Key_Released, this, GameOnKey);
 
 	return true;
 }
 
-void GameShutdown(SGame* gameInstance) {
-	SGameState* State = (SGameState*)gameInstance->state;
-
+void GameInstance::Shutdown() {
 	// TODO: Temp
-	State->SB.Destroy();
+	SB.Destroy();
 
-	State->TestText.Destroy();
-	State->TestSysText.Destroy();
+	TestText.Destroy();
+	TestSysText.Destroy();
 
 	// TODO: TEMP
-	Core::EventUnregister(Core::eEvent_Code_Debug_0, gameInstance, GameOnDebugEvent);
-	Core::EventUnregister(Core::eEvent_Code_Debug_1, gameInstance, GameOnDebugEvent);
-	Core::EventUnregister(Core::eEvent_Code_Debug_2, gameInstance, GameOnDebugEvent);
-	Core::EventUnregister(Core::eEvent_Code_Debug_3, gameInstance, GameOnDebugEvent);
-	Core::EventUnregister(Core::eEvent_Code_Object_Hover_ID_Changed, gameInstance, GameOnEvent);
-	Core::EventUnregister(Core::eEvent_Code_Reload_Shader_Module, gameInstance, GameOnEvent);
+	Core::EventUnregister(Core::eEvent_Code_Debug_0, this, GameOnDebugEvent);
+	Core::EventUnregister(Core::eEvent_Code_Debug_1, this, GameOnDebugEvent);
+	Core::EventUnregister(Core::eEvent_Code_Debug_2, this, GameOnDebugEvent);
+	Core::EventUnregister(Core::eEvent_Code_Debug_3, this, GameOnDebugEvent);
+	Core::EventUnregister(Core::eEvent_Code_Object_Hover_ID_Changed, this, GameOnEvent);
+	Core::EventUnregister(Core::eEvent_Code_Reload_Shader_Module, this, GameOnEvent);
 	// TEMP
 
-	Core::EventUnregister(Core::eEvent_Code_Key_Pressed, gameInstance, GameOnKey);
-	Core::EventUnregister(Core::eEvent_Code_Key_Released, gameInstance, GameOnKey);
-
-	State = nullptr;
+	Core::EventUnregister(Core::eEvent_Code_Key_Pressed, this, GameOnKey);
+	Core::EventUnregister(Core::eEvent_Code_Key_Released, this, GameOnKey);
 }
 
-bool GameUpdate(SGame* game_instance, float delta_time) {
+bool GameInstance::Update(float delta_time) {
 	// Ensure this is cleaned up to avoid leaking memory.
 	// TODO: Need a version of this that uses the frame allocator.
-	if (!game_instance->FrameData.WorldGeometries.empty()) {
-		game_instance->FrameData.WorldGeometries.clear();
-		std::vector<GeometryRenderData>().swap(game_instance->FrameData.WorldGeometries);
+	if (!FrameData.WorldGeometries.empty()) {
+		FrameData.WorldGeometries.clear();
+		std::vector<GeometryRenderData>().swap(FrameData.WorldGeometries);
 	}
 
 	static size_t AllocCount = 0;
@@ -356,8 +348,6 @@ bool GameUpdate(SGame* game_instance, float delta_time) {
 		StringFree(Usage);
 		LOG_DEBUG("Allocations: %llu (%llu this frame)", AllocCount, AllocCount - PrevAllocCount);
 	}
-
-	SGameState* State = (SGameState*)game_instance->state;
 
 	// Temp shader debug
 	if (Core::InputIsKeyUp(eKeys_F1) && Core::InputWasKeyDown(eKeys_F1)) {
@@ -377,16 +367,16 @@ bool GameUpdate(SGame* game_instance, float delta_time) {
 	}
 
 	if (Core::InputIsKeyDown(eKeys_Left)) {
-		State->WorldCamera->RotateYaw(1.0f * delta_time);
+		WorldCamera->RotateYaw(1.0f * delta_time);
 	}
 	if (Core::InputIsKeyDown(eKeys_Right)) {
-		State->WorldCamera->RotateYaw(-1.0f * delta_time);
+		WorldCamera->RotateYaw(-1.0f * delta_time);
 	}
 	if (Core::InputIsKeyDown(Keys::eKeys_Up)) {
-		State->WorldCamera->RotatePitch(1.0f * delta_time);
+		WorldCamera->RotatePitch(1.0f * delta_time);
 	}
 	if (Core::InputIsKeyDown(Keys::eKeys_Down)) {
-		State->WorldCamera->RotatePitch(-1.0f * delta_time);
+		WorldCamera->RotatePitch(-1.0f * delta_time);
 	}
 
 	float TempMoveSpeed = 50.0f;
@@ -395,62 +385,62 @@ bool GameUpdate(SGame* game_instance, float delta_time) {
 	}
 
 	if (Core::InputIsKeyDown(Keys::eKeys_W)) {
-		State->WorldCamera->MoveForward(TempMoveSpeed * delta_time);
+		WorldCamera->MoveForward(TempMoveSpeed * delta_time);
 	}
 	if (Core::InputIsKeyDown(Keys::eKeys_S)) {
-		State->WorldCamera->MoveBackward(TempMoveSpeed * delta_time);
+		WorldCamera->MoveBackward(TempMoveSpeed * delta_time);
 	}
 	if (Core::InputIsKeyDown(Keys::eKeys_A)) {
-		State->WorldCamera->MoveLeft(TempMoveSpeed * delta_time);
+		WorldCamera->MoveLeft(TempMoveSpeed * delta_time);
 	}
 	if (Core::InputIsKeyDown(Keys::eKeys_D)) {
-		State->WorldCamera->MoveRight(TempMoveSpeed * delta_time);
+		WorldCamera->MoveRight(TempMoveSpeed * delta_time);
 	}
 	if (Core::InputIsKeyDown(Keys::eKeys_Q)) {
-		State->WorldCamera->MoveDown(TempMoveSpeed * delta_time);
+		WorldCamera->MoveDown(TempMoveSpeed * delta_time);
 	}
 	if (Core::InputIsKeyDown(Keys::eKeys_E)) {
-		State->WorldCamera->MoveUp(TempMoveSpeed * delta_time);
+		WorldCamera->MoveUp(TempMoveSpeed * delta_time);
 	}
 
 	if (Core::InputIsKeyDown(Keys::eKeys_R)) {
-		State->WorldCamera->Reset();
+		WorldCamera->Reset();
 	}
 
 	// TODO: Remove
 	if (Core::InputIsKeyUp(eKeys_O) && Core::InputWasKeyDown(eKeys_O)) {
 		SEventContext Context = {};
-		Core::EventFire(Core::eEvent_Code_Debug_0, game_instance, Context);
+		Core::EventFire(Core::eEvent_Code_Debug_0, this, Context);
 	}
 
 	if (Core::InputIsKeyUp(eKeys_L) && Core::InputWasKeyDown(eKeys_L)) {
 		SEventContext Context = {};
-		Core::EventFire(Core::eEvent_Code_Debug_2, game_instance, Context);
+		Core::EventFire(Core::eEvent_Code_Debug_2, this, Context);
 	}
 
 	if (Core::InputIsKeyUp(eKeys_K) && Core::InputWasKeyDown(eKeys_K)) {
 		SEventContext Context = {};
-		Core::EventFire(Core::eEvent_Code_Debug_3, game_instance, Context);
+		Core::EventFire(Core::eEvent_Code_Debug_3, this, Context);
 	}
 
 	if (Core::InputIsKeyUp(eKeys_P) && Core::InputWasKeyDown(eKeys_P)) {
 		SEventContext Context = {};
-		Core::EventFire(Core::eEvent_Code_Debug_1, game_instance, Context);
+		Core::EventFire(Core::eEvent_Code_Debug_1, this, Context);
 	}
 
 	if (Core::InputIsKeyUp(eKeys_G) && Core::InputWasKeyDown(eKeys_G)) {
-		State->TestPython.ExecuteFunc("CompileShaders", "glsl");
+		TestPython.ExecuteFunc("CompileShaders", "glsl");
 
 		// Reload
 		SEventContext Context = {};
-		Core::EventFire(Core::eEvent_Code_Reload_Shader_Module, game_instance, Context);
+		Core::EventFire(Core::eEvent_Code_Reload_Shader_Module, this, Context);
 	}
 	if (Core::InputIsKeyUp(eKeys_H) && Core::InputWasKeyDown(eKeys_H)) {
-		State->TestPython.ExecuteFunc("CompileShaders", "hlsl");
+		TestPython.ExecuteFunc("CompileShaders", "hlsl");
 
 		// Reload
 		SEventContext Context = {};
-		Core::EventFire(Core::eEvent_Code_Reload_Shader_Module, game_instance, Context);
+		Core::EventFire(Core::eEvent_Code_Reload_Shader_Module, this, Context);
 	}
 	// Remove
 
@@ -460,17 +450,17 @@ bool GameUpdate(SGame* game_instance, float delta_time) {
 	float MouseMoveSpeed = 0.005f;
 	if (Core::InputeIsButtonDown(eButton_Right)) {
 		if (cx != px) {
-			State->WorldCamera->RotateYaw((px - cx) * MouseMoveSpeed);
+			WorldCamera->RotateYaw((px - cx) * MouseMoveSpeed);
 		}
 		if (cy != py) {
-			State->WorldCamera->RotatePitch((py - cy) * MouseMoveSpeed);
+			WorldCamera->RotatePitch((py - cy) * MouseMoveSpeed);
 		}
 	}
 
 	Quaternion Rotation = QuaternionFromAxisAngle(Vec3(0.0f, 1.0f, 0.0f), 0.5f * (float)delta_time, false);
-	State->Meshes[0].Transform.Rotate(Rotation);
-	State->Meshes[1].Transform.Rotate(Rotation);
-	State->Meshes[2].Transform.Rotate(Rotation);
+	Meshes[0].Transform.Rotate(Rotation);
+	Meshes[1].Transform.Rotate(Rotation);
+	Meshes[2].Transform.Rotate(Rotation);
 
 	// Text
 	Camera* WorldCamera = CameraSystem::GetDefault();
@@ -484,24 +474,24 @@ bool GameUpdate(SGame* game_instance, float delta_time) {
 	Core::InputGetMousePosition(MouseX, MouseY);
 
 	// Convert to NDC.
-	float MouseX_NDC = RangeConvertfloat((float)MouseX, 0.0f, (float)State->Width, -1.0f, 1.0f);
-	float MouseY_NDC = RangeConvertfloat((float)MouseY, 0.0f, (float)State->Height, -1.0f, 1.0f);
+	float MouseX_NDC = RangeConvertfloat((float)MouseX, 0.0f, (float)Width, -1.0f, 1.0f);
+	float MouseY_NDC = RangeConvertfloat((float)MouseY, 0.0f, (float)Height, -1.0f, 1.0f);
 
 	double FPS, FrameTime;
 	Metrics::Frame(&FPS, &FrameTime);
 
 	// Update the frustum.
-	Vec3 Forward = State->WorldCamera->Forward();
-	Vec3 Right = State->WorldCamera->Right();
-	Vec3 Up = State->WorldCamera->Up();
+	Vec3 Forward = WorldCamera->Forward();
+	Vec3 Right = WorldCamera->Right();
+	Vec3 Up = WorldCamera->Up();
 	// TODO: Get camera fov, aspect etc.
-	State->CameraFrustum = Frustum(State->WorldCamera->GetPosition(), Forward, Right, Up, (float)State->Width / (float)State->Height, Deg2Rad(45.0f), 0.1f, 1000.0f);
+	CameraFrustum = Frustum(WorldCamera->GetPosition(), Forward, Right, Up, (float)Width / (float)Height, Deg2Rad(45.0f), 0.1f, 1000.0f);
 
 	// NOTE: starting at a reasonable default to avoid too many realloc.
 	uint32_t DrawCount = 0;
-	game_instance->FrameData.WorldGeometries.reserve(512);
+	FrameData.WorldGeometries.reserve(512);
 	for (uint32_t i = 0; i < 10; ++i) {
-		Mesh* m = &State->Meshes[i];
+		Mesh* m = &Meshes[i];
 		if (m == nullptr) {
 			continue;
 		}
@@ -552,13 +542,13 @@ bool GameUpdate(SGame* game_instance, float delta_time) {
 						Dabs(ExtentsMax.z - Center.z)
 					};
 
-					if (State->CameraFrustum.IntersectsAABB(Center, HalfExtents) && EnableFrustumCulling) {
+					if (CameraFrustum.IntersectsAABB(Center, HalfExtents) && EnableFrustumCulling) {
 						// Add it to the list to be rendered.
 						GeometryRenderData Data;
 						Data.model = Model;
 						Data.geometry = g;
 						Data.uniqueID = m->UniqueID;
-						game_instance->FrameData.WorldGeometries.push_back(Data);
+						FrameData.WorldGeometries.push_back(Data);
 						DrawCount++;
 					}
 					else if (!EnableFrustumCulling){
@@ -567,7 +557,7 @@ bool GameUpdate(SGame* game_instance, float delta_time) {
 						Data.model = Model;
 						Data.geometry = g;
 						Data.uniqueID = m->UniqueID;
-						game_instance->FrameData.WorldGeometries.push_back(Data);
+						FrameData.WorldGeometries.push_back(Data);
 						DrawCount++;
 					}
 				}
@@ -588,19 +578,18 @@ bool GameUpdate(SGame* game_instance, float delta_time) {
 		Rad2Deg(Rot.x), Rad2Deg(Rot.y), Rad2Deg(Rot.z),
 		LeftDown ? "Y" : "N", RightDown ? "Y" : "N",
 		MouseX_NDC, MouseY_NDC,
-		State->HoveredObjectID == INVALID_ID ? "None" : "",
-		State->HoveredObjectID == INVALID_ID ? 0 : State->HoveredObjectID,
+		HoveredObjectID == INVALID_ID ? "None" : "",
+		HoveredObjectID == INVALID_ID ? 0 : HoveredObjectID,
 		(int)FPS,
 		(float)FrameTime,
 		DrawCount
 	);
-	State->TestText.SetText(FPSText);
+	TestText.SetText(FPSText);
 
 	return true;
 }
 
-bool GameRender(SGame* game_instance, SRenderPacket* packet, float delta_time) {
-	SGameState* State = (SGameState*)game_instance->state;
+bool GameInstance::Render(SRenderPacket* packet, float delta_time) {
 
 	// TODO: Read from config.
 	packet->view_count = 4;
@@ -610,37 +599,37 @@ bool GameRender(SGame* game_instance, SRenderPacket* packet, float delta_time) {
 
 	// Skybox
 	SkyboxPacketData SkyboxData;
-	SkyboxData.sb = &State->SB;
+	SkyboxData.sb = &SB;
 	if (!RenderViewSystem::BuildPacket(RenderViewSystem::Get("Skybox"), &SkyboxData, &packet->views[0])) {
 		LOG_ERROR("Failed to build packet for view 'World_Opaque'.");
 		return false;
 	}
 
 	// World
-	if (!RenderViewSystem::BuildPacket(RenderViewSystem::Get("World"), &game_instance->FrameData.WorldGeometries, &packet->views[1])) {
+	if (!RenderViewSystem::BuildPacket(RenderViewSystem::Get("World"), &FrameData.WorldGeometries, &packet->views[1])) {
 		LOG_ERROR("Failed to build packet for view 'World'.");
 		return false;
 	}
 
 	// UI
 	uint32_t UIMeshCount = 0;
-	Mesh** UIMeshes = (Mesh**)Memory::Allocate(sizeof(Mesh*) * 10, MemoryType::eMemory_Type_Array);
+	Mesh** TempUIMeshes = (Mesh**)Memory::Allocate(sizeof(Mesh*) * 10, MemoryType::eMemory_Type_Array);
 	// TODO: Flexible size array.
 	for (uint32_t i = 0; i < 10; ++i) {
-		if (State->UIMeshes[i].Generation != INVALID_ID_U8) {
-			UIMeshes[UIMeshCount] = &State->UIMeshes[i];
+		if (UIMeshes[i].Generation != INVALID_ID_U8) {
+			TempUIMeshes[UIMeshCount] = &UIMeshes[i];
 			UIMeshCount++;
 		}
 	}
 
 
 	UIText** Texts = (UIText**)Memory::Allocate(sizeof(UIText*) * 2, MemoryType::eMemory_Type_Array);
-	Texts[0] = &State->TestText;
-	Texts[1] = &State->TestSysText;
+	Texts[0] = &TestText;
+	Texts[1] = &TestSysText;
 
 	UIPacketData UIPacket;
 	UIPacket.meshData.mesh_count = UIMeshCount;
-	UIPacket.meshData.meshes = UIMeshes;
+	UIPacket.meshData.meshes = TempUIMeshes;
 	UIPacket.textCount = 2;
 	UIPacket.Textes = Texts;
 
@@ -652,7 +641,7 @@ bool GameRender(SGame* game_instance, SRenderPacket* packet, float delta_time) {
 	// Pick uses both world and ui packet data.
 	PickPacketData PickPacket;
 	PickPacket.UIMeshData = UIPacket.meshData;
-	PickPacket.WorldMeshData = game_instance->FrameData.WorldGeometries;
+	PickPacket.WorldMeshData = FrameData.WorldGeometries;
 	PickPacket.Texts = UIPacket.Textes;
 	PickPacket.TextCount = UIPacket.textCount;
 
@@ -664,14 +653,12 @@ bool GameRender(SGame* game_instance, SRenderPacket* packet, float delta_time) {
 	return true;
 }
 
-void GameOnResize(SGame* game_instance, unsigned int width, unsigned int height) {
-	SGameState* State = (SGameState*)game_instance->state;
+void GameInstance::OnResize(unsigned int width, unsigned int height) {
+	Width = width;
+	Height = height;
 
-	State->Width = width;
-	State->Height = height;
-
-	State->TestText.SetPosition(Vec3(180, (float)height - 150, 0));
-	State->TestSysText.SetPosition(Vec3(100, (float)height - 400, 0));
+	TestText.SetPosition(Vec3(180, (float)height - 150, 0));
+	TestSysText.SetPosition(Vec3(100, (float)height - 400, 0));
 
 	// TODO: Temp
 	SGeometryConfig UIConfig;
@@ -682,7 +669,7 @@ void GameOnResize(SGame* game_instance, unsigned int width, unsigned int height)
 	strncpy(UIConfig.material_name, "Material.UI", MATERIAL_NAME_MAX_LENGTH);
 	strncpy(UIConfig.name, "Material.UI", MATERIAL_NAME_MAX_LENGTH);
 
-	const float h = State->Height / 3.0f;
+	const float h = Height / 3.0f;
 	const float w = h * 200.0f / 470.0f;
 	const float x = 0.0f;
 	const float y = 0.0f;
@@ -714,7 +701,7 @@ void GameOnResize(SGame* game_instance, unsigned int width, unsigned int height)
 	uint32_t UIIndices[6] = { 0, 2, 1, 0, 1, 3 };
 	UIConfig.indices = UIIndices;
 
-	State->UIMeshes[0].geometries[0] = GeometrySystem::AcquireFromConfig(UIConfig, true);
+	UIMeshes[0].geometries[0] = GeometrySystem::AcquireFromConfig(UIConfig, true);
 }
 
 bool ConfigureRenderviews(SApplicationConfig* config) {

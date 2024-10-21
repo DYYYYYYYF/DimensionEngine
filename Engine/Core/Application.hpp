@@ -5,7 +5,7 @@
 #include "Systems/FontSystem.hpp"
 #include "Renderer/Interface/IRenderView.hpp"
 
-struct SGame;
+class IGame;
 struct SEventContext;
 
 struct SApplicationConfig {
@@ -20,7 +20,7 @@ struct SApplicationConfig {
 	std::vector<RenderViewConfig> Renderviews;
 };
 
-DAPI bool ApplicationCreate(struct SGame* game_instance);
+DAPI bool ApplicationCreate(IGame* game_instance);
 DAPI bool ApplicationRun();
 
 void GetFramebufferSize(unsigned int* width, unsigned int* height);

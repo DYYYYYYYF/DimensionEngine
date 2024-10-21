@@ -6,7 +6,7 @@
 // Init logger
 static EngineLogger* GlobalLogger = new EngineLogger();
 
-extern bool CreateGame(SGame* out_game);
+extern bool CreateGame(IGame* out_game);
 
 int main(void) {
 
@@ -15,20 +15,13 @@ int main(void) {
         return 0;
     }
 
-	SGame GameInstance;
-	if (!CreateGame(&GameInstance)) {
+	IGame* GameInst = new GameInstance();
+	if (!CreateGame(GameInst)) {
 		LOG_FATAL("Could not Create Game!");
 		return -1;
 	}
 
-    if (!GameInstance.render || !GameInstance.update || !GameInstance.initialize || !GameInstance.on_resize) {
-        LOG_FATAL("Game's function pointers must be assigned!");
-        return -2;
-    }
-
-
-
-    if (!ApplicationCreate(&GameInstance)) {
+    if (!ApplicationCreate(GameInst)) {
         LOG_INFO("Application create failed!");
         return 1;
     }

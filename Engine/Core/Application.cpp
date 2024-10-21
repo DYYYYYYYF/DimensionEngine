@@ -29,7 +29,7 @@
 
 struct SApplicationState {
 	// Instance
-	SGame* game_instance = nullptr;
+	IGame* game_instance = nullptr;
 	SPlatformState platform;
 
 	// Run
@@ -47,7 +47,7 @@ struct SApplicationState {
 static SApplicationState AppState;
 static bool Initialized = false;
 
-bool ApplicationCreate(SGame* game_instance){
+bool ApplicationCreate(IGame* game_instance){
 	if (Initialized) {
 		LOG_ERROR("Create application more than once!");
 		return false;
@@ -173,7 +173,7 @@ bool ApplicationCreate(SGame* game_instance){
 	}
 
 	// Perform the game's boot sequence.
-	if (!game_instance->boot(game_instance, Renderer)) {
+	if (!game_instance->Boot(Renderer)) {
 		LOG_FATAL("Game boot sequence failed!");
 		return false;
 	}
@@ -235,12 +235,12 @@ bool ApplicationCreate(SGame* game_instance){
 	}
 
 	// Init Game
-	if (!AppState.game_instance->initialize(AppState.game_instance)) {
+	if (!AppState.game_instance->Initialize()) {
 		LOG_FATAL("Game failed to initialize!");
 		return false;
 	}
 
-	AppState.game_instance->on_resize(AppState.game_instance, AppState.width, AppState.height);
+	AppState.game_instance->OnResize(AppState.width, AppState.height);
 	Renderer->OnResize(AppState.width, AppState.height);
 
 	Initialized = true;
@@ -275,7 +275,7 @@ bool ApplicationRun() {
 			// Update metrics.
 			Metrics::Update(FrameElapsedTime);
 
-			if (!AppState.game_instance->update(AppState.game_instance, (float)DeltaTime)) {
+			if (!AppState.game_instance->Update((float)DeltaTime)) {
 				LOG_FATAL("Game update failed!");
 				AppState.is_running = false;
 				break;
@@ -286,7 +286,7 @@ bool ApplicationRun() {
 			Packet.delta_time = DeltaTime;
 
 			// Call the game's render routine.
-			if (!AppState.game_instance->render(AppState.game_instance, &Packet, (float)DeltaTime)) {
+			if (!AppState.game_instance->Render(&Packet, (float)DeltaTime)) {
 				LOG_FATAL("Game render faield. shutting down.");
 				AppState.is_running = false;
 				break;
@@ -324,7 +324,7 @@ bool ApplicationRun() {
 	AppState.is_running = false;
 
 	// Shut down the game.
-	AppState.game_instance->shutdown(AppState.game_instance);
+	AppState.game_instance->Shutdown();
 
 	// Shutdown event system
 	Core::EventUnregister(Core::eEvent_Code_Application_Quit, 0, ApplicationOnEvent);
@@ -390,7 +390,7 @@ bool ApplicationOnResized(unsigned short code, void* sender, void* listener_inst
 					AppState.is_suspended = false;
 				}
 
-				AppState.game_instance->on_resize(AppState.game_instance, Width, Height);
+				AppState.game_instance->OnResize(Width, Height);
 				Renderer->OnResize(Width, Height);
 
 				return true;
