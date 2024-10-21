@@ -248,7 +248,7 @@ static const NSRange kEmptyRange = { NSNotFound, 0 };
 	state_ptr->quit_flagged = true;
 
 	SEventContext Data = {};
-	Core::EventFire(Core::eEvent_Code_Application_Quit, 0, Data);
+	EngineEvent::Fire(eEventCode::eEvent_Code_Application_Quit, 0, Data);
 
 	return YES;
 }
@@ -263,7 +263,7 @@ static const NSRange kEmptyRange = { NSNotFound, 0 };
 
 	Context.data.u16[0] = (unsigned short)newDrawableSize.width;
 	Context.data.u16[1] = (unsigned short)newDrawableSize.height;
-	Core::EventFire(Core::eEvent_Code_Resize, 0, Context);
+	EngineEvent::Fire(eEventCode::Resize, 0, Context);
 }
 
 
@@ -277,7 +277,7 @@ static const NSRange kEmptyRange = { NSNotFound, 0 };
 
     Context.data.u16[0] = (unsigned short)newDrawableSize.width;
     Context.data.u16[1] = (unsigned short)newDrawableSize.height;
-    Core::EventFire(Core::eEvent_Code_Resize, 0, Context);
+    EngineEvent::Fire(eEventCode::Resize, 0, Context);
 }
 
 - (void)windowDidMiniaturize:(NSNotification*)notification {
@@ -287,7 +287,7 @@ static const NSRange kEmptyRange = { NSNotFound, 0 };
 	SEventContext Context;
 	Context.data.u16[0] = 0;
 	Context.data.u16[1] = 0;
-	Core::EventFire(Core::eEvent_Code_Resize, 0, Context);
+	EngineEvent::Fire(eEventCode::Resize, 0, Context);
 
 	[state_ptr->window miniaturize : nil] ;
 }
@@ -303,7 +303,7 @@ static const NSRange kEmptyRange = { NSNotFound, 0 };
 
 	Context.data.u16[0] = (unsigned short)newDrawableSize.width;
 	Context.data.u16[1] = (unsigned short)newDrawableSize.height;
-	Core::EventFire(Core::eEvent_Code_Resize, 0, Context);
+	EngineEvent::Fire(eEventCode::Resize, 0, Context);
 
 	[state_ptr->window deminiaturize : nil] ;
 }
@@ -406,7 +406,7 @@ bool Platform::PlatformStartup(SPlatformState* platform_state, const char* appli
 	SEventContext context;
 	context.data.u16[0] = (unsigned short)state_ptr->layer.drawableSize.width;
 	context.data.u16[1] = (unsigned short)state_ptr->layer.drawableSize.height;
-	Core::EventFire(Core::eEvent_Code_Resize, 0, context);
+	EngineEvent::Fire(eEventCode::Resize, 0, context);
 
 	return true;
 

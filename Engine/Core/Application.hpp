@@ -27,7 +27,7 @@ public:
 public:
 	DAPI Application() : GameInst(nullptr) {}
 	DAPI Application(IGame* gameInstance) { GameInst = gameInstance; }
-	~Application() {};
+	virtual ~Application() {};
 
 public:
 	DAPI bool Initialize();

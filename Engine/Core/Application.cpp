@@ -344,6 +344,7 @@ bool Application::OnEvent(eEventCode code, void* sender, void* listener_instance
 		is_running = false;
 		return true;
 	}
+        default: break;
 	}	// Switch
 
 	return false;

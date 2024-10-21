@@ -30,6 +30,7 @@ static bool RenderViewSkyboxOnEvent(eEventCode code, void* sender, void* listene
 	case eEventCode::eEvent_Code_Default_Rendertarget_Refresh_Required:
 		RenderViewSystem::RegenerateRendertargets(self);
 		return false;
+    default: break;
 	}
 
 	return false;

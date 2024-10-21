@@ -24,20 +24,21 @@ bool GameOnEvent(eEventCode code, void* sender, void* listender_inst, SEventCont
 
 	switch (code)
 	{
-	case eEventCode::eEvent_Code_Object_Hover_ID_Changed: 
-	{
-		GameInst->HoveredObjectID = context.data.u32[0];
-		return true;
-	}break;
-	case eEventCode::eEvent_Code_Reload_Shader_Module:
-	{
-		for (uint32_t i = 0; i < 10; ++i) {
-			if (GameInst->Meshes[i].Generation != INVALID_ID_U8) {
-				GameInst->Meshes[i].ReloadMaterial();
-			}
-		}
-	}
-	}
+        case eEventCode::eEvent_Code_Object_Hover_ID_Changed: 
+        {
+            GameInst->HoveredObjectID = context.data.u32[0];
+            return true;
+        }break;
+        case eEventCode::eEvent_Code_Reload_Shader_Module:
+        {
+            for (uint32_t i = 0; i < 10; ++i) {
+                if (GameInst->Meshes[i].Generation != INVALID_ID_U8) {
+                    GameInst->Meshes[i].ReloadMaterial();
+                }
+            }
+        }
+        default: return true;
+    }
 
 	return false;
 }

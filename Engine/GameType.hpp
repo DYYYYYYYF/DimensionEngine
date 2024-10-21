@@ -12,6 +12,7 @@ private:
 	};
 
 public:
+    virtual ~IGame(){}
 	virtual bool Boot(IRenderer* renderer) = 0;
 	virtual void Shutdown() = 0;
 

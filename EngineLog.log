@@ -1,0 +1,71 @@
+[INFO]:	Logger Init Success.
+[INFO]:	Mode: Debug.
+[INFO]:	Input system initialized.
+[INFO]:	Loader registered.
+[INFO]:	Loader registered.
+[INFO]:	Loader registered.
+[INFO]:	Loader registered.
+[INFO]:	Loader registered.
+[INFO]:	Loader registered.
+[INFO]:	Loader registered.
+[INFO]:	Resource system initialize with base path: '../../Assets'.
+[INFO]:	Available threads: 7.
+[INFO]:	Main thread id is: 0xe731d300.
+[INFO]:	Starting job thread #0 (id=0x6ff8f000, type=0x8).
+[INFO]:	Starting job thread #1 (id=0x7001b000, type=0x4).
+[INFO]:	Starting job thread #2 (id=0x700a7000, type=0x2).
+[INFO]:	Starting job thread #3 (id=0x70133000, type=0x2).
+[INFO]:	Starting job thread #5 (id=0x7024b000, type=0x2).
+[INFO]:	Starting job thread #6 (id=0x702d7000, type=0x2).
+[INFO]:	Starting job thread #4 (id=0x701bf000, type=0x2).
+[INFO]:	Starting job thread #4 (id=0x701bf000, type=0x2).
+[INFO]:	Starting job thread #4 (id=0x701bf000, type=0x2).
+[INFO]:	Creating vulkan surface...
+[INFO]:	Vulkan surface created.
+[INFO]:	Creating vulkan device...
+[INFO]:	Graphics | Present | Compute | Transfer | Name
+[INFO]:	    1    |    1    |    1    |    1     | Apple M1
+[INFO]:	Selected device: Apple M1
+[INFO]:	GPU type is Integrated.
+[INFO]:	GOU Driver version: 0.2.1917
+[INFO]:	Vulkan API version: 1.1.211
+[INFO]:	Local GPU memory: 8.00 Gib.
+[INFO]:	Creating logical device...
+[INFO]:	Created logical device.
+[INFO]:	Queues obtained.
+[INFO]:	Created graphics command pool.
+[INFO]:	Vulkan device created.
+[INFO]:	Create swapchain successful.
+[INFO]:	Vulkan command buffers created.
+[INFO]:	VulkanBackend::CreateRenderbuffer(): Success allocated memory 134217728 bytes. Enable freelist: true
+[INFO]:	VulkanBackend::CreateRenderbuffer(): Success allocated memory 8388608 bytes. Enable freelist: true
+[INFO]:	Create vulkan instance succeed.
+[INFO]:	Booting...
+[INFO]:	Createing default texture...
+[INFO]:	Default diffuse texture created.
+[INFO]:	Creating default specular texture...
+[INFO]:	Default specular texture created.
+[INFO]:	Creating default normal texture...
+[INFO]:	Default normal texture created.
+[ERROR]:	Unable to find bit map font of supported type called: 'UbuntuMono21px'.
+[ERROR]:	Failed to load bitmap font.
+[ERROR]:	Failed to load bitmap font: Ubuntu Mono 21px.
+[ERROR]:	Unable to find system font of supported type called: 'NotoSansCJK'.
+[ERROR]:	Failed to load system font.
+[ERROR]:	Failed to load system font: Noto Sans.
+[ERROR]:	Error opening file: ../../Assets/Shaders/Shader.Builtin.Skybox.scfg
+[ERROR]:	Shader loader load. Unable to open file for binary reading: '../../Assets/Shaders/Shader.Builtin.Skybox.scfg'.
+[ERROR]:	Failed to load builtin skybox shader.
+[ERROR]:	Error opening file: ../../Assets/Shaders/Shader.Builtin.World.scfg
+[ERROR]:	Shader loader load. Unable to open file for binary reading: '../../Assets/Shaders/Shader.Builtin.World.scfg'.
+[ERROR]:	Failed to load builtin skybox shader.
+[ERROR]:	Error opening file: ../../Assets/Shaders/Shader.Builtin.UI.scfg
+[ERROR]:	Shader loader load. Unable to open file for binary reading: '../../Assets/Shaders/Shader.Builtin.UI.scfg'.
+[ERROR]:	Failed to load builtin UI shader.
+[ERROR]:	Error opening file: ../../Assets/Shaders/Shader.Builtin.UIPick.scfg
+[ERROR]:	Shader loader load. Unable to open file for binary reading: '../../Assets/Shaders/Shader.Builtin.UIPick.scfg'.
+[ERROR]:	Failed to load builtin UI Pick shader.
+[FATAL]:	Shader.Builtin.World shader is nullptr.
+[FATAL]:	Create default material failed. Application quit now!
+[FATAL]:	Material system failed to initialize!
+[INFO]:	Application create failed!

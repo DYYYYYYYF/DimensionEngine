@@ -62,8 +62,7 @@ static bool RenderViewWorldOnEvent(eEventCode code, void* sender, void* listener
 		}
 		return true;
 	}
-	
-		return true;
+        default: return true;
 	}	// switch
 
 
