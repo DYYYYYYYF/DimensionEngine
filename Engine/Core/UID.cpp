@@ -16,20 +16,16 @@ UID::UID() {
 	// uses random number.
 	// TODO: Implement a real UID generator.
 	static char v[] = { '0','1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
-	char s[37];
 	for (int i = 0; i < 36; i++) {
 		if (i == 8 || i == 13 || i == 18 || i == 23) {
 			// Put a dash
-			s[i] = '-';
+			Value.append("-");
 		}
 		else {
 			int offset = DRandom(0, INT_MAX) % 16;
-			s[i] = v[offset];
+			Value += v[offset];
 		}
 	}
-
-	s[36] = '\0';
-	Value = s;
 #endif
 }
 

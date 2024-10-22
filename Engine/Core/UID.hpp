@@ -1,12 +1,12 @@
 #pragma  once
 
 #include "Defines.hpp"
-#include "Containers/TString.hpp"
+#include <string>
 
 class UID {
 public:
 	UID();
 	static void Seed(size_t seed);
 
-	String Value;
+	std::string Value;
 };
