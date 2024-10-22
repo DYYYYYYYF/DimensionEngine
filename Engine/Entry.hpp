@@ -15,27 +15,22 @@ int main(void) {
         return 0;
     }
 
-	//IGame* GameInst = new GameInstance();
-	IGame* GameInst = (IGame*)Memory::Allocate(sizeof(GameInstance), eMemory_Type_Game);
+    IGame* GameInst = NewObject<GameInstance>();
     if (GameInst == nullptr) {
 		LOG_FATAL("Could not allocate memory for Game!");
 		return -2;
     }
-    GameInst = new (GameInst)GameInstance();
-    ASSERT(GameInst);
 
 	if (!CreateGame(GameInst)) {
 		LOG_FATAL("Could not Create Game!");
 		return -1;
 	}
 
-	Application* App = (Application*)Memory::Allocate(sizeof(Application), eMemory_Type_Application);
+    Application* App = NewObject<Application>(GameInst);
 	if (App == nullptr) {
 		LOG_FATAL("Could not allocate memory for Application!");
 		return 0;
 	}
-    App = new (App)Application(GameInst);
-    ASSERT(App);
 
     if (!App->Initialize()) {
 		LOG_INFO("Application did not initialize gracefully!");
@@ -48,11 +43,11 @@ int main(void) {
     }
 
     if (App) {
-        Memory::Free(App, sizeof(Application), eMemory_Type_Application);
+        DeleteObject(App);
     }
 
     if (GameInst) {
-        Memory::Free(GameInst, sizeof(GameInstance), eMemory_Type_Game);
+        DeleteObject(GameInst);
     }
 
     Memory::Shutdown();

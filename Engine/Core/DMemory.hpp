@@ -113,3 +113,13 @@ T* NewObject(Args ... args) {
 
 	return new(_NewObject)T(args...);
 }
+
+template<typename T, typename ... Args>
+void DeleteObject(T* Obj, Args ... args) {
+	if (Obj == nullptr) {
+		return;
+	}
+
+	Obj->~T();
+	Memory::Free(Obj, sizeof(T), MemoryType::eMemory_Type_Entity);
+}
