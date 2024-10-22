@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Defines.hpp"
-
+#include "EngineLogger.hpp"
 #include "DMutex.hpp"
 #include "Memory/DynamicAllocator.h"
 
@@ -111,5 +111,5 @@ T* NewObject(Args ... args) {
 		return nullptr;
 	}
 
-	return new(_NewObject)(args...);
+	return new(_NewObject)T(args...);
 }

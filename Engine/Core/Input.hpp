@@ -143,8 +143,7 @@ enum class eKeys : unsigned int{
 	DEFINE_KEY(Backslash, eKeys::Pipe),
 	DEFINE_KEY(Rbracket, 0xDD),
 
-	eKeys_Max
-
+	Max = 0xff
 };
 
 class Controller {

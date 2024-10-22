@@ -52,7 +52,7 @@ enum MacOSModifierKeys {
 };
 
 // Key translation
-enum Keys TranslateKeyCode(uint32_t ns_keycode);
+enum class eKeys TranslateKeyCode(uint32_t ns_keycode);
 // Modifier key handling
 void HandleModifierKeys(uint32_t ns_keycode, uint32_t modifier_flags, SInternalState* state_ptr);
 
@@ -104,7 +104,7 @@ void HandleModifierKeys(uint32_t ns_keycode, uint32_t modifier_flags, SInternalS
 }
 
 - (void)mouseDown:(NSEvent*)event{
-  Core::InputProcessButton(eButton_Left, true);
+    Controller::ProcessButton(eButtons::Left, true);
 }
 
 - (void)mouseDragged : (NSEvent*)event {
@@ -113,7 +113,7 @@ void HandleModifierKeys(uint32_t ns_keycode, uint32_t modifier_flags, SInternalS
 }
 
 - (void)mouseUp : (NSEvent*)event {
-  Core::InputProcessButton(eButton_Left, false);
+    Controller::ProcessButton(eButtons::Left, false);
 }
 
 - (void)mouseMoved : (NSEvent*)event {
@@ -125,11 +125,11 @@ void HandleModifierKeys(uint32_t ns_keycode, uint32_t modifier_flags, SInternalS
     NSSize WindowSize = state_ptr->layer.drawableSize;
     unsigned short x = pos.x * state_ptr->layer.contentsScale;
     unsigned short y = WindowSize.height - (pos.y * state_ptr->layer.contentsScale);
-    Core::InputProcessMouseMove(x, y);
+    Controller::ProcessMouseMove(x, y);
 }
 
 - (void)rightMouseDown : (NSEvent*)event {
-  Core::InputProcessButton(eButton_Right, true);
+    Controller::ProcessButton(eButtons::Right, true);
 }
 
 - (void)rightMouseDragged : (NSEvent*)event {
@@ -138,11 +138,11 @@ void HandleModifierKeys(uint32_t ns_keycode, uint32_t modifier_flags, SInternalS
 }
 
 - (void)rightMouseUp : (NSEvent*)event {
-  Core::InputProcessButton(eButton_Right, false);
+    Controller::ProcessButton(eButtons::Right, false);
 }
 
 - (void)otherMouseDown : (NSEvent*)event {
-  Core::InputProcessButton(eButton_Middle, true);
+    Controller::ProcessButton(eButtons::Middle, true);
 }
 
 - (void)otherMouseDragged : (NSEvent*)event {
@@ -151,27 +151,27 @@ void HandleModifierKeys(uint32_t ns_keycode, uint32_t modifier_flags, SInternalS
 }
 
 - (void)otherMouseUp : (NSEvent*)event {
-  Core::InputProcessButton(eButton_Middle, false);
+    Controller::ProcessButton(eButtons::Middle, false);
 }
 
 // Handle modifier keys since they are only registered via modifier flags
 - (void)flagsChanged : (NSEvent*)event {
-  // TODO: Should get SInternalState point and pass here.
-  HandleModifierKeys([event keyCode], (uint32_t)[event modifierFlags], nullptr);
+    // TODO: Should get SInternalState point and pass here.
+    HandleModifierKeys([event keyCode], (uint32_t)[event modifierFlags], nullptr);
 }
 
 - (void)keyDown : (NSEvent*)event {
-	enum Keys key = TranslateKeyCode((uint32_t)[event keyCode]);
-  Core::InputProcessKey(key, true);
+    eKeys key = TranslateKeyCode((uint32_t)[event keyCode]);
+    Controller::ProcessKey(key, true);
 }
 
 - (void)keyUp : (NSEvent*)event {
-	enum Keys key = TranslateKeyCode((uint32_t)[event keyCode]);
-    Core::InputProcessKey(key, false);
+    eKeys key = TranslateKeyCode((uint32_t)[event keyCode]);
+    Controller::ProcessKey(key, false);
 }
 
 - (void)scrollWheel : (NSEvent*)event {
-  Core::InputProcessMouseWheel((char)[event scrollingDeltaY]);
+    Controller::ProcessMouseWheel((char)[event scrollingDeltaY]);
 }
 
 
@@ -184,7 +184,7 @@ void HandleModifierKeys(uint32_t ns_keycode, uint32_t modifier_flags, SInternalS
 // Defines a constant for empty ranges in NSTextInputClient
 static const NSRange kEmptyRange = { NSNotFound, 0 };
 
--(NSRange)selectedRange { return kEmptyRange; }
+- (NSRange)selectedRange { return kEmptyRange; }
 
 - (NSRange)markedRange { return kEmptyRange; }
 
@@ -248,7 +248,7 @@ static const NSRange kEmptyRange = { NSNotFound, 0 };
 	state_ptr->quit_flagged = true;
 
 	SEventContext Data = {};
-	EngineEvent::Fire(eEventCode::eEvent_Code_Application_Quit, 0, Data);
+	EngineEvent::Fire(eEventCode::Application_Quit, 0, Data);
 
 	return YES;
 }
@@ -772,30 +772,30 @@ bool Mutex::UnLock() {
 
 // NOTE: End mutexs.
 
-Keys TranslateKeyCode(uint32_t ns_keycode) {
+enum class eKeys TranslateKeyCode(uint32_t ns_keycode) {
 	// https://boredzo.org/blog/wp-content/uploads/2007/05/IMTx-virtual-keycodes.pdf
 	// https://learn.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes
 	switch (ns_keycode) {
 	case 0x52:
-		return eKeys_Numpad_0;
+		return eKeys::Numpad_0;
 	case 0x53:
-		return eKeys_Numpad_1;
+		return eKeys::Numpad_1;
 	case 0x54:
-		return eKeys_Numpad_2;
+		return eKeys::Numpad_2;
 	case 0x55:
-		return eKeys_Numpad_3;
+		return eKeys::Numpad_3;
 	case 0x56:
-		return eKeys_Numpad_4;
+		return eKeys::Numpad_4;
 	case 0x57:
-		return eKeys_Numpad_5;
+		return eKeys::Numpad_5;
 	case 0x58:
-		return eKeys_Numpad_6;
+		return eKeys::Numpad_6;
 	case 0x59:
-		return eKeys_Numpad_7;
+		return eKeys::Numpad_7;
 	case 0x5B:
-		return eKeys_Numpad_8;
+		return eKeys::Numpad_8;
 	case 0x5C:
-		return eKeys_Numpad_9;
+		return eKeys::Numpad_9;
 
 /*
 	case 0x12:
@@ -821,185 +821,185 @@ Keys TranslateKeyCode(uint32_t ns_keycode) {
 */
 
 	case 0x00:
-		return eKeys_A;
+		return eKeys::A;
 	case 0x0B:
-		return eKeys_B;
+		return eKeys::B;
 	case 0x08:
-		return eKeys_C;
+		return eKeys::C;
 	case 0x02:
-		return eKeys_D;
+		return eKeys::D;
 	case 0x0E:
-		return eKeys_E;
+		return eKeys::E;
 	case 0x03:
-		return eKeys_F;
+		return eKeys::F;
 	case 0x05:
-		return eKeys_G;
+		return eKeys::G;
 	case 0x04:
-		return eKeys_H;
+		return eKeys::H;
 	case 0x22:
-		return eKeys_I;
+		return eKeys::I;
 	case 0x26:
-		return eKeys_J;
+		return eKeys::J;
 	case 0x28:
-		return eKeys_K;
+		return eKeys::K;
 	case 0x25:
-		return eKeys_L;
+		return eKeys::L;
 	case 0x2E:
-		return eKeys_I;
+		return eKeys::I;
 	case 0x2D:
-		return eKeys_N;
+		return eKeys::N;
 	case 0x1F:
-		return eKeys_O;
+		return eKeys::O;
 	case 0x23:
-		return eKeys_P;
+		return eKeys::P;
 	case 0x0C:
-		return eKeys_Q;
+		return eKeys::Q;
 	case 0x0F:
-		return eKeys_R;
+		return eKeys::R;
 	case 0x01:
-		return eKeys_S;
+		return eKeys::S;
 	case 0x11:
-		return eKeys_T;
+		return eKeys::T;
 	case 0x20:
-		return eKeys_U;
+		return eKeys::U;
 	case 0x09:
-		return eKeys_V;
+		return eKeys::V;
 	case 0x0D:
-		return eKeys_W;
+		return eKeys::W;
 	case 0x07:
-		return eKeys_X;
+		return eKeys::X;
 	case 0x10:
-		return eKeys_Y;
+		return eKeys::Y;
 	case 0x06:
-		return eKeys_Z;
+		return eKeys::Z;
 
 	case 0x27:
-		return eKeys_Apostrophe;
+		return eKeys::Apostrophe;
 	case 0x2A:
-		return eKeys_Backslash;
+		return eKeys::Backslash;
 	case 0x2B:
-		return eKeys_Comma;
+		return eKeys::Comma;
 	case 0x18:
-		return eKeys_Equal; // Equal/Plus
+		return eKeys::Equal; // Equal/Plus
 	case 0x32:
-		return eKeys_Grave;
+		return eKeys::Grave;
 	case 0x21:
-		return eKeys_LBracket;
+		return eKeys::LBracket;
 	case 0x1B:
-		return eKeys_Minus;
+		return eKeys::Minus;
 	case 0x2F:
-		return eKeys_Period;
+		return eKeys::Period;
 	case 0x1E:
-		return eKeys_Rbracket;
+		return eKeys::Rbracket;
 	case 0x29:
-		return eKeys_Semicolon;
+		return eKeys::Semicolon;
 	case 0x2C:
-		return eKeys_Slash;
+		return eKeys::Slash;
 	case 0x0A:
-		return eKeys_Max; // ?
+		return eKeys::Max; // ?
 
 	case 0x33:
-		return eKeys_BackSpace;
+		return eKeys::BackSpace;
 	case 0x39:
-		return eKeys_Capital;
+		return eKeys::Capital;
 	case 0x75:
-		return eKeys_DELETE;
+		return eKeys::DELETE;
 	case 0x7D:
-		return eKeys_Down;
+		return eKeys::Down;
 	case 0x77:
-		return eKeys_End;
+		return eKeys::End;
 	case 0x24:
-		return eKeys_Enter;
+		return eKeys::Enter;
 	case 0x35:
-		return eKeys_Escape;
+		return eKeys::Escape;
 	case 0x7A:
-		return eKeys_F1;
+		return eKeys::F1;
 	case 0x78:
-		return eKeys_F2;
+		return eKeys::F2;
 	case 0x63:
-		return eKeys_F3;
+		return eKeys::F3;
 	case 0x76:
-		return eKeys_F4;
+		return eKeys::F4;
 	case 0x60:
-		return eKeys_F5;
+		return eKeys::F5;
 	case 0x61:
-		return eKeys_F6;
+		return eKeys::F6;
 	case 0x62:
-		return eKeys_F7;
+		return eKeys::F7;
 	case 0x64:
-		return eKeys_F8;
+		return eKeys::F8;
 	case 0x65:
-		return eKeys_F9;
+		return eKeys::F9;
 	case 0x6D:
-		return eKeys_F10;
+		return eKeys::F10;
 	case 0x67:
-		return eKeys_F11;
+		return eKeys::F11;
 	case 0x6F:
-		return eKeys_F12;
+		return eKeys::F12;
 	case 0x69:
-		return eKeys_Print;
+		return eKeys::Print;
 	case 0x6B:
-		return eKeys_F14;
+		return eKeys::F14;
 	case 0x71:
-		return eKeys_F15;
+		return eKeys::F15;
 	case 0x6A:
-		return eKeys_F16;
+		return eKeys::F16;
 	case 0x40:
-		return eKeys_F17;
+		return eKeys::F17;
 	case 0x4F:
-		return eKeys_F18;
+		return eKeys::F18;
 	case 0x50:
-		return eKeys_F19;
+		return eKeys::F19;
 	case 0x5A:
-		return eKeys_F20;
+		return eKeys::F20;
 	case 0x73:
-		return eKeys_Home;
+		return eKeys::Home;
 	case 0x72:
-		return eKeys_Insert;
+		return eKeys::Insert;
 	case 0x7B:
-		return eKeys_Left;
+		return eKeys::Left;
 	case 0x3B:
-		return eKeys_LControl;
+		return eKeys::LControl;
 	case 0x38:
-		return eKeys_LShift;
+		return eKeys::LShift;
 	case 0x37:
-		return eKeys_LSuper;
+		return eKeys::LSuper;
 	case 0x6E:
-		return eKeys_Max; // Menu
+		return eKeys::Max; // Menu
 	case 0x79:
-		return eKeys_Max; // Page down
+		return eKeys::Max; // Page down
 	case 0x74:
-		return eKeys_Max; // Page up
+		return eKeys::Max; // Page up
 	case 0x7C:
-		return eKeys_Right;
+		return eKeys::Right;
 	case 0x3E:
-		return eKeys_RControl;
+		return eKeys::RControl;
 	case 0x3C:
-		return eKeys_RShift;
+		return eKeys::RShift;
 	case 0x36:
-		return eKeys_RSuper;
+		return eKeys::RSuper;
 	case 0x31:
-		return eKeys_Space;
+		return eKeys::Space;
 	case 0x30:
-		return eKeys_Tab;
+		return eKeys::Tab;
 	case 0x7E:
-		return eKeys_Up;
+		return eKeys::Up;
 
 	case 0x45:
-		return eKeys_Numpad_Add;
+		return eKeys::Numpad_Add;
 	case 0x4B:
-		return eKeys_Numpad_Divide;
+		return eKeys::Numpad_Divide;
 	case 0x4C:
-		return eKeys_Enter;
+		return eKeys::Enter;
 	case 0x51:
-		return eKeys_Numpad_Equal;
+		return eKeys::Numpad_Equal;
 	case 0x43:
-		return eKeys_Numpad_Mutiply;
+		return eKeys::Numpad_Mutiply;
 	case 0x4E:
-		return eKeys_Numpad_Subtract;
+		return eKeys::Numpad_Subtract;
 
 	default:
-		return eKeys_Max;
+		return eKeys::Max;
 	}
 }
 
@@ -1033,7 +1033,7 @@ static void HandleModifierKey(
 			//if (!(state_ptr->modifier_key_states & l_mod)) {
 			//	state_ptr->modifier_key_states |= l_mod;
 				// Report the keypress
-				Core::InputProcessKey(Keys(k_l_keycode), true);
+                Controller::ProcessKey(eKeys(k_l_keycode), true);
 			//}
 		}
 
@@ -1042,7 +1042,7 @@ static void HandleModifierKey(
 			//if (!(state_ptr->modifier_key_states & r_mod)) {
 			//	state_ptr->modifier_key_states |= r_mod;
 				// Report the keypress
-				Core::InputProcessKey(Keys(k_r_keycode), true);
+                Controller::ProcessKey(eKeys(k_r_keycode), true);
 			//}
 		}
 	}
@@ -1051,7 +1051,7 @@ static void HandleModifierKey(
 			//if (state_ptr->modifier_key_states & l_mod) {
 			//	state_ptr->modifier_key_states &= ~(l_mod);
 				// Report the release.
-				Core::InputProcessKey(Keys(k_l_keycode), false);
+                Controller::ProcessKey(eKeys(k_l_keycode), false);
 			//}
 		}
 
@@ -1059,7 +1059,7 @@ static void HandleModifierKey(
 			//if (state_ptr->modifier_key_states & r_mod) {
 			//	state_ptr->modifier_key_states &= ~(r_mod);
 				// Report the release.
-				Core::InputProcessKey(Keys(k_r_keycode), false);
+                Controller::ProcessKey(eKeys(k_r_keycode), false);
 			//}
 		}
 	}
@@ -1072,8 +1072,8 @@ void HandleModifierKeys(uint32_t ns_keycode, uint32_t modifier_flags, SInternalS
 		NSEventModifierFlagShift,
 		0x38,
 		0x3C,
-		eKeys_LShift,
-		eKeys_RShift,
+        (unsigned int)eKeys::LShift,
+        (unsigned int)eKeys::RShift,
 		modifier_flags,
 		eMacOS_Modifier_Key_LShift,
 		eMacOS_Modifier_Key_RShift,
@@ -1088,11 +1088,11 @@ void HandleModifierKeys(uint32_t ns_keycode, uint32_t modifier_flags, SInternalS
 		NSEventModifierFlagControl,
 		0x3B,
 		0x3E,
-		eKeys_LControl,
-		eKeys_RControl,
+        (unsigned int)eKeys::LControl,
+        (unsigned int)eKeys::RControl,
 		modifier_flags,
-    eMacOS_Modifier_Key_LCtrl,
-    eMacOS_Modifier_Key_RCtrl,
+        eMacOS_Modifier_Key_LCtrl,
+        eMacOS_Modifier_Key_RCtrl,
 		MACOS_LCTRL_MASK,
 		MACOS_RCTRL_MASK, state_ptr);
 
@@ -1118,11 +1118,11 @@ void HandleModifierKeys(uint32_t ns_keycode, uint32_t modifier_flags, SInternalS
 		NSEventModifierFlagCommand,
 		0x37,
 		0x36,
-		eKeys_LSuper,
-		eKeys_RSuper,
+		(unsigned int)eKeys::LSuper,
+        (unsigned int)eKeys::RSuper,
 		modifier_flags,
-    eMacOS_Modifier_Key_LCommand,
-    eMacOS_Modifier_Key_RCommand,
+        eMacOS_Modifier_Key_LCommand,
+        eMacOS_Modifier_Key_RCommand,
 		MACOS_LCOMMAND_MASK,
 		MACOS_RCOMMAND_MASK, state_ptr);
 
@@ -1131,12 +1131,12 @@ void HandleModifierKeys(uint32_t ns_keycode, uint32_t modifier_flags, SInternalS
 		if (modifier_flags & NSEventModifierFlagCapsLock) {
 			// Report as a keypress. This notifies the system
 			// that caps lock has been turned on.
-			Core::InputProcessKey(eKeys_Capital, true);
+            Controller::ProcessKey(eKeys::Capital, true);
 		}
 		else {
 			// Report as a release. This notifies the system
 			// that caps lock has been turned off.
-			Core::InputProcessKey(eKeys_Capital, false);
+			Controller::ProcessKey(eKeys::Capital, false);
 		}
 	}
 }
