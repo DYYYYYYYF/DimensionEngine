@@ -36,7 +36,7 @@ void Controller::ProcessKey(eKeys key, bool pressed) {
 
 		SEventContext context;
 		context.data.u16[0] = (unsigned int)key;
-		EngineEvent::Fire(pressed ? eEventCode::eEvent_Code_Key_Pressed : eEventCode::eEvent_Code_Key_Released, 0, context);
+		EngineEvent::Fire(pressed ? eEventCode::Key_Pressed : eEventCode::Key_Released, 0, context);
 	}
 }
 
@@ -46,7 +46,7 @@ void Controller::ProcessButton(eButtons button, bool pressed) {
 
 		SEventContext context;
 		context.data.u16[0] = (unsigned int)button;
-		EngineEvent::Fire(pressed ? eEventCode::eEvent_Code_Button_Pressed : eEventCode::eEvent_Code_Button_Released, 0, context);
+		EngineEvent::Fire(pressed ? eEventCode::Button_Pressed : eEventCode::Button_Released, 0, context);
 	}
 }
 
@@ -60,7 +60,7 @@ void Controller::ProcessMouseMove(short x, short y) {
 		SEventContext context;
 		context.data.i16[0] = x;
 		context.data.i16[1] = y;
-		EngineEvent::Fire(eEventCode::eEvent_Code_Mouse_Moved, 0, context);
+		EngineEvent::Fire(eEventCode::Mouse_Moved, 0, context);
 	}
 }
 
@@ -70,7 +70,7 @@ void Controller::ProcessMouseWheel(char z_delta) {
 	// Dispatch
 	SEventContext context;
 	context.data.u8[0] = z_delta;
-	EngineEvent::Fire(eEventCode::eEvent_Code_Mouse_Wheel, 0, context);
+	EngineEvent::Fire(eEventCode::Mouse_Wheel, 0, context);
 }
 
 bool Controller::IsKeyDown(eKeys key) {

@@ -33,13 +33,13 @@ static bool RenderViewWorldOnEvent(eEventCode code, void* sender, void* listener
 
 	switch ((eEventCode)code)
 	{
-	case eEventCode::eEvent_Code_Default_Rendertarget_Refresh_Required: 
+	case eEventCode::Default_Rendertarget_Refresh_Required: 
 	{
 		RenderViewSystem::RegenerateRendertargets(self);
 		return true;
 	}
 
-	case eEventCode::eEvent_Code_Set_Render_Mode:
+	case eEventCode::Set_Render_Mode:
 	{
 		int RenderMode = context.data.i32[0];
 		switch (RenderMode)
@@ -142,15 +142,15 @@ bool RenderViewWorld::OnCreate(const RenderViewConfig& config) {
 	// TODO: Obtain from scene.
 	AmbientColor = Vec4(0.7f, 0.7f, 0.7f, 1.0f);
 
-	if (!EngineEvent::Register(eEventCode::eEvent_Code_Default_Rendertarget_Refresh_Required, this, RenderViewWorldOnEvent)) {
+	if (!EngineEvent::Register(eEventCode::Default_Rendertarget_Refresh_Required, this, RenderViewWorldOnEvent)) {
 		LOG_ERROR("Unable to listen for refresh required event, creation failed.");
 		return false;
 	}
-	if (!EngineEvent::Register(eEventCode::eEvent_Code_Reload_Shader_Module, this, ReloadShader)) {
+	if (!EngineEvent::Register(eEventCode::Reload_Shader_Module, this, ReloadShader)) {
 		LOG_ERROR("Unable to listen for refresh required event, creation failed.");
 		return false;
 	}
-	if (!EngineEvent::Register(eEventCode::eEvent_Code_Set_Render_Mode, this, RenderViewWorldOnEvent)) {
+	if (!EngineEvent::Register(eEventCode::Set_Render_Mode, this, RenderViewWorldOnEvent)) {
 		LOG_ERROR("Unable to listen for refresh required event, creation failed.");
 		return false;
 	}
@@ -160,9 +160,9 @@ bool RenderViewWorld::OnCreate(const RenderViewConfig& config) {
 }
 
 void RenderViewWorld::OnDestroy() {
-	EngineEvent::Unregister(eEventCode::eEvent_Code_Default_Rendertarget_Refresh_Required, this, RenderViewWorldOnEvent);
-	EngineEvent::Unregister(eEventCode::eEvent_Code_Reload_Shader_Module, this, ReloadShader);
-	EngineEvent::Unregister(eEventCode::eEvent_Code_Set_Render_Mode, this, RenderViewWorldOnEvent);
+	EngineEvent::Unregister(eEventCode::Default_Rendertarget_Refresh_Required, this, RenderViewWorldOnEvent);
+	EngineEvent::Unregister(eEventCode::Reload_Shader_Module, this, ReloadShader);
+	EngineEvent::Unregister(eEventCode::Set_Render_Mode, this, RenderViewWorldOnEvent);
 }
 
 void RenderViewWorld::OnResize(uint32_t width, uint32_t height) {

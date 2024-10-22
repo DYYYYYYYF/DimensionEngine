@@ -589,7 +589,7 @@ bool VulkanBackend::RecreateSwapchain() {
 
 	// Tell the renderer that a refresh is required.
 	SEventContext EventContext = SEventContext();
-	EngineEvent::Fire(eEventCode::eEvent_Code_Default_Rendertarget_Refresh_Required, nullptr, EventContext);
+	EngineEvent::Fire(eEventCode::Default_Rendertarget_Refresh_Required, nullptr, EventContext);
 
 	CreateCommandBuffer();
 

@@ -27,7 +27,7 @@ static bool RenderViewSkyboxOnEvent(eEventCode code, void* sender, void* listene
 
 	switch (code)
 	{
-	case eEventCode::eEvent_Code_Default_Rendertarget_Refresh_Required:
+	case eEventCode::Default_Rendertarget_Refresh_Required:
 		RenderViewSystem::RegenerateRendertargets(self);
 		return false;
     default: break;
@@ -79,7 +79,7 @@ bool RenderViewSkybox::OnCreate(const RenderViewConfig& config) {
 	ProjectionMatrix = Matrix4::Perspective(Fov, 1280.0f / 720.0f, NearClip, FarClip);
 	WorldCamera = CameraSystem::GetDefault();
 
-	if (!EngineEvent::Register(eEventCode::eEvent_Code_Default_Rendertarget_Refresh_Required, this, RenderViewSkyboxOnEvent)) {
+	if (!EngineEvent::Register(eEventCode::Default_Rendertarget_Refresh_Required, this, RenderViewSkyboxOnEvent)) {
 		LOG_ERROR("Unable to listen for refresh required event, creation failed.");
 		return false;
 	}
@@ -89,7 +89,7 @@ bool RenderViewSkybox::OnCreate(const RenderViewConfig& config) {
 }
 
 void RenderViewSkybox::OnDestroy() {
-	EngineEvent::Unregister(eEventCode::eEvent_Code_Default_Rendertarget_Refresh_Required, this, RenderViewSkyboxOnEvent);
+	EngineEvent::Unregister(eEventCode::Default_Rendertarget_Refresh_Required, this, RenderViewSkyboxOnEvent);
 }
 
 void RenderViewSkybox::OnResize(uint32_t width, uint32_t height) {

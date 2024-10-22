@@ -315,7 +315,7 @@ LRESULT CALLBACK win32_process_message(HWND hwnd, UINT32 msg, WPARAM w_param, LP
 			return 1;
 		case WM_CLOSE:
 			SEventContext Context = SEventContext();
-			EngineEvent::Fire(eEventCode::eEvent_Code_Application_Quit, 0, Context);
+			EngineEvent::Fire(eEventCode::Application_Quit, 0, Context);
 			return 1;
 		case WM_DESTROY:
 			PostQuitMessage(0);

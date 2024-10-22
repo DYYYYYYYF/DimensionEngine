@@ -56,7 +56,7 @@ bool Application::Initialize(){
 	}
 
 	// Register for engine-level events.
-	EngineEvent::Register(eEventCode::eEvent_Code_Application_Quit, nullptr,
+	EngineEvent::Register(eEventCode::Application_Quit, nullptr,
 		std::bind(&Application::OnEvent, this, std::placeholders::_1, this, std::placeholders::_3, std::placeholders::_4));
 	EngineEvent::Register(eEventCode::Resize, nullptr,
 		std::bind(&Application::OnResized, this, std::placeholders::_1, this, std::placeholders::_3, std::placeholders::_4));
@@ -312,7 +312,7 @@ bool Application::Run() {
 	GameInst->Shutdown();
 
 	// Shutdown event system
-	EngineEvent::Unregister(eEventCode::eEvent_Code_Application_Quit, nullptr,
+	EngineEvent::Unregister(eEventCode::Application_Quit, nullptr,
 		std::bind(&Application::OnEvent, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
 	EngineEvent::Unregister(eEventCode::Resize, nullptr,
 		std::bind(&Application::OnResized, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
@@ -339,7 +339,7 @@ bool Application::Run() {
 
 bool Application::OnEvent(eEventCode code, void* sender, void* listener_instance, SEventContext context) {
 	switch (code){
-	case eEventCode::eEvent_Code_Application_Quit: {
+	case eEventCode::Application_Quit: {
 		LOG_INFO("Application quit now.");
 		is_running = false;
 		return true;
