@@ -21,7 +21,7 @@ int main(void) {
 		LOG_FATAL("Could not allocate memory for Game!");
 		return -2;
     }
-    GameInst = new (GameInstance)();
+    GameInst = new (GameInst)GameInstance();
     ASSERT(GameInst);
 
 	if (!CreateGame(GameInst)) {
@@ -34,7 +34,7 @@ int main(void) {
 		LOG_FATAL("Could not allocate memory for Application!");
 		return 0;
 	}
-    App = new (Application)(GameInst);
+    App = new (App)Application(GameInst);
     ASSERT(App);
 
     if (!App->Initialize()) {
@@ -48,11 +48,11 @@ int main(void) {
     }
 
     if (App) {
-		delete(App);
+        Memory::Free(App, sizeof(Application), eMemory_Type_Application);
     }
 
     if (GameInst) {
-		delete(GameInst);
+        Memory::Free(GameInst, sizeof(GameInstance), eMemory_Type_Game);
     }
 
     Memory::Shutdown();
