@@ -6,9 +6,9 @@
 bool JobSystem::IsRunning = false;
 unsigned char JobSystem::ThreadCount;
 JobThread JobSystem::JobThreads[32];
-RingQueue<JobInfo> JobSystem::LowPriorityQueue(1024);
-RingQueue<JobInfo> JobSystem::NormalPriorityQueue(1024);
-RingQueue<JobInfo> JobSystem::HighPriorityQueue(1024);
+std::queue<JobInfo> JobSystem::LowPriorityQueue;
+std::queue<JobInfo> JobSystem::NormalPriorityQueue;
+std::queue<JobInfo> JobSystem::HighPriorityQueue;
 Mutex JobSystem::LowPriQueueMutex;
 Mutex JobSystem::NormalPriQueueMutex;
 Mutex JobSystem::HighPriQueueMutex;
@@ -20,7 +20,7 @@ void JobSystem::StoreResult(PFN_OnJobComplete callback, void* params, size_t par
 	JobResultEntry Entry;
 	Entry.id = INVALID_ID_U16;
 	Entry.param_size = (uint32_t)param_size;
-	Entry.callback = callback;
+	Entry.callback = std::move(callback);
 
 	if (Entry.param_size > 0) {
 		// Take a copy, as the job is destroyed after this.
@@ -184,21 +184,21 @@ void JobSystem::Shutdown() {
 		JobThreads[i].thread.Destroy();
 	}
 
-	for (uint32_t i = 0; i < LowPriorityQueue.GetLength(); ++i) {
+	for (uint32_t i = 0; i < LowPriorityQueue.size(); ++i) {
 		JobInfo* Temp = nullptr;
-		LowPriorityQueue.Dequeue(Temp);
+		LowPriorityQueue.pop();
         if (Temp != nullptr){
             Temp->Release();
             Temp = nullptr;
         }
 
-		NormalPriorityQueue.Dequeue(Temp);
+		NormalPriorityQueue.pop();
         if (Temp != nullptr){
             Temp->Release();
             Temp = nullptr;
         }
         
-		HighPriorityQueue.Dequeue(Temp);
+		HighPriorityQueue.pop();
         if (Temp != nullptr){
             Temp->Release();
             Temp = nullptr;
@@ -212,18 +212,14 @@ void JobSystem::Shutdown() {
 	HighPriQueueMutex.Destroy();
 }
 
-void JobSystem::ProcessQueue(RingQueue<JobInfo>* queue, Mutex* queue_mutex) {
+void JobSystem::ProcessQueue(std::queue<JobInfo>& queue, Mutex* queue_mutex) {
 	// Check for a free thread first.
-	while (queue->GetLength() > 0) {
-		JobInfo info;
-		if (!queue->Peek(&info)) {
-			break;
-		}
-
+	while (queue.size() > 0) {
+		JobInfo info = queue.front();
 		bool ThreadFound = false;
 		for (unsigned char i = 0; i < ThreadCount; ++i) {
 			JobThread* thread = &JobThreads[i];
-			if ((thread->type_mask & info.type) == 0) {
+			if ((thread->type_mask & (uint32_t)info.type) == 0) {
 				continue;
 			}
 
@@ -237,7 +233,7 @@ void JobSystem::ProcessQueue(RingQueue<JobInfo>* queue, Mutex* queue_mutex) {
 				if (!queue_mutex->Lock()) {
 					LOG_ERROR("Failed to obtain lock on queue mutex!");
 				}
-				queue->Dequeue(&info);
+				queue.pop();
 				if (!queue_mutex->UnLock()) {
 					LOG_ERROR("Failed to release lock on queue mutex!");
 				}
@@ -269,9 +265,9 @@ void JobSystem::Update() {
 		return;
 	}
 
-	ProcessQueue(&HighPriorityQueue, &HighPriQueueMutex);
-	ProcessQueue(&NormalPriorityQueue, &NormalPriQueueMutex);
-	ProcessQueue(&LowPriorityQueue, &LowPriQueueMutex);
+	ProcessQueue(HighPriorityQueue, &HighPriQueueMutex);
+	ProcessQueue(NormalPriorityQueue, &NormalPriQueueMutex);
+	ProcessQueue(LowPriorityQueue, &LowPriQueueMutex);
 
 	// Process pending results.
 	for (unsigned short i = 0; i < MAX_JOB_RESULTS; ++i) {
@@ -307,7 +303,7 @@ void JobSystem::Update() {
 }
 
 void JobSystem::Submit(JobInfo info) {
-	RingQueue<JobInfo>* Queue = &NormalPriorityQueue;
+	std::queue<JobInfo>* Queue = &NormalPriorityQueue;
 	Mutex* QueueMutex = &NormalPriQueueMutex;
 
 	// If the job is high priority, try to kick it off immediately.
@@ -318,7 +314,7 @@ void JobSystem::Submit(JobInfo info) {
 		// Check for a free thread that supports the job type first.
 		for (unsigned char i = 0; i < ThreadCount; ++i) {
 			JobThread* thread = &JobThreads[i];
-			if (thread->type_mask & info.type) {
+			if (thread->type_mask & (uint32_t)info.type) {
 				bool Found = false;
 				if (!thread->info_mutex.Lock()) {
 					LOG_ERROR("Failed to obtain lock on job thread mutex!");
@@ -349,7 +345,7 @@ void JobSystem::Submit(JobInfo info) {
 	if (!QueueMutex->Lock()) {
 		LOG_ERROR("Failed to obtain lock on queue mutex!");
 	}
-	Queue->Enqueue(&info);
+	Queue->push(info);
 	if (!QueueMutex->UnLock()) {
 		LOG_ERROR("Failed to release lock on queue mutex!");
 	}
@@ -358,9 +354,9 @@ void JobSystem::Submit(JobInfo info) {
 JobInfo JobSystem::CreateJob(PFN_OnJobStart entry, PFN_OnJobComplete on_success, PFN_OnJobComplete on_failed,
 	void* param_data, size_t param_data_size, size_t result_data_size, JobType type, JobPriority priority) {
 	JobInfo Job;
-	Job.entry_point = entry;
-	Job.on_success = on_success;
-	Job.on_failed = on_failed;
+	Job.entry_point = std::move(entry);
+	Job.on_success = std::move(on_success);
+	Job.on_failed = std::move(on_failed);
 	Job.type = type;
 	Job.priority = priority;
 

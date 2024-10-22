@@ -38,9 +38,10 @@ bool Application::Initialize(){
 		return false;
 	}
 
-	Core::InputInitialize();
-
 	UID::Seed(101);
+
+	// Controller
+	Controller::Initialize();
 
 	// Metrics
 	Metrics::Initialize();
@@ -126,22 +127,22 @@ bool Application::Initialize(){
 	// Requires knowledge of renderer multithread support, so should be initialized here.
 	uint32_t JobThreadTypes[15];
 	for (uint32_t i = 0; i < 15; ++i) {
-		JobThreadTypes[i] = JobType::eGeneral;
+		JobThreadTypes[i] = (uint32_t)JobType::eGeneral;
 	}
 
 	if (ThreadCount == 1 || !RenderWithMultithread) {
 		// Everything on one job thread.
-		JobThreadTypes[0] |= (JobType::eGPU_Resource | JobType::eResource_Load);
+		JobThreadTypes[0] |= ((uint32_t)JobType::eGPU_Resource | (uint32_t)JobType::eResource_Load);
 	}
 	else if (ThreadCount == 2) {
 		// Split things between 2 threads.
-		JobThreadTypes[0] |= JobType::eGPU_Resource;
-		JobThreadTypes[1] |= JobType::eResource_Load;
+		JobThreadTypes[0] |= (uint32_t)JobType::eGPU_Resource;
+		JobThreadTypes[1] |= (uint32_t)JobType::eResource_Load;
 	}
 	else {
 		// Dedicate the first 2 threads to these thing, pass of general tasks to other threads.
-		JobThreadTypes[0] = JobType::eGPU_Resource;
-		JobThreadTypes[1] = JobType::eResource_Load;
+		JobThreadTypes[0] = (uint32_t)JobType::eGPU_Resource;
+		JobThreadTypes[1] = (uint32_t)JobType::eResource_Load;
 	}
 
 	// Job system
@@ -301,7 +302,7 @@ bool Application::Run() {
 			}
 
 			last_time = CurrentTime;
-			Core::InputUpdate(DeltaTime);
+			GameController->Update(DeltaTime);
 		}
 	}
 
@@ -329,8 +330,7 @@ bool Application::Run() {
 	Memory::Free(Renderer, sizeof(IRenderer), MemoryType::eMemory_Type_Renderer);
 
 	EngineEvent::Shutdown();
-	Core::InputShutdown();
-
+	Controller::Shutdown();
 	ResourceSystem::Shutdown();
 	Platform::PlatformShutdown(&platform);
 

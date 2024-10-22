@@ -39,10 +39,9 @@ public:
 	void ReloadMaterial(const char* mat_name = nullptr);
 
 private:
-	static void LoadJobSuccess(void* params);
-	static void LoadJobFail(void* params);
-	static bool LoadJobStart(void* params, void* result_data);
-
+	void LoadJobSuccess(void* params);
+	void LoadJobFail(void* params);
+	bool LoadJobStart(void* params, void* result_data);
 
 public:
 	uint32_t UniqueID;

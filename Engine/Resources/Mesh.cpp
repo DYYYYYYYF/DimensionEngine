@@ -48,11 +48,12 @@ bool Mesh::LoadFromResource(const char* resource_name) {
 	Params.mesh_resource = {};
 
 	JobInfo Job = JobSystem::CreateJob(
-		Mesh::LoadJobStart,
-		Mesh::LoadJobSuccess,
-		Mesh::LoadJobFail,
-		&Params,
-		sizeof(MeshLoadParams), sizeof(MeshLoadParams));
+		std::bind(&Mesh::LoadJobStart, this, std::placeholders::_1, std::placeholders::_2),
+		std::bind(&Mesh::LoadJobSuccess, this, std::placeholders::_1),
+		std::bind(&Mesh::LoadJobFail, this, std::placeholders::_1),
+		&Params, 
+		sizeof(MeshLoadParams), 
+		sizeof(MeshLoadParams));
 	JobSystem::Submit(Job);
 
 	return true;

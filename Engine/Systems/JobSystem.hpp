@@ -4,22 +4,23 @@
 
 #include "Core/DThread.hpp"
 #include "Core/DMutex.hpp"
-#include "Containers/TQueue.hpp"
+#include "Core/DMemory.hpp"
 
+#include <queue>
 #include <functional>
 
 #define MAX_JOB_RESULTS 512
 
-//typedef std::function<bool(void*, void*)> PFN_OnJobStart;
-//typedef std::function<void(void*)> PFN_OnJobComplete;
+typedef std::function<bool(void*, void*)> PFN_OnJobStart;
+typedef std::function<void(void*)> PFN_OnJobComplete;
 
-typedef bool(*PFN_OnJobStart)(void*, void*);
-typedef void(*PFN_OnJobComplete)(void*);
+//typedef bool(*PFN_OnJobStart)(void*, void*);
+//typedef void(*PFN_OnJobComplete)(void*);
 
 /**
  * @brief Describes a type of job.
  */
-enum JobType {
+enum class JobType : char{
 	/**
 	* @brief A general job that does not have any specific thread requirements.
 	* This means it matters little which job thread this job runs on.
@@ -46,7 +47,7 @@ enum JobType {
  * first before processing the normal-priority queue, which must also be exhausted before
  * processing the low-priority queue.
  */
-enum JobPriority : char{
+enum class JobPriority : char{
 	eLow,
 	eNormal,
 	eHigh
@@ -56,11 +57,22 @@ struct JobInfo {
 public:
 	JobInfo() : entry_point(nullptr), on_success(nullptr), on_failed(nullptr), param_data(nullptr), result_data(nullptr) {}
 	JobInfo(const JobInfo& info) {
+		entry_point = nullptr;
+		on_success = nullptr;
+		on_failed = nullptr;
+
+		if (info.entry_point) {
+			entry_point = info.entry_point;
+		}
+		if (info.on_success) {
+			on_success = info.on_success;
+		}
+		if (info.on_failed) {
+			on_failed = info.on_failed;
+		}
+
 		type = info.type;
 		priority = info.priority;
-		entry_point = info.entry_point;
-		on_success = info.on_success;
-		on_failed = info.on_failed;
 		param_data_size = info.param_data_size;
 		result_data_size = info.result_data_size;
 
@@ -91,17 +103,17 @@ public:
 		on_failed = nullptr;
 	}
 
-	JobType type;
-	JobPriority priority;
+	JobType type = JobType::eGeneral;
+	JobPriority priority = JobPriority::eNormal;
 	PFN_OnJobStart entry_point = nullptr;
 	PFN_OnJobComplete on_success = nullptr;
 	PFN_OnJobComplete on_failed = nullptr;
 
 	void* param_data = nullptr;
-	size_t param_data_size;
+	size_t param_data_size = 0;
 
 	void* result_data = nullptr;
-	size_t result_data_size;
+	size_t result_data_size = 0;
 };
 
 struct JobThread {
@@ -117,7 +129,7 @@ struct JobThread {
 struct JobResultEntry {
 	unsigned short id;
 	PFN_OnJobComplete callback = nullptr;
-	uint32_t param_size;
+	uint32_t param_size = 0;
 	void* params = nullptr;
 };
 
@@ -147,16 +159,16 @@ public:
 private:
 	static void StoreResult(PFN_OnJobComplete callback, void* params, size_t param_size);
 	static uint32_t RunJobThread(void* params);
-	static void ProcessQueue(RingQueue<JobInfo>* queue, Mutex* queue_mutex);
+	static void ProcessQueue(std::queue<JobInfo>& queue, Mutex* queue_mutex);
 
 private:
 	static bool IsRunning;
 	static unsigned char ThreadCount;
 	static JobThread JobThreads[32];
 	
-	static RingQueue<JobInfo> LowPriorityQueue;
-	static RingQueue<JobInfo> NormalPriorityQueue;
-	static RingQueue<JobInfo> HighPriorityQueue;
+	static std::queue<JobInfo> LowPriorityQueue;
+	static std::queue<JobInfo> NormalPriorityQueue;
+	static std::queue<JobInfo> HighPriorityQueue;
 	
 	// Mutexes for each queue, since a job could be kicked off from another job (thread).
 	static Mutex LowPriQueueMutex;

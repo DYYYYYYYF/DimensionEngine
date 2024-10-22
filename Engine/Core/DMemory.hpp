@@ -101,3 +101,15 @@ public:
 	
 	static Mutex AllocationMutex;
 };
+
+
+template<typename T, typename ... Args>
+T* NewObject(Args ... args) {
+	T* _NewObject = (T*)Memory::Allocate(sizeof(T), MemoryType::eMemory_Type_Entity);
+	if (_NewObject == nullptr) {
+		LOG_FATAL("Can not create object.");
+		return nullptr;
+	}
+
+	return new(_NewObject)(args...);
+}

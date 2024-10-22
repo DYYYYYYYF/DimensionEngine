@@ -3,73 +3,58 @@
 #include "DMemory.hpp"
 #include "EngineLogger.hpp"
 
-namespace Core{
-struct SKeyboardState {
-	bool keys[256];
-};
+bool Controller::Initialized = false;
+Controller::SKeyboardState Controller::keyboard_current;
+Controller::SKeyboardState Controller::keyboard_previous;
 
-struct SMouseState {
-	short x, y;
-	bool buttons[Buttons::eButton_Max];
-};
+Controller::SMouseState Controller::mouse_current;
+Controller::SMouseState Controller::mouse_previous;
 
-struct SInputState {
-	SKeyboardState keyboard_current;
-	SKeyboardState keyboard_previous;
-
-	SMouseState mouse_current;
-	SMouseState mouse_previous;
-};
-
-static bool Initialized = false;
-static SInputState InputState = {};
-
-void InputInitialize() {
-	Memory::Zero(&InputState, sizeof(SInputState));
+void Controller::Initialize() {
 	Initialized = true;
 	LOG_INFO("Input system initialized.");
 }
 
-void InputShutdown() {
+void Controller::Shutdown() {
 	// TODO: Add shutdown routines when needed.
 	Initialized = false;
 }
 
-void InputUpdate(double delta_time) {
+void Controller::Update(double delta_time) {
 	if (!Initialized) {
 		return;
 	}
 
 	// Copy states
-	Memory::Copy(&InputState.keyboard_previous, &InputState.keyboard_current, sizeof(SKeyboardState));
-	Memory::Copy(&InputState.mouse_previous, &InputState.mouse_current, sizeof(SMouseState));
+	Memory::Copy(&keyboard_previous, &keyboard_current, sizeof(SKeyboardState));
+	Memory::Copy(&mouse_previous, &mouse_current, sizeof(SMouseState));
 }
 
-void InputProcessKey(Keys key, bool pressed) {
-	if (InputState.keyboard_current.keys[key] != pressed) {
-		InputState.keyboard_current.keys[key] = pressed;
+void Controller::ProcessKey(eKeys key, bool pressed) {
+	if (keyboard_current.keys[(unsigned int)key] != pressed) {
+		keyboard_current.keys[(unsigned int)key] = pressed;
 
 		SEventContext context;
-		context.data.u16[0] = key;
+		context.data.u16[0] = (unsigned int)key;
 		EngineEvent::Fire(pressed ? eEventCode::eEvent_Code_Key_Pressed : eEventCode::eEvent_Code_Key_Released, 0, context);
 	}
 }
 
-void InputProcessButton(Buttons button, bool pressed) {
-	if (InputState.mouse_current.buttons[button] != pressed) {
-		InputState.mouse_current.buttons[button] = pressed;
+void Controller::ProcessButton(eButtons button, bool pressed) {
+	if (mouse_current.buttons[(unsigned int)button] != pressed) {
+		mouse_current.buttons[(unsigned int)button] = pressed;
 
 		SEventContext context;
-		context.data.u16[0] = button;
+		context.data.u16[0] = (unsigned int)button;
 		EngineEvent::Fire(pressed ? eEventCode::eEvent_Code_Button_Pressed : eEventCode::eEvent_Code_Button_Released, 0, context);
 	}
 }
 
-void InputProcessMouseMove(short x, short y) {
-	if (InputState.mouse_current.x != x || InputState.mouse_current.y != y) {
+void Controller::ProcessMouseMove(short x, short y) {
+	if (mouse_current.x != x || mouse_current.y != y) {
 		// Update
-		InputState.mouse_current.x = x;
-		InputState.mouse_current.y = y;
+		mouse_current.x = x;
+		mouse_current.y = y;
 
 		//Fire the event
 		SEventContext context;
@@ -79,7 +64,7 @@ void InputProcessMouseMove(short x, short y) {
 	}
 }
 
-void InputProcessMouseWheel(char z_delta) {
+void Controller::ProcessMouseWheel(char z_delta) {
 	// NOTE: no internal state to update
 
 	// Dispatch
@@ -88,90 +73,87 @@ void InputProcessMouseWheel(char z_delta) {
 	EngineEvent::Fire(eEventCode::eEvent_Code_Mouse_Wheel, 0, context);
 }
 
-bool InputIsKeyDown(Keys key) {
+bool Controller::IsKeyDown(eKeys key) {
 	if (!Initialized) {
 		return false;
 	}
 
-	return InputState.keyboard_current.keys[key] == true;
+	return keyboard_current.keys[(unsigned int)key] == true;
 }
 
-bool InputIsKeyUp(Keys key) {
+bool Controller::IsKeyUp(eKeys key) {
 	if (!Initialized) {
 		return false;
 	}
 
-	return InputState.keyboard_current.keys[key] == false;
+	return keyboard_current.keys[(unsigned int)key] == false;
 }
 
-bool InputWasKeyDown(Keys key) {
+bool Controller::WasKeyDown(eKeys key) {
 	if (!Initialized) {
 		return false;
 	}
 
-	return InputState.keyboard_previous.keys[key] == true;
+	return keyboard_previous.keys[(unsigned int)key] == true;
 }
 
-bool InputWasKeyUp(Keys key) {
+bool Controller::WasKeyUp(eKeys key) {
 	if (!Initialized) {
 		return false;
 	}
 
-	return InputState.keyboard_previous.keys[key] == false;
+	return keyboard_previous.keys[(unsigned int)key] == false;
 }
 
-bool InputeIsButtonDown(Buttons button) {
+bool Controller::IsButtonDown(eButtons button) {
 	if (!Initialized) {
 		return false;
 	}
 
-	return InputState.mouse_current.buttons[button] == true;
+	return mouse_current.buttons[(unsigned int)button] == true;
 }
 
-bool InputIsButtonUp(Buttons button) {
+bool Controller::IsButtonUp(eButtons button) {
 	if (!Initialized) {
 		return false;
 	}
 
-	return InputState.mouse_current.buttons[button] == false;
+	return mouse_current.buttons[(unsigned int)button] == false;
 }
 
-bool InputWasButtonDown(Buttons button) {
+bool Controller::WasButtonDown(eButtons button) {
 	if (!Initialized) {
 		return false;
 	}
 
-	return InputState.mouse_previous.buttons[button] == true;
+	return mouse_previous.buttons[(unsigned int)button] == true;
 }
 
-bool InputWasButtonUp(Buttons button) {
+bool Controller::WasButtonUp(eButtons button) {
 	if (!Initialized) {
 		return false;
 	}
 
-	return InputState.mouse_previous.buttons[button] == false;
+	return mouse_previous.buttons[(unsigned int)button] == false;
 }
 
-void InputGetMousePosition(int& x, int& y) {
+void Controller::GetMousePosition(int& x, int& y) {
 	if (!Initialized) {
 		x = 0;
 		y = 0;
 		return;
 	}
 
-	x = InputState.mouse_current.x;
-	y = InputState.mouse_current.y;
+	x = mouse_current.x;
+	y = mouse_current.y;
 }
-void InputGetPreviousMousePosition(int& x, int& y) {
+void Controller::GetPreviousMousePosition(int& x, int& y) {
 	if (!Initialized) {
 		x = 0;
 		y = 0;
 		return;
 	}
 
-	x = InputState.mouse_previous.x;
-	y = InputState.mouse_previous.y;
+	x = mouse_previous.x;
+	y = mouse_previous.y;
 }
-
-
-}	// namespace Input

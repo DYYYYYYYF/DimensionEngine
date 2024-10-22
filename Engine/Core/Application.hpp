@@ -9,6 +9,7 @@
 
 class IGame;
 struct SEventContext;
+class Controller;
 
 class Application {
 public:
@@ -42,6 +43,7 @@ public:
 	// Instance
 	IGame* GameInst = nullptr;
 	SPlatformState platform;
+	Controller* GameController = nullptr;
 
 	// Run
 	bool is_running;

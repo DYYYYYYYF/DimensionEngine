@@ -9,7 +9,7 @@ class Camera;
 
 class GameInstance : public IGame {
 public:
-	GameInstance() : WorldCamera(nullptr) {}
+	GameInstance() : WorldCamera(nullptr){}
 	virtual ~GameInstance() {};
 
 public:
@@ -22,9 +22,8 @@ public:
 
 public:
 	float delta_time;
-	Camera* WorldCamera;
 	short Width, Height;
-
+	Camera* WorldCamera;
 	Frustum CameraFrustum;
 
 	// TODO: temp

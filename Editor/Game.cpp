@@ -97,8 +97,8 @@ bool GameOnDebugEvent(eEventCode code, void* sender, void* listener_instance, SE
 
 bool GameOnKey(eEventCode code, void* sender, void* listener_instance, SEventContext context) {
 	if (code == eEventCode::eEvent_Code_Key_Pressed) {
-		unsigned short KeyCode = context.data.u16[0];
-		if (KeyCode == eKeys_Escape) {
+		eKeys KeyCode = eKeys(context.data.u16[0]);
+		if (KeyCode == eKeys::Escape) {
 			// NOTE: Technically dispatch an event to itself, but there may be other listeners.
 			SEventContext data = {};
 			EngineEvent::Fire(eEventCode::eEvent_Code_Application_Quit, 0, data);
@@ -342,7 +342,7 @@ bool GameInstance::Update(float delta_time) {
 	size_t PrevAllocCount = AllocCount;
 	AllocCount = Memory::GetAllocateCount();
     size_t UsedMemory = AllocCount - PrevAllocCount;
-	if (Core::InputIsKeyUp(eKeys_M) && Core::InputWasKeyDown(eKeys_M)) {
+	if (Controller::IsKeyUp(eKeys::M) && Controller::WasKeyDown(eKeys::M)) {
 		char* Usage = Memory::GetMemoryUsageStr();
 		LOG_INFO(Usage);
 		StringFree(Usage);
@@ -350,92 +350,92 @@ bool GameInstance::Update(float delta_time) {
 	}
 
 	// Temp shader debug
-	if (Core::InputIsKeyUp(eKeys_F1) && Core::InputWasKeyDown(eKeys_F1)) {
+	if (Controller::IsKeyUp(eKeys::F1) && Controller::WasKeyDown(eKeys::F1)) {
 		SEventContext Context;
 		Context.data.i32[0] = ShaderRenderMode::eShader_Render_Mode_Default;
 		EngineEvent::Fire(eEventCode::eEvent_Code_Set_Render_Mode, nullptr, Context);
 	}
-	if (Core::InputIsKeyUp(eKeys_F2) && Core::InputWasKeyDown(eKeys_F2)) {
+	if (Controller::IsKeyUp(eKeys::F2) && Controller::WasKeyDown(eKeys::F2)) {
 		SEventContext Context;
 		Context.data.i32[0] = ShaderRenderMode::eShader_Render_Mode_Lighting;
 		EngineEvent::Fire(eEventCode::eEvent_Code_Set_Render_Mode, nullptr, Context);
 	}
-	if (Core::InputIsKeyUp(eKeys_F3) && Core::InputWasKeyDown(eKeys_F3)) {
+	if (Controller::IsKeyUp(eKeys::F3) &&Controller::WasKeyDown(eKeys::F3)) {
 		SEventContext Context;
 		Context.data.i32[0] = ShaderRenderMode::eShader_Render_Mode_Normals;
 		EngineEvent::Fire(eEventCode::eEvent_Code_Set_Render_Mode, nullptr, Context);
 	}
 
-	if (Core::InputIsKeyDown(eKeys_Left)) {
+	if (Controller::IsKeyDown(eKeys::Left)) {
 		WorldCamera->RotateYaw(1.0f * delta_time);
 	}
-	if (Core::InputIsKeyDown(eKeys_Right)) {
+	if (Controller::IsKeyDown(eKeys::Right)) {
 		WorldCamera->RotateYaw(-1.0f * delta_time);
 	}
-	if (Core::InputIsKeyDown(Keys::eKeys_Up)) {
+	if (Controller::IsKeyDown(eKeys::Up)) {
 		WorldCamera->RotatePitch(1.0f * delta_time);
 	}
-	if (Core::InputIsKeyDown(Keys::eKeys_Down)) {
+	if (Controller::IsKeyDown(eKeys::Down)) {
 		WorldCamera->RotatePitch(-1.0f * delta_time);
 	}
 
 	float TempMoveSpeed = 50.0f;
-	if (Core::InputIsKeyDown(Keys::eKeys_Shift)) {
+	if (Controller::IsKeyDown(eKeys::Shift)) {
 		TempMoveSpeed *= 2.0f;
 	}
 
-	if (Core::InputIsKeyDown(Keys::eKeys_W)) {
+	if (Controller::IsKeyDown(eKeys::W)) {
 		WorldCamera->MoveForward(TempMoveSpeed * delta_time);
 	}
-	if (Core::InputIsKeyDown(Keys::eKeys_S)) {
+	if (Controller::IsKeyDown(eKeys::S)) {
 		WorldCamera->MoveBackward(TempMoveSpeed * delta_time);
 	}
-	if (Core::InputIsKeyDown(Keys::eKeys_A)) {
+	if (Controller::IsKeyDown(eKeys::A)) {
 		WorldCamera->MoveLeft(TempMoveSpeed * delta_time);
 	}
-	if (Core::InputIsKeyDown(Keys::eKeys_D)) {
+	if (Controller::IsKeyDown(eKeys::D)) {
 		WorldCamera->MoveRight(TempMoveSpeed * delta_time);
 	}
-	if (Core::InputIsKeyDown(Keys::eKeys_Q)) {
+	if (Controller::IsKeyDown(eKeys::Q)) {
 		WorldCamera->MoveDown(TempMoveSpeed * delta_time);
 	}
-	if (Core::InputIsKeyDown(Keys::eKeys_E)) {
+	if (Controller::IsKeyDown(eKeys::E)) {
 		WorldCamera->MoveUp(TempMoveSpeed * delta_time);
 	}
 
-	if (Core::InputIsKeyDown(Keys::eKeys_R)) {
+	if (Controller::IsKeyDown(eKeys::R)) {
 		WorldCamera->Reset();
 	}
 
 	// TODO: Remove
-	if (Core::InputIsKeyUp(eKeys_O) && Core::InputWasKeyDown(eKeys_O)) {
+	if (Controller::IsKeyUp(eKeys::O) &&Controller::WasKeyDown(eKeys::O)) {
 		SEventContext Context = {};
 		EngineEvent::Fire(eEventCode::eEvent_Code_Debug_0, this, Context);
 	}
 
-	if (Core::InputIsKeyUp(eKeys_L) && Core::InputWasKeyDown(eKeys_L)) {
+	if (Controller::IsKeyUp(eKeys::L) &&Controller::WasKeyDown(eKeys::L)) {
 		SEventContext Context = {};
 		EngineEvent::Fire(eEventCode::eEvent_Code_Debug_2, this, Context);
 	}
 
-	if (Core::InputIsKeyUp(eKeys_K) && Core::InputWasKeyDown(eKeys_K)) {
+	if (Controller::IsKeyUp(eKeys::K) &&Controller::WasKeyDown(eKeys::K)) {
 		SEventContext Context = {};
 		EngineEvent::Fire(eEventCode::eEvent_Code_Debug_3, this, Context);
 	}
 
-	if (Core::InputIsKeyUp(eKeys_P) && Core::InputWasKeyDown(eKeys_P)) {
+	if (Controller::IsKeyUp(eKeys::P) &&Controller::WasKeyDown(eKeys::P)) {
 		SEventContext Context = {};
 		EngineEvent::Fire(eEventCode::eEvent_Code_Debug_1, this, Context);
 	}
 
-	if (Core::InputIsKeyUp(eKeys_G) && Core::InputWasKeyDown(eKeys_G)) {
+	if (Controller::IsKeyUp(eKeys::G) &&Controller::WasKeyDown(eKeys::G)) {
 		TestPython.ExecuteFunc("CompileShaders", "glsl");
 
 		// Reload
 		SEventContext Context = {};
 		EngineEvent::Fire(eEventCode::eEvent_Code_Reload_Shader_Module, this, Context);
 	}
-	if (Core::InputIsKeyUp(eKeys_H) && Core::InputWasKeyDown(eKeys_H)) {
+	if (Controller::IsKeyUp(eKeys::H) &&Controller::WasKeyDown(eKeys::H)) {
 		TestPython.ExecuteFunc("CompileShaders", "hlsl");
 
 		// Reload
@@ -445,10 +445,10 @@ bool GameInstance::Update(float delta_time) {
 	// Remove
 
 	int px, py, cx, cy;
-	Core::InputGetMousePosition(cx, cy);
-	Core::InputGetPreviousMousePosition(px, py);
+	Controller::GetMousePosition(cx, cy);
+	Controller::GetPreviousMousePosition(px, py);
 	float MouseMoveSpeed = 0.005f;
-	if (Core::InputeIsButtonDown(eButton_Right)) {
+	if (Controller::IsButtonDown(eButtons::Right)) {
 		if (cx != px) {
 			WorldCamera->RotateYaw((px - cx) * MouseMoveSpeed);
 		}
@@ -468,10 +468,10 @@ bool GameInstance::Update(float delta_time) {
 	Vec3 Rot = WorldCamera->GetEulerAngles();
 
 	// Mouse state
-	bool LeftDown = Core::InputeIsButtonDown(eButton_Left);
-	bool RightDown = Core::InputeIsButtonDown(eButton_Right);
+	bool LeftDown =Controller::IsButtonDown(eButtons::Left);
+	bool RightDown =Controller::IsButtonDown(eButtons::Right);
 	int MouseX, MouseY;
-	Core::InputGetMousePosition(MouseX, MouseY);
+	Controller::GetMousePosition(MouseX, MouseY);
 
 	// Convert to NDC.
 	float MouseX_NDC = RangeConvertfloat((float)MouseX, 0.0f, (float)Width, -1.0f, 1.0f);

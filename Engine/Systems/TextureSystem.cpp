@@ -531,12 +531,12 @@ bool TextureSystem::LoadTexture(const char* name, Texture* texture) {
 	Params.current_generation = texture->Generation;
 
 	JobInfo Job = JobSystem::CreateJob(
-		TextureSystem::LoadJobStart,
-		TextureSystem::LoadJobSuccess,
-		TextureSystem::LoadJobFail,
+		std::bind(&TextureSystem::LoadJobStart, std::placeholders::_1, std::placeholders::_2),
+		std::bind(&TextureSystem::LoadJobSuccess, std::placeholders::_1),
+		std::bind(&TextureSystem::LoadJobFail, std::placeholders::_1),
 		&Params, 
-		(uint32_t)sizeof(TextureLoadParams), 
-		(uint32_t)sizeof(TextureLoadParams));
+		sizeof(TextureLoadParams),
+		sizeof(TextureLoadParams));
 	JobSystem::Submit(Job);
 	return true;
 }

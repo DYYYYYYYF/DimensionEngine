@@ -2,16 +2,17 @@
 
 #include "Defines.hpp"
 
-enum Buttons{
-	eButton_Left,
-	eButton_Right,
-	eButton_Middle,
-	eButton_Max
+enum class eButtons : char{
+	// Mouse
+	Left,
+	Right,
+	Middle,
+	// TODO: Controller
+	Max
 };
 
-#define DEFINE_KEY(name, code) eKeys_##name = code
-
-enum Keys {
+#define DEFINE_KEY(name, code) name = code
+enum class eKeys : unsigned int{
 	DEFINE_KEY(BackSpace, 0x08),
 	DEFINE_KEY(Enter, 0x0D),
 	DEFINE_KEY(Tab, 0x09),
@@ -134,38 +135,56 @@ enum Keys {
 	DEFINE_KEY(Grave, 0xC0),
 	DEFINE_KEY(Apostrophe, 0xDE),
 	DEFINE_KEY(Semicolon, 0x3B),
-	DEFINE_KEY(Quote, eKeys_Apostrophe),
+	DEFINE_KEY(Quote, eKeys::Apostrophe),
 	DEFINE_KEY(Equal, 0xBB),
 
 	DEFINE_KEY(LBracket, 0xDB),
 	DEFINE_KEY(Pipe, 0xDC),
-	DEFINE_KEY(Backslash, eKeys_Pipe),
+	DEFINE_KEY(Backslash, eKeys::Pipe),
 	DEFINE_KEY(Rbracket, 0xDD),
 
 	eKeys_Max
 
 };
 
-namespace Core {
-	void InputInitialize();
-	void InputShutdown();
-	void InputUpdate(double delta_time);
+class Controller {
+private:
+	struct SKeyboardState {
+		bool keys[256];
+	};
 
-	DAPI bool InputIsKeyDown(Keys key);
-	DAPI bool InputIsKeyUp(Keys key);
-	DAPI bool InputWasKeyDown(Keys key);
-	DAPI bool InputWasKeyUp(Keys key);
+	struct SMouseState {
+		short x, y;
+		bool buttons[(unsigned int)eButtons::Max];
+	};
 
-	void InputProcessKey(Keys key, bool pressed);
+public:
+	static void Initialize();
+	static void Shutdown();
+	static void Update(double delta_time);
 
-	DAPI bool InputeIsButtonDown(Buttons button);
-	DAPI bool InputIsButtonUp(Buttons button);
-	DAPI bool InputWasButtonDown(Buttons button);
-	DAPI bool InputWasButtonUp(Buttons button);
-	DAPI void InputGetMousePosition(int& x, int& y);
-	DAPI void InputGetPreviousMousePosition(int& x, int& y);
+	static DAPI bool IsKeyDown(eKeys key);
+	static DAPI bool IsKeyUp(eKeys key);
+	static DAPI bool WasKeyDown(eKeys key);
+	static DAPI bool WasKeyUp(eKeys key);
 
-	void InputProcessButton(Buttons button, bool pressed);
-	void InputProcessMouseMove(short x, short y);
-	void InputProcessMouseWheel(char z_delta);
-}
+	static DAPI bool IsButtonDown(eButtons button);
+	static DAPI bool IsButtonUp(eButtons button);
+	static DAPI bool WasButtonDown(eButtons button);
+	static DAPI bool WasButtonUp(eButtons button);
+	static DAPI void GetMousePosition(int& x, int& y);
+	static DAPI void GetPreviousMousePosition(int& x, int& y);
+
+	static void ProcessKey(eKeys key, bool pressed);
+	static void ProcessButton(eButtons button, bool pressed);
+	static void ProcessMouseMove(short x, short y);
+	static void ProcessMouseWheel(char z_delta);
+
+private:
+	static bool Initialized;
+	static SKeyboardState keyboard_current;
+	static SKeyboardState keyboard_previous;
+
+	static SMouseState mouse_current;
+	static SMouseState mouse_previous;
+};
