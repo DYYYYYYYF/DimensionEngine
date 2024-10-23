@@ -73,8 +73,8 @@ public:
 	VulkanSwapchain Swapchain;
 
 	// Shaders
-	Shader MaterialShader;
-	Shader UIShader;
+	VulkanShader MaterialShader;
+	VulkanShader UIShader;
 	Shader* Shaders;
 	uint32_t MaxShaderCount;
 

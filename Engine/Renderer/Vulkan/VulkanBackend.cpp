@@ -1810,7 +1810,6 @@ bool VulkanBackend::CreateModule(VulkanShader* Shader, VulkanShaderStageConfig c
 		LOG_ERROR("Unable to read shader module: %s.", config.filename);
 		return false;
 	}
-
 	Memory::Zero(&shader_stage->create_info, sizeof(vk::ShaderModuleCreateInfo));
 	shader_stage->create_info.sType = vk::StructureType::eShaderModuleCreateInfo;
 	// Use the resource's size and data directly.

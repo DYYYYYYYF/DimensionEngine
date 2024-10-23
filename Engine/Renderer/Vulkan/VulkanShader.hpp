@@ -1,8 +1,8 @@
 #pragma once
 
 #include <vulkan/vulkan.hpp>
-#include "Resources/ResourceTypes.hpp"
 #include "VulkanPipeline.hpp"
+#include "Resources/ResourceTypes.hpp"
 
 class VulkanRenderPass;
 
@@ -66,6 +66,9 @@ struct VulkanShaderInstanceState {
 };
 
 class VulkanShader : public Shader {
+public:
+	virtual std::vector<uint32_t> CreateShaderModule(const char* filename, EShLanguage Stage);
+
 public:
 	void* MappedUniformBufferBlock = nullptr;
 	uint32_t ID;

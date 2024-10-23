@@ -1,10 +1,14 @@
 #pragma once
 
-#include "Containers/TArray.hpp"
 #include "Containers/THashTable.hpp"
 #include "Math/MathTypes.hpp"
 #include "Resource.hpp"
-#include <vulkan/vulkan.hpp>
+
+// Shader compiler
+#include <spirv_cross/spirv_cross.hpp>
+#include <spirv_cross/spirv_glsl.hpp>
+#include <glslang/Public/ShaderLang.h>
+#include <glslang/SPIRV/GlslangToSpv.h>
 
 struct TextureMap;
 
@@ -176,6 +180,9 @@ struct ShaderConfig {
 };
 
 class Shader{
+public:
+	virtual std::vector<uint32_t> CreateShaderModule(const char* filename, EShLanguage Stage) = 0;
+
 public:
 	ShaderFlagBits Flags;
 	uint32_t ID = INVALID_ID;

@@ -191,7 +191,7 @@ bool RenderViewWorld::OnBuildPacket(void* data, struct RenderViewPacket* out_pac
 		return false;
 	}
 
-	std::vector<GeometryRenderData>* GeometryData = (std::vector<GeometryRenderData>*)data;
+	const std::vector<GeometryRenderData>* GeometryData = (std::vector<GeometryRenderData>*)data;
 	out_packet->view = this;
 
 	// Set matrix, etc.
@@ -201,18 +201,16 @@ bool RenderViewWorld::OnBuildPacket(void* data, struct RenderViewPacket* out_pac
 	out_packet->ambient_color = AmbientColor;
 
 	// Obtain all geometries from the current scene.
-
 	std::vector<GeometryDistance> GeometryDistances;
-
 	uint32_t GeometryDataCount = (uint32_t)GeometryData->size();
 	for (uint32_t i = 0; i < GeometryDataCount; ++i) {
-		GeometryRenderData* GData = &(*GeometryData)[i];
-		if (GData->geometry == nullptr) {
+		const GeometryRenderData& GData = (*GeometryData)[i];
+		if (GData.geometry == nullptr) {
 			continue;
 		}
 
 		// TODO: Add something to material to check for transparency.
-		if ((GData->geometry->Material->DiffuseMap.texture->Flags & TextureFlagBits::eTexture_Flag_Has_Transparency) == 0) {
+		if ((GData.geometry->Material->DiffuseMap.texture->Flags & TextureFlagBits::eTexture_Flag_Has_Transparency) == 0) {
 			// Only add meshes with _no_ transparency.
 			out_packet->geometries.push_back((*GeometryData)[i]);
 			out_packet->geometry_count++;
@@ -222,7 +220,7 @@ bool RenderViewWorld::OnBuildPacket(void* data, struct RenderViewPacket* out_pac
 			// Get the center, extract the global position from the model matrix and add it to the center,
 			// then calculate the distance between it and the camera, and finally save it to a list to be sorted.
 			// NOTE: This isn't perfect for translucent meshes that intersect, but is enough for our purposes now.
-			Vec3 Center = (*GeometryData)[i].geometry->Center.Transform(GData->model);
+			Vec3 Center = (*GeometryData)[i].geometry->Center.Transform(GData.model);
 			float Distance = Center.Distance(WorldCamera->GetPosition());
 
 			GeometryDistance gDist;

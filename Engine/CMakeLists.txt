@@ -14,7 +14,7 @@ include_directories(
 )
 
 file(GLOB ENGINE_SOURCE_FILES *.cpp */*.cpp */*/*.cpp */*/*/*.cpp Platform/PlatformMacOS.mm)
-add_library(engine SHARED ${ENGINE_SOURCE_FILES} "Resources/Geometry.cpp")
+add_library(engine SHARED ${ENGINE_SOURCE_FILES})
 
 # Output .dll to bin directly.
 set_target_properties(engine PROPERTIES
@@ -51,6 +51,17 @@ if(${APPLE})
 
     set_target_properties(engine PROPERTIES LINK_FLAGS "-Wl,-F/Library/Frameworks")
 elseif(${WIN32})
+    if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+    set(GLSLANGL_IBS
+        shaderc_shared
+    )
+    else()
+    set(GLSLANGL_IBS
+        shaderc_combined
+    )
+    endif()
+
+    target_link_libraries(engine PUBLIC "${GLSLANGL_IBS}")
     target_link_libraries(engine PUBLIC "Logger.lib")
     target_link_libraries(engine PUBLIC "vulkan-1.lib")
 endif()
