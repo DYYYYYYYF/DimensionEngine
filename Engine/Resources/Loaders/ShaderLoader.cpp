@@ -37,9 +37,6 @@ bool ShaderLoader::Load(const char* name, void* params, Resource* resource) {
 	ResourceData = new(ResourceData)ShaderConfig();
 	ASSERT(ResourceData);
 
-	ResourceData->attribute_count = 0;
-	ResourceData->uniform_count = 0;
-	ResourceData->stage_cout = 0;
 	ResourceData->cull_mode = FaceCullMode::eFace_Cull_Mode_Back;
 	ResourceData->polygon_mode = PolygonMode::ePology_Mode_Fill;
 	ResourceData->name = nullptr;
@@ -98,26 +95,21 @@ bool ShaderLoader::Load(const char* name, void* params, Resource* resource) {
 			ResourceData->stage_names = StageNames;
 
 			// Ensue stage name and stage filename count are the same.
-			if (ResourceData->stage_cout == 0) {
-				ResourceData->stage_cout = (unsigned short)StageNames.size();
-			}
-			else if (ResourceData->stage_cout != StageNames.size()) {
-				LOG_ERROR("shader_loader_load: Invalid file layout. Count mismatch between stage names and stage filenames.");
-			}
+			ResourceData->stages.resize(StageNames.size());
 
 			// Parse each stage and add the right type to the array.
-			for (unsigned short i = 0; i < ResourceData->stage_cout; ++i) {
+			for (unsigned short i = 0; i < ResourceData->stages.size(); ++i) {
 				if (strcmp(StageNames[i], "frag") == 0 || strcmp(StageNames[i], "fragment") == 0) {
-					ResourceData->stages.push_back(ShaderStage::eShader_Stage_Fragment);
+					ResourceData->stages[i] = ShaderStage::eShader_Stage_Fragment;
 				}
 				else if (strcmp(StageNames[i], "vert") == 0 || strcmp(StageNames[i], "vertex") == 0) {
-					ResourceData->stages.push_back(ShaderStage::eShader_Stage_Vertex);
+					ResourceData->stages[i] = ShaderStage::eShader_Stage_Vertex;
 				}
 				else if (strcmp(StageNames[i], "geom") == 0 || strcmp(StageNames[i], "geometry") == 0) {
-					ResourceData->stages.push_back(ShaderStage::eShader_Stage_Geometry);
+					ResourceData->stages[i] = ShaderStage::eShader_Stage_Geometry;
 				}
 				else if (strcmp(StageNames[i], "comp") == 0 || strcmp(StageNames[i], "compute") == 0) {
-					ResourceData->stages.push_back(ShaderStage::eShader_Stage_Compute);
+					ResourceData->stages[i] = ShaderStage::eShader_Stage_Compute;
 				}
 				else {
 					LOG_ERROR("shader_loader_load: Invalid file layout. Unrecognized stage '%s'", StageNames[i]);
@@ -126,10 +118,7 @@ bool ShaderLoader::Load(const char* name, void* params, Resource* resource) {
 		}
 		else if (strcmp(TrimmedVarName, "stagefiles") == 0) {
 			ResourceData->stage_filenames = StringSplit(TrimmedValue, ',', true, true);
-			if (ResourceData->stage_cout == 0) {
-				ResourceData->stage_cout = (unsigned short)ResourceData->stage_filenames.size();
-			}
-			else if (ResourceData->stage_cout != ResourceData->stage_filenames.size()) {
+			if (ResourceData->stages.size() != ResourceData->stage_filenames.size()) {
 				LOG_ERROR("shader_loader_load: Invalid file layout. Attribute fields must be 'type,name'. Skipping.");
 			}
 		}
@@ -220,7 +209,6 @@ bool ShaderLoader::Load(const char* name, void* params, Resource* resource) {
 
 				// Add the attribute.
 				ResourceData->attributes.push_back(Attribute);
-				ResourceData->attribute_count++;
 			}
 
 			for (uint32_t i = 0; i < Fields.size(); ++i) {
@@ -314,7 +302,6 @@ bool ShaderLoader::Load(const char* name, void* params, Resource* resource) {
 
 				// Add the uniform.
 				ResourceData->uniforms.push_back(Uniform);
-				ResourceData->uniform_count++;
 			}
 
 			for (uint32_t i = 0; i < Fields.size(); ++i) {

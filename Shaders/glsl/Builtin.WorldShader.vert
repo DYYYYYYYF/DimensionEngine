@@ -25,6 +25,7 @@ layout (location = 1) out struct out_dto{
 	vec4 vAmbientColor;
 	vec3 vViewPosition;
 	vec3 vFragPosition;
+	vec3 vVertPosition;
 	vec4 vColor;
 	vec4 vTangent;
 }OutDto;
@@ -37,8 +38,8 @@ void main(){
 	OutDto.vFragPosition = vec3(PushConstant.model * vec4(vPosition, 1.0f));
 	OutDto.vNormal = normalize(mat3(PushConstant.model) * vNormal);
 	OutDto.vTangent = vec4(normalize(mat3(PushConstant.model) * vTangent.xyz), vTangent.w);
+	gl_Position = GlobalUBO.projection * GlobalUBO.view * PushConstant.model * vec4(vPosition, 1.0f);
 
 	out_mode = GlobalUBO.mode;
-
-	gl_Position = GlobalUBO.projection * GlobalUBO.view * PushConstant.model * vec4(vPosition, 1.0f);
+	OutDto.vVertPosition = gl_Position.xyz / 255.0f;
 }

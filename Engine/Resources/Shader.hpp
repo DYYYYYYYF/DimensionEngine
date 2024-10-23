@@ -1,16 +1,18 @@
 #pragma once
 
-#include <vulkan/vulkan.hpp>
 #include "Containers/TArray.hpp"
 #include "Containers/THashTable.hpp"
 #include "Math/MathTypes.hpp"
+#include "Resource.hpp"
+#include <vulkan/vulkan.hpp>
 
 struct TextureMap;
 
 enum ShaderRenderMode {
 	eShader_Render_Mode_Default,
 	eShader_Render_Mode_Lighting,
-	eShader_Render_Mode_Normals
+	eShader_Render_Mode_Normals,
+	eShader_Render_Mode_Depth
 };
 
 enum ShaderState {
@@ -163,15 +165,9 @@ struct ShaderConfig {
 	FaceCullMode cull_mode;
 	PolygonMode polygon_mode;
 
-	unsigned short attribute_count;
 	std::vector<ShaderAttributeConfig> attributes;
-
-	unsigned short uniform_count;
 	std::vector<ShaderUniformConfig> uniforms;
-
-	unsigned short stage_cout;
 	std::vector<ShaderStage> stages;
-
 	std::vector<char*> stage_names;
 	std::vector<char*> stage_filenames;
 
@@ -179,13 +175,13 @@ struct ShaderConfig {
 	bool depthWrite;
 };
 
-class Shader {
+class Shader{
 public:
 	ShaderFlagBits Flags;
-	uint32_t ID;
+	uint32_t ID = INVALID_ID;
 	char* Name = nullptr;
 
-	size_t RenderFrameNumber;
+	size_t RenderFrameNumber = INVALID_ID_U64;
 	size_t RequiredUboAlignment;
 	size_t GlobalUboSize;
 	size_t GlobalUboOffset;
@@ -204,7 +200,6 @@ public:
 	unsigned short PushConstantsRangeCount;
 	Range PushConstantsRanges[32];
 	unsigned short AttributeStride;
-	void* InternalData = nullptr;
 
 	std::vector<ShaderUniform> Uniforms;
 	std::vector<ShaderAttribute> Attributes;

@@ -4,7 +4,7 @@
 #include "Platform/Platform.hpp"
 #include "Containers/TString.hpp"
 
-struct SMemoryStats Memory::stats;
+struct Memory::SMemoryStats Memory::stats;
 size_t Memory::TotalAllocateSize;
 DynamicAllocator Memory::DynamicAlloc;
 size_t Memory::AllocateCount;

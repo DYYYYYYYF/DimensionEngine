@@ -56,6 +56,7 @@ layout (location = 1) in struct dto{
 	vec4 vAmbientColor;
 	vec3 vViewPosition;
 	vec3 vFragPosition;
+	vec3 vVertPosition;
 	vec4 vColor;
 	vec4 vTangent;
 }in_dto;
@@ -86,6 +87,9 @@ void main(){
 	else if (in_mode == 2){
 		FragColor = vec4(abs(Normal), 1.0f);
 	} 
+	else if (in_mode == 3){
+		FragColor = vec4(in_dto.vVertPosition.z, in_dto.vVertPosition.z, in_dto.vVertPosition.z, 1.0f);
+	}
 	else {
 		FragColor = vec4(1.0f, 1.0f, 1.0f, 1.0f);
 	}

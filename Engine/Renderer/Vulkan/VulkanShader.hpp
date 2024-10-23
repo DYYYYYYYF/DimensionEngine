@@ -65,7 +65,7 @@ struct VulkanShaderInstanceState {
 	std::vector<TextureMap*> instance_texture_maps;
 };
 
-class VulkanShader {
+class VulkanShader : public Shader {
 public:
 	void* MappedUniformBufferBlock = nullptr;
 	uint32_t ID;

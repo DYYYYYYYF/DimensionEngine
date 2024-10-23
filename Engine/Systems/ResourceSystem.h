@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Resources/Resource.hpp"
-#include "Containers/TArray.hpp"
+#include <vector>
 
 class IResourceLoader;
 
@@ -27,7 +27,7 @@ public:
 
 public:
 	static SResourceSystemConfig Config;
-	static TArray<IResourceLoader*> RegisteredLoaders;
+	static std::vector<IResourceLoader*> RegisteredLoaders;
 
 	static bool Initilized;
 };

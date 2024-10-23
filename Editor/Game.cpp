@@ -172,9 +172,10 @@ bool GameInstance::Initialize() {
 		\n\tO: sponza P: car\
 		\n\tK: dragon L: bunny\
 		\nM: Watch memory usage.\
-		\nF1: Default shader mode.\
-		\nF2: Lighting shader mode.\
-		\nF3: Normals shader mode."))
+		\nF1: Default view.\
+		\nF2: Lighting view.\
+		\nF3: Normals view.\
+		\nF4: Depth view."))
 	{
 		LOG_ERROR("Failed to load basic ui system text.");
 		return false;
@@ -363,6 +364,11 @@ bool GameInstance::Update(float delta_time) {
 	if (Controller::IsKeyUp(eKeys::F3) &&Controller::WasKeyDown(eKeys::F3)) {
 		SEventContext Context;
 		Context.data.i32[0] = ShaderRenderMode::eShader_Render_Mode_Normals;
+		EngineEvent::Fire(eEventCode::Set_Render_Mode, nullptr, Context);
+	}
+	if (Controller::IsKeyUp(eKeys::F4) &&Controller::WasKeyDown(eKeys::F4)) {
+		SEventContext Context;
+		Context.data.i32[0] = ShaderRenderMode::eShader_Render_Mode_Depth;
 		EngineEvent::Fire(eEventCode::Set_Render_Mode, nullptr, Context);
 	}
 

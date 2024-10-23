@@ -70,12 +70,11 @@ public:
 	 *
 	 * @param shader A pointer to the shader.
 	 * @param pass The pointer of the renderpass to be associated with the shader.
-	 * @param stage_count The total number of stages.
 	 * @param stage_filenames An array of shader stage filenames to be loaded. Should align with stages array.
 	 * @param stages A array of shader_stages indicating what render stages (vertex, fragment, etc.) used in this shader.
 	 * @return True on success; otherwise false.
 	 */
-	virtual bool CreateRenderShader(Shader* shader, const ShaderConfig* config, IRenderpass* pass, unsigned short stage_count, std::vector<char*> stage_filenames, std::vector<ShaderStage> stages);
+	virtual bool CreateRenderShader(Shader* shader, const ShaderConfig* config, IRenderpass* pass, std::vector<char*> stage_filenames, std::vector<ShaderStage> stages);
 
 	/**
 	 * @brief Destroys the given shader and releases any resources held by it.
@@ -214,6 +213,9 @@ public:
 	virtual unsigned char GetWindowAttachmentCount() const;
 	virtual Texture* GetDepthAttachment(unsigned char index);
 	virtual unsigned char GetWindowAttachmentIndex();
+
+public:
+	RendererBackendType GetBackendType() const { return BackendType; }
 
 protected:
 	RendererBackendType BackendType;

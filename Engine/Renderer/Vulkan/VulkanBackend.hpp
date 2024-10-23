@@ -69,7 +69,7 @@ public:
 	virtual void ResetScissor() override;
 
 	// Shaders.
-	virtual bool CreateShader(Shader* shader, const ShaderConfig* config, IRenderpass* pass, unsigned short stage_count, const std::vector<char*>& stage_filenames, std::vector<ShaderStage>& stages) override;
+	virtual bool CreateShader(Shader* shader, const ShaderConfig* config, IRenderpass* pass, const std::vector<char*>& stage_filenames, std::vector<ShaderStage>& stages) override;
 	virtual bool DestroyShader(Shader* shader) override;
 	virtual bool InitializeShader(Shader* shader) override;
 	virtual bool UseShader(Shader* shader) override;

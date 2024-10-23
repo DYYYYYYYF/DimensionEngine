@@ -59,7 +59,12 @@ static bool RenderViewWorldOnEvent(eEventCode code, void* sender, void* listener
 			LOG_DEBUG("Change render mode: eShader_Render_Mode_Normals.");
 			break;
 
+		case ShaderRenderMode::eShader_Render_Mode_Depth:
+			self->render_mode = ShaderRenderMode::eShader_Render_Mode_Depth;
+			LOG_DEBUG("Change render mode: eShader_Render_Mode_Depth.");
+			break;
 		}
+
 		return true;
 	}
         default: return true;

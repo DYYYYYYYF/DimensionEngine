@@ -96,7 +96,7 @@ bool Application::Initialize(){
 	}
 
 	// Init shader system
-	SShaderSystemConfig ShaderSystemConfig;
+	ShaderSystem::Config ShaderSystemConfig;
 	ShaderSystemConfig.max_shader_count = 1024;
 	ShaderSystemConfig.max_uniform_count = 128;
 	ShaderSystemConfig.max_global_textures = 31;

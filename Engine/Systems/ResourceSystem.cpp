@@ -12,7 +12,7 @@
 #include "Resources/Loaders/SystemFontLoader.hpp"
 
 SResourceSystemConfig ResourceSystem::Config;
-TArray<IResourceLoader*> ResourceSystem::RegisteredLoaders = TArray<IResourceLoader*>();
+std::vector<IResourceLoader*> ResourceSystem::RegisteredLoaders;
 bool ResourceSystem::Initilized = false;
 
 bool ResourceSystem::Initialize(SResourceSystemConfig config) {
@@ -24,26 +24,26 @@ bool ResourceSystem::Initialize(SResourceSystemConfig config) {
 	Config = config;
 
 	// Invalidate all loaders.
-	RegisteredLoaders.Resize(config.max_loader_count);
+	RegisteredLoaders.resize(config.max_loader_count);
 	for (uint32_t i = 0; i < config.max_loader_count; ++i) {
 		RegisteredLoaders[i] = (IResourceLoader*)Memory::Allocate(sizeof(IResourceLoader), MemoryType::eMemory_Type_Array);
 		RegisteredLoaders[i]->Id = INVALID_ID;
 	}
 
 	// NOTE: Auto-register known loader types here.
-	IResourceLoader* BinLoader = new BinaryLoader();
+	IResourceLoader* BinLoader = NewObject<BinaryLoader>();
 	RegisterLoader(BinLoader);
-	IResourceLoader* ImgLoader = new ImageLoader();
+	IResourceLoader* ImgLoader = NewObject<ImageLoader>();
 	RegisterLoader(ImgLoader);
-	IResourceLoader* MatLoader = new MaterialLoader();
+	IResourceLoader* MatLoader = NewObject<MaterialLoader>();
 	RegisterLoader(MatLoader);
-	IResourceLoader* ShaLoader = new ShaderLoader();
+	IResourceLoader* ShaLoader = NewObject<ShaderLoader>();
 	RegisterLoader(ShaLoader);
-	IResourceLoader* MesLoader = new MeshLoader();
+	IResourceLoader* MesLoader = NewObject<MeshLoader>();
 	RegisterLoader(MesLoader);	
-	IResourceLoader* BitFontLoader = new BitmapFontLoader();
+	IResourceLoader* BitFontLoader = NewObject<BitmapFontLoader>();
 	RegisterLoader(BitFontLoader);
-	IResourceLoader* SysFontLoader = new SystemFontLoader();
+	IResourceLoader* SysFontLoader = NewObject<SystemFontLoader>();
 	RegisterLoader(SysFontLoader);
 
 	Initilized = true;
@@ -54,7 +54,12 @@ bool ResourceSystem::Initialize(SResourceSystemConfig config) {
 
 void ResourceSystem::Shutdown() {
 	if (Initilized) {
-		RegisteredLoaders.Clear();
+		for (uint32_t i = 0; i < RegisteredLoaders.size(); i++) {
+			DeleteObject(RegisteredLoaders[i]);
+		}
+
+		RegisteredLoaders.clear();
+		std::vector<IResourceLoader*>().swap(RegisteredLoaders);
 	}
 }
 
