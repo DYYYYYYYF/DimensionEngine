@@ -239,21 +239,21 @@ bool RenderViewPick::OnBuildPacket(IRenderviewPacketData* data, struct RenderVie
 			GeometryRenderData RenderData;
 			RenderData.geometry = m->geometries[j];
 			RenderData.model = m->GetWorldTransform();
-			RenderData.uniqueID = m->UniqueID;
+			RenderData.uniqueID = m->GetUniqueID();
 			out_packet->geometries.push_back(RenderData);
 			PacketData->UIGeometryCount++;
 		}
 
 		// Count all geometries as a single id.
-		if (m->UniqueID > HighestInstanceID) {
-			HighestInstanceID = m->UniqueID;
+		if (m->GetUniqueID() > HighestInstanceID) {
+			HighestInstanceID = m->GetUniqueID();
 		}
 	}
 
 	// Count texts as well.
 	for (uint32_t i = 0; i < PacketData->TextCount; ++i) {
-		if (PacketData->Texts[i]->UniqueID > HighestInstanceID) {
-			HighestInstanceID = PacketData->Texts[i]->UniqueID;
+		if (PacketData->Texts[i]->GetUniqueID() > HighestInstanceID) {
+			HighestInstanceID = PacketData->Texts[i]->GetUniqueID();
 		}
 	}
 
@@ -463,13 +463,13 @@ bool RenderViewPick::OnRender(struct RenderViewPacket* packet, IRendererBackend*
 		// Draw bitmap text.
  		for (uint32_t i = 0; i < PacketData->TextCount; ++i) {
 			UIText* Text = PacketData->Texts[i];
-			CurrentInstanceID = Text->UniqueID;
+			CurrentInstanceID = Text->GetUniqueID();
 			ShaderSystem::BindInstance(CurrentInstanceID);
 
 			// Get color based on id
 			Vector3 IDColor;
 			uint32_t R, G, B;
-			UInt2RGB(Text->UniqueID, &R, &G, &B);
+			UInt2RGB(Text->GetUniqueID(), &R, &G, &B);
 			RGB2Vec(R, G, B, &IDColor);
 			if (!ShaderSystem::SetUniformByIndex(UIShaderInfo.IDColorLocation, &IDColor)) {
 				LOG_ERROR("Failed to apply id colour uniform.");
@@ -479,7 +479,7 @@ bool RenderViewPick::OnRender(struct RenderViewPacket* packet, IRendererBackend*
 			ShaderSystem::ApplyInstance(true);
 
 			// Apply the locals.
-			Matrix4 Model = Text->Trans.GetLocal();
+			Matrix4 Model = Text->GetLocalTransform();
 			if (!ShaderSystem::SetUniformByIndex(UIShaderInfo.ModelLocation, &Model)) {
 				LOG_ERROR("Failde to apply model matrix for text.");
 			}

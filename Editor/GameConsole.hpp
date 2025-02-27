@@ -1,17 +1,18 @@
 ﻿#include <Core/Event.hpp>
 #include <Resources/UIText.hpp>
+#include <Frameworks/Classes/Actor.h>
 
 class IRenderer;
 
-class DebugConsole{
+class DebugConsoleActor : public Actor{
 public:
-	DebugConsole();
-	DebugConsole(IRenderer* renderer);
-	virtual ~DebugConsole();
+	DebugConsoleActor();
+	DebugConsoleActor(IRenderer* renderer);
+	virtual ~DebugConsoleActor();
 
 public:
-	bool Load();
-	void Update();
+	virtual bool Initialize() override;
+	virtual void Tick(float DeltaTime) override;
 
 	UIText* GetText();
 	UIText* GetEntryText();

@@ -231,7 +231,7 @@ bool RenderViewUI::OnRender(struct RenderViewPacket* packet, IRendererBackend* b
 			Text->RenderFrameNumber = frame_number;
 
 			// Apply the locals.
-			Matrix4 Model = Text->Trans.GetLocal();
+			Matrix4 Model = Text->GetLocalTransform();
 			if (!ShaderSystem::SetUniformByIndex(ModelLocation, &Model)) {
 				LOG_ERROR("Failde to apply model matrix for text.");
 			}

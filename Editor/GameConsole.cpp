@@ -5,7 +5,7 @@
 #include <Containers/TString.hpp>
 #include <Renderer/RendererFrontend.hpp>
 
-bool DebugConsole::Write(Log::Logger::Level level, const std::string& msg) {
+bool DebugConsoleActor::Write(Log::Logger::Level level, const std::string& msg) {
 	std::vector<std::string> SplitMessage = Utils::StringSplit(msg, '\n', true, false);
 	for (size_t i = 0; i < SplitMessage.size(); ++i) {
 		Lines.push_back(SplitMessage[i]);
@@ -15,7 +15,7 @@ bool DebugConsole::Write(Log::Logger::Level level, const std::string& msg) {
 	return true;
 }
 
-bool DebugConsole::OnKey(eEventCode code, void* sender, void* listener_inst, SEventContext context) {
+bool DebugConsoleActor::OnKey(eEventCode code, void* sender, void* listener_inst, SEventContext context) {
 	if (!Visible) {
 		return false;
 	}
@@ -105,7 +105,7 @@ bool DebugConsole::OnKey(eEventCode code, void* sender, void* listener_inst, SEv
 	return true;
 }
 
-DebugConsole::DebugConsole(){
+DebugConsoleActor::DebugConsoleActor(){
 	DisplayLineCount = 10;
 	LineOffset = 0;
 	Visible = false;
@@ -114,10 +114,10 @@ DebugConsole::DebugConsole(){
 	TextControl = nullptr;
 	EntryControl = nullptr;
 
-	Console::RegisterConsumer(std::bind(&DebugConsole::Write, this, std::placeholders::_1, std::placeholders::_2));
+	Console::RegisterConsumer(std::bind(&DebugConsoleActor::Write, this, std::placeholders::_1, std::placeholders::_2));
 }
 
-DebugConsole::DebugConsole(IRenderer* renderer) {
+DebugConsoleActor::DebugConsoleActor(IRenderer* renderer) {
 	DisplayLineCount = 10;
 	LineOffset = 0;
 	Visible = false;
@@ -126,10 +126,10 @@ DebugConsole::DebugConsole(IRenderer* renderer) {
 	TextControl = nullptr;
 	EntryControl = nullptr;
 
-	Console::RegisterConsumer(std::bind(&DebugConsole::Write, this, std::placeholders::_1, std::placeholders::_2));
+	Console::RegisterConsumer(std::bind(&DebugConsoleActor::Write, this, std::placeholders::_1, std::placeholders::_2));
 }
 
-DebugConsole::~DebugConsole() {
+DebugConsoleActor::~DebugConsoleActor() {
 	if (TextControl) {
 		TextControl->Destroy();
 		DeleteObject(TextControl);
@@ -142,10 +142,12 @@ DebugConsole::~DebugConsole() {
 		EntryControl = nullptr;
 	}
 
-	Console::UnregisterConsumer(std::bind(&DebugConsole::Write, this, std::placeholders::_1, std::placeholders::_2));
+	Console::UnregisterConsumer(std::bind(&DebugConsoleActor::Write, this, std::placeholders::_1, std::placeholders::_2));
 }
 
-bool DebugConsole::Load() {
+bool DebugConsoleActor::Initialize() {
+	Actor::Initialize();
+
 	// Create UI text control for rendering.
 	TextControl = NewObject<UIText>();
 	if (!TextControl->Create(Renderer, UITextType::eUI_Text_Type_system, "Noto Sans CJK JP", 26, "No Log.")) {
@@ -153,7 +155,7 @@ bool DebugConsole::Load() {
 		return false;
 	}
 
-	TextControl->SetPosition(Vector3(0.7f * Renderer->GetWidth(), 100, 0));
+	TextControl->SetLocation(Vector3(0.7f * Renderer->GetWidth(), 100, 0));
 
 	// Create another ui text control for rendering typed text.
 	EntryControl = NewObject<UIText>();
@@ -162,11 +164,11 @@ bool DebugConsole::Load() {
 		return false;
 	}
 
-	EntryControl->SetPosition(Vector3(0.7f * Renderer->GetWidth(), 100 + (31.0f * DisplayLineCount), 0.0f));
+	EntryControl->SetLocation(Vector3(0.7f * Renderer->GetWidth(), 100 + (31.0f * DisplayLineCount), 0.0f));
 
 	EngineEvent::Register(eEventCode::Key_Pressed, nullptr,
 		std::bind(
-			&DebugConsole::OnKey, this,
+			&DebugConsoleActor::OnKey, this,
 			std::placeholders::_1,
 			std::placeholders::_2,
 			std::placeholders::_3,
@@ -175,7 +177,7 @@ bool DebugConsole::Load() {
 	);
 	EngineEvent::Register(eEventCode::Key_Released, nullptr,
 		std::bind(
-			&DebugConsole::OnKey, this,
+			&DebugConsoleActor::OnKey, this,
 			std::placeholders::_1,
 			std::placeholders::_2,
 			std::placeholders::_3,
@@ -186,10 +188,13 @@ bool DebugConsole::Load() {
 	return true;
 }
 
-void DebugConsole::Update() {
+void DebugConsoleActor::Tick(float DeltaTime) {
 	if (!Dirty) {
 		return;
 	}
+
+	TextControl->Tick(DeltaTime);
+	EntryControl->Tick(DeltaTime);
 
 	size_t LineCount = Lines.size();
 	size_t MaxLines = DMIN(DisplayLineCount, LineCount);
@@ -213,15 +218,15 @@ void DebugConsole::Update() {
 	Dirty = false;
 }
 
-UIText* DebugConsole::GetText() {
+UIText* DebugConsoleActor::GetText() {
 	return TextControl;
 }
 
-UIText* DebugConsole::GetEntryText() {
+UIText* DebugConsoleActor::GetEntryText() {
 	return EntryControl;
 }
 
-void DebugConsole::MoveUp() {
+void DebugConsoleActor::MoveUp() {
 	Dirty = true;
 	int LineCount = (int)Lines.size();
 	// Don't bother with trying an offset, just reset and boot out.
@@ -234,7 +239,7 @@ void DebugConsole::MoveUp() {
 	LineOffset = DMIN(LineOffset, LineCount - DisplayLineCount);
 }
 
-void DebugConsole::MoveDown() {
+void DebugConsoleActor::MoveDown() {
 	Dirty = true;
 	size_t LineCount = Lines.size();
 	// Don't bother with trying an offset, just reset and boot out.
@@ -247,7 +252,7 @@ void DebugConsole::MoveDown() {
 	LineOffset = DMAX(LineOffset, 0);
 }
 
-void DebugConsole::MoveToTop() {
+void DebugConsoleActor::MoveToTop() {
 	Dirty = true;
 	int LineCount = (int)Lines.size();
 	// Don't bother with trying an offset, just reset and boot out.
@@ -259,7 +264,7 @@ void DebugConsole::MoveToTop() {
 	LineOffset = LineCount - DisplayLineCount;
 }
 
-void DebugConsole::MoveToBottom() {
+void DebugConsoleActor::MoveToBottom() {
 	Dirty = true;
 	LineOffset = 0;
 }

@@ -5,6 +5,7 @@
 #include "Renderer/RendererTypes.hpp"
 #include "Renderer/Vulkan/VulkanBuffer.hpp"
 #include "Renderer/Interface/IRenderbuffer.hpp"
+#include "Frameworks/Classes/Actor.h"
 
 class IFontDataBase;
 
@@ -13,12 +14,14 @@ enum UITextType {
 	eUI_Text_Type_system
 };
 
-class UIText {
+class UIText : public Actor {
+public:
+	DAPI UIText() : Actor() {}
+	DAPI virtual ~UIText() {}
+
 public:
 	DAPI bool Create(class IRenderer* renderer, UITextType type, const std::string& fontName, unsigned short fontSize, const char* textContent);
 	DAPI void Destroy();
-
-	DAPI void SetPosition(Vector3 position);
 	DAPI void SetText(const char* text);
 
 	void Draw();
@@ -34,14 +37,12 @@ private:
 	void RegenerateGeometry();
 
 public:
-	uint32_t UniqueID = INVALID_ID;
 	IRenderer* Renderer = nullptr;
 	UITextType Type = UITextType::eUI_Text_Type_Bitmap;
 	IFontDataBase* Data = nullptr;
 	IRenderbuffer* VertexBuffer = nullptr;
 	IRenderbuffer* IndexBuffer = nullptr;
 	char* Text = nullptr;
-	Transform Trans;
 	uint32_t InstanceID = INVALID_ID;
 	size_t RenderFrameNumber = 0;
 
