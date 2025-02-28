@@ -1,6 +1,7 @@
-﻿#pragma once
+#pragma once
 
 #include "Defines.hpp"
+#include "Core/DMemory.hpp"
 #include "Core/EngineLogger.hpp"
 #include "Platform/Platform.hpp"
 #include <type_traits>

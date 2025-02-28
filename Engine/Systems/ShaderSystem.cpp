@@ -1,4 +1,4 @@
-﻿#include "ShaderSystem.h"
+#include "ShaderSystem.h"
 
 #include "Renderer/RendererFrontend.hpp"
 #include "Systems/TextureSystem.h"
@@ -247,11 +247,11 @@ bool ShaderSystem::UseByID(uint32_t shader_id) {
 		Shader* NextShader = GetByID(shader_id);
 		CurrentShaderID = shader_id;
 		if (!Renderer->UseRenderShader(NextShader)) {
-			LOG_ERROR("Failed to use shader '%s'.", NextShader->Name);
+			LOG_ERROR("Failed to use shader '%s'.", NextShader->Name.c_str());
 			return false;
 		}
 		if (!Renderer->BindGlobalsRenderShader(NextShader)) {
-			LOG_ERROR("Failed to bind globals for shader '%s'.", NextShader->Name);
+			LOG_ERROR("Failed to bind globals for shader '%s'.", NextShader->Name.c_str());
 			return false;
 		}
 	}
@@ -266,13 +266,13 @@ unsigned short ShaderSystem::GetUniformIndex(Shader* shader, const char* uniform
 
 	auto it = shader->HashMap.find(uniform_name);
 	if (it == shader->HashMap.end()){
-		LOG_ERROR("Shader '%s' does not have a registered uniform named '%s'", shader->Name, uniform_name);
+		LOG_ERROR("Shader '%s' does not have a registered uniform named '%s'", shader->Name.c_str(), uniform_name);
 		return INVALID_ID_U16;
 	}
 
 	unsigned short Index = it->second;
 	if ( Index == INVALID_ID_U16) {
-		LOG_ERROR("Shader '%s' does not have a registered uniform named '%s'", shader->Name, uniform_name);
+		LOG_ERROR("Shader '%s' does not have a registered uniform named '%s'", shader->Name.c_str(), uniform_name);
 		return INVALID_ID_U16;
 	}
 
@@ -545,7 +545,7 @@ bool ShaderSystem::IsUniformNameValid(Shader* shader, const char* uniform_name) 
 
 	auto it = shader->HashMap.find(uniform_name);
 	if (it != shader->HashMap.end()){
-		LOG_ERROR("A uniform by the name '%s' already exists on shader '%s'.", uniform_name, shader->Name);
+		LOG_ERROR("A uniform by the name '%s' already exists on shader '%s'.", uniform_name, shader->Name.c_str());
 		return false;
 	}
 

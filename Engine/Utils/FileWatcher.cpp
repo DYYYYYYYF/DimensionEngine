@@ -1,10 +1,16 @@
 #include "FileWatcher.h"
-#include "tchar.h"
 #include "iostream"
 #include "Platform/File.hpp"
 #include "Core/Event.hpp"
 #include "Core/DMemory.hpp"
 #include <filesystem>
+
+#ifdef DPLATFORM_WINDOWS
+#include "tchar.h"
+#else
+#include <sys/types.h>
+#include <sys/stat.h>
+#endif
 
 FileWatcher::FileWatcher(){
 }
