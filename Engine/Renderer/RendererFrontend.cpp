@@ -16,6 +16,7 @@
 
 // TODO: temp
 #include "Core/Event.hpp"
+#include "../Utils/JSONReader.h"
 // TODO: temp
 
 IRenderer::IRenderer() {
@@ -84,6 +85,13 @@ void IRenderer::Shutdown() {
 	}
 
 	Backend = nullptr;
+
+
+	// Save current config
+	JSONReader JsonReader(std::string(ROOT_PATH) + "/Config/EngineConfig.json");
+	JsonReader.SetPropertyInt("Editor.Window.Width", FramebufferWidth);
+	JsonReader.SetPropertyInt("Editor.Window.Height", FramebufferHeight);
+
 }
 
 void IRenderer::OnResize(unsigned short width, unsigned short height) {

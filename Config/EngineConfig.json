@@ -1,15 +1,1 @@
-{
-    "Engine" : {
-        "Application" : "Engine Editor",
-        "Window"  : {
-            "Width" : 1600,
-            "Height": 800,
-            "OffsetX" : 100,
-            "OffsetY" : 100
-        },
-        "ShaderLanguage" : "glsl"
-    },
-    "Editor" :{
-
-    }
-}
+{"Engine":{"ShaderLanguage":"hlsl"},"Editor":{"Application":"Engine","Window":{"Width":1597,"Height":801,"OffsetX":100,"OffsetY":100}}}
