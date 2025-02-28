@@ -14,7 +14,7 @@ public:
 
 	template<typename T>
 	Transform(const std::vector<T>& dat) {
-		SetPosition(Vector3((float)dat[12], (float)dat[13], (float)dat[14]));
+		SetLocation(Vector3((float)dat[12], (float)dat[13], (float)dat[14]));
 
 		float ScaleX = Vector3((float)dat[0], (float)dat[1], (float)dat[2]).Length();
 		float ScaleY = Vector3((float)dat[4], (float)dat[5], (float)dat[6]).Length();
@@ -33,7 +33,7 @@ public:
 		Rotation[10] = (float)dat[10] / ScaleZ;
 
 		Quaternion Quat = MatrixToQuat(Rotation);
-		SetRotation(Quat);
+		SetQuaternion(Quat);
 	}
 
 	/**
@@ -71,14 +71,14 @@ public:
 	Transform(const Vector3& position, const Quaternion& rotation, const Vector3& scale);
 
 public:
-	void SetPosition(Vector3 pos) { vPosition = pos; IsDirty = true; }
-	const Vector3& GetPosition() const { return vPosition; }
+	void SetLocation(Vector3 pos) { vPosition = pos; bIsDirty = true; }
+	const Vector3& GetLocation() const { return vPosition; }
 
-	void SetScale(Vector3 scale) { vScale = scale; IsDirty = true; }
+	void SetScale(Vector3 scale) { vScale = scale; bIsDirty = true; }
 	const Vector3& GetScale() const { return vScale; }
 
-	void SetRotation(Quaternion quat) { vRotation = quat; IsDirty = true; }
-	const Quaternion& GetRotation() const { return vRotation; }
+	void SetQuaternion(Quaternion quat) { vRotation = quat; bIsDirty = true; }
+	const Quaternion& GetQuaternion() const { return vRotation; }
 
 
 	void Translate(const Vector3& translation);
@@ -91,14 +91,14 @@ public:
 
 	Matrix4 GetLocal();
 
-private:
+	bool IsDirty() const { return bIsDirty; }
 	void UpdateLocal();
 
 private:
 	Vector3 vPosition;
 	Quaternion vRotation;
 	Vector3 vScale;
-	bool IsDirty;
+	bool bIsDirty;
 	Matrix4 Local;
 
 };

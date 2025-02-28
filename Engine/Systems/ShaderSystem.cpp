@@ -8,6 +8,7 @@
 #include "Core/EngineLogger.hpp"
 #include "Containers/TString.hpp"
 #include "Renderer/Vulkan/VulkanShader.hpp"
+#include "../Utils/JSONReader.h"
 
 IRenderer* ShaderSystem::Renderer = nullptr;
 ShaderSystem::Config ShaderSystem::ShaderSystemConfig;
@@ -16,7 +17,7 @@ std::unordered_map<std::string, uint32_t> ShaderSystem::ShaderMap;
 uint32_t ShaderSystem::CurrentShaderID;
 std::vector<Shader*> ShaderSystem::Shaders;
 bool ShaderSystem::Initilized = false;
-ShaderLanguage ShaderSystem::GLOBAL_SHADER_TYPE = ShaderLanguage::eHLSL;
+ShaderLanguage ShaderSystem::GLOBAL_SHADER_TYPE = ShaderLanguage::eGLSL;
 
 bool OnReloadShader(eEventCode code, void* sender, void* listenerInst, SEventContext context) {
 	std::string ShaderName = context.data.c;
@@ -32,6 +33,11 @@ bool ShaderSystem::Initialize(IRenderer* renderer, ShaderSystem::Config config) 
 	if (renderer == nullptr) {
 		return false;
 	}
+
+	// Read current config
+	JSONReader JsonReader(std::string(ROOT_PATH) + "/Config/EngineConfig.json");
+	GLOBAL_SHADER_TYPE = JsonReader.ReadPropertyString("Engine.ShaderLanguage")
+		.compare("glsl") == 0 ? ShaderLanguage::eGLSL : ShaderLanguage::eHLSL;
 
 	Renderer = renderer;
 	if (config.max_shader_count < 512) {
@@ -78,6 +84,11 @@ void ShaderSystem::Shutdown() {
 
 		ShaderMap.clear();
 		std::vector<Shader*>().swap(Shaders);
+
+		// Save current config
+		JSONReader JsonReader(std::string(ROOT_PATH) + "/Config/EngineConfig.json");
+		std::string Lan = GLOBAL_SHADER_TYPE == ShaderLanguage::eGLSL ? "glsl" : "hlsl";
+		JsonReader.SetPropertyString("Engine.ShaderLanguage", Lan);
 	}
 }
 

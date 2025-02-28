@@ -127,7 +127,7 @@ void GameOnChangeConsoleVisibility(eKeys key, KeymapEntryBindType type, KeymapMo
 		return;
 	}
 
-	DebugConsole* UsedConsole = GameInst->GameConsole;
+	DebugConsoleActor* UsedConsole = GameInst->GameConsole;
 	if (UsedConsole) {
 		bool ConsoleVisible = GameInst->GameConsole->IsVisible();
 		ConsoleVisible = !ConsoleVisible;
@@ -215,7 +215,7 @@ void GameOnTemplate(eKeys key, KeymapEntryBindType type, KeymapModifierFlags mod
 
 // ------------------------------- Console ---------------------------------- //
 void GameOnConsoleScroll(eKeys key, KeymapEntryBindType type, KeymapModifierFlags modifiers, void* user_data) {
-	DebugConsole* Console = (DebugConsole*)user_data;
+	DebugConsoleActor* Console = (DebugConsoleActor*)user_data;
 	if (Console) {
 		if (key == eKeys::Up) {
 			Console->MoveUp();

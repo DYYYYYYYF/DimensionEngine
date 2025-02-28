@@ -11,7 +11,7 @@ public:
 	Platform() {};
 
 public:
-	static bool PlatformStartup(SPlatformState* platform_state, const char* application_name,
+	static bool PlatformStartup(SPlatformState* platform_state, const std::string& application_name,
 		int x, int y, int width, int height);
 
 	static void PlatformShutdown(SPlatformState* platform_state);

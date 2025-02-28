@@ -9,7 +9,7 @@ class VulkanCommandBuffer;
 
 class VulkanRenderPass : public IRenderpass{
 public:
-	virtual bool Create(VulkanContext* context, const RenderpassConfig* config) override;
+	virtual bool Create(VulkanContext* context, const RenderpassConfig& config) override;
 	virtual void Destroy() override;
 
 	virtual void Begin(RenderTarget* target) override;

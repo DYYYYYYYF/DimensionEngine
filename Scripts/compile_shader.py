@@ -1,6 +1,7 @@
 import os           # File operatorations
 import platform     # Cross platform
 import sys, getopt  # Command line argvs
+import json
 
 # Common values
 vulkanPath       = "D:/C_Library/VulkanSDK"
@@ -10,7 +11,7 @@ target_path      = os.path.abspath(".") + "/Assets/Shaders/"
 
 # compile failed files
 failed_shaders = []
-glsl_list = [".vert", ".frag", "geom", "tesc", "tese", "comp"]
+glsl_list = [".vert", ".frag", ".geom", ".tesc", ".tese", ".comp"]
 
 def CheckGlslc():
     # global value will be changed, so we need define the value inside func
@@ -111,6 +112,12 @@ if __name__ == '__main__':
                 default_shader_language = arg
 
         CompileShaders(default_shader_language)
+
+        # 保存JSON
+        ConfigPath = os.path.abspath(".")+'/Config/EngineConfig.json'
+        data = json.load(open(ConfigPath, 'r'))
+        data['Engine']['ShaderLanguage'] = default_shader_language
+        json.dump(data, open(ConfigPath, 'w'))
 
     except getopt.GetoptError:
         print('compile_shader.py -l <language>')

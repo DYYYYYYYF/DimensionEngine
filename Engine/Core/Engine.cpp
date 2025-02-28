@@ -27,6 +27,7 @@
 #include "Systems/JobSystem.hpp"
 #include "Systems/FontSystem.hpp"
 #include "Utils/FileWatcher.h"
+#include "../Utils/JSONReader.h"
 
 bool Application::Initialize(){
 	if (Initialized) {
@@ -226,6 +227,10 @@ bool Application::Initialize(){
 	GameInst->OnResize(width, height);
 	Renderer->OnResize(width, height);
 
+	JSONReader JsonReader(std::string(ROOT_PATH) + "/Config/EngineConfig.json");
+	int Height = JsonReader.ReadPropertyInt("Width");
+	std::string Language = JsonReader.ReadPropertyString("ShaderLanguage");
+
 	Initialized = true;
 	return true;
 }
@@ -295,7 +300,9 @@ bool Application::Run() {
 			// Cleanup the packet.
 			for (uint32_t i = 0; i < (uint32_t)Packet.views.size(); ++i) {
 				IRenderView* RenderView = Packet.views[i].view;
-				RenderView->OnDestroyPacket(&Packet.views[i]);
+				if (RenderView) {
+					RenderView->OnDestroyPacket(&Packet.views[i]);
+				}
 			}
 			Packet.views.clear();
 			std::vector<struct RenderViewPacket>().swap(Packet.views);

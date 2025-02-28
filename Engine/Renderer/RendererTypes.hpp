@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Defines.hpp"
 #include "Math/MathTypes.hpp"
@@ -47,6 +47,8 @@ struct RenderTargetAttachmentConfig {
 	RenderTargetAttachmentSource source = RenderTargetAttachmentSource::eRender_Target_Attachment_Source_Default;
 	RenderTargetAttachmentLoadOperation loadOperation = RenderTargetAttachmentLoadOperation::eRender_Target_Attachment_Load_Operation_Load;
 	RenderTargetAttachmentStoreOperation storeOperation = RenderTargetAttachmentStoreOperation::eRender_Target_Attachment_Store_Operation_Store;
+
+	// 如果当前Attachment是需要渲染到屏幕的则为true
 	bool presentAfter = true;
 };
 
@@ -147,5 +149,5 @@ public:
 };
 
 struct RenderBackendConfig {
-	const char* application_name = nullptr;
+	std::string application_name;
 };

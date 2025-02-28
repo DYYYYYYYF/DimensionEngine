@@ -13,8 +13,10 @@ std::vector<uint32_t> Utils::CompileShader(const std::string& file, enum ShaderS
 		scShadercStage = shaderc_shader_kind::shaderc_fragment_shader;
 		break;
     case ShaderStage::eShader_Stage_Geometry:
+		scShadercStage = shaderc_shader_kind::shaderc_geometry_shader;
         break;
     case ShaderStage::eShader_Stage_Compute:
+		scShadercStage = shaderc_shader_kind::shaderc_compute_shader;
         break;
 	}
 

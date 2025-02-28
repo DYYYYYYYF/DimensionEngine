@@ -34,7 +34,7 @@ public:
 	// TODO: temp
 	Skybox SB;
 	Keymap* ConsoleKeymap;
-	DebugConsole* GameConsole = nullptr;
+	DebugConsoleActor* GameConsole = nullptr;
 
 	TArray<Mesh*> Meshes;
 	TArray<Mesh*> UIMeshes;
