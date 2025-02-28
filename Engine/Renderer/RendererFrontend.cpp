@@ -16,6 +16,7 @@
 
 // TODO: temp
 #include "Core/Event.hpp"
+#include "../Utils/JSONReader.h"
 // TODO: temp
 
 IRenderer::IRenderer() {
@@ -55,7 +56,7 @@ IRenderer::~IRenderer() {
 	Shutdown();
 }
 
-bool IRenderer::Initialize(const char* application_name, struct SPlatformState* plat_state) {
+bool IRenderer::Initialize(const std::string& application_name, struct SPlatformState* plat_state) {
 	if (Backend == nullptr) {
 		return false;
 	}
@@ -84,6 +85,13 @@ void IRenderer::Shutdown() {
 	}
 
 	Backend = nullptr;
+
+
+	// Save current config
+	JSONReader JsonReader(std::string(ROOT_PATH) + "/Config/EngineConfig.json");
+	JsonReader.SetPropertyInt("Editor.Window.Width", FramebufferWidth);
+	JsonReader.SetPropertyInt("Editor.Window.Height", FramebufferHeight);
+
 }
 
 void IRenderer::OnResize(unsigned short width, unsigned short height) {
@@ -293,13 +301,8 @@ unsigned char IRenderer::GetWindowAttachmentIndex() {
 	return Backend->GetWindowAttachmentIndex();
 }
 
-bool IRenderer::CreateRenderpass(IRenderpass* out_renderpass, const RenderpassConfig* config) {
-	if (config == nullptr) {
-		LOG_ERROR("Renderpass config is required.");
-		return false;
-	}
-
-	if (config->renderTargetCount == 0) {
+bool IRenderer::CreateRenderpass(IRenderpass* out_renderpass, const RenderpassConfig& config) {
+	if (config.renderTargetCount == 0) {
 		LOG_ERROR("Can not have a renderpass target count of0.");
 		return false;
 	}

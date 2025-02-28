@@ -68,7 +68,7 @@ bool GameInstance::Boot(IRenderer* renderer) {
 	LOG_INFO("Booting...");
 
 	Renderer = renderer;
-	GameConsole = NewObject<DebugConsole>(Renderer);
+	GameConsole = NewObject<DebugConsoleActor>(Renderer);
 
 	Keybind GameKeybind;
 	GameKeybind.Setup(this);
@@ -120,7 +120,7 @@ bool GameInstance::Initialize() {
 		LOG_ERROR("Failed to load basic ui bitmap text.");
 		return false;
 	}
-	TestText.SetPosition(Vector3(150, 450, 0));
+	TestText.SetLocation(Vector3(150, 450, 0));
 	TestText.SetName("Render information window.");
 
 	if (!TestSysText.Create(Renderer, UITextType::eUI_Text_Type_system, 
@@ -137,11 +137,11 @@ bool GameInstance::Initialize() {
 		LOG_ERROR("Failed to load basic ui system text.");
 		return false;
 	}
-	TestSysText.SetPosition(Vector3(100, 200, 0));
+	TestSysText.SetLocation(Vector3(100, 200, 0));
 	TestSysText.SetName("Keyboard map texts.");
 
 	// Load console
-	GameConsole->Load();
+	GameConsole->Initialize();
 
 	// Skybox
 	if (!SB.Create("SkyboxCube", Renderer)) {
@@ -157,8 +157,7 @@ bool GameInstance::Initialize() {
 	SGeometryConfig GeoConfig = GeometrySystem::GenerateCubeConfig(10.0f, 10.0f, 10.0f, 1.0f, 1.0f, "TestCube", "Material.World");
 	CubeMesh->geometries[0] = GeometrySystem::AcquireFromConfig(GeoConfig, true);
 	CubeMesh->Generation = 0;
-	CubeMesh->UniqueID = Identifier::AcquireNewID(CubeMesh);
-	CubeMesh->Transform = Transform(Vector(0.0f, 0.0f, 0.0f), Quaternion(Vector(0.0f, 0.0f, 0.0f)));
+	CubeMesh->SetTransform(Vector(0.0f, 0.0f, 0.0f), Quaternion(Vector(0.0f, 0.0f, 0.0f)));
 	Meshes.Push(CubeMesh);
 
 	Mesh* CubeMesh2 = NewObject<Mesh>();
@@ -167,9 +166,8 @@ bool GameInstance::Initialize() {
 	CubeMesh2->geometries = (Geometry**)Memory::Allocate(sizeof(Geometry*) * CubeMesh2->geometry_count, MemoryType::eMemory_Type_Array);
 	SGeometryConfig GeoConfig2 = GeometrySystem::GenerateCubeConfig(5.0f, 5.0f, 5.0f, 1.0f, 1.0f, "TestCube2", "Material.World");
 	CubeMesh2->geometries[0] = GeometrySystem::AcquireFromConfig(GeoConfig2, true);
-	CubeMesh2->Transform = Transform(Vector3(10.0f, 0.0f, 1.0f), Quaternion(Vector(0.0f, 0.0f, 0.0f)));
+	CubeMesh2->SetTransform(Vector3(10.0f, 0.0f, 1.0f), Quaternion(Vector(0.0f, 0.0f, 0.0f)));
 	CubeMesh2->Generation = 0;
-	CubeMesh2->UniqueID = Identifier::AcquireNewID(CubeMesh2);
 	CubeMesh2->AttachTo(CubeMesh);
 	Meshes.Push(CubeMesh2);
 
@@ -179,9 +177,8 @@ bool GameInstance::Initialize() {
 	CubeMesh3->geometries = (Geometry**)Memory::Allocate(sizeof(Geometry*) * CubeMesh3->geometry_count, MemoryType::eMemory_Type_Array);
 	SGeometryConfig GeoConfig3 = GeometrySystem::GenerateCubeConfig(2.0f, 2.0f, 2.0f, 1.0f, 1.0f, "TestCube3", "Material.World");
 	CubeMesh3->geometries[0] = GeometrySystem::AcquireFromConfig(GeoConfig3, true);
-	CubeMesh3->Transform = Transform(Vector3(5.0f, 0.0f, 1.0f));
+	CubeMesh3->SetTransform(Vector3(5.0f, 0.0f, 1.0f));
 	CubeMesh3->Generation = 0;
-	CubeMesh3->UniqueID = Identifier::AcquireNewID(CubeMesh3);
 	CubeMesh3->AttachTo(CubeMesh2);
 	Meshes.Push(CubeMesh3);
 
@@ -238,7 +235,6 @@ bool GameInstance::Initialize() {
 	UIMesh->geometries = (Geometry**)Memory::Allocate(sizeof(Geometry*), MemoryType::eMemory_Type_Array);
 	UIMesh->geometries[0] = GeometrySystem::AcquireFromConfig(UIConfig, true);
 	UIMesh->Generation = 0;
-	UIMesh->UniqueID = Identifier::AcquireNewID(UIMesh);
 	UIMeshes.Push(UIMesh);
 
 	// TODO: TEMP
@@ -280,6 +276,17 @@ void GameInstance::Shutdown() {
 }
 
 bool GameInstance::Update(float delta_time) {
+	for (int i = 0; i < Meshes.Size(); ++i) {
+		Meshes[i]->Tick(delta_time);
+	}
+
+	for(int i = 0; i < UIMeshes.Size(); ++i) {
+		UIMeshes[i]->Tick(delta_time);
+	}
+
+	TestText.Tick(delta_time);
+	TestSysText.Tick(delta_time);
+
 	// Ensure this is cleaned up to avoid leaking memory.
 	// TODO: Need a version of this that uses the frame allocator.
 	if (!FrameData.WorldGeometries.empty()) {
@@ -302,9 +309,9 @@ bool GameInstance::Update(float delta_time) {
 
 	Quaternion RotationY = Quaternion(Axis::Y, 0.5f * (float)delta_time, false);
 	Quaternion RotationX = Quaternion(Axis::X, 0.5f * (float)delta_time, false);
-	Meshes[0]->Transform.Rotate(RotationY);
-	Meshes[1]->Transform.Rotate(RotationY);
-	Meshes[2]->Transform.Rotate(RotationY);
+	Meshes[0]->Rotate(RotationY);
+	Meshes[1]->Rotate(RotationY);
+	Meshes[2]->Rotate(RotationY);
 
 	// Text
 	Camera* WorldCamera = CameraSystem::GetDefault();
@@ -369,7 +376,7 @@ bool GameInstance::Update(float delta_time) {
 						GeometryRenderData Data;
 						Data.model = Model;
 						Data.geometry = g;
-						Data.uniqueID = m->UniqueID;
+						Data.uniqueID = m->GetUniqueID();
 						FrameData.WorldGeometries.push_back(Data);
 						DrawCount++;
 					}
@@ -393,7 +400,7 @@ bool GameInstance::Update(float delta_time) {
 						GeometryRenderData Data;
 						Data.model = Model;
 						Data.geometry = g;
-						Data.uniqueID = m->UniqueID;
+						Data.uniqueID = m->GetUniqueID();
 						FrameData.WorldGeometries.push_back(Data);
 						DrawCount++;
 					}
@@ -402,7 +409,7 @@ bool GameInstance::Update(float delta_time) {
 						GeometryRenderData Data;
 						Data.model = Model;
 						Data.geometry = g;
-						Data.uniqueID = m->UniqueID;
+						Data.uniqueID = m->GetUniqueID();
 						FrameData.WorldGeometries.push_back(Data);
 						DrawCount++;
 					}
@@ -416,22 +423,22 @@ bool GameInstance::Update(float delta_time) {
 	// TODO: Temp
 	std::string HoverdObjectName = "None";
 	if (HoveredObjectID != INVALID_ID) {
-		if (HoveredObjectID == TestText.UniqueID) {
+		if (HoveredObjectID == TestText.GetUniqueID()) {
 			HoverdObjectName = TestText.GetName();
 		}
-		if (HoveredObjectID == TestSysText.UniqueID) {
+		if (HoveredObjectID == TestSysText.GetUniqueID()) {
 			HoverdObjectName = TestSysText.GetName();
 		}
 
 		for (Mesh* Mesh : Meshes) {
-			if (Mesh->UniqueID == HoveredObjectID)
+			if (Mesh->GetUniqueID() == HoveredObjectID)
 			{
 				HoverdObjectName = Mesh->Name;
 				break;
 			}
 		}
 		for (Mesh* UI : UIMeshes) {
-			if (UI->UniqueID == HoveredObjectID)
+			if (UI->GetUniqueID() == HoveredObjectID)
 			{
 				HoverdObjectName = UI->Name;
 				break;
@@ -457,7 +464,7 @@ bool GameInstance::Update(float delta_time) {
 	);
 	TestText.SetText(FPSText);
 
-	GameConsole->Update();
+	GameConsole->Tick(delta_time);
 
 	return true;
 }
@@ -548,8 +555,8 @@ void GameInstance::OnResize(unsigned int width, unsigned int height) {
 	Width = width;
 	Height = height;
 
-	TestText.SetPosition(Vector3(180, (float)height - 150, 0));
-	TestSysText.SetPosition(Vector3(100, (float)height - 400, 0));
+	TestText.SetLocation(Vector3(180, (float)height - 150, 0));
+	TestSysText.SetLocation(Vector3(100, (float)height - 400, 0));
 
 	// TODO: Temp
 	SGeometryConfig UIConfig;
@@ -598,8 +605,8 @@ void GameInstance::OnResize(unsigned int width, unsigned int height) {
 bool GameInstance::ConfigureRenderviews(Application::SConfig* config) {
 	RenderViewConfig SkyboxConfig;
 	SkyboxConfig.type = RenderViewKnownType::eRender_View_Known_Type_Skybox;
-	SkyboxConfig.width = 0;
-	SkyboxConfig.height = 0;
+	SkyboxConfig.width = AppConfig.start_width;
+	SkyboxConfig.height = AppConfig.start_height;
 	SkyboxConfig.name = "Skybox";
 	SkyboxConfig.pass_count = 1;
 	SkyboxConfig.view_matrix_source = RenderViewViewMatrixtSource::eRender_View_View_Matrix_Source_Scene_Camera;
@@ -607,7 +614,7 @@ bool GameInstance::ConfigureRenderviews(Application::SConfig* config) {
 	// Renderpass config.
 	std::vector<RenderpassConfig> SkyboxPasses(1);
 	SkyboxPasses[0].name = "Renderpass.Builtin.Skybox";
-	SkyboxPasses[0].render_area = Vector4(0, 0, 1280, 720);
+	SkyboxPasses[0].render_area = Vector4(0, 0, AppConfig.start_width, AppConfig.start_height);
 	SkyboxPasses[0].clear_color = Vector4(0, 0, 0.2f, 1.0f);
 	SkyboxPasses[0].clear_flags = RenderpassClearFlags::eRenderpass_Clear_Color_Buffer;
 	SkyboxPasses[0].depth = 1.0f;
@@ -631,8 +638,8 @@ bool GameInstance::ConfigureRenderviews(Application::SConfig* config) {
 	// World view
 	RenderViewConfig WorldViewConfig;
 	WorldViewConfig.type = RenderViewKnownType::eRender_View_Known_Type_World;
-	WorldViewConfig.width = 0;
-	WorldViewConfig.height = 0;
+	WorldViewConfig.width = AppConfig.start_width;
+	WorldViewConfig.height = AppConfig.start_height;
 	WorldViewConfig.name = "World";
 	WorldViewConfig.pass_count = 1;
 	WorldViewConfig.view_matrix_source = RenderViewViewMatrixtSource::eRender_View_View_Matrix_Source_Scene_Camera;
@@ -640,7 +647,7 @@ bool GameInstance::ConfigureRenderviews(Application::SConfig* config) {
 	// Renderpass config.
 	std::vector<RenderpassConfig> WorldPasses(1);
 	WorldPasses[0].name = "Renderpass.Builtin.World";
-	WorldPasses[0].render_area = Vector4(0, 0, 1280, 720);
+	WorldPasses[0].render_area = Vector4(0, 0, AppConfig.start_width, AppConfig.start_height);
 	WorldPasses[0].clear_color = Vector4(0, 0.2f, 0, 1.0f);
 	WorldPasses[0].clear_flags = RenderpassClearFlags::eRenderpass_Clear_Stencil_Buffer | RenderpassClearFlags::eRenderpass_Clear_Depth_Buffer;
 	WorldPasses[0].depth = 1.0f;
@@ -671,8 +678,8 @@ bool GameInstance::ConfigureRenderviews(Application::SConfig* config) {
 	// UI view
 	RenderViewConfig UIViewConfig;
 	UIViewConfig.type = RenderViewKnownType::eRender_View_Known_Type_UI;
-	UIViewConfig.width = 0;
-	UIViewConfig.height = 0;
+	UIViewConfig.width = AppConfig.start_width;
+	UIViewConfig.height = AppConfig.start_height;
 	UIViewConfig.name = "UI";
 	UIViewConfig.pass_count = 1;
 	UIViewConfig.view_matrix_source = RenderViewViewMatrixtSource::eRender_View_View_Matrix_Source_Scene_Camera;
@@ -680,7 +687,7 @@ bool GameInstance::ConfigureRenderviews(Application::SConfig* config) {
 	// Renderpass config
 	std::vector<RenderpassConfig> UIPasses(1);
 	UIPasses[0].name = "Renderpass.Builtin.UI";
-	UIPasses[0].render_area = Vector4(0, 0, 1280, 720);
+	UIPasses[0].render_area = Vector4(0, 0, AppConfig.start_width, AppConfig.start_height);
 	UIPasses[0].clear_color = Vector4(0, 0, 0.2f, 1.0f);
 	UIPasses[0].clear_flags = RenderpassClearFlags::eRenderpass_Clear_None;
 	UIPasses[0].depth = 1.0f;
@@ -704,8 +711,8 @@ bool GameInstance::ConfigureRenderviews(Application::SConfig* config) {
 	// Pick pass
 	RenderViewConfig PickViewConfig;
 	PickViewConfig.type = RenderViewKnownType::eRender_View_Known_Type_Pick;
-	PickViewConfig.width = 0;
-	PickViewConfig.height = 0;
+	PickViewConfig.width = AppConfig.start_width;
+	PickViewConfig.height = AppConfig.start_height;
 	PickViewConfig.name = "Pick";
 	PickViewConfig.pass_count = 2;
 	PickViewConfig.view_matrix_source = RenderViewViewMatrixtSource::eRender_View_View_Matrix_Source_Scene_Camera;
@@ -714,7 +721,7 @@ bool GameInstance::ConfigureRenderviews(Application::SConfig* config) {
 	std::vector<RenderpassConfig>PickPasses(2);
 	// World pick pass
 	PickPasses[0].name = "Renderpass.Builtin.WorldPick";
-	PickPasses[0].render_area = Vector4(0, 0, 1280, 720);
+	PickPasses[0].render_area = Vector4(0, 0, AppConfig.start_width, AppConfig.start_height);
 	PickPasses[0].clear_color = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
 	PickPasses[0].clear_flags = RenderpassClearFlags::eRenderpass_Clear_Color_Buffer | RenderpassClearFlags::eRenderpass_Clear_Depth_Buffer;
 	PickPasses[0].depth = 1.0f;
@@ -740,7 +747,7 @@ bool GameInstance::ConfigureRenderviews(Application::SConfig* config) {
 
 	// UI pick pass
 	PickPasses[1].name = "Renderpass.Builtin.UIPick";
-	PickPasses[1].render_area = Vector4(0, 0, 1280, 720);
+	PickPasses[1].render_area = Vector4(0, 0, AppConfig.start_width, AppConfig.start_height);
 	PickPasses[1].clear_color = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
 	PickPasses[1].clear_flags = RenderpassClearFlags::eRenderpass_Clear_None;
 	PickPasses[1].depth = 1.0f;
@@ -774,8 +781,7 @@ void LoadScene1(GameInstance* GameInst) {
 
 	Mesh* Model = NewObject<Mesh>();
 	Model->LoadFromResource("mountain_part");	// It always return true.
-	Model->Transform = Transform(Vector3(300.0f, -50.0f, 0.0f), Quaternion(Vector3(0.0f, 0.0f, 0.0f)), Vector3(50.f));
-	Model->UniqueID = Identifier::AcquireNewID(Model);
+	Model->SetTransform(Vector3(300.0f, -50.0f, 0.0f), Quaternion(Vector3(0.0f, 0.0f, 0.0f)), Vector3(50.f));
 	GameInst->Meshes.Push(Model);
 }
 
@@ -789,20 +795,17 @@ void LoadScene2(GameInstance* GameInst) {
 
 	Mesh* Model1 = NewObject<Mesh>();
 	Model1->LoadFromResource("sponza");	// It always return true.
-	Model1->Transform = Transform(Vector3(0.0f, -10.0f, 0.0f), Quaternion(Vector3(0.0f, 90.0f, 0.0f)), Vector3(0.1f));
-	Model1->UniqueID = Identifier::AcquireNewID(Model1);
+	Model1->SetTransform(Vector3(0.0f, -10.0f, 0.0f), Quaternion(Vector3(0.0f, 90.0f, 0.0f)), Vector3(0.1f));
 	GameInst->Meshes.Push(Model1);
 
 	Mesh* Model2 = NewObject<Mesh>();
 	Model2->LoadFromResource("bunny");	// It always return true.
-	Model2->Transform = Transform(Vector3(30.0f, 0.0f, 0.0f), Quaternion(Vector3(0.0f, 0.0f, 0.0f)), Vector3(5.0f));
-	Model2->UniqueID = Identifier::AcquireNewID(Model2);
+	Model2->SetTransform(Vector3(30.0f, 0.0f, 0.0f), Quaternion(Vector3(0.0f, 0.0f, 0.0f)), Vector3(5.0f));
 	GameInst->Meshes.Push(Model2);
 
 	Mesh* Model3 = NewObject<Mesh>();
 	Model3->LoadFromResource("falcon");	// It always return true.
-	Model3->Transform = Transform(Vector3(-30.0f, 0.0f, 0.0f), Quaternion(Vector3(0.0f, 0.0f, 0.0f)));
-	Model3->UniqueID = Identifier::AcquireNewID(Model3);
+	Model3->SetTransform(Vector3(-30.0f, 0.0f, 0.0f), Quaternion(Vector3(0.0f, 0.0f, 0.0f)));
 	GameInst->Meshes.Push(Model3);
 }
 
@@ -816,8 +819,7 @@ void LoadScene3(GameInstance* GameInst) {
 
 	Mesh* Model = NewObject<Mesh>();
 	Model->LoadFromResource("Axis");	
-	Model->Transform = Transform(Vector3(0.0f, 10.0f, 0.0f), Quaternion(Vector3(0.0f, 0.0f, 0.0f)), Vector3(500.f));
-	Model->UniqueID = Identifier::AcquireNewID(Model);
+	Model->SetTransform(Vector3(0.0f, 10.0f, 0.0f), Quaternion(Vector3(0.0f, 0.0f, 0.0f)), Vector3(500.f));
 	GameInst->Meshes.Push(Model);
 }
 
@@ -831,7 +833,6 @@ void LoadScene4(GameInstance* GameInst) {
 
 	Mesh* Model = NewObject<Mesh>();
 	Model->LoadFromResource("LegoCar");	
-	Model->Transform = Transform(Vector3(0.0f, 0.0f, -50.0f), Quaternion(Vector3(0.0f, 0.0f, 0.0f)), Vector3(0.5f));
-	Model->UniqueID = Identifier::AcquireNewID(Model);
+	Model->SetTransform(Vector3(0.0f, 0.0f, -50.0f), Quaternion(Vector3(0.0f, 0.0f, 0.0f)), Vector3(0.5f));
 	GameInst->Meshes.Push(Model);
 }

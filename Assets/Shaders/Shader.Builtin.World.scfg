@@ -3,8 +3,8 @@ version=1.0
 name=Shader.Builtin.World
 language=hlsl
 renderpass=Renderpass.Builtin.World
-stages=vertex,fragment
-stagefiles=Shaders/Shader.Builtin.World.vert.spv,Shaders/Shader.Builtin.World.frag.spv
+stages=vertex,geometry,fragment
+stagefiles=Shaders/Shader.Builtin.World.vert.spv,Shaders/Shader.Builtin.World.geom.spv,Shaders/Shader.Builtin.World.frag.spv
 
 # 1=enable, 0=disable
 depth_test=1

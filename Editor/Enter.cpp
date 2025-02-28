@@ -7,14 +7,16 @@
 
 // TODO: Remove
 #include "Core/DMemory.hpp"
+#include "Utils/JSONReader.h"
 
 extern bool CreateGame(IGame* out_game) {
 	// Create Game state
-    out_game->AppConfig.start_x = 100;
-    out_game->AppConfig.start_y = 100;
-    out_game->AppConfig.start_width = 1280;
-    out_game->AppConfig.start_height = 720;
-    out_game->AppConfig.name = "Dimension Editor";
+	JSONReader JsonReader(std::string(ROOT_PATH) + "/Config/EngineConfig.json");
+    out_game->AppConfig.start_width = JsonReader.ReadPropertyInt("Width");
+	out_game->AppConfig.start_height = JsonReader.ReadPropertyInt("Height");
+	out_game->AppConfig.start_x = JsonReader.ReadPropertyInt("OffsetX");
+	out_game->AppConfig.start_y = JsonReader.ReadPropertyInt("OffsetY");
+	out_game->AppConfig.name = JsonReader.ReadPropertyString("Application");
 
     return true;
 }

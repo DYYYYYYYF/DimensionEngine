@@ -13,7 +13,7 @@ enum RenderViewKnownType {
 	eRender_View_Known_Type_UI = 0x02,
 	eRender_View_Known_Type_Skybox = 0x03,
 	/** @brief A view which only renders ui and world objects to be picked. */
-	eRender_View_Known_Type_Pick = 0x04
+	eRender_View_Known_Type_Pick = 0x04,
 };
 
 enum RenderViewViewMatrixtSource {

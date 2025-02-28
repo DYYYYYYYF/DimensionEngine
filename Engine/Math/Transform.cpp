@@ -6,7 +6,7 @@ Transform::Transform() {
 }
 
 Transform::Transform(const Transform& trans) {
-	SetPRS(trans.GetPosition(), trans.GetRotation(), trans.GetScale());
+	SetPRS(trans.GetLocation(), trans.GetQuaternion(), trans.GetScale());
 	Local = trans.Local;
 }
 
@@ -32,36 +32,36 @@ Transform::Transform(const Vector3& position, const Quaternion& rotation, const 
 
 void Transform::Translate(const Vector3& translation) {
 	vPosition = vPosition + translation;
-	IsDirty = true;
+	bIsDirty = true;
 }
 
 void Transform::Rotate(const Quaternion& rotation) {
 	vRotation = rotation.Multiply(vRotation);
-	IsDirty = true;
+	bIsDirty = true;
 }
 
 void Transform::Scale(const Vector3& scale) {
 	vScale = vScale * scale;
-	IsDirty = true;
+	bIsDirty = true;
 }
 
 void Transform::SetPR(const Vector3& pos, const Quaternion& rotation) {
 	vPosition = pos;
 	vRotation = rotation;
-	IsDirty = true;
+	bIsDirty = true;
 }
 
 void Transform::SetPRS(const Vector3& pos, const Quaternion& rotation, const Vector3& scale) {
 	vPosition = pos;
 	vRotation = rotation;
 	vScale = scale;
-	IsDirty = true;
+	bIsDirty = true;
 }
 
 void Transform::TransformRotate(const Vector3& translation, const Quaternion& rotation) {
 	vPosition = vPosition + translation;
 	vRotation = rotation.Multiply(vRotation);
-	IsDirty = true;
+	bIsDirty = true;
 }
 
 void Transform::UpdateLocal() {
@@ -70,13 +70,9 @@ void Transform::UpdateLocal() {
 	Matrix4 S = Matrix4::FromScale(vScale);
 
 	Local = T.Multiply(R.Multiply(S));
-	IsDirty = false;
+	bIsDirty = false;
 }
 
 Matrix4 Transform::GetLocal() {
-	if (IsDirty) {
-		UpdateLocal();
-	}
-
 	return Local;
 }

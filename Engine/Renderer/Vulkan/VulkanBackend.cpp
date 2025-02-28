@@ -83,7 +83,7 @@ bool VulkanBackend::Initialize(const RenderBackendConfig* config, unsigned char*
 
 	ApplicationInfo.setApiVersion(VK_API_VERSION_1_3)
 		.setApplicationVersion(1)
-		.setPApplicationName(config->application_name)
+		.setPApplicationName(config->application_name.c_str())
 		.setEngineVersion(1)
 		.setPEngineName("Dimension Engine");
 	InstanceInfo.setPApplicationInfo(&ApplicationInfo);
@@ -994,11 +994,9 @@ bool VulkanBackend::CreateShader(Shader* shader, const ShaderConfig* config, IRe
 			VkStages[i] = vk::ShaderStageFlagBits::eVertex;
 			break;
 		case eShader_Stage_Geometry:
-			LOG_WARN("vulkan_renderer_shader_create: VK_SHADER_STAGE_GEOMETRY_BIT is set but not yet supported.");
 			VkStages[i] = vk::ShaderStageFlagBits::eGeometry;
 			break;
 		case eShader_Stage_Compute:
-			LOG_WARN("vulkan_renderer_shader_create: SHADER_STAGE_COMPUTE is set but not yet supported.");
 			VkStages[i] = vk::ShaderStageFlagBits::eCompute;
 			break;
 		default:
@@ -1034,6 +1032,12 @@ bool VulkanBackend::CreateShader(Shader* shader, const ShaderConfig* config, IRe
 			break;
 		case ShaderStage::eShader_Stage_Fragment:
 			StageFlag = vk::ShaderStageFlagBits::eFragment;
+			break;
+		case ShaderStage::eShader_Stage_Geometry:
+			StageFlag = vk::ShaderStageFlagBits::eGeometry;
+			break;
+		case ShaderStage::eShader_Stage_Compute:
+			StageFlag = vk::ShaderStageFlagBits::eCompute;
 			break;
 		default:
 			// Go to the next type.
@@ -1652,23 +1656,23 @@ unsigned char VulkanBackend::GetWindowAttachmentCount() const {
 	return (unsigned char)Context.Swapchain.ImageCount;
 }
 
-bool VulkanBackend::CreateRenderpass(IRenderpass* out_renderpass, const RenderpassConfig* config) {
+bool VulkanBackend::CreateRenderpass(IRenderpass* out_renderpass, const RenderpassConfig& config) {
 
-	out_renderpass->RenderTargetCount = config->renderTargetCount;
+	out_renderpass->RenderTargetCount = config.renderTargetCount;
 	out_renderpass->Targets.resize(out_renderpass->RenderTargetCount);
-	out_renderpass->SetClearColor(config->clear_color);
-	out_renderpass->SetClearFlags(config->clear_flags);
-	out_renderpass->SetRenderArea(config->render_area);
+	out_renderpass->SetClearColor(config.clear_color);
+	out_renderpass->SetClearFlags(config.clear_flags);
+	out_renderpass->SetRenderArea(config.render_area);
 
 	// Copy over config for each target.
 	for (uint32_t i = 0; i < out_renderpass->RenderTargetCount; ++i) {
 		RenderTarget* Target = &out_renderpass->Targets[i];
-		Target->attachments.resize(config->target.attachments.size());
+		Target->attachments.resize(config.target.attachments.size());
 
 		// Each attachment for the target.
 		for (uint32_t a = 0; a < Target->attachments.size(); ++a) {
 			RenderTargetAttachment* Attachment = &Target->attachments[a];
-			const RenderTargetAttachmentConfig* AttachmentConfig = &config->target.attachments[a];
+			const RenderTargetAttachmentConfig* AttachmentConfig = &config.target.attachments[a];
 
 			Attachment->source = AttachmentConfig->source;
 			Attachment->type = AttachmentConfig->type;
