@@ -149,5 +149,5 @@ public:
 };
 
 struct RenderBackendConfig {
-	const char* application_name = nullptr;
+	std::string application_name;
 };

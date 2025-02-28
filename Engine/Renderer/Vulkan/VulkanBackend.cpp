@@ -83,7 +83,7 @@ bool VulkanBackend::Initialize(const RenderBackendConfig* config, unsigned char*
 
 	ApplicationInfo.setApiVersion(VK_API_VERSION_1_3)
 		.setApplicationVersion(1)
-		.setPApplicationName(config->application_name)
+		.setPApplicationName(config->application_name.c_str())
 		.setEngineVersion(1)
 		.setPEngineName("Dimension Engine");
 	InstanceInfo.setPApplicationInfo(&ApplicationInfo);

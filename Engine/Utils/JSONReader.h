@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include "Defines.hpp"
 #include "rapidjson/document.h"
 #include "rapidjson/writer.h"
 #include "rapidjson/stringbuffer.h"
@@ -9,8 +10,8 @@
 
 class JSONReader {
 public:
-	JSONReader(const std::string& filepath);
-	virtual ~JSONReader();
+	ENGINE_API JSONReader(const std::string& filepath);
+	ENGINE_API virtual ~JSONReader();
 
 public:
 	bool CouldParsed() const { return IsParsed; }
@@ -45,7 +46,7 @@ public:
 		return Result;
 	}
 
-	std::string ReadPropertyString(const std::string& key) {
+	ENGINE_API std::string ReadPropertyString(const std::string& key) {
 		if (Context.IsObject()) {
 			std::string ResString;
 			FindProperty(Context, key, ResString);
@@ -54,7 +55,7 @@ public:
 		return "";
 	}
 
-	int ReadPropertyInt(const std::string& key) {
+	ENGINE_API int ReadPropertyInt(const std::string& key) {
 		if (Context.IsObject()) {
 			std::string ResInt;
 			FindProperty(Context, key, ResInt);

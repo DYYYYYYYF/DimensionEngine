@@ -1,8 +1,11 @@
 {
     "Engine" : {
-        "WindowSize"  : {
-            "Width" : 1920,
-            "Height": 1080
+        "Application" : "Engine Editor",
+        "Window"  : {
+            "Width" : 1600,
+            "Height": 800,
+            "OffsetX" : 100,
+            "OffsetY" : 100
         },
         "ShaderLanguage" : "glsl"
     },

@@ -70,7 +70,7 @@ bool RenderViewUI::OnCreate(const RenderViewConfig& config) {
 	FarClip = 100.0f;
 
 	// Default
-	ProjectionMatrix = Matrix4::Orthographic(0, 1280.0f, 720.0f, 0.0f, NearClip, FarClip);
+	ProjectionMatrix = Matrix4::Orthographic(0, config.width, config.height, 0.0f, NearClip, FarClip);
 	ViewMatrix = Matrix4::Identity();
 
 	if (!EngineEvent::Register(eEventCode::Default_Rendertarget_Refresh_Required, this, RenderViewUIOnEvent)) {

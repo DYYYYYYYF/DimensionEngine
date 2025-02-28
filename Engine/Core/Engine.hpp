@@ -19,7 +19,7 @@ public:
 		short start_width = 1920;
 		short start_height = 1080;
 
-		const char* name = nullptr;
+		std::string name;
 
 		FontSystemConfig FontConfig;
 		std::vector<RenderViewConfig> Renderviews;

@@ -24,7 +24,7 @@ static LARGE_INTEGER StartTime;
 
 LRESULT CALLBACK win32_process_message(HWND hwnd, UINT32 msg, WPARAM w_param, LPARAM l_param);
 
-bool Platform::PlatformStartup(SPlatformState* platform_state, const char* application_name,
+bool Platform::PlatformStartup(SPlatformState* platform_state, const std::string& application_name,
 	int x, int y, int width, int height) {
 	
 	platform_state->internalState = malloc(sizeof(SInternalState));
@@ -79,7 +79,7 @@ bool Platform::PlatformStartup(SPlatformState* platform_state, const char* appli
 	WindowWidth += BorderRect.right - BorderRect.left;
 	WindowHeight += BorderRect.bottom - BorderRect.top;
 
-	HWND Handle = CreateWindowExA(WindowExStyle, "dimension_window_class", application_name, 
+	HWND Handle = CreateWindowExA(WindowExStyle, "dimension_window_class", application_name.c_str(),
 		WindowStyle, WindowX, WindowY, WindowWidth, WindowHeight, 0, 0, state->h_instance, 0);
 
 	if (Handle == 0) {

@@ -126,7 +126,7 @@ bool RenderViewPick::OnCreate(const RenderViewConfig& config) {
 	UIShaderInfo.NearClip = -100.0f;
 	UIShaderInfo.FarClip = 100.0f;
 	UIShaderInfo.Fov = 0;
-	UIShaderInfo.ProjectionMatrix = Matrix4::Orthographic(0.0f, 1280.0f, 720.0f, 0.0f, UIShaderInfo.NearClip, UIShaderInfo.FarClip);
+	UIShaderInfo.ProjectionMatrix = Matrix4::Orthographic(0.0f, config.width, config.height, 0.0f, UIShaderInfo.NearClip, UIShaderInfo.FarClip);
 	UIShaderInfo.ViewMatrix = Matrix4::Identity();
 
 	// Builtin World pick shader.
@@ -153,7 +153,8 @@ bool RenderViewPick::OnCreate(const RenderViewConfig& config) {
 	WorldShaderInfo.NearClip = 0.1f;
 	WorldShaderInfo.FarClip = 1000.0f;
 	WorldShaderInfo.Fov = Deg2Rad(45.0f);
-	WorldShaderInfo.ProjectionMatrix = Matrix4::Perspective(WorldShaderInfo.Fov, 1280 / 720.f, WorldShaderInfo.NearClip, WorldShaderInfo.FarClip);
+	WorldShaderInfo.ProjectionMatrix = Matrix4::Perspective(WorldShaderInfo.Fov, 
+		(float)config.width/config.height, WorldShaderInfo.NearClip, WorldShaderInfo.FarClip);
 	WorldShaderInfo.ViewMatrix = Matrix4::Identity();
 
 	InstanceCount = 0;

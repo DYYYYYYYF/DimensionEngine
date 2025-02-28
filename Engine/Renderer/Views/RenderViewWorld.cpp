@@ -111,7 +111,7 @@ bool RenderViewWorld::OnCreate(const RenderViewConfig& config) {
 	Fov = Deg2Rad(45.0f);
 
 	// Default
-	ProjectionMatrix = Matrix4::Perspective(Fov, 1280.0f / 720.0f, NearClip, FarClip);
+	ProjectionMatrix = Matrix4::Perspective(Fov, (float)config.width / config.height, NearClip, FarClip);
 	WorldCamera = CameraSystem::GetDefault();
 
 	// TODO: Obtain from scene.

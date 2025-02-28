@@ -55,7 +55,7 @@ IRenderer::~IRenderer() {
 	Shutdown();
 }
 
-bool IRenderer::Initialize(const char* application_name, struct SPlatformState* plat_state) {
+bool IRenderer::Initialize(const std::string& application_name, struct SPlatformState* plat_state) {
 	if (Backend == nullptr) {
 		return false;
 	}

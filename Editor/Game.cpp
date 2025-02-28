@@ -605,8 +605,8 @@ void GameInstance::OnResize(unsigned int width, unsigned int height) {
 bool GameInstance::ConfigureRenderviews(Application::SConfig* config) {
 	RenderViewConfig SkyboxConfig;
 	SkyboxConfig.type = RenderViewKnownType::eRender_View_Known_Type_Skybox;
-	SkyboxConfig.width = 0;
-	SkyboxConfig.height = 0;
+	SkyboxConfig.width = AppConfig.start_width;
+	SkyboxConfig.height = AppConfig.start_height;
 	SkyboxConfig.name = "Skybox";
 	SkyboxConfig.pass_count = 1;
 	SkyboxConfig.view_matrix_source = RenderViewViewMatrixtSource::eRender_View_View_Matrix_Source_Scene_Camera;
@@ -614,7 +614,7 @@ bool GameInstance::ConfigureRenderviews(Application::SConfig* config) {
 	// Renderpass config.
 	std::vector<RenderpassConfig> SkyboxPasses(1);
 	SkyboxPasses[0].name = "Renderpass.Builtin.Skybox";
-	SkyboxPasses[0].render_area = Vector4(0, 0, 1280, 720);
+	SkyboxPasses[0].render_area = Vector4(0, 0, AppConfig.start_width, AppConfig.start_height);
 	SkyboxPasses[0].clear_color = Vector4(0, 0, 0.2f, 1.0f);
 	SkyboxPasses[0].clear_flags = RenderpassClearFlags::eRenderpass_Clear_Color_Buffer;
 	SkyboxPasses[0].depth = 1.0f;
@@ -638,8 +638,8 @@ bool GameInstance::ConfigureRenderviews(Application::SConfig* config) {
 	// World view
 	RenderViewConfig WorldViewConfig;
 	WorldViewConfig.type = RenderViewKnownType::eRender_View_Known_Type_World;
-	WorldViewConfig.width = 0;
-	WorldViewConfig.height = 0;
+	WorldViewConfig.width = AppConfig.start_width;
+	WorldViewConfig.height = AppConfig.start_height;
 	WorldViewConfig.name = "World";
 	WorldViewConfig.pass_count = 1;
 	WorldViewConfig.view_matrix_source = RenderViewViewMatrixtSource::eRender_View_View_Matrix_Source_Scene_Camera;
@@ -647,7 +647,7 @@ bool GameInstance::ConfigureRenderviews(Application::SConfig* config) {
 	// Renderpass config.
 	std::vector<RenderpassConfig> WorldPasses(1);
 	WorldPasses[0].name = "Renderpass.Builtin.World";
-	WorldPasses[0].render_area = Vector4(0, 0, 1280, 720);
+	WorldPasses[0].render_area = Vector4(0, 0, AppConfig.start_width, AppConfig.start_height);
 	WorldPasses[0].clear_color = Vector4(0, 0.2f, 0, 1.0f);
 	WorldPasses[0].clear_flags = RenderpassClearFlags::eRenderpass_Clear_Stencil_Buffer | RenderpassClearFlags::eRenderpass_Clear_Depth_Buffer;
 	WorldPasses[0].depth = 1.0f;
@@ -678,8 +678,8 @@ bool GameInstance::ConfigureRenderviews(Application::SConfig* config) {
 	// UI view
 	RenderViewConfig UIViewConfig;
 	UIViewConfig.type = RenderViewKnownType::eRender_View_Known_Type_UI;
-	UIViewConfig.width = 0;
-	UIViewConfig.height = 0;
+	UIViewConfig.width = AppConfig.start_width;
+	UIViewConfig.height = AppConfig.start_height;
 	UIViewConfig.name = "UI";
 	UIViewConfig.pass_count = 1;
 	UIViewConfig.view_matrix_source = RenderViewViewMatrixtSource::eRender_View_View_Matrix_Source_Scene_Camera;
@@ -687,7 +687,7 @@ bool GameInstance::ConfigureRenderviews(Application::SConfig* config) {
 	// Renderpass config
 	std::vector<RenderpassConfig> UIPasses(1);
 	UIPasses[0].name = "Renderpass.Builtin.UI";
-	UIPasses[0].render_area = Vector4(0, 0, 1280, 720);
+	UIPasses[0].render_area = Vector4(0, 0, AppConfig.start_width, AppConfig.start_height);
 	UIPasses[0].clear_color = Vector4(0, 0, 0.2f, 1.0f);
 	UIPasses[0].clear_flags = RenderpassClearFlags::eRenderpass_Clear_None;
 	UIPasses[0].depth = 1.0f;
@@ -711,8 +711,8 @@ bool GameInstance::ConfigureRenderviews(Application::SConfig* config) {
 	// Pick pass
 	RenderViewConfig PickViewConfig;
 	PickViewConfig.type = RenderViewKnownType::eRender_View_Known_Type_Pick;
-	PickViewConfig.width = 0;
-	PickViewConfig.height = 0;
+	PickViewConfig.width = AppConfig.start_width;
+	PickViewConfig.height = AppConfig.start_height;
 	PickViewConfig.name = "Pick";
 	PickViewConfig.pass_count = 2;
 	PickViewConfig.view_matrix_source = RenderViewViewMatrixtSource::eRender_View_View_Matrix_Source_Scene_Camera;
@@ -721,7 +721,7 @@ bool GameInstance::ConfigureRenderviews(Application::SConfig* config) {
 	std::vector<RenderpassConfig>PickPasses(2);
 	// World pick pass
 	PickPasses[0].name = "Renderpass.Builtin.WorldPick";
-	PickPasses[0].render_area = Vector4(0, 0, 1280, 720);
+	PickPasses[0].render_area = Vector4(0, 0, AppConfig.start_width, AppConfig.start_height);
 	PickPasses[0].clear_color = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
 	PickPasses[0].clear_flags = RenderpassClearFlags::eRenderpass_Clear_Color_Buffer | RenderpassClearFlags::eRenderpass_Clear_Depth_Buffer;
 	PickPasses[0].depth = 1.0f;
@@ -747,7 +747,7 @@ bool GameInstance::ConfigureRenderviews(Application::SConfig* config) {
 
 	// UI pick pass
 	PickPasses[1].name = "Renderpass.Builtin.UIPick";
-	PickPasses[1].render_area = Vector4(0, 0, 1280, 720);
+	PickPasses[1].render_area = Vector4(0, 0, AppConfig.start_width, AppConfig.start_height);
 	PickPasses[1].clear_color = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
 	PickPasses[1].clear_flags = RenderpassClearFlags::eRenderpass_Clear_None;
 	PickPasses[1].depth = 1.0f;
