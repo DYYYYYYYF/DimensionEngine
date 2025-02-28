@@ -1,1 +1,1 @@
-{"Engine":{"ShaderLanguage":"hlsl"},"Editor":{"Application":"Engine","Window":{"Width":1597,"Height":801,"OffsetX":100,"OffsetY":100}}}
+{"Engine": {"ShaderLanguage": "glsl"}, "Editor": {"Application": "Engine", "Window": {"Width": 1597, "Height": 801, "OffsetX": 100, "OffsetY": 100}}}

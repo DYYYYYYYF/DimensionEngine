@@ -1,4 +1,5 @@
-﻿struct GSSceneIn
+
+struct GSSceneIn
 {
     float4 vPosition : SV_POSITION;
     int iMode : INT0;
@@ -30,7 +31,6 @@ void main(triangle GSSceneIn input[3], inout TriangleStream<GSSceneOut> OutputSt
 {
     GSSceneOut output = (GSSceneOut) 0;
     
-    // 空GS
     OutputStream.RestartStrip();
     for (uint i = 0; i < 3; i++)
     {
