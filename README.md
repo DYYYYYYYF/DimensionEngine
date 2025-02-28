@@ -82,5 +82,7 @@ gltf：https://github.com/syoyo/tinygltf
 
 audio：  
 https://github.com/kcat/openal-soft  
-https://github.com/libsndfile/libsndfile
+https://github.com/libsndfile/libsndfile 
+
+JSON：https://github.com/Tencent/rapidjson
 
