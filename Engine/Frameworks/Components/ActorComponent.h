@@ -1,8 +1,8 @@
-﻿#pragma once
+#pragma once
 
 #include "Math/MathTypes.hpp"
 #include "Math/Transform.hpp"
-#include "Frameworks/Classes/object.h"
+#include "Frameworks/Classes/Object.h"
 
 class Actor;
 

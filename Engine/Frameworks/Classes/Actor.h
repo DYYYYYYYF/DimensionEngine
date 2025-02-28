@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "Object.h"
 #include "Frameworks/Components/ActorComponent.h"

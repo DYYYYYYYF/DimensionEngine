@@ -1,4 +1,4 @@
-﻿#include "Actor.h"
+#include "Actor.h"
 
 Actor::Actor():Object(), Parent(nullptr) {
 	ActorComp = NewObject<ActorComponent>();
