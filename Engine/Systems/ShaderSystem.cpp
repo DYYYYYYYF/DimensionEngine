@@ -35,8 +35,8 @@ bool ShaderSystem::Initialize(IRenderer* renderer, ShaderSystem::Config config) 
 	}
 
 	// Read current config
-	JSONReader JsonReader(std::string(ROOT_PATH) + "/Config/EngineConfig.json");
-	GLOBAL_SHADER_TYPE = JsonReader.ReadPropertyString("Engine.ShaderLanguage")
+	JSONReader JsonReader(ENGINE_CONFIG_PATH);
+	GLOBAL_SHADER_TYPE = JsonReader.ReadPropertyString("ShaderLanguage")
 		.compare("glsl") == 0 ? ShaderLanguage::eGLSL : ShaderLanguage::eHLSL;
 
 	Renderer = renderer;
@@ -86,9 +86,9 @@ void ShaderSystem::Shutdown() {
 		std::vector<Shader*>().swap(Shaders);
 
 		// Save current config
-		JSONReader JsonReader(std::string(ROOT_PATH) + "/Config/EngineConfig.json");
+		JSONReader JsonReader(std::string(ROOT_PATH) + "/Engine/EngineConfig.json");
 		std::string Lan = GLOBAL_SHADER_TYPE == ShaderLanguage::eGLSL ? "glsl" : "hlsl";
-		JsonReader.SetPropertyString("Engine.ShaderLanguage", Lan);
+		JsonReader.SetPropertyString("ShaderLanguage", Lan);
 	}
 }
 

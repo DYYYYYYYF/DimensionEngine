@@ -16,7 +16,6 @@
 
 // TODO: temp
 #include "Core/Event.hpp"
-#include "../Utils/JSONReader.h"
 // TODO: temp
 
 IRenderer::IRenderer() {
@@ -56,14 +55,14 @@ IRenderer::~IRenderer() {
 	Shutdown();
 }
 
-bool IRenderer::Initialize(const std::string& application_name, struct SPlatformState* plat_state) {
+bool IRenderer::Initialize(const std::string& application_name, Vector2 window_size, struct SPlatformState* plat_state) {
 	if (Backend == nullptr) {
 		return false;
 	}
 
 	// Default framebuffer size. Overriden when window is created.
-	FramebufferWidth = 1280;
-	FramebufferHeight = 720;
+	FramebufferWidth = (uint32_t)window_size.x;
+	FramebufferHeight = (uint32_t)window_size.y;
 	Resizing = false;
 	FrameSinceResize = 0;
 
@@ -85,13 +84,6 @@ void IRenderer::Shutdown() {
 	}
 
 	Backend = nullptr;
-
-
-	// Save current config
-	JSONReader JsonReader(std::string(ROOT_PATH) + "/Config/EngineConfig.json");
-	JsonReader.SetPropertyInt("Editor.Window.Width", FramebufferWidth);
-	JsonReader.SetPropertyInt("Editor.Window.Height", FramebufferHeight);
-
 }
 
 void IRenderer::OnResize(unsigned short width, unsigned short height) {
