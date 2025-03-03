@@ -6,10 +6,10 @@
 #include "Core/DMemory.hpp"
 #include "Core/EngineLogger.hpp"
 
-bool VulkanRenderPass::Create(VulkanContext* context, const RenderpassConfig* config) {
+bool VulkanRenderPass::Create(VulkanContext* context, const RenderpassConfig& config) {
 
-	Depth = config->depth;
-	Stencil = config->stencil;
+	Depth = config.depth;
+	Stencil = config.stencil;
 	Context = context;
 
 	// Main subpass
@@ -25,8 +25,8 @@ bool VulkanRenderPass::Create(VulkanContext* context, const RenderpassConfig* co
 	// Can always just look at the first target since they are all the same(one per frame).
 	// render target* taget = &Targets[0]
 	vk::AttachmentDescription AttachmentDesc;
-	for (uint32_t i = 0; i < config->target.attachments.size(); ++i) {
-		const RenderTargetAttachmentConfig* AttachmentConfig = &config->target.attachments[i];
+	for (uint32_t i = 0; i < config.target.attachments.size(); ++i) {
+		const RenderTargetAttachmentConfig* AttachmentConfig = &config.target.attachments[i];
 		if (AttachmentConfig->type == RenderTargetAttachmentType::eRender_Target_Attachment_Type_Color) {
 			// Color attachment
 			bool IsNeedClearColor = (ClearFlags & eRenderpass_Clear_Color_Buffer) != 0;

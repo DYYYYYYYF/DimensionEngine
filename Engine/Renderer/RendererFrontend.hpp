@@ -21,7 +21,7 @@ public:
 	virtual ~IRenderer();
 
 public:
-	virtual bool Initialize(const char* application_name, struct SPlatformState* plat_state);
+	virtual bool Initialize(const std::string& application_name, Vector2 window_size, struct SPlatformState* plat_state);
 	virtual void Shutdown();
 
 	virtual void OnResize(unsigned short width, unsigned short height);
@@ -205,7 +205,7 @@ public:
 	// Renderpass
 	virtual bool CreateRenderTarget(unsigned char attachment_count, std::vector<RenderTargetAttachment> attachments, IRenderpass* pass, uint32_t width, uint32_t height, RenderTarget* out_target);
 	virtual void DestroyRenderTarget(RenderTarget* target, bool free_internal_memory) ;
-	virtual bool CreateRenderpass(IRenderpass* out_renderpass, const RenderpassConfig* config);
+	virtual bool CreateRenderpass(IRenderpass* out_renderpass, const RenderpassConfig& config);
 	virtual void DestroyRenderpass(IRenderpass* pass) ;
 	virtual IRendererBackend* GetRenderBackend() { return Backend; }
 

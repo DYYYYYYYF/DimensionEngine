@@ -410,12 +410,12 @@ public:
 		Matrix.data[6] = AxisY.z;
 		Matrix.data[10] = AxisZ.z;
 
-		//Matrix.data[12] = -position.Dot(AxisX);		// Local axis
-		//Matrix.data[13] = -position.Dot(AxisY);		// Local axis
-		//Matrix.data[14] = -position.Dot(AxisZ);		// Local axis
-		Matrix.data[12] = -position.x;		// World axis
-		Matrix.data[13] = -position.y;		// World axis
-		Matrix.data[14] = -position.z;		// World axis
+		Matrix.data[12] = -position.Dot(AxisX);		// Local axis
+		Matrix.data[13] = -position.Dot(AxisY);		// Local axis
+		Matrix.data[14] = -position.Dot(AxisZ);		// Local axis
+		//Matrix.data[12] = -position.x;		// World axis
+		//Matrix.data[13] = -position.y;		// World axis
+		//Matrix.data[14] = -position.z;		// World axis
 
 		return Matrix;
 	}

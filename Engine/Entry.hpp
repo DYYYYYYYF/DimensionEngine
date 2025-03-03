@@ -24,24 +24,24 @@ int main(void) {
 		return -1;
 	}
 
-    Application* App = NewObject<Application>(GameInst);
-	if (App == nullptr) {
+    Engine* CoreEngine = NewObject<Engine>(GameInst);
+	if (CoreEngine == nullptr) {
 		LOG_FATAL("Could not allocate memory for Application!");
 		return 0;
 	}
 
-    if (!App->Initialize()) {
+    if (!CoreEngine->Initialize()) {
 		LOG_INFO("Application did not initialize gracefully!");
 		return 1;
     }
 
-    if (!App->Run()) {
+    if (!CoreEngine->Run()) {
         LOG_INFO("Application did not shutdown gracefully!");
         return 2;
     }
 
-    if (App) {
-        DeleteObject(App);
+    if (CoreEngine) {
+        DeleteObject(CoreEngine);
     }
 
     if (GameInst) {

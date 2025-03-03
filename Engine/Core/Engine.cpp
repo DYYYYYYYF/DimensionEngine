@@ -28,7 +28,7 @@
 #include "Systems/FontSystem.hpp"
 #include "Utils/FileWatcher.h"
 
-bool Application::Initialize(){
+bool Engine::Initialize(){
 	if (Initialized) {
 		LOG_ERROR("Create application more than once!");
 		return false;
@@ -58,23 +58,23 @@ bool Application::Initialize(){
 
 	// Register for engine-level events.
 	EngineEvent::Register(eEventCode::Application_Quit, nullptr,
-		std::bind(&Application::OnEvent, this, std::placeholders::_1, this, std::placeholders::_3, std::placeholders::_4));
+		std::bind(&Engine::OnEvent, this, std::placeholders::_1, this, std::placeholders::_3, std::placeholders::_4));
 	EngineEvent::Register(eEventCode::Resize, nullptr,
-		std::bind(&Application::OnResized, this, std::placeholders::_1, this, std::placeholders::_3, std::placeholders::_4));
+		std::bind(&Engine::OnResized, this, std::placeholders::_1, this, std::placeholders::_3, std::placeholders::_4));
 
 	// Platform
 	if (!Platform::PlatformStartup(&platform,
-		GameInst->AppConfig.name,
-		GameInst->AppConfig.start_x, 
-		GameInst->AppConfig.start_y, 
-		GameInst->AppConfig.start_width, 
-        GameInst->AppConfig.start_height)){
+		GameInst->GetApplicationName(),
+		(int)GameInst->GetWindowOffsetX(),
+		(int)GameInst->GetWindowOffsetY(),
+		GameInst->GetWindowWidth(),
+		GameInst->GetWindowHeight())) {
         LOG_FATAL("Failed to startup platform. Application quit now!");
 		return false;
     }
 
-	width = GameInst->AppConfig.start_width;
-	height = GameInst->AppConfig.start_height;
+	width = GameInst->GetWindowWidth();
+	height = GameInst->GetWindowHeight();
 
 	// Init texture system
 	SResourceSystemConfig ResourceSystemConfig;
@@ -150,7 +150,7 @@ bool Application::Initialize(){
 	}
 
 	// Render system.
-	if (!Renderer->Initialize(GameInst->AppConfig.name, &platform)) {
+	if (!Renderer->Initialize(GameInst->GetApplicationName(),Vector2(width, height), & platform)) {
 		LOG_FATAL("Renderer failed to initialize!");
 		return false;
 	}
@@ -178,7 +178,7 @@ bool Application::Initialize(){
 	}
 
 	// Init font system.
-	if (!FontSystem::Initialize(Renderer, &GameInst->AppConfig.FontConfig)) {
+	if (!FontSystem::Initialize(Renderer, &GameInst->GetFontConfig())) {
 		LOG_FATAL("Font system failed to initialize!");
 		return false;
 	}
@@ -192,9 +192,10 @@ bool Application::Initialize(){
 	}
 
 	// Load render views from app config.
-	uint32_t ViewCount = (uint32_t)GameInst->AppConfig.Renderviews.size();
+	const std::vector<RenderViewConfig>& Renderviews = GameInst->GetRenderviews();
+	uint32_t ViewCount = (uint32_t)Renderviews.size();
 	for (uint32_t v = 0; v < ViewCount; ++v) {
-		const RenderViewConfig& View = GameInst->AppConfig.Renderviews[v];
+		const RenderViewConfig& View = Renderviews[v];
 		if (!RenderViewSystem::Create(View)) {
 			LOG_FATAL("Failed to create view '%s'.", View.name);
 			return false;
@@ -232,7 +233,7 @@ bool Application::Initialize(){
 
 static FileWatcher* GlobalFileWatcher = nullptr;
 
-bool Application::Run() {
+bool Engine::Run() {
 	AppClock.Start();
 	AppClock.Update();
 	last_time = AppClock.GetElapsedTime();	// Seconds
@@ -328,9 +329,9 @@ bool Application::Run() {
 
 	// Shutdown event system
 	EngineEvent::Unregister(eEventCode::Application_Quit, nullptr,
-		std::bind(&Application::OnEvent, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
+		std::bind(&Engine::OnEvent, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
 	EngineEvent::Unregister(eEventCode::Resize, nullptr,
-		std::bind(&Application::OnResized, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
+		std::bind(&Engine::OnResized, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
 
 	RenderViewSystem::Shutdown();
 	CameraSystem::Shutdown();
@@ -352,7 +353,7 @@ bool Application::Run() {
 	return true;
 }
 
-bool Application::OnEvent(eEventCode code, void* sender, void* listener_instance, SEventContext context) {
+bool Engine::OnEvent(eEventCode code, void* sender, void* listener_instance, SEventContext context) {
 	switch (code){
 	case eEventCode::Application_Quit: {
 		LOG_INFO("Application quit now.");
@@ -365,7 +366,7 @@ bool Application::OnEvent(eEventCode code, void* sender, void* listener_instance
 	return false;
 }
 
-bool Application::OnResized(eEventCode code, void* sender, void* listener_instance, SEventContext context) {
+bool Engine::OnResized(eEventCode code, void* sender, void* listener_instance, SEventContext context) {
 	if (Renderer == nullptr) {
 		return false;
 	}
@@ -403,7 +404,7 @@ bool Application::OnResized(eEventCode code, void* sender, void* listener_instan
 	return true;
 }
 
-void Application::GetFramebufferSize(unsigned int* width, unsigned int* height) {
+void Engine::GetFramebufferSize(unsigned int* width, unsigned int* height) {
 	*width = this->width;
 	*height = this->height;
 }

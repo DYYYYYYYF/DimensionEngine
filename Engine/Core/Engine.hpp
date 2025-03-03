@@ -11,7 +11,7 @@ class IGame;
 struct SEventContext;
 class Controller;
 
-class Application {
+class Engine {
 public:
 	struct SConfig {
 		short start_x = 0;
@@ -19,20 +19,20 @@ public:
 		short start_width = 1920;
 		short start_height = 1080;
 
-		const char* name = nullptr;
+		std::string name;
 
 		FontSystemConfig FontConfig;
 		std::vector<RenderViewConfig> Renderviews;
 	};
 
 public:
-	DAPI Application() : GameInst(nullptr), GameController(nullptr), is_running(false), is_suspended(false),
+	DAPI Engine() : GameInst(nullptr), GameController(nullptr), is_running(false), is_suspended(false),
 		width(1920), height(1080), last_time(0.0), Initialized(false){}
-	DAPI Application(IGame* gameInstance) : GameController(nullptr), is_running(false), is_suspended(false),
+	DAPI Engine(IGame* gameInstance) : GameController(nullptr), is_running(false), is_suspended(false),
 		width(1920), height(1080), last_time(0.0), Initialized(false) {
 		GameInst = gameInstance;
 	}
-	virtual ~Application() {};
+	virtual ~Engine() {};
 
 public:
 	DAPI bool Initialize();

@@ -118,7 +118,7 @@ bool RenderViewSystem::Create(const RenderViewConfig& config) {
 	View->ID = ID;
 
 	for (uint32_t i = 0; i < View->RenderpassCount; ++i) {
-		if (!Renderer->CreateRenderpass(&View->Passes[i], &config.passes[i])) {
+		if (!Renderer->CreateRenderpass(&View->Passes[i], config.passes[i])) {
 			LOG_FATAL("RenderViewSystem::Create() Renderpass not found: '%s'.", config.passes[i].name);
 			return false;
 		}

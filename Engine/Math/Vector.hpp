@@ -470,10 +470,10 @@ public:
 	}
 
 	TVector4(T x, T y, T z, T w) {
-		r = x;
-		g = y;
-		b = z;
-		a = w;
+		r = (T)x;
+		g = (T)y;
+		b = (T)z;
+		a = (T)w;
 		InitSIMDData();
 	}
 

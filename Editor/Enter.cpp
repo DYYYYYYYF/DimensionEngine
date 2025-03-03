@@ -7,14 +7,16 @@
 
 // TODO: Remove
 #include "Core/DMemory.hpp"
+#include "Utils/JSONReader.h"
 
 extern bool CreateGame(IGame* out_game) {
 	// Create Game state
-    out_game->AppConfig.start_x = 100;
-    out_game->AppConfig.start_y = 100;
-    out_game->AppConfig.start_width = 1280;
-    out_game->AppConfig.start_height = 720;
-    out_game->AppConfig.name = "Dimension Editor";
+	JSONReader JsonReader(EDITOR_CONFIG_PATH);
+	out_game->SetWindowWidth(JsonReader.ReadPropertyInt("Window.Width"));
+	out_game->SetWindowHeight(JsonReader.ReadPropertyInt("Window.Height"));
+	out_game->SetWindowOffsetX(JsonReader.ReadPropertyInt("Window.OffsetX"));
+	out_game->SetWindowOffsetY(JsonReader.ReadPropertyInt("Window.OffsetY"));
+	out_game->SetApplicationName(JsonReader.ReadPropertyString("Application"));
 
     return true;
 }

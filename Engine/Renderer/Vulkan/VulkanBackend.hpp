@@ -44,7 +44,7 @@ public:
 	virtual unsigned char GetWindowAttachmentCount() const override;
 	virtual Texture* GetDepthAttachment(unsigned char index) override;
 	virtual unsigned char GetWindowAttachmentIndex() override;
-	virtual bool CreateRenderpass(IRenderpass* out_renderpass, const RenderpassConfig* config) override;
+	virtual bool CreateRenderpass(IRenderpass* out_renderpass, const RenderpassConfig& config) override;
 	virtual void DestroyRenderpass(IRenderpass* pass) override;
 
 	// Renderbuffer

@@ -55,14 +55,14 @@ IRenderer::~IRenderer() {
 	Shutdown();
 }
 
-bool IRenderer::Initialize(const char* application_name, struct SPlatformState* plat_state) {
+bool IRenderer::Initialize(const std::string& application_name, Vector2 window_size, struct SPlatformState* plat_state) {
 	if (Backend == nullptr) {
 		return false;
 	}
 
 	// Default framebuffer size. Overriden when window is created.
-	FramebufferWidth = 1280;
-	FramebufferHeight = 720;
+	FramebufferWidth = (uint32_t)window_size.x;
+	FramebufferHeight = (uint32_t)window_size.y;
 	Resizing = false;
 	FrameSinceResize = 0;
 
@@ -293,13 +293,8 @@ unsigned char IRenderer::GetWindowAttachmentIndex() {
 	return Backend->GetWindowAttachmentIndex();
 }
 
-bool IRenderer::CreateRenderpass(IRenderpass* out_renderpass, const RenderpassConfig* config) {
-	if (config == nullptr) {
-		LOG_ERROR("Renderpass config is required.");
-		return false;
-	}
-
-	if (config->renderTargetCount == 0) {
+bool IRenderer::CreateRenderpass(IRenderpass* out_renderpass, const RenderpassConfig& config) {
+	if (config.renderTargetCount == 0) {
 		LOG_ERROR("Can not have a renderpass target count of0.");
 		return false;
 	}

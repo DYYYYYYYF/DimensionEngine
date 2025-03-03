@@ -8,11 +8,13 @@
 #include <Core/Keymap.hpp>
 #include <Containers/TArray.hpp>
 
+#define EDITOR_CONFIG_PATH std::string(ROOT_PATH) + "/Editor/Config.json"
+
 class Camera;
 
 class GameInstance : public IGame {
 public:
-	GameInstance() : WorldCamera(nullptr), Width(1920), Height(1080), ConsoleKeymap(nullptr){}
+	GameInstance() : WorldCamera(nullptr), ConsoleKeymap(nullptr){}
 	virtual ~GameInstance() {};
 
 public:
@@ -24,10 +26,9 @@ public:
 	virtual void OnResize(unsigned int width, unsigned int height) override;
 
 private:
-	bool ConfigureRenderviews(Application::SConfig* config);
+	bool ConfigureRenderviews();
 
 public:
-	short Width, Height;
 	Camera* WorldCamera;
 	Frustum CameraFrustum;
 

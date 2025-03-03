@@ -173,6 +173,8 @@ inline bool is_avx2_supported() {
 #endif
 #endif
 
+#define ENGINE_CONFIG_PATH std::string(ROOT_PATH) + "/Engine/EngineConfig.json"
+
 struct Range {
 	size_t offset = 0;
 	size_t size = 0;
