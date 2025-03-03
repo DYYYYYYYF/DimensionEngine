@@ -1,4 +1,4 @@
-﻿#include "ShaderSystem.h"
+#include "ShaderSystem.h"
 
 #include "Renderer/RendererFrontend.hpp"
 #include "Systems/TextureSystem.h"
@@ -35,8 +35,8 @@ bool ShaderSystem::Initialize(IRenderer* renderer, ShaderSystem::Config config) 
 	}
 
 	// Read current config
-	JSONReader JsonReader(ENGINE_CONFIG_PATH);
-	GLOBAL_SHADER_TYPE = JsonReader.ReadPropertyString("ShaderLanguage")
+	JSONReader JsonReader(std::string(ROOT_PATH) + "/Config/EngineConfig.json");
+	GLOBAL_SHADER_TYPE = JsonReader.ReadPropertyString("Engine.ShaderLanguage")
 		.compare("glsl") == 0 ? ShaderLanguage::eGLSL : ShaderLanguage::eHLSL;
 
 	Renderer = renderer;
@@ -86,9 +86,9 @@ void ShaderSystem::Shutdown() {
 		std::vector<Shader*>().swap(Shaders);
 
 		// Save current config
-		JSONReader JsonReader(std::string(ROOT_PATH) + "/Engine/EngineConfig.json");
+		JSONReader JsonReader(std::string(ROOT_PATH) + "/Config/EngineConfig.json");
 		std::string Lan = GLOBAL_SHADER_TYPE == ShaderLanguage::eGLSL ? "glsl" : "hlsl";
-		JsonReader.SetPropertyString("ShaderLanguage", Lan);
+		JsonReader.SetPropertyString("Engine.ShaderLanguage", Lan);
 	}
 }
 
@@ -258,11 +258,11 @@ bool ShaderSystem::UseByID(uint32_t shader_id) {
 		Shader* NextShader = GetByID(shader_id);
 		CurrentShaderID = shader_id;
 		if (!Renderer->UseRenderShader(NextShader)) {
-			LOG_ERROR("Failed to use shader '%s'.", NextShader->Name);
+			LOG_ERROR("Failed to use shader '%s'.", NextShader->Name.c_str());
 			return false;
 		}
 		if (!Renderer->BindGlobalsRenderShader(NextShader)) {
-			LOG_ERROR("Failed to bind globals for shader '%s'.", NextShader->Name);
+			LOG_ERROR("Failed to bind globals for shader '%s'.", NextShader->Name.c_str());
 			return false;
 		}
 	}
@@ -277,13 +277,13 @@ unsigned short ShaderSystem::GetUniformIndex(Shader* shader, const char* uniform
 
 	auto it = shader->HashMap.find(uniform_name);
 	if (it == shader->HashMap.end()){
-		LOG_ERROR("Shader '%s' does not have a registered uniform named '%s'", shader->Name, uniform_name);
+		LOG_ERROR("Shader '%s' does not have a registered uniform named '%s'", shader->Name.c_str(), uniform_name);
 		return INVALID_ID_U16;
 	}
 
 	unsigned short Index = it->second;
 	if ( Index == INVALID_ID_U16) {
-		LOG_ERROR("Shader '%s' does not have a registered uniform named '%s'", shader->Name, uniform_name);
+		LOG_ERROR("Shader '%s' does not have a registered uniform named '%s'", shader->Name.c_str(), uniform_name);
 		return INVALID_ID_U16;
 	}
 
@@ -556,7 +556,7 @@ bool ShaderSystem::IsUniformNameValid(Shader* shader, const char* uniform_name) 
 
 	auto it = shader->HashMap.find(uniform_name);
 	if (it != shader->HashMap.end()){
-		LOG_ERROR("A uniform by the name '%s' already exists on shader '%s'.", uniform_name, shader->Name);
+		LOG_ERROR("A uniform by the name '%s' already exists on shader '%s'.", uniform_name, shader->Name.c_str());
 		return false;
 	}
 

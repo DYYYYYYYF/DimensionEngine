@@ -52,7 +52,7 @@ public:
 	virtual bool EndRenderpass(IRenderpass* pass) = 0;
 	virtual bool CreateRenderTarget(unsigned char attachment_count, std::vector<RenderTargetAttachment> attachments, IRenderpass* pass, uint32_t width, uint32_t height, RenderTarget* out_target) = 0;
 	virtual void DestroyRenderTarget(RenderTarget* target, bool free_internal_memory) = 0;
-	virtual bool CreateRenderpass(IRenderpass* out_renderpass,const RenderpassConfig* config) = 0;
+	virtual bool CreateRenderpass(IRenderpass* out_renderpass,const RenderpassConfig& config) = 0;
 	virtual void DestroyRenderpass(IRenderpass* pass) = 0;
 	virtual Texture* GetWindowAttachment(unsigned char index) = 0;
 	virtual unsigned char GetWindowAttachmentCount() const = 0;

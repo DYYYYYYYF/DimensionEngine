@@ -3,6 +3,7 @@
 #include "Resource.hpp"
 #include "Geometry.hpp"
 #include "Math/Transform.hpp"
+#include "Frameworks/Classes/Actor.h"
 #include <vector>
 
 enum MeshFileType {
@@ -32,19 +33,12 @@ struct MeshGroupData {
 	std::vector<MeshFaceData> Faces;
 };
 
-class Mesh {
+class Mesh : public Actor{
 public:
-	Mesh() : geometries(nullptr), Parent(nullptr), geometry_count(0), UniqueID(INVALID_ID), Generation(INVALID_ID_U8){}
+	Mesh() : Actor(), geometries(nullptr), geometry_count(0), Generation(INVALID_ID_U8){}
 	virtual ~Mesh() { Unload(); }
 	DAPI bool LoadFromResource(const std::string& resource_name);
 	DAPI void Unload();
-
-	DAPI Matrix4 GetLocal();
-	DAPI Matrix4 GetWorldTransform();
-
-	DAPI void SetParent(Mesh* parent) { Parent = parent; }
-	DAPI void AttachTo(Mesh* parent) { Parent = parent; }
-	DAPI Mesh* GetParent() const { return Parent; }
 
 private:
 	void LoadJobSuccess(void* params);
@@ -53,12 +47,9 @@ private:
 
 public:
 	std::string Name;
-	uint32_t UniqueID;
 	unsigned char Generation;
 	unsigned short geometry_count;
 	Geometry** geometries;
-	Transform Transform;
-	Mesh* Parent;
 };
 
 struct MeshLoadParams {

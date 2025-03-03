@@ -1,10 +1,17 @@
 #include "FileWatcher.h"
-#include "tchar.h"
 #include "iostream"
 #include "Platform/File.hpp"
 #include "Core/Event.hpp"
 #include "Core/DMemory.hpp"
 #include <filesystem>
+
+#ifdef DPLATFORM_WINDOWS
+#include "tchar.h"
+#else
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#endif
 
 FileWatcher::FileWatcher(){
 }
@@ -78,11 +85,19 @@ void WatchableFile::UpdateLastModInfo()
 
 bool WatchableFile::GetFileInfo(WatchableFileInfo* fi, const std::string& name) const
 {
+#ifdef DPLATFORM_WINDOWS
 	struct _stat fileStatus;
-	if (_stat(name.c_str(), &fileStatus) == -1)
+    if (_stat(name.c_str(), &fileStatus) == -1)
+    {
+        return false;
+    }
+#else
+    struct stat fileStatus;
+	if (stat(name.c_str(), &fileStatus) == -1)
 	{
 		return false;
 	}
+#endif
 
 	fi->mtime = from_time_t(fileStatus.st_mtime);
 	fi->size = fileStatus.st_size;

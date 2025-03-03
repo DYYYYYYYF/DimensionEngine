@@ -31,7 +31,6 @@ bool UIText::Create(class IRenderer* renderer, UITextType type, const std::strin
 	}
 
 	Text = StringCopy(textContent);
-	Trans = Transform();
 
 	static const size_t QuadSize = (sizeof(Vertex2D) * 4);
 
@@ -86,16 +85,10 @@ bool UIText::Create(class IRenderer* renderer, UITextType type, const std::strin
 	// Generate geometry.
 	RegenerateGeometry();
 
-	// Get a unique identifier for the text object.
-	UniqueID = Identifier::AcquireNewID(this);
-
 	return true;
 }
 void UIText::Destroy() {
 	if (Text != nullptr) {
-		// Release the unique id.
-		Identifier::ReleaseID(UniqueID);
-
 		uint32_t TextLength = (uint32_t)strlen(Text);
 		Memory::Free(Text, sizeof(char) * TextLength, MemoryType::eMemory_Type_String);
 		Text = nullptr;
@@ -112,10 +105,6 @@ void UIText::Destroy() {
 	}
 
 	Renderer = nullptr;
-}
-	
-void UIText::SetPosition(Vector3 position) {
-	Trans.SetPosition(position);
 }
 
 void UIText::SetText(const char* text) {

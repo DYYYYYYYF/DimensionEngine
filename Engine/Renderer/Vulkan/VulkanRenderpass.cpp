@@ -228,32 +228,6 @@ bool VulkanRenderPass::Create(VulkanContext* context, const RenderpassConfig& co
 		LOG_ERROR("VulkanRenderPass::Create() Failed to create renderpass.");
 	}
 
-	// Clean up
-	if (!AttachmentDescriptions.empty()) {
-		AttachmentDescriptions.clear();
-		std::vector<vk::AttachmentDescription>().swap(AttachmentDescriptions);
-	}
-
-	if (!ColorAttachmentDescriptions.empty()) {
-		ColorAttachmentDescriptions.clear();
-		std::vector<vk::AttachmentDescription>().swap(ColorAttachmentDescriptions);
-	}
-
-	if (!DepthAttachmentDescriptions.empty()) {
-		DepthAttachmentDescriptions.clear();
-		std::vector<vk::AttachmentDescription>().swap(DepthAttachmentDescriptions);
-	}
-
-	if (!ColorAttachmentReferences.empty()) {
-		ColorAttachmentReferences.clear();
-		std::vector<vk::AttachmentReference>().swap(ColorAttachmentReferences);
-	}
-
-	if (!DepthAttachmentReferences.empty()) {
-		DepthAttachmentReferences.clear();
-		std::vector<vk::AttachmentReference>().swap(DepthAttachmentReferences);
-	}
-
 	return true;
 }
 

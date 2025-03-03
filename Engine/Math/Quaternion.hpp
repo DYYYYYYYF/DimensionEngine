@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "Vector.hpp"
 #include "Matrix.hpp"
 
@@ -135,7 +135,7 @@ public:
 
 	// Calculates a rotation matrix based on the quaternion and the passed in center point.
 	inline TMatrix4<T> ToRotationMatrix(const TVector3<T>& center) {
-		TMatrix4<Type> Matrix = ToRotationMatrix();
+		TMatrix4<T> Matrix = ToRotationMatrix();
 
 		// 齐次坐标的平移部分：旋转中心变换后得到的平移
 		Matrix.data[3] = -center.x * Matrix.data[0] - center.y * Matrix.data[1] - center.z * Matrix.data[2];

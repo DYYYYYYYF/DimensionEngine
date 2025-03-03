@@ -21,7 +21,7 @@ public:
 	virtual ~IRenderer();
 
 public:
-	virtual bool Initialize(const std::string& application_name, Vector2 window_size, struct SPlatformState* plat_state);
+	virtual bool Initialize(const std::string& application_name, struct SPlatformState* plat_state);
 	virtual void Shutdown();
 
 	virtual void OnResize(unsigned short width, unsigned short height);

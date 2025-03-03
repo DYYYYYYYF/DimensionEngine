@@ -42,7 +42,8 @@ elseif(${LOG_LEVEL}  STREQUAL "FATAL")
 endif()
 
 # Public header files
- include_directories(${PROJECT_SOURCE_DIR}/3rd/gltf)
+include_directories(${PROJECT_SOURCE_DIR}/3rd/gltf)
+include_directories(${PROJECT_SOURCE_DIR}/3rd/rapidjson/include)
 
 if(${APPLE})
     message("-- Current environment: MacOS")

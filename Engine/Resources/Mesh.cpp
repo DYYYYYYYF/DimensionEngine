@@ -72,17 +72,3 @@ void Mesh::Unload() {
 	geometry_count = 0;
 	Generation = INVALID_ID_U8;
 }
-
-Matrix4 Mesh::GetLocal() {
-	return Transform.GetLocal();
-}
-
-Matrix4 Mesh::GetWorldTransform() {
-	Matrix4 l = GetLocal();
-	if (Parent != nullptr) {
-		Matrix4 p = Parent->GetWorldTransform();
-		return p.Multiply(l);
-	}
-
-	return l;
-}

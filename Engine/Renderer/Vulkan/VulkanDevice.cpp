@@ -1,4 +1,4 @@
-﻿#include "VulkanDevice.hpp"
+#include "VulkanDevice.hpp"
 #include "VulkanContext.hpp"
 #include "Containers/TArray.hpp"
 
@@ -52,6 +52,11 @@ bool VulkanDevice::Create(VulkanContext* context, vk::SurfaceKHR surface) {
 	// TODO: should be config driven
 	vk::PhysicalDeviceFeatures DeviceFeatures;
 	DeviceFeatures.setSamplerAnisotropy(true)	// It will not append on modern device, but not sure.
+#ifdef DPLATFORM_MACOS
+		.setGeometryShader(false)   // Geometry shader is not supported on MacOS.
+#else
+        .setGeometryShader(true)
+#endif
 		.setFillModeNonSolid(true);	// It should be true when Pipeline's PolygonMode set on eLine or ePoint.
 
 	const char* ExtensionName = VK_KHR_SWAPCHAIN_EXTENSION_NAME;

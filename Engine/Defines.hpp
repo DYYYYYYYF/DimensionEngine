@@ -67,6 +67,8 @@
 
 #endif	// #ifdef DEXPORT
 
+#define CORE_API	DAPI
+#define ENGINE_API	DAPI
 
 // __cpuid
 #if defined(_MSC_VER)

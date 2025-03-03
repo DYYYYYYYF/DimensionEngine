@@ -311,7 +311,7 @@ static const NSRange kEmptyRange = { NSNotFound, 0 };
 @end // WindowDelegate
 
 // Platform.hpp
-bool Platform::PlatformStartup(SPlatformState* platform_state, const char* application_name,
+bool Platform::PlatformStartup(SPlatformState* platform_state, const std::string& application_name,
 	int x, int y, int width, int height){
     platform_state->internalState = malloc(sizeof(SInternalState));
     SInternalState* state_ptr = (SInternalState*)platform_state->internalState;
@@ -366,7 +366,7 @@ bool Platform::PlatformStartup(SPlatformState* platform_state, const char* appli
 	[state_ptr->window setLevel : NSNormalWindowLevel];
 	[state_ptr->window setContentView : state_ptr->view] ;
 	[state_ptr->window makeFirstResponder : state_ptr->view] ;
-	[state_ptr->window setTitle : @(application_name)] ;
+	[state_ptr->window setTitle : @(application_name.c_str())] ;
 	[state_ptr->window setDelegate : state_ptr->wnd_delegate] ;
 	[state_ptr->window setAcceptsMouseMovedEvents : YES] ;
 	[state_ptr->window setRestorable : NO] ;

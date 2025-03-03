@@ -70,11 +70,11 @@ bool MeshLoader::ImportGltfFile(const std::string& obj_file, const char* out_dsm
 			if (!Node.rotation.empty()) {
 				// x y z w
 				Quaternion rotation = Quaternion((float)Node.rotation[0], (float)Node.rotation[1], (float)Node.rotation[2], (float)Node.rotation[3]);
-				LocalTransform.SetRotation(rotation);
+				LocalTransform.SetQuaternion(rotation);
 			}
 			if (!Node.translation.empty()) {
 				Vector3 Translation = Vector3((float)Node.translation[0], (float)Node.translation[1], (float)Node.translation[2]);
-				LocalTransform.SetPosition(Translation);
+				LocalTransform.SetLocation(Translation);
 			}
 		}
 
