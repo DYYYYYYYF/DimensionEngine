@@ -119,9 +119,12 @@ bool GameInstance::Initialize() {
 	// Load python script
 	TestPython.SetPythonFile("recompile_shader");
 
+	Vector3 Position = JsonReader.ReadPropertyVector("Camera.Position");
+	Vector3 Rotation = JsonReader.ReadPropertyVector("Camera.Rotation");
+
 	WorldCamera = CameraSystem::GetDefault();
-	Matrix4 CameraView = Matrix4::LookAt(Vector(0.0f, 0.0f, -90.0f), Vector3(0.0f, 0.0f, 0.0f), Axis::Y);
-	WorldCamera->SetViewMatrix(CameraView);
+	WorldCamera->SetPosition(Position);
+	WorldCamera->SetEulerAngles(Rotation);
 
 	// Create test ui text objects.
 	if (!TestText.Create(Renderer, UITextType::eUI_Text_Type_Bitmap, "Ubuntu Mono 21px", 21, "Test! \n Yooo!")) {
@@ -277,7 +280,8 @@ void GameInstance::Shutdown() {
 	JSONReader JsonReader(EDITOR_CONFIG_PATH);
 	JsonReader.SetPropertyInt("Window.Width", WindowSize.Width);
 	JsonReader.SetPropertyInt("Window.Height", WindowSize.Height);
-	JsonReader.AddPropertyVector("Camera.Position", WorldCamera->GetPosition());
+	JsonReader.SetPropertyVector("Camera.Position", WorldCamera->GetPosition());
+	JsonReader.SetPropertyVector("Camera.Rotation", WorldCamera->GetEulerAngles());
 
 	// TODO: TEMP
 	EngineEvent::Unregister(eEventCode::Debug_0, this, GameOnDebugEvent);

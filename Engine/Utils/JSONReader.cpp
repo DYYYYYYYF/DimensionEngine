@@ -169,25 +169,46 @@ Vector JSONReader::ReadPropertyVector(const std::string& key) {
 bool JSONReader::AddPropertyInt(const std::string& key, int val) {
 	std::vector<std::string> keys = SplitPath(key);
 	rapidjson::Value NewVal(val);
-	return AddJSONValueByPath(Context, keys, NewVal, Context.GetAllocator());
+
+	bool Reulst = AddJSONValueByPath(Context, keys, NewVal, Context.GetAllocator());
+	if (Reulst) {
+		SaveFile();
+	}
+
+	return Reulst;
 }
 
 bool JSONReader::AddPropertyFloat(const std::string& key, float val) {
 	std::vector<std::string> keys = SplitPath(key);
 	rapidjson::Value NewVal(val);
-	return AddJSONValueByPath(Context, keys, NewVal, Context.GetAllocator());
+	bool Reulst = AddJSONValueByPath(Context, keys, NewVal, Context.GetAllocator());
+	if (Reulst) {
+		SaveFile();
+	}
+
+	return Reulst;
 }
 
 bool JSONReader::AddPropertyDouble(const std::string& key, double val) {
 	std::vector<std::string> keys = SplitPath(key);
 	rapidjson::Value NewVal(val);
-	return AddJSONValueByPath(Context, keys, NewVal, Context.GetAllocator());
+	bool Reulst = AddJSONValueByPath(Context, keys, NewVal, Context.GetAllocator());
+	if (Reulst) {
+		SaveFile();
+	}
+
+	return Reulst;
 }
 
 bool JSONReader::AddPropertyString(const std::string& key, const std::string& val) {
 	std::vector<std::string> keys = SplitPath(key);
 	rapidjson::Value NewVal(val.c_str(), (rapidjson::SizeType)val.length());
-	return AddJSONValueByPath(Context, keys, NewVal, Context.GetAllocator());
+	bool Reulst = AddJSONValueByPath(Context, keys, NewVal, Context.GetAllocator());
+	if (Reulst) {
+		SaveFile();
+	}
+
+	return Reulst;
 }
 
 bool JSONReader::AddPropertyVector(const std::string& key, const Vector& val) {
@@ -196,9 +217,15 @@ bool JSONReader::AddPropertyVector(const std::string& key, const Vector& val) {
 	rapidjson::Value NewValX(val.x);
 	rapidjson::Value NewValY(val.y);
 	rapidjson::Value NewValZ(val.z);
-	return AddJSONValueByPath(Context, keys, NewValX, Context.GetAllocator()) &&
+	bool Res = AddJSONValueByPath(Context, keys, NewValX, Context.GetAllocator()) &&
 		AddJSONValueByPath(Context, keys, NewValY, Context.GetAllocator())&&
 		AddJSONValueByPath(Context, keys, NewValZ, Context.GetAllocator());
+
+	if (Res) {
+		SaveFile();
+	}
+
+	return Res;
 }
 
 bool JSONReader::AddPropertyMatrix(const std::string& key, const Matrix4& val) {
@@ -210,6 +237,8 @@ bool JSONReader::AddPropertyMatrix(const std::string& key, const Matrix4& val) {
 			return false;
 		}
 	}
+
+	SaveFile();
 	return true;
 }
 
@@ -262,10 +291,6 @@ bool JSONReader::ModifyJSONValueByPath(rapidjson::Value& node, const std::vector
 				return false;
 			}
 		}
-		else {
-			LOG_ERROR("Array not found or invalid: %s", arrayKey.c_str());
-			return false;
-		}
 	}
 
 	if (keys.size() == 1) {
@@ -293,37 +318,36 @@ bool JSONReader::AddJSONValueByPath(rapidjson::Value& node, const std::vector<st
 		return false;
 	}
 
-	if (keys.size() < 2) {
-		std::string currentKey = keys[0];
-		if (keys.size() == 1) {
-			// 处理数组索引
-			if (currentKey.find('[') != std::string::npos && currentKey.back() == ']') {
-				size_t indexStart = currentKey.find('[');
-				size_t indexEnd = currentKey.find(']');
-				std::string arrayKey = currentKey.substr(0, indexStart);
-				int index = std::stoi(currentKey.substr(indexStart + 1, indexEnd - indexStart - 1));
+	std::string currentKey = keys[0];
+	std::string NewKey = keys[1];
+	if (keys.size() == 2) {
+		// 处理数组索引
+		if (NewKey.find('[') != std::string::npos && NewKey.back() == ']') {
+			size_t indexStart = NewKey.find('[');
+			size_t indexEnd = NewKey.find(']');
+			std::string arrayKey = NewKey.substr(0, indexStart);
+			int index = std::stoi(NewKey.substr(indexStart + 1, indexEnd - indexStart - 1));
 
-				// 确保 node[arrayKey] 是一个数组
-				if (!node.HasMember(arrayKey.c_str())) {
-					node[arrayKey.c_str()].SetArray(); // 初始化为数组
-				}
-				if (node[arrayKey.c_str()].IsArray()) {
-					rapidjson::Value NewLayer(rapidjson::kObjectType);
-					rapidjson::Value key(currentKey.c_str(), allocator);
-					rapidjson::Value valValue(val, allocator); 
+			// 确保 node[arrayKey] 是一个数组
+			if (!node[currentKey.c_str()].HasMember(arrayKey.c_str())) {
+				rapidjson::Value key(arrayKey.c_str(), allocator);
+				rapidjson::Value NewLayer(rapidjson::kArrayType);// 初始化为数组
+				node[currentKey.c_str()].AddMember(key, NewLayer, allocator);
+			}
 
-					NewLayer.AddMember(key, valValue, allocator);
-					node[arrayKey.c_str()].PushBack(NewLayer, allocator);
-					return true;
-				}
-			} else {
-				// 确保 node 是一个对象
-				if (node.IsObject()) {
-					rapidjson::Value key(currentKey.c_str(), allocator);
-					rapidjson::Value valValue(val, allocator);
-					node.AddMember(key, valValue, allocator);
-					return true;
-				}
+			if (node[currentKey.c_str()][arrayKey.c_str()].IsArray()) {
+				rapidjson::Value NewLayer(rapidjson::kObjectType);
+				rapidjson::Value valValue(val, allocator); 
+				node[currentKey.c_str()][arrayKey.c_str()].PushBack(valValue, allocator);
+				return true;
+			}
+		} else {
+			// 确保 node 是一个对象
+			if (node[currentKey.c_str()].IsObject()) {
+				rapidjson::Value key(NewKey.c_str(), allocator);
+				rapidjson::Value valValue(val, allocator);
+				node[currentKey.c_str()].AddMember(key, valValue, allocator);
+				return true;
 			}
 		}
 	}

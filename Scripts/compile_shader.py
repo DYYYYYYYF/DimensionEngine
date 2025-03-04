@@ -114,9 +114,9 @@ if __name__ == '__main__':
         CompileShaders(default_shader_language)
 
         # 保存JSON
-        ConfigPath = os.path.abspath(".")+'/Config/EngineConfig.json'
+        ConfigPath = os.path.abspath(".")+'/Engine/EngineConfig.json'
         data = json.load(open(ConfigPath, 'r'))
-        data['Engine']['ShaderLanguage'] = default_shader_language
+        data['ShaderLanguage'] = default_shader_language
         json.dump(data, open(ConfigPath, 'w'))
 
     except getopt.GetoptError:
