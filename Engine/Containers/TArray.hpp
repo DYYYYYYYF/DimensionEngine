@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Defines.hpp"
 #include "Core/DMemory.hpp"
