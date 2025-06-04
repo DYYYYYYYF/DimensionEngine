@@ -16,7 +16,7 @@ bool Skybox::Create(const char* cubeName, IRenderer* renderer) {
 	CubeMap.repeat_w = TextureRepeat::eTexture_Repeat_Clamp_To_Edge;
 	CubeMap.usage = TextureUsage::eTexture_Usage_Map_Cubemap;
 	if (!Renderer->AcquireTextureMap(&CubeMap)) {
-		LOG_FATAL("Unable to acquire resources for cube map texture.");
+		GLOG(Log::eFatal, "Unable to acquire resources for cube map texture.");
 		return false;
 	}
 
@@ -28,7 +28,7 @@ bool Skybox::Create(const char* cubeName, IRenderer* renderer) {
 	RenderFrameNumber = INVALID_ID_U64;
 	Shader* SkyboxShader = ShaderSystem::Get("Shader.Builtin.Skybox");
 	if (SkyboxShader == nullptr) {
-		LOG_WARN("Skybox shader is not loaded. Maybe there is no skybox render pass be created.");
+		GLOG(Log::eWarn, "Skybox shader is not loaded. Maybe there is no skybox render pass be created.");
 		return true;
 	}
 
@@ -36,7 +36,7 @@ bool Skybox::Create(const char* cubeName, IRenderer* renderer) {
 
 	InstanceID = Renderer->AcquireInstanceResource(SkyboxShader, Maps);
 	if (InstanceID == INVALID_ID) {
-		LOG_FATAL("Unable to acquire shader resources for skybox texture.");
+		GLOG(Log::eFatal, "Unable to acquire shader resources for skybox texture.");
 		return false;
 	}
 

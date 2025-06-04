@@ -23,7 +23,7 @@ Controller::~Controller() {
 
 void Controller::Initialize() {
 	Initialized = true;
-	LOG_INFO("Input system initialized.");
+	GLOG(Log::eInfo, "Input system initialized.");
 }
 
 void Controller::Shutdown() {

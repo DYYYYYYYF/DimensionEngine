@@ -23,7 +23,7 @@ bool MaterialLoader::Load(const std::string& name, void* params, Resource* resou
 
 	FileHandle File;
 	if (!FileSystemOpen(FullFilePath, eFile_Mode_Read, false, &File)) {
-		LOG_ERROR("Material loader load. Unable to open material file for reading: '%s'.", FullFilePath);
+		GLOG(Log::eError, "Material loader load. Unable to open material file for reading: '%s'.", FullFilePath);
 		return false;
 	}
 
@@ -60,7 +60,7 @@ bool MaterialLoader::Load(const std::string& name, void* params, Resource* resou
 		// Split into var-value
 		int EqualIndex = StringIndexOf(Trimmed, '=');
 		if (EqualIndex == -1) {
-			LOG_WARN("Potential formatting issue found in file '%s': '=' token not found. Skiping line %ui.", FullFilePath, LineNumber);
+			GLOG(Log::eWarn, "Potential formatting issue found in file '%s': '=' token not found. Skiping line %ui.", FullFilePath, LineNumber);
 			LineNumber++;
 			continue;
 		}
@@ -111,25 +111,25 @@ bool MaterialLoader::Load(const std::string& name, void* params, Resource* resou
 		}
 		else if (strcmp(TrimmedVarName, "shininess") == 0){
 			if (!StringToFloat(TrimmedValue, &ResourceData->shininess)) {
-				LOG_WARN("Error parsing shininess in file '%s'. Using default of 32.0f instead.", FullFilePath);
+				GLOG(Log::eWarn, "Error parsing shininess in file '%s'. Using default of 32.0f instead.", FullFilePath);
 				ResourceData->shininess = 32.0f;
 			}
 		}
 		else if (strcmp(TrimmedVarName, "metallic") == 0) {
 			if (!StringToFloat(TrimmedValue, &ResourceData->Metallic)) {
-				LOG_WARN("Error parsing metallic in file '%s'. Using default of 0.1f instead.", FullFilePath);
+				GLOG(Log::eWarn, "Error parsing metallic in file '%s'. Using default of 0.1f instead.", FullFilePath);
 				ResourceData->Metallic = 0.1f;
 			}
 		}
 		else if (strcmp(TrimmedVarName, "roughness") == 0) {
 			if (!StringToFloat(TrimmedValue, &ResourceData->Roughness)) {
-				LOG_WARN("Error parsing Roughness in file '%s'. Using default of 0.5f instead.", FullFilePath);
+				GLOG(Log::eWarn, "Error parsing Roughness in file '%s'. Using default of 0.5f instead.", FullFilePath);
 				ResourceData->Roughness = 0.5f;
 			}
 		}
 		else if (strcmp(TrimmedVarName, "ambient_occlusion") == 0) {
 			if (!StringToFloat(TrimmedValue, &ResourceData->AmbientOcclusion)) {
-				LOG_WARN("Error parsing AmbientOcclusion in file '%s'. Using default of 0.7f instead.", FullFilePath);
+				GLOG(Log::eWarn, "Error parsing AmbientOcclusion in file '%s'. Using default of 0.7f instead.", FullFilePath);
 				ResourceData->AmbientOcclusion = 0.7f;
 			}
 		}
@@ -153,7 +153,7 @@ bool MaterialLoader::Load(const std::string& name, void* params, Resource* resou
 
 void MaterialLoader::Unload(Resource* resource) {
 	if (resource == nullptr) {
-		LOG_WARN("Material loader unload called with nullptr.");
+		GLOG(Log::eWarn, "Material loader unload called with nullptr.");
 		return;
 	}
 

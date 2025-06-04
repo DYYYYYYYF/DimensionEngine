@@ -29,7 +29,7 @@ void FileWatcher::AddWatchFolder(const std::string& path, bool recursion) {
 	for (const auto& entry : std::filesystem::directory_iterator(FolderPath)) {
 		std::string FilePath = path + entry.path().filename().string();
 		AddWatchFile(FilePath);
-		LOG_DEBUG("Add file %s in watcher list.", FilePath.c_str());
+		GLOG(Log::eDebug, "Add file %s in watcher list.", FilePath.c_str());
 	}
 }
 

@@ -43,7 +43,7 @@ public:
 			}
 		}
 
-		LOG_WARN("Unable to find suitable memory type!");
+		GLOG(Log::eWarn, "Unable to find suitable memory type!");
 		return -1;
 	}
 

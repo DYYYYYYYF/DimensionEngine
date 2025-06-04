@@ -14,7 +14,7 @@ enum FileMode {
 
 #define CLOSE_IF_FAILED(func, handle)			\
 	if (!func)	{								\
-		LOG_ERROR("File operation failed.");	\
+		GLOG(Log::eError, "File operation failed.");	\
 		FileSystemClose(handle);				\
 		return false;							\
 	}

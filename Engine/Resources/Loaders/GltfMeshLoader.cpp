@@ -35,7 +35,7 @@ bool MeshLoader::ImportGltfFile(const std::string& obj_file, const char* out_dsm
 	// 加载 GLTF 文件
 	bool success = loader.LoadASCIIFromFile(&model, &err, &warn, obj_file);
 	if (!success) {
-		LOG_INFO("Failed to load GLTF model: ", err.c_str());
+		GLOG(Log::eInfo, "Failed to load GLTF model: ", err.c_str());
 		return false;
 	}
 
@@ -144,7 +144,7 @@ bool MeshLoader::ProcessGltfMaterial(const tinygltf::Model& model, const char* o
 			const tinygltf::Texture& texture = model.textures[textureIndex];
 			// 获取图像索引
 			if (texture.source < 0 || texture.source >= model.images.size()) {
-				LOG_WARN("GLTF laod warning.Invalid image index %i in material %s.", texture.source, CurrentConfig.name.c_str());
+				GLOG(Log::eWarn, "GLTF laod warning.Invalid image index %i in material %s.", texture.source, CurrentConfig.name.c_str());
 				continue;
 			}
 
@@ -159,7 +159,7 @@ bool MeshLoader::ProcessGltfMaterial(const tinygltf::Model& model, const char* o
 			const tinygltf::Texture& texture = model.textures[textureIndex];
 			// 获取图像索引
 			if (texture.source < 0 || texture.source >= model.images.size()) {
-				LOG_WARN("GLTF laod warning.Invalid image index %i in material %s.", texture.source, CurrentConfig.name.c_str());
+				GLOG(Log::eWarn, "GLTF laod warning.Invalid image index %i in material %s.", texture.source, CurrentConfig.name.c_str());
 				continue;
 			}
 
@@ -174,7 +174,7 @@ bool MeshLoader::ProcessGltfMaterial(const tinygltf::Model& model, const char* o
 			const tinygltf::Texture& texture = model.textures[textureIndex];
 			// 获取图像索引
 			if (texture.source < 0 || texture.source >= model.images.size()) {
-				LOG_WARN("GLTF laod warning.Invalid image index %i in material %s.", texture.source, CurrentConfig.name.c_str());
+				GLOG(Log::eWarn, "GLTF laod warning.Invalid image index %i in material %s.", texture.source, CurrentConfig.name.c_str());
 				continue;
 			}
 
@@ -191,7 +191,7 @@ bool MeshLoader::ProcessGltfMaterial(const tinygltf::Model& model, const char* o
 			const tinygltf::Texture& texture = model.textures[textureIndex];
 			// 获取图像索引
 			if (texture.source < 0 || texture.source >= model.images.size()) {
-				LOG_WARN("GLTF laod warning.Invalid image index %i in material %s.", texture.source, CurrentConfig.name.c_str());
+				GLOG(Log::eWarn, "GLTF laod warning.Invalid image index %i in material %s.", texture.source, CurrentConfig.name.c_str());
 				continue;
 			}
 
@@ -258,7 +258,7 @@ bool MeshLoader::ProcessGltfMesh(size_t meshIndex, const tinygltf::Model& model,
 			ASSERT(ByteStride == 1);
 			if (indexBuffer.data.empty() ||
 				indexAccessor.byteOffset + indexBufferView.byteOffset + indexAccessor.count * sizeof(uint8_t) > indexBuffer.data.size()) {
-				LOG_FATAL("Index buffer is invalid or out of bounds!");
+				GLOG(Log::eFatal, "Index buffer is invalid or out of bounds!");
 				return false;
 			}
 
@@ -281,7 +281,7 @@ bool MeshLoader::ProcessGltfMesh(size_t meshIndex, const tinygltf::Model& model,
 			ASSERT(ByteStride == 2);
 			if (indexBuffer.data.empty() ||
 				indexAccessor.byteOffset + indexBufferView.byteOffset + indexAccessor.count * sizeof(uint16_t) > indexBuffer.data.size()) {
-				LOG_FATAL("Index buffer is invalid or out of bounds!");
+				GLOG(Log::eFatal, "Index buffer is invalid or out of bounds!");
 				return false;
 			}
 
@@ -303,7 +303,7 @@ bool MeshLoader::ProcessGltfMesh(size_t meshIndex, const tinygltf::Model& model,
 			ASSERT(ByteStride == 4);
 			if (indexBuffer.data.empty() ||
 				indexAccessor.byteOffset + indexBufferView.byteOffset + indexAccessor.count * sizeof(uint32_t) > indexBuffer.data.size()) {
-				LOG_FATAL("Index buffer is invalid or out of bounds!");
+				GLOG(Log::eFatal, "Index buffer is invalid or out of bounds!");
 				return false;
 			}
 

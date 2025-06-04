@@ -18,7 +18,7 @@ public:
 			data = _mm_set_ps(w, z, y, x);  // Load x, y, z, w into v1
 		}
 		else {
-            LOG_FATAL("Can not support 256bit SIMD yet!");
+            GLOG(Log::eFatal, "Can not support 256bit SIMD yet!");
             exit(-2);
 		}
 	}
@@ -29,7 +29,7 @@ public:
 			data = _mm_set_ps(w, z, y, x);  // Load x, y, z, w into v1
 		}
 		else {
-            LOG_FATAL("Can not support 256bit SIMD yet!");
+            GLOG(Log::eFatal, "Can not support 256bit SIMD yet!");
             exit(-2);
 		}
 	}
@@ -45,7 +45,7 @@ public:
 			result = _mm256_add_ps(v1, v2);  // Perform SIMD addition
 		}
 		else {
-            LOG_FATAL("Can not support 256bit SIMD yet!");
+            GLOG(Log::eFatal, "Can not support 256bit SIMD yet!");
             exit(-2);
 		}
 
@@ -56,7 +56,7 @@ public:
 			_mm_store_ps(reinterpret_cast<float*>(&res.data), result);
 		}
 		else {
-            LOG_FATAL("Can not support 256bit SIMD yet!");
+            GLOG(Log::eFatal, "Can not support 256bit SIMD yet!");
             exit(-2);
 		}
 
@@ -88,7 +88,7 @@ public:
 			_mm_store_ps(reinterpret_cast<float*>(&res.data), res.data);
 		}
 		else {
-            LOG_FATAL("Can not support 256bit SIMD yet!");
+            GLOG(Log::eFatal, "Can not support 256bit SIMD yet!");
             exit(-2);
 		}
 		res.x = reinterpret_cast<T*>(&res.data)[0];
@@ -129,17 +129,17 @@ void CheckSupportedSIMD() {
 }
 
 void TestSIMD(){
-	LOG_INFO("\n SIMD:\n");
+	GLOG(Log::eInfo, "\n SIMD:\n");
 	CheckSupportedSIMD();
 
 	V4<double> v1(1.0f, 2.0, 3.0, 4.0);
 	V4<double> v2(5.0f, 6.0, 7.0, 8.0);
 
-	LOG_INFO("Add:");
+	GLOG(Log::eInfo, "Add:");
 	V4 v3 = v1 + v2;
 	std::cout << v3 << std::endl;
 
-	LOG_INFO("Mul:");
+	GLOG(Log::eInfo, "Mul:");
 	V4 v4 = v1 * 2.0;
 	std::cout << v4 << std::endl;
 

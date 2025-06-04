@@ -151,7 +151,7 @@ bool DebugConsoleActor::Initialize() {
 	// Create UI text control for rendering.
 	TextControl = NewObject<UIText>();
 	if (!TextControl->Create(Renderer, UITextType::eUI_Text_Type_system, "Noto Sans CJK JP", 26, "No Log.")) {
-		LOG_FATAL("Unable to create text control for debug console.");
+		GLOG(Log::eFatal, "Unable to create text control for debug console.");
 		return false;
 	}
 
@@ -160,7 +160,7 @@ bool DebugConsoleActor::Initialize() {
 	// Create another ui text control for rendering typed text.
 	EntryControl = NewObject<UIText>();
 	if (!EntryControl->Create(Renderer, UITextType::eUI_Text_Type_system, "Noto Sans CJK JP", 26, "Press 'entry' to record command.")) {
-		LOG_FATAL("Unable to create entry control for debug console.");
+		GLOG(Log::eFatal, "Unable to create entry control for debug console.");
 		return false;
 	}
 

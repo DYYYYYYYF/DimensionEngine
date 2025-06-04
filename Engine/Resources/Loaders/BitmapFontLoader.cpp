@@ -42,7 +42,7 @@ bool BitmapFontLoader::Load(const std::string& name, void* params, Resource* res
 	}
 
 	if (Type == BitmapFontFileType::eBitmap_Font_File_Type_Not_Found) {
-		LOG_ERROR("Unable to find bit map font of supported type called: '%s'.", name.c_str());
+		GLOG(Log::eError, "Unable to find bit map font of supported type called: '%s'.", name.c_str());
 		return false;
 	}
 
@@ -54,7 +54,7 @@ bool BitmapFontLoader::Load(const std::string& name, void* params, Resource* res
 	switch (Type)
 	{
 	case eBitmap_Font_File_Type_Not_Found:
-		LOG_ERROR("Unable to find bitmap font of supported type called '%s'.", name.c_str());
+		GLOG(Log::eError, "Unable to find bitmap font of supported type called '%s'.", name.c_str());
 		Result = false;
 		break;
 	case eBitmap_Font_File_Type_DBF:
@@ -70,7 +70,7 @@ bool BitmapFontLoader::Load(const std::string& name, void* params, Resource* res
 
 	FileSystemClose(&f);
 	if (!Result) {
-		LOG_ERROR("Failed to process bitmap font file: '%s'.", FullFilePath);
+		GLOG(Log::eError, "Failed to process bitmap font file: '%s'.", FullFilePath);
 		resource->FullPath = nullptr;
 		resource->Data = nullptr;
 		resource->DataSize = 0;
@@ -118,7 +118,7 @@ void BitmapFontLoader::Unload(Resource* resource) {
 
 #define VERIFY_LINE(line_type, line_num, expected, actual)	\
 	if (actual != expected) {	\
-		LOG_ERROR("Error in file format reading type '%s', line %u. Expected %d element(s) but read %d.", line_type, line_num, expected, actual); \
+		GLOG(Log::eError, "Error in file format reading type '%s', line %u. Expected %d element(s) but read %d.", line_type, line_num, expected, actual); \
 		return false;	\
 	}	
 
@@ -181,7 +181,7 @@ bool BitmapFontLoader::ImportFntFile(FileHandle* fntFile, const char* outDbfFile
 					}
 				}
 				else {
-					LOG_ERROR("Pages is 0, which should not be possible. Font file reading aborted.");
+					GLOG(Log::eError, "Pages is 0, which should not be possible. Font file reading aborted.");
 					return false;
 				}
 			}
@@ -196,7 +196,7 @@ bool BitmapFontLoader::ImportFntFile(FileHandle* fntFile, const char* outDbfFile
 						out_data->data->glyphs = (FontGlyph*)Memory::Allocate(sizeof(FontGlyph) * out_data->data->glyphCount, MemoryType::eMemory_Type_Array);
 					}
 					else {
-						LOG_ERROR("Glyph count is 0, which should not be possible. Font file reading aborted.");
+						GLOG(Log::eError, "Glyph count is 0, which should not be possible. Font file reading aborted.");
 						return false;
 					}
 				}
@@ -301,7 +301,7 @@ bool BitmapFontLoader::ReadDbfFile(FileHandle* file, BitmapFontResourceData* dat
 
 	// Verify hreader contents.
 	if (Header.magicNumber != RESOURCES_MAGIC && Header.resourceType == ResourceType::eResource_Type_Bitmap_Font) {
-		LOG_ERROR("DBF File header is invalid and cannot be read.");
+		GLOG(Log::eError, "DBF File header is invalid and cannot be read.");
 		FileSystemClose(file);
 		return false;
 	}
@@ -388,7 +388,7 @@ bool BitmapFontLoader::WriteDbfFile(const char* path, BitmapFontResourceData* da
 	// Header info first.
 	FileHandle file;
 	if (!FileSystemOpen(path, FileMode::eFile_Mode_Write, true, &file)) {
-		LOG_ERROR("Failed to open file for writing: %s.", path);
+		GLOG(Log::eError, "Failed to open file for writing: %s.", path);
 		return false;
 	}
 

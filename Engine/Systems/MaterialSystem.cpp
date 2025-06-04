@@ -22,12 +22,12 @@ std::unordered_map<std::string, uint32_t> MaterialSystem::MaterialMap;
 
 bool MaterialSystem::Initialize(IRenderer* renderer, SMaterialSystemConfig config) {
 	if (config.max_material_count == 0) {
-		LOG_FATAL("Material system init failed. TextureSystemConfig.max_texture_count should > 0");
+		GLOG(Log::eFatal, "Material system init failed. TextureSystemConfig.max_texture_count should > 0");
 		return false;
 	}
 
 	if (renderer == nullptr) {
-		LOG_FATAL("Material system init failed. Renderer is nullptr.");
+		GLOG(Log::eFatal, "Material system init failed. Renderer is nullptr.");
 		return false;
 	}
 
@@ -44,7 +44,7 @@ bool MaterialSystem::Initialize(IRenderer* renderer, SMaterialSystemConfig confi
 
 	// Create default textures for use in the system.
 	if (!CreateDefaultMaterial()) {
-		LOG_FATAL("Create default material failed. Application quit now!");
+		GLOG(Log::eFatal, "Create default material failed. Application quit now!");
 		return false;
 	}
 
@@ -79,7 +79,7 @@ Material* MaterialSystem::Acquire(const char* name) {
 	// Load the given material configuration from disk.
 	Resource MatResource;
 	if (!ResourceSystem::Load(name, eResource_type_Material, nullptr, &MatResource)) {
-		LOG_ERROR("Failed to load material resource, returning nullptr.");
+		GLOG(Log::eError, "Failed to load material resource, returning nullptr.");
 		return nullptr;
 	}
 
@@ -93,7 +93,7 @@ Material* MaterialSystem::Acquire(const char* name) {
 	ResourceSystem::Unload(&MatResource);
 
 	if (Mat == nullptr) {
-		LOG_ERROR("Failed to load material resource, returning nullptr.");
+		GLOG(Log::eError, "Failed to load material resource, returning nullptr.");
 		return nullptr;
 	}
 
@@ -123,13 +123,13 @@ Material* MaterialSystem::AcquireFromConfig(SMaterialConfig config) {
 
 		// Make sure an empty slot was actually found.
 		if (m == nullptr || m->GetID() == INVALID_ID) {
-			LOG_FATAL("Material acquire failed. Material system cannot hold anymore materials. Adjust configuration to allow more.");
+			GLOG(Log::eFatal, "Material acquire failed. Material system cannot hold anymore materials. Adjust configuration to allow more.");
 			return nullptr;
 		}
 
 		// Create new material.
 		if (!LoadMaterial(config, m)) {
-			LOG_ERROR("Load %s material failed.", config.name.c_str());
+			GLOG(Log::eError, "Load %s material failed.", config.name.c_str());
 			return nullptr;
 		}
 
@@ -186,7 +186,7 @@ Material* MaterialSystem::AcquireFromConfig(SMaterialConfig config) {
 	}
 
 	Mat->IncreaseReferenceCount();
-	LOG_DEBUG("Material '%s' Reference count increased to %i.", config.name.c_str(), Mat->GetReferenceCount());
+	GLOG(Log::eDebug, "Material '%s' Reference count increased to %i.", config.name.c_str(), Mat->GetReferenceCount());
 
 	// Update the entry.
 	return Mat;
@@ -205,7 +205,7 @@ void MaterialSystem::Release(const char* name) {
 		uint32_t MaterialID = MaterialMap[CopyMatName];
 		Material* Mat = RegisteredMaterials[MaterialID];
 		if (Mat->GetReferenceCount() == 0) {
-			LOG_WARN("Tried to release non-existent material: %s", CopyMatName);
+			GLOG(Log::eWarn, "Tried to release non-existent material: %s", CopyMatName);
 			return;
 		}
 
@@ -215,7 +215,7 @@ void MaterialSystem::Release(const char* name) {
 			DestroyMaterial(Mat);
 			DeleteObject(Mat);
 			RegisteredMaterials[MaterialID] = nullptr;
-			LOG_INFO("Released material '%s'. Material unloaded.", CopyMatName);
+			GLOG(Log::eInfo, "Released material '%s'. Material unloaded.", CopyMatName);
 		}
 
 		// Update the entry.
@@ -254,7 +254,7 @@ bool MaterialSystem::LoadMaterial(SMaterialConfig config, Material* mat) {
 	mat->DiffuseMap.repeat_v = TextureRepeat::eTexture_Repeat_Repeat;
 	mat->DiffuseMap.repeat_w = TextureRepeat::eTexture_Repeat_Repeat;
 	if (!Renderer->AcquireTextureMap(&mat->DiffuseMap)) {
-		LOG_ERROR("Unable to acquire resources for diffuse texture map.");
+		GLOG(Log::eError, "Unable to acquire resources for diffuse texture map.");
 		return false;
 	}
 
@@ -262,7 +262,7 @@ bool MaterialSystem::LoadMaterial(SMaterialConfig config, Material* mat) {
 		mat->DiffuseMap.usage = TextureUsage::eTexture_Usage_Map_Diffuse;
 		mat->DiffuseMap.texture = TextureSystem::Acquire(config.diffuse_map_name, true);
 		if (mat->DiffuseMap.texture == nullptr) {
-			LOG_WARN("Unable to load texture '%s' for material '%s', using default.", config.diffuse_map_name, mat->Name.c_str());
+			GLOG(Log::eWarn, "Unable to load texture '%s' for material '%s', using default.", config.diffuse_map_name, mat->Name.c_str());
 			mat->DiffuseMap.texture = TextureSystem::GetDefaultDiffuseTexture();
 		}
 	}
@@ -279,7 +279,7 @@ bool MaterialSystem::LoadMaterial(SMaterialConfig config, Material* mat) {
 	mat->SpecularMap.repeat_v = TextureRepeat::eTexture_Repeat_Repeat;
 	mat->SpecularMap.repeat_w = TextureRepeat::eTexture_Repeat_Repeat;
 	if (!Renderer->AcquireTextureMap(&mat->SpecularMap)) {
-		LOG_ERROR("Unable to acquire resources for specular texture map.");
+		GLOG(Log::eError, "Unable to acquire resources for specular texture map.");
 		return false;
 	}
 
@@ -287,7 +287,7 @@ bool MaterialSystem::LoadMaterial(SMaterialConfig config, Material* mat) {
 		mat->SpecularMap.usage = TextureUsage::eTexture_Usage_Map_Specular;
 		mat->SpecularMap.texture = TextureSystem::Acquire(config.specular_map_name, true);
 		if (mat->SpecularMap.texture == nullptr) {
-			LOG_WARN("Unable to load texture '%s' for material '%s', using default.", config.specular_map_name, mat->Name.c_str());
+			GLOG(Log::eWarn, "Unable to load texture '%s' for material '%s', using default.", config.specular_map_name, mat->Name.c_str());
 			mat->SpecularMap.texture = TextureSystem::GetDefaultSpecularTexture();
 		}
 	}
@@ -304,7 +304,7 @@ bool MaterialSystem::LoadMaterial(SMaterialConfig config, Material* mat) {
 	mat->NormalMap.repeat_v = TextureRepeat::eTexture_Repeat_Repeat;
 	mat->NormalMap.repeat_w = TextureRepeat::eTexture_Repeat_Repeat;
 	if (!Renderer->AcquireTextureMap(&mat->NormalMap)) {
-		LOG_ERROR("Unable to acquire resources for normal texture map.");
+		GLOG(Log::eError, "Unable to acquire resources for normal texture map.");
 		return false;
 	}
 
@@ -312,7 +312,7 @@ bool MaterialSystem::LoadMaterial(SMaterialConfig config, Material* mat) {
 		mat->NormalMap.usage = TextureUsage::eTexture_Usage_Map_Normal;
 		mat->NormalMap.texture = TextureSystem::Acquire(config.normal_map_name, true);
 		if (mat->NormalMap.texture == nullptr) {
-			LOG_WARN("Unable to load texture '%s' for material '%s', using default.", config.normal_map_name, mat->Name.c_str());
+			GLOG(Log::eWarn, "Unable to load texture '%s' for material '%s', using default.", config.normal_map_name, mat->Name.c_str());
 			mat->NormalMap.texture = TextureSystem::GetDefaultNormalTexture();
 		}
 	}
@@ -329,7 +329,7 @@ bool MaterialSystem::LoadMaterial(SMaterialConfig config, Material* mat) {
 	mat->RoughnessMetallicMap.repeat_v = TextureRepeat::eTexture_Repeat_Repeat;
 	mat->RoughnessMetallicMap.repeat_w = TextureRepeat::eTexture_Repeat_Repeat;
 	if (!Renderer->AcquireTextureMap(&mat->RoughnessMetallicMap)) {
-		LOG_ERROR("Unable to acquire resources for normal texture map.");
+		GLOG(Log::eError, "Unable to acquire resources for normal texture map.");
 		return false;
 	}
 
@@ -337,7 +337,7 @@ bool MaterialSystem::LoadMaterial(SMaterialConfig config, Material* mat) {
 		mat->RoughnessMetallicMap.usage = TextureUsage::eTexture_Usage_Map_RoughnessMetallic;
 		mat->RoughnessMetallicMap.texture = TextureSystem::Acquire(config.MetallicRoughnessTexName.c_str(), true);
 		if (mat->RoughnessMetallicMap.texture == nullptr) {
-			LOG_WARN("Unable to load texture '%s' for material '%s', using default.", config.MetallicRoughnessTexName.c_str(), mat->Name.c_str());
+			GLOG(Log::eWarn, "Unable to load texture '%s' for material '%s', using default.", config.MetallicRoughnessTexName.c_str(), mat->Name.c_str());
 
 			// TODO: 如果没有RM贴图，可以根据具体的 Roughness/Metallic 参数创建新的贴图。
 			mat->RoughnessMetallicMap.texture = TextureSystem::GetDefaultRoughnessMetallicTexture();
@@ -353,7 +353,7 @@ bool MaterialSystem::LoadMaterial(SMaterialConfig config, Material* mat) {
 	// Send it off to the renderer to acquire resources.
 	Shader* s = ShaderSystem::Get(config.shader_name.c_str());
 	if (s == nullptr) {
-		LOG_ERROR("Unable to load material because its shader was not found: '%s'. This is likely a problem with the material asset.", config.shader_name.c_str());
+		GLOG(Log::eError, "Unable to load material because its shader was not found: '%s'. This is likely a problem with the material asset.", config.shader_name.c_str());
 		return false;
 	}
 
@@ -361,7 +361,7 @@ bool MaterialSystem::LoadMaterial(SMaterialConfig config, Material* mat) {
 	std::vector<TextureMap*> Maps = { &mat->DiffuseMap, &mat->SpecularMap, &mat->NormalMap, &mat->RoughnessMetallicMap };
 	mat->InternalId = Renderer->AcquireInstanceResource(s, Maps);
 	if (mat->InternalId == INVALID_ID) {
-		LOG_ERROR("Failed to acquire renderer resources for material '%s'.", mat->Name.c_str());
+		GLOG(Log::eError, "Failed to acquire renderer resources for material '%s'.", mat->Name.c_str());
 		return false;
 	}
 
@@ -369,7 +369,7 @@ bool MaterialSystem::LoadMaterial(SMaterialConfig config, Material* mat) {
 }
 
 void MaterialSystem::DestroyMaterial(Material* mat) {
-	LOG_INFO("Destroying material '%s'...", mat->Name.c_str());
+	GLOG(Log::eInfo, "Destroying material '%s'...", mat->Name.c_str());
 
 	// Release texture references.
 	if (mat->DiffuseMap.texture != nullptr) {
@@ -407,7 +407,7 @@ void MaterialSystem::DestroyMaterial(Material* mat) {
 
 bool MaterialSystem::CreateDefaultMaterial() {
 	if (DefaultMaterial) {
-		LOG_WARN("Already exist default material.");
+		GLOG(Log::eWarn, "Already exist default material.");
 		return true;
 	}
 
@@ -424,7 +424,7 @@ bool MaterialSystem::CreateDefaultMaterial() {
 	DefaultMaterial->DiffuseMap.repeat_w = eTexture_Repeat_Repeat;
 	DefaultMaterial->DiffuseMap.texture = TextureSystem::GetDefaultDiffuseTexture();
 	if (!Renderer->AcquireTextureMap(&DefaultMaterial->DiffuseMap)) {
-		LOG_ERROR("Unable to acquire resources for diffuse texture map.");
+		GLOG(Log::eError, "Unable to acquire resources for diffuse texture map.");
 		return false;
 	}
 
@@ -436,7 +436,7 @@ bool MaterialSystem::CreateDefaultMaterial() {
 	DefaultMaterial->SpecularMap.repeat_w = eTexture_Repeat_Repeat;
 	DefaultMaterial->SpecularMap.texture = TextureSystem::GetDefaultSpecularTexture();
 	if (!Renderer->AcquireTextureMap(&DefaultMaterial->SpecularMap)) {
-		LOG_ERROR("Unable to acquire resources for diffuse texture map.");
+		GLOG(Log::eError, "Unable to acquire resources for diffuse texture map.");
 		return false;
 	}
 
@@ -448,7 +448,7 @@ bool MaterialSystem::CreateDefaultMaterial() {
 	DefaultMaterial->NormalMap.repeat_w = eTexture_Repeat_Repeat;
 	DefaultMaterial->NormalMap.texture = TextureSystem::GetDefaultNormalTexture();
 	if (!Renderer->AcquireTextureMap(&DefaultMaterial->NormalMap)) {
-		LOG_ERROR("Unable to acquire resources for diffuse texture map.");
+		GLOG(Log::eError, "Unable to acquire resources for diffuse texture map.");
 		return false;
 	}
 
@@ -460,7 +460,7 @@ bool MaterialSystem::CreateDefaultMaterial() {
 	DefaultMaterial->RoughnessMetallicMap.repeat_w = eTexture_Repeat_Repeat;
 	DefaultMaterial->RoughnessMetallicMap.texture = TextureSystem::GetDefaultNormalTexture();
 	if (!Renderer->AcquireTextureMap(&DefaultMaterial->RoughnessMetallicMap)) {
-		LOG_ERROR("Unable to acquire resources for diffuse texture map.");
+		GLOG(Log::eError, "Unable to acquire resources for diffuse texture map.");
 		return false;
 	}
 
@@ -468,14 +468,14 @@ bool MaterialSystem::CreateDefaultMaterial() {
 
 	Shader* s = ShaderSystem::Get("Shader.Builtin.World");
 	if (s == nullptr) {
-		LOG_FATAL("Shader.Builtin.World shader is nullptr.");
+		GLOG(Log::eFatal, "Shader.Builtin.World shader is nullptr.");
 		ASSERT(s);
 		return false;
 	}
 
 	DefaultMaterial->InternalId = Renderer->AcquireInstanceResource(s, Maps);
 	if (DefaultMaterial->InternalId == INVALID_ID) {
-		LOG_ERROR("Create default material failed. Application quit now!");
+		GLOG(Log::eError, "Create default material failed. Application quit now!");
 		return false;
 	}
 
@@ -488,7 +488,7 @@ bool MaterialSystem::CreateDefaultMaterial() {
 #ifdef LEVEL_DEBUG
 #define MATERIAL_APPLY_OR_FAIL(expr)                  \
     if (!expr) {                                      \
-        LOG_ERROR("Failed to apply material: %s", #expr); \
+        GLOG(Log::eError, "Failed to apply material: %s", #expr); \
         return false;                                 \
     }
 #else
@@ -520,7 +520,7 @@ bool MaterialSystem::ApplyGlobal(uint32_t shader_id, size_t renderer_frame_numbe
 		MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(UILocations.view, &view));
 	}
 	else {
-		LOG_ERROR("material_system_apply_global(): Unrecognized shader id '%d' ", shader_id);
+		GLOG(Log::eError, "material_system_apply_global(): Unrecognized shader id '%d' ", shader_id);
 		return false;
 	}
 
@@ -556,7 +556,7 @@ bool MaterialSystem::ApplyInstance(Material* mat, bool need_update) {
 			MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(UILocations.diffuse_texture, &mat->DiffuseMap));
 		}
 		else {
-			LOG_ERROR("material_system_apply_instance(): Unrecognized shader id '%d' on shader '%s'.", mat->ShaderID, mat->Name.c_str());
+			GLOG(Log::eError, "material_system_apply_instance(): Unrecognized shader id '%d' on shader '%s'.", mat->ShaderID, mat->Name.c_str());
 			return false;
 		}
 	}
@@ -573,6 +573,6 @@ bool MaterialSystem::ApplyLocal(Material* mat, const Matrix4& model) {
 		return ShaderSystem::SetUniformByIndex(UILocations.model, &model);
 	}
 
-	LOG_ERROR("Unrecognized shader id '%d'", mat->ShaderID);
+	GLOG(Log::eError, "Unrecognized shader id '%d'", mat->ShaderID);
 	return false;
 }

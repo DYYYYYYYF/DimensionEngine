@@ -7,6 +7,6 @@ bool ActorComponent::AttachTo(Actor* Own) {
 		return true;
 	}
 
-	LOG_WARN("Invalid pointer.");
+	GLOG(Log::eWarn, "Invalid pointer.");
 	return false;
 }

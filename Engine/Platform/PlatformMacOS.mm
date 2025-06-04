@@ -316,7 +316,7 @@ bool Platform::PlatformStartup(SPlatformState* platform_state, const std::string
     platform_state->internalState = malloc(sizeof(SInternalState));
     SInternalState* state_ptr = (SInternalState*)platform_state->internalState;
     if (state_ptr == nullptr){
-        LOG_ERROR("Platform internal state is null!");
+        GLOG(Log::eError, "Platform internal state is null!");
         return false;
     }
 
@@ -328,7 +328,7 @@ bool Platform::PlatformStartup(SPlatformState* platform_state, const std::string
 	// App delegate creation
 	state_ptr->app_delegate = [[ApplicationDelegate alloc] init];
 	if (!state_ptr->app_delegate) {
-		LOG_ERROR("Failed to create application delegate")
+		GLOG(Log::eError, "Failed to create application delegate")
 		return false;
 	}
 	[NSApp setDelegate : state_ptr->app_delegate];
@@ -336,7 +336,7 @@ bool Platform::PlatformStartup(SPlatformState* platform_state, const std::string
 	// Window delegate creation
 	state_ptr->wnd_delegate = [[WindowDelegate alloc]initWithState:platform_state];
 	if (!state_ptr->wnd_delegate) {
-		LOG_ERROR("Failed to create window delegate")
+		GLOG(Log::eError, "Failed to create window delegate")
 		return false;
 	}
 
@@ -347,7 +347,7 @@ bool Platform::PlatformStartup(SPlatformState* platform_state, const std::string
 		backing : NSBackingStoreBuffered
 		defer : NO];
 	if (!state_ptr->window) {
-		LOG_ERROR("Failed to create window");
+		GLOG(Log::eError, "Failed to create window");
 		return false;
 	}
 
@@ -358,7 +358,7 @@ bool Platform::PlatformStartup(SPlatformState* platform_state, const std::string
 	// Layer creation
 	state_ptr->layer = [CAMetalLayer layer];
 	if (!state_ptr->layer) {
-		LOG_ERROR("Failed to create layer for view");
+		GLOG(Log::eError, "Failed to create layer for view");
 	}
 
 
@@ -392,7 +392,7 @@ bool Platform::PlatformStartup(SPlatformState* platform_state, const std::string
 	// CAMetalLayer from which the Vulkan surface was created.
 	// See also https://github.com/KhronosGroup/MoltenVK/issues/428
 	state_ptr->layer.contentsScale = state_ptr->view.window.backingScaleFactor;
-	LOG_DEBUG("contentScale: %f", state_ptr->layer.contentsScale);
+	GLOG(Log::eDebug, "contentScale: %f", state_ptr->layer.contentsScale);
 
 	[state_ptr->view setLayer : state_ptr->layer] ;
 
@@ -536,7 +536,7 @@ bool PlatformCreateVulkanSurface(SPlatformState* plat_state, VulkanContext* cont
 
 	VkSurfaceKHR MetalSurface;
 	if (vkCreateMetalSurfaceEXT(context->Instance, &info, nullptr, &MetalSurface) != VK_SUCCESS) {
-		LOG_FATAL("Create surface failed.");
+		GLOG(Log::eFatal, "Create surface failed.");
 		return false;
 	}
 
@@ -562,17 +562,17 @@ bool Thread::Create(PFN_thread_start start_func, void* params, bool auto_detach)
 	if (Result != 0) {
 		switch (Result) {
 		case EAGAIN:
-			LOG_ERROR("Failed to create thread: insufficient resources to create another thread.");
+			GLOG(Log::eError, "Failed to create thread: insufficient resources to create another thread.");
 			return false;
 		case EINVAL:
-			LOG_ERROR("Failed to create thread: invalid settings were passed in attributes..");
+			GLOG(Log::eError, "Failed to create thread: invalid settings were passed in attributes..");
 			return false;
 		default:
-			LOG_ERROR("Failed to create thread: an unhandled error has occurred. errno=%i", Result);
+			GLOG(Log::eError, "Failed to create thread: an unhandled error has occurred. errno=%i", Result);
 			return false;
 		}
 	}
-	LOG_DEBUG("Starting process on thread id: %#x", ThreadID);
+	GLOG(Log::eDebug, "Starting process on thread id: %#x", ThreadID);
 
 	// Only save off the handle if not auto-detaching.
 	if (!auto_detach) {
@@ -585,13 +585,13 @@ bool Thread::Create(PFN_thread_start start_func, void* params, bool auto_detach)
 		if (Result != 0) {
 			switch (Result) {
 			case EINVAL:
-				LOG_ERROR("Failed to detach newly-created thread: thread is not a joinable thread.");
+				GLOG(Log::eError, "Failed to detach newly-created thread: thread is not a joinable thread.");
 				return false;
 			case ESRCH:
-				LOG_ERROR("Failed to detach newly-created thread: no thread with the id %#x could be found.", ThreadID);
+				GLOG(Log::eError, "Failed to detach newly-created thread: no thread with the id %#x could be found.", ThreadID);
 				return false;
 			default:
-				LOG_ERROR("Failed to detach newly-created thread: an unknown error has occurred. errno=%i", Result);
+				GLOG(Log::eError, "Failed to detach newly-created thread: an unknown error has occurred. errno=%i", Result);
 				return false;
 			}
 		}
@@ -617,13 +617,13 @@ void Thread::Detach() {
 	if (Result != 0) {
 		switch (Result) {
 		case EINVAL:
-			LOG_ERROR("Failed to detach thread: thread is not a joinable thread.");
+			GLOG(Log::eError, "Failed to detach thread: thread is not a joinable thread.");
 			break;
 		case ESRCH:
-			LOG_ERROR("Failed to detach thread: no thread with the id %#x could be found.", ThreadID);
+			GLOG(Log::eError, "Failed to detach thread: no thread with the id %#x could be found.", ThreadID);
 			break;
 		default:
-			LOG_ERROR("Failed to detach thread: an unknown error has occurred. errno=%i", Result);
+			GLOG(Log::eError, "Failed to detach thread: an unknown error has occurred. errno=%i", Result);
 			break;
 		}
 	}
@@ -640,10 +640,10 @@ void Thread::Cancel() {
 	if (Result != 0) {
 		switch (Result) {
 		case ESRCH:
-			LOG_ERROR("Failed to cancel thread: no thread with the id %#x could be found.", ThreadID);
+			GLOG(Log::eError, "Failed to cancel thread: no thread with the id %#x could be found.", ThreadID);
 			break;
 		default:
-			LOG_ERROR("Failed to cancel thread: an unknown error has occurred. errno=%i", Result);
+			GLOG(Log::eError, "Failed to cancel thread: an unknown error has occurred. errno=%i", Result);
 			break;
 		}
 	}
@@ -679,7 +679,7 @@ bool Mutex::Create() {
 	pthread_mutex_t mutex;
 	int result = pthread_mutex_init(&mutex, &mutex_attr);
 	if (result != 0) {
-		LOG_ERROR("Mutex creation failure!");
+		GLOG(Log::eError, "Mutex creation failure!");
 		return false;
 	}
 
@@ -701,13 +701,13 @@ void Mutex::Destroy() {
 		// KTRACE("Mutex destroyed.");
 		break;
 	case EBUSY:
-		LOG_ERROR("Unable to destroy mutex: mutex is locked or referenced.");
+		GLOG(Log::eError, "Unable to destroy mutex: mutex is locked or referenced.");
 		break;
 	case EINVAL:
-		LOG_ERROR("Unable to destroy mutex: the value specified by mutex is invalid.");
+		GLOG(Log::eError, "Unable to destroy mutex: the value specified by mutex is invalid.");
 		break;
 	default:
-		LOG_ERROR("An handled error has occurred while destroy a mutex: errno=%i", result);
+		GLOG(Log::eError, "An handled error has occurred while destroy a mutex: errno=%i", result);
 		break;
 	}
 
@@ -728,19 +728,19 @@ bool Mutex::Lock() {
 		// KTRACE("Obtained mutex lock.");
 		return true;
 	case EOWNERDEAD:
-		LOG_ERROR("Owning thread terminated while mutex still active.");
+		GLOG(Log::eError, "Owning thread terminated while mutex still active.");
 		return false;
 	case EAGAIN:
-		LOG_ERROR("Unable to obtain mutex lock: the maximum number of recursive mutex locks has been reached.");
+		GLOG(Log::eError, "Unable to obtain mutex lock: the maximum number of recursive mutex locks has been reached.");
 		return false;
 	case EBUSY:
-		LOG_ERROR("Unable to obtain mutex lock: a mutex lock already exists.");
+		GLOG(Log::eError, "Unable to obtain mutex lock: a mutex lock already exists.");
 		return false;
 	case EDEADLK:
-		LOG_ERROR("Unable to obtain mutex lock: a mutex deadlock was detected.");
+		GLOG(Log::eError, "Unable to obtain mutex lock: a mutex deadlock was detected.");
 		return false;
 	default:
-		LOG_ERROR("An handled error has occurred while obtaining a mutex lock: errno=%i", result);
+		GLOG(Log::eError, "An handled error has occurred while obtaining a mutex lock: errno=%i", result);
 		return false;
 	}
 
@@ -758,13 +758,13 @@ bool Mutex::UnLock() {
 		// KTRACE("Freed mutex lock.");
 		return true;
 	case EOWNERDEAD:
-		LOG_ERROR("Unable to unlock mutex: owning thread terminated while mutex still active.");
+		GLOG(Log::eError, "Unable to unlock mutex: owning thread terminated while mutex still active.");
 		return false;
 	case EPERM:
-		LOG_ERROR("Unable to unlock mutex: mutex not owned by current thread.");
+		GLOG(Log::eError, "Unable to unlock mutex: mutex not owned by current thread.");
 		return false;
 	default:
-		LOG_ERROR("An handled error has occurred while unlocking a mutex lock: errno=%i", Result);
+		GLOG(Log::eError, "An handled error has occurred while unlocking a mutex lock: errno=%i", Result);
 		return false;
 	}
   return false;
@@ -1080,7 +1080,7 @@ void HandleModifierKeys(uint32_t ns_keycode, uint32_t modifier_flags, SInternalS
 		MACOS_LSHIFT_MASK,
 		MACOS_RSHIFT_MASK, state_ptr);
 
-	  LOG_INFO("modifier flags keycode: %u", ns_keycode);
+	  GLOG(Log::eInfo, "modifier flags keycode: %u", ns_keycode);
 
 	// Ctrl
 	HandleModifierKey(

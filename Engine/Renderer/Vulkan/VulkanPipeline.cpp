@@ -118,7 +118,7 @@ bool VulkanPipeline::Create(VulkanContext* context, const VulkanPipelineConfig& 
 	vk::PushConstantRange Ranges[32];
 	if (config.push_constant_range_count > 0) {
 		if (config.push_constant_range_count > 32) {
-			LOG_ERROR("Vulkan graphics pipeline create: can not have more push constants.");
+			GLOG(Log::eError, "Vulkan graphics pipeline create: can not have more push constants.");
 			return false;
 		}
 
@@ -171,7 +171,7 @@ bool VulkanPipeline::Create(VulkanContext* context, const VulkanPipelineConfig& 
 	vk::ResultValue<vk::Pipeline> Result = context->Device.GetLogicalDevice()
 		.createGraphicsPipeline(VK_NULL_HANDLE, PipelineCreateInfo, context->Allocator);
 	if (Result.result != vk::Result::eSuccess) {
-		LOG_ERROR("Create graphics pipelines failed.");
+		GLOG(Log::eError, "Create graphics pipelines failed.");
 		return false;
 	}
 

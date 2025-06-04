@@ -8,12 +8,12 @@ bool Freelist::Create(size_t total_size) {
 	// Enough space to hold state, plus array for all nodes.
 	TotalSize = total_size;
 	MaxEntries = (total_size / sizeof(void*));
-	LOG_INFO("Freelist max entries: %d.", MaxEntries);
+	GLOG(Log::eInfo, "Freelist max entries: %d.", MaxEntries);
 
 	size_t UesdSize = sizeof(FreelistNode) * MaxEntries;
 	ListMemory = Platform::PlatformAllocate(UesdSize, false);
 	if (ListMemory == nullptr) {
-		LOG_FATAL("Cannot allocate enough memory for freelist!");
+		GLOG(Log::eFatal, "Cannot allocate enough memory for freelist!");
 		return false;
 	}
 
@@ -82,7 +82,7 @@ bool Freelist::AllocateBlock(size_t size, size_t* offset) {
 	}
 
 	size_t FreeSpace = GetFreeSpace();
-	LOG_WARN("Freelist find block, no block with enough free space found (requested: %uB, available: %lluB).", size, FreeSpace);
+	GLOG(Log::eWarn, "Freelist find block, no block with enough free space found (requested: %uB, available: %lluB).", size, FreeSpace);
 	return false;
 }
 
@@ -124,7 +124,7 @@ bool Freelist::FreeBlock(size_t size, size_t offset) {
 			else if (Node->offset == offset) {
 				// If there is a exact match, this means the exact block of memory
 				// that is already free is being freed again.
-				LOG_FATAL("Attemping to free already-freed block of memory at offset %llu.", Node->offset);
+				GLOG(Log::eFatal, "Attemping to free already-freed block of memory at offset %llu.", Node->offset);
 				return false;
 			}
 			else if (Node->offset > offset) {
@@ -180,7 +180,7 @@ bool Freelist::FreeBlock(size_t size, size_t offset) {
 		}
 	}
 
-	LOG_WARN("Unable to find block to be freed. Corruption possible?");
+	GLOG(Log::eWarn, "Unable to find block to be freed. Corruption possible?");
 	return false;
 }
 

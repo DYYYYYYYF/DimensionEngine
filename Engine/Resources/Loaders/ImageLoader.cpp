@@ -27,7 +27,7 @@ bool ImageLoader::Load(const std::string& name, void* params, Resource* resource
 
 	ImageResourceParams* TypedParams = (ImageResourceParams*)params;
 	if (params == nullptr) {
-		LOG_ERROR("ImageLoader::Load() Required a valid params (ImageResourceParams).");
+		GLOG(Log::eError, "ImageLoader::Load() Required a valid params (ImageResourceParams).");
 		return false;
 	}
 
@@ -49,7 +49,7 @@ bool ImageLoader::Load(const std::string& name, void* params, Resource* resource
 	}
 
 	if (!Found) {
-		LOG_ERROR("Image resource loader failed find file '%s'or with any supported extensions.", name.c_str());
+		GLOG(Log::eError, "Image resource loader failed find file '%s'or with any supported extensions.", name.c_str());
 		return false;
 	}
 
@@ -59,14 +59,14 @@ bool ImageLoader::Load(const std::string& name, void* params, Resource* resource
 
 	FileHandle f;
 	if (!FileSystemOpen(FullFilePath, FileMode::eFile_Mode_Read, true, &f)) {
-		LOG_ERROR("Unable to read file: %s.", FullFilePath);
+		GLOG(Log::eError, "Unable to read file: %s.", FullFilePath);
 		FileSystemClose(&f);
 		return false;
 	}
 
 	size_t FileSize = 0;
 	if (!FileSystemSize(&f, &FileSize)) {
-		LOG_ERROR("Unable to get size of file: %s.", FullFilePath);
+		GLOG(Log::eError, "Unable to get size of file: %s.", FullFilePath);
 		FileSystemClose(&f);
 		return false;
 	}
@@ -74,7 +74,7 @@ bool ImageLoader::Load(const std::string& name, void* params, Resource* resource
 	int Width, Height, ChannelCount;
 	unsigned char* RawData = (unsigned char*)Memory::Allocate(FileSize, MemoryType::eMemory_Type_Texture);
 	if (RawData == nullptr) {
-		LOG_ERROR("Image resource loader failed to load file: '%s'.", FullFilePath);
+		GLOG(Log::eError, "Image resource loader failed to load file: '%s'.", FullFilePath);
 		FileSystemClose(&f);
 		return false;
 	}
@@ -84,18 +84,18 @@ bool ImageLoader::Load(const std::string& name, void* params, Resource* resource
 	FileSystemClose(&f);
 
 	if (!ReadResult) {
-		LOG_ERROR("Unable to read file: '%s'.", FullFilePath);
+		GLOG(Log::eError, "Unable to read file: '%s'.", FullFilePath);
 		return false;
 	}
 
 	if (BytesRead != FileSize) {
-		LOG_ERROR("File size if %llu does not match expected: %llu.", BytesRead, FileSize);
+		GLOG(Log::eError, "File size if %llu does not match expected: %llu.", BytesRead, FileSize);
 		return false;
 	}
 	
 	unsigned char* Data = stbi_load_from_memory(RawData, (int)FileSize, &Width, &Height, &ChannelCount, RequiredChannelCount);
 	if (Data == nullptr) {
-		LOG_ERROR("Image resource loader failed to load file: '%s'.", FullFilePath);
+		GLOG(Log::eError, "Image resource loader failed to load file: '%s'.", FullFilePath);
 		return false;
 	}
 

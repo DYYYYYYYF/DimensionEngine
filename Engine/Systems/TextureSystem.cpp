@@ -19,12 +19,12 @@ IRenderer* TextureSystem::Renderer = nullptr;
 
 bool TextureSystem::Initialize(IRenderer* renderer, STextureSystemConfig config) {
 	if (config.max_texture_count == 0) {
-		LOG_FATAL("Texture system init failed. TextureSystemConfig.max_texture_count should > 0");
+		GLOG(Log::eFatal, "Texture system init failed. TextureSystemConfig.max_texture_count should > 0");
 		return false;
 	}
 
 	if (renderer == nullptr) {
-		LOG_FATAL("Texture system init failed. Renderer is nullptr.");
+		GLOG(Log::eFatal, "Texture system init failed. Renderer is nullptr.");
 		return false;
 	}
 
@@ -37,7 +37,7 @@ bool TextureSystem::Initialize(IRenderer* renderer, STextureSystemConfig config)
 
 	// Create default textures for use in the system.
 	if (!CreateDefaultTexture()) {
-		LOG_FATAL("Create default texture failed. Application quit now!");
+		GLOG(Log::eFatal, "Create default texture failed. Application quit now!");
 		return false;
 	}
 
@@ -50,7 +50,7 @@ void TextureSystem::Shutdown() {
 	for (auto& PairsTex : TextureMap) {
 		Texture* tex = PairsTex.second;
 		if (tex != nullptr && tex->Generation != INVALID_ID) {
-			LOG_DEBUG("Destroying texture: '%s'.", tex->GetName().c_str());
+			GLOG(Log::eDebug, "Destroying texture: '%s'.", tex->GetName().c_str());
 			Renderer->DestroyTexture(tex);
 			DeleteObject(tex);
 		}
@@ -69,13 +69,13 @@ Texture* TextureSystem::Acquire(const char* name, bool auto_release) {
 	uint32_t ID = INVALID_ID;
 	// NOTE: Increments reference_cout, or creates new entry.
 	if (!ProcessTextureReference(name, TextureType::eTexture_Type_2D, 1, auto_release, false)) {
-		LOG_ERROR("TextureSystem::Acquire() failed to obtain a new texture id.");
+		GLOG(Log::eError, "TextureSystem::Acquire() failed to obtain a new texture id.");
 		return nullptr;
 	}
 
 	OutTexture = TextureMap[name];
 	if (OutTexture == nullptr) {
-		LOG_ERROR("TextureSystem::Acquire() failed to get texture.");
+		GLOG(Log::eError, "TextureSystem::Acquire() failed to get texture.");
 		return nullptr;
 	}
 
@@ -94,13 +94,13 @@ Texture* TextureSystem::AcquireCube(const char* name, bool auto_release) {
 	uint32_t ID = INVALID_ID;
 	// NOTE: Increments reference_cout, or creates new entry.
 	if (!ProcessTextureReference(name, TextureType::eTexture_Type_Cube, 1, auto_release, false)) {
-		LOG_ERROR("TextureSystem::AcquireCube() failed to obtain a new texture id.");
+		GLOG(Log::eError, "TextureSystem::AcquireCube() failed to obtain a new texture id.");
 		return nullptr;
 	}
 
 	OutTexture = TextureMap[name];
 	if (OutTexture == nullptr) {
-		LOG_ERROR("TextureSystem::Acquire() failed to get texture.");
+		GLOG(Log::eError, "TextureSystem::Acquire() failed to get texture.");
 		return nullptr;
 	}
 
@@ -112,7 +112,7 @@ Texture* TextureSystem::AcquireWriteable(const char* name, uint32_t width, uint3
 	// NOTE: Wrapped textures are never auto-release because it means that their
 	// resources are created and managed somewhere within the renderer internals.
 	if (!ProcessTextureReference(name, TextureType::eTexture_Type_2D, 1, false, true)) {
-		LOG_ERROR("TextureSystem::AcquireWriteable() failed to obtain a new texture id.");
+		GLOG(Log::eError, "TextureSystem::AcquireWriteable() failed to obtain a new texture id.");
 		return nullptr;
 	}
 	
@@ -145,7 +145,7 @@ void TextureSystem::Release(const std::string& name) {
 	uint32_t ID = INVALID_ID;
 	// NOTE: Decrement the reference count.
 	if (!ProcessTextureReference(name, TextureType::eTexture_Type_2D, -1, false, false)) {
-		LOG_ERROR("TextureSystem::Release() failed to release texture '%s' properly.", name.c_str());
+		GLOG(Log::eError, "TextureSystem::Release() failed to release texture '%s' properly.", name.c_str());
 	}
 }
 
@@ -162,7 +162,7 @@ void TextureSystem::WrapInternal(const char* name, uint32_t width, uint32_t heig
 		// NOTE: Wrapped textures are never auto-release because it means that their
 		// resource are created and managed somewhere within the renderer internals.
 		if (!ProcessTextureReference(name, TextureType::eTexture_Type_2D, 1, false, true)) {
-			LOG_ERROR("TextureSystem::WrapInternal() fialed to obtain a new texture id.");
+			GLOG(Log::eError, "TextureSystem::WrapInternal() fialed to obtain a new texture id.");
 			return;
 		}
 
@@ -175,7 +175,7 @@ void TextureSystem::WrapInternal(const char* name, uint32_t width, uint32_t heig
 		else {
 			t = (Texture*)Memory::Allocate(sizeof(Texture), MemoryType::eMemory_Type_Texture);
 		}
-		// LOG_INFO("TextureSystem::WrapInternal() created texture '%s', but not registering, resulting in an allocation. It is up to the caller for free this memory.", name);
+		// GLOG(Log::eInfo, "TextureSystem::WrapInternal() created texture '%s', but not registering, resulting in an allocation. It is up to the caller for free this memory.", name);
 	}
 
 	t->SetID(ID);
@@ -208,7 +208,7 @@ bool TextureSystem::Resize(Texture* t, uint32_t width, uint32_t height, bool reg
 	}
 
 	if (!(t->Flags & TextureFlagBits::eTexture_Flag_Is_Writeable)) {
-		LOG_WARN("Texture system resize should not be called on textures that are not writeable.");
+		GLOG(Log::eWarn, "Texture system resize should not be called on textures that are not writeable.");
 		return false;
 	}
 
@@ -271,7 +271,7 @@ Texture* TextureSystem::GetDefaultRoughnessMetallicTexture() {
 bool TextureSystem::CreateDefaultTexture() {
 	// NOTE: create default texture, a 256x256 blue/white checkerboard pattern.
 	// This is done in code to eliminate asset dependencies.
-	LOG_INFO("Createing default texture...");
+	GLOG(Log::eInfo, "Createing default texture...");
 	const uint32_t TexDimension = 256;
 	const uint32_t bpp = 4;
 	const uint32_t PixelCount = TexDimension * TexDimension;
@@ -310,14 +310,14 @@ bool TextureSystem::CreateDefaultTexture() {
 		DefaultDiffuseTexture->Flags = 0;
 		DefaultDiffuseTexture->Type = TextureType::eTexture_Type_2D;
 		Renderer->CreateTexture(Pixels, DefaultDiffuseTexture);
-		LOG_INFO("Default diffuse texture created.");
+		GLOG(Log::eInfo, "Default diffuse texture created.");
 		// Manually set the texture generation to invalid since this is a default texture.
 		DefaultDiffuseTexture->Generation = INVALID_ID;
 	}
 
 	// Specular texture.
 	if (DefaultSpecularTexture == nullptr) {
-		LOG_INFO("Creating default specular texture...");
+		GLOG(Log::eInfo, "Creating default specular texture...");
 		unsigned char SpecularPixels[16 * 16 * 4];
 		// Default spec map is black (no specular).
 		Memory::Set(SpecularPixels, 0, sizeof(unsigned char) * 16 * 16 * 4);
@@ -330,14 +330,14 @@ bool TextureSystem::CreateDefaultTexture() {
 		DefaultSpecularTexture->Flags = 0;
 		DefaultSpecularTexture->Type = TextureType::eTexture_Type_2D;
 		Renderer->CreateTexture(SpecularPixels, DefaultSpecularTexture);
-		LOG_INFO("Default specular texture created.");
+		GLOG(Log::eInfo, "Default specular texture created.");
 		// Manually set the texture generation to invalid since this is a default texture.
 		DefaultSpecularTexture->Generation = INVALID_ID;
 	}
 	
 	// Normal texture.
 	if (DefaultNormalTexture == nullptr) {
-		LOG_INFO("Creating default normal texture...");
+		GLOG(Log::eInfo, "Creating default normal texture...");
 		unsigned char NormalPixels[16 * 16 * 4];
 		// Default spec map is black (no specular).
 		Memory::Set(NormalPixels, 0, sizeof(unsigned char) * 16 * 16 * 4);
@@ -364,7 +364,7 @@ bool TextureSystem::CreateDefaultTexture() {
 		DefaultNormalTexture->Flags = 0;
 		DefaultNormalTexture->Type = TextureType::eTexture_Type_2D;
 		Renderer->CreateTexture(NormalPixels, DefaultNormalTexture);
-		LOG_INFO("Default normal texture created.");
+		GLOG(Log::eInfo, "Default normal texture created.");
 		// Manually set the texture generation to invalid since this is a default texture.
 		DefaultNormalTexture->Generation = INVALID_ID;
 
@@ -372,7 +372,7 @@ bool TextureSystem::CreateDefaultTexture() {
 	
 	// Roughness metallic texture.
 	if (DefaultRoughnessMetallicTexture == nullptr) {
-		LOG_INFO("Creating default roughness metallic texture...");
+		GLOG(Log::eInfo, "Creating default roughness metallic texture...");
 		unsigned char RoughnessMetallicPixels[16 * 16 * 4];
 		size_t tt = sizeof(float);
 		size_t tt1 = sizeof(char);
@@ -401,7 +401,7 @@ bool TextureSystem::CreateDefaultTexture() {
 		DefaultRoughnessMetallicTexture->Flags = 0;
 		DefaultRoughnessMetallicTexture->Type = TextureType::eTexture_Type_2D;
 		Renderer->CreateTexture(RoughnessMetallicPixels, DefaultRoughnessMetallicTexture);
-		LOG_INFO("Default roughness metallic texture created.");
+		GLOG(Log::eInfo, "Default roughness metallic texture created.");
 		// Manually set the texture generation to invalid since this is a default texture.
 		DefaultRoughnessMetallicTexture->Generation = INVALID_ID;
 
@@ -442,7 +442,7 @@ bool TextureSystem::LoadCubeTexture(const std::string& name, const char texture_
 
 		Resource ImageResource;
 		if (!ResourceSystem::Load(texture_names[i], ResourceType::eResource_type_Image, &Params, &ImageResource)) {
-			LOG_ERROR("TextureSystem::LoadCubeTexture() Failed to load image resource for texture '%s'.", texture_names[i]);
+			GLOG(Log::eError, "TextureSystem::LoadCubeTexture() Failed to load image resource for texture '%s'.", texture_names[i]);
 			return false;
 		}
 
@@ -460,7 +460,7 @@ bool TextureSystem::LoadCubeTexture(const std::string& name, const char texture_
 		else {
 			// verify all textures are the same size.
 			if (t->Width != ResourceData->width || t->Height != ResourceData->height || t->ChannelCount != ResourceData->channel_count) {
-				LOG_ERROR("TextureSystem::LoadCubeTexture() All textures must be the same resolution and bit depth.");
+				GLOG(Log::eError, "TextureSystem::LoadCubeTexture() All textures must be the same resolution and bit depth.");
 				Memory::Free(piexels, sizeof(unsigned char) * ImageSize * 6, MemoryType::eMemory_Type_Array);
 				piexels = nullptr;
 				return false;
@@ -508,7 +508,7 @@ void TextureSystem::LoadJobSuccess(void* params) {
 		TextureParams->out_texture->Generation = TextureParams->current_generation + 1;
 	}
 
-	LOG_INFO("Successfully loaded texture '%s.", TextureParams->resource_name.c_str());
+	GLOG(Log::eInfo, "Successfully loaded texture '%s.", TextureParams->resource_name.c_str());
 
 	// Clean up data.
 	ResourceSystem::Unload(&TextureParams->ImageResource);
@@ -516,7 +516,7 @@ void TextureSystem::LoadJobSuccess(void* params) {
 
 void TextureSystem::LoadJobFail(void* params) {
 	TextureLoadParams* TextureParams = (TextureLoadParams*)params;
-	LOG_ERROR("Failed to load texture '%s'.", TextureParams->resource_name.c_str());
+	GLOG(Log::eError, "Failed to load texture '%s'.", TextureParams->resource_name.c_str());
 	ResourceSystem::Unload(&TextureParams->ImageResource);
 }
 
@@ -566,22 +566,22 @@ bool TextureSystem::LoadJobStart(void* params, void* result_data) {
 
 Texture* TextureSystem::CheckTextureName(const std::string& name) {
 	if (StringEquali(name.c_str(), DEFAULT_DIFFUSE_TEXTURE_NAME)) {
-		LOG_WARN("Texture acquire return default texture. Use GetDefaultTexture() for texture 'DEFAULT_DIFFUSE_TEXTURE_NAME'");
+		GLOG(Log::eWarn, "Texture acquire return default texture. Use GetDefaultTexture() for texture 'DEFAULT_DIFFUSE_TEXTURE_NAME'");
 		return DefaultDiffuseTexture;
 	}
 
 	if (StringEquali(name.c_str(), DEFAULT_NORMAL_TEXTURE_NAME)) {
-		LOG_WARN("Texture acquire return default texture. Use GetDefaultTexture() for texture 'DEFAULT_NORMAL_TEXTURE_NAME'");
+		GLOG(Log::eWarn, "Texture acquire return default texture. Use GetDefaultTexture() for texture 'DEFAULT_NORMAL_TEXTURE_NAME'");
 		return DefaultNormalTexture;
 	}
 
 	if (StringEquali(name.c_str(), DEFAULT_SPECULAR_TEXTURE_NAME)) {
-		LOG_WARN("Texture acquire return default texture. Use GetDefaultTexture() for texture 'DEFAULT_SPECULAR_TEXTURE_NAME'");
+		GLOG(Log::eWarn, "Texture acquire return default texture. Use GetDefaultTexture() for texture 'DEFAULT_SPECULAR_TEXTURE_NAME'");
 		return DefaultSpecularTexture;
 	}
 
 	if (StringEquali(name.c_str(), DEFAULT_ROUGHNESS_METALLIC_TEXTURE_NAME)) {
-		LOG_WARN("Texture acquire return default texture. Use GetDefaultTexture() for texture 'DEFAULT_ROUGHNESS_METALLIC_TEXTURE_NAME'");
+		GLOG(Log::eWarn, "Texture acquire return default texture. Use GetDefaultTexture() for texture 'DEFAULT_ROUGHNESS_METALLIC_TEXTURE_NAME'");
 		return DefaultRoughnessMetallicTexture;
 	}
 
@@ -630,25 +630,25 @@ bool TextureSystem::ProcessTextureReference(const std::string& name, TextureType
 		}
         
         if (Tex == nullptr){
-            LOG_ERROR("TextureSystem::ProcessTextureReference() There is not enough space to create new texture.");
+            GLOG(Log::eError, "TextureSystem::ProcessTextureReference() There is not enough space to create new texture.");
             return false;
         }
 
 		// An empty slot was not found, bleat about it and boot out.
 		if (Tex->GetID() == INVALID_ID) {
-			LOG_FATAL("ProcessTextureReference() texture system can not hold anymore textures. Adjust configuration to allow more.");
+			GLOG(Log::eFatal, "ProcessTextureReference() texture system can not hold anymore textures. Adjust configuration to allow more.");
 			return false;
 		}
 		else {
 			Tex->Type = type;
 			// Create new texture.
 			if (skip_load) {
-				LOG_DEBUG("Load skipped for texture '%s'. This is expected behaviour.", name.c_str());
+				GLOG(Log::eDebug, "Load skipped for texture '%s'. This is expected behaviour.", name.c_str());
 			}
 			else {
 				if (type == TextureType::eTexture_Type_2D) {
 					if (!LoadTexture(name, Tex)) {
-						LOG_ERROR("Failed to load texture '%s'.", name.c_str());
+						GLOG(Log::eError, "Failed to load texture '%s'.", name.c_str());
 						return false;
 					}
 				}
@@ -664,7 +664,7 @@ bool TextureSystem::ProcessTextureReference(const std::string& name, TextureType
 					StringFormat(TextureNames[5], 512, "%s_b", name.c_str());		// Back texture.
 
 					if (!LoadCubeTexture(name, TextureNames, Tex)) {
-						LOG_ERROR("Failed to load cube texture '%s'.", name.c_str());
+						GLOG(Log::eError, "Failed to load cube texture '%s'.", name.c_str());
 						return false;
 					}
 				}
@@ -683,11 +683,11 @@ bool TextureSystem::ProcessTextureReference(const std::string& name, TextureType
 		}
 		else {
 			if (Tex->IsAutoRelease()) {
-				LOG_WARN("Tried to release non-existent texture: '%s'.", name.c_str());
+				GLOG(Log::eWarn, "Tried to release non-existent texture: '%s'.", name.c_str());
 				return false;
 			}
 			else {
-				LOG_WARN("Tried to release a texture where auto-release=false, but references was already: 0.");
+				GLOG(Log::eWarn, "Tried to release a texture where auto-release=false, but references was already: 0.");
 				// Still count this as a success but warn about it.
 				return true;
 			}
@@ -712,7 +712,7 @@ bool TextureSystem::ProcessTextureReference(const std::string& name, TextureType
 			// Reset the reference.
 			Tex->SetID(INVALID_ID);
 			Tex->SetIsAutoRelease(false);
-			LOG_DEBUG("Released texture '%s', Texture unloaded because count=0 and auto_release=true.", NameCopy);
+			GLOG(Log::eDebug, "Released texture '%s', Texture unloaded because count=0 and auto_release=true.", NameCopy);
 		}
 	}
 	else {

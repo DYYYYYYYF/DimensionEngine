@@ -67,7 +67,7 @@ bool GameOnDebugEvent(eEventCode code, void* sender, void* listener_instance, SE
 }
 
 bool GameInstance::Boot(IRenderer* renderer) {
-	LOG_INFO("Booting...");
+	GLOG(Log::eInfo, "Booting...");
 
 	JSONReader JsonReader(EDITOR_CONFIG_PATH);
 	WindowSize.Width = JsonReader.ReadPropertyInt("Window.Width");
@@ -104,7 +104,7 @@ bool GameInstance::Boot(IRenderer* renderer) {
 
 	// Configure render views.  TODO: read from file.
 	if (!ConfigureRenderviews()) {
-		LOG_ERROR("Failed to configure renderer views. Aborting application.");
+		GLOG(Log::eError, "Failed to configure renderer views. Aborting application.");
 		return false;
 	}
 
@@ -112,7 +112,7 @@ bool GameInstance::Boot(IRenderer* renderer) {
 }
 
 bool GameInstance::Initialize() {
-	LOG_DEBUG("GameInitialize() called.");
+	GLOG(Log::eDebug, "GameInitialize() called.");
 	JSONReader JsonReader(EDITOR_CONFIG_PATH);
 	Matrix4 Mat = JsonReader.ReadPropertyMatrix("Camera.Transform");
 
@@ -128,7 +128,7 @@ bool GameInstance::Initialize() {
 
 	// Create test ui text objects.
 	if (!TestText.Create(Renderer, UITextType::eUI_Text_Type_Bitmap, "Ubuntu Mono 21px", 21, "Test! \n Yooo!")) {
-		LOG_ERROR("Failed to load basic ui bitmap text.");
+		GLOG(Log::eError, "Failed to load basic ui bitmap text.");
 		return false;
 	}
 	TestText.SetLocation(Vector3(150, 450, 0));
@@ -145,7 +145,7 @@ bool GameInstance::Initialize() {
 		\nF3: Light view.\
 		\nF4: Depth view."))
 	{
-		LOG_ERROR("Failed to load basic ui system text.");
+		GLOG(Log::eError, "Failed to load basic ui system text.");
 		return false;
 	}
 	TestSysText.SetLocation(Vector3(100, 200, 0));
@@ -156,7 +156,7 @@ bool GameInstance::Initialize() {
 
 	// Skybox
 	if (!SB.Create("SkyboxCube", Renderer)) {
-		LOG_ERROR("Failed to create skybox. Exiting...");
+		GLOG(Log::eError, "Failed to create skybox. Exiting...");
 		return false;
 	}
 
@@ -503,7 +503,7 @@ bool GameInstance::Render(SRenderPacket* packet, float delta_time) {
 	IRenderView* SkyboxView = RenderViewSystem::Get("Skybox");
 	if (SkyboxView) {
 		if (!RenderViewSystem::BuildPacket(SkyboxView, &SkyboxData, &packet->views[ViewCounter++])) {
-			LOG_ERROR("Failed to build packet for view 'World_Opaque'.");
+			GLOG(Log::eError, "Failed to build packet for view 'World_Opaque'.");
 			return false;
 		}
 	}
@@ -515,7 +515,7 @@ bool GameInstance::Render(SRenderPacket* packet, float delta_time) {
 		WorldData.Meshes = FrameData.WorldGeometries;
 		WorldData.GlobalTime = GameTime;
 		if (!RenderViewSystem::BuildPacket(WorldView, &WorldData, &packet->views[ViewCounter++])) {
-			LOG_ERROR("Failed to build packet for view 'World'.");
+			GLOG(Log::eError, "Failed to build packet for view 'World'.");
 			return false;
 		}
 	}
@@ -546,7 +546,7 @@ bool GameInstance::Render(SRenderPacket* packet, float delta_time) {
 	IRenderView* UIView = RenderViewSystem::Get("UI");
 	if (UIView) {
 		if (!RenderViewSystem::BuildPacket(RenderViewSystem::Get("UI"), &UIPacket, &packet->views[ViewCounter++])) {
-			LOG_ERROR("Failed to build packet for view 'UI'.");
+			GLOG(Log::eError, "Failed to build packet for view 'UI'.");
 			return false;
 		}
 	}
@@ -561,7 +561,7 @@ bool GameInstance::Render(SRenderPacket* packet, float delta_time) {
 		PickPacket.TextCount = UIPacket.textCount;
 
 		if (!RenderViewSystem::BuildPacket(PickView, &PickPacket, &packet->views[ViewCounter++])) {
-			LOG_ERROR("Failed to build packet for view 'Pick'.");
+			GLOG(Log::eError, "Failed to build packet for view 'Pick'.");
 			return false;
 		}
 	}

@@ -23,13 +23,13 @@ bool BinaryLoader::Load(const std::string& name, void* params, Resource* resourc
 
 	FileHandle File;
 	if (!FileSystemOpen(FullFilePath, eFile_Mode_Read, true, &File)) {
-		LOG_ERROR("Binary loader load. Unable to open file for binary reading: '%s'.", FullFilePath);
+		GLOG(Log::eError, "Binary loader load. Unable to open file for binary reading: '%s'.", FullFilePath);
 		return false;
 	}
 
 	size_t FileSize = 0;
 	if (!FileSystemSize(&File, &FileSize)) {
-		LOG_ERROR("Unable to binary read file: '%s'.", FullFilePath);
+		GLOG(Log::eError, "Unable to binary read file: '%s'.", FullFilePath);
 		FileSystemClose(&File);
 		return false;
 	}
@@ -38,7 +38,7 @@ bool BinaryLoader::Load(const std::string& name, void* params, Resource* resourc
 	unsigned char* ResourceData = (unsigned char*)Memory::Allocate(sizeof(unsigned char) * FileSize, MemoryType::eMemory_Type_Array);
 	size_t ReadSize = 0;
 	if (!FileSystemReadAllBytes(&File, ResourceData, &ReadSize)) {
-		LOG_ERROR("Unable to binary read file: '%s'.", FullFilePath);
+		GLOG(Log::eError, "Unable to binary read file: '%s'.", FullFilePath);
 		FileSystemClose(&File);
 		return false;
 	}
@@ -55,7 +55,7 @@ bool BinaryLoader::Load(const std::string& name, void* params, Resource* resourc
 
 void BinaryLoader::Unload(Resource* resource) {
 	if (resource == nullptr) {
-		LOG_WARN("Material loader unload called with nullptr.");
+		GLOG(Log::eWarn, "Material loader unload called with nullptr.");
 		return;
 	}
 

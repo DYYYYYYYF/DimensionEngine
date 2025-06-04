@@ -194,7 +194,7 @@ private:
 
 		// Lock, find a free space, store, unlock.
 		if (!ResultMutex.Lock()) {
-			LOG_ERROR("Failed to obtain mutex lock for storing a result! Result storage may be corrupted.");
+			GLOG(Log::eError, "Failed to obtain mutex lock for storing a result! Result storage may be corrupted.");
 		}
 
 		for (unsigned short i = 0; i < MAX_JOB_RESULTS; ++i) {
@@ -206,7 +206,7 @@ private:
 		}
 
 		if (!ResultMutex.UnLock()) {
-			LOG_ERROR("Failed to release mutex lock for result storage, storage may be corrupted.");
+			GLOG(Log::eError, "Failed to release mutex lock for result storage, storage may be corrupted.");
 		}
 	}
 

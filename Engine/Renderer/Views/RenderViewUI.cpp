@@ -48,14 +48,14 @@ bool RenderViewUI::OnCreate(const RenderViewConfig& config) {
 	const char* ShaderName = "Shader.Builtin.UI";
 	Resource ConfigResource;
 	if (!ResourceSystem::Load(ShaderName, ResourceType::eResource_Type_Shader, nullptr, &ConfigResource)) {
-		LOG_ERROR("Failed to load builtin UI shader.");
+		GLOG(Log::eError, "Failed to load builtin UI shader.");
 		return false;
 	}
 
 	ShaderConfig* Config = (ShaderConfig*)ConfigResource.Data;
 	// NOTE: Assuming the first pass since that's all this view has.
 	if (!ShaderSystem::Create(&Passes[0], Config)) {
-		LOG_ERROR("Failed to load builtin UI shader.");
+		GLOG(Log::eError, "Failed to load builtin UI shader.");
 		return false;
 	}
 	ResourceSystem::Unload(&ConfigResource);
@@ -74,11 +74,11 @@ bool RenderViewUI::OnCreate(const RenderViewConfig& config) {
 	ViewMatrix = Matrix4::Identity();
 
 	if (!EngineEvent::Register(eEventCode::Default_Rendertarget_Refresh_Required, this, RenderViewUIOnEvent)) {
-		LOG_ERROR("Unable to listen for refresh required event, creation failed.");
+		GLOG(Log::eError, "Unable to listen for refresh required event, creation failed.");
 		return false;
 	}
 
-	LOG_INFO("Renderview ui created.");
+	GLOG(Log::eInfo, "Renderview ui created.");
 	return true;
 }
 
@@ -103,7 +103,7 @@ void RenderViewUI::OnResize(uint32_t width, uint32_t height) {
 
 bool RenderViewUI::OnBuildPacket(IRenderviewPacketData* data, struct RenderViewPacket* out_packet) {
 	if (data == nullptr || out_packet == nullptr) {
-		LOG_WARN("RenderViewUI::OnBuildPacke() Requires valid pointer to packet and data.");
+		GLOG(Log::eWarn, "RenderViewUI::OnBuildPacke() Requires valid pointer to packet and data.");
 		return false;
 	}
 
@@ -168,13 +168,13 @@ bool RenderViewUI::OnRender(struct RenderViewPacket* packet, IRendererBackend* b
 		Pass->Begin(&Pass->Targets[render_target_index]);
 
 		if (!ShaderSystem::UseByID(SID)) {
-			LOG_ERROR("RenderViewUI::OnRender() Failed to use material shader. Render frame failed.");
+			GLOG(Log::eError, "RenderViewUI::OnRender() Failed to use material shader. Render frame failed.");
 			return false;
 		}
 
 		// Apply globals.
 		if (!MaterialSystem::ApplyGlobal(SID, frame_number, packet->projection_matrix, packet->view_matrix, Vector4(0), Vector3(0), render_mode, 0.0f)) {
-			LOG_ERROR("RenderViewUI::OnRender() Failed to use global shader. Render frame failed.");
+			GLOG(Log::eError, "RenderViewUI::OnRender() Failed to use global shader. Render frame failed.");
 			return false;
 		}
 
@@ -191,7 +191,7 @@ bool RenderViewUI::OnRender(struct RenderViewPacket* packet, IRendererBackend* b
 
 			bool IsNeedUpdate = Mat->RenderFrameNumer != frame_number;
 			if (!MaterialSystem::ApplyInstance(Mat, IsNeedUpdate)) {
-				LOG_WARN("Failed to apply material '%s'. Skipping draw.", Mat->Name.c_str());
+				GLOG(Log::eWarn, "Failed to apply material '%s'. Skipping draw.", Mat->Name.c_str());
 				continue;
 			}
 			else {
@@ -213,14 +213,14 @@ bool RenderViewUI::OnRender(struct RenderViewPacket* packet, IRendererBackend* b
 			ShaderSystem::BindInstance(Text->InstanceID);
 
 			if (!ShaderSystem::SetUniformByIndex(DiffuseMapLocation, &Text->Data->atlas)) {
-				LOG_ERROR("Failed to apply bitmap font diffuse map uniform.");
+				GLOG(Log::eError, "Failed to apply bitmap font diffuse map uniform.");
 				return false;
 			}
 
 			// TODO: font color
 			Vector4 FontColor = Text->GetColor();
 			if (!ShaderSystem::SetUniformByIndex(DiffuseColorLocation, &FontColor)) {
-				LOG_ERROR("Failed to apply bitmap font diffuse color uniform.");
+				GLOG(Log::eError, "Failed to apply bitmap font diffuse color uniform.");
 				return false;
 			}
 
@@ -233,7 +233,7 @@ bool RenderViewUI::OnRender(struct RenderViewPacket* packet, IRendererBackend* b
 			// Apply the locals.
 			Matrix4 Model = Text->GetLocalTransform();
 			if (!ShaderSystem::SetUniformByIndex(ModelLocation, &Model)) {
-				LOG_ERROR("Failde to apply model matrix for text.");
+				GLOG(Log::eError, "Failde to apply model matrix for text.");
 			}
 
 			Text->Draw();

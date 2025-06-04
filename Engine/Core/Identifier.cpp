@@ -27,13 +27,13 @@ uint32_t Identifier::AcquireNewID(void* owner) {
 
 void Identifier::ReleaseID(uint32_t id) {
 	if (Owners[id] == nullptr) {
-		LOG_ERROR("Identifier::ReleaseID before initialization.");
+		GLOG(Log::eError, "Identifier::ReleaseID before initialization.");
 		return;
 	}
 
 	size_t Length = Owners.size();
 	if (id > Length) {
-		LOG_ERROR("Identifier::ReleaseID() ID: '%u' out of range (max=%llu).Nothing was done.", id, Length);
+		GLOG(Log::eError, "Identifier::ReleaseID() ID: '%u' out of range (max=%llu).Nothing was done.", id, Length);
 		return;
 	}
 

@@ -109,7 +109,7 @@ public:
 
 	void InsertAt(size_t index, ElementType val) {
 		if (index > Length) {
-			LOG_ERROR("Index Out of length! Length: %i, Index: %i", Length, index);
+			GLOG(Log::eError, "Index Out of length! Length: %i, Index: %i", Length, index);
 		}
 
 		if (Length >= Capacity) {
@@ -142,7 +142,7 @@ public:
 
 	ElementType Pop() {
 		if (Length < 1) {
-			LOG_ERROR("Tring to pop a 0 length array.");
+			GLOG(Log::eError, "Tring to pop a 0 length array.");
 			return ElementType();
 		}
 
@@ -163,7 +163,7 @@ public:
 
 	ElementType PopAt(size_t index) {
 		if (index > Length - 1 ) {
-			LOG_ERROR("Index Out of length! Length: %i, Index: %i", Length, index);
+			GLOG(Log::eError, "Index Out of length! Length: %i, Index: %i", Length, index);
 			return ElementType();
 		}
 

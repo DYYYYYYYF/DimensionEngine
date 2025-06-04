@@ -44,7 +44,7 @@ private:
 		std::vector<std::string> Keys = SplitPath(key);
 		rapidjson::Value NewVal(val);
 		if (!ModifyJSONValueByPath(Context, Keys, NewVal, Context.GetAllocator())) {
-			LOG_ERROR("Modify property failed. property: %s. file: %s.", key.c_str(), Filename.c_str());
+			GLOG(Log::eError, "Modify property failed. property: %s. file: %s.", key.c_str(), Filename.c_str());
 		}
 
 		// 将修改后的 JSON 转换为字符串
@@ -54,7 +54,7 @@ private:
 	template <typename T>
 	T QueryJSONValue(const rapidjson::Value& node, const std::vector<std::string>& keys) {
 		if (keys.empty()) {
-			LOG_ERROR("QueryJSONValue: Path is empty!");
+			GLOG(Log::eError, "QueryJSONValue: Path is empty!");
 			return T();
 		}
 
@@ -73,12 +73,12 @@ private:
 					return array[index].Get<T>();
 				}
 				else {
-					LOG_ERROR("Index out of range for array: %s", arrayKey.c_str());
+					GLOG(Log::eError, "Index out of range for array: %s", arrayKey.c_str());
 					return T();
 				}
 			}
 			else {
-				LOG_ERROR("Array not found or invalid: %s", arrayKey.c_str());
+				GLOG(Log::eError, "Array not found or invalid: %s", arrayKey.c_str());
 				return T();
 			}
 		}
@@ -95,7 +95,7 @@ private:
 				}
 			}
 			else {
-				LOG_ERROR("Key not found: %s", currentKey);
+				GLOG(Log::eError, "Key not found: %s", currentKey);
 				return T();
 			}
 		}
@@ -106,7 +106,7 @@ private:
 			return QueryJSONValue<T>(node[currentKey.c_str()], remainingKeys);
 		}
 
-		LOG_ERROR("Invalid path or non-object node at key: %s.", currentKey);
+		GLOG(Log::eError, "Invalid path or non-object node at key: %s.", currentKey);
 		return T();
 	}
 

@@ -403,7 +403,7 @@ inline uint32_t StringUTF8Length(const char* Str) {
 		}
 		else {
 			// NOTE: Not supporting 5 and 6-type characters; return as invalid UTF-8.
-			LOG_ERROR(" String::UTF8Length() Not supporting character more than 4 bytes. Invalid UTF-8.");
+			GLOG(Log::eError, " String::UTF8Length() Not supporting character more than 4 bytes. Invalid UTF-8.");
 			return 0;
 		}
 	}
@@ -444,7 +444,7 @@ inline bool StringBytesToCodepoint(const char* bytes, uint32_t offset, int* out_
 		// NOTE: Not supporting 5 and 6-type characters; return as invalid UTF-8.
 		*out_codepoint = 0;
 		*out_advance = 0;
-		LOG_ERROR(" String::BytesToCodepoint() Not supporting character more than 4 bytes. Invalid UTF-8.");
+		GLOG(Log::eError, " String::BytesToCodepoint() Not supporting character more than 4 bytes. Invalid UTF-8.");
 		return false;
 	}
 }

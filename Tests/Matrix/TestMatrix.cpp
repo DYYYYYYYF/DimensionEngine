@@ -5,15 +5,15 @@ using namespace std;
 
 void TestMatrix() {
 
-	LOG_INFO("Vector2<float> size: %ld", sizeof(TVector2<float>));
-	LOG_INFO("Vector3<float> size: %ld", sizeof(TVector3<float>));
-	LOG_INFO("Vector4<float> size: %ld", sizeof(TVector4<float>));
-	LOG_INFO("TMatrix4<float> size: %ld", sizeof(TMatrix4<float>));
+	GLOG(Log::eInfo, "Vector2<float> size: %ld", sizeof(TVector2<float>));
+	GLOG(Log::eInfo, "Vector3<float> size: %ld", sizeof(TVector3<float>));
+	GLOG(Log::eInfo, "Vector4<float> size: %ld", sizeof(TVector4<float>));
+	GLOG(Log::eInfo, "TMatrix4<float> size: %ld", sizeof(TMatrix4<float>));
 
-	LOG_INFO("Vector2<double> size: %ld", sizeof(TVector2<double>));
-	LOG_INFO("Vector3<double> size: %ld", sizeof(TVector3<double>));
-	LOG_INFO("Vector4<double> size: %ld", sizeof(TVector4<double>));
-	LOG_INFO("TMatrix4<double> size: %ld", sizeof(TMatrix4<double>));
+	GLOG(Log::eInfo, "Vector2<double> size: %ld", sizeof(TVector2<double>));
+	GLOG(Log::eInfo, "Vector3<double> size: %ld", sizeof(TVector3<double>));
+	GLOG(Log::eInfo, "Vector4<double> size: %ld", sizeof(TVector4<double>));
+	GLOG(Log::eInfo, "TMatrix4<double> size: %ld", sizeof(TMatrix4<double>));
 
 	Matrix4 Translation = {
 		1, 0, 0, 1,

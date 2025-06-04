@@ -50,7 +50,7 @@ bool VulkanRenderPass::Create(VulkanContext* context, const RenderpassConfig& co
 				// If we loading, check if we are also clearing. This combination doesn't make sense, and should be warned about.
 				if (AttachmentConfig->loadOperation == RenderTargetAttachmentLoadOperation::eRender_Target_Attachment_Load_Operation_Load) {
 					if (IsNeedClearColor) {
-						LOG_WARN("Color attachment load operation set to load, but is also set to clear. This combination is invalid.");
+						GLOG(Log::eWarn, "Color attachment load operation set to load, but is also set to clear. This combination is invalid.");
 						AttachmentDesc.setLoadOp(vk::AttachmentLoadOp::eClear);
 					}
 					else {
@@ -58,7 +58,7 @@ bool VulkanRenderPass::Create(VulkanContext* context, const RenderpassConfig& co
 					}
 				}
 				else {
-					LOG_FATAL("Invalid and unsupported combination of load operation (0x%x) and clear flags (0x%x) for color attachment.", AttachmentDesc.loadOp, ClearFlags);
+					GLOG(Log::eFatal, "Invalid and unsupported combination of load operation (0x%x) and clear flags (0x%x) for color attachment.", AttachmentDesc.loadOp, ClearFlags);
 					return false;
 				}
 			}
@@ -71,7 +71,7 @@ bool VulkanRenderPass::Create(VulkanContext* context, const RenderpassConfig& co
 				AttachmentDesc.setStoreOp(vk::AttachmentStoreOp::eStore);
 			}
 			else {
-				LOG_FATAL("Invalid store operation  (0x%x) for depth attachment. Check onfiguration.", AttachmentConfig->storeOperation);
+				GLOG(Log::eFatal, "Invalid store operation  (0x%x) for depth attachment. Check onfiguration.", AttachmentConfig->storeOperation);
 				return false;
 			}
 
@@ -110,7 +110,7 @@ bool VulkanRenderPass::Create(VulkanContext* context, const RenderpassConfig& co
 				// If we loading, check if we are also clearing. This combination doesn't make sense, and should be warned about.
 				if (AttachmentConfig->loadOperation == RenderTargetAttachmentLoadOperation::eRender_Target_Attachment_Load_Operation_Load) {
 					if (IsNeedClearDepth) {
-						LOG_WARN("Depth attachment load operation set to load, but is also set to clear. This combination is invalid.");
+						GLOG(Log::eWarn, "Depth attachment load operation set to load, but is also set to clear. This combination is invalid.");
 						AttachmentDesc.setLoadOp(vk::AttachmentLoadOp::eClear);
 					}
 					else {
@@ -118,7 +118,7 @@ bool VulkanRenderPass::Create(VulkanContext* context, const RenderpassConfig& co
 					}
 				}
 				else {
-					LOG_FATAL("Invalid and unsupported combination of load operation (0x%x) and clear flags (0x%x) for depth attachment.", AttachmentDesc.loadOp, ClearFlags);
+					GLOG(Log::eFatal, "Invalid and unsupported combination of load operation (0x%x) and clear flags (0x%x) for depth attachment.", AttachmentDesc.loadOp, ClearFlags);
 					return false;
 				}
 			}
@@ -131,7 +131,7 @@ bool VulkanRenderPass::Create(VulkanContext* context, const RenderpassConfig& co
 				AttachmentDesc.setStoreOp(vk::AttachmentStoreOp::eStore);
 			}
 			else {
-				LOG_FATAL("Invalid store operation  (0x%x) for depth attachment. Check onfiguration.", AttachmentConfig->storeOperation);
+				GLOG(Log::eFatal, "Invalid store operation  (0x%x) for depth attachment. Check onfiguration.", AttachmentConfig->storeOperation);
 				return false;
 			}
 
@@ -225,7 +225,7 @@ bool VulkanRenderPass::Create(VulkanContext* context, const RenderpassConfig& co
 
 	if (context->Device.GetLogicalDevice().createRenderPass(&CreateInfo,
 		context->Allocator, (vk::RenderPass*)&Renderpass) != vk::Result::eSuccess) {
-		LOG_ERROR("VulkanRenderPass::Create() Failed to create renderpass.");
+		GLOG(Log::eError, "VulkanRenderPass::Create() Failed to create renderpass.");
 	}
 
 	return true;

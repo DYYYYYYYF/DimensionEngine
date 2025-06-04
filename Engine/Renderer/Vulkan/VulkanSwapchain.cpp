@@ -98,7 +98,7 @@ void VulkanSwapchain::Create(VulkanContext* context, unsigned int width, unsigne
 	// Images
 	ImageCount = 0;
 	if (LogicalDevice.getSwapchainImagesKHR(Handle, &ImageCount, 0) != vk::Result::eSuccess) {
-		LOG_INFO("Get swapchain images failed.");
+		GLOG(Log::eInfo, "Get swapchain images failed.");
 		return;
 	}
 
@@ -123,7 +123,7 @@ void VulkanSwapchain::Create(VulkanContext* context, unsigned int width, unsigne
 				&RenderTextures[i]
 			);
 			if (RenderTextures[i].InternalData == nullptr) {
-				LOG_FATAL("Failed to generate new swapchain image texture.");
+				GLOG(Log::eFatal, "Failed to generate new swapchain image texture.");
 				return;
 			}
 		}
@@ -136,7 +136,7 @@ void VulkanSwapchain::Create(VulkanContext* context, unsigned int width, unsigne
 
 	vk::Image SwapchainImages[32];
 	if (LogicalDevice.getSwapchainImagesKHR(Handle, &ImageCount, SwapchainImages) != vk::Result::eSuccess) {
-		LOG_INFO("Get swapchain images failed.");
+		GLOG(Log::eInfo, "Get swapchain images failed.");
 		return;
 	}
 
@@ -172,7 +172,7 @@ void VulkanSwapchain::Create(VulkanContext* context, unsigned int width, unsigne
 	// Depth resources
 	if (!context->Device.DetectDepthFormat()) {
 		context->Device.SetDepthFormat(vk::Format::eUndefined);
-		LOG_FATAL("Failed to find a supported format!");
+		GLOG(Log::eFatal, "Failed to find a supported format!");
 	};
 
 	if (DepthTexture.size() == 0) {
@@ -198,7 +198,7 @@ void VulkanSwapchain::Create(VulkanContext* context, unsigned int width, unsigne
 
 	}
 	
-	LOG_INFO("Create swapchain successful.");
+	GLOG(Log::eInfo, "Create swapchain successful.");
 }
 
 void VulkanSwapchain::Recreate(VulkanContext* context, unsigned int width, unsigned int height) {
@@ -245,7 +245,7 @@ void VulkanSwapchain::Presnet(VulkanContext* context, vk::Queue present_queue, v
 		Recreate(context, context->FrameBufferWidth, context->FrameBufferHeight);
 	}
 	else if (Result != vk::Result::eSuccess) {
-		LOG_FATAL("Failed to present swapchain image.");
+		GLOG(Log::eFatal, "Failed to present swapchain image.");
 	}
 
 	// Increment (and loop) the index;
@@ -260,7 +260,7 @@ uint32_t VulkanSwapchain::AcquireNextImageIndex(VulkanContext* context, size_t t
 		return -1;
 	}
 	else if (Result.result != vk::Result::eSuccess && Result.result != vk::Result::eSuboptimalKHR) {
-		LOG_FATAL("Acquire swapchain image failed.");
+		GLOG(Log::eFatal, "Acquire swapchain image failed.");
 		return -1;
 	}
 

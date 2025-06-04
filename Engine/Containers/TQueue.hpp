@@ -73,7 +73,7 @@ public:
 		}
 
 		if (Length == Capacity) {
-			LOG_ERROR("Ring::Enqueue() Attempted to enqueue value in full ring queue: %p.", this);
+			GLOG(Log::eError, "Ring::Enqueue() Attempted to enqueue value in full ring queue: %p.", this);
 			return false;
 		}
 
@@ -95,7 +95,7 @@ public:
 		}
 
 		if (Length == 0) {
-			LOG_ERROR("RingQueue::Dequeue() Attempted to dequeue value in empty ring queue.");
+			GLOG(Log::eError, "RingQueue::Dequeue() Attempted to dequeue value in empty ring queue.");
 			return false;
 		}
 
@@ -117,7 +117,7 @@ public:
 		}
 
 		if (Length == 0) {
-			LOG_ERROR("RingQueue::Dequeue() Attempted to dequeue value in empty ring queue.");
+			GLOG(Log::eError, "RingQueue::Dequeue() Attempted to dequeue value in empty ring queue.");
 			return false;
 		}
 

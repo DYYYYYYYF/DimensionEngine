@@ -412,7 +412,7 @@ private:
             #endif
 		}
 		else {
-            LOG_FATAL("Can not support 256bit SIMD yet!");
+            GLOG(Log::eFatal, "Can not support 256bit SIMD yet!");
 		}
 #endif
 	}
@@ -603,7 +603,7 @@ public:
 #endif
         }
 		else {
-			LOG_FATAL("Engine not support double type SIMD yet!");
+			GLOG(Log::eFatal, "Engine not support double type SIMD yet!");
 			ASSERT(false);
 		}
 		res.x = reinterpret_cast<T*>(&res.data)[0];
@@ -640,7 +640,7 @@ public:
 #endif
         }
 		else {
-			LOG_FATAL("Engine not support double type SIMD yet!");
+			GLOG(Log::eFatal, "Engine not support double type SIMD yet!");
 			ASSERT(false);
 		}
 		d.x = reinterpret_cast<T*>(&d.data)[0];
@@ -696,7 +696,7 @@ public:
 #endif
         }
 		else {
-			LOG_FATAL("Engine not support double type SIMD yet!");
+			GLOG(Log::eFatal, "Engine not support double type SIMD yet!");
 			ASSERT(false);
 		}
 		d.x = reinterpret_cast<T*>(&d.data)[0];
@@ -727,7 +727,7 @@ public:
 #endif
         }
 		else {
-			LOG_FATAL("Engine not support double type SIMD yet!");
+			GLOG(Log::eFatal, "Engine not support double type SIMD yet!");
 			ASSERT(false);
 		}
 		d.x = reinterpret_cast<T*>(&d.data)[0];
@@ -760,7 +760,7 @@ public:
 #endif
         }
 		else {
-            LOG_ERROR("Not support 256bit SIMD yet.");
+            GLOG(Log::eError, "Not support 256bit SIMD yet.");
             ASSERT(false);
 		}
 		d.x = reinterpret_cast<T*>(&d.data)[0];
@@ -790,7 +790,7 @@ public:
 #endif
         }
         else {
-            LOG_ERROR("Can not support 256bit SIMD yet.");
+            GLOG(Log::eError, "Can not support 256bit SIMD yet.");
             ASSERT(false);
         }
 		d.x = reinterpret_cast<T*>(&d.data)[0];
@@ -826,7 +826,7 @@ public:
 			d.data = _mm_div_ps(data, safeDenom);  // Perform SIMD multiplication
 			_mm_store_ps(reinterpret_cast<float*>(&d.data), d.data);
 #else
-            LOG_FATAL("Engine not support double type SIMD yet!");
+            GLOG(Log::eFatal, "Engine not support double type SIMD yet!");
             ASSERT(false);
 #endif
         }
@@ -867,7 +867,7 @@ public:
 #endif
         }
 		else {
-			LOG_FATAL("Engine not support double type SIMD yet!");
+			GLOG(Log::eFatal, "Engine not support double type SIMD yet!");
 			ASSERT(false);
 		}
 		d.x = reinterpret_cast<T*>(&d.data)[0];

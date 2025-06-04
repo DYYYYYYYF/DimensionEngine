@@ -13,7 +13,7 @@ Mutex Memory::AllocationMutex;
 bool Memory::Initialize(size_t size) {
 	Platform::PlatformZeroMemory(&stats, sizeof(stats));
 	if (!DynamicAlloc.Create(size)) {
-		LOG_FATAL("Memory system is unable to setup internal allocator. Application can not continue.");
+		GLOG(Log::eFatal, "Memory system is unable to setup internal allocator. Application can not continue.");
 		return false;
 	}
 
@@ -21,7 +21,7 @@ bool Memory::Initialize(size_t size) {
 	TotalAllocateSize = size;
 	AllocationMutex.Create();
 
-	LOG_DEBUG("Memory system successfully allocated %llu bytes.", TotalAllocateSize);
+	GLOG(Log::eDebug, "Memory system successfully allocated %llu bytes.", TotalAllocateSize);
 	return true;
 }
 
@@ -31,7 +31,7 @@ void Memory::Shutdown() {
 	AllocateCount = 0;
 	TotalAllocateSize = 0;
 
-	LOG_INFO("Shutdown memory system, left memory: %llu.", DynamicAlloc.GetFreeSpace());
+	GLOG(Log::eInfo, "Shutdown memory system, left memory: %llu.", DynamicAlloc.GetFreeSpace());
 }
 
 void* Memory::Allocate(size_t size, MemoryType type = MemoryType::eMemory_Type_Array) {
@@ -40,7 +40,7 @@ void* Memory::Allocate(size_t size, MemoryType type = MemoryType::eMemory_Type_A
 
 void* Memory::AllocateAligned(size_t size, unsigned short alignment, MemoryType type) {
 	if (type == eMemory_Type_Unknow) {
-		LOG_WARN("Called allocate using eMemory_Type_Unknow. Re-class this allocation.");
+		GLOG(Log::eWarn, "Called allocate using eMemory_Type_Unknow. Re-class this allocation.");
 	}
 
 	void* Block = nullptr;
@@ -50,7 +50,7 @@ void* Memory::AllocateAligned(size_t size, unsigned short alignment, MemoryType 
 
 	// Make sure multi-threaded requests don't trample each other.
 	if (!AllocationMutex.Lock()) {
-		LOG_FATAL("Error obtaining mutex lock during allocation.");
+		GLOG(Log::eFatal, "Error obtaining mutex lock during allocation.");
 		return nullptr;
 	}
 
@@ -58,12 +58,12 @@ void* Memory::AllocateAligned(size_t size, unsigned short alignment, MemoryType 
 	AllocationMutex.UnLock();
 
 	if (Block == nullptr) {
-		LOG_WARN("Allocate by platform. Dynamic allocator memory is not enough!");
+		GLOG(Log::eWarn, "Allocate by platform. Dynamic allocator memory is not enough!");
 		Block = Platform::PlatformAllocate(size, false);
 	}
 
 	if (Block == nullptr) {
-		LOG_FATAL("Allocate failed.");
+		GLOG(Log::eFatal, "Allocate failed.");
 	}
 
 	Platform::PlatformZeroMemory(Block, size);
@@ -74,7 +74,7 @@ void* Memory::AllocateAligned(size_t size, unsigned short alignment, MemoryType 
 void Memory::AllocateReport(size_t size, MemoryType type) {
 	// Make sure multi-threaded requests don't trample each other.
 	if (!AllocationMutex.Lock()) {
-		LOG_FATAL("Error obtaining mutex lock during allocation.");
+		GLOG(Log::eFatal, "Error obtaining mutex lock during allocation.");
 		return;
 	}
 
@@ -91,12 +91,12 @@ void  Memory::Free(void* block, size_t size, MemoryType type) {
 
 void Memory::FreeAligned(void* block, size_t size, unsigned short alignment, MemoryType type) {
 	if (type == eMemory_Type_Unknow) {
-		LOG_WARN("Called free using eMemory_Type_Unknow. Re-class this allocation.");
+		GLOG(Log::eWarn, "Called free using eMemory_Type_Unknow. Re-class this allocation.");
 	}
 
 	// Make sure multi-threaded requests don't trample each other.
 	if (!AllocationMutex.Lock()) {
-		LOG_FATAL("Unable to obtain mutex lock for free operation. Heap corruption is likely.");
+		GLOG(Log::eFatal, "Unable to obtain mutex lock for free operation. Heap corruption is likely.");
 		return;
 	}
 
@@ -116,7 +116,7 @@ void Memory::FreeAligned(void* block, size_t size, unsigned short alignment, Mem
 
 void Memory::FreeReport(size_t size, MemoryType type) {
 	if (!AllocationMutex.Lock()) {
-		LOG_FATAL("Unable to obtain mutex lock for free operation. Heap corruption is likely.");
+		GLOG(Log::eFatal, "Unable to obtain mutex lock for free operation. Heap corruption is likely.");
 		return;
 	}
 
@@ -195,7 +195,7 @@ char* Memory::GetMemoryUsageStr() {
 
 void Memory::ShowMemoryUsage() {
 	std::string Msg = GetMemoryUsageStr();
-	LOG_DEBUG(Msg.c_str());
+	GLOG(Log::eDebug, Msg.c_str());
 }
 
 size_t Memory::GetAllocateCount() { 

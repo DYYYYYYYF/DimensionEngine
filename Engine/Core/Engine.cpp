@@ -31,12 +31,12 @@
 
 bool Engine::Initialize(){
 	if (Initialized) {
-		LOG_ERROR("Create application more than once!");
+		GLOG(Log::eError, "Create application more than once!");
 		return false;
 	}
 
 	if (GameInst == nullptr) {
-		LOG_ERROR("Create application failed! Game instance is nullptr!");
+		GLOG(Log::eError, "Create application failed! Game instance is nullptr!");
 		return false;
 	}
 
@@ -53,7 +53,7 @@ bool Engine::Initialize(){
 
 	// Event
 	if (!EngineEvent::Initialize()) {
-		LOG_ERROR("Event system init failed. Application can not start.");
+		GLOG(Log::eError, "Event system init failed. Application can not start.");
 		return false;
 	}
 
@@ -70,7 +70,7 @@ bool Engine::Initialize(){
 		(int)GameInst->GetWindowOffsetY(),
 		GameInst->GetWindowWidth(),
 		GameInst->GetWindowHeight())) {
-        LOG_FATAL("Failed to startup platform. Application quit now!");
+        GLOG(Log::eFatal, "Failed to startup platform. Application quit now!");
 		return false;
     }
 
@@ -83,7 +83,7 @@ bool Engine::Initialize(){
     ResourceSystemConfig.asset_base_path = std::string(ROOT_PATH) + "/Assets";
 
 	if (!ResourceSystem::Initialize(ResourceSystemConfig)) {
-		LOG_FATAL("Resource system failed to initialize!");
+		GLOG(Log::eFatal, "Resource system failed to initialize!");
 		return false;
 	}
 
@@ -101,7 +101,7 @@ bool Engine::Initialize(){
 	ShaderSystemConfig.max_global_textures = 31;
 	ShaderSystemConfig.max_instance_textures = 31;
 	if (!ShaderSystem::Initialize(Renderer, ShaderSystemConfig)) {
-		LOG_FATAL("Shader system failed to initialize!");
+		GLOG(Log::eFatal, "Shader system failed to initialize!");
 		return false;
 	}
 
@@ -109,16 +109,16 @@ bool Engine::Initialize(){
 	bool RenderWithMultithread = Renderer->GetEnabledMutiThread();
 	int ThreadCount = Platform::GetProcessorCount() - 1;
 	if (ThreadCount < 1) {
-		LOG_FATAL("Error: Platform reported processor count (minus one for main thread) as %i. Need at least one additional thread for the job system.", ThreadCount);
+		GLOG(Log::eFatal, "Error: Platform reported processor count (minus one for main thread) as %i. Need at least one additional thread for the job system.", ThreadCount);
 	}
 	else {
-		LOG_INFO("Available threads: %i.", ThreadCount);
+		GLOG(Log::eInfo, "Available threads: %i.", ThreadCount);
 	}
 
 	// Cap the thread count.
 	const int MaxThreadCount = 15;
 	if (ThreadCount > MaxThreadCount) {
-		LOG_INFO("Available threads on the system is %i, but will be capped at %i.", ThreadCount, MaxThreadCount);
+		GLOG(Log::eInfo, "Available threads on the system is %i, but will be capped at %i.", ThreadCount, MaxThreadCount);
 		ThreadCount = MaxThreadCount;
 	}
 
@@ -146,19 +146,19 @@ bool Engine::Initialize(){
 
 	// Job system
 	if (!JobSystem::Initialize(ThreadCount, JobThreadTypes)) {
-		LOG_FATAL("Job system failed to initialize!");
+		GLOG(Log::eFatal, "Job system failed to initialize!");
 		return false;
 	}
 
 	// Render system.
 	if (!Renderer->Initialize(GameInst->GetApplicationName(),Vector2(width, height), & platform)) {
-		LOG_FATAL("Renderer failed to initialize!");
+		GLOG(Log::eFatal, "Renderer failed to initialize!");
 		return false;
 	}
 
 	// Perform the game's boot sequence.
 	if (!GameInst->Boot(Renderer)) {
-		LOG_FATAL("Game boot sequence failed!");
+		GLOG(Log::eFatal, "Game boot sequence failed!");
 		return false;
 	}
 
@@ -166,7 +166,7 @@ bool Engine::Initialize(){
 	STextureSystemConfig TextureSystemConfig;
 	TextureSystemConfig.max_texture_count = 65536;
 	if (!TextureSystem::Initialize(Renderer, TextureSystemConfig)) {
-		LOG_FATAL("Texture system failed to initialize!");
+		GLOG(Log::eFatal, "Texture system failed to initialize!");
 		return false;
 	}
 
@@ -174,13 +174,13 @@ bool Engine::Initialize(){
 	SCameraSystemConfig CameraSystemConfig;
 	CameraSystemConfig.max_camera_count = 61;
 	if (!CameraSystem::Initialize(Renderer, CameraSystemConfig)) {
-		LOG_FATAL("Camera system failed to initialize!");
+		GLOG(Log::eFatal, "Camera system failed to initialize!");
 		return false;
 	}
 
 	// Init font system.
 	if (!FontSystem::Initialize(Renderer, &GameInst->GetFontConfig())) {
-		LOG_FATAL("Font system failed to initialize!");
+		GLOG(Log::eFatal, "Font system failed to initialize!");
 		return false;
 	}
 
@@ -188,7 +188,7 @@ bool Engine::Initialize(){
 	SRenderViewSystemConfig RenderViewSysConfig;
 	RenderViewSysConfig.max_view_count = 255;
 	if (!RenderViewSystem::Initialize(Renderer, RenderViewSysConfig)) {
-		LOG_FATAL("Render view system failed to intialize!");
+		GLOG(Log::eFatal, "Render view system failed to intialize!");
 		return false;
 	}
 
@@ -198,7 +198,7 @@ bool Engine::Initialize(){
 	for (uint32_t v = 0; v < ViewCount; ++v) {
 		const RenderViewConfig& View = Renderviews[v];
 		if (!RenderViewSystem::Create(View)) {
-			LOG_FATAL("Failed to create view '%s'.", View.name);
+			GLOG(Log::eFatal, "Failed to create view '%s'.", View.name);
 			return false;
 		}
 	}
@@ -207,7 +207,7 @@ bool Engine::Initialize(){
 	SMaterialSystemConfig MaterialSystemConfig;
 	MaterialSystemConfig.max_material_count = 4096;
 	if (!MaterialSystem::Initialize(Renderer, MaterialSystemConfig)) {
-		LOG_FATAL("Material system failed to initialize!");
+		GLOG(Log::eFatal, "Material system failed to initialize!");
 		return false;
 	}
 
@@ -215,13 +215,13 @@ bool Engine::Initialize(){
 	SGeometrySystemConfig GeometrySystemConfig;
 	GeometrySystemConfig.max_geometry_count = 4096;
 	if (!GeometrySystem::Initialize(Renderer, GeometrySystemConfig)) {
-		LOG_FATAL("Geometry system failed to initialize!");
+		GLOG(Log::eFatal, "Geometry system failed to initialize!");
 		return false;
 	}
 
 	// Init Game
 	if (!GameInst->Initialize()) {
-		LOG_FATAL("Game failed to initialize!");
+		GLOG(Log::eFatal, "Game failed to initialize!");
 		return false;
 	}
 
@@ -243,7 +243,7 @@ bool Engine::Run() {
 	double FrameElapsedTime = 0.0;
 	double TargetFrameSeconds = 1.0 / 120.0;
 
-	LOG_DEBUG(Memory::GetMemoryUsageStr());
+	GLOG(Log::eDebug, Memory::GetMemoryUsageStr());
 
 	GlobalFileWatcher = NewObject<FileWatcher>();
 
@@ -275,7 +275,7 @@ bool Engine::Run() {
 			Metrics::Update(FrameElapsedTime);
 
 			if (!GameInst->Update((float)DeltaTime)) {
-				LOG_FATAL("Game update failed!");
+				GLOG(Log::eFatal, "Game update failed!");
 				is_running = false;
 				break;
 			}
@@ -287,7 +287,7 @@ bool Engine::Run() {
 
 			// Call the game's render routine.
 			if (!GameInst->Render(&Packet, (float)DeltaTime)) {
-				LOG_FATAL("Game render faield. shutting down.");
+				GLOG(Log::eFatal, "Game render faield. shutting down.");
 				is_running = false;
 				break;
 			}
@@ -359,7 +359,7 @@ bool Engine::Run() {
 bool Engine::OnEvent(eEventCode code, void* sender, void* listener_instance, SEventContext context) {
 	switch (code){
 	case eEventCode::Application_Quit: {
-		LOG_INFO("Application quit now.");
+		GLOG(Log::eInfo, "Application quit now.");
 		is_running = false;
 		return true;
 	}
@@ -382,17 +382,17 @@ bool Engine::OnResized(eEventCode code, void* sender, void* listener_instance, S
 		if (Width != width || Height != height) {
 			width = Width;
 			height = Height;
-			LOG_DEBUG("Window resize: %i %i", Width, Height);
+			GLOG(Log::eDebug, "Window resize: %i %i", Width, Height);
 
 			// Handle minimization
 			if (Width == 0 || Height == 0) {
-				LOG_INFO("Window minimized, suspending application.");
+				GLOG(Log::eInfo, "Window minimized, suspending application.");
 				is_suspended = true;
 				return true;
 			}
 			else {
 				if (is_suspended) {
-					LOG_INFO("Window restored, resuming application.");
+					GLOG(Log::eInfo, "Window restored, resuming application.");
 					is_suspended = false;
 				}
 

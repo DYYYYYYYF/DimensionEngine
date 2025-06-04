@@ -8,7 +8,6 @@ set(LIBRARY_OUTPUT_PATH  ${PROJECT_SOURCE_DIR}/Bin)
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/Bin)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/Library)
 
-set(UD_LOGGER_DIR ${PROJECT_SOURCE_DIR}/3rd/uncledon-logger)
 set(STB_DIR ${PROJECT_SOURCE_DIR}/3rd/stb)
 
 # Plugins
@@ -53,7 +52,7 @@ if(${APPLE})
     find_package(PkgConfig REQUIRED)
 
     include_directories(${Vulkan_INCLUDE_DIRS})
-    link_directories(${UD_LOGGER_DIR}/lib/MacOS/${CMAKE_BUILD_TYPE} ${SYSTEM_LIBRARY_DIR} ${LIBRARY_OUTPUT_PATH})
+    link_directories( ${SYSTEM_LIBRARY_DIR} ${LIBRARY_OUTPUT_PATH})
 
 elseif(${WIN32})
     message("-- Current environment: Windows")
@@ -70,7 +69,7 @@ endif()
     set(Vulkan_INCLUDE_DIRS "${Vulkan_DIR}/Include")
 	
     include_directories(${Vulkan_INCLUDE_DIRS})
-    link_directories(${Vulkan_LIBRARY_DIRS} ${UD_LOGGER_DIR}/lib/Windows/${CMAKE_BUILD_TYPE})
+    link_directories(${Vulkan_LIBRARY_DIRS})
 endif()
 
 source_group(TREE ${CMAKE_SOURCE_DIR} FILES ${ALL_SRCS})

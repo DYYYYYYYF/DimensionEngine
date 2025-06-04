@@ -44,7 +44,7 @@ bool SystemFontLoader::Load(const std::string& name, void* params, Resource* res
 	}
 
 	if (Type == SystemFontFileType::eSystem_Font_File_Type_Not_Found) {
-		LOG_ERROR("Unable to find system font of supported type called: '%s'.", name.c_str());
+		GLOG(Log::eError, "Unable to find system font of supported type called: '%s'.", name.c_str());
 		return false;
 	}
 
@@ -55,7 +55,7 @@ bool SystemFontLoader::Load(const std::string& name, void* params, Resource* res
 	switch (Type)
 	{
 	case eSystem_Font_File_Type_Not_Found:
-		LOG_ERROR("Unable to find system font of supported type called '%s'.", name.c_str());
+		GLOG(Log::eError, "Unable to find system font of supported type called '%s'.", name.c_str());
 		Result = false;
 		break;
 	case eSystem_Font_File_Type_DSF:
@@ -72,7 +72,7 @@ bool SystemFontLoader::Load(const std::string& name, void* params, Resource* res
 	FileSystemClose(&f);
 
 	if (!Result) {
-		LOG_ERROR("Failed to process system font file '%s'.", FullFilePath);
+		GLOG(Log::eError, "Failed to process system font file '%s'.", FullFilePath);
 		resource->Data = nullptr;
 		resource->DataSize = 0;
 		return false;
@@ -135,7 +135,7 @@ bool SystemFontLoader::ImportFontconfigFile(FileHandle* f, const char* typePath,
 		// Split into var/value.
 		int EqualIndex = StringIndexOf(Trimmed, '=');
 		if (EqualIndex == -1) {
-			LOG_WARN("Potential formatting issue found in file: '=' token not found. Skipping line  %u.", LineNumber);
+			GLOG(Log::eWarn, "Potential formatting issue found in file: '=' token not found. Skipping line  %u.", LineNumber);
 			LineNumber++;
 			continue;
 		}
@@ -155,7 +155,7 @@ bool SystemFontLoader::ImportFontconfigFile(FileHandle* f, const char* typePath,
 		// Process the variable.
 		if (StringEquali(TrimmedVarName, "version")) {
 			// TODO: version
-            LOG_INFO("Test");
+            GLOG(Log::eInfo, "Test");
 		}
 		else if (StringEquali(TrimmedVarName, "file")) {
 			const char* FormatStr = "%s/%s/%s";
@@ -165,25 +165,25 @@ bool SystemFontLoader::ImportFontconfigFile(FileHandle* f, const char* typePath,
 			// Open and read the font file as binary, and save into an allocated.
 			FileHandle FontBinaryHandle;
 			if (!FileSystemOpen(FullFilePath, FileMode::eFile_Mode_Read, true, &FontBinaryHandle)) {
-				LOG_ERROR("Unable to open binary font file. Load process failed.");
+				GLOG(Log::eError, "Unable to open binary font file. Load process failed.");
 				return false;
 			}
 
 			size_t FileSize;
 			if (!FileSystemSize(&FontBinaryHandle, &FileSize)) {
-				LOG_ERROR("Unable to get binary font file size. Load process failed.");
+				GLOG(Log::eError, "Unable to get binary font file size. Load process failed.");
 				return false;
 			}
 
 			outResource->fontBinary = Memory::Allocate(FileSize, MemoryType::eMemory_Type_Resource);
 			if (!FileSystemReadAllBytes(&FontBinaryHandle, (unsigned char*)outResource->fontBinary, &outResource->binarySize)) {
-				LOG_ERROR("Unable to perform binary read on font file. Load process failed.");
+				GLOG(Log::eError, "Unable to perform binary read on font file. Load process failed.");
 				return false;
 			}
 
 			// Might still work anyway. so continue.
 			if (outResource->binarySize != FileSize) {
-				LOG_WARN("Mismatch between filesize and bytes read in font file. File may be corrupt.");
+				GLOG(Log::eWarn, "Mismatch between filesize and bytes read in font file. File may be corrupt.");
 			}
 			
 			FileSystemClose(&FontBinaryHandle);
@@ -204,7 +204,7 @@ bool SystemFontLoader::ImportFontconfigFile(FileHandle* f, const char* typePath,
 
 	// Check here to make sure a binary was loaded, and at least one font face was found.
 	if (!outResource->fontBinary || outResource->fonts.size() < 1) {
-		LOG_ERROR("Font configuration did not provide a binary and at least one font face. Load process failed.");
+		GLOG(Log::eError, "Font configuration did not provide a binary and at least one font face. Load process failed.");
 		return false;
 	}
 
@@ -223,7 +223,7 @@ bool SystemFontLoader::ReadDSFFile(FileHandle* file, SystemFontResourceData* dat
 
 	// Verify header contents.
 	if (Header.magicNumber != RESOURCES_MAGIC && Header.resourceType == ResourceType::eResource_Type_System_Font) {
-		LOG_ERROR("DSF file header is invalid and can not be read.");
+		GLOG(Log::eError, "DSF file header is invalid and can not be read.");
 		FileSystemClose(file);
 		return false;
 	}

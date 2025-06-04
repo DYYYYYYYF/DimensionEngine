@@ -14,7 +14,7 @@ struct AllocHeader {
 
 bool DynamicAllocator::Create(size_t total_size) {
 	if (total_size < 1) {
-		LOG_ERROR("Dynamic allocator create can not have a total_size of 0. Failed.");
+		GLOG(Log::eError, "Dynamic allocator create can not have a total_size of 0. Failed.");
 		return false;
 	}
 
@@ -25,7 +25,7 @@ bool DynamicAllocator::Create(size_t total_size) {
 	
 	MemoryBlock = Platform::PlatformAllocate(total_size, false);
 	if (MemoryBlock == nullptr) {
-		LOG_FATAL("DynamicAllocator::Create() Cannot allocate enough memory for dynamic allocator.");
+		GLOG(Log::eFatal, "DynamicAllocator::Create() Cannot allocate enough memory for dynamic allocator.");
 		return false;
 	}
 
@@ -78,15 +78,15 @@ void* DynamicAllocator::AllocateAligned(size_t size, unsigned short alignment) {
 			return (void*)AlignedBlockOffset;
 		}
 		else {
-			LOG_ERROR("DynamicAllocator::AllocateAligned() allocate no blocks of memory large enough to allocate from.");
+			GLOG(Log::eError, "DynamicAllocator::AllocateAligned() allocate no blocks of memory large enough to allocate from.");
 			size_t available = List.GetFreeSpace();
-			LOG_ERROR("Requested size: %llu, Total space available: %llu.", size, available);
+			GLOG(Log::eError, "Requested size: %llu, Total space available: %llu.", size, available);
 			// TODO: Report fragmentation?
 			return nullptr;
 		}
 	}
 
-	LOG_ERROR("Dynamic allocator allocate requires a valid size and alignment.");
+	GLOG(Log::eError, "Dynamic allocator allocate requires a valid size and alignment.");
 	return nullptr;
 }
 
@@ -96,13 +96,13 @@ bool DynamicAllocator::Free(void* block, size_t size) {
 
 bool DynamicAllocator::FreeAligned(void* block) {
 	if (block == nullptr || MemoryBlock == nullptr) {
-		LOG_ERROR("DynamicAllocator::FreeAligned(): Free requires a valid block (0x%p).", block);
+		GLOG(Log::eError, "DynamicAllocator::FreeAligned(): Free requires a valid block (0x%p).", block);
 		return false;
 	}
 
 	void* EndOfBlock = (void*)((size_t)MemoryBlock + TotalSize);
 	if (block < MemoryBlock || block > EndOfBlock) {
-		LOG_ERROR("DynamicAllocator::FreeAligned(): Trying to release block (0x%p) outside of allocator range (0x%p)-(0x%p). Sub size: %uul, Total size: %uul.",
+		GLOG(Log::eError, "DynamicAllocator::FreeAligned(): Trying to release block (0x%p) outside of allocator range (0x%p)-(0x%p). Sub size: %uul, Total size: %uul.",
 			block, MemoryBlock, EndOfBlock, (size_t)block - (size_t)MemoryBlock, TotalSize);
 		return false;
 	}
@@ -113,7 +113,7 @@ bool DynamicAllocator::FreeAligned(void* block) {
 	size_t Offset = (size_t)Header->start - (size_t)MemoryBlock;
 
 	if (!List.FreeBlock(RequiredSize, Offset)) {
-		LOG_ERROR("DynamicAllocator::FreeAligned(): Free failed.");
+		GLOG(Log::eError, "DynamicAllocator::FreeAligned(): Free failed.");
 		return false;
 	}
 

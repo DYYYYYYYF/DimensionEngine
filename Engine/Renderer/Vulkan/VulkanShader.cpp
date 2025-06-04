@@ -7,7 +7,7 @@
 
 bool VulkanShader::Initialize() {
 	if (Renderer == nullptr) {
-		LOG_ERROR("VulkanShader::Initialize Falied. Renderer ptr is nullptr please offer a valued ptr in construction.");
+		GLOG(Log::eError, "VulkanShader::Initialize Falied. Renderer ptr is nullptr please offer a valued ptr in construction.");
 		return false;
 	}
 
@@ -64,17 +64,17 @@ bool VulkanShader::Initialize() {
 	}
 
 	if (!CompileShaderFile()) {
-		LOG_ERROR("VulkanShader::Reload: compile shader failed for shader '%s'.", Name.c_str());
+		GLOG(Log::eError, "VulkanShader::Reload: compile shader failed for shader '%s'.", Name.c_str());
 		return false;
 	}
 
 	if (!CreateModule()) {
-		LOG_ERROR("VulkanShader::Initialize: create shader module failed for shader '%s'.", Name.c_str());
+		GLOG(Log::eError, "VulkanShader::Initialize: create shader module failed for shader '%s'.", Name.c_str());
 		return false;
 	}
 
 	if (!CreatePipeline()) {
-		LOG_ERROR("VulkanShader::Initialize: create pipeline failed for shader '%s'.", Name.c_str());
+		GLOG(Log::eError, "VulkanShader::Initialize: create pipeline failed for shader '%s'.", Name.c_str());
 		return false;
 	}
 
@@ -83,7 +83,7 @@ bool VulkanShader::Initialize() {
 
 bool VulkanShader::Reload() {
 	if (Renderer == nullptr) {
-		LOG_ERROR("VulkanShader::Initialize Falied. Renderer ptr is nullptr please offer a valued ptr in construction.");
+		GLOG(Log::eError, "VulkanShader::Initialize Falied. Renderer ptr is nullptr please offer a valued ptr in construction.");
 		return false;
 	}
 
@@ -121,17 +121,17 @@ bool VulkanShader::Reload() {
 	}
 
 	if (!CompileShaderFile()) {
-		LOG_ERROR("VulkanShader::Reload: compile shader failed for shader '%s'.", Name.c_str());
+		GLOG(Log::eError, "VulkanShader::Reload: compile shader failed for shader '%s'.", Name.c_str());
 		return false;
 	}
 
 	if (!CreateModule()) {
-		LOG_ERROR("VulkanShader::Reload: create shader module failed for shader '%s'.", Name.c_str());
+		GLOG(Log::eError, "VulkanShader::Reload: create shader module failed for shader '%s'.", Name.c_str());
 		return false;
 	}
 
 	if (!CreatePipeline()) {
-		LOG_ERROR("VulkanShader::Reload: create pipeline failed for shader '%s'.", Name.c_str());
+		GLOG(Log::eError, "VulkanShader::Reload: create pipeline failed for shader '%s'.", Name.c_str());
 		return false;
 	}
 
@@ -203,7 +203,7 @@ bool VulkanShader::CreateModule() {
 
 		Resource BinaryResource;
 		if (!ResourceSystem::Load(vkShaderStageConfig.filename, ResourceType::eResource_type_Binary, nullptr, &BinaryResource)) {
-			LOG_ERROR("Unable to create %s shader module for '%s'. Shader will be destroyed.", vkShaderStageConfig.filename, Name.c_str());
+			GLOG(Log::eError, "Unable to create %s shader module for '%s'. Shader will be destroyed.", vkShaderStageConfig.filename, Name.c_str());
 			return false;
 		}
 
@@ -295,7 +295,7 @@ std::vector<uint32_t> VulkanShader::CompileShaderFile(const std::string& filenam
 		break;
 	}
 
-	LOG_WARN("Compile shader file %s...", ShaderSourceFilename.c_str());
+	GLOG(Log::eWarn, "Compile shader file %s...", ShaderSourceFilename.c_str());
 
 	File ShaderSource(ShaderSourceFilename);
 	std::string Content = ShaderSource.ReadBytes();
@@ -313,7 +313,7 @@ std::vector<uint32_t> VulkanShader::CompileShaderFile(const std::string& filenam
 
 	if (module.GetCompilationStatus() !=
 		shaderc_compilation_status_success) {
-		LOG_ERROR("Compile shader %s failed.\n\
+		GLOG(Log::eError, "Compile shader %s failed.\n\
 			Error msg: %s",
 			Name.c_str(),
 			module.GetErrorMessage().c_str()
@@ -391,7 +391,7 @@ bool VulkanShader::CreatePipeline() {
 	PipelineConfig.push_constant_ranges = PushConstantsRanges;
 
 	if (!Pipeline.Create(&Context, PipelineConfig)) {
-		LOG_ERROR("Failed to load graphics pipeline for object shader.");
+		GLOG(Log::eError, "Failed to load graphics pipeline for object shader.");
 		return false;
 	}
 
@@ -407,14 +407,14 @@ bool VulkanShader::CreatePipeline() {
 	// TODO: max count should be configurable, or perhaps long term support of buffer resizing.
 	size_t TotalBufferSize = GlobalUboStride + (UboStride * VULKAN_MAX_MATERIAL_COUNT);
 	if (!vkRenderer->CreateRenderbuffer(RenderbufferType::eRenderbuffer_Type_Uniform, TotalBufferSize, true, &UniformBuffer)) {
-		LOG_ERROR("Vulkan buffer creation failed for object shader.");
+		GLOG(Log::eError, "Vulkan buffer creation failed for object shader.");
 		return false;
 	}
 	vkRenderer->BindRenderbuffer(&UniformBuffer, 0);
 
 	// Allocate space for the global UBO, which should occupy the _stride_ space, _not_ the actual size used.
 	if (!vkRenderer->AllocateRenderbuffer(&UniformBuffer, GlobalUboStride, &GlobalUboOffset)) {
-		LOG_ERROR("Failed to allocate space for the uniform buffer!");
+		GLOG(Log::eError, "Failed to allocate space for the uniform buffer!");
 		return false;
 	}
 
@@ -439,7 +439,7 @@ bool VulkanShader::CreatePipeline() {
 		.setPSetLayouts(GlobalLayouts);
 	if (LogicalDevice.allocateDescriptorSets(&AllocInfo, GlobalDescriptorSets)
 		!= vk::Result::eSuccess) {
-		LOG_ERROR("Allocate descriptor sets failed.");
+		GLOG(Log::eError, "Allocate descriptor sets failed.");
 		return false;
 	}
 

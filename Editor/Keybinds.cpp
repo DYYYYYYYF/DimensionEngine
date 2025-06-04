@@ -172,14 +172,14 @@ void GameOnPrintMemory(eKeys key, KeymapEntryBindType type, KeymapModifierFlags 
 	AllocCount = Memory::GetAllocateCount();
 	size_t UsedMemory = AllocCount - PrevAllocCount;
 	char* Usage = Memory::GetMemoryUsageStr();
-	LOG_INFO(Usage);
+	GLOG(Log::eInfo, Usage);
 
 	size_t Size = 0;
 	unsigned short  Alignment = 0;
 	if (Memory::GetAlignmentSize(Usage, &Size, &Alignment)) {
 		Memory::FreeAligned(Usage, Size, Alignment, MemoryType::eMemory_Type_String);
 	}
-	LOG_DEBUG("Allocations: %llu (%llu this frame)", AllocCount, UsedMemory);
+	GLOG(Log::eDebug, "Allocations: %llu (%llu this frame)", AllocCount, UsedMemory);
 }
 
 void GameOnLoadScene(eKeys key, KeymapEntryBindType type, KeymapModifierFlags modifiers, void* user_data) {
@@ -229,7 +229,7 @@ void GameOnConsoleScroll(eKeys key, KeymapEntryBindType type, KeymapModifierFlag
 void GameOnConsoleScrollHold(eKeys key, KeymapEntryBindType type, KeymapModifierFlags modifiers, void* user_data) {
 	GameInstance* GameInst = (GameInstance*)user_data;
 	if (GameInst == nullptr) {
-		LOG_ERROR("Keybind::Setup() Invalid game pointer.");
+		GLOG(Log::eError, "Keybind::Setup() Invalid game pointer.");
 		return;
 	}
 
@@ -250,7 +250,7 @@ void GameOnConsoleScrollHold(eKeys key, KeymapEntryBindType type, KeymapModifier
 void Keybind::Setup(IGame* game) {
 	GameInstance* GameInst = (GameInstance*)game;
 	if (GameInst == nullptr) {
-		LOG_ERROR("Keybind::Setup() Invalid game pointer.");
+		GLOG(Log::eError, "Keybind::Setup() Invalid game pointer.");
 		return;
 	}
 

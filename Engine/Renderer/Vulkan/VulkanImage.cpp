@@ -49,7 +49,7 @@ void VulkanImage::CreateImage(VulkanContext* context, TextureType type, uint32_t
 	MemoryRequirements = LogicalDevice.getImageMemoryRequirements(Image);
 	uint32_t MemoryType = context->FindMemoryIndex(MemoryRequirements.memoryTypeBits, MemoryFlags);
 	if (MemoryType == -1) {
-		LOG_ERROR("Required memory type not found. Image not vaild.");
+		GLOG(Log::eError, "Required memory type not found. Image not vaild.");
 	}
 
 	// Allocate memory
@@ -182,7 +182,7 @@ void VulkanImage::TransitionLayout(VulkanContext* context, TextureType type, Vul
 		DstStage = vk::PipelineStageFlagBits::eFragmentShader;
 	}
 	else {
-		LOG_FATAL("Unsupported layout transition!");
+		GLOG(Log::eFatal, "Unsupported layout transition!");
 		return;
 	}
 

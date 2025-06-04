@@ -20,13 +20,13 @@ void Mesh::LoadJobSuccess(void* params) {
 	}
 	MeshParams->out_mesh->Generation++;
 
-	LOG_INFO("Successfully loaded mesh: '%s'.", MeshParams->resource_name.c_str());
+	GLOG(Log::eInfo, "Successfully loaded mesh: '%s'.", MeshParams->resource_name.c_str());
 	ResourceSystem::Unload(&MeshParams->mesh_resource);
 }
 
 void Mesh::LoadJobFail(void* params) {
 	MeshLoadParams* MeshParams = (MeshLoadParams*)params;
-	LOG_ERROR("Failed to load mesh: '%s'.", MeshParams->resource_name.c_str());
+	GLOG(Log::eError, "Failed to load mesh: '%s'.", MeshParams->resource_name.c_str());
 	ResourceSystem::Unload(&MeshParams->mesh_resource);
 }
 

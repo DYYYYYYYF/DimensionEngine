@@ -15,9 +15,9 @@ void GameOnCompilerShader(CommandContext cmd) {
             args += cmd.Arguments[i];
         }
         
-        LOG_INFO("Please complete 'GameOnCompilerShader' method. Arguments: %s.", args.c_str());
+        GLOG(Log::eInfo, "Please complete 'GameOnCompilerShader' method. Arguments: %s.", args.c_str());
     } else {
-        LOG_INFO("Please complete 'GameOnCompilerShader' method.");
+        GLOG(Log::eInfo, "Please complete 'GameOnCompilerShader' method.");
     }
 	
 	// Reload

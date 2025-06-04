@@ -21,12 +21,12 @@ std::unordered_map<std::string, uint32_t> RenderViewSystem::RegisteredViewMap;
 
 bool RenderViewSystem::Initialize(IRenderer* renderer, SRenderViewSystemConfig config) {
 	if (renderer == nullptr) {
-		LOG_FATAL("RenderViewSystem::Initialize() Invalid renderer pointer.");
+		GLOG(Log::eFatal, "RenderViewSystem::Initialize() Invalid renderer pointer.");
 		return false;
 	}
 
 	if (config.max_view_count == 0) {
-		LOG_FATAL("RenderViewSystem::Initialize() Config.max_view_count must be > 0.");
+		GLOG(Log::eFatal, "RenderViewSystem::Initialize() Config.max_view_count must be > 0.");
 		return false;
 	}
 
@@ -68,18 +68,18 @@ void RenderViewSystem::Shutdown() {
 
 bool RenderViewSystem::Create(const RenderViewConfig& config) {
 	if (config.pass_count < 1) {
-		LOG_ERROR("RenderViewSystem::Create() Renderpass count is zero.");
+		GLOG(Log::eError, "RenderViewSystem::Create() Renderpass count is zero.");
 		return false;
 	}
 
 	if (!config.name || strlen(config.name) < 1) {
-		LOG_ERROR("RenderViewSystem::Create() name is required.");
+		GLOG(Log::eError, "RenderViewSystem::Create() name is required.");
 		return false;
 	}
 
 	unsigned short ID = INVALID_ID_U16;
 	if (RegisteredViewMap.find(config.name) != RegisteredViewMap.end()){
-		LOG_ERROR("RenderViewSystem::Create() A view named '%s' already exists. A new one will not be created.", config.name);
+		GLOG(Log::eError, "RenderViewSystem::Create() A view named '%s' already exists. A new one will not be created.", config.name);
 		return false;
 	}
 
@@ -93,7 +93,7 @@ bool RenderViewSystem::Create(const RenderViewConfig& config) {
 
 	// Make sure id was valid.
 	if (ID == INVALID_ID_U16) {
-		LOG_ERROR("RenderViewSystem::Create() No available space for a new view. Change system config to account for more.");
+		GLOG(Log::eError, "RenderViewSystem::Create() No available space for a new view. Change system config to account for more.");
 		return false;
 	}
 
@@ -119,7 +119,7 @@ bool RenderViewSystem::Create(const RenderViewConfig& config) {
 
 	for (uint32_t i = 0; i < View->RenderpassCount; ++i) {
 		if (!Renderer->CreateRenderpass(&View->Passes[i], config.passes[i])) {
-			LOG_FATAL("RenderViewSystem::Create() Renderpass not found: '%s'.", config.passes[i].name);
+			GLOG(Log::eFatal, "RenderViewSystem::Create() Renderpass not found: '%s'.", config.passes[i].name);
 			return false;
 		}
 	}
@@ -155,13 +155,13 @@ void RenderViewSystem::RegenerateRendertargets(IRenderView* view) {
 						Attachment->texture = Renderer->GetDepthAttachment(i);
 					}
 					else {
-						LOG_FATAL("Unsupported attachment type: 0x%x", Attachment->type);
+						GLOG(Log::eFatal, "Unsupported attachment type: 0x%x", Attachment->type);
 						continue;
 					}
 				}
 				else if (Attachment->source == RenderTargetAttachmentSource::eRender_Target_Attachment_Source_View) {
 					if (!view->RegenerateAttachmentTarget((uint32_t)r, Attachment)) {
-						LOG_ERROR("View failed to regenerate attachment target for attachment type: 0x%x.", Attachment->type);
+						GLOG(Log::eError, "View failed to regenerate attachment target for attachment type: 0x%x.", Attachment->type);
 					}
 				}
 			}
@@ -186,7 +186,7 @@ void RenderViewSystem::OnWindowResize(uint32_t width, uint32_t height) {
 IRenderView* RenderViewSystem::Get(const std::string& name) {
 	if (Initialized) {
 		if (RegisteredViewMap.find(name) == RegisteredViewMap.end()){
-			LOG_WARN("Can not find render view '%s', return nullptr.", name.c_str());
+			GLOG(Log::eWarn, "Can not find render view '%s', return nullptr.", name.c_str());
 			return nullptr;
 		}
 
@@ -197,7 +197,7 @@ IRenderView* RenderViewSystem::Get(const std::string& name) {
 		}
 	}
 
-	LOG_ERROR("RenderViewSystem::Get() Acquire renderview beform renderview system initialize.");
+	GLOG(Log::eError, "RenderViewSystem::Get() Acquire renderview beform renderview system initialize.");
 	return nullptr;
 }
 

@@ -16,21 +16,21 @@ bool AudioEngine::Initalize() {
 	// 创建 OpenAL 设备
 	aDevice = alcOpenDevice(nullptr); // nullptr 表示使用默认设备
 	if (!aDevice) {
-		LOG_ERROR("Failed to open OpenAL device");
+		GLOG(Log::eError, "Failed to open OpenAL device");
 		return false;
 	}
 
 	// 创建 OpenAL 上下文
 	aContext = alcCreateContext(aDevice, nullptr);
 	if (!aContext) {
-		LOG_ERROR("Failed to create OpenAL context");
+		GLOG(Log::eError, "Failed to create OpenAL context");
 		alcCloseDevice(aDevice);
 		return false;
 	}
 
 	// 设置当前上下文
 	if (!alcMakeContextCurrent(aContext)) {
-		LOG_ERROR("Failed to make OpenAL context current");
+		GLOG(Log::eError, "Failed to make OpenAL context current");
 		alcDestroyContext(aContext);
 		alcCloseDevice(aDevice);
 		return false;

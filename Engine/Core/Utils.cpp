@@ -34,7 +34,7 @@ std::vector<uint32_t> Utils::CompileShader(const std::string& file, enum ShaderS
 	shaderc::SpvCompilationResult module = compiler.CompileGlslToSpv(Content, scShadercStage, file.c_str(), options);
 
 	if (module.GetCompilationStatus() != shaderc_compilation_status_success) {
-		LOG_ERROR("Compile shader %s failed.\n\
+		GLOG(Log::eError, "Compile shader %s failed.\n\
 			Error msg: %s",
 			file.c_str(),
 			module.GetErrorMessage().c_str()

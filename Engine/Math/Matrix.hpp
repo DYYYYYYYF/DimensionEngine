@@ -429,7 +429,7 @@ public:
 	* @return A matrix looking at target from the perspective of position.
 	*/
 	static TMatrix4 LookAtLH(const TVector3<T>& position, const TVector3<T>& target, const TVector3<T>& up) {
-		LOG_WARN("Not support LookAtLH yet!");
+		GLOG(Log::eWarn, "Not support LookAtLH yet!");
 		return TMatrix4();
 	}
 
@@ -947,7 +947,7 @@ public:
 
 	TVector4<T> GetColoumn(int i) const {
 		if (i < 1 || i > 4) {
-			LOG_WARN("Invalid matrix boundings. Return Vec4().")
+			GLOG(Log::eWarn, "Invalid matrix boundings. Return Vec4().")
 				return TVector4<T>();
 		}
 
@@ -957,7 +957,7 @@ public:
 
 	TVector4<T> GetRow(int i) const {
 		if (i < 1 || i > 4) {
-			LOG_WARN("Invalid matrix boundings. Return Vec4().")
+			GLOG(Log::eWarn, "Invalid matrix boundings. Return Vec4().")
 				return TVector4<T>(0.0f);
 		}
 

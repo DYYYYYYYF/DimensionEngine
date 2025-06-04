@@ -9,34 +9,34 @@ extern bool CreateGame(IGame* out_game);
 int main(void) {
 
     if (!Memory::Initialize(MEBIBYTES(500))) {
-        LOG_ERROR("Failed to initialize memory system; shuting down.");
+        GLOG(Log::eError, "Failed to initialize memory system; shuting down.");
         return 0;
     }
 
     IGame* GameInst = NewObject<GameInstance>();
     if (GameInst == nullptr) {
-		LOG_FATAL("Could not allocate memory for Game!");
+		GLOG(Log::eFatal, "Could not allocate memory for Game!");
 		return -2;
     }
 
 	if (!CreateGame(GameInst)) {
-		LOG_FATAL("Could not Create Game!");
+		GLOG(Log::eFatal, "Could not Create Game!");
 		return -1;
 	}
 
     Engine* CoreEngine = NewObject<Engine>(GameInst);
 	if (CoreEngine == nullptr) {
-		LOG_FATAL("Could not allocate memory for Application!");
+		GLOG(Log::eFatal, "Could not allocate memory for Application!");
 		return 0;
 	}
 
     if (!CoreEngine->Initialize()) {
-		LOG_INFO("Application did not initialize gracefully!");
+		GLOG(Log::eInfo, "Application did not initialize gracefully!");
 		return 1;
     }
 
     if (!CoreEngine->Run()) {
-        LOG_INFO("Application did not shutdown gracefully!");
+        GLOG(Log::eInfo, "Application did not shutdown gracefully!");
         return 2;
     }
 

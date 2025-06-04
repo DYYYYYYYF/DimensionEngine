@@ -12,7 +12,7 @@ JSONReader::JSONReader(const std::string& filepath) {
 
 	FILE* fp = fopen(filepath.c_str(), "r");
 	if (!fp) {
-		LOG_WARN("Can not open json file: %s", filepath.c_str());
+		GLOG(Log::eWarn, "Can not open json file: %s", filepath.c_str());
 		return;
 	}
 
@@ -26,7 +26,7 @@ JSONReader::JSONReader(const std::string& filepath) {
 
 	// 检查解析结果
 	if (Context.HasParseError()) {
-		LOG_WARN("Can not open json file: %s", filepath.c_str());
+		GLOG(Log::eWarn, "Can not open json file: %s", filepath.c_str());
 		return;
 	}
 
@@ -71,7 +71,7 @@ void JSONReader::SetPropertyString(const std::string& key, const std::string& va
 	std::vector<std::string> Keys = SplitPath(key);
 	rapidjson::Value NewVal(val.c_str(), (rapidjson::SizeType)val.length());
 	if (!ModifyJSONValueByPath(Context, Keys, NewVal, Context.GetAllocator())) {
-		LOG_ERROR("Modify property failed. property: %s. file: %s.", key.c_str(), Filename.c_str());
+		GLOG(Log::eError, "Modify property failed. property: %s. file: %s.", key.c_str(), Filename.c_str());
 	}
 
 	// 将修改后的 JSON 转换为字符串
@@ -256,7 +256,7 @@ std::vector<std::string> JSONReader::SplitPath(const std::string& key) {
 void JSONReader::SaveFile() {
 	FILE* fp = fopen(Filename.c_str(), "w");
 	if (!fp) {
-		LOG_WARN("Can not open json file: %s", Filename.c_str());
+		GLOG(Log::eWarn, "Can not open json file: %s", Filename.c_str());
 		return;
 	}
 
@@ -287,7 +287,7 @@ bool JSONReader::ModifyJSONValueByPath(rapidjson::Value& node, const std::vector
 				return true;
 			}
 			else {
-				LOG_ERROR("Index out of range for array: %s", arrayKey.c_str());
+				GLOG(Log::eError, "Index out of range for array: %s", arrayKey.c_str());
 				return false;
 			}
 		}
@@ -314,7 +314,7 @@ bool JSONReader::ModifyJSONValueByPath(rapidjson::Value& node, const std::vector
 bool JSONReader::AddJSONValueByPath(rapidjson::Value& node, const std::vector<std::string>& keys,
 	const rapidjson::Value& val, rapidjson::Document::AllocatorType& allocator) {
 	if (keys.empty()) {
-		LOG_ERROR("QueryJSONValue: Path is empty!");
+		GLOG(Log::eError, "QueryJSONValue: Path is empty!");
 		return false;
 	}
 
@@ -359,6 +359,6 @@ bool JSONReader::AddJSONValueByPath(rapidjson::Value& node, const std::vector<st
 		return AddJSONValueByPath(node[currentKey.c_str()], remainingKeys, val, allocator);
 	}
 
-	LOG_ERROR("Add property failed: %s.", currentKey);
+	GLOG(Log::eError, "Add property failed: %s.", currentKey);
 	return false;
 }

@@ -12,7 +12,7 @@ void* VulkanAllocator::Allocation(void* user_data, size_t size, size_t alignment
 
 	void* Result = Memory::AllocateAligned(size, (unsigned short)alignment, MemoryType::eMemory_Type_Vulkan);
 #ifdef DVULKAN_ALLOCATOR_TRACE
-	LOG_INFO("Allocated block %p. Size=%llu, Alignment=%llu.", Result, size, alignment);
+	GLOG(Log::eInfo, "Allocated block %p. Size=%llu, Alignment=%llu.", Result, size, alignment);
 #endif
 	return Result;
 }
@@ -20,25 +20,25 @@ void* VulkanAllocator::Allocation(void* user_data, size_t size, size_t alignment
 void VulkanAllocator::Free(void* user_date, void* memory) {
 	if (memory == nullptr) {
 #ifdef DVULKAN_ALLOCATOR_TRACE
-		LOG_INFO("Block is nullptr, nothing to free: %p.", memory);
+		GLOG(Log::eInfo, "Block is nullptr, nothing to free: %p.", memory);
 #endif
 		return;
 	}
 
 #ifdef DVULKAN_ALLOCATOR_TRACE
-	LOG_INFO("Attempting to free block %p.", memory);
+	GLOG(Log::eInfo, "Attempting to free block %p.", memory);
 #endif
 	size_t size;
 	unsigned short alignment;
 	bool Result = Memory::GetAlignmentSize(memory, &size, &alignment);
 	if (Result) {
 #ifdef DVULKAN_ALLOCATOR_TRACE
-		LOG_INFO("Block %p found with size/alignment: %llu/%llu. Freeing aligned block.", memory, size, alignment);
+		GLOG(Log::eInfo, "Block %p found with size/alignment: %llu/%llu. Freeing aligned block.", memory, size, alignment);
 #endif
 		Memory::FreeAligned(memory, size, alignment, MemoryType::eMemory_Type_Vulkan);
 	}
 	else {
-		LOG_ERROR("VulkanAllocFree failed to get alignment lookup for block %p.", memory);
+		GLOG(Log::eError, "VulkanAllocFree failed to get alignment lookup for block %p.", memory);
 	}
 }
 
@@ -56,36 +56,36 @@ void* VulkanAllocator::Reallocation(void* user_data, void* original, size_t size
 	unsigned short alloc_alignment;
 	bool IsAligned = Memory::GetAlignmentSize(original, &alloc_size, &alloc_alignment);
 	if (!IsAligned) {
-		LOG_ERROR("VulkanAllocReallocation of unaligned block %p.", original);
+		GLOG(Log::eError, "VulkanAllocReallocation of unaligned block %p.", original);
 		return nullptr;
 	}
 
 	if (alloc_alignment != alignment) {
-		LOG_ERROR("Attemp to realloc using a different alignment of %llu than the original of %hu.", alignment, alloc_alignment);
+		GLOG(Log::eError, "Attemp to realloc using a different alignment of %llu than the original of %hu.", alignment, alloc_alignment);
 		return nullptr;
 	}
 
 #ifdef DVULKAN_ALLOCATOR_TRACE
-	LOG_INFO("Attempting to realloc block %p.", original);
+	GLOG(Log::eInfo, "Attempting to realloc block %p.", original);
 #endif
 
 	void* Result = Allocation(user_data, size, alloc_alignment, allocation_scope);
 	if (Result) {
 #ifdef DVULKAN_ALLOCATOR_TRACE
-		LOG_INFO("Block %p reallocated to %p, copying data.", original, Result);
+		GLOG(Log::eInfo, "Block %p reallocated to %p, copying data.", original, Result);
 #endif
 
 		// Copy over the original memory.
 		Memory::Copy(Result, original, size);
 #ifdef DVULKAN_ALLOCATOR_TRACE
-		LOG_INFO("Freeing original aligned block %p.", original);
+		GLOG(Log::eInfo, "Freeing original aligned block %p.", original);
 #endif
 		// Free the original memory only if the new allocation was successful.
 		Memory::FreeAligned(original, alloc_size, alloc_alignment, MemoryType::eMemory_Type_Vulkan);
 	}
 	else {
 #ifdef DVULKAN_ALLOCATOR_TRACE
-		LOG_ERROR("Failed to realloc %p.", original);
+		GLOG(Log::eError, "Failed to realloc %p.", original);
 #endif
 	}
 
@@ -94,14 +94,14 @@ void* VulkanAllocator::Reallocation(void* user_data, void* original, size_t size
 
 void VulkanAllocator::InternalAlloc(void* pUserData, size_t size, VkInternalAllocationType allocationType, VkSystemAllocationScope allocationScope) {
 #ifdef DVULKAN_ALLOCATOR_TRACE
-	LOG_INFO("External allocation of size: %llu.", size);
+	GLOG(Log::eInfo, "External allocation of size: %llu.", size);
 #endif
 	Memory::AllocateReport(size, MemoryType::eMemory_Type_Vulkan_EXT);
 }
 
 void VulkanAllocator::InternalFree(void* pUserData, size_t size, VkInternalAllocationType allocationType, VkSystemAllocationScope allocationScope) {
 #ifdef DVULKAN_ALLOCATOR_TRACE
-	LOG_INFO("External free of size: %llu.", size);
+	GLOG(Log::eInfo, "External free of size: %llu.", size);
 #endif
 	Memory::FreeReport(size, MemoryType::eMemory_Type_Vulkan_EXT);
 }

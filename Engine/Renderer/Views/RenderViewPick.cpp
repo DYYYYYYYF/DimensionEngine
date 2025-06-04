@@ -55,14 +55,14 @@ void RenderViewPick::AcquireShaderInstance() {
 	// UI Shader.
 	uint32_t Instance = Renderer->AcquireInstanceResource(UIShaderInfo.UsedShader, std::vector<TextureMap*>());
 	if (Instance == INVALID_ID) {
-		LOG_ERROR("Failed to acquire shader resource.");
+		GLOG(Log::eError, "Failed to acquire shader resource.");
 		return;
 	}
 
 	// World Shader.
 	Instance = Renderer->AcquireInstanceResource(WorldShaderInfo.UsedShader, std::vector<TextureMap*>());
 	if (Instance == INVALID_ID) {
-		LOG_ERROR("Failed to acquire shader resource.");
+		GLOG(Log::eError, "Failed to acquire shader resource.");
 		return;
 	}
 
@@ -74,12 +74,12 @@ void RenderViewPick::ReleaseShaderInstance() {
 	for (int i = 0; i < InstanceCount; ++i) {
 		// UI Shader
 		if (!Renderer->ReleaseInstanceResource(UIShaderInfo.UsedShader, i)) {
-			LOG_ERROR("Failed to release shader resource.");
+			GLOG(Log::eError, "Failed to release shader resource.");
 		}
 
 		// UI Shader
 		if (!Renderer->ReleaseInstanceResource(WorldShaderInfo.UsedShader, i)) {
-			LOG_ERROR("Failed to release shader resource.");
+			GLOG(Log::eError, "Failed to release shader resource.");
 		}
 	}
 
@@ -105,12 +105,12 @@ bool RenderViewPick::OnCreate(const RenderViewConfig& config) {
 	const char* UIShaderName = "Shader.Builtin.UIPick";
 	Resource ConfigResource;
 	if (!ResourceSystem::Load(UIShaderName, ResourceType::eResource_Type_Shader, nullptr, &ConfigResource)) {
-		LOG_ERROR("Failed to load builtin UI Pick shader.");
+		GLOG(Log::eError, "Failed to load builtin UI Pick shader.");
 		return false;
 	}
 	ShaderConfig* Config = (ShaderConfig*)ConfigResource.Data;
 	if (!ShaderSystem::Create(UIShaderInfo.Pass, Config)) {
-		LOG_ERROR("Failed to load builtin UI Pick shader.");
+		GLOG(Log::eError, "Failed to load builtin UI Pick shader.");
 		return false;
 	}
 	ResourceSystem::Unload(&ConfigResource);
@@ -132,12 +132,12 @@ bool RenderViewPick::OnCreate(const RenderViewConfig& config) {
 	// Builtin World pick shader.
 	const char* WorldShaderName = "Shader.Builtin.WorldPick";
 	if (!ResourceSystem::Load(WorldShaderName, ResourceType::eResource_Type_Shader, nullptr, &ConfigResource)) {
-		LOG_ERROR("Failed to load builtin UI Pick shader.");
+		GLOG(Log::eError, "Failed to load builtin UI Pick shader.");
 		return false;
 	}
 	Config = (ShaderConfig*)ConfigResource.Data;
 	if (!ShaderSystem::Create(WorldShaderInfo.Pass, Config)) {
-		LOG_ERROR("Failed to load builtin UI Pick shader.");
+		GLOG(Log::eError, "Failed to load builtin UI Pick shader.");
 		return false;
 	}
 	ResourceSystem::Unload(&ConfigResource);
@@ -162,16 +162,16 @@ bool RenderViewPick::OnCreate(const RenderViewConfig& config) {
 	Memory::Zero(&DepthTargetAttachment, sizeof(Texture));
 
 	if (!EngineEvent::Register(eEventCode::Mouse_Moved, this, OnMouseMoved)) {
-		LOG_ERROR("Unable to listen for mouse moved event, creation failed.");
+		GLOG(Log::eError, "Unable to listen for mouse moved event, creation failed.");
 		return false;
 	}
 
 	if (!EngineEvent::Register(eEventCode::Default_Rendertarget_Refresh_Required, this, RenderViewPickOnEvent)) {
-		LOG_ERROR("Unable to listen for refresh required event, creation failed.");
+		GLOG(Log::eError, "Unable to listen for refresh required event, creation failed.");
 		return false;
 	}
 
-	LOG_INFO("Renderview pick created.");
+	GLOG(Log::eInfo, "Renderview pick created.");
 	return true;
 }
 
@@ -207,7 +207,7 @@ void RenderViewPick::OnResize(uint32_t width, uint32_t height) {
 
 bool RenderViewPick::OnBuildPacket(IRenderviewPacketData* data, struct RenderViewPacket* out_packet) {
 	if (data == nullptr || out_packet == nullptr) {
-		LOG_WARN("RenderViewUI::OnBuildPacke() Requires valid pointer to packet and data.");
+		GLOG(Log::eWarn, "RenderViewUI::OnBuildPacke() Requires valid pointer to packet and data.");
 		return false;
 	}
 
@@ -305,7 +305,7 @@ bool RenderViewPick::RegenerateAttachmentTarget(uint32_t passIndex, RenderTarget
 		attachment->texture = &DepthTargetAttachment;
 	}
 	else {
-		LOG_ERROR("Unsupported attachment type 0x%x.", attachment->type);
+		GLOG(Log::eError, "Unsupported attachment type 0x%x.", attachment->type);
 		return false;
 	}
 
@@ -364,16 +364,16 @@ bool RenderViewPick::OnRender(struct RenderViewPacket* packet, IRendererBackend*
 
 		// World
 		if (!ShaderSystem::UseByID(WorldShaderInfo.UsedShader->ID)) {
-			LOG_ERROR("Failed to use world pick shader. Render frame failed.");
+			GLOG(Log::eError, "Failed to use world pick shader. Render frame failed.");
 			return false;
 		}
 
 		// Apply globals
 		if (!ShaderSystem::SetUniformByIndex(WorldShaderInfo.ProjectionLocation, &WorldShaderInfo.ProjectionMatrix)) {
-			LOG_ERROR("Failed to apply projection matrix");
+			GLOG(Log::eError, "Failed to apply projection matrix");
 		}
 		if (!ShaderSystem::SetUniformByIndex(WorldShaderInfo.ViewLocation, &WorldShaderInfo.ViewMatrix)) {
-			LOG_ERROR("Failed to apply view matrix");
+			GLOG(Log::eError, "Failed to apply view matrix");
 		}
 		ShaderSystem::ApplyGlobal();
 
@@ -391,7 +391,7 @@ bool RenderViewPick::OnRender(struct RenderViewPacket* packet, IRendererBackend*
 			UInt2RGB(Geo->uniqueID, &R, &G, &B);
 			RGB2Vec(R, G, B, &IDColor);
 			if (!ShaderSystem::SetUniformByIndex(WorldShaderInfo.IDColorLocation, &IDColor)) {
-				LOG_ERROR("Failed to apply id colour uniform.");
+				GLOG(Log::eError, "Failed to apply id colour uniform.");
 				return false;
 			}
 
@@ -401,7 +401,7 @@ bool RenderViewPick::OnRender(struct RenderViewPacket* packet, IRendererBackend*
 
 			// Apply the locals.
 			if (!ShaderSystem::SetUniformByIndex(WorldShaderInfo.ModelLocation, &Geo->model)) {
-				LOG_ERROR("Failed to apply model matrix for world geometry.");
+				GLOG(Log::eError, "Failed to apply model matrix for world geometry.");
 			}
 
 			// Draw
@@ -418,16 +418,16 @@ bool RenderViewPick::OnRender(struct RenderViewPacket* packet, IRendererBackend*
 
 		// UI
 		if (!ShaderSystem::UseByID(UIShaderInfo.UsedShader->ID)) {
-			LOG_ERROR("Failed to use material shader. Render frame failed.");
+			GLOG(Log::eError, "Failed to use material shader. Render frame failed.");
 			return false;
 		}
 
 		// Apply globals.
 		if (!ShaderSystem::SetUniformByIndex(UIShaderInfo.ProjectionLocation, &UIShaderInfo.ProjectionMatrix)) {
-			LOG_ERROR("Failed to apply projection matrix");
+			GLOG(Log::eError, "Failed to apply projection matrix");
 		}
 		if (!ShaderSystem::SetUniformByIndex(UIShaderInfo.ViewLocation, &UIShaderInfo.ViewMatrix)) {
-			LOG_ERROR("Failed to apply view matrix");
+			GLOG(Log::eError, "Failed to apply view matrix");
 		}
 		ShaderSystem::ApplyGlobal();
 
@@ -444,7 +444,7 @@ bool RenderViewPick::OnRender(struct RenderViewPacket* packet, IRendererBackend*
 			UInt2RGB(Geo->uniqueID, &R, &G, &B);
 			RGB2Vec(R, G, B, &IDColor);
 			if (!ShaderSystem::SetUniformByIndex(WorldShaderInfo.IDColorLocation, &IDColor)) {
-				LOG_ERROR("Failed to apply id colour uniform.");
+				GLOG(Log::eError, "Failed to apply id colour uniform.");
 				return false;
 			}
 
@@ -454,7 +454,7 @@ bool RenderViewPick::OnRender(struct RenderViewPacket* packet, IRendererBackend*
 
 			// Apply the locals.
 			if (!ShaderSystem::SetUniformByIndex(WorldShaderInfo.ModelLocation, &Geo->model)) {
-				LOG_ERROR("Failed to apply model matrix for world geometry.");
+				GLOG(Log::eError, "Failed to apply model matrix for world geometry.");
 			}
 
 			// Draw
@@ -473,7 +473,7 @@ bool RenderViewPick::OnRender(struct RenderViewPacket* packet, IRendererBackend*
 			UInt2RGB(Text->GetUniqueID(), &R, &G, &B);
 			RGB2Vec(R, G, B, &IDColor);
 			if (!ShaderSystem::SetUniformByIndex(UIShaderInfo.IDColorLocation, &IDColor)) {
-				LOG_ERROR("Failed to apply id colour uniform.");
+				GLOG(Log::eError, "Failed to apply id colour uniform.");
 				return false;
 			}
 
@@ -482,7 +482,7 @@ bool RenderViewPick::OnRender(struct RenderViewPacket* packet, IRendererBackend*
 			// Apply the locals.
 			Matrix4 Model = Text->GetLocalTransform();
 			if (!ShaderSystem::SetUniformByIndex(UIShaderInfo.ModelLocation, &Model)) {
-				LOG_ERROR("Failde to apply model matrix for text.");
+				GLOG(Log::eError, "Failde to apply model matrix for text.");
 			}
 
 			Text->Draw();

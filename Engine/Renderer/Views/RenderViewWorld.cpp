@@ -46,22 +46,22 @@ static bool RenderViewWorldOnEvent(eEventCode code, void* sender, void* listener
 		{
 		case ShaderRenderMode::eShader_Render_Mode_Default:
 			self->render_mode = ShaderRenderMode::eShader_Render_Mode_Default;
-			LOG_DEBUG("Change render mode: eShader_Render_Mode_Default.");
+			GLOG(Log::eDebug, "Change render mode: eShader_Render_Mode_Default.");
 			break;
 
 		case ShaderRenderMode::eShader_Render_Mode_Lighting:
 			self->render_mode = ShaderRenderMode::eShader_Render_Mode_Lighting;
-			LOG_DEBUG("Change render mode: eShader_Render_Mode_Lighting.");
+			GLOG(Log::eDebug, "Change render mode: eShader_Render_Mode_Lighting.");
 			break;
 
 		case ShaderRenderMode::eShader_Render_Mode_Normals:
 			self->render_mode = ShaderRenderMode::eShader_Render_Mode_Normals;
-			LOG_DEBUG("Change render mode: eShader_Render_Mode_Normals.");
+			GLOG(Log::eDebug, "Change render mode: eShader_Render_Mode_Normals.");
 			break;
 
 		case ShaderRenderMode::eShader_Render_Mode_Depth:
 			self->render_mode = ShaderRenderMode::eShader_Render_Mode_Depth;
-			LOG_DEBUG("Change render mode: eShader_Render_Mode_Depth.");
+			GLOG(Log::eDebug, "Change render mode: eShader_Render_Mode_Depth.");
 			break;
 		}
 
@@ -91,14 +91,14 @@ bool RenderViewWorld::OnCreate(const RenderViewConfig& config) {
 	const char* ShaderName = "Shader.Builtin.World";
 	Resource ConfigResource;
 	if (!ResourceSystem::Load(ShaderName, ResourceType::eResource_Type_Shader, nullptr, &ConfigResource)) {
-		LOG_ERROR("Failed to load builtin skybox shader.");
+		GLOG(Log::eError, "Failed to load builtin skybox shader.");
 		return false;
 	}
 
 	ShaderConfig* Config = (ShaderConfig*)ConfigResource.Data;
 	// NOTE: Assuming the first pass since that's all this view has.
 	if (!ShaderSystem::Create(&Passes[0], Config)) {
-		LOG_ERROR("Failed to load builtin world shader.");
+		GLOG(Log::eError, "Failed to load builtin world shader.");
 		return false;
 	}
 	ResourceSystem::Unload(&ConfigResource);
@@ -118,15 +118,15 @@ bool RenderViewWorld::OnCreate(const RenderViewConfig& config) {
 	AmbientColor = Vector4(0.7f, 0.7f, 0.7f, 1.0f);
 
 	if (!EngineEvent::Register(eEventCode::Default_Rendertarget_Refresh_Required, this, RenderViewWorldOnEvent)) {
-		LOG_ERROR("Unable to listen for refresh required event, creation failed.");
+		GLOG(Log::eError, "Unable to listen for refresh required event, creation failed.");
 		return false;
 	}
 	if (!EngineEvent::Register(eEventCode::Set_Render_Mode, this, RenderViewWorldOnEvent)) {
-		LOG_ERROR("Unable to listen for refresh required event, creation failed.");
+		GLOG(Log::eError, "Unable to listen for refresh required event, creation failed.");
 		return false;
 	}
 	
-	LOG_INFO("Renderview world created.");
+	GLOG(Log::eInfo, "Renderview world created.");
 	return true;
 }
 
@@ -152,7 +152,7 @@ void RenderViewWorld::OnResize(uint32_t width, uint32_t height) {
 
 bool RenderViewWorld::OnBuildPacket(IRenderviewPacketData* data, struct RenderViewPacket* out_packet) {
 	if (data == nullptr || out_packet == nullptr) {
-		LOG_WARN("RenderViewUI::OnBuildPacke() Requires valid pointer to packet and data.");
+		GLOG(Log::eWarn, "RenderViewUI::OnBuildPacke() Requires valid pointer to packet and data.");
 		return false;
 	}
 
@@ -232,13 +232,13 @@ bool RenderViewWorld::OnRender(struct RenderViewPacket* packet, IRendererBackend
 		Pass->Begin(&Pass->Targets[render_target_index]);
 
 		if (!ShaderSystem::UseByID(SID)) {
-			LOG_ERROR("RenderViewUI::OnRender() Failed to use material shader. Render frame failed.");
+			GLOG(Log::eError, "RenderViewUI::OnRender() Failed to use material shader. Render frame failed.");
 			return false;
 		}
 
 		// Apply globals.
 		if (!MaterialSystem::ApplyGlobal(SID, frame_number, packet->projection_matrix, packet->view_matrix, packet->ambient_color, packet->view_position, render_mode, packet->global_time)) {
-			LOG_ERROR("RenderViewUI::OnRender() Failed to use global shader. Render frame failed.");
+			GLOG(Log::eError, "RenderViewUI::OnRender() Failed to use global shader. Render frame failed.");
 			return false;
 		}
 
@@ -259,7 +259,7 @@ bool RenderViewWorld::OnRender(struct RenderViewPacket* packet, IRendererBackend
 			// updates the internal shader bindings and binds them, or only binds them.
 			bool IsNeedUpdate = Mat->RenderFrameNumer != frame_number;
 			if (!MaterialSystem::ApplyInstance(Mat, IsNeedUpdate)) {
-				LOG_WARN("Failed to apply material '%s'. Skipping draw.", Mat->Name.c_str());
+				GLOG(Log::eWarn, "Failed to apply material '%s'. Skipping draw.", Mat->Name.c_str());
 				continue;
 			}
 			else {

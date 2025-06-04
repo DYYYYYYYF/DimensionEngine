@@ -45,7 +45,7 @@ bool Console::RegisterCommand(const std::string& cmd, unsigned char arg_count, P
 	uint32_t CommandCount = (uint32_t)RegisteredCommands.size();
 	for (uint32_t i = 0; i < CommandCount; ++i) {
 		if (RegisteredCommands[i].Name.compare(cmd) == 0) {
-			LOG_ERROR("Command already registered: %s.", cmd.c_str());
+			GLOG(Log::eError, "Command already registered: %s.", cmd.c_str());
 			return false;
 		}
 	}
@@ -74,7 +74,7 @@ bool Console::ExecuteCommand(const std::string& cmd) {
 
 	// Write the line back out to the console for reference.
 	std::string Temp = "-->" + cmd;
-	WriteLine(Log::Logger::INFO, Temp);
+	WriteLine(Log::Logger::eINFO, Temp);
 
 	// Strings are slow. But it's a console. It doesn't need to be lightning fast.
 	bool HasError = false;
@@ -86,7 +86,7 @@ bool Console::ExecuteCommand(const std::string& cmd) {
 			CommandFound = true;
 			unsigned char ArgCount = (unsigned char)(Parts.size() - 1);
 			if (Cmd->ArgCount != ArgCount) {
-				LOG_ERROR("The console command '%s' requires %u arguments but %u were provided.", Cmd->Name.c_str(), Cmd->ArgCount, ArgCount);
+				GLOG(Log::eError, "The console command '%s' requires %u arguments but %u were provided.", Cmd->Name.c_str(), Cmd->ArgCount, ArgCount);
                 // TODO: Should handle it inside callback, because it may has default param.
 				// HasError = true;
 			}
@@ -111,7 +111,7 @@ bool Console::ExecuteCommand(const std::string& cmd) {
 	}
 
 	if (!CommandFound) {
-		LOG_ERROR("The command '%s' does not exist.", Parts[0].c_str());
+		GLOG(Log::eError, "The command '%s' does not exist.", Parts[0].c_str());
 		HasError = true;
 	}
 

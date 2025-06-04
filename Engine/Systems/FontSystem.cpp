@@ -47,7 +47,7 @@ bool FontSystem::Initialize(IRenderer* renderer, FontSystemConfig* config){
 	}
 
 	if (config->maxBitmapFontCount == 0 || config->maxSystemFontCount == 0) {
-		LOG_FATAL("FontSystem::Initialize() config->maxBitmapFontCount and config->maxSystemFontCount must be > 0.");
+		GLOG(Log::eFatal, "FontSystem::Initialize() config->maxBitmapFontCount and config->maxSystemFontCount must be > 0.");
 		return false;
 	}
 
@@ -61,14 +61,14 @@ bool FontSystem::Initialize(IRenderer* renderer, FontSystemConfig* config){
 	// Bitmap fonts.
 	for (uint32_t i = 0; i < Config.defaultBitmapFontCount; ++i) {
 		if (!LoadBitmapFont(&Config.bitmapFontConfigs[i])) {
-			LOG_ERROR("Failed to load bitmap font: %s.", Config.bitmapFontConfigs[i].name.c_str());
+			GLOG(Log::eError, "Failed to load bitmap font: %s.", Config.bitmapFontConfigs[i].name.c_str());
 		}
 	}
 
 	// System fonts.
 	for (uint32_t i = 0; i < Config.defaultSystemFontCount; ++i) {
 		if (!LoadSystemFont(&Config.systemFontConfigs[i])) {
-			LOG_ERROR("Failed to load system font: %s.", Config.systemFontConfigs[i].name.c_str());
+			GLOG(Log::eError, "Failed to load system font: %s.", Config.systemFontConfigs[i].name.c_str());
 		}
 	}
 
@@ -111,7 +111,7 @@ bool FontSystem::LoadSystemFont(SystemFontConfig* config){
 	// resource will be released.
 	Resource LoadedResource;
 	if (!ResourceSystem::Load(config->resourceName, ResourceType::eResource_Type_System_Font, nullptr, &LoadedResource)) {
-		LOG_ERROR("Failed to load system font.");
+		GLOG(Log::eError, "Failed to load system font.");
 		return false;
 	}
 
@@ -125,7 +125,7 @@ bool FontSystem::LoadSystemFont(SystemFontConfig* config){
 
 		// Make sure a font with this name doesn't already exist.
 		if (SystemFontMap.find(Face->name) != SystemFontMap.end()) {
-			LOG_WARN("A font named '%s' already exists and will not be loaded again.", config->name.c_str());
+			GLOG(Log::eWarn, "A font named '%s' already exists and will not be loaded again.", config->name.c_str());
 			return true;
 		}
 
@@ -139,7 +139,7 @@ bool FontSystem::LoadSystemFont(SystemFontConfig* config){
 		}
 
 		if (ID == INVALID_ID_U16) {
-			LOG_ERROR("No space left to allocate a new system font. Increase maximum number allowed in font system config.");
+			GLOG(Log::eError, "No space left to allocate a new system font. Increase maximum number allowed in font system config.");
 			return false;
 		}
 
@@ -155,20 +155,20 @@ bool FontSystem::LoadSystemFont(SystemFontConfig* config){
 		int Result = stbtt_InitFont(&Lookup->info, (unsigned char*)Lookup->fontBinary, Lookup->offset);
 		if (Result == 0) {
 			// Zero indicates failure.
-			LOG_ERROR("Failed to init system font %s at index %i.", LoadedResource.FullPath.c_str(), i);
+			GLOG(Log::eError, "Failed to init system font %s at index %i.", LoadedResource.FullPath.c_str(), i);
 			return false;
 		}
 
 		// Create a default size variant.
 		SystemFontVariantData* Variant = CreateSystemFontVariant(Lookup, config->defaultSize, Face->name.c_str());
 		if (!Variant) {
-			LOG_ERROR("Failed to create variant: %s, index %i.", Face->name.c_str(), i);
+			GLOG(Log::eError, "Failed to create variant: %s, index %i.", Face->name.c_str(), i);
 			continue;
 		}
 
 		// Also perform setup for the variant.
 		if (!SetupFontData(Variant)) {
-			LOG_ERROR("Failed to setup font data.");
+			GLOG(Log::eError, "Failed to setup font data.");
 			continue;
 		}
 
@@ -187,7 +187,7 @@ bool FontSystem::LoadSystemFont(SystemFontConfig* config){
 bool FontSystem::LoadBitmapFont(BitmapFontConfig* config) {
 	// Make sure a font with this name doesn't already exist.
 	if (BitmapFontMap.find(config->name) != BitmapFontMap.end()) {
-		LOG_WARN("A font named '%s already exists and will not be loaded again.", config->name.c_str());
+		GLOG(Log::eWarn, "A font named '%s already exists and will not be loaded again.", config->name.c_str());
 		return true;
 	}
 
@@ -201,7 +201,7 @@ bool FontSystem::LoadBitmapFont(BitmapFontConfig* config) {
 	}
 
 	if (ID == INVALID_ID_U16) {
-		LOG_ERROR("No space left to allocate a new bitmap font. Increase maximum number allowed in font system config.");
+		GLOG(Log::eError, "No space left to allocate a new bitmap font. Increase maximum number allowed in font system config.");
 		return false;
 	}
 
@@ -209,7 +209,7 @@ bool FontSystem::LoadBitmapFont(BitmapFontConfig* config) {
 	BitmapFontLookup* Lookup = NewObject<BitmapFontLookup>();
 
 	if (!ResourceSystem::Load(config->resourceName, ResourceType::eResource_Type_Bitmap_Font, nullptr, &Lookup->font.loadedResource)) {
-		LOG_ERROR("Failed to load bitmap font.");
+		GLOG(Log::eError, "Failed to load bitmap font.");
 		return false;
 	}
 
@@ -233,7 +233,7 @@ bool FontSystem::LoadBitmapFont(BitmapFontConfig* config) {
 bool FontSystem::Acquire(const std::string& fontName, unsigned short fontSize, class UIText* text) {
 	if (text->Type == UITextType::eUI_Text_Type_Bitmap) {
 		if (BitmapFontMap.find(fontName) == BitmapFontMap.end()) {
-			LOG_ERROR("A bitmap font named '%s' was not found. Font acquisition failed.", fontName.c_str());
+			GLOG(Log::eError, "A bitmap font named '%s' was not found. Font acquisition failed.", fontName.c_str());
 			return false;
 		}
 
@@ -249,7 +249,7 @@ bool FontSystem::Acquire(const std::string& fontName, unsigned short fontSize, c
 	}
 	else if (text->Type == UITextType::eUI_Text_Type_system) {
 		if (SystemFontMap.find(fontName) == SystemFontMap.end()) {
-			LOG_ERROR("A system font named '%s' was not found. Font acquisition failed.", fontName.c_str());
+			GLOG(Log::eError, "A system font named '%s' was not found. Font acquisition failed.", fontName.c_str());
 			return false;
 		}
 
@@ -271,13 +271,13 @@ bool FontSystem::Acquire(const std::string& fontName, unsigned short fontSize, c
 		// If we reach this point, the size variant doesn't exist. Create it.
 		SystemFontVariantData* Variant = CreateSystemFontVariant(Lookup, fontSize, fontName);
 		if (!Variant) {
-			LOG_ERROR("Failed to create variant: %s, index %i, size %i", Lookup->face, Lookup->index, fontSize);
+			GLOG(Log::eError, "Failed to create variant: %s, index %i, size %i", Lookup->face, Lookup->index, fontSize);
 			return false;
 		}
 
 		// Also perform setup for the variant.
 		if (!SetupFontData(Variant)) {
-			LOG_ERROR("Failed to setup font data.");
+			GLOG(Log::eError, "Failed to setup font data.");
 		}
 
 		// Add to the lookup's size variant.
@@ -290,7 +290,7 @@ bool FontSystem::Acquire(const std::string& fontName, unsigned short fontSize, c
 		return true;
 	}
 
-	LOG_WARN("Unsupported font type.");
+	GLOG(Log::eWarn, "Unsupported font type.");
 	return false;
 }
 
@@ -308,7 +308,7 @@ bool FontSystem::VerifyAtlas(IFontDataBase* font, const std::string& text) {
 	} 
 	else if (font->type == FontType::eFont_Type_System) {
 		if (SystemFontMap.find(font->face) == SystemFontMap.end()){
-			LOG_ERROR("A system font named '%s' was not found. Font acquisition failed.", font->face.c_str());
+			GLOG(Log::eError, "A system font named '%s' was not found. Font acquisition failed.", font->face.c_str());
 			return false;
 		}
 
@@ -319,7 +319,7 @@ bool FontSystem::VerifyAtlas(IFontDataBase* font, const std::string& text) {
 		return VerifySystemFontSizeVariant(Lookup, font, text);
 	}
 
-	LOG_ERROR("FontSystem::VerifyAtlas() Failed: unknown font type.");
+	GLOG(Log::eError, "FontSystem::VerifyAtlas() Failed: unknown font type.");
 	return false;
 }
 
@@ -329,7 +329,7 @@ bool FontSystem::SetupFontData(IFontDataBase* font) {
 	font->atlas.filter_minify = TextureFilter::eTexture_Filter_Mode_Linear;
 	font->atlas.usage = TextureUsage::eTexture_Usage_Map_Diffuse;
 	if (!Renderer->AcquireTextureMap(&font->atlas)) {
-		LOG_ERROR("Unable to acquire resource for font atlas texture map.");
+		GLOG(Log::eError, "Unable to acquire resource for font atlas texture map.");
 		return false;
 	}
 
@@ -424,7 +424,7 @@ bool FontSystem::RebuildSystemFontVariantAtlas(SystemFontLookup* lookip, IFontDa
 	// with rendered glyphs at the given size.
 	stbtt_pack_context Context;
 	if (!stbtt_PackBegin(&Context, Pixels, variant->atlasSizeX, variant->atlasSizeY, 0, 1, 0)) {
-        LOG_ERROR("stbtt_PackBegin() Failed.");
+        GLOG(Log::eError, "stbtt_PackBegin() Failed.");
 		return false;
 	}
 
@@ -437,7 +437,7 @@ bool FontSystem::RebuildSystemFontVariantAtlas(SystemFontLookup* lookip, IFontDa
 	Range.array_of_unicode_codepoints = InternalData->codepoints.data();
 	if (!stbtt_PackFontRanges(&Context, (unsigned char*)lookip->fontBinary, lookip->index, &Range, 1)) {
         stbtt_PackEnd(&Context);
-        LOG_ERROR("stbtt_PackFontRanges() Failed.");
+        GLOG(Log::eError, "stbtt_PackFontRanges() Failed.");
 		return false;
 	}
 
@@ -496,7 +496,7 @@ bool FontSystem::RebuildSystemFontVariantAtlas(SystemFontLookup* lookip, IFontDa
 		stbtt_kerningentry* KerningTable = (stbtt_kerningentry*)Memory::Allocate(sizeof(stbtt_kerningentry) * variant->kerningCount, MemoryType::eMemory_Type_Array);
 		int EntryCount = stbtt_GetKerningTable(&lookip->info, KerningTable, variant->kerningCount);
 		if (EntryCount != variant->kerningCount) {
-			LOG_ERROR("Kerning entry count mismatch: %i -> %i.", EntryCount, variant->kerningCount);
+			GLOG(Log::eError, "Kerning entry count mismatch: %i -> %i.", EntryCount, variant->kerningCount);
 			return false;
 		}
 
@@ -523,7 +523,7 @@ bool FontSystem::VerifySystemFontSizeVariant(SystemFontLookup* lookup, IFontData
 		int Codepoint;
 		unsigned char Advance;
 		if (!StringBytesToCodepoint(text.c_str(), i, &Codepoint, &Advance)) {
-			LOG_ERROR("BytesToCodepoint() Failed to get codepoint.");
+			GLOG(Log::eError, "BytesToCodepoint() Failed to get codepoint.");
 			++i;
 			continue;
 		}

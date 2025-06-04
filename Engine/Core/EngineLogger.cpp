@@ -21,18 +21,17 @@ EngineLogger::EngineLogger(){
 
     Log::Logger::Level LogLevel;
 #ifdef LEVEL_DEBUG
-    LogLevel = Log::Logger::Level::DEBUG;
+    LogLevel = Log::Logger::Level::eDEBUG;
     Log::Logger::getInstance()->SetMode(Log::Logger::eMode_Complex);
 #else
-    LogLevel = Log::Logger::Level::INFO;
+    LogLevel = Log::Logger::Level::eINFO;
 	Log::Logger::getInstance()->SetMode(Log::Logger::eMode_Simple);
 #endif
 
     Log::Logger::getInstance()->setMaxSize(1024000);
     Log::Logger::getInstance()->setLevel(LogLevel);
 
-    LOG_INFO("Logger Init Success.");
-    LOG_INFO("Mode: Debug.");
+    ELog(Log::eInfo, "Logger Init Success.");
+    ELog(Log::eInfo, "Mode: Debug.");
 
 }
-

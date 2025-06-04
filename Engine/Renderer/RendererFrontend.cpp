@@ -70,7 +70,7 @@ bool IRenderer::Initialize(const std::string& application_name, Vector2 window_s
 	RendererConfig.application_name = application_name;
 
 	if (!Backend->Initialize(&RendererConfig, &WindowRenderTargetCount, plat_state)) {
-		LOG_FATAL("Renderer backend init failed.");
+		GLOG(Log::eFatal, "Renderer backend init failed.");
 		return false;
 	}
 
@@ -94,7 +94,7 @@ void IRenderer::OnResize(unsigned short width, unsigned short height) {
 		FrameSinceResize = 0;
 	}
 	else {
-		LOG_WARN("Renderer backend does not exist to accept resize: %i %i", width, height);
+		GLOG(Log::eWarn, "Renderer backend does not exist to accept resize: %i %i", width, height);
 	}
 }
 
@@ -134,7 +134,7 @@ bool IRenderer::DrawFrame(SRenderPacket* packet) {
 		// Render each view.
 		for (uint32_t i = 0; (uint32_t)i < packet->views.size(); ++i) {
 			if (!RenderViewSystem::OnRender(packet->views[i].view, &packet->views[i], Backend->GetFrameNum(), AttachmentIndex)) {
-				LOG_ERROR("Error rendering view index '%i'.", i);
+				GLOG(Log::eError, "Error rendering view index '%i'.", i);
 				return false;
 			}
 		}
@@ -143,7 +143,7 @@ bool IRenderer::DrawFrame(SRenderPacket* packet) {
 		bool result = Backend->EndFrame(packet->delta_time);
 
 		if (!result) {
-			LOG_ERROR("Renderer end frame failed.");
+			GLOG(Log::eError, "Renderer end frame failed.");
 			return false;
 		}
 
@@ -295,7 +295,7 @@ unsigned char IRenderer::GetWindowAttachmentIndex() {
 
 bool IRenderer::CreateRenderpass(IRenderpass* out_renderpass, const RenderpassConfig& config) {
 	if (config.renderTargetCount == 0) {
-		LOG_ERROR("Can not have a renderpass target count of0.");
+		GLOG(Log::eError, "Can not have a renderpass target count of0.");
 		return false;
 	}
 
@@ -323,7 +323,7 @@ void IRenderer::DestroyRenderbuffer(IRenderbuffer* buffer) {
 
 bool IRenderer::BindRenderbuffer(IRenderbuffer* buffer, size_t offset) {
 	if (buffer == nullptr) {
-		LOG_ERROR("IRenderer::BindRenderbuffer() requires a valid pointer to a buffer.");
+		GLOG(Log::eError, "IRenderer::BindRenderbuffer() requires a valid pointer to a buffer.");
 		return false;
 	}
 

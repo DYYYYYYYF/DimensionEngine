@@ -52,14 +52,14 @@ bool RenderViewSkybox::OnCreate(const RenderViewConfig& config) {
 	const char* ShaderName = "Shader.Builtin.Skybox";
 	Resource ConfigResource;
 	if (!ResourceSystem::Load(ShaderName, ResourceType::eResource_Type_Shader, nullptr, &ConfigResource)) {
-		LOG_ERROR("Failed to load builtin skybox shader.");
+		GLOG(Log::eError, "Failed to load builtin skybox shader.");
 		return false;
 	}
 
 	ShaderConfig* Config = (ShaderConfig*)ConfigResource.Data;
 	// NOTE: Assuming the first pass since that's all this view has.
 	if (!ShaderSystem::Create(&Passes[0], Config)) {
-		LOG_ERROR("Failed to load builtin ksybox shader.");
+		GLOG(Log::eError, "Failed to load builtin ksybox shader.");
 		return false;
 	}
 	ResourceSystem::Unload(&ConfigResource);
@@ -80,11 +80,11 @@ bool RenderViewSkybox::OnCreate(const RenderViewConfig& config) {
 	WorldCamera = CameraSystem::GetDefault();
 
 	if (!EngineEvent::Register(eEventCode::Default_Rendertarget_Refresh_Required, this, RenderViewSkyboxOnEvent)) {
-		LOG_ERROR("Unable to listen for refresh required event, creation failed.");
+		GLOG(Log::eError, "Unable to listen for refresh required event, creation failed.");
 		return false;
 	}
 
-	LOG_INFO("Renderview skybox created.");
+	GLOG(Log::eInfo, "Renderview skybox created.");
 	return true;
 }
 
@@ -109,7 +109,7 @@ void RenderViewSkybox::OnResize(uint32_t width, uint32_t height) {
 
 bool RenderViewSkybox::OnBuildPacket(IRenderviewPacketData* data, struct RenderViewPacket* out_packet) {
 	if (data == nullptr || out_packet == nullptr) {
-		LOG_WARN("RenderViewSkybox::OnBuildPacke() Requires valid pointer to packet and data.");
+		GLOG(Log::eWarn, "RenderViewSkybox::OnBuildPacke() Requires valid pointer to packet and data.");
 		return false;
 	}
 
@@ -149,7 +149,7 @@ bool RenderViewSkybox::OnRender(struct RenderViewPacket* packet, IRendererBacken
 		Pass->Begin(&Pass->Targets[render_target_index]);
 
 		if (!ShaderSystem::UseByID(SID)) {
-			LOG_ERROR("RenderViewSkybox::OnRender() Failed to use material shader. Render frame failed.");
+			GLOG(Log::eError, "RenderViewSkybox::OnRender() Failed to use material shader. Render frame failed.");
 			return false;
 		}
 
@@ -163,12 +163,12 @@ bool RenderViewSkybox::OnRender(struct RenderViewPacket* packet, IRendererBacken
 		// TODO: This is terrible
 		back_renderer->BindGlobalsShader(ShaderSystem::GetByID(SID));
 		if (!ShaderSystem::SetUniformByIndex(ProjectionLocation, &packet->projection_matrix)) {
-			LOG_ERROR("RenderViewSkybox::OnRender() Failed to apply skybox projection uniform.");
+			GLOG(Log::eError, "RenderViewSkybox::OnRender() Failed to apply skybox projection uniform.");
 			return false;
 		}
 
 		if (!ShaderSystem::SetUniformByIndex(ViewLocation, &ViewMatrix)) {
-			LOG_ERROR("RenderViewSkybox::OnRender() Failed to apply skybox view uniform.");
+			GLOG(Log::eError, "RenderViewSkybox::OnRender() Failed to apply skybox view uniform.");
 			return false;
 		}
 
@@ -177,7 +177,7 @@ bool RenderViewSkybox::OnRender(struct RenderViewPacket* packet, IRendererBacken
 		// Instance.
 		ShaderSystem::BindInstance(SkyboxData->sb->InstanceID);
 		if (!ShaderSystem::SetUniformByIndex(CubeMapLocation, &SkyboxData->sb->CubeMap)) {
-			LOG_ERROR("RenderViewSkybox::OnRender() Failed to apply cube map uniform.");
+			GLOG(Log::eError, "RenderViewSkybox::OnRender() Failed to apply cube map uniform.");
 			return false;
 		}
 

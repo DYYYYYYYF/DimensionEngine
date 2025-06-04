@@ -37,9 +37,9 @@ bool AudioManager::LoadSound(const std::string& filename) {
 
 void AudioManager::PlaySound(const std::string& filename) {
 	if (Sounds.find(filename) == Sounds.end()) {
-		LOG_WARN("Can not found audio asset %s. Loading...", filename.c_str());
+		GLOG(Log::eWarn, "Can not found audio asset %s. Loading...", filename.c_str());
 		if (!LoadSound(filename)) {
-			LOG_WARN("Load audio failed.");
+			GLOG(Log::eWarn, "Load audio failed.");
 			return;
 		}
 
@@ -54,7 +54,7 @@ void AudioManager::PlaySound(const std::string& filename) {
 
 void AudioManager::StopSound(const std::string& filename) {
 	if (Sounds.find(filename) == Sounds.end()) {
-		LOG_WARN("Can not found audio asset %s.", filename.c_str());
+		GLOG(Log::eWarn, "Can not found audio asset %s.", filename.c_str());
 		return;
 	}
 

@@ -22,20 +22,18 @@ set_target_properties(engine PROPERTIES
 )
 
 target_compile_definitions(engine PUBLIC -DDEXPORT) 
-message("-- UncleDon-Logger Path: ${UD_LOGGER_DIR}")
 message("-- STB Image Path: ${STB_DIR}")
 
 target_include_directories(
     engine 
     PUBLIC 
+    UL::Logger
     ${CMAKE_CURRENT_SOURCE_DIR}
-    ${UD_LOGGER_DIR}/include
     ${STB_DIR}
     ${Python3_INCLUDE_DIRS}
 )
 
 if(${APPLE})
-    target_link_libraries(engine PUBLIC libLogger.a)
     target_link_libraries(engine PUBLIC libshaderc_combined.a)
     target_link_libraries(engine PUBLIC Vulkan::Vulkan)
 
@@ -62,10 +60,9 @@ elseif(${WIN32})
 # 链接库
 message("-- Shaderc: ${GLSLANGL_IBS}")
     target_link_libraries(engine PUBLIC ${GLSLANGL_IBS})
-    target_link_libraries(engine PUBLIC "Logger.lib")
     target_link_libraries(engine PUBLIC "vulkan-1.lib")
 endif()
 
-target_link_libraries(engine PUBLIC ${Python3_LIBRARIES})
+target_link_libraries(engine PUBLIC ${Python3_LIBRARIES} UL::Logger)
 
 message("-- Generated Engine Library\n")

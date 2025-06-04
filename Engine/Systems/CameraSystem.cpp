@@ -13,12 +13,12 @@ std::unordered_map<std::string, uint32_t> CameraSystem::CameraMap;
 
 bool CameraSystem::Initialize(IRenderer* renderer, SCameraSystemConfig config) {
 	if (config.max_camera_count == 0) {
-		LOG_FATAL("Texture system init failed. TextureSystemConfig.max_texture_count should > 0");
+		GLOG(Log::eFatal, "Texture system init failed. TextureSystemConfig.max_texture_count should > 0");
 		return false;
 	}
 
 	if (renderer == nullptr) {
-		LOG_FATAL("Texture system init failed. Renderer is nullptr.");
+		GLOG(Log::eFatal, "Texture system init failed. Renderer is nullptr.");
 		return false;
 	}
 
@@ -59,7 +59,7 @@ Camera* CameraSystem::Acquire(const char* name) {
 
 		unsigned short ID = INVALID_ID_U16;
 		if (CameraMap.find(name) == CameraMap.end()) {
-			LOG_ERROR("Camera system Acquire() failed lookup. returned nullptr.");
+			GLOG(Log::eError, "Camera system Acquire() failed lookup. returned nullptr.");
 			return nullptr;
 		}
 
@@ -74,15 +74,15 @@ Camera* CameraSystem::Acquire(const char* name) {
 			}
 
 			if (ID == INVALID_ID_U16) {
-				LOG_ERROR("Camera system Acquire() failed to acquire new slot. Adjust camera system config to allow more, return nullptr.");
+				GLOG(Log::eError, "Camera system Acquire() failed to acquire new slot. Adjust camera system config to allow more, return nullptr.");
 				return nullptr;
 			}
 
 			// Create/register the new camera.
-			LOG_INFO("Creating new camera named '%s'.", name);
+			GLOG(Log::eInfo, "Creating new camera named '%s'.", name);
 			Camera* NewCamera = NewObject<Camera>(ID);
 			if (NewCamera == nullptr) {
-				LOG_ERROR("Create camera %s failed.", name);
+				GLOG(Log::eError, "Create camera %s failed.", name);
 				return nullptr;
 			}
 
@@ -94,20 +94,20 @@ Camera* CameraSystem::Acquire(const char* name) {
 		return Cameras[ID];
 	}
 
-	LOG_ERROR("Camera system acquire called before system initialization. return nullptr.");
+	GLOG(Log::eError, "Camera system acquire called before system initialization. return nullptr.");
 	return nullptr;
 }
 
 void CameraSystem::Release(const char* name) {
 	if (Initialized) {
 		if (StringEquali(name, DEFAULT_CAMERA_NAME)) {
-			LOG_WARN("Cannot release default camera. Nothing was done.");
+			GLOG(Log::eWarn, "Cannot release default camera. Nothing was done.");
 			return;
 		}
 
 		unsigned short ID = INVALID_ID_U16;
 		if (CameraMap.find(name) == CameraMap.end()) {
-			LOG_WARN("Camera system release failed lookup. Nothing was done.");
+			GLOG(Log::eWarn, "Camera system release failed lookup. Nothing was done.");
 			return;
 		}
 
@@ -116,7 +116,7 @@ void CameraSystem::Release(const char* name) {
 			// Decrement the reference count, and reset the camera if the counter reaches 0.
 			Camera* Cam = Cameras[ID];
 			if (Cam == nullptr) {
-				LOG_FATAL("Invalid camera refer. It should not happened.");
+				GLOG(Log::eFatal, "Invalid camera refer. It should not happened.");
 				return;
 			}
 

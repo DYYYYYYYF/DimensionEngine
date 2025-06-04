@@ -17,7 +17,7 @@ bool ResourceSystem::Initilized = false;
 
 bool ResourceSystem::Initialize(SResourceSystemConfig config) {
 	if (config.max_loader_count == 0) {
-		LOG_FATAL("Resource system initialize failed because config.max_loader_count == 0.");
+		GLOG(Log::eFatal, "Resource system initialize failed because config.max_loader_count == 0.");
 		return false;
 	}
 
@@ -40,7 +40,7 @@ bool ResourceSystem::Initialize(SResourceSystemConfig config) {
 	RegisterLoader(SysFontLoader);
 
 	Initilized = true;
-	LOG_INFO("Resource system initialize with base path: '%s'.", config.asset_base_path.c_str());
+	GLOG(Log::eInfo, "Resource system initialize with base path: '%s'.", config.asset_base_path.c_str());
 	return true;
 
 }
@@ -59,7 +59,7 @@ void ResourceSystem::Shutdown() {
 bool ResourceSystem::RegisterLoader(IResourceLoader* loader) {
 	uint32_t Count = (uint32_t)RegisteredLoaders.size();
 	if (Count > Config.max_loader_count) {
-		LOG_ERROR("Can not register more loader, max loader count is %d.", Config.max_loader_count);
+		GLOG(Log::eError, "Can not register more loader, max loader count is %d.", Config.max_loader_count);
 		return false;
 	}
 
@@ -68,11 +68,11 @@ bool ResourceSystem::RegisterLoader(IResourceLoader* loader) {
 		if (RegisteredLoaders[i] == nullptr) continue;
 		if (RegisteredLoaders[i]->Id != INVALID_ID) {
 			if (RegisteredLoaders[i]->Type == loader->Type) {
-				LOG_ERROR("Resource system register loader error. Loader of type %d already exists and will ot be registered.", loader->Type);
+				GLOG(Log::eError, "Resource system register loader error. Loader of type %d already exists and will ot be registered.", loader->Type);
 				return false;
 			}
 			else if (RegisteredLoaders[i]->CustomType.length() > 0 && RegisteredLoaders[i]->CustomType.compare(loader->CustomType) == 0) {
-				LOG_ERROR("Resource system register loader error. Loader of custom type %d already exists and will ot be registered.", loader->CustomType.c_str());
+				GLOG(Log::eError, "Resource system register loader error. Loader of custom type %d already exists and will ot be registered.", loader->CustomType.c_str());
 				return false;
 			}
 		}
@@ -97,13 +97,13 @@ bool ResourceSystem::Load(const std::string& name, ResourceType type, void* para
 	}
 
 	resource->LoaderID = INVALID_ID;
-	LOG_ERROR("Resouce system load. No loader for type %d was found.", type);
+	GLOG(Log::eError, "Resouce system load. No loader for type %d was found.", type);
 	return false;
 }
 
 bool ResourceSystem::LoadCustom(const std::string& name, const char* custom_type, void* params, Resource* resource) {
 	if (custom_type == nullptr || strlen(custom_type) == 0) {
-		LOG_ERROR("Resouce system load custom failed. custom type is invalid.");
+		GLOG(Log::eError, "Resouce system load custom failed. custom type is invalid.");
 		return false;
 	}
 
@@ -116,7 +116,7 @@ bool ResourceSystem::LoadCustom(const std::string& name, const char* custom_type
 	}
 
 	resource->LoaderID = INVALID_ID;
-	LOG_ERROR("Resouce system load custom. No custom loader for type %d was found.", custom_type);
+	GLOG(Log::eError, "Resouce system load custom. No custom loader for type %d was found.", custom_type);
 	return false;
 }
 
@@ -138,7 +138,7 @@ const char* ResourceSystem::GetRootPath() {
 		return Config.asset_base_path.c_str();
 	}
 
-	LOG_ERROR("Resource system GetRootPaht() called beform initialization, returning empty string.");
+	GLOG(Log::eError, "Resource system GetRootPaht() called beform initialization, returning empty string.");
 	return "";
 }
 

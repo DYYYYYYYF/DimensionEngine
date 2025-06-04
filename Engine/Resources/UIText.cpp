@@ -15,7 +15,7 @@
 
 bool UIText::Create(class IRenderer* renderer, UITextType type, const std::string& fontName, unsigned short fontSize, const char* textContent) {
 	if (fontName.length() == 0 || textContent == nullptr || textContent[0] == '\0') {
-		LOG_ERROR(" UIText::Create() Requires a valid pointer to fontName and textContent.");
+		GLOG(Log::eError, " UIText::Create() Requires a valid pointer to fontName and textContent.");
 		return false;
 	}
 
@@ -26,7 +26,7 @@ bool UIText::Create(class IRenderer* renderer, UITextType type, const std::strin
 	// Acquire the font of the correct type and assign its internal data.
 	// This also gets the atlas texture.
 	if (!FontSystem::Acquire(fontName, fontSize, this)) {
-		LOG_ERROR("Unable to acquire font: '%s'. UIText can not be created.", fontName.c_str());
+		GLOG(Log::eError, "Unable to acquire font: '%s'. UIText can not be created.", fontName.c_str());
 		return false;
 	}
 
@@ -45,7 +45,7 @@ bool UIText::Create(class IRenderer* renderer, UITextType type, const std::strin
 	std::vector<TextureMap*> FontMaps = { &Data->atlas };
 	InstanceID = renderer->AcquireInstanceResource(UIShader, FontMaps);
 	if (InstanceID == INVALID_ID) {
-		LOG_FATAL("Unable to acquire shader resource for font texture map.");
+		GLOG(Log::eFatal, "Unable to acquire shader resource for font texture map.");
 		return false;
 	}
 
@@ -53,12 +53,12 @@ bool UIText::Create(class IRenderer* renderer, UITextType type, const std::strin
 	VertexBuffer = (VulkanBuffer*)Memory::Allocate(sizeof(VulkanBuffer), MemoryType::eMemory_Type_Vulkan);
 	VertexBuffer = new (VertexBuffer)VulkanBuffer();
 	if (!renderer->CreateRenderbuffer(RenderbufferType::eRenderbuffer_Type_Vertex, TextLength * QuadSize, false, VertexBuffer)) {
-		LOG_ERROR("UIText::Create() Failed to create vertex renderbuffer.");
+		GLOG(Log::eError, "UIText::Create() Failed to create vertex renderbuffer.");
 		return false;
 	}
 
 	if (!renderer->BindRenderbuffer(VertexBuffer, 0)) {
-		LOG_ERROR("UIText::Create() Failed to bind vertex renderbuffer.");
+		GLOG(Log::eError, "UIText::Create() Failed to bind vertex renderbuffer.");
 		return false;
 	}
 
@@ -67,18 +67,18 @@ bool UIText::Create(class IRenderer* renderer, UITextType type, const std::strin
 	IndexBuffer = new (IndexBuffer)VulkanBuffer();
 	static const unsigned char QuadIndexSize = sizeof(uint32_t) * 6;
 	if (!renderer->CreateRenderbuffer(RenderbufferType::eRenderbuffer_Type_Index, TextLength * QuadIndexSize, false, IndexBuffer)) {
-		LOG_ERROR("UIText::Create() Failed to create index renderbuffer.");
+		GLOG(Log::eError, "UIText::Create() Failed to create index renderbuffer.");
 		return false;
 	}
 
 	if (!renderer->BindRenderbuffer(IndexBuffer, 0)) {
-		LOG_ERROR("UIText::Create() Failed to bind index renderbuffer.");
+		GLOG(Log::eError, "UIText::Create() Failed to bind index renderbuffer.");
 		return false;
 	}
 
 	// Verify atlas has the glyphs needed.
 	if (!FontSystem::VerifyAtlas(Data, textContent)) {
-		LOG_ERROR("Font atlas verification failed.");
+		GLOG(Log::eError, "Font atlas verification failed.");
 		return false;
 	}
 
@@ -101,7 +101,7 @@ void UIText::Destroy() {
 	// Release resources for font texture map.
 	Shader* UIShader = ShaderSystem::Get("Shader.Builtin.UI");	// TODO: Text shader.
 	if (!Renderer->ReleaseInstanceResource(UIShader, InstanceID)) {
-		LOG_FATAL("Unable to release shader resources for font texture map.");
+		GLOG(Log::eFatal, "Unable to release shader resources for font texture map.");
 	}
 
 	Renderer = nullptr;
@@ -124,7 +124,7 @@ void UIText::SetText(const char* text) {
 
 		// Verify atlas has the glyphs needed
 		if (!FontSystem::VerifyAtlas(Data, Text)) {
-			LOG_ERROR("Font atlas verification failed.");
+			GLOG(Log::eError, "Font atlas verification failed.");
 		}
 
 		RegenerateGeometry();
@@ -137,12 +137,12 @@ void UIText::Draw() {
 	if (TextLength > 0) {
 		static const size_t QuadVertCount = 4;
 		if (!Renderer->DrawRenderbuffer(VertexBuffer, 0, TextLength * QuadVertCount, true)) {
-			LOG_ERROR("Failed to draw ui font vertex buffer.");
+			GLOG(Log::eError, "Failed to draw ui font vertex buffer.");
 		}
 
 		static const unsigned char QuadIndexCount = 6;
 		if (!Renderer->DrawRenderbuffer(IndexBuffer, 0, TextLength * QuadIndexCount, false)) {
-			LOG_ERROR("Failed to draw ui font index buffer.");
+			GLOG(Log::eError, "Failed to draw ui font index buffer.");
 		}
 	}
 }
@@ -162,7 +162,7 @@ void UIText::RegenerateGeometry() {
 	// Resize the vertex buffer, but only if larger.
 	if (tVertexBufferSize > VertexBuffer->TotalSize) {
 		if (!Renderer->ResizeRenderbuffer(VertexBuffer, tVertexBufferSize)) {
-			LOG_ERROR("UIText::RegenerateGeometry() failed to resize vertex renderbuffer.");
+			GLOG(Log::eError, "UIText::RegenerateGeometry() failed to resize vertex renderbuffer.");
 			return;
 		}
 	}
@@ -170,7 +170,7 @@ void UIText::RegenerateGeometry() {
 	// Resize the index buffer, but only if larger.
 	if (tIndexBufferSize > IndexBuffer->TotalSize) {
 		if (!Renderer->ResizeRenderbuffer(IndexBuffer, tIndexBufferSize)) {
-			LOG_ERROR("UIText::RegenerateGeometry() failed to resize index renderbuffer.");
+			GLOG(Log::eError, "UIText::RegenerateGeometry() failed to resize index renderbuffer.");
 			return;
 		}
 	}
@@ -204,7 +204,7 @@ void UIText::RegenerateGeometry() {
 		// NOTE: UTF-8 codepoint handing.
 		unsigned char Advance = 0;
 		if (!StringBytesToCodepoint(Text, c, &CodePoint, &Advance)) {
-			LOG_WARN("Invalid UTF-8 found in string, using unknown codepoint of -1.");
+			GLOG(Log::eWarn, "Invalid UTF-8 found in string, using unknown codepoint of -1.");
 			CodePoint = -1;
 		}
 
@@ -265,7 +265,7 @@ void UIText::RegenerateGeometry() {
 				unsigned char NextAdvance = 0;
 
 				if (!StringBytesToCodepoint(Text, Offset, &NextCodepoint, &NextAdvance)) {
-					LOG_WARN("Invalid UTF-8 found in string, using unknown codepoint of -1.");
+					GLOG(Log::eWarn, "Invalid UTF-8 found in string, using unknown codepoint of -1.");
 					CodePoint = -1;
 				}
 				else {
@@ -281,7 +281,7 @@ void UIText::RegenerateGeometry() {
 			x += g->advanceX + Kerning;
 		}
 		else {
-			LOG_ERROR("Unable to find unknown codepoint. Skipping.");
+			GLOG(Log::eError, "Unable to find unknown codepoint. Skipping.");
 			// Increment utf-8 character count.
 			uc++;
 			continue;
@@ -310,9 +310,9 @@ void UIText::RegenerateGeometry() {
 
 	// Verify results.
 	if (!VertexLoadResult) {
-		LOG_ERROR("UIText::RegenerateGeometry() Failed to load data into vertex buffer range.");
+		GLOG(Log::eError, "UIText::RegenerateGeometry() Failed to load data into vertex buffer range.");
 	}
 	if (!IndexLoadResult) {
-		LOG_ERROR("UIText::RegenerateGeometry() Failed to load data into index buffer range.");
+		GLOG(Log::eError, "UIText::RegenerateGeometry() Failed to load data into index buffer range.");
 	}
 }

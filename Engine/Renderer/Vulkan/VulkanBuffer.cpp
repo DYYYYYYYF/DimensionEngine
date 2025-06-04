@@ -31,10 +31,10 @@ bool VulkanBuffer::Create(VulkanContext* context) {
 		MemoryPropertyFlags = vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent;
 		break;
 	case eRenderbuffer_Type_Storage:
-		LOG_ERROR("Storage buffer not supported yet.");
+		GLOG(Log::eError, "Storage buffer not supported yet.");
 		return false;
 	default:
-		LOG_ERROR("Unsupported buffer type: %i.", Type);
+		GLOG(Log::eError, "Unsupported buffer type: %i.", Type);
 		return false;
 	}
 
@@ -50,7 +50,7 @@ bool VulkanBuffer::Create(VulkanContext* context) {
 	MemoryRequirements = context->Device.GetLogicalDevice().getBufferMemoryRequirements(Buffer);
 	MemoryIndex = context->FindMemoryIndex(MemoryRequirements.memoryTypeBits, MemoryPropertyFlags);
 	if (MemoryIndex == -1) {
-		LOG_ERROR("Unable to create vulkan buffer because the required memory type index was not found.");
+		GLOG(Log::eError, "Unable to create vulkan buffer because the required memory type index was not found.");
 		return false;
 	}
 
@@ -94,14 +94,14 @@ bool VulkanBuffer::Resize(VulkanContext* context, size_t size) {
 
 	// Sanity check
 	if (size < TotalSize) {
-		LOG_ERROR("Vulkan buffer resize requires that new size larger than the old. Nothing will doing.");
+		GLOG(Log::eError, "Vulkan buffer resize requires that new size larger than the old. Nothing will doing.");
 		return false;
 	}
 
 	// Resize the freelist first.
 	if (UseFreelist) {
 		if (!BufferFreelist.Resize(size)) {
-			LOG_ERROR("Vulkan buffer resize failed to resize freelist.");
+			GLOG(Log::eError, "Vulkan buffer resize failed to resize freelist.");
 			return false;
 		}
 	}
@@ -189,7 +189,7 @@ bool VulkanBuffer::Flush(VulkanContext* context, size_t offset, size_t size){
 			.setSize(size);
 
 		if (context->Device.GetLogicalDevice().flushMappedMemoryRanges(1, &Range) != vk::Result::eSuccess) {
-			LOG_ERROR("Flush mapped memory ranges failed.");
+			GLOG(Log::eError, "Flush mapped memory ranges failed.");
 			return false;
 		}
 	}
