@@ -1,33 +1,30 @@
-#include <iostream>
-#include "Containers/Freelist.hpp"
+#include "MemoryAnalyer.h"
+#include "MemoryAllocatorTester.h"
 
 int TestFreelist() {
-	printf("Test free list...\n");
-	
-	Freelist List;
-	// Allocate and create the freelist.
-	List.Create(512);
+	AllocatorTester tester;
 
-	// Verify that the memory was assigned.
-	size_t FreeSpace = List.GetFreeSpace();
-	printf("Free space: %ziB\n", FreeSpace);
+	std::cout << "=== 动态内存分配器测试 ===" << std::endl;
 
-	size_t Offset = INVALID_ID;
-	bool result = List.AllocateBlock(64, &Offset);
-	if (result) {
-		printf("Allocate block successful...\n");
+	// 运行正确性测试
+	bool correctness_passed = tester.RunCorrectnessTests();
+	if (!correctness_passed) {
+		std::cout << "\n[FAIL] 正确性测试未通过" << std::endl;
+		return 0;
 	}
 
-	FreeSpace = List.GetFreeSpace();
-	printf("Free space: %ziB\n", FreeSpace);
+	// 运行性能测试
+	tester.RunPerformanceTests();
 
-	result = List.FreeBlock(64, Offset);
-	if (result) {
-		printf("Free block successful...\n");
-	}
+	// 运行内存泄漏检测
+	tester.TestMemoryLeaks();
 
-	List.Destroy();
+	std::cout << "\n=== 测试完成 ===" << std::endl;
 
-	printf("\n");
-	return 0;
+
+	std::cout << "=== 动态内存分析 ===" << std::endl;
+	RunAnalysis();
+	std::cout << "\n=== 分析完成 ===" << std::endl;
+
+	return 1;
 }

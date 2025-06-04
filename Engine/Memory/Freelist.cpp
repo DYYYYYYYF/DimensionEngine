@@ -1,23 +1,39 @@
 ﻿#include "Freelist.hpp"
-
 #include "Core/DMemory.hpp"
 #include "Core/EngineLogger.hpp"
 #include "Platform/Platform.hpp"
+#include <mutex>
+#include <algorithm>  // for std::min, std::max
 
 bool Freelist::Create(size_t total_size) {
+	std::lock_guard<std::mutex> lock(freelist_mutex);
+
 	// Enough space to hold state, plus array for all nodes.
 	TotalSize = total_size;
-	MaxEntries = (total_size / sizeof(void*));
-	GLOG(Log::eInfo, "Freelist max entries: %d.", MaxEntries);
 
-	size_t UesdSize = sizeof(FreelistNode) * MaxEntries;
-	ListMemory = Platform::PlatformAllocate(UesdSize, false);
+	// 修复：优化MaxEntries计算，避免过度分配
+	size_t calculated_entries = total_size / sizeof(FreelistNode);
+
+	// 限制最大节点数：基于实际需求
+	// 假设平均分配大小256字节，最大碎片化3倍
+	size_t estimated_max_blocks = (total_size / 256) * 3;
+	size_t reasonable_limit = std::min(estimated_max_blocks, static_cast<size_t>(16384)); // 最多16K节点
+
+	MaxEntries = std::min(calculated_entries, reasonable_limit);
+
+	// 确保至少有基本数量
+	MaxEntries = std::max(MaxEntries, static_cast<size_t>(64));
+
+	GLOG(Log::eInfo, "Freelist max entries: %d (optimized from %zu).", MaxEntries, calculated_entries);
+
+	size_t UsedSize = sizeof(FreelistNode) * MaxEntries;
+	ListMemory = Platform::PlatformAllocate(UsedSize, false);
 	if (ListMemory == nullptr) {
 		GLOG(Log::eFatal, "Cannot allocate enough memory for freelist!");
 		return false;
 	}
 
-	Memory::Zero(ListMemory, UesdSize);
+	Memory::Zero(ListMemory, UsedSize);
 
 	Nodes = (FreelistNode*)ListMemory;
 
@@ -37,13 +53,21 @@ bool Freelist::Create(size_t total_size) {
 }
 
 void Freelist::Destroy() {
+	std::lock_guard<std::mutex> lock(freelist_mutex);
+
 	if (ListMemory != nullptr) {
 		Platform::PlatformFree(ListMemory, false);
 		ListMemory = nullptr;
+		Head = nullptr;
+		Nodes = nullptr;
+		MaxEntries = 0;
+		TotalSize = 0;
 	}
 }
 
 bool Freelist::AllocateBlock(size_t size, size_t* offset) {
+	std::lock_guard<std::mutex> lock(freelist_mutex);
+
 	if (offset == nullptr || ListMemory == nullptr) {
 		return false;
 	}
@@ -65,7 +89,7 @@ bool Freelist::AllocateBlock(size_t size, size_t* offset) {
 				ReturnNode = Head;
 				Head = Node->next;
 			}
-			ResetNode(ReturnNode);
+			ResetNodeUnsafe(ReturnNode);  // 修复：使用不加锁版本
 			return true;
 		}
 		else if (Node->size > size) {
@@ -81,12 +105,14 @@ bool Freelist::AllocateBlock(size_t size, size_t* offset) {
 		Node = Node->next;
 	}
 
-	size_t FreeSpace = GetFreeSpace();
+	size_t FreeSpace = GetFreeSpaceUnsafe();  // 调用内部不加锁版本
 	GLOG(Log::eWarn, "Freelist find block, no block with enough free space found (requested: %uB, available: %lluB).", size, FreeSpace);
 	return false;
 }
 
 bool Freelist::FreeBlock(size_t size, size_t offset) {
+	std::lock_guard<std::mutex> lock(freelist_mutex);
+
 	if (ListMemory == nullptr || size == 0) {
 		return false;
 	}
@@ -97,7 +123,11 @@ bool Freelist::FreeBlock(size_t size, size_t offset) {
 	if (Node == nullptr) {
 		// Check for the case where the entire thing is allocated.
 		// In this case a new node is needed at the head.
-		FreelistNode* NewNode = AcquireFreeNode();
+		FreelistNode* NewNode = AcquireFreeNodeUnsafe();  // 调用内部不加锁版本
+		if (NewNode == nullptr) {
+			GLOG(Log::eError, "Cannot acquire free node for freelist.");
+			return false;
+		}
 		NewNode->offset = offset;
 		NewNode->size = size;
 		NewNode->next = nullptr;
@@ -117,7 +147,7 @@ bool Freelist::FreeBlock(size_t size, size_t offset) {
 					Node->size += Node->next->size;
 					FreelistNode* Next = Node->next;
 					Node->next = Node->next->next;
-					ResetNode(Next);
+					ResetNodeUnsafe(Next);  // 调用内部不加锁版本
 				}
 				return true;
 			}
@@ -129,7 +159,11 @@ bool Freelist::FreeBlock(size_t size, size_t offset) {
 			}
 			else if (Node->offset > offset) {
 				// Iterated beyond the space to be freed. Need a new node.
-				FreelistNode* NewNode = AcquireFreeNode();
+				FreelistNode* NewNode = AcquireFreeNodeUnsafe();
+				if (NewNode == nullptr) {
+					GLOG(Log::eError, "Cannot acquire free node for freelist.");
+					return false;
+				}
 				NewNode->offset = offset;
 				NewNode->size = size;
 
@@ -149,15 +183,15 @@ bool Freelist::FreeBlock(size_t size, size_t offset) {
 					NewNode->size += NewNode->next->size;
 					FreelistNode* Rubbish = NewNode->next;
 					NewNode->next = Rubbish->next;
-					ResetNode(Rubbish);
+					ResetNodeUnsafe(Rubbish);
 				}
 
-				// Double check next node to see if it can be joined.
+				// Double check previous node to see if it can be joined.
 				if (Prev && Prev->offset + Prev->size == NewNode->offset) {
 					Prev->size += NewNode->size;
 					FreelistNode* Rubbish = NewNode;
 					Prev->next = Rubbish->next;
-					ResetNode(Rubbish);
+					ResetNodeUnsafe(Rubbish);
 				}
 
 				return true;
@@ -166,7 +200,11 @@ bool Freelist::FreeBlock(size_t size, size_t offset) {
 			// If on the last node and the last node's offset+size < the free offset,
 			// a new node is required.
 			if (!Node->next && Node->offset + Node->size < offset) {
-				FreelistNode* NewNode = AcquireFreeNode();
+				FreelistNode* NewNode = AcquireFreeNodeUnsafe();
+				if (NewNode == nullptr) {
+					GLOG(Log::eError, "Cannot acquire free node for freelist.");
+					return false;
+				}
 				NewNode->offset = offset;
 				NewNode->size = size;
 				NewNode->next = nullptr;
@@ -185,92 +223,106 @@ bool Freelist::FreeBlock(size_t size, size_t offset) {
 }
 
 bool Freelist::Resize(size_t new_size) {
+	std::lock_guard<std::mutex> lock(freelist_mutex);
+
 	if (ListMemory == nullptr || new_size < TotalSize) {
 		return false;
 	}
 
 	size_t OldSize = TotalSize;
-
-	// Enough space to hold state.
 	size_t SizeDiff = new_size - TotalSize;
-	MaxEntries = (new_size / sizeof(void*));
-	TotalSize = new_size;
+	size_t NewMaxEntries = (new_size / sizeof(FreelistNode));
+	size_t NewMemorySize = sizeof(FreelistNode) * NewMaxEntries;
 
-	void* NewMemory = Platform::PlatformAllocate(sizeof(FreelistNode) * MaxEntries, false);
-	Memory::Zero(NewMemory, sizeof(FreelistNode) * MaxEntries);
-
-	// Invalidate the offset and size for all but the first node. The invalid value
-	// will be checked for when seeking a new node from the list.
-	for (size_t i = 1; i < MaxEntries; ++i) {
-		Nodes[i].offset = INVALID_ID;
-		Nodes[i].size = INVALID_ID;
+	// 分配新内存
+	void* NewMemory = Platform::PlatformAllocate(NewMemorySize, false);
+	if (NewMemory == nullptr) {
+		return false;
 	}
 
-	// Copy over the nodes.
-	FreelistNode* NewListNode = &((FreelistNode*)NewMemory)[0];
-	FreelistNode* OldListNode = Head;
+	Memory::Zero(NewMemory, NewMemorySize);
+	FreelistNode* NewNodes = (FreelistNode*)NewMemory;
 
-	Nodes = (FreelistNode*)ListMemory;
-	Head = &Nodes[0];
+	// 初始化新节点
+	for (size_t i = 0; i < NewMaxEntries; ++i) {
+		NewNodes[i].offset = INVALID_ID;
+		NewNodes[i].size = INVALID_ID;
+		NewNodes[i].next = nullptr;
+	}
 
-	if (OldListNode == nullptr) {
-		// If there is no head, then the entire list is allocated. In this case
-		// the head should be set to the difference of the space now available, and
-		// at the end of the list.
-		Head->offset = OldSize;
-		Head->size = SizeDiff;
-		Head->next = nullptr;
+	// 复制现有的空闲块信息
+	FreelistNode* NewHead = nullptr;
+	FreelistNode* NewTail = nullptr;
+	size_t NodeIndex = 0;
+
+	FreelistNode* OldNode = Head;
+	while (OldNode != nullptr && NodeIndex < NewMaxEntries) {
+		NewNodes[NodeIndex].offset = OldNode->offset;
+		NewNodes[NodeIndex].size = OldNode->size;
+		NewNodes[NodeIndex].next = nullptr;
+
+		if (NewHead == nullptr) {
+			NewHead = &NewNodes[NodeIndex];
+			NewTail = NewHead;
+		}
+		else {
+			NewTail->next = &NewNodes[NodeIndex];
+			NewTail = &NewNodes[NodeIndex];
+		}
+
+		OldNode = OldNode->next;
+		NodeIndex++;
+	}
+
+	// 处理新增的空间
+	if (NewHead == nullptr) {
+		// 整个内存都被分配了，添加新的空闲块
+		NewHead = &NewNodes[0];
+		NewHead->offset = OldSize;
+		NewHead->size = SizeDiff;
+		NewHead->next = nullptr;
 	}
 	else {
-		while (OldListNode) {
-			// Get a new node, copy the offset/size, and set next to it.
-			FreelistNode* NewNode = AcquireFreeNode();
-			NewNode->offset = OldListNode->offset;
-			NewNode->size = OldListNode->size;
-			NewNode->next = nullptr;
-			NewListNode->next = NewNode;
-			// Move to the next entry.
-			NewListNode = NewListNode->next;
-
-			if (OldListNode->next) {
-				// If there is another node, move on.
-				OldListNode = OldListNode->next;
-			}
-			else {
-				// Reached the end of the list.
-				// Check if it extends to the end of the block. If so, just append
-				// to the size. Otherwise, create a new node and attach to it.
-				if (OldListNode->offset + OldListNode->size == OldSize) {
-					NewNode->size += SizeDiff;
-				}
-				else {
-					FreelistNode* NewNodeEnd = AcquireFreeNode();
-					NewNodeEnd->offset = OldSize;
-					NewNodeEnd->size = SizeDiff;
-					NewNodeEnd->next = nullptr;
-					NewNode->next = NewNodeEnd;
-				}
-				break;
+		// 检查最后一个块是否能合并
+		if (NewTail->offset + NewTail->size == OldSize) {
+			NewTail->size += SizeDiff;
+		}
+		else {
+			// 创建新的空闲块
+			if (NodeIndex < NewMaxEntries) {
+				NewNodes[NodeIndex].offset = OldSize;
+				NewNodes[NodeIndex].size = SizeDiff;
+				NewNodes[NodeIndex].next = nullptr;
+				NewTail->next = &NewNodes[NodeIndex];
 			}
 		}
 	}
 
+	// 更新成员变量
 	Platform::PlatformFree(ListMemory, false);
 	ListMemory = NewMemory;
+	Nodes = NewNodes;
+	Head = NewHead;
+	MaxEntries = NewMaxEntries;
+	TotalSize = new_size;
 
 	return true;
 }
 
 void Freelist::Clear() {
+	std::lock_guard<std::mutex> lock(freelist_mutex);
+
 	if (ListMemory != nullptr) {
 		// Invalidate the offset and size for all but the first node. The invalid value
 		// will be checked for when seeking a new node from the list.
 		for (size_t i = 0; i < MaxEntries; ++i) {
 			Nodes[i].offset = INVALID_ID;
 			Nodes[i].size = INVALID_ID;
+			Nodes[i].next = nullptr;
 		}
 
 		// Reset the head to occupy the entire thing.
+		Head = &Nodes[0];
 		Head->offset = 0;
 		Head->size = TotalSize;
 		Head->next = nullptr;
@@ -278,6 +330,12 @@ void Freelist::Clear() {
 }
 
 size_t Freelist::GetFreeSpace() {
+	std::lock_guard<std::mutex> lock(freelist_mutex);
+	return GetFreeSpaceUnsafe();
+}
+
+// 内部不加锁的版本，供已经加锁的函数调用
+size_t Freelist::GetFreeSpaceUnsafe() {
 	if (ListMemory == nullptr) {
 		return 0;
 	}
@@ -293,6 +351,12 @@ size_t Freelist::GetFreeSpace() {
 }
 
 FreelistNode* Freelist::AcquireFreeNode() {
+	std::lock_guard<std::mutex> lock(freelist_mutex);
+	return AcquireFreeNodeUnsafe();
+}
+
+// 内部不加锁的版本
+FreelistNode* Freelist::AcquireFreeNodeUnsafe() {
 	for (size_t i = 1; i < MaxEntries; ++i) {
 		if (Nodes[i].offset == INVALID_ID) {
 			return &Nodes[i];
@@ -304,7 +368,15 @@ FreelistNode* Freelist::AcquireFreeNode() {
 }
 
 void Freelist::ResetNode(FreelistNode* node) {
-	node->offset = INVALID_ID;
-	node->size = INVALID_ID;
-	node->next = nullptr;
+	std::lock_guard<std::mutex> lock(freelist_mutex);
+	ResetNodeUnsafe(node);
+}
+
+// 内部不加锁的版本
+void Freelist::ResetNodeUnsafe(FreelistNode* node) {
+	if (node != nullptr) {
+		node->offset = INVALID_ID;
+		node->size = INVALID_ID;
+		node->next = nullptr;
+	}
 }

@@ -1,7 +1,7 @@
 #pragma once
 
 #include <vulkan/vulkan.hpp>
-#include "Containers/Freelist.hpp"
+#include "Memory/Freelist.hpp"
 #include "Renderer/Interface/IRenderbuffer.hpp"
 
 class VulkanContext;

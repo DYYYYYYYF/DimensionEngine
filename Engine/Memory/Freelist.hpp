@@ -1,6 +1,7 @@
-#pragma once
+﻿#pragma once
 
 #include "Defines.hpp"
+#include <mutex>
 
 struct DAPI FreelistNode {
 	size_t offset = 0;
@@ -10,12 +11,12 @@ struct DAPI FreelistNode {
 
 class DAPI Freelist {
 public:
-	Freelist() : ListMemory(nullptr), Head(nullptr), Nodes(nullptr), MaxEntries(50), TotalSize(0) {}
+	Freelist() : ListMemory(nullptr), Head(nullptr), Nodes(nullptr), MaxEntries(0), TotalSize(0) {}
 
 public:
 	/*
 	* @brief Creates a new FreeList or obtains the memory requirement for one.
-	* 
+	*
 	* @param total_size The total size in bytes that the free list should track.
 	*/
 	bool Create(size_t total_size);
@@ -27,7 +28,7 @@ public:
 
 	/*
 	* @brief Attempts to find a free block of memory the given size.
-	* 
+	*
 	* @param size The size to allocate.
 	* @param offset A pointer to hold the offset to the allocated memory.
 	* @return bool True if a block of memory has found and allocated; otherwise false.
@@ -35,7 +36,7 @@ public:
 	bool AllocateBlock(size_t size, size_t* offset);
 
 	/*
-	* @brief Attempts to free a free block of memory at the given offset, and of the 
+	* @brief Attempts to free a free block of memory at the given offset, and of the
 	* given size. Can fail if invalid data is passed.
 	*
 	* @param size The size to allocate.
@@ -46,7 +47,7 @@ public:
 
 	/**
 	 * @brief Attempts to resize the freelist
-	 * 
+	 *
 	 * @param new_size The new size of memory the freelist could hold.
 	 */
 	bool Resize(size_t new_size);
@@ -66,11 +67,18 @@ private:
 	FreelistNode* AcquireFreeNode();
 	void ResetNode(FreelistNode* node);
 
+	// 内部不加锁版本，供已经获得锁的函数使用
+	FreelistNode* AcquireFreeNodeUnsafe();
+	void ResetNodeUnsafe(FreelistNode* node);
+	size_t GetFreeSpaceUnsafe();
+
 private:
 	size_t TotalSize;
 	size_t MaxEntries;
 	FreelistNode* Head;
 	FreelistNode* Nodes;
-
 	void* ListMemory;
+
+	// 线程安全相关
+	mutable std::mutex freelist_mutex;  // 保护所有操作的互斥锁
 };

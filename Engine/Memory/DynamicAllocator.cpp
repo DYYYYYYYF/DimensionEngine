@@ -1,4 +1,4 @@
-#include "DynamicAllocator.h"
+﻿#include "DynamicAllocator.h"
 
 #include "Core/DMemory.hpp"
 #include "Core/EngineLogger.hpp"
@@ -78,9 +78,9 @@ void* DynamicAllocator::AllocateAligned(size_t size, unsigned short alignment) {
 			return (void*)AlignedBlockOffset;
 		}
 		else {
-			GLOG(Log::eError, "DynamicAllocator::AllocateAligned() allocate no blocks of memory large enough to allocate from.");
+			GLOG(Log::eWarn, "DynamicAllocator::AllocateAligned() allocate no blocks of memory large enough to allocate from.");
 			size_t available = List.GetFreeSpace();
-			GLOG(Log::eError, "Requested size: %llu, Total space available: %llu.", size, available);
+			GLOG(Log::eWarn, "Requested size: %llu, Total space available: %llu.", size, available);
 			// TODO: Report fragmentation?
 			return nullptr;
 		}
@@ -91,6 +91,15 @@ void* DynamicAllocator::AllocateAligned(size_t size, unsigned short alignment) {
 }
 
 bool DynamicAllocator::Free(void* block, size_t size) {
+	if (block != nullptr) {
+		size_t stored_size;
+		unsigned short alignment;
+		if (GetAlignmentSize(block, &stored_size, &alignment)) {
+			if (stored_size != size) {
+				GLOG(Log::eWarn, "Size mismatch in Free: expected %zu, got %zu", stored_size, size);
+			}
+		}
+	}
 	return FreeAligned(block);
 }
 
@@ -101,7 +110,7 @@ bool DynamicAllocator::FreeAligned(void* block) {
 	}
 
 	void* EndOfBlock = (void*)((size_t)MemoryBlock + TotalSize);
-	if (block < MemoryBlock || block > EndOfBlock) {
+	if (block < MemoryBlock || block >= EndOfBlock) {
 		GLOG(Log::eError, "DynamicAllocator::FreeAligned(): Trying to release block (0x%p) outside of allocator range (0x%p)-(0x%p). Sub size: %uul, Total size: %uul.",
 			block, MemoryBlock, EndOfBlock, (size_t)block - (size_t)MemoryBlock, TotalSize);
 		return false;
@@ -121,9 +130,49 @@ bool DynamicAllocator::FreeAligned(void* block) {
 }
 
 bool DynamicAllocator::GetAlignmentSize(void* block, size_t* out_size, unsigned short* out_alignment) {
-	// Get the header.
-	*out_size = *(uint32_t*)((size_t)block - DSIZE_STORAGE);
-	AllocHeader* Header = (AllocHeader*)((size_t)block + *out_size);
+	// 添加基本的安全检查
+	if (block == nullptr || MemoryBlock == nullptr || out_size == nullptr || out_alignment == nullptr) {
+		return false;
+	}
+
+	// 边界检查
+	void* EndOfMemory = (void*)((size_t)MemoryBlock + TotalSize);
+	if (block < MemoryBlock || block >= EndOfMemory) {
+		return false;
+	}
+
+	// 检查偏移量
+	size_t offset = (size_t)block - (size_t)MemoryBlock;
+	if (offset < DSIZE_STORAGE) {
+		return false;
+	}
+
+	// 检查BlockSize指针
+	void* BlockSizePtr = (void*)((size_t)block - DSIZE_STORAGE);
+	if (BlockSizePtr < MemoryBlock || BlockSizePtr >= EndOfMemory) {
+		return false;
+	}
+
+	// 安全读取块大小
+	uint32_t block_size = *(uint32_t*)BlockSizePtr;
+	if (block_size == 0 || block_size > TotalSize) {
+		return false;
+	}
+
+	// 检查Header指针
+	void* HeaderPtr = (void*)((size_t)block + block_size);
+	if (HeaderPtr < MemoryBlock ||
+		(size_t)HeaderPtr + sizeof(AllocHeader) >(size_t)EndOfMemory) {
+		return false;
+	}
+
+	// 安全读取头部
+	AllocHeader* Header = (AllocHeader*)HeaderPtr;
+	if (Header->alignment == 0 || Header->alignment > 1024) {
+		return false;
+	}
+
+	*out_size = block_size;
 	*out_alignment = Header->alignment;
 	return true;
 }
