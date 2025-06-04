@@ -22,8 +22,11 @@ public:
 	static void ELog(Log::Level level, const char* format, Args ... args) {
 		char* str = AppendLogMessage(format, args...);
 		Log::Logger::Level ULevel = (Log::Logger::Level)level;
-		if (str == nullptr) return;
-
+		if (str == nullptr
+#ifdef LEVEL_DEBUG
+			|| ULevel < Log::Logger::eINFO
+#endif
+			) return;
 		Console::WriteLine(ULevel, str);
 		Log::Logger::getInstance()->log(ULevel, __FILE__, __LINE__, str);
 		delete[] str;
@@ -47,11 +50,9 @@ private:
 };
 
 // Logger
-template<typename ... Args>
-void GLOG(Log::Level level, const char* format, Args ... args)
-{
-	EngineLogger::ELog(level, format, args...);
-}
+#ifndef GLOG
+#define GLOG EngineLogger::ELog
+#endif
 
 #ifdef LEVEL_DEBUG
 #define ASSERT(expr) if(!(expr)){UL_DEBUG(#expr " is null!"); exit(-1);}
