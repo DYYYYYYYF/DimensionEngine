@@ -106,23 +106,36 @@ public:
 };
 
 
-template<typename T, typename ... Args>
-T* NewObject(Args&& ... args) {
-	T* _NewObject = (T*)Memory::Allocate(sizeof(T), MemoryType::eMemory_Type_Entity);
-	if (_NewObject == nullptr) {
-		GLOG(Log::eFatal, "Can not create object.");
+template<typename T, typename... Args>
+T* NewObject(Args&&... args) {
+	static_assert(std::is_constructible_v<T, Args...>,
+		"T must be constructible with given arguments");
+
+	void* memory = Memory::Allocate(sizeof(T), MemoryType::eMemory_Type_Entity);
+	if (memory == nullptr) {
+		GLOG(Log::eFatal, "Failed to allocate memory");
 		return nullptr;
 	}
 
-	return new(_NewObject)T(std::forward<Args>(args)...);
+	try {
+		return new(memory) T(std::forward<Args>(args)...);
+	}
+	catch (...) {
+		Memory::Free(memory, sizeof(T), MemoryType::eMemory_Type_Entity);
+		throw;
+	}
 }
 
-template<typename T, typename ... Args>
-void DeleteObject(T* Obj) {
-	if (Obj == nullptr) {
-		return;
+template<typename T>
+void DeleteObject(T* obj) noexcept {
+	if (obj == nullptr) return;
+
+	try {
+		obj->~T();
+	}
+	catch (...) {
+		GLOG(Log::eError, "Exception during destruction");
 	}
 
-	Obj->~T();
-	Memory::Free(Obj, sizeof(T), MemoryType::eMemory_Type_Entity);
+	Memory::Free(obj, sizeof(T), MemoryType::eMemory_Type_Entity);
 }

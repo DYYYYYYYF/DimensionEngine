@@ -9,6 +9,8 @@
 #include "Frustum.hpp"
 #include "Quaternion.hpp"
 
+#include "ForwardDeclarations.hpp"
+
 struct DAPI Axis {
 	inline static TVector3<float> X = TVector3<float>{ 1.0f, 0.0f, 0.0f };
 	inline static TVector3<float> Y = TVector3<float>{ 0.0f, 1.0f, 0.0f };

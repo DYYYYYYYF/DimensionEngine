@@ -22,15 +22,15 @@ void TestSIMD(){
 	GLOG(Log::eInfo, "\n SIMD:\n");
 	CheckSupportedSIMD();
 
-	TVector4<double> v1(1.0, 2.0, 3.0, 4.0);
-	TVector4<double> v2(5.0, 6.0, 7.0, 8.0);
+	Vector4d v1(1.0, 2.0, 3.0, 4.0);
+	Vector4d v2(5.0, 6.0, 7.0, 8.0);
 
 	GLOG(Log::eInfo, "Add:");
-	TVector4<double> v3 = v1 + v2;
+	Vector4d v3 = v1 + v2;
 	std::cout << v3 << std::endl;
 
 	GLOG(Log::eInfo, "Mul:");
-	TVector4<double> v4 = v1 * 2.0;
+	Vector4d v4 = v1 * 2.0;
 	std::cout << v4 << std::endl;
 
 }
