@@ -13,6 +13,8 @@ public:
 	ENGINE_API virtual ~JSONReader();
 
 public:
+	ENGINE_API bool IsValid() const { return IsParsed; }
+
 	ENGINE_API void SetPropertyString(const std::string& key, const std::string& val);
 	ENGINE_API std::string ReadPropertyString(const std::string& key);
 

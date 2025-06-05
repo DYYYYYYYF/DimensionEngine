@@ -2,11 +2,10 @@
 #include "Core/DMemory.hpp"
 #include "Core/EngineLogger.hpp"
 #include "Platform/Platform.hpp"
-#include <mutex>
 #include <algorithm>  // for std::min, std::max
 
 bool Freelist::Create(size_t total_size) {
-	std::lock_guard<std::mutex> lock(freelist_mutex);
+	MutexGuard Guard(freelist_mutex);
 
 	// Enough space to hold state, plus array for all nodes.
 	TotalSize = total_size;
@@ -53,9 +52,9 @@ bool Freelist::Create(size_t total_size) {
 }
 
 void Freelist::Destroy() {
-	std::lock_guard<std::mutex> lock(freelist_mutex);
-
 	if (ListMemory != nullptr) {
+		MutexGuard Guard(freelist_mutex);
+
 		Platform::PlatformFree(ListMemory, false);
 		ListMemory = nullptr;
 		Head = nullptr;
@@ -66,7 +65,7 @@ void Freelist::Destroy() {
 }
 
 bool Freelist::AllocateBlock(size_t size, size_t* offset) {
-	std::lock_guard<std::mutex> lock(freelist_mutex);
+	MutexGuard Guard(freelist_mutex);
 
 	if (offset == nullptr || ListMemory == nullptr) {
 		return false;
@@ -111,7 +110,7 @@ bool Freelist::AllocateBlock(size_t size, size_t* offset) {
 }
 
 bool Freelist::FreeBlock(size_t size, size_t offset) {
-	std::lock_guard<std::mutex> lock(freelist_mutex);
+	MutexGuard Guard(freelist_mutex);
 
 	if (ListMemory == nullptr || size == 0) {
 		return false;
@@ -223,7 +222,7 @@ bool Freelist::FreeBlock(size_t size, size_t offset) {
 }
 
 bool Freelist::Resize(size_t new_size) {
-	std::lock_guard<std::mutex> lock(freelist_mutex);
+	MutexGuard Guard(freelist_mutex);
 
 	if (ListMemory == nullptr || new_size < TotalSize) {
 		return false;
@@ -310,9 +309,9 @@ bool Freelist::Resize(size_t new_size) {
 }
 
 void Freelist::Clear() {
-	std::lock_guard<std::mutex> lock(freelist_mutex);
-
 	if (ListMemory != nullptr) {
+		MutexGuard Guard(freelist_mutex);
+
 		// Invalidate the offset and size for all but the first node. The invalid value
 		// will be checked for when seeking a new node from the list.
 		for (size_t i = 0; i < MaxEntries; ++i) {
@@ -330,8 +329,10 @@ void Freelist::Clear() {
 }
 
 size_t Freelist::GetFreeSpace() {
-	std::lock_guard<std::mutex> lock(freelist_mutex);
-	return GetFreeSpaceUnsafe();
+	MutexGuard Guard(freelist_mutex);
+	size_t FreeSpace = GetFreeSpaceUnsafe();
+
+	return FreeSpace;
 }
 
 // 内部不加锁的版本，供已经加锁的函数调用
@@ -351,8 +352,10 @@ size_t Freelist::GetFreeSpaceUnsafe() {
 }
 
 FreelistNode* Freelist::AcquireFreeNode() {
-	std::lock_guard<std::mutex> lock(freelist_mutex);
-	return AcquireFreeNodeUnsafe();
+	MutexGuard Guard(freelist_mutex);
+	FreelistNode* FreeNode = AcquireFreeNodeUnsafe();
+
+	return FreeNode;
 }
 
 // 内部不加锁的版本
@@ -368,7 +371,7 @@ FreelistNode* Freelist::AcquireFreeNodeUnsafe() {
 }
 
 void Freelist::ResetNode(FreelistNode* node) {
-	std::lock_guard<std::mutex> lock(freelist_mutex);
+	MutexGuard Guard(freelist_mutex);
 	ResetNodeUnsafe(node);
 }
 

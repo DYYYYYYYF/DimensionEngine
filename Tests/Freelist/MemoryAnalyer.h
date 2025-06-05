@@ -98,7 +98,7 @@ public:
 
 			std::vector<std::pair<void*, size_t>> local_ptrs;
 
-			while (!should_stop.load()) {
+			while (!should_stop) {
 				if (op_dist(gen) <= 60 || local_ptrs.empty()) {
 					// 60% 概率分配内存
 					size_t size = size_dist(gen);

@@ -19,14 +19,12 @@ bool Memory::Initialize(size_t size) {
 
 	AllocateCount = 0;
 	TotalAllocateSize = size;
-	AllocationMutex.Create();
 
 	GLOG(Log::eDebug, "Memory system successfully allocated %llu bytes.", TotalAllocateSize);
 	return true;
 }
 
 void Memory::Shutdown() {
-	AllocationMutex.Destroy();
 	DynamicAlloc.Destroy();
 	AllocateCount = 0;
 	TotalAllocateSize = 0;

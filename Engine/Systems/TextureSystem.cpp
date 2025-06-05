@@ -669,7 +669,7 @@ bool TextureSystem::ProcessTextureReference(const std::string& name, TextureType
 					}
 				}
 			}
-			UL_DEBUG("Texture '%s' does not yet exist. Created, and ref_count is now %i.", name.c_str(), Tex->GetReferenceCount());
+			GLOG(Log::eDebug, "Texture '%s' does not yet exist. Created, and ref_count is now %i.", name.c_str(), Tex->GetReferenceCount());
 		}
 	}
 
@@ -717,7 +717,7 @@ bool TextureSystem::ProcessTextureReference(const std::string& name, TextureType
 	}
 	else {
 		// Incrementing. Check if the handle is now or not.
-		UL_DEBUG("Texture '%s' already exists, ref_count increased to %i.", name.c_str(), Tex->GetReferenceCount());
+		GLOG(Log::eDebug, "Texture '%s' already exists, ref_count increased to %i.", name.c_str(), Tex->GetReferenceCount());
 	}
 
 	return true;

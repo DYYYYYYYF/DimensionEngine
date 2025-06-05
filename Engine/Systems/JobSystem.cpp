@@ -21,12 +21,6 @@ uint32_t JobSystem::RunJobThread(void* param) {
 	size_t ThreadID = Thr->thread.ThreadID;
 	GLOG(Log::eInfo, "Starting job thread #%i (id=%#x, type=%#x).", Thr->index, ThreadID, Thr->type_mask);
 
-	// A mutex to lock info for this thread.
-	if (!Thr->info_mutex.Create()) {
-		GLOG(Log::eError, "Failed to create job thread mutex! Aborting thread.");
-		return 0;
-	}
-
 	// Run forever, waiting for jobs,
 	while (true) {
 		if (!IsRunning || !Thr) {
@@ -90,7 +84,6 @@ uint32_t JobSystem::RunJobThread(void* param) {
 	}
 
 	// Destroy the mutex for this thread.
-	Thr->info_mutex.Destroy();
 	return 1;
 }
 
@@ -115,24 +108,6 @@ bool JobSystem::Initialize(unsigned char job_thread_count, unsigned int type_mas
 		}
 
 		Memory::Zero(&JobThreads[i].info, sizeof(JobInfo));
-	}
-
-	// Create needed mutexes.
-	if (!ResultMutex.Create()) {
-		GLOG(Log::eError, "Failed to create result mutex!");
-		return false;
-	}
-	if (!LowPriQueueMutex.Create()) {
-		GLOG(Log::eError, "Failed to create low priority queue mutex!");
-		return false;
-	}
-	if (!NormalPriQueueMutex.Create()) {
-		GLOG(Log::eError, "Failed to create normal priority queue mutex!");
-		return false;
-	}
-	if (!HighPriQueueMutex.Create()) {
-		GLOG(Log::eError, "Failed to create high priority queue mutex!");
-		return false;
 	}
 
 	return true;
@@ -170,12 +145,6 @@ void JobSystem::Shutdown() {
             Temp = nullptr;
         }
 	}
-
-	// Destroy mutexes
-	ResultMutex.Destroy();
-	LowPriQueueMutex.Destroy();
-	NormalPriQueueMutex.Destroy();
-	HighPriQueueMutex.Destroy();
 }
 
 void JobSystem::ProcessQueue(std::queue<JobInfo>& queue, Mutex* queue_mutex) {

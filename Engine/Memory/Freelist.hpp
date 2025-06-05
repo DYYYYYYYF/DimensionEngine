@@ -1,7 +1,7 @@
 ﻿#pragma once
 
 #include "Defines.hpp"
-#include <mutex>
+#include "Core/DMutex.hpp"
 
 struct DAPI FreelistNode {
 	size_t offset = 0;
@@ -80,5 +80,5 @@ private:
 	void* ListMemory;
 
 	// 线程安全相关
-	mutable std::mutex freelist_mutex;  // 保护所有操作的互斥锁
+	mutable Mutex freelist_mutex;  // 保护所有操作的互斥锁
 };

@@ -260,17 +260,14 @@ size_t Thread::GetThreadID() {
 // NOTE: End Threads
 
 // NOTE: Begin mutexs
-bool Mutex::Create() {
+Mutex::Mutex() {
 	InternalData = CreateMutex(0, 0, 0);
 	if (InternalData == nullptr) {
 		GLOG(Log::eFatal, "Unable to create mutex.");
-		return false;
 	}
-
-	return true;
 }
 
-void Mutex::Destroy() {
+Mutex::~Mutex() {
 	if (InternalData == nullptr) {
 		return;
 	}
