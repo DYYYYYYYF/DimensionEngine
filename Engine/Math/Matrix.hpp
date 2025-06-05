@@ -119,13 +119,14 @@ public:
 		return NewMat;
 	}
 
-	TMatrix4 Transpose() {
+	TMatrix4 Transpose() const {
+		TMatrix4 result = *this;
 		for (int row = 0; row < 4; ++row) {
 			for (int col = row + 1; col < 4; ++col) {
-				Swap(&data[row * 4 + col], &data[col * 4 + row]);
+				std::swap(result.data[row * 4 + col], result.data[col * 4 + row]);
 			}
-		} 
-		return *this;
+		}
+		return result;
 	}
 
 	/*
@@ -538,28 +539,32 @@ public:
 	}
 
 	bool operator==(const TMatrix4& other) {
-		return	(
-			(Dabs(other.data[0] - data[0]) <FLT_MIN) &&
-			(Dabs(other.data[0] - data[0]) <FLT_MIN) &&
-			(Dabs(other.data[0] - data[0]) <FLT_MIN) &&
-			(Dabs(other.data[0] - data[0]) <FLT_MIN) &&
-										   
-			(Dabs(other.data[0] - data[0]) <FLT_MIN) &&
-			(Dabs(other.data[0] - data[0]) <FLT_MIN) &&
-			(Dabs(other.data[0] - data[0]) <FLT_MIN) &&
-			(Dabs(other.data[0] - data[0]) <FLT_MIN) &&
-										  	
-			(Dabs(other.data[0] - data[0]) <FLT_MIN) &&
-			(Dabs(other.data[0] - data[0]) <FLT_MIN) &&
-			(Dabs(other.data[0] - data[0]) <FLT_MIN) &&
-			(Dabs(other.data[0] - data[0]) <FLT_MIN) &&
-			(Dabs(other.data[0] - data[0]) <FLT_MIN) &&
-											
-			(Dabs(other.data[0] - data[0]) <FLT_MIN) &&
-			(Dabs(other.data[0] - data[0]) <FLT_MIN) &&
-			(Dabs(other.data[0] - data[0]) <FLT_MIN) &&
-			(Dabs(other.data[0] - data[0]) <FLT_MIN)
-		);
+#if defined(SIMD_SUPPORTED)
+		if constexpr (std::is_same_v<T, float>) {
+			const float epsilon = D_FLOAT_EPSILON;
+			for (int i = 0; i < 16; i += 4) {
+				__m128 a = _mm_load_ps(&data[i]);
+				__m128 b = _mm_load_ps(&other.data[i]);
+				__m128 diff = _mm_sub_ps(a, b);
+				__m128 abs_diff = _mm_andnot_ps(_mm_set1_ps(-0.0f), diff); // 取绝对值
+				__m128 cmp = _mm_cmpgt_ps(abs_diff, _mm_set1_ps(epsilon));
+				if (_mm_movemask_ps(cmp) != 0) {
+					return false;
+				}
+			}
+			return true;
+		}
+#endif
+		for (int i = 0; i < 16; ++i) {
+			if (Dabs(other.data[i] - data[i]) > D_FLOAT_EPSILON) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	bool operator!=(const TMatrix4& other) {
+		return (!(*this == other));
 	}
 
 	template<typename TypeInex>
@@ -573,8 +578,8 @@ public:
 	}
 
 	TMatrix4 operator*(const TMatrix4& other) {
-		const T* MatPtr1 = data;
-		const T* MatPtr2 = other.data;
+		const T* MatPtr1 = other.data;
+		const T* MatPtr2 = data;
 
 		TMatrix4 NewMat = TMatrix4::Identity();
 		T* DstPtr = NewMat.data;

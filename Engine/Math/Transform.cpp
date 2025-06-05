@@ -64,15 +64,57 @@ void Transform::TransformRotate(const Vector3& translation, const Quaternion& ro
 	bIsDirty = true;
 }
 
-void Transform::UpdateLocal() {
+void Transform::UpdateLocal() const {
+	if (!bIsDirty) {
+		return;
+	}
+
+	Matrix4 S = Matrix4::FromScale(vScale);
 	Matrix4 R = vRotation.ToRotationMatrix();
 	Matrix4 T = Matrix4::FromTranslation(vPosition);
-	Matrix4 S = Matrix4::FromScale(vScale);
-
 	Local = T.Multiply(R.Multiply(S));
+
 	bIsDirty = false;
+	bInverseDirty = true; // 标记逆矩阵需要更新
 }
 
-Matrix4 Transform::GetLocal() {
+Matrix4 Transform::GetLocal() const {
 	return Local;
 }
+
+Matrix4 Transform::GetWorldMatrix() const {
+	if (bIsDirty) {
+		UpdateLocal();
+	}
+	return Local;
+}
+
+Matrix4 Transform::GetInverseWorldMatrix() const {
+	if (bIsDirty) {
+		UpdateLocal();
+	}
+
+	if (bInverseDirty) {
+		InverseLocal = Local.Inverse();
+		bInverseDirty = false;
+	}
+
+	return InverseLocal;
+}
+
+Vector3 Transform::TransformPoint(const Vector3& point) const {
+	if (bIsDirty) {
+		const_cast<Transform*>(this)->UpdateLocal();
+	}
+	return Local * point;
+}
+
+Vector3 Transform::TransformDirection(const Vector3& direction) const {
+	Matrix4 RS = Matrix4::FromScale(vScale) * vRotation.ToRotationMatrix();
+	return RS * direction;
+}
+
+Vector3 Transform::InverseTransformPoint(const Vector3& point) const {
+	return GetInverseWorldMatrix() * point;
+}
+

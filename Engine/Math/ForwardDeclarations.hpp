@@ -11,7 +11,7 @@ template<typename T> struct DAPI TExtents3D;
 template<typename T> struct DAPI TVertex3;
 template<typename T> struct DAPI TVertex2;
 
-using Vector2		=	TVector2<double>;
+using Vector2		=	TVector2<float>;
 using Vector2f		=	TVector2<float>;
 using Vector		=	TVector3<float>;
 using Vector3		=	TVector3<float>;
@@ -24,3 +24,10 @@ using Extents2D		=	TExtents2D<float>;
 using Extents3D		=	TExtents3D<float>;
 using Vertex		=	TVertex3<float>;
 using Vertex2D		=	TVertex2<float>;
+
+using Vector2d = TVector2<double>;
+using Vector3d = TVector3<double>;
+using Vector4d = TVector4<double>;
+using Quaterniond = TQuaternion<double>;
+using Matrix4d = TMatrix4<double>;
+using Vertexd = TVertex3<double>;

@@ -1,7 +1,7 @@
 ﻿#pragma once
 #include "MathTypes.hpp"
 
-class DAPI Transform {
+class DAPI alignas(16) Transform {
 public:
 	/**
 	 * @brief Creates and returns a new transform, using a zero vector for position,
@@ -89,16 +89,24 @@ public:
 	void SetPRS(const Vector3& pos, const Quaternion& rotation, const Vector3& scale);
 	void TransformRotate(const Vector3& translation, const Quaternion& rotation);
 
-	Matrix4 GetLocal();
+	Matrix4 GetLocal() const;
+	Matrix4 GetWorldMatrix() const;
+	Matrix4 GetInverseWorldMatrix() const;
+	Vector3 TransformPoint(const Vector3& point) const;
+	Vector3 TransformDirection(const Vector3& direction) const;
+	Vector3 InverseTransformPoint(const Vector3& point) const;
 
 	bool IsDirty() const { return bIsDirty; }
-	void UpdateLocal();
+	void UpdateLocal() const;
 
 private:
 	Vector3 vPosition;
 	Quaternion vRotation;
 	Vector3 vScale;
-	bool bIsDirty;
-	Matrix4 Local;
+
+	mutable bool bIsDirty;
+	mutable Matrix4 Local;
+	mutable Matrix4 InverseLocal;
+	mutable bool bInverseDirty;
 
 };

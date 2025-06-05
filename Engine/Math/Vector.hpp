@@ -11,14 +11,8 @@ public:
 	{
 		T elements[2] = { 0.0f };
 		struct {
-			union
-			{
-				T x, r, s, u;
-			};
-			union
-			{
-				T y, g, t, v;
-			};
+			union { T x, r, s, u; };
+			union { T y, g, t, v; };
 		};
 	};
 
@@ -64,8 +58,13 @@ public:
 	* @brief Normalizes vector
 	*/
 	TVector2 Normalize() {
-		x /= Length();
-		y /= Length();
+		T l = Length();
+		if (l < FLT_MIN) {
+			return TVector2();
+		}
+
+		x = x / l;
+		y = y / l;
 
 		return *this;
 	}
@@ -129,8 +128,12 @@ public:
 		return TVector2(-x, -y);
 	}
 
-	friend std::ostream& operator<<(std::ostream& os, const TVector2& vec) {
-		return os << "x: " << vec.x << " y: " << vec.y << "\n";
+	bool operator==(const TVector2& other) const {
+		return Compare(other);
+	}
+
+	bool operator!=(const TVector2& other) const {
+		return !(*this == other);
 	}
 };
 
@@ -215,7 +218,7 @@ public:
 	TVector3 Normalize() {
 		T l = Length();
 		if (l < FLT_MIN) {
-			return 0.0f;
+			return TVector3(0.0f);
 		}
 
 		x = x / l;
@@ -412,7 +415,7 @@ private:
             #endif
 		}
 		else {
-            GLOG(Log::eFatal, "Can not support 256bit SIMD yet!");
+            GLOG(Log::eWarn, "Can not support 256bit SIMD yet!");
 		}
 #endif
 	}
@@ -603,14 +606,14 @@ public:
 #endif
         }
 		else {
-			GLOG(Log::eFatal, "Engine not support double type SIMD yet!");
-			ASSERT(false);
+			GLOG(Log::eWarn, "Engine not support double type SIMD yet!");
+			return x * vec.x + y * vec.y + z * vec.z + w * vec.w;
 		}
 		res.x = reinterpret_cast<T*>(&res.data)[0];
 		res.y = reinterpret_cast<T*>(&res.data)[1];
 		res.z = reinterpret_cast<T*>(&res.data)[2];
 		res.w = reinterpret_cast<T*>(&res.data)[3];
-		return res;
+		return res.x + res.y + res.z + res.w;
 #else
 		return x * vec.x + y * vec.y + z * vec.z + w * vec.w;
 #endif
@@ -640,8 +643,9 @@ public:
 #endif
         }
 		else {
-			GLOG(Log::eFatal, "Engine not support double type SIMD yet!");
-			ASSERT(false);
+			GLOG(Log::eWarn, "Engine not support double type SIMD yet!");
+			TVector4 d{ x - vec.x, y - vec.y, z - vec.z, w - vec.w };
+			return d.Length();
 		}
 		d.x = reinterpret_cast<T*>(&d.data)[0];
 		d.y = reinterpret_cast<T*>(&d.data)[1];
@@ -696,8 +700,8 @@ public:
 #endif
         }
 		else {
-			GLOG(Log::eFatal, "Engine not support double type SIMD yet!");
-			ASSERT(false);
+			GLOG(Log::eWarn, "Engine not support double type SIMD yet!");
+			return TVector4{ x + vec.x, y + vec.y, z + vec.z, w + vec.w };
 		}
 		d.x = reinterpret_cast<T*>(&d.data)[0];
 		d.y = reinterpret_cast<T*>(&d.data)[1];
@@ -727,8 +731,8 @@ public:
 #endif
         }
 		else {
-			GLOG(Log::eFatal, "Engine not support double type SIMD yet!");
-			ASSERT(false);
+			GLOG(Log::eWarn, "Engine not support double type SIMD yet!");
+			return TVector4{ x - vec.x, y - vec.y, z - vec.z, w - vec.w };
 		}
 		d.x = reinterpret_cast<T*>(&d.data)[0];
 		d.y = reinterpret_cast<T*>(&d.data)[1];
@@ -760,8 +764,8 @@ public:
 #endif
         }
 		else {
-            GLOG(Log::eError, "Not support 256bit SIMD yet.");
-            ASSERT(false);
+            GLOG(Log::eWarn, "Not support 256bit SIMD yet.");
+			return TVector4{ x * vec.x, y * vec.y, z * vec.z, w * vec.w };
 		}
 		d.x = reinterpret_cast<T*>(&d.data)[0];
 		d.y = reinterpret_cast<T*>(&d.data)[1];
@@ -790,8 +794,8 @@ public:
 #endif
         }
         else {
-            GLOG(Log::eError, "Can not support 256bit SIMD yet.");
-            ASSERT(false);
+            GLOG(Log::eWarn, "Can not support 256bit SIMD yet.");
+			return TVector4{ x * num, y * num, z * num, w * num };
         }
 		d.x = reinterpret_cast<T*>(&d.data)[0];
 		d.y = reinterpret_cast<T*>(&d.data)[1];
@@ -826,8 +830,8 @@ public:
 			d.data = _mm_div_ps(data, safeDenom);  // Perform SIMD multiplication
 			_mm_store_ps(reinterpret_cast<float*>(&d.data), d.data);
 #else
-            GLOG(Log::eFatal, "Engine not support double type SIMD yet!");
-            ASSERT(false);
+            GLOG(Log::eWarn, "Engine not support double type SIMD yet!");
+			return TVector4{ x / num, y / num, y / num, w / num };
 #endif
         }
 		d.x = reinterpret_cast<T*>(&d.data)[0];
@@ -867,8 +871,8 @@ public:
 #endif
         }
 		else {
-			GLOG(Log::eFatal, "Engine not support double type SIMD yet!");
-			ASSERT(false);
+			GLOG(Log::eWarn, "Engine not support double type SIMD yet!");
+			return TVector4{ x / vec.x, y / vec.y, z / vec.z, w / vec.w };
 		}
 		d.x = reinterpret_cast<T*>(&d.data)[0];
 		d.y = reinterpret_cast<T*>(&d.data)[1];
