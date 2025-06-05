@@ -65,8 +65,17 @@ OpenAL and sniffle lib to load audio resource (.wma) and play.
 
 ## Short cut
 
-PBR  
+**PBR View**  
 ![](Assets/Shortcuts/PBR.png)
+
+**Noraml View**
+![](Assets/Shortcuts/Normal.png)
+
+**Light View** 
+![](Assets/Shortcuts/Light.png)
+
+**Depth View** 
+![](Assets/Shortcuts/Depth.png)
 
 
 
