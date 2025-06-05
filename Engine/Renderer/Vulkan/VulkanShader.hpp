@@ -105,7 +105,6 @@ public:
 protected:
 	virtual bool CreateModule();
 	virtual bool CompileShaderFile(bool writeToDisk = true);
-	virtual std::vector<uint32_t> CompileShaderFile(const std::string& filename, shaderc_shader_kind shadercStage, bool writeToDisk = true);
 
 private:
 	bool CreatePipeline();

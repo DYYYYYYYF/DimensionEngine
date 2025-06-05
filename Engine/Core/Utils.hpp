@@ -8,16 +8,6 @@
 #include "Resources/Shader.hpp"
 
 class DAPI Utils {
-public:
-	/**
-	 * @brief 编译Shader -> spv
-	 * @param file 文件名
-	 * @param shaderStage 着色阶段
-	 * @param writeToDisk是否需要写入本地
-	 * @return 二进制数据
-	 */
-	static std::vector<uint32_t> CompileShader(const std::string& file, enum ShaderStage shaderStage, bool writeToDisk = true);
-
 // String
 public:
 	/**

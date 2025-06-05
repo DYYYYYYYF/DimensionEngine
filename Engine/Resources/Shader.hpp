@@ -257,6 +257,10 @@ public:
 	virtual bool Reload() = 0;
 	virtual void Destroy() = 0;
 
+	// Shader utils
+	virtual std::vector<uint32_t> CompileShaderToSPV(const std::string& filename, enum ShaderStage shaderStage, bool writeToDisk = true);
+
+
 public:
 	IRenderer* Renderer;
 	ShaderFlagBits Flags;

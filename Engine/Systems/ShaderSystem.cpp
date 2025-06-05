@@ -8,7 +8,7 @@
 #include "Core/EngineLogger.hpp"
 #include "Containers/TString.hpp"
 #include "Renderer/Vulkan/VulkanShader.hpp"
-#include "../Utils/JSONReader.h"
+#include "Utils/JSONReader.h"
 
 IRenderer* ShaderSystem::Renderer = nullptr;
 ShaderSystem::Config ShaderSystem::ShaderSystemConfig;

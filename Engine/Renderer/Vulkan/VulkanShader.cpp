@@ -2,8 +2,9 @@
 #include "Systems/ResourceSystem.h"
 #include "Core/EngineLogger.hpp"
 #include "Platform/File.hpp"
-#include "../RendererFrontend.hpp"
+#include "Renderer/RendererFrontend.hpp"
 #include "VulkanBackend.hpp"
+#include "Core/Utils.hpp"
 
 bool VulkanShader::Initialize() {
 	if (Renderer == nullptr) {
@@ -250,88 +251,29 @@ bool VulkanShader::CompileShaderFile(bool writeToDisk/* = true*/){
 
 		File SPVFile(ShaderFile);
 		if (!SPVFile.IsExist() || Status == ShaderStatus::eShader_State_Reloading){
-			shaderc_shader_kind ShadercStage;
+			ShaderStage ShadercStage;
 			switch (vkShaderStageConfig.stage)
 			{
 			case vk::ShaderStageFlagBits::eVertex:
-				ShadercStage = shaderc_shader_kind::shaderc_vertex_shader;
+				ShadercStage = ShaderStage::eShader_Stage_Vertex;
+				break;
+			case vk::ShaderStageFlagBits::eGeometry:
+				ShadercStage = ShaderStage::eShader_Stage_Geometry;
 				break;
 			case vk::ShaderStageFlagBits::eFragment:
-				ShadercStage = shaderc_shader_kind::shaderc_fragment_shader;
+				ShadercStage = ShaderStage::eShader_Stage_Fragment;
 				break;
 			default:
-				ShadercStage = shaderc_shader_kind::shaderc_vertex_shader;
-				break;
+				GLOG(Log::eError, "Unknown shader stage flag.");
+				return false;
 			}
 
-			CompileShaderFile(vkShaderStageConfig.filename, ShadercStage);
+			CompileShaderToSPV(vkShaderStageConfig.filename, ShadercStage);
 		}
 	}
 
 	return true;
 }
-
-std::vector<uint32_t> VulkanShader::CompileShaderFile(const std::string& filename, shaderc_shader_kind shadercStage, bool writeToDisk) {
-	size_t PrePathIndex = filename.find_first_of('/');
-	size_t SufPathIndex = filename.find_last_of(".");
-	std::string PrePath = filename.substr(0, PrePathIndex);
-	std::string SufPath = filename.substr(PrePathIndex, SufPathIndex - PrePathIndex);
-
-	std::string ShaderSourceFilename;
-	shaderc_source_language SourceLanguage;
-	switch (Language)
-	{
-	case ShaderLanguage::eGLSL:
-		ShaderSourceFilename = "../Shaders/glsl" + SufPath;
-		SourceLanguage = shaderc_source_language_glsl;
-		break;
-	case ShaderLanguage::eHLSL:
-		ShaderSourceFilename = "../Shaders/hlsl" + SufPath + ".hlsl";
-		SourceLanguage = shaderc_source_language_hlsl;
-		break;
-	default:
-		ShaderSourceFilename = "../Shaders/glsl" + SufPath;
-		SourceLanguage = shaderc_source_language_glsl;
-		break;
-	}
-
-	GLOG(Log::eWarn, "Compile shader file %s...", ShaderSourceFilename.c_str());
-
-	File ShaderSource(ShaderSourceFilename);
-	std::string Content = ShaderSource.ReadBytes();
-	shaderc::Compiler compiler;
-	shaderc::CompileOptions options;
-	options.SetTargetEnvironment(shaderc_target_env_vulkan, shaderc_env_version_vulkan_1_3);
-	options.SetTargetSpirv(shaderc_spirv_version_1_6);
-	options.SetOptimizationLevel(shaderc_optimization_level_performance);	// 优化
-	options.SetSourceLanguage(SourceLanguage);
-
-	// Like -DMY_DEFINE=1
-	//options.AddMacroDefinition("MY_DEFINE", "1");
-
-	shaderc::SpvCompilationResult module = compiler.CompileGlslToSpv(Content, shadercStage, Name.c_str(), options);
-
-	if (module.GetCompilationStatus() !=
-		shaderc_compilation_status_success) {
-		GLOG(Log::eError, "Compile shader %s failed.\n\
-			Error msg: %s",
-			Name.c_str(),
-			module.GetErrorMessage().c_str()
-		);
-	}
-
-	std::vector<uint32_t> SPRIV = std::vector<uint32_t>(module.cbegin(), module.cend());
-
-	// 写入文件
-	if (writeToDisk && SPRIV.data()) {
-		std::string SPRIVFilePath = ResourceSystem::GetRootPath() + std::string("/Shaders") + SufPath + ".spv";
-		File OutFile(SPRIVFilePath);
-		OutFile.WriteBytes(reinterpret_cast<const char*>(SPRIV.data()), SPRIV.size() * sizeof(uint32_t), std::ios::trunc | std::ios::binary);
-	}
-
-	return SPRIV;
-}
-
 
 bool VulkanShader::CreatePipeline() {
 	VulkanBackend* vkRenderer = static_cast<VulkanBackend*>(Renderer->GetRenderBackend());
