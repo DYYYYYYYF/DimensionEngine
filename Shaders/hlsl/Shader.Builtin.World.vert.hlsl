@@ -31,6 +31,7 @@ struct VSOutput
     float4 outAmbientColor  : COLOR0;
     float3 outViewPosition  : VECTOR0;
     float3 outFragPosition  : VECTOR1;
+    float3 outVertPosition  : VECTOR2;
     float4 outColor         : COLOR1;
     float4 outTangent       : POSITION0;
 };
@@ -53,6 +54,7 @@ VSOutput main(VSInput input)
     output.outTangent = float4(normalize(mul(push_constants.model, input.vTangent)).xyz, input.vTangent.w);
 
     output.outMode = ubo.mode;
-    
+    output.outVertPosition = output.outPosition / 255.0f;
+
 	return output;
 }
