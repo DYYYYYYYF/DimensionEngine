@@ -1,7 +1,6 @@
 ﻿#pragma once
 
 #include "Renderer/Interface/IRendererBackend.hpp"
-#include "Core/DMemory.hpp"
 #include "VulkanContext.hpp"
 
 class VulkanBuffer;
@@ -65,9 +64,9 @@ public:
 	virtual bool FreeRenderbuffer(IRenderbuffer* buffer, size_t size, size_t offset);
 
 	// Render target
-	virtual void SetViewport(Vector4 rect) override;
+	virtual void SetViewport(const Vector4& rect) override;
 	virtual void ResetViewport() override;
-	virtual void SetScissor(Vector4 rect) override;
+	virtual void SetScissor(const Vector4& rect) override;
 	virtual void ResetScissor() override;
 
 	// Shaders.

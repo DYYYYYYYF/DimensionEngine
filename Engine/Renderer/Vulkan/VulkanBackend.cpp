@@ -485,7 +485,7 @@ bool VulkanBackend::EndFrame(double delta_time) {
 	return true;
 }
 
-void VulkanBackend::SetViewport(Vector4 rect) {
+void VulkanBackend::SetViewport(const Vector4& rect) {
 	// Dynamic state
 	vk::Viewport Viewport;
 	Viewport.x = rect.x;
@@ -504,7 +504,7 @@ void VulkanBackend::ResetViewport() {
 	SetViewport(Context.ViewportRect);
 }
 
-void VulkanBackend::SetScissor(Vector4 rect) {
+void VulkanBackend::SetScissor(const Vector4& rect) {
 	vk::Rect2D Scissor;
 	Scissor.offset.x = (uint32_t)rect.x;
 	Scissor.offset.y = (uint32_t)rect.y;

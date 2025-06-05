@@ -75,9 +75,9 @@ public:
 	virtual bool DrawRenderbuffer(IRenderbuffer* buffer, size_t offset, uint32_t element_count, bool bind_only) = 0;
 
 	// Render target
-	virtual void SetViewport(Vector4 rect) = 0;
+	virtual void SetViewport(const Vector4& rect) = 0;
 	virtual void ResetViewport() = 0;
-	virtual void SetScissor(Vector4 rect) = 0;
+	virtual void SetScissor(const Vector4& rect) = 0;
 	virtual void ResetScissor() = 0;
 
 	// Shader
