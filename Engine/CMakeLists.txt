@@ -28,6 +28,7 @@ target_include_directories(
     engine 
     PUBLIC 
     UL::Logger
+    yaml-cpp
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${STB_DIR}
     ${Python3_INCLUDE_DIRS}
@@ -63,6 +64,6 @@ message("-- Shaderc: ${GLSLANGL_IBS}")
     target_link_libraries(engine PUBLIC "vulkan-1.lib")
 endif()
 
-target_link_libraries(engine PUBLIC ${Python3_LIBRARIES} UL::Logger)
+target_link_libraries(engine PUBLIC ${Python3_LIBRARIES} UL::Logger yaml-cpp)
 
 message("-- Generated Engine Library\n")

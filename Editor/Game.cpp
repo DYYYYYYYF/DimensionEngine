@@ -4,7 +4,7 @@
 #include <Core/Controller.hpp>
 #include <Core/Event.hpp>
 #include <Core/Metrics.hpp>
-#include <Utils/JSONReader.h>
+#include "Utils/YAMLReader.h"
 #include <Systems/CameraSystem.h>
 #include <Containers/TString.hpp>
 
@@ -69,9 +69,9 @@ bool GameOnDebugEvent(eEventCode code, void* sender, void* listener_instance, SE
 bool GameInstance::Boot(IRenderer* renderer) {
 	GLOG(Log::eInfo, "Booting...");
 
-	JSONReader JsonReader(EDITOR_CONFIG_PATH);
-	WindowSize.Width = JsonReader.ReadPropertyInt("Window.Width");
-	WindowSize.Height = JsonReader.ReadPropertyInt("Window.Height");
+	YAMLReader YamlReader(EDITOR_CONFIG_PATH);
+	WindowSize.Width = YamlReader.ReadPropertyInt("Window.Width");
+	WindowSize.Height = YamlReader.ReadPropertyInt("Window.Height");
 
 	Renderer = renderer;
 	GameConsole = NewObject<DebugConsoleActor>(Renderer);
@@ -113,14 +113,14 @@ bool GameInstance::Boot(IRenderer* renderer) {
 
 bool GameInstance::Initialize() {
 	GLOG(Log::eDebug, "GameInitialize() called.");
-	JSONReader JsonReader(EDITOR_CONFIG_PATH);
-	Matrix4 Mat = JsonReader.ReadPropertyMatrix("Camera.Transform");
+	YAMLReader YamlReader(EDITOR_CONFIG_PATH);
+	Matrix4 Mat = YamlReader.ReadPropertyMatrix("Camera.Transform");
 
 	// Load python script
 	TestPython.SetPythonFile("recompile_shader");
 
-	Vector3 Position = JsonReader.ReadPropertyVector("Camera.Position");
-	Vector3 Rotation = JsonReader.ReadPropertyVector("Camera.Rotation");
+	Vector3 Position = YamlReader.ReadPropertyVector("Camera.Position");
+	Vector3 Rotation = YamlReader.ReadPropertyVector("Camera.Rotation");
 
 	WorldCamera = CameraSystem::GetDefault();
 	WorldCamera->SetPosition(Position);
@@ -277,11 +277,11 @@ void GameInstance::Shutdown() {
 	TestText.Destroy();
 	TestSysText.Destroy();
 
-	JSONReader JsonReader(EDITOR_CONFIG_PATH);
-	JsonReader.SetPropertyInt("Window.Width", WindowSize.Width);
-	JsonReader.SetPropertyInt("Window.Height", WindowSize.Height);
-	JsonReader.SetPropertyVector("Camera.Position", WorldCamera->GetPosition());
-	JsonReader.SetPropertyVector("Camera.Rotation", WorldCamera->GetEulerAngles());
+	YAMLReader YamlReader(EDITOR_CONFIG_PATH);
+	YamlReader.SetPropertyInt("Window.Width", WindowSize.Width);
+	YamlReader.SetPropertyInt("Window.Height", WindowSize.Height);
+	YamlReader.SetPropertyVector("Camera.Position", WorldCamera->GetPosition());
+	YamlReader.SetPropertyVector("Camera.Rotation", WorldCamera->GetEulerAngles());
 
 	// TODO: TEMP
 	EngineEvent::Unregister(eEventCode::Debug_0, this, GameOnDebugEvent);

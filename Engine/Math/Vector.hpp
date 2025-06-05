@@ -658,6 +658,16 @@ public:
 		return TVector4_Base(-x, -y, -z, -w);
 	}
 
+	T& operator[](size_t col) {
+		ASSERT(col < 4);
+		return elements[col];
+	}
+
+	const T& operator[](size_t col) const {
+		ASSERT(col < 4);
+		return elements[col];
+	}
+
 	// 复合赋值操作符
 	TVector4_Base& operator+=(const TVector4_Base& vec) noexcept {
 		*this = *this + vec;

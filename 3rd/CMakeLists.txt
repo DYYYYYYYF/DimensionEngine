@@ -19,3 +19,8 @@ if (ENABLE_PLUGINS_AUDIO)
     #set(BUILD_TESTING OFF CACHE BOOL "Build tests" FORCE)
     add_subdirectory(sndfile-audio-loader)          # Audio loader
 endif()
+
+# yaml-cpp
+option(YAML_CPP_BUILD_TESTS OFF)
+option(YAML_CPP_BUILD_TOOLS OFF)
+add_subdirectory(yaml-cpp)

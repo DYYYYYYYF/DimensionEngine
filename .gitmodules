@@ -10,6 +10,6 @@
 [submodule "3rd/sndfile-audio-loader"]
 	path = 3rd/sndfile-audio-loader
 	url = https://github.com/libsndfile/libsndfile.git
-[submodule "3rd/rapidjson"]
-	path = 3rd/rapidjson
-	url = https://github.com/Tencent/rapidjson.git
+[submodule "3rd/yaml-cpp"]
+	path = 3rd/yaml-cpp
+	url = https://github.com/jbeder/yaml-cpp.git

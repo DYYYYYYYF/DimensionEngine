@@ -950,23 +950,21 @@ public:
 #endif
 	}
 
-	TVector4<T> GetColoumn(int i) const {
-		if (i < 1 || i > 4) {
-			GLOG(Log::eWarn, "Invalid matrix boundings. Return Vec4().")
-				return TVector4<T>();
+	TVector4<T> GetColoumn(int Col) const {
+		if (Col < 0 || Col > 3) {
+			GLOG(Log::eWarn, "Invalid matrix boundings. Return Vec4().");
+			return TVector4<T>();
 		}
 
-		int Col = i - 1;
 		return TVector4<T>(data[Col], data[Col + 4], data[Col + 8], data[Col + 12]);
 	}
 
-	TVector4<T> GetRow(int i) const {
-		if (i < 1 || i > 4) {
-			GLOG(Log::eWarn, "Invalid matrix boundings. Return Vec4().")
-				return TVector4<T>(0.0f);
+	TVector4<T> GetRow(int Row) const {
+		if (Row < 0 || Row > 3) {
+			GLOG(Log::eWarn, "Invalid matrix boundings. Return Vec4().");
+			return TVector4<T>(0.0f);
 		}
 
-		int Row = i - 1;
 		return TVector4<T>(data[Row * 4], data[Row * 4 + 1], data[Row * 4 + 2], data[Row * 4 + 3]);
 	}
 
