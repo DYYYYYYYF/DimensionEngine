@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Math/MathTypes.hpp"
 #include "Math/Transform.hpp"

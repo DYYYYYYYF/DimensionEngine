@@ -685,7 +685,7 @@ public:
 };
 
 template<typename T>
-struct alignas(16) TVector4_SIMD {  // 32字节对齐支持AVX
+struct alignas(32) TVector4_SIMD {  // 32字节对齐支持AVX
 	static_assert(std::is_floating_point<T>::value);
 
 public:

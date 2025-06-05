@@ -1,4 +1,4 @@
-#include "Platform.hpp"
+﻿#include "Platform.hpp"
 
 #if defined(DPLATFORM_WINDOWS)
 

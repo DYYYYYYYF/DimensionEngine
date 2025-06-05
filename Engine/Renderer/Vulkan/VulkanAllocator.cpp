@@ -1,4 +1,4 @@
-#include "VulkanAllocator.hpp"
+﻿#include "VulkanAllocator.hpp"
 
 #include "Core/DMemory.hpp"
 #include "Core/EngineLogger.hpp"

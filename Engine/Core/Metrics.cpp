@@ -1,4 +1,4 @@
-#include "Metrics.hpp"
+﻿#include "Metrics.hpp"
 #include "DMemory.hpp"
 
 bool Metrics::Initialized;

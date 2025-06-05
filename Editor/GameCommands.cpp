@@ -1,4 +1,4 @@
-#include "GameCommands.hpp"
+﻿#include "GameCommands.hpp"
 #include <Core/Console.hpp>
 #include <Core/Event.hpp>
 #include <Core/EngineLogger.hpp>

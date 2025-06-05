@@ -1,4 +1,4 @@
-#include "Clock.hpp"
+﻿#include "Clock.hpp"
 
 #include "Platform/Platform.hpp"
 

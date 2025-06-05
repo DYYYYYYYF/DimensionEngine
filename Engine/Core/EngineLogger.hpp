@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "Platform/Platform.hpp"
 #include "Core/Console.hpp"
 

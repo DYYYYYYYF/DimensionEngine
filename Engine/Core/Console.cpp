@@ -1,4 +1,4 @@
-#include "Console.hpp"
+﻿#include "Console.hpp"
 #include "Core/Utils.hpp"
 #include "Core/Event.hpp"
 

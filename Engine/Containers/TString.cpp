@@ -1,4 +1,4 @@
-#include "TString.hpp"
+﻿#include "TString.hpp"
 
 String::String() {
 	this->Str = (char*)Memory::Allocate(sizeof(char), MemoryType::eMemory_Type_String);

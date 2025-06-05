@@ -1,4 +1,4 @@
-#include "EngineLogger.hpp"
+﻿#include "EngineLogger.hpp"
 
 #ifdef __APPLE__
 using namespace std::filesystem;

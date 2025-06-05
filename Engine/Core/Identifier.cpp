@@ -1,4 +1,4 @@
-#include "Identifier.hpp"
+﻿#include "Identifier.hpp"
 #include "EngineLogger.hpp"
 
 std::vector<void*> Identifier::Owners;

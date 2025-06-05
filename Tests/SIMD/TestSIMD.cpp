@@ -1,4 +1,4 @@
-#include <Math/MathTypes.hpp>
+﻿#include <Math/MathTypes.hpp>
 
 void CheckSupportedSIMD() {
 #if defined(SIMD_SUPPORTED_NEON)

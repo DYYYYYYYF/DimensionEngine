@@ -384,6 +384,7 @@ void RunAnalysis() {
 }
 
 // 简化的单元测试宏
+#ifndef TEST_ASSERT
 #define TEST_ASSERT(condition, message) \
     do { \
         if (!(condition)) { \
@@ -391,7 +392,9 @@ void RunAnalysis() {
             return false; \
         } \
     } while(0)
+#endif
 
+#ifndef TEST_ASSERT_EQ
 #define TEST_ASSERT_EQ(expected, actual, message) \
     do { \
         if ((expected) != (actual)) { \
@@ -400,6 +403,7 @@ void RunAnalysis() {
             return false; \
         } \
     } while(0)
+#endif
 
 // 额外的单元测试
 bool TestAlignmentEdgeCases() {

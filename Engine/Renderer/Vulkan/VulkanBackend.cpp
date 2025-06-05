@@ -1,4 +1,4 @@
-#include "VulkanBackend.hpp"
+﻿#include "VulkanBackend.hpp"
 #include "VulkanPlatform.hpp"
 #include "VulkanDevice.hpp"
 #include "VulkanImage.hpp"

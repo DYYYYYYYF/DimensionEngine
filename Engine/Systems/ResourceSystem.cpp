@@ -1,4 +1,4 @@
-#include "ResourceSystem.h"
+﻿#include "ResourceSystem.h"
 
 #include "Renderer/Vulkan/VulkanContext.hpp"
 

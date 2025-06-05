@@ -1,4 +1,4 @@
-#include "Shader.hpp"
+ï»¿#include "Shader.hpp"
 #include "Systems/ResourceSystem.h"
 #include "Platform/File.hpp"
 #include "Renderer/Vulkan/VulkanShader.hpp"
@@ -54,7 +54,7 @@ std::vector<uint32_t> Shader::CompileShaderToSPV(const std::string& filename, en
 	shaderc::CompileOptions options;
 	options.SetTargetEnvironment(shaderc_target_env_vulkan, shaderc_env_version_vulkan_1_3);
 	options.SetTargetSpirv(shaderc_spirv_version_1_6);
-	options.SetOptimizationLevel(shaderc_optimization_level_performance);	// ÓÅ»¯
+	options.SetOptimizationLevel(shaderc_optimization_level_performance);	// ä¼˜åŒ–
 	options.SetSourceLanguage(SourceLanguage);
 
 	// Like -DMY_DEFINE=1
@@ -74,7 +74,7 @@ std::vector<uint32_t> Shader::CompileShaderToSPV(const std::string& filename, en
 
 	std::vector<uint32_t> SPRIV = std::vector<uint32_t>(module.cbegin(), module.cend());
 
-	// Ð´ÈëÎÄ¼þ
+	// å†™å…¥æ–‡ä»¶
 	if (writeToDisk && SPRIV.data()) {
 		std::string SPRIVFilePath = ResourceSystem::GetRootPath() + std::string("/Shaders") + SufPath + ".spv";
 		File OutFile(SPRIVFilePath);

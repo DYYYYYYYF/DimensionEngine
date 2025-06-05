@@ -1,4 +1,4 @@
-#include "FileWatcher.h"
+﻿#include "FileWatcher.h"
 #include "iostream"
 #include "Platform/File.hpp"
 #include "Core/Event.hpp"

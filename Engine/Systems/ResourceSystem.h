@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Resources/Resource.hpp"
 #include <vector>
