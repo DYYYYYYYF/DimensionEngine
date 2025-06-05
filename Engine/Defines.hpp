@@ -80,6 +80,24 @@
 #elif defined(__AVX2__)
 static A = 0;
 #endif
+
+
+#if defined(_MSC_VER)
+// MSVC 特别处理
+#if defined(_MSVC_LANG) && _MSVC_LANG >= 201703L
+#define IS_CPP17_OR_HIGHER 1
+#else
+#define IS_CPP17_OR_HIGHER 0
+#endif
+#else
+// GCC/Clang/其他标准编译器
+#if __cplusplus >= 201703L
+#define IS_CPP17_OR_HIGHER 1
+#else
+#define IS_CPP17_OR_HIGHER 0
+#endif
+#endif
+
 inline void cpuid(int info[4], int function_id) {
 	__cpuid(info, function_id);
 }

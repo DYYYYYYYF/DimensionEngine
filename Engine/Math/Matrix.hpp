@@ -223,7 +223,7 @@ public:
 		Vector.x = -data[2];
 		Vector.y = -data[6];
 		Vector.z = -data[10];
-		return Vector.Normalize();
+		return Vector.Normalized();
 	}
 
 	/*
@@ -236,7 +236,7 @@ public:
 		Vector.x = data[2];
 		Vector.y = data[6];
 		Vector.z = data[10];
-		return Vector.Normalize();
+		return Vector.Normalized();
 	}
 
 	/*
@@ -249,7 +249,7 @@ public:
 		Vector.x = data[1];
 		Vector.y = data[5];
 		Vector.z = data[9];
-		return Vector.Normalize();
+		return Vector.Normalized();
 	}
 
 	/*
@@ -262,7 +262,7 @@ public:
 		Vector.x = -data[1];
 		Vector.y = -data[5];
 		Vector.z = -data[9];
-		return Vector.Normalize();
+		return Vector.Normalized();
 	}
 
 	/*
@@ -275,7 +275,7 @@ public:
 		Vector.x = -data[0];
 		Vector.y = -data[4];
 		Vector.z = -data[8];
-		return Vector.Normalize();
+		return Vector.Normalized();
 	}
 
 	/*
@@ -288,7 +288,7 @@ public:
 		Vector.x = data[0];
 		Vector.y = data[4];
 		Vector.z = data[8];
-		return Vector.Normalize();
+		return Vector.Normalized();
 	}
 
 public:
@@ -395,7 +395,7 @@ public:
 			return Matrix;
 		}
 
-		TVector3<T> AxisZ = (position - target).Normalize();	
+		TVector3<T> AxisZ = (position - target).Normalized();	
 		TVector3<T> AxisX = AxisZ.Cross(up);
 		TVector3<T> AxisY = AxisX.Cross(AxisZ);
 

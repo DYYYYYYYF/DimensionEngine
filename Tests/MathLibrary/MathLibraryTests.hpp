@@ -83,10 +83,10 @@ public:
 
 		// 标准化测试
 		Vector2f v2 = v1;
-		v2.Normalize();
-		ASSERT_FLOAT_EQUAL(1.0f, v2.Length(), "Vector2 normalize - unit length");
-		ASSERT_FLOAT_EQUAL(0.6f, v2.x, "Vector2 normalize - x component");
-		ASSERT_FLOAT_EQUAL(0.8f, v2.y, "Vector2 normalize - y component");
+		Vector2f nv2 = v2.Normalized();
+		ASSERT_FLOAT_EQUAL(1.0f, nv2.Length(), "Vector2 normalize - unit length");
+		ASSERT_FLOAT_EQUAL(0.6f, nv2.x, "Vector2 normalize - x component");
+		ASSERT_FLOAT_EQUAL(0.8f, nv2.y, "Vector2 normalize - y component");
 
 		// 运算符测试
 		Vector2f v3(1.0f, 2.0f);
@@ -140,7 +140,7 @@ public:
 
 		// 标准化测试
 		Vector3 v5(3.0f, 4.0f, 0.0f);
-		Vector3 normalized = v5.Normalize();
+		Vector3 normalized = v5.Normalized();
 		ASSERT_FLOAT_EQUAL(1.0f, normalized.Length(), "Vector3 normalize - unit length");
 
 		// 静态方向向量测试
@@ -189,8 +189,8 @@ public:
 
 		// 标准化测试
 		Vector4 v5 = v1;
-		v5.Normalize();
-		ASSERT_FLOAT_EQUAL(1.0f, v5.Length(), "Vector4 normalize - unit length");
+		Vector4 nv5 = v5.Normalized();
+		ASSERT_FLOAT_EQUAL(1.0f, nv5.Length(), "Vector4 normalize - unit length");
 	}
 
 	// ================================
@@ -548,12 +548,12 @@ public:
 
 		// 零向量测试
 		Vector3 zero_vec(0.0f, 0.0f, 0.0f);
-		Vector3 normalized = zero_vec.Normalize();
+		Vector3 normalized = zero_vec.Normalized();
 		ASSERT_FLOAT_EQUAL(0.0f, normalized.Length(), "Zero vector normalization");
 
 		// 非常小的向量
 		Vector3 tiny_vec(1e-10f, 1e-10f, 1e-10f);
-		Vector3 tiny_norm = tiny_vec.Normalize();
+		Vector3 tiny_norm = tiny_vec.Normalized();
 		ASSERT_TRUE(tiny_norm.Length() <= 1.0f + EPSILON, "Tiny vector normalization");
 
 		// 奇异矩阵（零行列式）

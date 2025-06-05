@@ -627,7 +627,7 @@ void MeshLoader::ProcessSubobject(std::vector<Vector3>& positions, std::vector<V
 			Vector3 Edge1 = Pos2 - Pos1;
 			Vector3 Edge2 = Pos3 - Pos2;
 
-			DefaultNormal = (Edge1.Cross(Edge2)).Normalize();
+			DefaultNormal = (Edge1.Cross(Edge2)).Normalized();
 		}
 
 		// Each vertex

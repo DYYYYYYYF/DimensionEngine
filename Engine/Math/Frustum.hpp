@@ -29,7 +29,7 @@ class DAPI Plane3D {
 public:
 	Plane3D() : Normal(0), Distance(0.0f) {}
 	Plane3D(TVector3<float> p1, TVector3<float> Norm) {
-		Normal = Norm.Normalize();
+		Normal = Norm.Normalized();
 		Distance = Normal.Dot(p1);
 	}
 

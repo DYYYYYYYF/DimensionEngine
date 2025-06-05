@@ -33,7 +33,7 @@ void GeometryUtils::GenerateNormals(uint32_t vertex_count, Vertex* vertices,
 			continue;
 		}
 
-		Normal = Normal.Normalize();
+		Normal = Normal.Normalized();
 
 		if (smooth) {
 			// 平滑法线：累积加权法线
@@ -53,7 +53,7 @@ void GeometryUtils::GenerateNormals(uint32_t vertex_count, Vertex* vertices,
 	if (smooth) {
 		for (uint32_t i = 0; i < vertex_count; ++i) {
 			if (vertices[i].normal.LengthSquared() > 1e-12f) {
-				vertices[i].normal = vertices[i].normal.Normalize();
+				vertices[i].normal = vertices[i].normal.Normalized();
 			}
 			else {
 				// 如果法线为零，设置默认向上法线
@@ -137,7 +137,7 @@ void GeometryUtils::GenerateTangents(uint32_t vertex_count, Vertex* vertices,
 		Vector3& t = tangents[i];
 
 		// Gram-Schmidt正交化
-		t = (t - n * n.Dot(t)).Normalize();
+		t = (t - n * n.Dot(t)).Normalized();
 
 		// 计算handedness
 		float handedness = (n.Cross(t).Dot(bitangents[i]) < 0.0f) ? -1.0f : 1.0f;
