@@ -3,7 +3,7 @@
 	url = https://github.com/DYYYYYYYF/UncleDon-Logger
 [submodule "3rd/stb"]
 	path = 3rd/stb
-	url = git@github.com:nothings/stb.git
+	url = https://github.com/nothings/stb.git
 [submodule "3rd/openal-soft"]
 	path = 3rd/openal-soft
 	url = https://github.com/kcat/openal-soft.git
