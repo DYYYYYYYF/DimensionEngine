@@ -89,7 +89,10 @@ void main(){
 		RMA /= 255;
 		FragColor = PBR(point_light_0, Normal, in_dto.vAmbientColor.xyz, in_dto.vViewPosition, in_dto.vFragPosition, RMA.r, RMA.g, RMA.b);
 	}
-	else if (in_mode == 1 || in_mode == 2){
+	else if (in_mode == 1){
+		FragColor = vec4(Normal.x, Normal.y, Normal.z, 1.0f);
+	}
+	else if (in_mode == 2){
 		vec3 vViewDirection = normalize(in_dto.vViewPosition - in_dto.vFragPosition);
 		FragColor = CalculateDirectionalLight(dir_light, Normal, vViewDirection);
 
