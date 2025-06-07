@@ -1,4 +1,4 @@
-﻿#include "YAMLReader.h"
+#include "YAMLReader.h"
 #include <fstream>
 #include <sstream>
 
@@ -194,73 +194,75 @@ std::vector<std::string> YAMLReader::SplitPath(const std::string& key) {
 
 template<typename T>
 bool YAMLReader::ModifyYAMLValueByPath(YAML::Node& node, const std::vector<std::string>& keys, const T& val) {
-	if (keys.empty()) {
-		return false;
-	}
+    if (keys.empty()) {
+        return false;
+    }
 
-	if (keys.size() == 1) {
-		std::string currentKey = keys[0];
+    try {
+        YAML::Node current = node;
+        
+        // 导航到目标位置，为除最后一个键外的所有键创建路径
+        for (size_t i = 0; i < keys.size() - 1; ++i) {
+            std::string key = keys[i];
+            
+            if (key.find('[') != std::string::npos && key.back() == ']') {
+                // 处理数组索引
+                size_t indexStart = key.find('[');
+                size_t indexEnd = key.find(']');
+                std::string arrayKey = key.substr(0, indexStart);
+                int index = std::stoi(key.substr(indexStart + 1, indexEnd - indexStart - 1));
 
-		// 处理数组索引
-		if (currentKey.find('[') != std::string::npos && currentKey.back() == ']') {
-			size_t indexStart = currentKey.find('[');
-			size_t indexEnd = currentKey.find(']');
-			std::string arrayKey = currentKey.substr(0, indexStart);
-			int index = std::stoi(currentKey.substr(indexStart + 1, indexEnd - indexStart - 1));
+                if (!current[arrayKey]) {
+                    current[arrayKey] = YAML::Node(YAML::NodeType::Sequence);
+                }
 
-			if (!node[arrayKey]) {
-				node[arrayKey] = YAML::Node(YAML::NodeType::Sequence);
-			}
+                // 扩展数组大小
+                while ((int)current[arrayKey].size() <= index) {
+                    current[arrayKey].push_back(YAML::Node(YAML::NodeType::Map));
+                }
 
-			YAML::Node& array = node[arrayKey];
-			if (array.IsSequence()) {
-				// 扩展数组大小以适应索引
-				while ((int)array.size() <= index) {
-					array.push_back(YAML::Node());
-				}
-				array[index] = val;
-				return true;
-			}
-		}
-		else {
-			node[currentKey] = val;
-			return true;
-		}
-	}
+                current = current[arrayKey][index];
+            }
+            else {
+                // 处理普通键
+                if (!current[key]) {
+                    current[key] = YAML::Node(YAML::NodeType::Map);
+                }
+                current = current[key];
+            }
+        }
+        
+        // 处理最后一个键并设置值
+        std::string finalKey = keys.back();
+        if (finalKey.find('[') != std::string::npos && finalKey.back() == ']') {
+            // 处理最后的数组索引
+            size_t indexStart = finalKey.find('[');
+            size_t indexEnd = finalKey.find(']');
+            std::string arrayKey = finalKey.substr(0, indexStart);
+            int index = std::stoi(finalKey.substr(indexStart + 1, indexEnd - indexStart - 1));
 
-	std::string currentKey = keys[0];
+            if (!current[arrayKey]) {
+                current[arrayKey] = YAML::Node(YAML::NodeType::Sequence);
+            }
 
-	// 处理数组索引的嵌套情况
-	if (currentKey.find('[') != std::string::npos && currentKey.back() == ']') {
-		size_t indexStart = currentKey.find('[');
-		size_t indexEnd = currentKey.find(']');
-		std::string arrayKey = currentKey.substr(0, indexStart);
-		int index = std::stoi(currentKey.substr(indexStart + 1, indexEnd - indexStart - 1));
+            // 扩展数组大小
+            while ((int)current[arrayKey].size() <= index) {
+                current[arrayKey].push_back(YAML::Node());
+            }
 
-		if (!node[arrayKey]) {
-			node[arrayKey] = YAML::Node(YAML::NodeType::Sequence);
-		}
-
-		YAML::Node& array = node[arrayKey];
-		if (array.IsSequence()) {
-			while ((int)array.size() <= index) {
-				array.push_back(YAML::Node(YAML::NodeType::Map));
-			}
-
-			std::vector<std::string> remainingKeys(keys.begin() + 1, keys.end());
-			return ModifyYAMLValueByPath(array[index], remainingKeys, val);
-		}
-	}
-	else {
-		if (!node[currentKey]) {
-			node[currentKey] = YAML::Node(YAML::NodeType::Map);
-		}
-
-		std::vector<std::string> remainingKeys(keys.begin() + 1, keys.end());
-		return ModifyYAMLValueByPath(node[currentKey], remainingKeys, val);
-	}
-
-	return false;
+            current[arrayKey][index] = val;
+        }
+        else {
+            // 处理最后的普通键
+            current[finalKey] = val;
+        }
+        
+        return true;
+    }
+    catch (const std::exception& e) {
+        GLOG(Log::eError, "Failed to modify YAML value: %s", e.what());
+        return false;
+    }
 }
 
 template<typename T>

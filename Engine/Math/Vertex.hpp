@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "Vector.hpp"
 
 template<typename T>
@@ -113,7 +113,7 @@ struct TVertex2 {
 
 	bool Compare(const TVertex2& v0) const {
 		return position.Compare(v0.position, D_FLOAT_EPSILON) &&
-			texcoord.Compare(v0.texcoord, D_FLOAT_EPSILON) &&
+            texcoord.Compare(v0.texcoord, D_FLOAT_EPSILON);
 	}
 
 	TVector2<T> position;

@@ -1,4 +1,4 @@
-﻿#include "FontSystem.hpp"
+#include "FontSystem.hpp"
 
 #include "Core/DMemory.hpp"
 #include "Core/EngineLogger.hpp"
@@ -41,21 +41,21 @@ bool FontSystem::Initilized = false;
 std::unordered_map<std::string, uint32_t> FontSystem::SystemFontMap;
 std::unordered_map<std::string, uint32_t> FontSystem::BitmapFontMap;
 
-bool FontSystem::Initialize(IRenderer* renderer, FontSystemConfig* config){
+bool FontSystem::Initialize(IRenderer* renderer, const FontSystemConfig& config){
 	if (renderer == nullptr) {
 		return false;
 	}
 
-	if (config->maxBitmapFontCount == 0 || config->maxSystemFontCount == 0) {
+	if (config.maxBitmapFontCount == 0 || config.maxSystemFontCount == 0) {
 		GLOG(Log::eFatal, "FontSystem::Initialize() config->maxBitmapFontCount and config->maxSystemFontCount must be > 0.");
 		return false;
 	}
 
-	Config = *config;
+	Config = config;
 	Renderer = renderer;
 
-	BitmapFonts.resize(config->maxBitmapFontCount);
-	SystemFonts.resize(config->maxSystemFontCount);
+	BitmapFonts.resize(Config.maxBitmapFontCount);
+	SystemFonts.resize(Config.maxSystemFontCount);
 
 	// Load up any default fonts.
 	// Bitmap fonts.
