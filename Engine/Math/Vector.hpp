@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "DMath.hpp"
 #include "Core/DMemory.hpp"
 #include "SIMD/SIMDHelper.hpp"
@@ -388,7 +388,17 @@ struct alignas(16) TVector4_Base {
 
 public:
     union {
-        T elements[4] = { T(0) };
+#if defined(SIMD_SUPPORTED)
+		// SIMD数据存储 - 使用SIMDHelper::SIMDType会更好，但为了简化，我们用int占位
+		// 实际使用时，SIMDHelper会处理加载和存储
+#if defined(SIMD_SUPPORTED_SSE2) || defined(SIMD_SUPPORTED_AVX2)
+		mutable __m128 simd_data_placeholder;
+#elif defined(SIMD_SUPPORTED_NEON)
+		mutable float32x4_t simd_data_placeholder;
+#endif
+#endif
+
+        T alignas(16) elements[4] = { T(0) };
         struct {
             union { T x, r, s; };
             union { T y, g, t; };
@@ -397,17 +407,6 @@ public:
         };
     };
 
-#if defined(SIMD_SUPPORTED)
-private:
-    // SIMD数据存储 - 使用SIMDHelper::SIMDType会更好，但为了简化，我们用int占位
-    // 实际使用时，SIMDHelper会处理加载和存储
-#if defined(SIMD_SUPPORTED_SSE2) || defined(SIMD_SUPPORTED_AVX2)
-    mutable __m128 simd_data_placeholder;
-#elif defined(SIMD_SUPPORTED_NEON)
-    mutable float32x4_t simd_data_placeholder;
-#endif
-#endif
-    
 public:
     // 构造函数
     TVector4_Base() noexcept : elements{ T(0), T(0), T(0), T(0) } {
@@ -614,6 +613,17 @@ struct alignas(32) TVector4_SIMD {  // 32字节对齐支持AVX
 
 public:
     union {
+
+#if defined(SIMD_SUPPORTED)
+		// SIMD数据存储 - 使用SIMDHelper::SIMDType会更好，但为了简化，我们用int占位
+		// 实际使用时，SIMDHelper会处理加载和存储
+#if defined(SIMD_SUPPORTED_SSE2) || defined(SIMD_SUPPORTED_AVX2)
+		mutable __m256d simd_data_placeholder;
+#elif defined(SIMD_SUPPORTED_NEON)
+		mutable float64x2_t simd_data_placeholder;
+#endif
+#endif
+
         T elements[4] = { T(0) };
         struct {
             union { T x, r, s; };
@@ -622,17 +632,6 @@ public:
             union { T w, a, q; };
         };
     };
-
-#if defined(SIMD_SUPPORTED)
-private:
-    // SIMD数据存储 - 使用SIMDHelper::SIMDType会更好，但为了简化，我们用int占位
-    // 实际使用时，SIMDHelper会处理加载和存储
-#if defined(SIMD_SUPPORTED_SSE2) || defined(SIMD_SUPPORTED_AVX2)
-    mutable __m256 simd_data_placeholder;
-#elif defined(SIMD_SUPPORTED_NEON)
-    mutable float64x2_t simd_data_placeholder;
-#endif
-#endif
 
 public:
     // 构造函数

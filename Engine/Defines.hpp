@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 /*
 * @brief Any id set to this should be considered invalid,
