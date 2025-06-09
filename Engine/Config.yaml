@@ -1,1 +1,2 @@
-shader_language: hlsl
+renderer:
+  shader_language: hlsl

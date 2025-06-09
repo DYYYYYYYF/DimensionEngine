@@ -10,12 +10,6 @@ struct SMaterialSystemConfig {
 	uint32_t max_material_count = 512;
 };
 
-struct SMaterialReference {
-	size_t reference_count = 0;
-	uint32_t handle = INVALID_ID;
-	bool auto_release = false;
-};
-
 class MaterialSystem {
 public:
 	static bool Initialize(IRenderer* renderer, SMaterialSystemConfig config);
