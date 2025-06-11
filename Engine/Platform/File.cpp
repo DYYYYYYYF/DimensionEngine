@@ -4,6 +4,7 @@
 
 #include <string>
 #include <algorithm>
+#include <sys/stat.h>
 #ifdef DPLATFORM_MACOS
 #include <sys/stat.h>
 #endif
@@ -67,6 +68,6 @@ bool File::IsExist() {
 	return _stat(FullPath.c_str(), &buffer) == 0;
 #else
 	struct stat buffer;
-	return stat(FullPath.c_str(), &buffer) == 0;
+	return ::stat(FullPath.c_str(), &buffer) == 0;
 #endif
 }

@@ -7,6 +7,7 @@
 
 #ifdef DPLATFORM_WINDOWS
 #include "tchar.h"
+#include <sys/stat.h>
 #else
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -85,15 +86,15 @@ void WatchableFile::UpdateLastModInfo()
 
 bool WatchableFile::GetFileInfo(WatchableFileInfo* fi, const std::string& name) const
 {
-#ifdef DPLATFORM_WINDOWS
+#ifdef _MSC_VER
 	struct _stat fileStatus;
-    if (_stat(name.c_str(), &fileStatus) == -1)
-    {
-        return false;
-    }
+	if (_stat(name.c_str(), &fileStatus) == -1)
+	{
+		return false;
+	}
 #else
-    struct stat fileStatus;
-	if (stat(name.c_str(), &fileStatus) == -1)
+	struct stat fileStatus;
+	if (::stat(name.c_str(), &fileStatus) == -1)
 	{
 		return false;
 	}

@@ -36,7 +36,7 @@ private:
 	template<typename ... Args>
 	static char* AppendLogMessage(const char* format, Args ... args)
 	{
-		int size_s = std::snprintf(nullptr, 0, format, args ...); // Extra space for '\0'
+		int size_s = std::snprintf(nullptr, 0, format, args ...) + 1; // Extra space for '\0'
 		if (size_s > 0) {
 			size_t size = static_cast<size_t>(size_s);
 			char* buf = new char[size];

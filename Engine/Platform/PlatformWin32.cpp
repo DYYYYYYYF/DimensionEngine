@@ -309,14 +309,16 @@ bool Mutex::UnLock() {
 LRESULT CALLBACK win32_process_message(HWND hwnd, UINT32 msg, WPARAM w_param, LPARAM l_param) {
 	switch (msg) {
 		case WM_ERASEBKGND:
-			return 1;
-		case WM_CLOSE:
+			{return 1;}
+		case WM_CLOSE: {
 			SEventContext Context = SEventContext();
 			EngineEvent::Fire(eEventCode::Application_Quit, 0, Context);
 			return 1;
-		case WM_DESTROY:
+		}
+		case WM_DESTROY: {
 			PostQuitMessage(0);
 			return 0;
+		}
 		case WM_SIZE: {
 			RECT Rect;
 			GetClientRect(hwnd, &Rect);

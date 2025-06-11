@@ -7,13 +7,21 @@ include_directories(${Python3_INCLUDE_DIRS})
 message("-- Python3 include path: ${Python3_INCLUDE_DIRS}")
 message("-- Python3 libraries: ${Python3_LIBRARIES}")
 
-file(GLOB ENGINE_SOURCE_FILES 
-    *.cpp 
-    */*.cpp 
-    */*/*.cpp 
-    */*/*/*.cpp 
-    Platform/PlatformMacOS.mm
+file(GLOB_RECURSE ENGINE_SOURCE_FILES
+    CONFIGURE_DEPENDS
+    ${CMAKE_CURRENT_SOURCE_DIR}/*.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/*.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/*.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp
 )
+
+# macOS 平台下添加 Objective-C++ 文件
+if(APPLE)
+    list(APPEND ENGINE_SOURCE_FILES
+        ${CMAKE_CURRENT_SOURCE_DIR}/Platform/PlatformMacOS.mm
+    )
+endif()
+
 add_library(engine SHARED ${ENGINE_SOURCE_FILES})
 
 # Output .dll to bin directly.
