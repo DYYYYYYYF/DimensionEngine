@@ -254,7 +254,6 @@ public:
 	};
 
 public:
-	// 修复构造函数中的变量命名错误
 	constexpr TVector3_16() noexcept : elements{ T(0), T(0), T(0) } {}
 	constexpr TVector3_16(T xyz) noexcept : x(xyz), y(xyz), z(xyz) {}
 	constexpr TVector3_16(T x, T y, T z) noexcept : x(x), y(y), z(z) {}  // 修复：使用正确的变量名
@@ -385,606 +384,451 @@ public:
 
 template<typename T>
 struct alignas(16) TVector4_Base {
-	static_assert(std::is_floating_point<T>::value);
+    static_assert(std::is_floating_point<T>::value);
 
 public:
-	union {
+    union {
 #if defined(SIMD_SUPPORTED)
-		// 根据类型选择合适的SIMD类型
-		typename std::conditional_t<
-			std::is_same_v<T, float>,
-			__m128,      // float: 128位，4个float
-			__m256d      // double: 256位，4个double
-		> data;
+		// SIMD数据存储 - 使用SIMDHelper::SIMDType会更好，但为了简化，我们用int占位
+		// 实际使用时，SIMDHelper会处理加载和存储
+#if defined(SIMD_SUPPORTED_SSE2) || defined(SIMD_SUPPORTED_AVX2)
+		mutable __m128 simd_data_placeholder;
+#elif defined(SIMD_SUPPORTED_NEON)
+		mutable float32x4_t simd_data_placeholder;
 #endif
-		T elements[4] = { T(0) };
-		struct {
-			union { T x, r, s; };
-			union { T y, g, t; };
-			union { T z, b, p; };
-			union { T w, a, q; };
-		};
-	};
+#endif
 
-private:
-	// 使用模板特化的SIMD辅助函数
-	void load_simd() noexcept {
-#if defined(SIMD_SUPPORTED)
-		SIMDHelper<T>::load(elements, data);
-#endif
-	}
-
-	void store_simd() noexcept {
-#if defined(SIMD_SUPPORTED)
-		SIMDHelper<T>::store(elements, data);
-#endif
-	}
+        T alignas(16) elements[4] = { T(0) };
+        struct {
+            union { T x, r, s; };
+            union { T y, g, t; };
+            union { T z, b, p; };
+            union { T w, a, q; };
+        };
+    };
 
 public:
-	// 构造函数
-	TVector4_Base() noexcept : elements{ T(0), T(0), T(0), T(0) } {
+    // 构造函数
+    TVector4_Base() noexcept : elements{ T(0), T(0), T(0), T(0) } {
 #if defined(SIMD_SUPPORTED)
-		load_simd();
+        SIMDHelper<T>::load(elements, simd_data_placeholder);
 #endif
-	}
+    }
 
-	TVector4_Base(const TVector3_Base<T>& vec, T w = T(1)) noexcept : x(vec.x), y(vec.y), z(vec.z), w(w) {
+    TVector4_Base(const TVector3_Base<T>& vec, T w = T(1)) noexcept : x(vec.x), y(vec.y), z(vec.z), w(w) {
 #if defined(SIMD_SUPPORTED)
-		load_simd();
+        SIMDHelper<T>::load(elements, simd_data_placeholder);
 #endif
-	}
+    }
 
-	TVector4_Base(const TVector3_16<T>& vec, T w = T(1)) noexcept : x(vec.x), y(vec.y), z(vec.z), w(w) {
+    TVector4_Base(const TVector3_16<T>& vec, T w = T(1)) noexcept : x(vec.x), y(vec.y), z(vec.z), w(w) {
 #if defined(SIMD_SUPPORTED)
-		load_simd();
+        SIMDHelper<T>::load(elements, simd_data_placeholder);
 #endif
-	}
+    }
 
-	TVector4_Base(T xyzw) noexcept : x(xyzw), y(xyzw), z(xyzw), w(xyzw) {
+    TVector4_Base(T xyzw) noexcept : x(xyzw), y(xyzw), z(xyzw), w(xyzw) {
 #if defined(SIMD_SUPPORTED)
-		load_simd();
+        SIMDHelper<T>::load(elements, simd_data_placeholder);
 #endif
-	}
+    }
 
-	TVector4_Base(T x, T y, T z, T w) noexcept : x(x), y(y), z(z), w(w) {
+    TVector4_Base(T x, T y, T z, T w) noexcept : x(x), y(y), z(z), w(w) {
 #if defined(SIMD_SUPPORTED)
-		load_simd();
+        SIMDHelper<T>::load(elements, simd_data_placeholder);
 #endif
-	}
+    }
 
-	TVector4_Base(const TVector4_Base& v) noexcept = default;
-	TVector4_Base(TVector4_Base&& v) noexcept = default;
-	TVector4_Base& operator=(const TVector4_Base& v) noexcept = default;
-	TVector4_Base& operator=(TVector4_Base&& v) noexcept = default;
+    TVector4_Base(const TVector4_Base& v) noexcept = default;
+    TVector4_Base(TVector4_Base&& v) noexcept = default;
+    TVector4_Base& operator=(const TVector4_Base& v) noexcept = default;
+    TVector4_Base& operator=(TVector4_Base&& v) noexcept = default;
 
-	void Zero() noexcept {
-		x = y = z = w = T(0);
+    void Zero() noexcept {
+        x = y = z = w = T(0);
 #if defined(SIMD_SUPPORTED)
-		load_simd();
+        SIMDHelper<T>::load(elements, simd_data_placeholder);
 #endif
-	}
+    }
 
-	void One() noexcept {
-		x = y = z = w = T(1);
+    void One() noexcept {
+        x = y = z = w = T(1);
 #if defined(SIMD_SUPPORTED)
-		load_simd();
+        SIMDHelper<T>::load(elements, simd_data_placeholder);
 #endif
-	}
+    }
 
-	// LengthSquared - 使用SIMDHelper
-	T LengthSquared() const noexcept {
+    // LengthSquared - 使用SIMDHelper
+    T LengthSquared() const noexcept {
 #if defined(SIMD_SUPPORTED)
-		CONSTEXPR_IF(std::is_same_v<T, float> || std::is_same_v<T, double>) {
-			auto squared = SIMDHelper<T>::mul(data, data);
-			return SIMDHelper<T>::horizontal_add(squared);
-		}
+        // 对于支持SIMD的情况，我们需要SIMDHelper提供更完整的接口
+        // 这里暂时使用标量版本，实际实现中需要扩展SIMDHelper
+        return x * x + y * y + z * z + w * w;
+#else
+        return x * x + y * y + z * z + w * w;
 #endif
-		return x * x + y * y + z * z + w * w;
-	}
+    }
 
-	T Length() const noexcept { return Dsqrt(LengthSquared()); }
+    T Length() const noexcept { return Dsqrt(LengthSquared()); }
 
-	// Normalize - 使用SIMDHelper
-	TVector4_Base& NormalizeInPlace() noexcept {
-		T len = Length();
-		if (len < std::numeric_limits<T>::epsilon()) {
-			Zero();
-			return *this;
-		}
+    // Normalize - 使用SIMDHelper
+    TVector4_Base& NormalizeInPlace() noexcept {
+        T len = Length();
+        if (len < std::numeric_limits<T>::epsilon()) {
+            Zero();
+            return *this;
+        }
+
+        T inv_len = T(1) / len;
+        x *= inv_len; y *= inv_len; z *= inv_len; w *= inv_len;
 
 #if defined(SIMD_SUPPORTED)
-		CONSTEXPR_IF(std::is_same_v<T, float> || std::is_same_v<T, double>) {
-			auto len_vec = SIMDHelper<T>::set1(len);
-			data = SIMDHelper<T>::div(data, len_vec);
-			store_simd();
-		}
-		else {
+        SIMDHelper<T>::load(elements, simd_data_placeholder);
 #endif
-			x /= len; y /= len; z /= len; w /= len;
+        return *this;
+    }
+
+    TVector4_Base Normalized() const noexcept {
+        TVector4_Base result(*this);
+        return result.NormalizeInPlace();
+    }
+
+    constexpr bool Compare(const TVector4_Base& vec, T tolerance = T(0.000001)) const noexcept {
+        return Dabs(x - vec.x) <= tolerance && Dabs(y - vec.y) <= tolerance &&
+            Dabs(z - vec.z) <= tolerance && Dabs(w - vec.w) <= tolerance;
+    }
+
+    // Dot product
+    T Dot(const TVector4_Base& vec) const noexcept {
+        return x * vec.x + y * vec.y + z * vec.z + w * vec.w;
+    }
+
+    T Distance(const TVector4_Base& vec) const noexcept {
+        TVector4_Base diff = *this - vec;
+        return diff.Length();
+    }
+
+    static TVector4_Base StringToVec4(const char* str) {
+        if (str == nullptr) {
+            return TVector4_Base{ T(1), T(1), T(1), T(1) };
+        }
+
+        TVector4_Base result;
+        CONSTEXPR_IF(std::is_same<T, float>::value) {
+            sscanf(str, "%f %f %f %f", &result.x, &result.y, &result.z, &result.w);
+        }
+        else CONSTEXPR_IF(std::is_same<T, double>::value) {
+            sscanf(str, "%lf %lf %lf %lf", &result.x, &result.y, &result.z, &result.w);
+        }
 #if defined(SIMD_SUPPORTED)
-		}
+        SIMDHelper<T>::load(result.elements, result.simd_data_placeholder);
 #endif
-		return *this;
-	}
+        return result;
+    }
 
-	TVector4_Base Normalized() const noexcept {
-		TVector4_Base result(*this);
-		return result.NormalizeInPlace();
-	}
+    static TVector4_Base Identity() noexcept {
+        return TVector4_Base(T(0), T(0), T(0), T(1));
+    }
 
-	constexpr bool Compare(const TVector4_Base& vec, T tolerance = T(0.000001)) const noexcept {
-		return Dabs(x - vec.x) <= tolerance && Dabs(y - vec.y) <= tolerance &&
-			Dabs(z - vec.z) <= tolerance && Dabs(w - vec.w) <= tolerance;
-	}
+    // 算术操作符
+    TVector4_Base operator+(const TVector4_Base& vec) const noexcept {
+        return TVector4_Base{ x + vec.x, y + vec.y, z + vec.z, w + vec.w };
+    }
 
-	// Dot product - 使用SIMDHelper
-	T Dot(const TVector4_Base& vec) const noexcept {
+    TVector4_Base operator-(const TVector4_Base& vec) const noexcept {
+        return TVector4_Base{ x - vec.x, y - vec.y, z - vec.z, w - vec.w };
+    }
+
+    TVector4_Base operator*(const TVector4_Base& vec) const noexcept {
+        return TVector4_Base{ x * vec.x, y * vec.y, z * vec.z, w * vec.w };
+    }
+
+    TVector4_Base operator*(T num) const noexcept {
+        return TVector4_Base{ x * num, y * num, z * num, w * num };
+    }
+
+    TVector4_Base operator/(T num) const noexcept {
+        return TVector4_Base{ x / num, y / num, z / num, w / num };
+    }
+
+    TVector4_Base operator/(const TVector4_Base& vec) const noexcept {
+        return TVector4_Base{ x / vec.x, y / vec.y, z / vec.z, w / vec.w };
+    }
+
+    TVector4_Base operator-() const noexcept {
+        return TVector4_Base(-x, -y, -z, -w);
+    }
+
+    T& operator[](size_t col) {
+        ASSERT(col < 4);
+        return elements[col];
+    }
+
+    const T& operator[](size_t col) const {
+        ASSERT(col < 4);
+        return elements[col];
+    }
+
+    // 复合赋值操作符
+    TVector4_Base& operator+=(const TVector4_Base& vec) noexcept {
+        x += vec.x; y += vec.y; z += vec.z; w += vec.w;
 #if defined(SIMD_SUPPORTED)
-		CONSTEXPR_IF(std::is_same_v<T, float> || std::is_same_v<T, double>) {
-			auto product = SIMDHelper<T>::mul(data, vec.data);
-			return SIMDHelper<T>::horizontal_add(product);
-		}
+        SIMDHelper<T>::load(elements, simd_data_placeholder);
 #endif
-		return x * vec.x + y * vec.y + z * vec.z + w * vec.w;
-	}
+        return *this;
+    }
 
-	T Distance(const TVector4_Base& vec) const noexcept {
-		TVector4_Base diff = *this - vec;
-		return diff.Length();
-	}
-
-	static TVector4_Base StringToVec4(const char* str) {
-		if (str == nullptr) {
-			return TVector4_Base{ T(1), T(1), T(1), T(1) };
-		}
-
-		TVector4_Base result;
-		CONSTEXPR_IF(std::is_same<T, float>::value) {
-			sscanf(str, "%f %f %f %f", &result.x, &result.y, &result.z, &result.w);
-		}
-		else CONSTEXPR_IF(std::is_same<T, double>::value) {
-			sscanf(str, "%lf %lf %lf %lf", &result.x, &result.y, &result.z, &result.w);
-		}
+    TVector4_Base& operator-=(const TVector4_Base& vec) noexcept {
+        x -= vec.x; y -= vec.y; z -= vec.z; w -= vec.w;
 #if defined(SIMD_SUPPORTED)
-		result.load_simd();
+        SIMDHelper<T>::load(elements, simd_data_placeholder);
 #endif
-		return result;
-	}
+        return *this;
+    }
 
-	static TVector4_Base Identity() noexcept {
-		return TVector4_Base(T(0), T(0), T(0), T(1));
-	}
-
-	// 算术操作符 - 使用SIMDHelper
-	TVector4_Base operator+(const TVector4_Base& vec) const noexcept {
-		TVector4_Base result;
+    TVector4_Base& operator*=(T scalar) noexcept {
+        x *= scalar; y *= scalar; z *= scalar; w *= scalar;
 #if defined(SIMD_SUPPORTED)
-		CONSTEXPR_IF(std::is_same_v<T, float> || std::is_same_v<T, double>) {
-			result.data = SIMDHelper<T>::add(data, vec.data);
-			result.store_simd();
-		}
- else {
+        SIMDHelper<T>::load(elements, simd_data_placeholder);
 #endif
-			result = TVector4_Base{ x + vec.x, y + vec.y, z + vec.z, w + vec.w };
+        return *this;
+    }
+
+    TVector4_Base& operator/=(T scalar) noexcept {
+        x /= scalar; y /= scalar; z /= scalar; w /= scalar;
 #if defined(SIMD_SUPPORTED)
-			}
+        SIMDHelper<T>::load(elements, simd_data_placeholder);
 #endif
-			return result;
-	}
+        return *this;
+    }
 
-	TVector4_Base operator-(const TVector4_Base& vec) const noexcept {
-		TVector4_Base result;
-#if defined(SIMD_SUPPORTED)
-		CONSTEXPR_IF(std::is_same_v<T, float> || std::is_same_v<T, double>) {
-			result.data = SIMDHelper<T>::sub(data, vec.data);
-			result.store_simd();
-		}
- else {
-#endif
-			result = TVector4_Base{ x - vec.x, y - vec.y, z - vec.z, w - vec.w };
-#if defined(SIMD_SUPPORTED)
-			}
-#endif
-			return result;
-	}
-
-	TVector4_Base operator*(const TVector4_Base& vec) const noexcept {
-		TVector4_Base result;
-#if defined(SIMD_SUPPORTED)
-		CONSTEXPR_IF(std::is_same_v<T, float> || std::is_same_v<T, double>) {
-			result.data = SIMDHelper<T>::mul(data, vec.data);
-			result.store_simd();
-		}
- else {
-#endif
-			result = TVector4_Base{ x * vec.x, y * vec.y, z * vec.z, w * vec.w };
-#if defined(SIMD_SUPPORTED)
-			}
-#endif
-			return result;
-	}
-
-	TVector4_Base operator*(T num) const noexcept {
-		TVector4_Base result;
-#if defined(SIMD_SUPPORTED)
-		CONSTEXPR_IF(std::is_same_v<T, float> || std::is_same_v<T, double>) {
-			auto scalar_vec = SIMDHelper<T>::set1(num);
-			result.data = SIMDHelper<T>::mul(data, scalar_vec);
-			result.store_simd();
-		}
- else {
-#endif
-			result = TVector4_Base{ x * num, y * num, z * num, w * num };
-#if defined(SIMD_SUPPORTED)
-			}
-#endif
-			return result;
-	}
-
-	TVector4_Base operator/(T num) const noexcept {
-		TVector4_Base result;
-#if defined(SIMD_SUPPORTED)
-		CONSTEXPR_IF(std::is_same_v<T, float> || std::is_same_v<T, double>) {
-			auto scalar_vec = SIMDHelper<T>::set1(num);
-			result.data = SIMDHelper<T>::safe_div(data, scalar_vec);
-			result.store_simd();
-		}
- else {
-#endif
-			result = TVector4_Base{ x / num, y / num, z / num, w / num };
-#if defined(SIMD_SUPPORTED)
-			}
-#endif
-			return result;
-	}
-
-	TVector4_Base operator/(const TVector4_Base& vec) const noexcept {
-		TVector4_Base result;
-#if defined(SIMD_SUPPORTED)
-		CONSTEXPR_IF(std::is_same_v<T, float> || std::is_same_v<T, double>) {
-			result.data = SIMDHelper<T>::safe_div(data, vec.data);
-			result.store_simd();
-		}
- else {
-#endif
-			result = TVector4_Base{ x / vec.x, y / vec.y, z / vec.z, w / vec.w };
-#if defined(SIMD_SUPPORTED)
-			}
-#endif
-			return result;
-	}
-
-	TVector4_Base operator-() const noexcept {
-		return TVector4_Base(-x, -y, -z, -w);
-	}
-
-	T& operator[](size_t col) {
-		ASSERT(col < 4);
-		return elements[col];
-	}
-
-	const T& operator[](size_t col) const {
-		ASSERT(col < 4);
-		return elements[col];
-	}
-
-	// 复合赋值操作符
-	TVector4_Base& operator+=(const TVector4_Base& vec) noexcept {
-		*this = *this + vec;
-		return *this;
-	}
-
-	TVector4_Base& operator-=(const TVector4_Base& vec) noexcept {
-		*this = *this - vec;
-		return *this;
-	}
-
-	TVector4_Base& operator*=(T scalar) noexcept {
-		*this = *this * scalar;
-		return *this;
-	}
-
-	TVector4_Base& operator/=(T scalar) noexcept {
-		*this = *this / scalar;
-		return *this;
-	}
-
-	friend std::ostream& operator<<(std::ostream& os, const TVector4_Base& vec) {
-		return os << "x: " << vec.x << " y: " << vec.y << " z: " << vec.z << " w: " << vec.w << "\n";
-	}
+    friend std::ostream& operator<<(std::ostream& os, const TVector4_Base& vec) {
+        return os << "x: " << vec.x << " y: " << vec.y << " z: " << vec.z << " w: " << vec.w << "\n";
+    }
 };
 
 template<typename T>
 struct alignas(32) TVector4_SIMD {  // 32字节对齐支持AVX
-	static_assert(std::is_floating_point<T>::value);
+    static_assert(std::is_floating_point<T>::value);
 
 public:
-	union {
-#if defined(SIMD_SUPPORTED)
-		// 根据类型选择合适的SIMD类型
-		typename std::conditional_t<
-			std::is_same_v<T, float>,
-			__m128,      // float: 128位，4个float
-			__m256d      // double: 256位，4个double
-		> data;
-#endif
-		T elements[4] = { T(0) };
-		struct {
-			union { T x, r, s; };
-			union { T y, g, t; };
-			union { T z, b, p; };
-			union { T w, a, q; };
-		};
-	};
+    union {
 
-private:
-	// 使用模板特化的SIMD辅助函数
-	void load_simd() noexcept {
 #if defined(SIMD_SUPPORTED)
-		SIMDHelper<T>::load(elements, data);
+		// SIMD数据存储 - 使用SIMDHelper::SIMDType会更好，但为了简化，我们用int占位
+		// 实际使用时，SIMDHelper会处理加载和存储
+#if defined(SIMD_SUPPORTED_SSE2) || defined(SIMD_SUPPORTED_AVX2)
+		mutable __m256d simd_data_placeholder;
+#elif defined(SIMD_SUPPORTED_NEON)
+		mutable float64x2_t simd_data_placeholder;
 #endif
-	}
+#endif
 
-	void store_simd() noexcept {
-#if defined(SIMD_SUPPORTED)
-		SIMDHelper<T>::store(elements, data);
-#endif
-	}
+        T elements[4] = { T(0) };
+        struct {
+            union { T x, r, s; };
+            union { T y, g, t; };
+            union { T z, b, p; };
+            union { T w, a, q; };
+        };
+    };
 
 public:
-	// 构造函数
-	TVector4_SIMD() noexcept : elements{ T(0), T(0), T(0), T(0) } {
+    // 构造函数
+    TVector4_SIMD() noexcept : elements{ T(0), T(0), T(0), T(0) } {
 #if defined(SIMD_SUPPORTED)
-		load_simd();
+        SIMDHelper<T>::load(elements, simd_data_placeholder);
 #endif
-	}
+    }
 
-	TVector4_SIMD(const TVector3_16<T>& vec, T w = T(1)) noexcept : x(vec.x), y(vec.y), z(vec.z), w(w) {
+    TVector4_SIMD(const TVector3_Base<T>& vec, T w = T(1)) noexcept : x(vec.x), y(vec.y), z(vec.z), w(w) {
 #if defined(SIMD_SUPPORTED)
-		load_simd();
+        SIMDHelper<T>::load(elements, simd_data_placeholder);
 #endif
-	}
+    }
 
-	TVector4_SIMD(T xyzw) noexcept : x(xyzw), y(xyzw), z(xyzw), w(xyzw) {
+    TVector4_SIMD(const TVector3_16<T>& vec, T w = T(1)) noexcept : x(vec.x), y(vec.y), z(vec.z), w(w) {
 #if defined(SIMD_SUPPORTED)
-		load_simd();
+        SIMDHelper<T>::load(elements, simd_data_placeholder);
 #endif
-	}
+    }
 
-	TVector4_SIMD(T x, T y, T z, T w) noexcept : x(x), y(y), z(z), w(w) {
+    TVector4_SIMD(T xyzw) noexcept : x(xyzw), y(xyzw), z(xyzw), w(xyzw) {
 #if defined(SIMD_SUPPORTED)
-		load_simd();
+        SIMDHelper<T>::load(elements, simd_data_placeholder);
 #endif
-	}
+    }
 
-	TVector4_SIMD(const TVector4_SIMD& v) noexcept = default;
-	TVector4_SIMD(TVector4_SIMD&& v) noexcept = default;
-	TVector4_SIMD& operator=(const TVector4_SIMD& v) noexcept = default;
-	TVector4_SIMD& operator=(TVector4_SIMD&& v) noexcept = default;
-
-	void Zero() noexcept {
-		x = y = z = w = T(0);
+    TVector4_SIMD(T x, T y, T z, T w) noexcept : x(x), y(y), z(z), w(w) {
 #if defined(SIMD_SUPPORTED)
-		load_simd();
+        SIMDHelper<T>::load(elements, simd_data_placeholder);
 #endif
-	}
+    }
 
-	void One() noexcept {
-		x = y = z = w = T(1);
+    TVector4_SIMD(const TVector4_SIMD& v) noexcept = default;
+    TVector4_SIMD(TVector4_SIMD&& v) noexcept = default;
+    TVector4_SIMD& operator=(const TVector4_SIMD& v) noexcept = default;
+    TVector4_SIMD& operator=(TVector4_SIMD&& v) noexcept = default;
+
+    void Zero() noexcept {
+        x = y = z = w = T(0);
 #if defined(SIMD_SUPPORTED)
-		load_simd();
+        SIMDHelper<T>::load(elements, simd_data_placeholder);
 #endif
-	}
+    }
 
-	// LengthSquared - 使用SIMDHelper
-	T LengthSquared() const noexcept {
+    void One() noexcept {
+        x = y = z = w = T(1);
 #if defined(SIMD_SUPPORTED)
-		CONSTEXPR_IF(std::is_same_v<T, float> || std::is_same_v<T, double>) {
-			auto squared = SIMDHelper<T>::mul(data, data);
-			return SIMDHelper<T>::horizontal_add(squared);
-		}
+        SIMDHelper<T>::load(elements, simd_data_placeholder);
 #endif
-		return x * x + y * y + z * z + w * w;
-	}
+    }
 
-	T Length() const noexcept { return Dsqrt(LengthSquared()); }
+    // LengthSquared - 使用SIMDHelper
+    T LengthSquared() const noexcept {
+#if defined(SIMD_SUPPORTED)
+        // 对于支持SIMD的情况，我们需要SIMDHelper提供更完整的接口
+        // 这里暂时使用标量版本，实际实现中需要扩展SIMDHelper
+        return x * x + y * y + z * z + w * w;
+#else
+        return x * x + y * y + z * z + w * w;
+#endif
+    }
 
-	// Normalize - 使用SIMDHelper
-	TVector4_SIMD& NormalizeInPlace() noexcept {
-		T len = Length();
-		if (len < std::numeric_limits<T>::epsilon()) {
-			Zero();
-			return *this;
-		}
+    T Length() const noexcept { return Dsqrt(LengthSquared()); }
+
+    // Normalize - 使用SIMDHelper
+    TVector4_SIMD& NormalizeInPlace() noexcept {
+        T len = Length();
+        if (len < std::numeric_limits<T>::epsilon()) {
+            Zero();
+            return *this;
+        }
+
+        T inv_len = T(1) / len;
+        x *= inv_len; y *= inv_len; z *= inv_len; w *= inv_len;
 
 #if defined(SIMD_SUPPORTED)
-		CONSTEXPR_IF(std::is_same_v<T, float> || std::is_same_v<T, double>) {
-			auto len_vec = SIMDHelper<T>::set1(len);
-			data = SIMDHelper<T>::div(data, len_vec);
-			store_simd();
-		}
-		else {
+        SIMDHelper<T>::load(elements, simd_data_placeholder);
 #endif
-			x /= len; y /= len; z /= len; w /= len;
+        return *this;
+    }
+
+    TVector4_SIMD Normalized() const noexcept {
+        TVector4_SIMD result(*this);
+        return result.NormalizeInPlace();
+    }
+
+    constexpr bool Compare(const TVector4_SIMD& vec, T tolerance = T(0.000001)) const noexcept {
+        return Dabs(x - vec.x) <= tolerance && Dabs(y - vec.y) <= tolerance &&
+            Dabs(z - vec.z) <= tolerance && Dabs(w - vec.w) <= tolerance;
+    }
+
+    // Dot product
+    T Dot(const TVector4_SIMD& vec) const noexcept {
+        return x * vec.x + y * vec.y + z * vec.z + w * vec.w;
+    }
+
+    T Distance(const TVector4_SIMD& vec) const noexcept {
+        TVector4_SIMD diff = *this - vec;
+        return diff.Length();
+    }
+
+    static TVector4_SIMD StringToVec4(const char* str) {
+        if (str == nullptr) {
+            return TVector4_SIMD{ T(1), T(1), T(1), T(1) };
+        }
+
+        TVector4_SIMD result;
+        CONSTEXPR_IF(std::is_same<T, float>::value) {
+            sscanf(str, "%f %f %f %f", &result.x, &result.y, &result.z, &result.w);
+        }
+        else CONSTEXPR_IF(std::is_same<T, double>::value) {
+            sscanf(str, "%lf %lf %lf %lf", &result.x, &result.y, &result.z, &result.w);
+        }
 #if defined(SIMD_SUPPORTED)
-		}
+        SIMDHelper<T>::load(result.elements, result.simd_data_placeholder);
 #endif
-		return *this;
-	}
+        return result;
+    }
 
-	TVector4_SIMD Normalized() const noexcept {
-		TVector4_SIMD result(*this);
-		return result.NormalizeInPlace();
-	}
+    static TVector4_SIMD Identity() noexcept {
+        return TVector4_SIMD(T(0), T(0), T(0), T(1));
+    }
 
-	constexpr bool Compare(const TVector4_SIMD& vec, T tolerance = T(0.000001)) const noexcept {
-		return Dabs(x - vec.x) <= tolerance && Dabs(y - vec.y) <= tolerance &&
-			Dabs(z - vec.z) <= tolerance && Dabs(w - vec.w) <= tolerance;
-	}
+    // 算术操作符
+    TVector4_SIMD operator+(const TVector4_SIMD& vec) const noexcept {
+        return TVector4_SIMD{ x + vec.x, y + vec.y, z + vec.z, w + vec.w };
+    }
 
-	// Dot product - 使用SIMDHelper
-	T Dot(const TVector4_SIMD& vec) const noexcept {
+    TVector4_SIMD operator-(const TVector4_SIMD& vec) const noexcept {
+        return TVector4_SIMD{ x - vec.x, y - vec.y, z - vec.z, w - vec.w };
+    }
+
+    TVector4_SIMD operator*(const TVector4_SIMD& vec) const noexcept {
+        return TVector4_SIMD{ x * vec.x, y * vec.y, z * vec.z, w * vec.w };
+    }
+
+    TVector4_SIMD operator*(T num) const noexcept {
+        return TVector4_SIMD{ x * num, y * num, z * num, w * num };
+    }
+
+    TVector4_SIMD operator/(T num) const noexcept {
+        return TVector4_SIMD{ x / num, y / num, z / num, w / num };
+    }
+
+    TVector4_SIMD operator/(const TVector4_SIMD& vec) const noexcept {
+        return TVector4_SIMD{ x / vec.x, y / vec.y, z / vec.z, w / vec.w };
+    }
+
+    TVector4_SIMD operator-() const noexcept {
+        return TVector4_SIMD(-x, -y, -z, -w);
+    }
+
+    T& operator[](size_t col) {
+        ASSERT(col < 4);
+        return elements[col];
+    }
+
+    const T& operator[](size_t col) const {
+        ASSERT(col < 4);
+        return elements[col];
+    }
+
+    // 复合赋值操作符
+    TVector4_SIMD& operator+=(const TVector4_SIMD& vec) noexcept {
+        x += vec.x; y += vec.y; z += vec.z; w += vec.w;
 #if defined(SIMD_SUPPORTED)
-		CONSTEXPR_IF(std::is_same_v<T, float> || std::is_same_v<T, double>) {
-			auto product = SIMDHelper<T>::mul(data, vec.data);
-			return SIMDHelper<T>::horizontal_add(product);
-		}
+        SIMDHelper<T>::load(elements, simd_data_placeholder);
 #endif
-		return x * vec.x + y * vec.y + z * vec.z + w * vec.w;
-	}
+        return *this;
+    }
 
-	T Distance(const TVector4_SIMD& vec) const noexcept {
-		TVector4_SIMD diff = *this - vec;
-		return diff.Length();
-	}
-
-	static TVector4_SIMD StringToVec4(const char* str) {
-		if (str == nullptr) {
-			return TVector4_SIMD{ T(1), T(1), T(1), T(1) };
-		}
-
-		TVector4_SIMD result;
-		CONSTEXPR_IF(std::is_same<T, float>::value) {
-			sscanf(str, "%f %f %f %f", &result.x, &result.y, &result.z, &result.w);
-		}
-		else CONSTEXPR_IF(std::is_same<T, double>::value) {
-			sscanf(str, "%lf %lf %lf %lf", &result.x, &result.y, &result.z, &result.w);
-		}
+    TVector4_SIMD& operator-=(const TVector4_SIMD& vec) noexcept {
+        x -= vec.x; y -= vec.y; z -= vec.z; w -= vec.w;
 #if defined(SIMD_SUPPORTED)
-		result.load_simd();
+        SIMDHelper<T>::load(elements, simd_data_placeholder);
 #endif
-		return result;
-	}
+        return *this;
+    }
 
-	static TVector4_SIMD Identity() noexcept {
-		return TVector4_SIMD(T(0), T(0), T(0), T(1));
-	}
-
-	// 算术操作符 - 使用SIMDHelper
-	TVector4_SIMD operator+(const TVector4_SIMD& vec) const noexcept {
-		TVector4_SIMD result;
+    TVector4_SIMD& operator*=(T scalar) noexcept {
+        x *= scalar; y *= scalar; z *= scalar; w *= scalar;
 #if defined(SIMD_SUPPORTED)
-		CONSTEXPR_IF(std::is_same_v<T, float> || std::is_same_v<T, double>) {
-			result.data = SIMDHelper<T>::add(data, vec.data);
-			result.store_simd();
-		}
- else {
+        SIMDHelper<T>::load(elements, simd_data_placeholder);
 #endif
-			result = TVector4_SIMD{ x + vec.x, y + vec.y, z + vec.z, w + vec.w };
-#if defined(SIMD_SUPPORTED)
-			}
-#endif
-			return result;
-	}
+        return *this;
+    }
 
-	TVector4_SIMD operator-(const TVector4_SIMD& vec) const noexcept {
-		TVector4_SIMD result;
+    TVector4_SIMD& operator/=(T scalar) noexcept {
+        x /= scalar; y /= scalar; z /= scalar; w /= scalar;
 #if defined(SIMD_SUPPORTED)
-		CONSTEXPR_IF(std::is_same_v<T, float> || std::is_same_v<T, double>) {
-			result.data = SIMDHelper<T>::sub(data, vec.data);
-			result.store_simd();
-		}
- else {
+        SIMDHelper<T>::load(elements, simd_data_placeholder);
 #endif
-			result = TVector4_SIMD{ x - vec.x, y - vec.y, z - vec.z, w - vec.w };
-#if defined(SIMD_SUPPORTED)
-			}
-#endif
-			return result;
-	}
+        return *this;
+    }
 
-	TVector4_SIMD operator*(const TVector4_SIMD& vec) const noexcept {
-		TVector4_SIMD result;
-#if defined(SIMD_SUPPORTED)
-		CONSTEXPR_IF(std::is_same_v<T, float> || std::is_same_v<T, double>) {
-			result.data = SIMDHelper<T>::mul(data, vec.data);
-			result.store_simd();
-		}
- else {
-#endif
-			result = TVector4_SIMD{ x * vec.x, y * vec.y, z * vec.z, w * vec.w };
-#if defined(SIMD_SUPPORTED)
-			}
-#endif
-			return result;
-	}
-
-	TVector4_SIMD operator*(T num) const noexcept {
-		TVector4_SIMD result;
-#if defined(SIMD_SUPPORTED)
-		CONSTEXPR_IF(std::is_same_v<T, float> || std::is_same_v<T, double>) {
-			auto scalar_vec = SIMDHelper<T>::set1(num);
-			result.data = SIMDHelper<T>::mul(data, scalar_vec);
-			result.store_simd();
-		}
- else {
-#endif
-			result = TVector4_SIMD{ x * num, y * num, z * num, w * num };
-#if defined(SIMD_SUPPORTED)
-			}
-#endif
-			return result;
-	}
-
-	TVector4_SIMD operator/(T num) const noexcept {
-		TVector4_SIMD result;
-#if defined(SIMD_SUPPORTED)
-		CONSTEXPR_IF(std::is_same_v<T, float> || std::is_same_v<T, double>) {
-			auto scalar_vec = SIMDHelper<T>::set1(num);
-			result.data = SIMDHelper<T>::safe_div(data, scalar_vec);
-			result.store_simd();
-		}
- else {
-#endif
-			result = TVector4_SIMD{ x / num, y / num, z / num, w / num };
-#if defined(SIMD_SUPPORTED)
-			}
-#endif
-			return result;
-	}
-
-	TVector4_SIMD operator/(const TVector4_SIMD& vec) const noexcept {
-		TVector4_SIMD result;
-#if defined(SIMD_SUPPORTED)
-		CONSTEXPR_IF(std::is_same_v<T, float> || std::is_same_v<T, double>) {
-			result.data = SIMDHelper<T>::safe_div(data, vec.data);
-			result.store_simd();
-		}
- else {
-#endif
-			result = TVector4_SIMD{ x / vec.x, y / vec.y, z / vec.z, w / vec.w };
-#if defined(SIMD_SUPPORTED)
-			}
-#endif
-			return result;
-	}
-
-	TVector4_SIMD operator-() const noexcept {
-		return TVector4_SIMD(-x, -y, -z, -w);
-	}
-
-	// 复合赋值操作符
-	TVector4_SIMD& operator+=(const TVector4_SIMD& vec) noexcept {
-		*this = *this + vec;
-		return *this;
-	}
-
-	TVector4_SIMD& operator-=(const TVector4_SIMD& vec) noexcept {
-		*this = *this - vec;
-		return *this;
-	}
-
-	TVector4_SIMD& operator*=(T scalar) noexcept {
-		*this = *this * scalar;
-		return *this;
-	}
-
-	TVector4_SIMD& operator/=(T scalar) noexcept {
-		*this = *this / scalar;
-		return *this;
-	}
-
-	friend std::ostream& operator<<(std::ostream& os, const TVector4_SIMD& vec) {
-		return os << "x: " << vec.x << " y: " << vec.y << " z: " << vec.z << " w: " << vec.w << "\n";
-	}
+    friend std::ostream& operator<<(std::ostream& os, const TVector4_SIMD& vec) {
+        return os << "x: " << vec.x << " y: " << vec.y << " z: " << vec.z << " w: " << vec.w << "\n";
+    }
 };

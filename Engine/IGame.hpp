@@ -50,10 +50,10 @@ public:
 	Vector2 GetWindowOffset() const { return WindowOffset; }
 	void SetWindowOffset(const Vector2& Offset) { WindowOffset = Offset; }
 
-	std::string GetApplicationName() const { return ApplicationName; }
+	const std::string& GetApplicationName() const { return ApplicationName; }
 	void SetApplicationName(const std::string& Name) { ApplicationName = Name; }
 
-	FontSystemConfig GetFontConfig() const { return FontConfig; }
+	const FontSystemConfig& GetFontConfig() const { return FontConfig; }
 	const std::vector<RenderViewConfig>& GetRenderviews() const { return Renderviews; };
 
 public:

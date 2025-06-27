@@ -1,4 +1,4 @@
-#include "Platform.hpp"
+﻿#include "Platform.hpp"
 
 #if defined(DPLATFORM_MACOS)
 
@@ -328,7 +328,7 @@ bool Platform::PlatformStartup(SPlatformState* platform_state, const std::string
 	// App delegate creation
 	state_ptr->app_delegate = [[ApplicationDelegate alloc] init];
 	if (!state_ptr->app_delegate) {
-		GLOG(Log::eError, "Failed to create application delegate")
+        GLOG(Log::eError, "Failed to create application delegate");
 		return false;
 	}
 	[NSApp setDelegate : state_ptr->app_delegate];
@@ -336,7 +336,7 @@ bool Platform::PlatformStartup(SPlatformState* platform_state, const std::string
 	// Window delegate creation
 	state_ptr->wnd_delegate = [[WindowDelegate alloc]initWithState:platform_state];
 	if (!state_ptr->wnd_delegate) {
-		GLOG(Log::eError, "Failed to create window delegate")
+        GLOG(Log::eError, "Failed to create window delegate");
 		return false;
 	}
 
@@ -665,13 +665,12 @@ void Thread::Sleep(size_t ms) {
 }
 
 size_t Thread::GetThreadID() {
-
 	return (size_t)pthread_self();
 }
 // NOTE: End Threads
 
 // NOTE: Begin mutexs
-bool Mutex::Create() {
+Mutex::Mutex() {
 	// Initialize
 	pthread_mutexattr_t mutex_attr;
 	pthread_mutexattr_init(&mutex_attr);
@@ -680,17 +679,17 @@ bool Mutex::Create() {
 	int result = pthread_mutex_init(&mutex, &mutex_attr);
 	if (result != 0) {
 		GLOG(Log::eError, "Mutex creation failure!");
-		return false;
+		return;
 	}
 
 	// Save off the mutex handle.
 	InternalData = Platform::PlatformAllocate(sizeof(pthread_mutex_t), false);
 	*(pthread_mutex_t*)InternalData = mutex;
 
-	return true;
+	return;
 }
 
-void Mutex::Destroy() {
+Mutex::~Mutex() {
 	if (InternalData == nullptr) {
 		return;
 	}

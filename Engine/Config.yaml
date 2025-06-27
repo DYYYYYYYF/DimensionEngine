@@ -1,11 +1,2 @@
-engine:
-  name: DimensionEngine
-  version: 0.1.0
-  debug_mode: true
 renderer:
-  api: Vulkan
-  shader_language: glsl
-assets:
-  textures: ./assets/textures/
-  models: ./assets/models/
-  shaders: ./assets/shaders/
+  shader_language: hlsl

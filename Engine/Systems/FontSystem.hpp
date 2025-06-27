@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "Math/MathTypes.hpp"
 #include "Resources/ResourceTypes.hpp"
@@ -57,7 +57,7 @@ struct FontSystemConfig {
 
 class FontSystem {
 public:
-	static bool Initialize(IRenderer* renderer, FontSystemConfig* config);
+	static bool Initialize(IRenderer* renderer, const FontSystemConfig& config);
 	static void Shutdown();
 
 	static bool LoadSystemFont(SystemFontConfig* config);

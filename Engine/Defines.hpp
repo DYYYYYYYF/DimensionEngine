@@ -153,12 +153,19 @@ inline bool is_avx2_supported() {
 #endif
 #endif
 
-#if defined(SIMD_SUPPORTED)
+#if defined(SIMD_SUPPORTED_NEON)
 #if defined(DPLATFORM_MACOS)
+// Apple Silicon 默认支持 NEON
+#ifdef __ARM_NEON
 #include <arm_neon.h>
 #ifndef FLT_MIN
 #define FLT_MIN (1.17549435e-38f)  // Smallest positive normalized float
 #endif
+#else
+#undef SIMD_SUPPORTED_NEON
+#endif
+#else
+#include <arm_neon.h>
 #endif
 #endif
 

@@ -2,7 +2,8 @@
 #include <fstream>
 #include <sstream>
 
-YAMLReader::YAMLReader(const std::string& filepath) : IsParsed(false), Filename(filepath) {
+YAMLReader::YAMLReader(const std::string& filepath, bool enableAutoBatch) : IsParsed(false), Filename(filepath),
+	m_autoBatch(enableAutoBatch), m_isDirty(false){
 	try {
 		Context = YAML::LoadFile(filepath);
 		IsParsed = true;
@@ -15,7 +16,42 @@ YAMLReader::YAMLReader(const std::string& filepath) : IsParsed(false), Filename(
 }
 
 YAMLReader::~YAMLReader() {
-	// 析构函数
+	try {
+		// 析构时自动保存未提交的修改
+		if (m_isDirty) {
+			SaveFile();
+			GLOG(Log::eInfo, "Auto-saved changes in destructor for: %s", Filename.c_str());
+		}
+	}
+	catch (const std::exception& e) {
+		GLOG(Log::eError, "Error in destructor while saving: %s", e.what());
+	}
+}
+
+void YAMLReader::Flush() {
+	if (m_isDirty) {
+		SaveFile();
+		m_isDirty = false;
+	}
+}
+
+void YAMLReader::EnableAutoBatch(bool enable) {
+	if (!enable && m_autoBatch && m_isDirty) {
+		// 如果要关闭自动批量模式，先保存当前修改
+		SaveFile();
+		m_isDirty = false;
+	}
+	m_autoBatch = enable;
+}
+
+void YAMLReader::SaveIfNeeded() {
+	if (m_autoBatch) {
+		m_isDirty = true;  // 标记为脏数据，等待析构时保存
+	}
+	else {
+		SaveFile();        // 立即保存
+		m_isDirty = false;
+	}
 }
 
 void YAMLReader::SetPropertyString(const std::string& key, const std::string& val) {
@@ -69,7 +105,7 @@ void YAMLReader::SetPropertyMatrix(const std::string& key, const Matrix4& Mat) {
 	if (!ModifyYAMLValueByPath(Context, Keys, matrixNode)) {
 		GLOG(Log::eError, "Modify matrix property failed. property: %s. file: %s.", key.c_str(), Filename.c_str());
 	}
-	SaveFile();
+	SaveIfNeeded();
 }
 
 Matrix4 YAMLReader::ReadPropertyMatrix(const std::string& key) {
@@ -84,7 +120,7 @@ void YAMLReader::SetPropertyVector(const std::string& key, const Vector& Vec) {
 	if (!ModifyYAMLValueByPath(Context, Keys, vectorNode)) {
 		GLOG(Log::eError, "Modify vector property failed. property: %s. file: %s.", key.c_str(), Filename.c_str());
 	}
-	SaveFile();
+	SaveIfNeeded();
 }
 
 Vector YAMLReader::ReadPropertyVector(const std::string& key) {
@@ -93,11 +129,93 @@ Vector YAMLReader::ReadPropertyVector(const std::string& key) {
 	return YAMLToVector(vectorNode);
 }
 
+template<typename T>
+void YAMLReader::SetPropertyValue(const std::string& key, const T& val) {
+	std::vector<std::string> Keys = SplitPath(key);
+	if (!ModifyYAMLValueByPath(Context, Keys, val)) {
+		GLOG(Log::eError, "Modify int property failed. property: %s. file: %s.", key.c_str(), Filename.c_str());
+		return;
+	}
+	SaveIfNeeded();
+}
+
+template<typename T>
+T YAMLReader::QueryYAMLValue(const YAML::Node& node, const std::vector<std::string>& keys) {
+	if (keys.empty()) {
+		GLOG(Log::eError, "QueryYAMLValue: Path is empty!");
+		return T{};
+	}
+
+	std::string currentKey = keys[0];
+	YAML::Node currentNode = node;
+
+	// 处理数组索引
+	if (currentKey.find('[') != std::string::npos && currentKey.back() == ']') {
+		size_t indexStart = currentKey.find('[');
+		size_t indexEnd = currentKey.find(']');
+		std::string arrayKey = currentKey.substr(0, indexStart);
+		int index = std::stoi(currentKey.substr(indexStart + 1, indexEnd - indexStart - 1));
+
+		if (currentNode[arrayKey] && currentNode[arrayKey].IsSequence()) {
+			const YAML::Node& array = currentNode[arrayKey];
+			if (index >= 0 && index < (int)array.size()) {
+				if (keys.size() == 1) {
+					try {
+						return array[index].as<T>();
+					}
+					catch (const YAML::Exception& e) {
+						GLOG(Log::eError, "Failed to convert YAML value: %s", e.what());
+						return T{};
+					}
+				}
+				else {
+					std::vector<std::string> remainingKeys(keys.begin() + 1, keys.end());
+					return QueryYAMLValue<T>(array[index], remainingKeys);
+				}
+			}
+			else {
+				GLOG(Log::eError, "Index out of range for array: %s", arrayKey.c_str());
+				return T{};
+			}
+		}
+		else {
+			GLOG(Log::eError, "Array not found or invalid: %s", arrayKey.c_str());
+			return T{};
+		}
+	}
+
+	if (keys.size() == 1) {
+		// 到达目标键，返回其值
+		if (currentNode[currentKey]) {
+			try {
+				return currentNode[currentKey].as<T>();
+			}
+			catch (const YAML::Exception& e) {
+				GLOG(Log::eError, "Failed to convert YAML value for key '%s': %s", currentKey.c_str(), e.what());
+				return T{};
+			}
+		}
+		else {
+			GLOG(Log::eError, "Key not found: %s", currentKey.c_str());
+			return T{};
+		}
+	}
+
+	// 递归查找嵌套字段
+	if (currentNode[currentKey] && currentNode[currentKey].IsMap()) {
+		std::vector<std::string> remainingKeys(keys.begin() + 1, keys.end());
+		return QueryYAMLValue<T>(currentNode[currentKey], remainingKeys);
+	}
+
+	GLOG(Log::eError, "Invalid path or non-map node at key: %s", currentKey.c_str());
+	return T{};
+}
+
 bool YAMLReader::AddPropertyInt(const std::string& key, int val) {
 	std::vector<std::string> Keys = SplitPath(key);
 	bool result = AddYAMLValueByPath(Context, Keys, val);
 	if (result) {
-		SaveFile();
+		SaveIfNeeded();
 	}
 	return result;
 }
@@ -106,7 +224,7 @@ bool YAMLReader::AddPropertyFloat(const std::string& key, float val) {
 	std::vector<std::string> Keys = SplitPath(key);
 	bool result = AddYAMLValueByPath(Context, Keys, val);
 	if (result) {
-		SaveFile();
+		SaveIfNeeded();
 	}
 	return result;
 }
@@ -115,7 +233,7 @@ bool YAMLReader::AddPropertyDouble(const std::string& key, double val) {
 	std::vector<std::string> Keys = SplitPath(key);
 	bool result = AddYAMLValueByPath(Context, Keys, val);
 	if (result) {
-		SaveFile();
+		SaveIfNeeded();
 	}
 	return result;
 }
@@ -124,7 +242,7 @@ bool YAMLReader::AddPropertyString(const std::string& key, const std::string& va
 	std::vector<std::string> Keys = SplitPath(key);
 	bool result = AddYAMLValueByPath(Context, Keys, val);
 	if (result) {
-		SaveFile();
+		SaveIfNeeded();
 	}
 	return result;
 }
@@ -133,7 +251,7 @@ bool YAMLReader::AddPropertyBool(const std::string& key, bool val) {
 	std::vector<std::string> Keys = SplitPath(key);
 	bool result = AddYAMLValueByPath(Context, Keys, val);
 	if (result) {
-		SaveFile();
+		SaveIfNeeded();
 	}
 	return result;
 }
@@ -153,7 +271,7 @@ bool YAMLReader::AddPropertyMatrix(const std::string& key, const Matrix4& val) {
 	YAML::Node matrixNode = MatrixToYAML(val);
 	bool result = AddYAMLValueByPath(Context, Keys, matrixNode);
 	if (result) {
-		SaveFile();
+		SaveIfNeeded();
 	}
 	return result;
 }
@@ -198,69 +316,70 @@ bool YAMLReader::ModifyYAMLValueByPath(YAML::Node& node, const std::vector<std::
 		return false;
 	}
 
-	if (keys.size() == 1) {
-		std::string currentKey = keys[0];
+	try {
+		YAML::Node* current = &node;  // 使用指针
 
-		// 处理数组索引
-		if (currentKey.find('[') != std::string::npos && currentKey.back() == ']') {
-			size_t indexStart = currentKey.find('[');
-			size_t indexEnd = currentKey.find(']');
-			std::string arrayKey = currentKey.substr(0, indexStart);
-			int index = std::stoi(currentKey.substr(indexStart + 1, indexEnd - indexStart - 1));
+		// 导航到目标位置
+		for (size_t i = 0; i < keys.size() - 1; ++i) {
+			std::string key = keys[i];
 
-			if (!node[arrayKey]) {
-				node[arrayKey] = YAML::Node(YAML::NodeType::Sequence);
-			}
+			if (key.find('[') != std::string::npos && key.back() == ']') {
+				// 处理数组索引
+				size_t indexStart = key.find('[');
+				size_t indexEnd = key.find(']');
+				std::string arrayKey = key.substr(0, indexStart);
+				int index = std::stoi(key.substr(indexStart + 1, indexEnd - indexStart - 1));
 
-			YAML::Node& array = node[arrayKey];
-			if (array.IsSequence()) {
-				// 扩展数组大小以适应索引
-				while ((int)array.size() <= index) {
-					array.push_back(YAML::Node());
+				if (!(*current)[arrayKey]) {
+					(*current)[arrayKey] = YAML::Node(YAML::NodeType::Sequence);
 				}
-				array[index] = val;
-				return true;
+
+				while ((int)(*current)[arrayKey].size() <= index) {
+					(*current)[arrayKey].push_back(YAML::Node(YAML::NodeType::Map));
+				}
+
+				// 关键：获取实际节点的地址
+				YAML::Node& targetNode = (*current)[arrayKey][index];
+				current = &targetNode;
 			}
+			else {
+				if (!(*current)[key]) {
+					(*current)[key] = YAML::Node(YAML::NodeType::Map);
+				}
+				// 关键：获取实际节点的地址
+				YAML::Node& targetNode = (*current)[key];
+				current = &targetNode;
+			}
+		}
+
+		// 处理最后一个键并设置值
+		std::string finalKey = keys.back();
+		if (finalKey.find('[') != std::string::npos && finalKey.back() == ']') {
+			size_t indexStart = finalKey.find('[');
+			size_t indexEnd = finalKey.find(']');
+			std::string arrayKey = finalKey.substr(0, indexStart);
+			int index = std::stoi(finalKey.substr(indexStart + 1, indexEnd - indexStart - 1));
+
+			if (!(*current)[arrayKey]) {
+				(*current)[arrayKey] = YAML::Node(YAML::NodeType::Sequence);
+			}
+
+			while ((int)(*current)[arrayKey].size() <= index) {
+				(*current)[arrayKey].push_back(YAML::Node());
+			}
+
+			(*current)[arrayKey][index] = val;
 		}
 		else {
-			node[currentKey] = val;
-			return true;
+			(*current)[finalKey] = val;
 		}
+
+		return true;
 	}
-
-	std::string currentKey = keys[0];
-
-	// 处理数组索引的嵌套情况
-	if (currentKey.find('[') != std::string::npos && currentKey.back() == ']') {
-		size_t indexStart = currentKey.find('[');
-		size_t indexEnd = currentKey.find(']');
-		std::string arrayKey = currentKey.substr(0, indexStart);
-		int index = std::stoi(currentKey.substr(indexStart + 1, indexEnd - indexStart - 1));
-
-		if (!node[arrayKey]) {
-			node[arrayKey] = YAML::Node(YAML::NodeType::Sequence);
-		}
-
-		YAML::Node& array = node[arrayKey];
-		if (array.IsSequence()) {
-			while ((int)array.size() <= index) {
-				array.push_back(YAML::Node(YAML::NodeType::Map));
-			}
-
-			std::vector<std::string> remainingKeys(keys.begin() + 1, keys.end());
-			return ModifyYAMLValueByPath(array[index], remainingKeys, val);
-		}
+	catch (const std::exception& e) {
+		GLOG(Log::eError, "Failed to modify YAML value: %s", e.what());
+		return false;
 	}
-	else {
-		if (!node[currentKey]) {
-			node[currentKey] = YAML::Node(YAML::NodeType::Map);
-		}
-
-		std::vector<std::string> remainingKeys(keys.begin() + 1, keys.end());
-		return ModifyYAMLValueByPath(node[currentKey], remainingKeys, val);
-	}
-
-	return false;
 }
 
 template<typename T>
@@ -418,3 +537,15 @@ template bool YAMLReader::AddYAMLValueByPath<double>(YAML::Node&, const std::vec
 template bool YAMLReader::AddYAMLValueByPath<bool>(YAML::Node&, const std::vector<std::string>&, const bool&);
 template bool YAMLReader::AddYAMLValueByPath<std::string>(YAML::Node&, const std::vector<std::string>&, const std::string&);
 template bool YAMLReader::AddYAMLValueByPath<YAML::Node>(YAML::Node&, const std::vector<std::string>&, const YAML::Node&);
+
+template void YAMLReader::SetPropertyValue<int>(const std::string&, const int&);
+template void YAMLReader::SetPropertyValue<float>(const std::string&, const float&);
+template void YAMLReader::SetPropertyValue<double>(const std::string&, const double&);
+template void YAMLReader::SetPropertyValue<bool>(const std::string&, const bool&);
+template void YAMLReader::SetPropertyValue<std::string>(const std::string&, const std::string&);
+
+template int YAMLReader::QueryYAMLValue<int>(const YAML::Node&, const std::vector<std::string>&);
+template float YAMLReader::QueryYAMLValue<float>(const YAML::Node&, const std::vector<std::string>&);
+template double YAMLReader::QueryYAMLValue<double>(const YAML::Node&, const std::vector<std::string>&);
+template bool YAMLReader::QueryYAMLValue<bool>(const YAML::Node&, const std::vector<std::string>&);
+template std::string YAMLReader::QueryYAMLValue<std::string>(const YAML::Node&, const std::vector<std::string>&);

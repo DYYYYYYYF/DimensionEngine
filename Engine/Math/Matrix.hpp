@@ -538,435 +538,282 @@ public:
 		return *this;
 	}
 
-	bool operator==(const TMatrix4& other) {
-#if defined(SIMD_SUPPORTED)
-		if constexpr (std::is_same_v<T, float>) {
-			const float epsilon = D_FLOAT_EPSILON;
-			for (int i = 0; i < 16; i += 4) {
-				__m128 a = _mm_load_ps(&data[i]);
-				__m128 b = _mm_load_ps(&other.data[i]);
-				__m128 diff = _mm_sub_ps(a, b);
-				__m128 abs_diff = _mm_andnot_ps(_mm_set1_ps(-0.0f), diff); // 取绝对值
-				__m128 cmp = _mm_cmpgt_ps(abs_diff, _mm_set1_ps(epsilon));
-				if (_mm_movemask_ps(cmp) != 0) {
-					return false;
-				}
-			}
-			return true;
-		}
-#endif
-		for (int i = 0; i < 16; ++i) {
-			if (Dabs(other.data[i] - data[i]) > D_FLOAT_EPSILON) {
-				return false;
-			}
-		}
-		return true;
-	}
+    bool operator==(const TMatrix4& other) {
+            for (int i = 0; i < 16; ++i) {
+                if (Dabs(other.data[i] - data[i]) > D_FLOAT_EPSILON) {
+                    return false;
+                }
+            }
+            return true;
+        }
 
-	bool operator!=(const TMatrix4& other) {
-		return (!(*this == other));
-	}
+        bool operator!=(const TMatrix4& other) {
+            return (!(*this == other));
+        }
 
-	template<typename TypeInex>
-	T& operator[](TypeInex i) {
-		return data[i];
-	}
+        template<typename TypeInex>
+        T& operator[](TypeInex i) {
+            return data[i];
+        }
 
-	template<typename TypeInex>
-	const T& operator[](TypeInex i) const {
-		return data[i];
-	}
+        template<typename TypeInex>
+        const T& operator[](TypeInex i) const {
+            return data[i];
+        }
 
-	TMatrix4 operator*(const TMatrix4& other) {
-		const T* MatPtr1 = other.data;
-		const T* MatPtr2 = data;
+        TMatrix4 operator*(const TMatrix4& other) {
+            const T* MatPtr1 = other.data;
+            const T* MatPtr2 = data;
 
-		TMatrix4 NewMat = TMatrix4::Identity();
-		T* DstPtr = NewMat.data;
+            TMatrix4 NewMat = TMatrix4::Identity();
+            T* DstPtr = NewMat.data;
 
-#if defined(SIMD_SUPPORTED_NEON)
-		for (int i = 0; i < 4; ++i) {
-			// Load Mat1's i-th row (column-major access)
-			float32x4_t row1 = vld1q_f32(&MatPtr1[i * 4]);
+    #if defined(SIMD_SUPPORTED)
+            if constexpr (std::is_same_v<T, float>) {
+                for (int i = 0; i < 4; ++i) {
+                    // 加载第一个矩阵的第i行
+                    typename SIMDHelper<T>::SIMDType row1;
+                    T row_data[4] = {MatPtr1[i * 4 + 0], MatPtr1[i * 4 + 1], MatPtr1[i * 4 + 2], MatPtr1[i * 4 + 3]};
+                    SIMDHelper<T>::load(row_data, row1);
 
-			for (int j = 0; j < 4; j++) {
-				// Load Mat2's j-th column (column-major access)
-				float32x4_t col2 = { MatPtr2[j], MatPtr2[4 + j], MatPtr2[8 + j], MatPtr2[12 + j] };
+                    for (int j = 0; j < 4; j++) {
+                        // 加载第二个矩阵的第j列
+                        T col_data[4] = {MatPtr2[0 + j], MatPtr2[4 + j], MatPtr2[8 + j], MatPtr2[12 + j]};
+                        typename SIMDHelper<T>::SIMDType col2;
+                        SIMDHelper<T>::load(col_data, col2);
 
-				// Perform element-wise multiplication and horizontal addition
-				float32x4_t product = vmulq_f32(row1, col2);
+                        // 执行乘法并累加
+                        typename SIMDHelper<T>::SIMDType result = SIMDHelper<T>::mul(row1, col2);
+                        T final_result = SIMDHelper<T>::horizontal_add(result);
+                        
+                        DstPtr[i * 4 + j] = final_result;
+                    }
+                }
+            } else {
+    #endif
+                for (int i = 0; i < 4; ++i) {
+                    for (int j = 0; j < 4; j++) {
+                        *DstPtr = MatPtr1[i * 4 + 0] * MatPtr2[0 + j] +
+                            MatPtr1[i * 4 + 1] * MatPtr2[4 + j] +
+                            MatPtr1[i * 4 + 2] * MatPtr2[8 + j] +
+                            MatPtr1[i * 4 + 3] * MatPtr2[12 + j];
+                        DstPtr++;
+                    }
+                }
+    #if defined(SIMD_SUPPORTED)
+            }
+    #endif
 
-				// Horizontal addition to accumulate the results
-				float32x2_t sum_pair = vadd_f32(vget_low_f32(product), vget_high_f32(product)); // Add pairs
-				float32x2_t sum_final = vpadd_f32(sum_pair, sum_pair); // Final horizontal addition
+            return NewMat;
+        }
 
-				// Store the resulting scalar into the matrix
-				DstPtr[i * 4 + j] = vget_lane_f32(sum_final, 0); // Extract the final sum
-			}
-		}
-#elif defined(SIMD_SUPPORTED)
-		for (int i = 0; i < 4; ++i) {
-			// 加载Mat1的第i列（按列主序，逐列访问）
-			DataType row1 = _mm_set_ps(MatPtr1[i * 4 + 3], MatPtr1[i * 4 + 2], MatPtr1[i * 4 + 1], MatPtr1[i * 4 + 0]);
-			for (int j = 0; j < 4; j++) {
-				// 加载Mat2的第j列（按列主序，逐列访问）
-				DataType col2 = _mm_set_ps(MatPtr2[12 + j], MatPtr2[8 + j], MatPtr2[4 + j], MatPtr2[0 + j]);
+        friend std::ostream& operator<<(std::ostream& os, const TMatrix4& mat) {
+            return os
+                << mat[0] << " " << mat[4] << " " << mat[8] << " " << mat[12] << "\n"
+                << mat[1] << " " << mat[5] << " " << mat[9] << " " << mat[13] << "\n"
+                << mat[2] << " " << mat[6] << " " << mat[10] << " " << mat[14] << "\n"
+                << mat[3] << " " << mat[7] << " " << mat[11] << " " << mat[15] << "\n";
+        }
 
-				// 执行乘法并累加
-				DataType result = _mm_mul_ps(row1, col2);
-				result = _mm_hadd_ps(result, result);  // 水平加法：先加前两对元素，再加后两对元素
-				result = _mm_hadd_ps(result, result);  // 再加一次
+        /**
+         * @brief Performs v * m
+         *
+         * @param m The matrix to be multiplied.
+         * @param v The vector to multiply by.
+         * @return The transformed vector.
+         */
+        friend TVector3<T> operator*(const TVector3<T>& v, const TMatrix4& m) {
+    #if defined(SIMD_SUPPORTED)
+            if constexpr (std::is_same_v<T, float>) {
+                // 准备向量数据，包含齐次坐标
+                T vec_data[4] = {v.x, v.y, v.z, 1.0f};
+                typename SIMDHelper<T>::SIMDType vec_simd;
+                SIMDHelper<T>::load(vec_data, vec_simd);
 
-				// 将结果存储回目标矩阵
-				T FinalRest = _mm_cvtss_f32(result);		// result[0]
-				DstPtr[i * 4 + j] = FinalRest;
-			}
-		}
-#else
-		for (int i = 0; i < 4; ++i) {
-			for (int j = 0; j < 4; j++) {
-				*DstPtr = MatPtr1[i * 4 + 0] * MatPtr2[0 + j] +
-					MatPtr1[i * 4 + 1] * MatPtr2[4 + j] +
-					MatPtr1[i * 4 + 2] * MatPtr2[8 + j] +
-					MatPtr1[i * 4 + 3] * MatPtr2[12 + j];
-				DstPtr++;
-			}
-		}
-#endif
+                T result_data[3];
+                for (int i = 0; i < 3; ++i) {
+                    // 加载矩阵行
+                    typename SIMDHelper<T>::SIMDType row;
+                    SIMDHelper<T>::load(&m.data[i * 4], row);
+                    
+                    // 执行点积
+                    typename SIMDHelper<T>::SIMDType mul_result = SIMDHelper<T>::mul(vec_simd, row);
+                    result_data[i] = SIMDHelper<T>::horizontal_add(mul_result);
+                }
 
-		return NewMat;
-	}
-
-	friend std::ostream& operator<<(std::ostream& os, const TMatrix4& mat) {
-		return os
-			<< mat[0] << " " << mat[4] << " " << mat[8] << " " << mat[12] << "\n"
-			<< mat[1] << " " << mat[5] << " " << mat[9] << " " << mat[13] << "\n"
-			<< mat[2] << " " << mat[6] << " " << mat[10] << " " << mat[14] << "\n"
-			<< mat[3] << " " << mat[7] << " " << mat[11] << " " << mat[15] << "\n";
-	}
-
-	/**
-	 * @brief Performs v * m
-	 *
-	 * @param m The matrix to be multiplied.
-	 * @param v The vector to multiply by.
-	 * @return The transformed vector.
-	 */
-	friend TVector3<T> operator*(const TVector3<T>& v, const TMatrix4& m) {
-#if defined(SIMD_SUPPORTED_NEON)
-        // Load rows of the matrix
-           float32x4_t row1 = vld1q_f32(&m.data[0]);
-           float32x4_t row2 = vld1q_f32(&m.data[4]);
-           float32x4_t row3 = vld1q_f32(&m.data[8]);
-
-           // Load vector v and append 1.0f for homogeneous coordinates
-           float32x4_t vec = {v.x, v.y, v.z, 1.0f};
-
-           // Compute dot products for each row
-           float32x4_t result1 = vmulq_f32(row1, vec);
-           float32x4_t result2 = vmulq_f32(row2, vec);
-           float32x4_t result3 = vmulq_f32(row3, vec);
-
-           // Perform horizontal addition to reduce each row result to a single value
-           float32x2_t sum1 = vadd_f32(vget_low_f32(result1), vget_high_f32(result1));
-           sum1 = vpadd_f32(sum1, sum1); // Final horizontal addition
-
-           float32x2_t sum2 = vadd_f32(vget_low_f32(result2), vget_high_f32(result2));
-           sum2 = vpadd_f32(sum2, sum2); // Final horizontal addition
-
-           float32x2_t sum3 = vadd_f32(vget_low_f32(result3), vget_high_f32(result3));
-           sum3 = vpadd_f32(sum3, sum3); // Final horizontal addition
-
-           // Extract results and construct the output vector
-           return TVector3<T>(
-               vget_lane_f32(sum1, 0),
-               vget_lane_f32(sum2, 0),
-               vget_lane_f32(sum3, 0)
-           );
-#elif defined(SIMD_SUPPORTED)
-		DataType row1 = _mm_load_ps(&m.data[0]);
-		DataType row2 = _mm_load_ps(&m.data[4]);
-		DataType row3 = _mm_load_ps(&m.data[8]);
-
-		DataType v1 = _mm_set_ps(1.0f, v.z, v.y, v.x);
-		DataType result1 = _mm_mul_ps(v1, row1);
-		result1 = _mm_hadd_ps(result1, result1);
-		result1 = _mm_hadd_ps(result1, result1);
-
-		DataType result2 = _mm_mul_ps(v1, row2);
-		result2 = _mm_hadd_ps(result2, result2);
-		result2 = _mm_hadd_ps(result2, result2);
-
-		DataType result3 = _mm_mul_ps(v1, row3);
-		result3 = _mm_hadd_ps(result3, result3);
-		result3 = _mm_hadd_ps(result3, result3);
-
-		return TVector3<T>(
-			_mm_cvtss_f32(result1),
-			_mm_cvtss_f32(result2),
-			_mm_cvtss_f32(result3)
-		);
-#else
-		return TVector3<T>(
-			v.x * m.data[0] + v.y * m.data[1] + v.z * m.data[2] + m.data[3],
-			v.x * m.data[4] + v.y * m.data[5] + v.z * m.data[6] + m.data[7],
-			v.x * m.data[8] + v.y * m.data[9] + v.z * m.data[10] + m.data[11]
-		);
-#endif
-	}
-
-	/**
-	 * @brief Performs m * v
-	 *
-	 * @param v The vector to be multiplied.
-	 * @param m The matrix to be multiply by.
-	 * @return The transformed vector.
-	 */
-	friend TVector3<T> operator*(const TMatrix4& m, const TVector3<T>& v) {
-#if defined(SIMD_SUPPORTED_NEON)
-        // Prepare matrix rows as columns (transposed layout)
-            float32x4_t col1 = {m.data[0], m.data[4], m.data[8], m.data[12]};
-            float32x4_t col2 = {m.data[1], m.data[5], m.data[9], m.data[13]};
-            float32x4_t col3 = {m.data[2], m.data[6], m.data[10], m.data[14]};
-
-            // Prepare the vector with an appended 1.0f (homogeneous coordinate)
-            float32x4_t vec = {v.x, v.y, v.z, 1.0f};
-
-            // Compute dot products for each column
-            float32x4_t result1 = vmulq_f32(vec, col1);
-            float32x4_t result2 = vmulq_f32(vec, col2);
-            float32x4_t result3 = vmulq_f32(vec, col3);
-
-            // Perform horizontal addition to reduce each result to a single scalar
-            float32x2_t sum1 = vadd_f32(vget_low_f32(result1), vget_high_f32(result1));
-            sum1 = vpadd_f32(sum1, sum1); // Final horizontal addition
-
-            float32x2_t sum2 = vadd_f32(vget_low_f32(result2), vget_high_f32(result2));
-            sum2 = vpadd_f32(sum2, sum2); // Final horizontal addition
-
-            float32x2_t sum3 = vadd_f32(vget_low_f32(result3), vget_high_f32(result3));
-            sum3 = vpadd_f32(sum3, sum3); // Final horizontal addition
-
-            // Extract the results and construct the resulting vector
+                return TVector3<T>(result_data[0], result_data[1], result_data[2]);
+            }
+    #endif
             return TVector3<T>(
-                vget_lane_f32(sum1, 0),
-                vget_lane_f32(sum2, 0),
-                vget_lane_f32(sum3, 0)
+                v.x * m.data[0] + v.y * m.data[1] + v.z * m.data[2] + m.data[3],
+                v.x * m.data[4] + v.y * m.data[5] + v.z * m.data[6] + m.data[7],
+                v.x * m.data[8] + v.y * m.data[9] + v.z * m.data[10] + m.data[11]
             );
-#elif defined(SIMD_SUPPORTED)
-		DataType row1 = _mm_set_ps(m.data[12], m.data[8],  m.data[4], m.data[0]);
-		DataType row2 = _mm_set_ps(m.data[13], m.data[9],  m.data[5], m.data[1]);
-		DataType row3 = _mm_set_ps(m.data[14], m.data[10], m.data[6], m.data[2]);
+        }
 
-		DataType v1 = _mm_set_ps(1.0f, v.z, v.y, v.x);
-		DataType result1 = _mm_mul_ps(v1, row1);
-		result1 = _mm_hadd_ps(result1, result1);
-		result1 = _mm_hadd_ps(result1, result1);
+        /**
+         * @brief Performs m * v
+         *
+         * @param v The vector to be multiplied.
+         * @param m The matrix to be multiply by.
+         * @return The transformed vector.
+         */
+        friend TVector3<T> operator*(const TMatrix4& m, const TVector3<T>& v) {
+    #if defined(SIMD_SUPPORTED)
+            if constexpr (std::is_same_v<T, float>) {
+                // 准备向量数据，包含齐次坐标
+                T vec_data[4] = {v.x, v.y, v.z, 1.0f};
+                typename SIMDHelper<T>::SIMDType vec_simd;
+                SIMDHelper<T>::load(vec_data, vec_simd);
 
-		DataType result2 = _mm_mul_ps(v1, row2);
-		result2 = _mm_hadd_ps(result2, result2);
-		result2 = _mm_hadd_ps(result2, result2);
+                T result_data[3];
+                for (int i = 0; i < 3; ++i) {
+                    // 加载矩阵列
+                    T col_data[4] = {m.data[i], m.data[i + 4], m.data[i + 8], m.data[i + 12]};
+                    typename SIMDHelper<T>::SIMDType col;
+                    SIMDHelper<T>::load(col_data, col);
+                    
+                    // 执行点积
+                    typename SIMDHelper<T>::SIMDType mul_result = SIMDHelper<T>::mul(vec_simd, col);
+                    result_data[i] = SIMDHelper<T>::horizontal_add(mul_result);
+                }
 
-		DataType result3 = _mm_mul_ps(v1, row3);
-		result3 = _mm_hadd_ps(result3, result3);
-		result3 = _mm_hadd_ps(result3, result3);
+                return TVector3<T>(result_data[0], result_data[1], result_data[2]);
+            }
+    #endif
+            return TVector3<T>(
+                v.x * m.data[0] + v.y * m.data[4] + v.z * m.data[8] + m.data[12],
+                v.x * m.data[1] + v.y * m.data[5] + v.z * m.data[9] + m.data[13],
+                v.x * m.data[2] + v.y * m.data[6] + v.z * m.data[10] + m.data[14]
+            );
+        }
 
-		return TVector3<T>(
-			_mm_cvtss_f32(result1),
-			_mm_cvtss_f32(result2),
-			_mm_cvtss_f32(result3)
-		);
-#else
-		return TVector3<T>(
-			v.x * m.data[0] + v.y * m.data[4] + v.z * m.data[8] + m.data[12],
-			v.x * m.data[1] + v.y * m.data[5] + v.z * m.data[9] + m.data[13],
-			v.x * m.data[2] + v.y * m.data[6] + v.z * m.data[10] + m.data[14]
-		);
-#endif
-	}
+        /**
+         * @brief Performs m * v
+         *
+         * @param m The matrix to be multiplied.
+         * @param v The vector to multiply by.
+         * @return The transformed vector.
+         */
+        friend TVector4<T> operator*(const TMatrix4& m, const TVector4<T>& v) {
+    #if defined(SIMD_SUPPORTED)
+            if constexpr (std::is_same_v<T, float>) {
+                // 准备向量数据
+                T vec_data[4] = {v.x, v.y, v.z, v.w};
+                typename SIMDHelper<T>::SIMDType vec_simd;
+                SIMDHelper<T>::load(vec_data, vec_simd);
 
-	/**
-	 * @brief Performs m * v
-	 *
-	 * @param m The matrix to be multiplied.
-	 * @param v The vector to multiply by.
-	 * @return The transformed vector.
-	 */
-	friend TVector4<T> operator*(const TMatrix4& m, const TVector4<T>& v) {
-#if defined(SIMD_SUPPORTED_NEON)
-    // Load rows of the matrix
-    float32x4_t row1 = vld1q_f32(&m.data[0]);
-    float32x4_t row2 = vld1q_f32(&m.data[4]);
-    float32x4_t row3 = vld1q_f32(&m.data[8]);
-    float32x4_t row4 = vld1q_f32(&m.data[12]);
+                T result_data[4];
+                for (int i = 0; i < 4; ++i) {
+                    // 加载矩阵行
+                    typename SIMDHelper<T>::SIMDType row;
+                    SIMDHelper<T>::load(&m.data[i * 4], row);
+                    
+                    // 执行点积
+                    typename SIMDHelper<T>::SIMDType mul_result = SIMDHelper<T>::mul(vec_simd, row);
+                    result_data[i] = SIMDHelper<T>::horizontal_add(mul_result);
+                }
 
-    // Load vector v into a NEON register
-    float32x4_t vec = {v.x, v.y, v.z, v.w};
+                return TVector4<T>(result_data[0], result_data[1], result_data[2], result_data[3]);
+            }
+    #endif
+            return TVector4<T>(
+                v.x * m.data[0] + v.y * m.data[1] + v.z * m.data[2] + v.w * m.data[3],
+                v.x * m.data[4] + v.y * m.data[5] + v.z * m.data[6] + v.w * m.data[7],
+                v.x * m.data[8] + v.y * m.data[9] + v.z * m.data[10] + v.w * m.data[11],
+                v.x * m.data[12] + v.y * m.data[13] + v.z * m.data[14] + v.w * m.data[15]
+            );
+        }
 
-    // Compute dot products for each row
-    float32x4_t result1 = vmulq_f32(vec, row1);
-    float32x4_t result2 = vmulq_f32(vec, row2);
-    float32x4_t result3 = vmulq_f32(vec, row3);
-    float32x4_t result4 = vmulq_f32(vec, row4);
+        /**
+         * @brief Performs v * m
+         *
+         * @param v The vector to be multiplied.
+         * @param m The matrix to be multiply by.
+         * @return The transformed vector.
+         */
+        friend TVector4<T> operator*(const TVector4<T>& v, const TMatrix4& m) {
+    #if defined(SIMD_SUPPORTED)
+            if constexpr (std::is_same_v<T, float>) {
+                // 准备向量数据
+                T vec_data[4] = {v.x, v.y, v.z, v.w};
+                typename SIMDHelper<T>::SIMDType vec_simd;
+                SIMDHelper<T>::load(vec_data, vec_simd);
 
-    // Perform horizontal addition to reduce results to a single scalar
-    float32x2_t sum1 = vadd_f32(vget_low_f32(result1), vget_high_f32(result1));
-    sum1 = vpadd_f32(sum1, sum1); // Final horizontal addition
+                T result_data[4];
+                for (int i = 0; i < 4; ++i) {
+                    // 加载矩阵列
+                    T col_data[4] = {m.data[i], m.data[i + 4], m.data[i + 8], m.data[i + 12]};
+                    typename SIMDHelper<T>::SIMDType col;
+                    SIMDHelper<T>::load(col_data, col);
+                    
+                    // 执行点积
+                    typename SIMDHelper<T>::SIMDType mul_result = SIMDHelper<T>::mul(vec_simd, col);
+                    result_data[i] = SIMDHelper<T>::horizontal_add(mul_result);
+                }
 
-    float32x2_t sum2 = vadd_f32(vget_low_f32(result2), vget_high_f32(result2));
-    sum2 = vpadd_f32(sum2, sum2); // Final horizontal addition
+                return TVector4<T>(result_data[0], result_data[1], result_data[2], result_data[3]);
+            }
+    #endif
+            return TVector4<T>(
+                v.x * m.data[0] + v.y * m.data[4] + v.z * m.data[8] + v.w * m.data[12],
+                v.x * m.data[1] + v.y * m.data[5] + v.z * m.data[9] + v.w * m.data[13],
+                v.x * m.data[2] + v.y * m.data[6] + v.z * m.data[10] + v.w * m.data[14],
+                v.x * m.data[3] + v.y * m.data[7] + v.z * m.data[11] + v.w * m.data[15]
+            );
+        }
 
-    float32x2_t sum3 = vadd_f32(vget_low_f32(result3), vget_high_f32(result3));
-    sum3 = vpadd_f32(sum3, sum3); // Final horizontal addition
+        TVector4<T> GetColumn(int Col) const {
+            if (Col < 0 || Col > 3) {
+                GLOG(Log::eWarn, "Invalid matrix boundings. Return Vec4().");
+                return TVector4<T>();
+            }
 
-    float32x2_t sum4 = vadd_f32(vget_low_f32(result4), vget_high_f32(result4));
-    sum4 = vpadd_f32(sum4, sum4); // Final horizontal addition
+            return TVector4<T>(data[Col], data[Col + 4], data[Col + 8], data[Col + 12]);
+        }
 
-    // Extract the results and construct the resulting vector
-    return TVector4<T>(
-        vget_lane_f32(sum1, 0),
-        vget_lane_f32(sum2, 0),
-        vget_lane_f32(sum3, 0),
-        vget_lane_f32(sum4, 0)
-    );
-#elif defined(SIMD_SUPPORTED)
-		DataType row1 = _mm_load_ps(&m.data[0]);
-		DataType row2 = _mm_load_ps(&m.data[4]);
-		DataType row3 = _mm_load_ps(&m.data[8]);
-		DataType row4 = _mm_load_ps(&m.data[12]);
+        TVector4<T> GetRow(int Row) const {
+            if (Row < 0 || Row > 3) {
+                GLOG(Log::eWarn, "Invalid matrix boundings. Return Vec4().");
+                return TVector4<T>(0.0f);
+            }
 
-		DataType v1 = _mm_set_ps(v.w, v.z, v.y, v.x);
-		DataType result1 = _mm_mul_ps(v1, row1);
-		result1 = _mm_hadd_ps(result1, result1);
-		result1 = _mm_hadd_ps(result1, result1);
+            return TVector4<T>(data[Row * 4], data[Row * 4 + 1], data[Row * 4 + 2], data[Row * 4 + 3]);
+        }
 
-		DataType result2 = _mm_mul_ps(v1, row2);
-		result2 = _mm_hadd_ps(result2, result2);
-		result2 = _mm_hadd_ps(result2, result2);
+        // 批量矩阵运算函数
+        static void BatchMultiply(TMatrix4* results, const TMatrix4* matrices_a, const TMatrix4* matrices_b, size_t count) {
+    #if defined(SIMD_SUPPORTED)
+            if constexpr (std::is_same_v<T, float>) {
+                for (size_t idx = 0; idx < count; ++idx) {
+                    results[idx] = matrices_a[idx] * matrices_b[idx];
+                }
+            } else {
+    #endif
+                for (size_t idx = 0; idx < count; ++idx) {
+                    results[idx] = matrices_a[idx] * matrices_b[idx];
+                }
+    #if defined(SIMD_SUPPORTED)
+            }
+    #endif
+        }
 
-		DataType result3 = _mm_mul_ps(v1, row3);
-		result3 = _mm_hadd_ps(result3, result3);
-		result3 = _mm_hadd_ps(result3, result3);
-
-		DataType result4 = _mm_mul_ps(v1, row4);
-		result4 = _mm_hadd_ps(result4, result4);
-		result4 = _mm_hadd_ps(result4, result4);
-
-		return TVector4<T>(
-			_mm_cvtss_f32(result1),
-			_mm_cvtss_f32(result2),
-			_mm_cvtss_f32(result3),
-			_mm_cvtss_f32(result4)
-		);
-#else
-		return TVector4<T>(
-			v.x * m.data[0] + v.y * m.data[1] + v.z * m.data[2] + v.w * m.data[3],
-			v.x * m.data[4] + v.y * m.data[5] + v.z * m.data[6] + v.w * m.data[7],
-			v.x * m.data[8] + v.y * m.data[9] + v.z * m.data[10] + v.w * m.data[11],
-			v.x * m.data[12] + v.y * m.data[13] + v.z * m.data[14] + v.w * m.data[15]
-		);
-#endif
-	}
-
-	/**
-	 * @brief Performs v * m
-	 *
-	 * @param v The vector to be multiplied.
-	 * @param m The matrix to be multiply by.
-	 * @return The transformed vector.
-	 */
-	friend TVector4<T> operator*(const TVector4<T>& v, const TMatrix4& m) {
-#if defined(SIMD_SUPPORTED_NEON)
-    // Prepare matrix rows for multiplication
-    float32x4_t row1 = {m.data[0], m.data[4], m.data[8], m.data[12]};
-    float32x4_t row2 = {m.data[1], m.data[5], m.data[9], m.data[13]};
-    float32x4_t row3 = {m.data[2], m.data[6], m.data[10], m.data[14]};
-    float32x4_t row4 = {m.data[3], m.data[7], m.data[11], m.data[15]};
-
-    // Prepare the vector
-    float32x4_t vec = {v.x, v.y, v.z, v.w};
-
-    // Perform element-wise multiplication for each row and reduce with horizontal addition
-    float32x4_t result1 = vmulq_f32(vec, row1);
-    float32x4_t result2 = vmulq_f32(vec, row2);
-    float32x4_t result3 = vmulq_f32(vec, row3);
-    float32x4_t result4 = vmulq_f32(vec, row4);
-
-    float32x2_t sum1 = vadd_f32(vget_low_f32(result1), vget_high_f32(result1));
-    sum1 = vpadd_f32(sum1, sum1);
-
-    float32x2_t sum2 = vadd_f32(vget_low_f32(result2), vget_high_f32(result2));
-    sum2 = vpadd_f32(sum2, sum2);
-
-    float32x2_t sum3 = vadd_f32(vget_low_f32(result3), vget_high_f32(result3));
-    sum3 = vpadd_f32(sum3, sum3);
-
-    float32x2_t sum4 = vadd_f32(vget_low_f32(result4), vget_high_f32(result4));
-    sum4 = vpadd_f32(sum4, sum4);
-
-    // Return the result as a TVector4
-    return TVector4<T>(
-        vget_lane_f32(sum1, 0),
-        vget_lane_f32(sum2, 0),
-        vget_lane_f32(sum3, 0),
-        vget_lane_f32(sum4, 0)
-    );
-#elif defined(SIMD_SUPPORTED)
-		DataType row1 = _mm_set_ps(m.data[12], m.data[8], m.data[4], m.data[0]);
-		DataType row2 = _mm_set_ps(m.data[13], m.data[9], m.data[5], m.data[1]);
-		DataType row3 = _mm_set_ps(m.data[14], m.data[10], m.data[6], m.data[2]);
-		DataType row4 = _mm_set_ps(m.data[15], m.data[11], m.data[7], m.data[3]);
-
-		DataType v1 = _mm_set_ps(v.w, v.z, v.y, v.x);
-		DataType result1 = _mm_mul_ps(v1, row1);
-		result1 = _mm_hadd_ps(result1, result1);
-		result1 = _mm_hadd_ps(result1, result1);
-
-		DataType result2 = _mm_mul_ps(v1, row2);
-		result2 = _mm_hadd_ps(result2, result2);
-		result2 = _mm_hadd_ps(result2, result2);
-
-		DataType result3 = _mm_mul_ps(v1, row3);
-		result3 = _mm_hadd_ps(result3, result3);
-		result3 = _mm_hadd_ps(result3, result3);
-
-		DataType result4 = _mm_mul_ps(v1, row4);
-		result4 = _mm_hadd_ps(result4, result4);
-		result4 = _mm_hadd_ps(result4, result4);
-
-		return TVector4<T>(
-			_mm_cvtss_f32(result1),
-			_mm_cvtss_f32(result2),
-			_mm_cvtss_f32(result3),
-			_mm_cvtss_f32(result4)
-		);
-#else
-		return TVector4<T>(
-			v.x * m.data[0] + v.y * m.data[4] + v.z * m.data[8] + v.w * m.data[12],
-			v.x * m.data[1] + v.y * m.data[5] + v.z * m.data[9] + v.w * m.data[13],
-			v.x * m.data[2] + v.y * m.data[6] + v.z * m.data[10] + v.w * m.data[14],
-			v.x * m.data[3] + v.y * m.data[7] + v.z * m.data[11] + v.w * m.data[15]
-		);
-#endif
-	}
-
-	TVector4<T> GetColoumn(int Col) const {
-		if (Col < 0 || Col > 3) {
-			GLOG(Log::eWarn, "Invalid matrix boundings. Return Vec4().");
-			return TVector4<T>();
-		}
-
-		return TVector4<T>(data[Col], data[Col + 4], data[Col + 8], data[Col + 12]);
-	}
-
-	TVector4<T> GetRow(int Row) const {
-		if (Row < 0 || Row > 3) {
-			GLOG(Log::eWarn, "Invalid matrix boundings. Return Vec4().");
-			return TVector4<T>(0.0f);
-		}
-
-		return TVector4<T>(data[Row * 4], data[Row * 4 + 1], data[Row * 4 + 2], data[Row * 4 + 3]);
-	}
+        // 批量矩阵向量乘法
+        static void BatchTransform(TVector4<T>* results, const TMatrix4* matrices, const TVector4<T>* vectors, size_t count) {
+    #if defined(SIMD_SUPPORTED)
+            if constexpr (std::is_same_v<T, float>) {
+                for (size_t idx = 0; idx < count; ++idx) {
+                    results[idx] = matrices[idx] * vectors[idx];
+                }
+            } else {
+    #endif
+                for (size_t idx = 0; idx < count; ++idx) {
+                    results[idx] = matrices[idx] * vectors[idx];
+                }
+    #if defined(SIMD_SUPPORTED)
+            }
+    #endif
+        }
 
 private:
 	void Swap(T* a, T* b) {

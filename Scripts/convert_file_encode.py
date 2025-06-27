@@ -3,6 +3,7 @@
 """
 文件编码转换脚本
 将指定路径下所有指定后缀的文件编码格式改为UTF-8带签名（BOM）格式，支持递归修改
+支持多个路径输入
 仅使用Python标准库，无需安装第三方依赖
 """
 
@@ -150,9 +151,9 @@ def find_files_by_extension(root_path, extensions):
         if file_path.is_file() and file_path.suffix.lower() in [ext.lower() for ext in extensions]:
             yield file_path
 
-def convert_files(root_path, extensions, dry_run=False, verbose=False):
+def convert_files_in_path(root_path, extensions, dry_run=False, verbose=False):
     """
-    批量转换文件编码
+    转换单个路径下的文件编码
     :param root_path: 根路径
     :param extensions: 文件后缀列表
     :param dry_run: 是否为试运行模式
@@ -167,7 +168,7 @@ def convert_files(root_path, extensions, dry_run=False, verbose=False):
         'binary': 0
     }
     
-    print(f"开始{'试运行' if dry_run else '转换'}，路径: {root_path}，后缀: {extensions}")
+    print(f"\n处理路径: {root_path}")
     
     for file_path in find_files_by_extension(root_path, extensions):
         stats['total'] += 1
@@ -209,6 +210,48 @@ def convert_files(root_path, extensions, dry_run=False, verbose=False):
     
     return stats
 
+def convert_files(paths, extensions, dry_run=False, verbose=False):
+    """
+    批量转换多个路径下的文件编码
+    :param paths: 根路径列表
+    :param extensions: 文件后缀列表
+    :param dry_run: 是否为试运行模式
+    :param verbose: 是否详细输出
+    :return: 转换统计信息
+    """
+    total_stats = {
+        'total': 0,
+        'success': 0,
+        'failed': 0,
+        'skipped': 0,
+        'binary': 0
+    }
+    
+    print(f"开始{'试运行' if dry_run else '转换'}，后缀: {extensions}")
+    print(f"处理路径数量: {len(paths)}")
+    
+    for path in paths:
+        if not os.path.exists(path):
+            print(f"警告: 路径不存在，跳过: {path}")
+            continue
+            
+        path_stats = convert_files_in_path(path, extensions, dry_run, verbose)
+        
+        # 累加统计信息
+        for key in total_stats:
+            total_stats[key] += path_stats[key]
+        
+        # 显示当前路径的统计
+        if path_stats['total'] > 0:
+            print(f"  路径 {path} 完成: 总数={path_stats['total']}")
+            if not dry_run:
+                print(f"    成功={path_stats['success']}, 失败={path_stats['failed']}, "
+                      f"跳过(BOM)={path_stats['skipped']}, 跳过(二进制)={path_stats['binary']}")
+        else:
+            print(f"  路径 {path}: 未找到匹配的文件")
+    
+    return total_stats
+
 def main():
     """主函数"""
     parser = argparse.ArgumentParser(
@@ -216,32 +259,63 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 使用示例:
-  %(prog)s /path/to/files .cpp .h              # 转换C++文件
-  %(prog)s /path/to/files .txt --dry-run       # 试运行模式
-  %(prog)s /path/to/files .py .js .html        # 转换多种类型文件
-  %(prog)s /path/to/files .cpp --verbose       # 详细输出
+  %(prog)s --paths /path/to/files1 /path/to/files2 .cpp .h    # 转换多个路径的C++文件
+  %(prog)s --paths /path/to/files .txt --dry-run              # 试运行模式
+  %(prog)s --paths /path/to/files .py .js .html               # 转换多种类型文件
+  %(prog)s --paths /path/to/files .cpp --verbose              # 详细输出
+  %(prog)s --paths-file paths.txt .cpp .h                     # 从文件读取路径列表
         """
     )
     
-    parser.add_argument('path', help='要处理的根路径')
+    # 路径参数组
+    path_group = parser.add_mutually_exclusive_group(required=True)
+    path_group.add_argument('--paths', nargs='+', help='要处理的根路径列表')
+    path_group.add_argument('--paths-file', help='包含路径列表的文件，每行一个路径')
+    
     parser.add_argument('extensions', nargs='+', help='要处理的文件后缀（如 .cpp .h .txt）')
     parser.add_argument('--dry-run', action='store_true', help='试运行模式，只显示将要处理的文件，不实际修改')
     parser.add_argument('--verbose', '-v', action='store_true', help='详细输出')
     
     args = parser.parse_args()
     
+    # 获取路径列表
+    paths = []
+    if args.paths_file:
+        # 从文件读取路径
+        try:
+            with open(args.paths_file, 'r', encoding='utf-8') as f:
+                paths = [line.strip() for line in f if line.strip() and not line.strip().startswith('#')]
+        except Exception as e:
+            print(f"错误: 无法读取路径文件 {args.paths_file}: {e}")
+            sys.exit(1)
+    else:
+        paths = args.paths
+    
     # 验证路径
-    if not os.path.exists(args.path):
-        print(f"错误: 路径不存在: {args.path}")
+    if not paths:
+        print("错误: 未指定任何路径")
+        sys.exit(1)
+    
+    # 检查路径是否存在（给出警告但不退出）
+    valid_paths = []
+    for path in paths:
+        if os.path.exists(path):
+            valid_paths.append(path)
+        else:
+            print(f"警告: 路径不存在: {path}")
+    
+    if not valid_paths:
+        print("错误: 所有路径都不存在")
         sys.exit(1)
     
     try:
         # 执行转换
-        stats = convert_files(args.path, args.extensions, args.dry_run, args.verbose)
+        stats = convert_files(valid_paths, args.extensions, args.dry_run, args.verbose)
         
-        # 输出统计信息
+        # 输出总体统计信息
         mode_text = "试运行完成" if args.dry_run else "转换完成"
-        print(f"\n{mode_text}:")
+        print(f"\n{mode_text} - 总体统计:")
+        print(f"处理路径数: {len(valid_paths)}")
         print(f"总文件数: {stats['total']}")
         if not args.dry_run:
             print(f"成功转换: {stats['success']}")
