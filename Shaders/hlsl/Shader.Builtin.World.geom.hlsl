@@ -8,6 +8,7 @@ struct GSSceneIn
     float4 vAlbientColor : COLOR0;
     float3 vViewPosition : VECTOR0;
     float3 vFragPosition : VECTOR1;
+    float3 vVertPosition : VECTOR2;
     float4 vColor : COLOR1;
     float4 vTangent : POSITION0;
 	
@@ -22,6 +23,7 @@ struct GSSceneOut
     float4 outAmbientColor : COLOR0;
     float3 outViewPosition : VECTOR0;
     float3 outFragPosition : VECTOR1;
+    float3 outVertPosition : VECTOR2;
     float4 outColor : COLOR1;
     float4 outTangent : POSITION0;
 };
@@ -41,6 +43,7 @@ void main(triangle GSSceneIn input[3], inout TriangleStream<GSSceneOut> OutputSt
         output.outAmbientColor = input[i].vAlbientColor;
         output.outViewPosition = input[i].vViewPosition;
         output.outFragPosition = input[i].vFragPosition;
+        output.outVertPosition = input[i].vVertPosition;
         output.outColor = input[i].vColor;
         output.outTangent = input[i].vTangent;
         
