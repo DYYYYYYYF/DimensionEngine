@@ -26,4 +26,18 @@ option(YAML_CPP_BUILD_TOOLS OFF)
 add_subdirectory(yaml-cpp)
 
 # assimp
+if(MSVC)
+    # 移除所有配置中的默认 /W3 标志
+    foreach(flag_var
+        CMAKE_CXX_FLAGS CMAKE_CXX_FLAGS_DEBUG CMAKE_CXX_FLAGS_RELEASE
+        CMAKE_CXX_FLAGS_MINSIZEREL CMAKE_CXX_FLAGS_RELWITHDEBINFO
+        CMAKE_C_FLAGS CMAKE_C_FLAGS_DEBUG CMAKE_C_FLAGS_RELEASE
+        CMAKE_C_FLAGS_MINSIZEREL CMAKE_C_FLAGS_RELWITHDEBINFO)
+        
+        string(REGEX REPLACE "/W[0-4]" "" ${flag_var} "${${flag_var}}")
+    endforeach()
+    
+    # 设置统一的警告级别
+    add_compile_options(/W4)
+endif()
 add_subdirectory(assimp)
