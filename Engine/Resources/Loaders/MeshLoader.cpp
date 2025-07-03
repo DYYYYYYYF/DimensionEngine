@@ -12,6 +12,12 @@
 #include <vector>
 #include <stdio.h>	//sscanf
 
+// Assimp
+#include <assimp/Importer.hpp>
+#include <assimp/scene.h>
+#include <assimp/postprocess.h>
+#include <assimp/material.h>
+
 MeshLoader::MeshLoader() {
 	Type = ResourceType::eResource_type_Static_Mesh;
 	TypePath = "Models";
@@ -25,20 +31,33 @@ bool MeshLoader::Load(const std::string& name, void* params, Resource* resource)
 	const char* FormatStr = "%s/%s/%s%s";
 	FileHandle f;
 
-#define SUPPORTED_FILETYPE_COUNT 3
+#define SUPPORTED_FILETYPE_COUNT 7  // 增加支持的文件类型数量
 	SupportedMeshFileType SupportedFileTypes[SUPPORTED_FILETYPE_COUNT];
 	SupportedFileTypes[0] = SupportedMeshFileType{ ".dsm", MeshFileType::eMesh_File_Type_DSM, true };
-	SupportedFileTypes[1] = SupportedMeshFileType{ ".obj", MeshFileType::eMesh_File_Type_OBJ, false };
-	SupportedFileTypes[2] = SupportedMeshFileType{ ".gltf", MeshFileType::eMesh_File_Type_GLTF, false };
+	SupportedFileTypes[1] = SupportedMeshFileType{ ".obj", MeshFileType::eMesh_File_Type_3D_Model, false };
+	SupportedFileTypes[2] = SupportedMeshFileType{ ".gltf", MeshFileType::eMesh_File_Type_3D_Model, false };
+	SupportedFileTypes[3] = SupportedMeshFileType{ ".glb", MeshFileType::eMesh_File_Type_3D_Model, true };  // 二进制GLTF
+	SupportedFileTypes[4] = SupportedMeshFileType{ ".fbx", MeshFileType::eMesh_File_Type_3D_Model, true };  // FBX
+	SupportedFileTypes[5] = SupportedMeshFileType{ ".dae", MeshFileType::eMesh_File_Type_3D_Model, false }; // Collada
+	SupportedFileTypes[6] = SupportedMeshFileType{ ".3ds", MeshFileType::eMesh_File_Type_3D_Model, true };  // 3DS Max
 
 	char FullFilePath[512];
 	MeshFileType Type = MeshFileType::eMesh_File_Type_Not_Found;
-	// Try each supported extension.
+	// 尝试每种支持的扩展名
 	for (uint32_t i = 0; i < SUPPORTED_FILETYPE_COUNT; ++i) {
-		StringFormat(FullFilePath, 512, FormatStr, ResourceSystem::GetRootPath(), TypePath.c_str(), name.c_str(), SupportedFileTypes[i].extension);
-		// If the file exists, open it and stop finding.
+		StringFormat(FullFilePath, 512, FormatStr, ResourceSystem::GetRootPath(), TypePath.c_str(), name.c_str(), SupportedFileTypes[i].extension.c_str());
+
+		// 如果文件存在
 		if (FileSystemExists(FullFilePath)) {
-			if (FileSystemOpen(FullFilePath, FileMode::eFile_Mode_Read, SupportedFileTypes[i].is_binary, &f)) {
+			// 对于DSM文件，需要打开文件句柄
+			if (SupportedFileTypes[i].type == MeshFileType::eMesh_File_Type_DSM) {
+				if (FileSystemOpen(FullFilePath, FileMode::eFile_Mode_Read, SupportedFileTypes[i].is_binary, &f)) {
+					Type = SupportedFileTypes[i].type;
+					break;
+				}
+			}
+			else {
+				// 对于3D模型文件，不需要提前打开文件句柄
 				Type = SupportedFileTypes[i].type;
 				break;
 			}
@@ -53,35 +72,40 @@ bool MeshLoader::Load(const std::string& name, void* params, Resource* resource)
 	resource->FullPath = std::string(FullFilePath);
 	resource->Name = std::move(name);
 
-	// The resource data is just an array of configs.
+	// 资源数据是几何体配置的数组
 	std::vector<SGeometryConfig> ResourceDatas;
 	ResourceDatas.reserve(25968);
 	bool Result = false;
+
 	switch (Type) {
-	case MeshFileType::eMesh_File_Type_GLTF:
+	case MeshFileType::eMesh_File_Type_3D_Model:
 	{
-		// Generate the dsm filename.
+		// 生成DSM文件名
 		char DsmFileName[512];
 		StringFormat(DsmFileName, 512, "%s/%s/%s%s", ResourceSystem::GetRootPath(), TypePath.c_str(), name.c_str(), ".dsm");
-		Result = ImportGltfFile(FullFilePath, DsmFileName, ResourceDatas);
+
+		// 使用统一的Assimp加载器处理所有3D模型格式
+		Result = Import3DModelFile(FullFilePath, DsmFileName, ResourceDatas);
+
+		GLOG(Log::eInfo, "Loaded 3D model '%s' with %zu geometries using Assimp",
+			FullFilePath, ResourceDatas.size());
 	}break;
-	case MeshFileType::eMesh_File_Type_OBJ:
-	{
-		// Generate the dsm filename.
-		char DsmFileName[512];
-		StringFormat(DsmFileName, 512, "%s/%s/%s%s", ResourceSystem::GetRootPath(), TypePath.c_str(), name.c_str(), ".dsm");
-		Result = ImportObjFile(&f, DsmFileName, ResourceDatas);
-	}break;
+
 	case MeshFileType::eMesh_File_Type_DSM:
 		Result = LoadDsmFile(&f, ResourceDatas);
+		GLOG(Log::eDebug, "Loaded DSM file '%s' with %zu geometries", FullFilePath, ResourceDatas.size());
 		break;
+
 	case MeshFileType::eMesh_File_Type_Not_Found:
 		GLOG(Log::eError, "Unable to find mesh of supported type called '%s'.", name.c_str());
 		Result = false;
 		break;
 	}
 
-	FileSystemClose(&f);
+	// 如果打开了文件句柄，需要关闭
+	if (Type == MeshFileType::eMesh_File_Type_DSM) {
+		FileSystemClose(&f);
+	}
 
 	if (!Result) {
 		GLOG(Log::eError, "Failed to process mesh file '%s'.", FullFilePath);
@@ -91,14 +115,25 @@ bool MeshLoader::Load(const std::string& name, void* params, Resource* resource)
 		return false;
 	}
 
+	if (ResourceDatas.empty()) {
+		GLOG(Log::eWarn, "No geometries found in mesh file '%s'.", FullFilePath);
+		resource->Data = nullptr;
+		resource->DataSize = 0;
+		resource->DataCount = 0;
+		return true;  // 不算错误，只是空文件
+	}
+
+	// 分配内存并复制数据
 	resource->Data = Memory::Allocate(sizeof(SGeometryConfig) * ResourceDatas.size(), MemoryType::eMemory_Type_Array);
 	for (size_t i = 0; i < ResourceDatas.size(); ++i) {
-		new (static_cast<SGeometryConfig*>(resource->Data) + i) SGeometryConfig(ResourceDatas[i]); // 使用 placement new
+		new (static_cast<SGeometryConfig*>(resource->Data) + i) SGeometryConfig(ResourceDatas[i]); // 使用移动构造
 	}
 	resource->DataSize = sizeof(SGeometryConfig);
 	resource->DataCount = ResourceDatas.size();
+
 	std::vector<SGeometryConfig>().swap(ResourceDatas);
 
+	GLOG(Log::eInfo, "Successfully loaded mesh resource '%s' with %u geometries", name.c_str(), resource->DataCount);
 	return true;
 }
 
@@ -120,469 +155,385 @@ void MeshLoader::Unload(Resource* resource) {
 	resource = nullptr;
 }
 
-bool MeshLoader::ImportObjFile(FileHandle* obj_file, const char* out_dsm_filename, std::vector<SGeometryConfig>& out_geometries) {
-	// Positions
-	std::vector<Vector3> Positions;
-	// Normals
-	std::vector<Vector3> Normals;
-	// Texcoords
-	std::vector<Vector2f> Texcoords;
+bool MeshLoader::Import3DModelFile(const std::string& model_file, const char* out_dsm_filename, std::vector<SGeometryConfig>& out_geometries) {
+	Assimp::Importer importer;
 
-	//Groups
-	std::vector<MeshGroupData> Groups;
+	// 设置后处理标志 - 适用于所有3D格式
+	unsigned int postProcessFlags =
+		aiProcess_Triangulate |           // 三角化所有面
+		aiProcess_GenNormals |           // 为没有法线的顶点生成法线
+		aiProcess_CalcTangentSpace |     // 计算切线和副切线
+		aiProcess_JoinIdenticalVertices | // 合并相同的顶点
+		aiProcess_ValidateDataStructure | // 验证数据结构
+		aiProcess_ImproveCacheLocality |  // 优化顶点缓存局部性
+		aiProcess_RemoveRedundantMaterials | // 移除冗余材质
+		aiProcess_SortByPType |          // 按图元类型排序
+		aiProcess_FindDegenerates |      // 查找退化的多边形
+		aiProcess_FindInvalidData |      // 查找无效数据
+		aiProcess_GenUVCoords |          // 为缺少UV坐标的顶点生成UV
+		aiProcess_TransformUVCoords |    // 处理UV变换
+		aiProcess_OptimizeMeshes |       // 优化网格数量
+		aiProcess_OptimizeGraph;         // 优化场景图
 
-	// Default name is filename.
-	char name[512] = "";
+	// 加载3D模型文件
+	const aiScene* scene = importer.ReadFile(model_file, postProcessFlags);
 
-	char MaterialFileName[512] = "";
-	unsigned short CurrentMatNameCount = 0;
-	char MaterialNames[32][64] = {0};
-
-	char LineBuf[512] = "";
-	char* p = &LineBuf[0];
-	size_t LineLength = 0;
-
-	// index 0 is previous, 1 is previous before that.
-	char PrevFirstChars[2] = { '\0', '\0'};
-	while (true) {
-		if (!FileSystemReadLine(obj_file, 511, &p, &LineLength)) {
-			break;
-		}
-
-		// Skip blank lines.
-		if (LineLength < 1) {
-			continue;
-		}
-
-		char FirstChar = LineBuf[0];
-
-		switch (FirstChar)
-		{
-		case '#':
-			continue;
-		case 'v':
-		{
-			char SecondChar = LineBuf[1];
-			switch (SecondChar)
-			{
-			case ' ':{
-				// Vertex position
-				Vector3 Pos;
-				char t[2];
-				int Result = sscanf(LineBuf, "%s %f %f %f", t, &Pos.x, &Pos.y, &Pos.z);
-				if (Result == -1) {
-					GLOG(Log::eError, "Mesh loader ImportObjFile: sscanf failed. succeed num: %i  Line: %s", Result, LineBuf);
-				}
-
-				Positions.push_back(Pos);
-			}break;
-			case 'n': {
-				// Vertex normal
-				Vector3 Norm;
-				char t[3];
-				int Result = sscanf(LineBuf, "%s %f %f %f", t, &Norm.x, &Norm.y, &Norm.z);
-				if (Result == -1) {
-					GLOG(Log::eError, "Mesh loader ImportObjFile: sscanf failed. succeed num: %i  Line: %s", Result, LineBuf);
-				}
-
-				Normals.push_back(Norm);
-			}break;
-			case 't': {
-				// Vertex texcoords
-				Vector2f Texcoord;
-				char t[3];
-				int Result = sscanf(LineBuf, "%s %f %f", t, &Texcoord.x, &Texcoord.y);
-				if (Result == -1) {
-					GLOG(Log::eError, "Mesh loader ImportObjFile: sscanf failed. succeed num: %i  Line: %s", Result, LineBuf);
-				}
-
-				Texcoords.push_back(Texcoord);
-			}break;
-			}
-		}break;
-		case 's': {
-
-		}break;
-		case 'f': {
-			// face
-			// f 1/2/3
-			// f 1/1/1 2/2/2 3/3/3 = pos/tex/norm pos/tex/norm pos/tex/norm
-			MeshFaceData Face;
-			char t[3];
-
-			size_t NormalCount = Normals.size();
-			size_t TexcoordCount = Texcoords.size();
-			if (NormalCount == 0 && TexcoordCount == 0) {
-				int Result = sscanf(LineBuf, "%s %d %d %d", 
-					t, 
-					&Face.vertices[0].position_index, 
-					&Face.vertices[1].position_index,
-					&Face.vertices[2].position_index);
-				if (Result == -1) {
-					GLOG(Log::eError, "Mesh loader ImportObjFile: sscanf failed. succeed num: %i  Line: %s", Result, LineBuf);
-				}
-			}
-			else if (NormalCount == 0) {
-				int Result = sscanf(LineBuf, "%s %d/%d %d/%d %d/%d",
-					t,
-					&Face.vertices[0].position_index,
-					&Face.vertices[0].texcoord_index,
-					&Face.vertices[1].position_index,
-					&Face.vertices[1].texcoord_index,
-					&Face.vertices[2].position_index,
-					&Face.vertices[2].texcoord_index);
-				if (Result == -1) {
-					GLOG(Log::eError, "Mesh loader ImportObjFile: sscanf failed. succeed num: %i  Line: %s", Result, LineBuf);
-				}
-			}
-			else if (TexcoordCount == 0) {
-				int Result = sscanf(LineBuf, "%s %d/%*d/%d %d/%*d/%d %d/%*d/%d",
-					t,
-					&Face.vertices[0].position_index,
-					&Face.vertices[0].normal_index,
-					&Face.vertices[1].position_index,
-					&Face.vertices[1].normal_index,
-					&Face.vertices[2].position_index,
-					&Face.vertices[2].normal_index);
-				if (Result == -1) {
-					GLOG(Log::eError, "Mesh loader ImportObjFile: sscanf failed. succeed num: %i  Line: %s", Result, LineBuf);
-				}
-			}
-			else {
-				int Result = sscanf(LineBuf, "%s %d/%d/%d %d/%d/%d %d/%d/%d",
-					t, 
-					&Face.vertices[0].position_index, 
-					&Face.vertices[0].texcoord_index, 
-					&Face.vertices[0].normal_index,
-
-					&Face.vertices[1].position_index, 
-					&Face.vertices[1].texcoord_index, 
-					&Face.vertices[1].normal_index,
-
-					&Face.vertices[2].position_index, 
-					&Face.vertices[2].texcoord_index, 
-					&Face.vertices[2].normal_index);
-				if (Result == -1) {
-					GLOG(Log::eError, "Mesh loader ImportObjFile: sscanf failed. succeed num: %i  Line: %s", Result, LineBuf);
-				}
-			}
-
-			// 0 - max_position_count
-			Face.vertices[0].position_index -= 1;
-			Face.vertices[0].texcoord_index -= 1;
-			Face.vertices[0].normal_index -= 1;
-			Face.vertices[1].position_index -= 1;
-			Face.vertices[1].texcoord_index -= 1;
-			Face.vertices[1].normal_index -= 1;
-			Face.vertices[2].position_index -= 1;
-			Face.vertices[2].texcoord_index -= 1;
-			Face.vertices[2].normal_index -= 1;
-
-			size_t GroupSize = Groups.size();
-			if (GroupSize == 0) {
-				Groups.resize(1);
-			}
-			size_t GroupIndex = Groups.size() - 1;
-			Groups[GroupIndex].Faces.push_back(Face);
-		}break;
-		case 'm': {
-			// Material library file.
-			char SubStr[8];
-			int Result = sscanf(LineBuf, "%s %s", SubStr, MaterialFileName);
-			if (Result == -1) {
-				GLOG(Log::eError, "Mesh loader ImportObjFile: sscanf failed. succeed num: %i  Line: %s", Result, LineBuf);
-			}
-
-			// If found, save off the material file name.
-			if (StringNequali(SubStr, "mtllib", 6)) {
-				// TODO verification
-			}
-		}break;
-		case 'u': {
-			// Any time there is a usemtl, assume a new group.
-			// New named group or smoothing group, all faces coming after should be added to it.
-			/*MeshGroupData NewGroup;
-			NewGroup.Faces.reserve(16384);
-			Groups.push_back(NewGroup);*/
-
-			// usemtl
-			// Read the material name.
-			char t[8];
-			int Result = sscanf(LineBuf, "%s %s", t, MaterialNames[CurrentMatNameCount]);
-			if (Result == -1) {
-				GLOG(Log::eError, "Mesh loader ImportObjFile: sscanf failed. succeed num: %i  Line: %s", Result, LineBuf);
-			}
-
-			strncpy(name, MaterialNames[CurrentMatNameCount], 255);
-			CurrentMatNameCount++;
-		} break;
-		case 'g': {
-			size_t GroupCount = Groups.size();
-			// Process each group as a subobject.
-			for (size_t i = 0; i < GroupCount; ++i) {
-				SGeometryConfig NewData;
-				NewData.name = name;
-
-				if (i > 0) {
-					NewData.name += (int)i;
-				}
-				NewData.material_name = MaterialNames[i];
-
-				ProcessSubobject(Positions, Normals, Texcoords, Groups[i].Faces, &NewData);
-				out_geometries.push_back(NewData);
-
-				// Increment the number of objects.
-				Groups[i].Faces.clear();
-				Memory::Zero(MaterialNames[i], 64);
-			}
-
-			CurrentMatNameCount = 0;
-			Groups.clear();
-			Memory::Zero(name, 512);
-
-			// Read the name.
-			char t[3];
-			int Result = sscanf(LineBuf, "%s %s", t, name);
-			if (Result == -1) {
-				GLOG(Log::eError, "Mesh loader ImportObjFile: sscanf failed. succeed num: %i  Line: %s", Result, LineBuf);
-			}
-		}break;
-		}
-
-		PrevFirstChars[1] = PrevFirstChars[0];
-		PrevFirstChars[0] = FirstChar;
-	}	// Each line
-
-	// Process the remaining group since the last one will not have been trigged
-	// by the finding of a new name.
-	// Process each group as a subobject.
-	size_t GroupCount = Groups.size();
-	SGeometryConfig NewData;
-	for (size_t i = 0; i < GroupCount; ++i) {
-		NewData.name = name;
-
-		if (i > 0) {
-			NewData.name += (int)i;
-		}
-		NewData.material_name = MaterialNames[i];
-
-		ProcessSubobject(Positions, Normals, Texcoords, Groups[i].Faces, &NewData);
-		out_geometries.push_back(NewData);
-
-		// Increment the number of objects.
-		Groups[i].Faces.clear();
+	if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
+		GLOG(Log::eError, "Failed to load 3D model with Assimp: %s", importer.GetErrorString());
+		return false;
 	}
 
-	Groups.clear();
-	Positions.clear();
-	Normals.clear();
-	Texcoords.clear();
+	GLOG(Log::eInfo, "Successfully loaded 3D model: %s", model_file.c_str());
+	GLOG(Log::eDebug, "Model contains %u meshes, %u materials", scene->mNumMeshes, scene->mNumMaterials);
 
-	if (strlen(MaterialFileName) > 0) {
-		// Load up the material file.
-		char FullMtlPath[512];
-		Memory::Zero(FullMtlPath, sizeof(char) * 512);
-		StringDirectoryFromPath(FullMtlPath, out_dsm_filename);
-		String::Append(FullMtlPath, 512, FullMtlPath, MaterialFileName);
+	// 材质配置
+	std::vector<SMaterialConfig> MaterialConfigs;
 
-		// Process material library file.
-		if (!ImportObjMaterialLibraryFile(FullMtlPath)) {
-			GLOG(Log::eError, "Error reading obj material file.");
-		}
+	// 处理材质
+	if (!ProcessAssimpMaterials(scene, out_dsm_filename, MaterialConfigs)) {
+		GLOG(Log::eWarn, "Failed to process some materials");
 	}
 
-	// De-duplicate geometry.
+	// 处理场景节点和网格
+	ProcessAssimpNode(scene->mRootNode, scene, MaterialConfigs, Matrix4::Identity(), out_geometries);
+
+	MaterialConfigs.clear();
+
+	// 去重几何体
 	DeduplicateGeometry(out_geometries);
 
-	std::vector<Vector3>().swap(Positions);
-	std::vector<Vector3>().swap(Normals);
-	std::vector<Vector2f>().swap(Texcoords);
-	std::vector<MeshGroupData>().swap(Groups);
-
-	// Output a .dsm file, which will be loaded in the future.
-	return WriteDsmFile(out_dsm_filename, name, out_geometries);
+	// 输出DSM文件
+	std::string name = model_file;
+	return WriteDsmFile(out_dsm_filename, name.c_str(), out_geometries);
 }
 
-bool MeshLoader::ImportObjMaterialLibraryFile(const char* mtl_file_path) {
-	GLOG(Log::eDebug, "Importing obj .mtl file '%s'.", mtl_file_path);
+bool MeshLoader::ProcessAssimpMaterials(const aiScene* scene, const char* out_dsm_filename, std::vector<SMaterialConfig>& materialConfigs) {
+	for (unsigned int i = 0; i < scene->mNumMaterials; ++i) {
+		const aiMaterial* mat = scene->mMaterials[i];
+		SMaterialConfig config;
 
-	// Grab the .mtl file, if it exists, and read the material information.
-	FileHandle MtlFile;
-	if (!FileSystemOpen(mtl_file_path, FileMode::eFile_Mode_Read, false, &MtlFile)) {
-		GLOG(Log::eError, "Unable to open mtl file: '%s'", mtl_file_path);
-		return false;
+		// 材质名称
+		aiString name;
+		if (mat->Get(AI_MATKEY_NAME, name) == AI_SUCCESS && strlen(name.C_Str()) > 0) {
+			config.name = std::string(name.C_Str());
+		}
+		else {
+			char file[512] = "";
+			StringFilenameNoExtensionFromPath(file, out_dsm_filename);
+			config.name = std::string(file) + "_auto_material_" + std::to_string(i);
+		}
+
+		// 基础颜色/漫反射颜色
+		aiColor4D baseColor;
+		if (mat->Get(AI_MATKEY_BASE_COLOR, baseColor) == AI_SUCCESS) {
+			config.diffuse_color = Vector4(baseColor.r, baseColor.g, baseColor.b, baseColor.a);
+		}
+		else if (mat->Get(AI_MATKEY_COLOR_DIFFUSE, baseColor) == AI_SUCCESS) {
+			config.diffuse_color = Vector4(baseColor.r, baseColor.g, baseColor.b, 1.0f);
+		}
+		else {
+			config.diffuse_color = Vector4(0.8f, 0.8f, 0.8f, 1.0f); // 默认颜色
+		}
+
+		// PBR属性 - 金属度
+		float metallic = 0.0f;
+		if (mat->Get(AI_MATKEY_METALLIC_FACTOR, metallic) == AI_SUCCESS) {
+			config.Metallic = metallic;
+		}
+
+		// PBR属性 - 粗糙度
+		float roughness = 0.5f;
+		if (mat->Get(AI_MATKEY_ROUGHNESS_FACTOR, roughness) == AI_SUCCESS) {
+			config.Roughness = roughness;
+		}
+
+		// 自发光颜色
+		aiColor3D emissive;
+		if (mat->Get(AI_MATKEY_COLOR_EMISSIVE, emissive) == AI_SUCCESS) {
+			config.EmissiveColor = Vector4(emissive.r, emissive.g, emissive.b, 1.0f);
+		}
+
+		// 反光度 (用于传统的Blinn-Phong着色)
+		float shininess = 32.0f;
+		if (mat->Get(AI_MATKEY_SHININESS, shininess) == AI_SUCCESS) {
+			config.shininess = shininess;
+		}
+		if (config.shininess == 0.0f) {
+			config.shininess = 8.0f; // 避免除零错误
+		}
+
+		// 透明度/不透明度
+		float opacity = 1.0f;
+		if (mat->Get(AI_MATKEY_OPACITY, opacity) == AI_SUCCESS) {
+			config.diffuse_color.a = opacity;
+		}
+
+		// 环境光颜色（如果需要的话）
+		aiColor3D ambient;
+		if (mat->Get(AI_MATKEY_COLOR_AMBIENT, ambient) == AI_SUCCESS) {
+			// 可以选择如何处理环境光，比如存储到额外的字段或者影响漫反射颜色
+			// 这里我们暂时不处理，因为现代渲染通常在着色器中处理环境光
+		}
+
+		// 折射率（如果需要的话）
+		float refractiveIndex = 1.0f;
+		if (mat->Get(AI_MATKEY_REFRACTI, refractiveIndex) == AI_SUCCESS) {
+			// 可以添加到SMaterialConfig中，如果需要支持折射
+		}
+
+		// 处理贴图
+		ProcessAssimpTextures(mat, config);
+
+		config.shader_name = "Shader.Builtin.World";
+
+		// 环境光遮蔽默认值（通常通过贴图处理，而不是材质属性）
+		config.AmbientOcclusion = 1.0f;
+
+		materialConfigs.push_back(config);
+
+		// 写入材质文件
+		if (!WriteDmtFile(out_dsm_filename, &config)) {
+			GLOG(Log::eWarn, "Failed to write material file for: %s", config.name.c_str());
+		}
 	}
 
-	SMaterialConfig CurrentConfig;
-	bool HitName = false;
-	char* Line = nullptr;
-	char LineBuf[512];
-	char* p = &LineBuf[0];
-	size_t LineLength = 0;
-	while (true) {
-		if (!FileSystemReadLine(&MtlFile, 512, &p, &LineLength)) {
-			break;
-		}
-
-		// Trim the line first.
-		Line = Strtrim(LineBuf);
-		LineLength = strlen(Line);
-
-		// Skip blank lines.
-		if (LineLength < 1) {
-			continue;
-		}
-
-		char FirstChar = Line[0];
-		switch (FirstChar)
-		{
-		case '#':
-			continue;
-		case 'K': {
-			char SecondChar = Line[1];
-			switch (SecondChar)
-			{
-			case 'a':
-			case 'd':
-			{
-				// Ambient/Diffuse color are treated the same at this level.
-				// ambient color is determined by the level.
-				char t[3];
-				int Result = sscanf(Line, "%s %f %f %f", t, &CurrentConfig.diffuse_color.r, &CurrentConfig.diffuse_color.g, &CurrentConfig.diffuse_color.b);
-				if (Result == -1) {
-					GLOG(Log::eError, "Mesh loader ImportObjFile: sscanf failed. succeed num: %i  Line: %s", Result, LineBuf);
-				}
-
-				// NOTE: This is only used by the color shader, and will set to max_norm by default.
-				// Transparency could be added as a material property all its own at a later time.
-				CurrentConfig.diffuse_color.a = 1.0f;
-			}break;
-			case 's':
-			{
-				// Specular color
-				char t[3];
-
-				// NOTE: Not using this for now.
-				float SpecRubbish = 0.0f;
-				int Result = sscanf(Line, "%s %f %f %f", t, &SpecRubbish, &SpecRubbish, &SpecRubbish);
-				if (Result == -1) {
-					GLOG(Log::eError, "Mesh loader ImportObjFile: sscanf failed. succeed num: %i  Line: %s", Result, LineBuf);
-				}
-			} break;
-			}
-		}break;
-		case 'N':
-		{
-			char SecondChar = Line[1];
-			switch (SecondChar)
-			{
-			case 's':
-			{
-				// Specular exponent.
-				char t[3];
-				int Result = sscanf(Line, "%s %f", t, &CurrentConfig.shininess);
-				if (Result == -1) {
-					GLOG(Log::eError, "Mesh loader ImportObjFile: sscanf failed. succeed num: %i  Line: %s", Result, LineBuf);
-				}
-			}break;
-			}
-		} break;
-		case 'm':
-		{
-			// Map
-			char SubStr[10];
-			char TextureFileName[512];
-
-			int Result = sscanf(Line, "%s %s", SubStr, TextureFileName);
-			if (Result == -1) {
-				GLOG(Log::eError, "Mesh loader ImportObjFile: sscanf failed. succeed num: %i  Line: %s", Result, LineBuf);
-			}
-
-			if (StringNequali(SubStr, "map_Kd", 6)) {
-				// Is a diffuse texture map.
-				StringFilenameNoExtensionFromPath(CurrentConfig.diffuse_map_name, TextureFileName);
-			}
-			else if (StringNequali(SubStr, "map_Ks", 6)) {
-				// Is a specular texture map.
-				StringFilenameNoExtensionFromPath(CurrentConfig.specular_map_name, TextureFileName);
-			}
-			else if (StringNequali(SubStr, "map_bump", 8)) {
-				// Is a normal texture map.
-				StringFilenameNoExtensionFromPath(CurrentConfig.normal_map_name, TextureFileName);
-			}
-		}break;
-		case 'b':
-		{
-			// Some implementations use 'bump' instead of 'map_bump'.
-			char SubStr[10];
-			char TextureFileName[512];
-
-			int Result = sscanf(Line, "%s %s", SubStr, TextureFileName);
-			if (Result == -1) {
-				GLOG(Log::eError, "Mesh loader ImportObjFile: sscanf failed. succeed num: %i  Line: %s", Result, LineBuf);
-			}
-
-			if (StringNequali(SubStr, "bump", 4)) {
-				// Is a bump(normal) texture map.
-				StringFilenameNoExtensionFromPath(CurrentConfig.normal_map_name, TextureFileName);
-			}
-		} break;
-		case 'n':
-		{
-			// Some implementations use 'bump' instead of 'map_bump'.
-			char SubStr[10];
-			char MaterialName[512];
-
-			int Result = sscanf(Line, "%s %s", SubStr, MaterialName);
-			if (Result == -1) {
-				GLOG(Log::eError, "Mesh loader ImportObjFile: sscanf failed. succeed num: %i  Line: %s", Result, LineBuf);
-			}
-
-			if (StringNequali(SubStr, "newmtl", 6)) {
-				// Is a material name.
-
-				// NOTE: Hardcoding default material shader name because all objects imported this way
-				// will be treated same.
-				CurrentConfig.shader_name = "Shader.Builtin.World";
-				// NOTE:Shininess of 0 will cause problems in the shader. Use default.
-				if (CurrentConfig.shininess == 0.0f) {
-					CurrentConfig.shininess = 8.0f;
-				}
-
-				if (HitName) {
-					// Write out a dmt file and move on.
-					if (!WriteDmtFile(mtl_file_path, &CurrentConfig)) {
-						GLOG(Log::eError, "Unable to write dmt file.");
-						return false;
-					}
-
-					// Reset material for the next round.
-					Memory::Zero(&CurrentConfig, sizeof(SMaterialConfig));
-				}
-
-				CurrentConfig.name = std::string(MaterialName);
-				HitName = true;
-			}
-		}
-		}
-	}	// Each line
-
-	// Write out the remaining dmt file.
-	// NOTE: Hardcoding default material shader name because all objects imported this way
-	// will be treated same.
-	CurrentConfig.shader_name = "Shader.Builtin.World";
-	// NOTE:Shininess of 0 will cause problems in the shader. Use default.
-	if (CurrentConfig.shininess == 0.0f) {
-		CurrentConfig.shininess = 8.0f;
+	// 如果没有材质，创建一个默认材质
+	if (materialConfigs.empty()) {
+		SMaterialConfig defaultConfig;
+		defaultConfig.name = "DefaultMaterial";
+		defaultConfig.diffuse_color = Vector4(0.8f, 0.8f, 0.8f, 1.0f);
+		defaultConfig.shininess = 32.0f;
+		defaultConfig.Metallic = 0.0f;
+		defaultConfig.Roughness = 0.5f;
+		defaultConfig.AmbientOcclusion = 1.0f;
+		defaultConfig.EmissiveColor = Vector4(0.0f, 0.0f, 0.0f, 1.0f);
+		defaultConfig.shader_name = "Shader.Builtin.World";
+		materialConfigs.push_back(defaultConfig);
 	}
 
-	if (!WriteDmtFile(mtl_file_path, &CurrentConfig)) {
-		GLOG(Log::eError, "Unable to write dmt file.");
-		return false;
-	}
-
-	FileSystemClose(&MtlFile);
 	return true;
+}
+
+void MeshLoader::ProcessAssimpTextures(const aiMaterial* mat, SMaterialConfig& config) {
+	aiString texPath;
+
+	// 漫反射/基础颜色贴图
+	if (mat->GetTexture(aiTextureType_DIFFUSE, 0, &texPath) == AI_SUCCESS) {
+		StringFilenameNoExtensionFromPath(config.diffuse_map_name, texPath.C_Str());
+	}
+	else if (mat->GetTexture(aiTextureType_BASE_COLOR, 0, &texPath) == AI_SUCCESS) {
+		StringFilenameNoExtensionFromPath(config.diffuse_map_name, texPath.C_Str());
+	}
+
+	// 法线贴图
+	if (mat->GetTexture(aiTextureType_NORMALS, 0, &texPath) == AI_SUCCESS) {
+		StringFilenameNoExtensionFromPath(config.normal_map_name, texPath.C_Str());
+	}
+	else if (mat->GetTexture(aiTextureType_HEIGHT, 0, &texPath) == AI_SUCCESS) {
+		StringFilenameNoExtensionFromPath(config.normal_map_name, texPath.C_Str());
+	}
+
+	// 镜面反射贴图
+	if (mat->GetTexture(aiTextureType_SPECULAR, 0, &texPath) == AI_SUCCESS) {
+		StringFilenameNoExtensionFromPath(config.specular_map_name, texPath.C_Str());
+	}
+
+	// 金属度贴图
+	if (mat->GetTexture(aiTextureType_METALNESS, 0, &texPath) == AI_SUCCESS) {
+		char texName[512] = "";
+		StringFilenameNoExtensionFromPath(texName, texPath.C_Str());
+		config.MetallicRoughnessTexName = std::string(texName);
+	}
+
+	// 粗糙度贴图
+	if (mat->GetTexture(aiTextureType_DIFFUSE_ROUGHNESS, 0, &texPath) == AI_SUCCESS) {
+		char texName[512] = "";
+		StringFilenameNoExtensionFromPath(texName, texPath.C_Str());
+		if (config.MetallicRoughnessTexName.empty()) {
+			config.MetallicRoughnessTexName = std::string(texName);
+		}
+	}
+
+	// 自发光贴图
+	if (mat->GetTexture(aiTextureType_EMISSIVE, 0, &texPath) == AI_SUCCESS) {
+		char texName[512] = "";
+		StringFilenameNoExtensionFromPath(texName, texPath.C_Str());
+		config.EmissiveFactorTexName = std::string(texName);
+	}
+
+	// 环境光遮蔽贴图 - 使用正确的aiTextureType
+	if (mat->GetTexture(aiTextureType_AMBIENT_OCCLUSION, 0, &texPath) == AI_SUCCESS) {
+		// 如果SMaterialConfig支持AO贴图，可以添加相应字段
+		char texName[512] = "";
+		StringFilenameNoExtensionFromPath(texName, texPath.C_Str());
+		// config.AmbientOcclusionTexName = std::string(texName); // 如果需要的话
+	}
+
+	// 不透明度贴图
+	if (mat->GetTexture(aiTextureType_OPACITY, 0, &texPath) == AI_SUCCESS) {
+		// 可以处理透明度贴图
+		char texName[512] = "";
+		StringFilenameNoExtensionFromPath(texName, texPath.C_Str());
+		// config.OpacityTexName = std::string(texName); // 如果需要的话
+	}
+}
+
+void MeshLoader::ProcessAssimpNode(aiNode* node, const aiScene* scene, const std::vector<SMaterialConfig>& materialConfigs, const Matrix4& parentTransform, std::vector<SGeometryConfig>& out_geometries) {
+	// 计算当前节点的变换矩阵
+	aiMatrix4x4 aiTrans = node->mTransformation;
+
+	// 转换Assimp矩阵到引擎矩阵格式
+	// Assimp使用行主序，需要转换为列主序（如果你的引擎使用列主序）
+	Matrix4 nodeTransform = Matrix4(
+		aiTrans.a1, aiTrans.b1, aiTrans.c1, aiTrans.d1,
+		aiTrans.a2, aiTrans.b2, aiTrans.c2, aiTrans.d2,
+		aiTrans.a3, aiTrans.b3, aiTrans.c3, aiTrans.d3,
+		aiTrans.a4, aiTrans.b4, aiTrans.c4, aiTrans.d4
+	);
+
+	Matrix4 worldTransform = parentTransform.Multiply(nodeTransform);
+
+	// 处理当前节点的网格
+	for (unsigned int i = 0; i < node->mNumMeshes; ++i) {
+		aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
+		ProcessAssimpMesh(mesh, scene, materialConfigs, worldTransform, out_geometries);
+	}
+
+	// 递归处理子节点
+	for (unsigned int i = 0; i < node->mNumChildren; ++i) {
+		ProcessAssimpNode(node->mChildren[i], scene, materialConfigs, worldTransform, out_geometries);
+	}
+}
+
+void MeshLoader::ProcessAssimpMesh(aiMesh* mesh, const aiScene* scene, const std::vector<SMaterialConfig>& materialConfigs, const Matrix4& transform, std::vector<SGeometryConfig>& out_geometries) {
+	if (!mesh->HasFaces()) {
+		GLOG(Log::eWarn, "Mesh has no faces, skipping: %s", mesh->mName.C_Str());
+		return;
+	}
+
+	if (mesh->mNumVertices == 0) {
+		GLOG(Log::eWarn, "Mesh has no vertices, skipping: %s", mesh->mName.C_Str());
+		return;
+	}
+
+	if (mesh->mNumFaces == 0) {
+		GLOG(Log::eWarn, "Mesh has no faces, skipping: %s", mesh->mName.C_Str());
+		return;
+	}
+
+	std::vector<Vector3> positions;
+	std::vector<Vector3> normals;
+	std::vector<Vector2f> texcoords;
+
+	positions.reserve(mesh->mNumVertices);
+	normals.reserve(mesh->mNumVertices);
+	texcoords.reserve(mesh->mNumVertices);
+
+	// 计算法线变换矩阵（逆转置）
+	Matrix4 normalMatrix = transform.Inverse().Transpose();
+
+	// 处理顶点
+	for (unsigned int i = 0; i < mesh->mNumVertices; ++i) {
+		// 位置
+		Vector3 pos(mesh->mVertices[i].x, mesh->mVertices[i].y, mesh->mVertices[i].z);
+		pos = transform * pos;  // 应用变换
+		positions.push_back(pos);
+
+		// 法线
+		if (mesh->mNormals) {
+			Vector3 normal(mesh->mNormals[i].x, mesh->mNormals[i].y, mesh->mNormals[i].z);
+			normal = normalMatrix * normal;  // 用法线变换矩阵
+			normals.push_back(normal.Normalized());
+		}
+		else {
+			normals.push_back(Vector3(0, 0, 1));
+		}
+
+		// 纹理坐标（使用第一套UV）
+		if (mesh->mTextureCoords[0]) {
+			Vector2f texcoord(mesh->mTextureCoords[0][i].x, mesh->mTextureCoords[0][i].y);
+			texcoords.push_back(texcoord);
+		}
+		else {
+			texcoords.push_back(Vector2f(0, 0));
+		}
+	}
+
+	// 转换为MeshFaceData格式以复用现有逻辑
+	std::vector<MeshFaceData> faces;
+	faces.reserve(mesh->mNumFaces);
+
+	for (unsigned int i = 0; i < mesh->mNumFaces; ++i) {
+		aiFace face = mesh->mFaces[i];
+
+		// 确保是三角形
+		if (face.mNumIndices != 3) {
+			GLOG(Log::eWarn, "Non-triangular face found, skipping");
+			continue;
+		}
+
+		// 检查索引是否有效
+		bool validIndices = true;
+		for (unsigned int j = 0; j < 3; ++j) {
+			if (face.mIndices[j] >= mesh->mNumVertices) {
+				GLOG(Log::eWarn, "Invalid vertex index %u in mesh '%s' (max: %u), skipping face",
+					face.mIndices[j], mesh->mName.C_Str(), mesh->mNumVertices - 1);
+				validIndices = false;
+				break;
+			}
+		}
+
+		if (!validIndices) {
+			continue;
+		}
+
+		MeshFaceData meshFace;
+		for (unsigned int j = 0; j < 3; ++j) {
+			uint32_t idx = face.mIndices[j];
+			meshFace.vertices[j].position_index = idx;
+			meshFace.vertices[j].normal_index = idx;
+			meshFace.vertices[j].texcoord_index = idx;
+		}
+		faces.push_back(meshFace);
+	}
+
+	// 检查是否有有效的面数据
+	if (faces.empty()) {
+		GLOG(Log::eWarn, "No valid triangular faces found in mesh: %s", mesh->mName.C_Str());
+		return;
+	}
+
+	// 检查是否有有效的顶点数据
+	if (positions.empty()) {
+		GLOG(Log::eWarn, "No valid vertex positions found in mesh: %s", mesh->mName.C_Str());
+		return;
+	}
+
+	// 创建几何体配置
+	SGeometryConfig newData;
+
+	// 设置名称
+	if (strlen(mesh->mName.C_Str()) > 0) {
+		newData.name = std::string(mesh->mName.C_Str());
+	}
+	else {
+		newData.name = "UnnamedMesh_" + std::to_string(out_geometries.size());
+	}
+
+	// 设置材质
+	if (mesh->mMaterialIndex < materialConfigs.size()) {
+		newData.material_name = materialConfigs[mesh->mMaterialIndex].name;
+	}
+	else {
+		newData.material_name = DEFAULT_MATERIAL_NAME;
+	}
+
+	// 复用现有的处理逻辑
+	ProcessSubobject(positions, normals, texcoords, faces, &newData);
+	out_geometries.push_back(newData);
+
+	GLOG(Log::eDebug, "Processed mesh: %s with %u vertices, %u faces",
+		newData.name.c_str(), newData.vertex_count, (uint32_t)faces.size());
 }
 
 void MeshLoader::ProcessSubobject(std::vector<Vector3>& positions, std::vector<Vector3>& normals, std::vector<Vector2f>& texcoords, std::vector<MeshFaceData>& faces, SGeometryConfig* out_data) {

@@ -9,9 +9,11 @@ struct FileHandle;
 struct SGeometryConfig;
 struct SMaterialConfig;
 
-namespace tinygltf {
-	class Model;
-}
+// Assimp前向声明
+struct aiScene;
+struct aiNode;
+struct aiMesh;
+struct aiMaterial;
 
 class MeshLoader : public IResourceLoader {
 public:
@@ -22,17 +24,27 @@ public:
 	virtual void Unload(Resource* resource) override;
 
 private:
-	virtual bool ImportObjFile(FileHandle* obj_file, const char* out_dsm_filename, std::vector<SGeometryConfig>& out_geometries);
+	// 通用文件处理
 	virtual void ProcessSubobject(std::vector<Vector3>& positions, std::vector<Vector3>& normals, std::vector<Vector2f>& texcoords, std::vector<MeshFaceData>& faces, SGeometryConfig* out_data);
-	virtual bool ImportObjMaterialLibraryFile(const char* mtl_file_path);
-
 	virtual bool LoadDsmFile(FileHandle* dsm_file, std::vector<SGeometryConfig>& out_geometries);
 	virtual bool WriteDsmFile(const char* path, const char* name, std::vector<SGeometryConfig>& geometries);
 	virtual bool WriteDmtFile(const char* mtl_file_path, SMaterialConfig* config);
 
-	virtual bool ImportGltfFile(const std::string& obj_file, const char* out_dsm_filename, std::vector<SGeometryConfig>& out_geometries);
-	virtual bool ProcessGltfMesh(size_t meshIndex, const tinygltf::Model& model, const std::vector<SMaterialConfig>& materialConfigs, const std::unordered_map<size_t, int>& nodeParentMap, const std::unordered_map<size_t, Matrix4>& mapMeshMat, std::vector<SGeometryConfig>& out_geometries);
-	virtual bool ProcessGltfMaterial(const tinygltf::Model& model, const char* out_dsm_filename, std::vector<SMaterialConfig>& materialConfigs);
+	// 统一的3D模型文件处理 (使用Assimp) - 支持OBJ, GLTF, FBX, DAE等
+	virtual bool Import3DModelFile(const std::string& model_file, const char* out_dsm_filename, std::vector<SGeometryConfig>& out_geometries);
+
+	// Assimp相关处理函数
+	virtual bool ProcessAssimpMaterials(const aiScene* scene, const char* out_dsm_filename, std::vector<SMaterialConfig>& materialConfigs);
+	virtual void ProcessAssimpTextures(const aiMaterial* mat, SMaterialConfig& config);
+	virtual void ProcessAssimpNode(aiNode* node, const aiScene* scene, const std::vector<SMaterialConfig>& materialConfigs, const Matrix4& parentTransform, std::vector<SGeometryConfig>& out_geometries);
+	virtual void ProcessAssimpMesh(aiMesh* mesh, const aiScene* scene, const std::vector<SMaterialConfig>& materialConfigs, const Matrix4& transform, std::vector<SGeometryConfig>& out_geometries);
+
+	virtual bool ImportObjFile(const std::string& obj_file, const char* out_dsm_filename, std::vector<SGeometryConfig>& out_geometries) {
+		return Import3DModelFile(obj_file, out_dsm_filename, out_geometries);
+	}
+	virtual bool ImportGltfFile(const std::string& gltf_file, const char* out_dsm_filename, std::vector<SGeometryConfig>& out_geometries) {
+		return Import3DModelFile(gltf_file, out_dsm_filename, out_geometries);
+	}
 
 	virtual bool DeduplicateGeometry(std::vector<SGeometryConfig>& out_geometries);
 };

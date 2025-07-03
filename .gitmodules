@@ -13,3 +13,6 @@
 [submodule "3rd/yaml-cpp"]
 	path = 3rd/yaml-cpp
 	url = https://github.com/jbeder/yaml-cpp.git
+[submodule "3rd/assimp"]
+	path = 3rd/assimp
+	url = https://github.com/assimp/assimp.git

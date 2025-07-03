@@ -9,12 +9,11 @@
 enum MeshFileType {
 	eMesh_File_Type_Not_Found,
 	eMesh_File_Type_DSM,
-	eMesh_File_Type_OBJ,
-	eMesh_File_Type_GLTF
+	eMesh_File_Type_3D_Model
 };
 
 struct SupportedMeshFileType {
-	const char* extension = nullptr;
+	std::string extension;
 	MeshFileType type;
 	bool is_binary;
 };

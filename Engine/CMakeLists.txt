@@ -37,6 +37,7 @@ target_include_directories(
     PUBLIC 
     UL::Logger
     yaml-cpp
+    assimp::assimp
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${STB_DIR}
     ${Python3_INCLUDE_DIRS}
@@ -72,6 +73,13 @@ message("-- Shaderc: ${GLSLANGL_IBS}")
     target_link_libraries(engine PUBLIC "vulkan-1.lib")
 endif()
 
-target_link_libraries(engine PUBLIC ${Python3_LIBRARIES} UL::Logger yaml-cpp)
+target_link_libraries(engine PUBLIC ${Python3_LIBRARIES} UL::Logger yaml-cpp assimp::assimp)
+
+if(WIN32)
+    add_custom_command(TARGET engine POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        $<TARGET_FILE:assimp::assimp>
+        $<TARGET_FILE_DIR:engine>)
+endif()
 
 message("-- Generated Engine Library\n")

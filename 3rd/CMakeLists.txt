@@ -24,3 +24,6 @@ endif()
 option(YAML_CPP_BUILD_TESTS OFF)
 option(YAML_CPP_BUILD_TOOLS OFF)
 add_subdirectory(yaml-cpp)
+
+# assimp
+add_subdirectory(assimp)
