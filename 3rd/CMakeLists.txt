@@ -21,8 +21,11 @@ if (ENABLE_PLUGINS_AUDIO)
 endif()
 
 # yaml-cpp
-option(YAML_CPP_BUILD_TESTS OFF)
-option(YAML_CPP_BUILD_TOOLS OFF)
+# 关闭测试
+set(YAML_CPP_BUILD_TESTS OFF CACHE BOOL "Don't build yaml-cpp tests")
+# 关闭样例（examples）
+set(YAML_CPP_BUILD_CONTRIB OFF CACHE BOOL "Don't build yaml-cpp contrib")
+set(YAML_CPP_BUILD_TOOLS OFF CACHE BOOL "Don't build yaml-cpp tools")
 add_subdirectory(yaml-cpp)
 
 # assimp
@@ -40,4 +43,11 @@ if(MSVC)
     # 设置统一的警告级别
     add_compile_options(/W4)
 endif()
+
+# 不编译 assimp 的测试
+set(ASSIMP_BUILD_TESTS OFF CACHE BOOL "Disable assimp tests")
+# 不编译 assimp 的工具（如 assimp viewer、assimp_cmd）
+set(ASSIMP_BUILD_ASSIMP_TOOLS OFF CACHE BOOL "Disable assimp tools")
+# 不编译 assimp 的样例
+set(ASSIMP_BUILD_SAMPLES OFF CACHE BOOL "Disable assimp samples")
 add_subdirectory(assimp)
