@@ -5,6 +5,10 @@
 #include "DMutex.hpp"
 #include "Memory/DynamicAllocator.h"
 
+#ifndef DEFAULT_ALIGNMENT_SIZE
+#define DEFAULT_ALIGNMENT_SIZE 8
+#endif
+
 enum MemoryType {
 	eMemory_Type_Unknow,
 	eMemory_Type_Array,
@@ -77,9 +81,9 @@ public:
 	static DAPI bool Initialize(size_t size);
 	static DAPI void Shutdown();
 
-	static DAPI void* Allocate(size_t size, MemoryType type);
+	static DAPI void* Allocate(size_t size, MemoryType type = MemoryType::eMemory_Type_Unknow);
 	static DAPI void* AllocateAligned(size_t size, unsigned short alignment, MemoryType type);
-	static DAPI void Free(void* block, size_t size, MemoryType type);
+	static DAPI void Free(void* block, size_t size, MemoryType type = MemoryType::eMemory_Type_Unknow);
 	static DAPI void FreeAligned(void* block, size_t size, unsigned short alignment, MemoryType type);
 	static DAPI void* Zero(void* block, size_t size);
 	static DAPI void* Copy(void* dst, const void* src, size_t size);
