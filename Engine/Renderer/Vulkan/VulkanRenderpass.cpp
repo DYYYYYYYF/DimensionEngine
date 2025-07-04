@@ -27,7 +27,7 @@ bool VulkanRenderPass::Create(VulkanContext* context, const RenderpassConfig& co
 	vk::AttachmentDescription AttachmentDesc;
 	for (uint32_t i = 0; i < config.target.attachments.size(); ++i) {
 		const RenderTargetAttachmentConfig* AttachmentConfig = &config.target.attachments[i];
-		if (AttachmentConfig->type == RenderTargetAttachmentType::eRender_Target_Attachment_Type_Color) {
+		if (AttachmentConfig->type & RenderTargetAttachmentType::eRender_Target_Attachment_Type_Color) {
 			// Color attachment
 			bool IsNeedClearColor = (ClearFlags & eRenderpass_Clear_Color_Buffer) != 0;
 
@@ -45,6 +45,9 @@ bool VulkanRenderPass::Create(VulkanContext* context, const RenderpassConfig& co
 			if (AttachmentConfig->loadOperation == RenderTargetAttachmentLoadOperation::eRender_Target_Attachment_Load_Operation_DontCare) {
 				// We dont care, they only other thing that needs checking is if the attachment is being cleared.
 				AttachmentDesc.setLoadOp(IsNeedClearColor ? vk::AttachmentLoadOp::eClear : vk::AttachmentLoadOp::eDontCare);
+			}
+			else if (AttachmentConfig->loadOperation == RenderTargetAttachmentLoadOperation::eRender_Target_Attachment_Load_Operation_Clear) {
+				AttachmentDesc.setLoadOp(vk::AttachmentLoadOp::eClear);
 			}
 			else {
 				// If we loading, check if we are also clearing. This combination doesn't make sense, and should be warned about.
@@ -88,7 +91,7 @@ bool VulkanRenderPass::Create(VulkanContext* context, const RenderpassConfig& co
 			// Push to co
 			ColorAttachmentDescriptions.push_back(AttachmentDesc);
 		}	// Color attachment
-		else if (AttachmentConfig->type == RenderTargetAttachmentType::eRender_Target_Attachment_Type_Depth) {
+		else if (AttachmentConfig->type & RenderTargetAttachmentType::eRender_Target_Attachment_Type_Depth) {
 			// Depth attachment
 			bool IsNeedClearDepth = (ClearFlags & eRenderpass_Clear_Depth_Buffer) != 0;
 
@@ -105,6 +108,9 @@ bool VulkanRenderPass::Create(VulkanContext* context, const RenderpassConfig& co
 			if (AttachmentConfig->loadOperation == RenderTargetAttachmentLoadOperation::eRender_Target_Attachment_Load_Operation_DontCare) {
 				// If we don't care, they only other thing that needs checking is if the attachment is being cleared.
 				AttachmentDesc.setLoadOp(IsNeedClearDepth ? vk::AttachmentLoadOp::eClear : vk::AttachmentLoadOp::eDontCare);
+			}
+			else if (AttachmentConfig->loadOperation == RenderTargetAttachmentLoadOperation::eRender_Target_Attachment_Load_Operation_Clear) {
+				AttachmentDesc.setLoadOp(vk::AttachmentLoadOp::eClear);
 			}
 			else {
 				// If we loading, check if we are also clearing. This combination doesn't make sense, and should be warned about.
@@ -239,54 +245,154 @@ void VulkanRenderPass::Destroy() {
 }
 
 void VulkanRenderPass::Begin(RenderTarget* target) {
+	if (!target) {
+		GLOG(Log::eError, "VulkanRenderPass::Begin - RenderTarget is null");
+		return;
+	}
+
 	VulkanCommandBuffer* CmdBuffer = &Context->GraphicsCommandBuffers[Context->ImageIndex];
 
+	// 设置渲染区域
 	vk::Rect2D Area;
 	Area.setOffset({ (int32_t)RenderArea.x, (int32_t)RenderArea.y })
 		.setExtent({ (uint32_t)RenderArea.z, (uint32_t)RenderArea.w });
 
+	// 准备RenderPassBeginInfo
 	vk::RenderPassBeginInfo BeginInfo;
 	BeginInfo.setRenderPass(*(vk::RenderPass*)&Renderpass)
 		.setFramebuffer(*((vk::Framebuffer*)&target->internal_framebuffer))
 		.setRenderArea(Area);
 
-	BeginInfo.setClearValueCount(0);
-	BeginInfo.setPClearValues(nullptr);
-
-	vk::ClearValue ClearValues[2];
-	Memory::Zero(ClearValues, sizeof(vk::ClearValue) * 2);
-	bool IsNeedClearColor = (ClearFlags & eRenderpass_Clear_Color_Buffer) != 0;
-	if (IsNeedClearColor) {
-		Memory::Copy(ClearValues[BeginInfo.clearValueCount].color.float32, ClearColor.elements, sizeof(float) * 4);
-		BeginInfo.clearValueCount++;
+	// 计算所需的清除值数组大小
+	uint32_t AttachmentCount = (uint32_t)target->attachments.size();
+	if (AttachmentCount == 0) {
+		GLOG(Log::eWarn, "VulkanRenderPass::Begin - No attachments in target");
+		BeginInfo.setClearValueCount(0);
+		BeginInfo.setPClearValues(nullptr);
 	}
 	else {
-		BeginInfo.clearValueCount++;
-	}
+		// 为所有附件分配清除值（按附件索引组织）
+		const uint32_t MAX_ATTACHMENTS = 8; // 定义最大附件数，避免栈溢出
+		vk::ClearValue ClearValues[MAX_ATTACHMENTS];
 
-	bool IsNeedClearDepth = (ClearFlags & eRenderpass_Clear_Depth_Buffer) != 0;
-	if (IsNeedClearDepth) {
-		Memory::Copy(ClearValues[BeginInfo.clearValueCount].color.float32, ClearColor.elements, sizeof(float) * 4);
-		ClearValues[BeginInfo.clearValueCount].depthStencil.depth = Depth;
+		if (AttachmentCount > MAX_ATTACHMENTS) {
+			GLOG(Log::eError, "VulkanRenderPass::Begin - Too many attachments: %u (max: %u)",
+				AttachmentCount, MAX_ATTACHMENTS);
+			AttachmentCount = MAX_ATTACHMENTS;
+		}
 
+		// 零初始化所有清除值
+		Memory::Zero(ClearValues, sizeof(vk::ClearValue) * AttachmentCount);
+
+		// 验证清除标志和深度值
+		bool IsNeedClearColor = (ClearFlags & eRenderpass_Clear_Color_Buffer) != 0;
+		bool IsNeedClearDepth = (ClearFlags & eRenderpass_Clear_Depth_Buffer) != 0;
 		bool IsNeedClearStencil = (ClearFlags & eRenderpass_Clear_Stencil_Buffer) != 0;
-		ClearValues[BeginInfo.clearValueCount].depthStencil.stencil = IsNeedClearStencil ? Stencil : 0;
-		BeginInfo.clearValueCount++;
-	}
-	else {
-		uint32_t AttachCount = (uint32_t)target->attachments.size();
-		for (uint32_t i = 0; i < AttachCount; ++i) {
-			if (target->attachments[i].type == RenderTargetAttachmentType::eRender_Target_Attachment_Type_Depth) {
-				// If there is a depth attachment, make sure to add the clear count, but dont bother copying the data.
-				BeginInfo.clearValueCount++;
+
+		// 验证深度值范围
+		if (IsNeedClearDepth && (Depth < 0.0f || Depth > 1.0f)) {
+			GLOG(Log::eError, "VulkanRenderPass::Begin - Invalid depth clear value: %f (must be [0.0, 1.0])", Depth);
+			// 修正深度值
+			float SafeDepth = Clamp(Depth, 0.0f, 1.0f);
+			GLOG(Log::eWarn, "VulkanRenderPass::Begin - Clamping depth from %f to %f", Depth, SafeDepth);
+		}
+
+		// 验证模板值范围
+		if (IsNeedClearStencil && Stencil > 255) {
+			GLOG(Log::eError, "VulkanRenderPass::Begin - Invalid stencil clear value: %u (must be [0, 255])", Stencil);
+		}
+
+		// 按附件索引设置清除值
+		for (uint32_t i = 0; i < AttachmentCount; ++i) {
+			const RenderTargetAttachment& attachment = target->attachments[i];
+
+			if (attachment.type == RenderTargetAttachmentType::eRender_Target_Attachment_Type_Color) {
+				// 颜色附件
+				if (IsNeedClearColor) {
+					// 验证颜色值
+					if (isnan(ClearColor.x) || isnan(ClearColor.y) || isnan(ClearColor.z) || isnan(ClearColor.w) ||
+						isinf(ClearColor.x) || isinf(ClearColor.y) || isinf(ClearColor.z) || isinf(ClearColor.w)) {
+						GLOG(Log::eError, "VulkanRenderPass::Begin - Invalid color clear values (NaN/Inf): (%f, %f, %f, %f)",
+							ClearColor.x, ClearColor.y, ClearColor.z, ClearColor.w);
+						// 使用安全的默认值
+						ClearValues[i].color.float32[0] = 0.0f;
+						ClearValues[i].color.float32[1] = 0.0f;
+						ClearValues[i].color.float32[2] = 0.0f;
+						ClearValues[i].color.float32[3] = 0.0f;
+					}
+					else {
+						ClearValues[i].color.float32[0] = ClearColor.x;
+						ClearValues[i].color.float32[1] = ClearColor.y;
+						ClearValues[i].color.float32[2] = ClearColor.z;
+						ClearValues[i].color.float32[3] = ClearColor.w;
+					}
+				}
+				else {
+					// 即使不清除，也设置默认值
+					ClearValues[i].color.float32[0] = 0.0f;
+					ClearValues[i].color.float32[1] = 0.0f;
+					ClearValues[i].color.float32[2] = 0.0f;
+					ClearValues[i].color.float32[3] = 0.0f;
+				}
+
+				GLOG(Log::eDebug, "Color attachment %u clear value: (%f, %f, %f, %f)",
+					i, ClearValues[i].color.float32[0], ClearValues[i].color.float32[1],
+					ClearValues[i].color.float32[2], ClearValues[i].color.float32[3]);
+			}
+			else if (attachment.type == RenderTargetAttachmentType::eRender_Target_Attachment_Type_Depth) {
+				// 深度附件
+				if (IsNeedClearDepth) {
+					float SafeDepth = Clamp(Depth, 0.0f, 1.0f);
+					ClearValues[i].depthStencil.depth = SafeDepth;
+				}
+				else {
+					ClearValues[i].depthStencil.depth = 1.0f; // 默认最远深度
+				}
+
+				if (IsNeedClearStencil) {
+					uint32_t SafeStencil = Clamp(Stencil, 0u, 255u);
+					ClearValues[i].depthStencil.stencil = SafeStencil;
+				}
+				else {
+					ClearValues[i].depthStencil.stencil = 0;
+				}
+
+				GLOG(Log::eDebug, "Depth attachment %u clear value: depth=%f, stencil=%u",
+					i, ClearValues[i].depthStencil.depth, ClearValues[i].depthStencil.stencil);
+			}
+			else {
+				GLOG(Log::eWarn, "VulkanRenderPass::Begin - Unknown attachment type %d at index %u",
+					(int)attachment.type, i);
 			}
 		}
+
+		// 设置清除值
+		BeginInfo.setClearValueCount(AttachmentCount);
+		BeginInfo.setPClearValues(ClearValues);
+
+		GLOG(Log::eDebug, "VulkanRenderPass::Begin - Set %u clear values for %u attachments",
+			AttachmentCount, AttachmentCount);
 	}
 
-	BeginInfo.setPClearValues(BeginInfo.clearValueCount > 0 ? ClearValues : nullptr);
+	// 开始渲染通道
+	try {
+		CmdBuffer->CommandBuffer.beginRenderPass(BeginInfo, vk::SubpassContents::eInline);
+		CmdBuffer->State = VulkanCommandBufferState::eCommand_Buffer_State_In_Renderpass;
 
-	CmdBuffer->CommandBuffer.beginRenderPass(BeginInfo, vk::SubpassContents::eInline);
-	CmdBuffer->State = VulkanCommandBufferState::eCommand_Buffer_State_In_Renderpass;
+		GLOG(Log::eDebug, "VulkanRenderPass::Begin - Render pass started successfully");
+	}
+	catch (const vk::SystemError& e) {
+		GLOG(Log::eError, "VulkanRenderPass::Begin - Failed to begin render pass: %s", e.what());
+
+		// 输出调试信息
+		GLOG(Log::eError, "Debug info:");
+		GLOG(Log::eError, "  Attachment count: %u", AttachmentCount);
+		GLOG(Log::eError, "  Clear value count: %u", BeginInfo.clearValueCount);
+		GLOG(Log::eError, "  Clear flags: 0x%x", ClearFlags);
+		GLOG(Log::eError, "  Render area: (%f, %f, %f, %f)", RenderArea.x, RenderArea.y, RenderArea.z, RenderArea.w);
+
+		throw; // 重新抛出异常
+	}
 }
 
 void VulkanRenderPass::End() {

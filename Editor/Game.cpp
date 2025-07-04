@@ -165,7 +165,7 @@ bool GameInstance::Initialize() {
 	CubeMesh->Name = "TestCube";
 	CubeMesh->geometry_count = 1;
 	CubeMesh->geometries = (Geometry**)Memory::Allocate(sizeof(Geometry*) * CubeMesh->geometry_count, MemoryType::eMemory_Type_Array);
-	SGeometryConfig GeoConfig = GeometrySystem::GenerateCubeConfig(10.0f, 10.0f, 10.0f, 1.0f, 1.0f, "TestCube", "Material.World");
+	SGeometryConfig GeoConfig = GeometrySystem::GenerateCubeConfig(10.0f, 10.0f, 10.0f, 1.0f, 1.0f, "TestCube", "Material.Builtin.GBuffer");
 	CubeMesh->geometries[0] = GeometrySystem::AcquireFromConfig(GeoConfig, true);
 	CubeMesh->Generation = 0;
 	CubeMesh->SetTransform(Vector(0.0f, 0.0f, 0.0f), Quaternion(Vector(0.0f, 0.0f, 0.0f)));
@@ -175,7 +175,7 @@ bool GameInstance::Initialize() {
 	CubeMesh2->Name = "TestCube2";
 	CubeMesh2->geometry_count = 1;
 	CubeMesh2->geometries = (Geometry**)Memory::Allocate(sizeof(Geometry*) * CubeMesh2->geometry_count, MemoryType::eMemory_Type_Array);
-	SGeometryConfig GeoConfig2 = GeometrySystem::GenerateCubeConfig(5.0f, 5.0f, 5.0f, 1.0f, 1.0f, "TestCube2", "Material.World");
+	SGeometryConfig GeoConfig2 = GeometrySystem::GenerateCubeConfig(5.0f, 5.0f, 5.0f, 1.0f, 1.0f, "TestCube2", "Material.Builtin.GBuffer");
 	CubeMesh2->geometries[0] = GeometrySystem::AcquireFromConfig(GeoConfig2, true);
 	CubeMesh2->SetTransform(Vector3(10.0f, 0.0f, 1.0f), Quaternion(Vector(0.0f, 0.0f, 0.0f)));
 	CubeMesh2->Generation = 0;
@@ -186,7 +186,7 @@ bool GameInstance::Initialize() {
 	CubeMesh3->Name = "TestCube3";
 	CubeMesh3->geometry_count = 1;
 	CubeMesh3->geometries = (Geometry**)Memory::Allocate(sizeof(Geometry*) * CubeMesh3->geometry_count, MemoryType::eMemory_Type_Array);
-	SGeometryConfig GeoConfig3 = GeometrySystem::GenerateCubeConfig(2.0f, 2.0f, 2.0f, 1.0f, 1.0f, "TestCube3", "Material.World");
+	SGeometryConfig GeoConfig3 = GeometrySystem::GenerateCubeConfig(2.0f, 2.0f, 2.0f, 1.0f, 1.0f, "TestCube3", "Material.Builtin.GBuffer");
 	CubeMesh3->geometries[0] = GeometrySystem::AcquireFromConfig(GeoConfig3, true);
 	CubeMesh3->SetTransform(Vector3(5.0f, 0.0f, 1.0f));
 	CubeMesh3->Generation = 0;
@@ -509,7 +509,7 @@ bool GameInstance::Render(SRenderPacket* packet, float delta_time) {
 	}
 
 	// World
-	IRenderView* WorldView = RenderViewSystem::Get("World");
+	IRenderView* WorldView = RenderViewSystem::Get("WorldDeferred");
 	if(WorldView) {
 		WorldPacketData WorldData;
 		WorldData.Meshes = FrameData.WorldGeometries;
@@ -652,42 +652,141 @@ bool GameInstance::ConfigureRenderviews() {
 	SkyboxConfig.pass_count = (unsigned char)SkyboxPasses.size();
 	Renderviews.push_back(SkyboxConfig);
 
-	// World view
-	RenderViewConfig WorldViewConfig;
+	//// World view
+	/*RenderViewConfig WorldViewConfig;
 	WorldViewConfig.type = RenderViewKnownType::eRender_View_Known_Type_World;
 	WorldViewConfig.width = GetWindowWidth();
 	WorldViewConfig.height = GetWindowHeight();
 	WorldViewConfig.name = "World";
 	WorldViewConfig.pass_count = 1;
+	WorldViewConfig.view_matrix_source = RenderViewViewMatrixtSource::eRender_View_View_Matrix_Source_Scene_Camera;*/
+
+	//// Renderpass config.
+	//std::vector<RenderpassConfig> WorldPasses(1);
+	//WorldPasses[0].name = "Renderpass.Builtin.World";
+	//WorldPasses[0].render_area = Vector4(0, 0, (float)GetWindowWidth(), (float)GetWindowHeight());
+	//WorldPasses[0].clear_color = Vector4(0, 0.2f, 0, 1.0f);
+	//WorldPasses[0].clear_flags = RenderpassClearFlags::eRenderpass_Clear_Stencil_Buffer | RenderpassClearFlags::eRenderpass_Clear_Depth_Buffer;
+	//WorldPasses[0].depth = 1.0f;
+	//WorldPasses[0].stencil = 0;
+
+	//RenderTargetAttachmentConfig WorldTargetColorAttachments;
+	//WorldTargetColorAttachments.type = RenderTargetAttachmentType::eRender_Target_Attachment_Type_Color;
+	//WorldTargetColorAttachments.source = RenderTargetAttachmentSource::eRender_Target_Attachment_Source_Default;
+	//WorldTargetColorAttachments.loadOperation = RenderTargetAttachmentLoadOperation::eRender_Target_Attachment_Load_Operation_Load;
+	//WorldTargetColorAttachments.storeOperation = RenderTargetAttachmentStoreOperation::eRender_Target_Attachment_Store_Operation_Store;
+	//WorldTargetColorAttachments.presentAfter = false;
+	//WorldPasses[0].target.attachments.push_back(WorldTargetColorAttachments);
+
+	//RenderTargetAttachmentConfig WorldTargetDepthAttachments;
+	//WorldTargetDepthAttachments.type = RenderTargetAttachmentType::eRender_Target_Attachment_Type_Depth;
+	//WorldTargetDepthAttachments.source = RenderTargetAttachmentSource::eRender_Target_Attachment_Source_Default;
+	//WorldTargetDepthAttachments.loadOperation = RenderTargetAttachmentLoadOperation::eRender_Target_Attachment_Load_Operation_DontCare;
+	//WorldTargetDepthAttachments.storeOperation = RenderTargetAttachmentStoreOperation::eRender_Target_Attachment_Store_Operation_Store;
+	//WorldTargetDepthAttachments.presentAfter = false;
+	//WorldPasses[0].target.attachments.push_back(WorldTargetDepthAttachments);
+
+	//WorldPasses[0].renderTargetCount = Renderer->GetWindowAttachmentCount();
+
+	//WorldViewConfig.passes = WorldPasses;
+	//WorldViewConfig.pass_count = (unsigned char)WorldPasses.size();
+	//Renderviews.push_back(WorldViewConfig);
+
+	// Deferred render
+	RenderViewConfig WorldViewConfig;
+	WorldViewConfig.type = RenderViewKnownType::eRender_View_Known_Type_Deferred;
+	WorldViewConfig.width = GetWindowWidth();
+	WorldViewConfig.height = GetWindowHeight();
+	WorldViewConfig.name = "WorldDeferred";
+	WorldViewConfig.pass_count = 2;
 	WorldViewConfig.view_matrix_source = RenderViewViewMatrixtSource::eRender_View_View_Matrix_Source_Scene_Camera;
+	// 延迟渲染通道配置 - 需要两个通道
+	std::vector<RenderpassConfig> WorldPasses(2);  // 改为2个通道
 
-	// Renderpass config.
-	std::vector<RenderpassConfig> WorldPasses(1);
-	WorldPasses[0].name = "Renderpass.Builtin.World";
+	// 第一通道：G-Buffer渲染
+	Memory::Zero(&WorldPasses[0], sizeof(RenderpassConfig));
+
+	WorldPasses[0].name = "Renderpass.Builtin.GBuffer";
 	WorldPasses[0].render_area = Vector4(0, 0, (float)GetWindowWidth(), (float)GetWindowHeight());
-	WorldPasses[0].clear_color = Vector4(0, 0.2f, 0, 1.0f);
-	WorldPasses[0].clear_flags = RenderpassClearFlags::eRenderpass_Clear_Stencil_Buffer | RenderpassClearFlags::eRenderpass_Clear_Depth_Buffer;
-	WorldPasses[0].depth = 1.0f;
-	WorldPasses[0].stencil = 0;
+	WorldPasses[0].clear_color = Vector4(0.0f, 0.0f, 0.0f, 0.0f);  // 明确设置为0.0f
+	WorldPasses[0].clear_flags = RenderpassClearFlags::eRenderpass_Clear_Color_Buffer |
+		RenderpassClearFlags::eRenderpass_Clear_Depth_Buffer |
+		RenderpassClearFlags::eRenderpass_Clear_Stencil_Buffer;
+	WorldPasses[0].depth = 1.0f;        // 深度清除值：1.0f (最远)
+	WorldPasses[0].stencil = 0;         // 模板清除值：0
 
-	RenderTargetAttachmentConfig WorldTargetColorAttachments;
-	WorldTargetColorAttachments.type = RenderTargetAttachmentType::eRender_Target_Attachment_Type_Color;
-	WorldTargetColorAttachments.source = RenderTargetAttachmentSource::eRender_Target_Attachment_Source_Default;
-	WorldTargetColorAttachments.loadOperation = RenderTargetAttachmentLoadOperation::eRender_Target_Attachment_Load_Operation_Load;
-	WorldTargetColorAttachments.storeOperation = RenderTargetAttachmentStoreOperation::eRender_Target_Attachment_Store_Operation_Store;
-	WorldTargetColorAttachments.presentAfter = false;
-	WorldPasses[0].target.attachments.push_back(WorldTargetColorAttachments);
+	// G-Buffer颜色附件0：Albedo + Metallic (RGBA8)
+	RenderTargetAttachmentConfig GBufferAlbedoAttachment;
+	Memory::Zero(&GBufferAlbedoAttachment, sizeof(RenderTargetAttachmentConfig));
+	GBufferAlbedoAttachment.type = RenderTargetAttachmentType::eRender_Target_Attachment_Type_Color;
+	GBufferAlbedoAttachment.source = RenderTargetAttachmentSource::eRender_Target_Attachment_Source_View;
+	GBufferAlbedoAttachment.loadOperation = RenderTargetAttachmentLoadOperation::eRender_Target_Attachment_Load_Operation_DontCare;
+	GBufferAlbedoAttachment.storeOperation = RenderTargetAttachmentStoreOperation::eRender_Target_Attachment_Store_Operation_Store;
+	GBufferAlbedoAttachment.presentAfter = false;
+	GBufferAlbedoAttachment.index = 0;
+	WorldPasses[0].target.attachments.push_back(GBufferAlbedoAttachment);
 
-	RenderTargetAttachmentConfig WorldTargetDepthAttachments;
-	WorldTargetDepthAttachments.type = RenderTargetAttachmentType::eRender_Target_Attachment_Type_Depth;
-	WorldTargetDepthAttachments.source = RenderTargetAttachmentSource::eRender_Target_Attachment_Source_Default;
-	WorldTargetDepthAttachments.loadOperation = RenderTargetAttachmentLoadOperation::eRender_Target_Attachment_Load_Operation_DontCare;
-	WorldTargetDepthAttachments.storeOperation = RenderTargetAttachmentStoreOperation::eRender_Target_Attachment_Store_Operation_Store;
-	WorldTargetDepthAttachments.presentAfter = false;
-	WorldPasses[0].target.attachments.push_back(WorldTargetDepthAttachments);
+	// G-Buffer颜色附件1：Normal + Roughness (RGBA16F)
+	RenderTargetAttachmentConfig GBufferNormalAttachment;
+	Memory::Zero(&GBufferNormalAttachment, sizeof(RenderTargetAttachmentConfig));
+	GBufferNormalAttachment.type = RenderTargetAttachmentType::eRender_Target_Attachment_Type_Color;
+	GBufferNormalAttachment.source = RenderTargetAttachmentSource::eRender_Target_Attachment_Source_View;
+	GBufferNormalAttachment.loadOperation = RenderTargetAttachmentLoadOperation::eRender_Target_Attachment_Load_Operation_DontCare;
+	GBufferNormalAttachment.storeOperation = RenderTargetAttachmentStoreOperation::eRender_Target_Attachment_Store_Operation_Store;
+	GBufferNormalAttachment.presentAfter = false;
+	GBufferNormalAttachment.index = 1;
+	WorldPasses[0].target.attachments.push_back(GBufferNormalAttachment);
 
-	WorldPasses[0].renderTargetCount = Renderer->GetWindowAttachmentCount();
+	// G-Buffer颜色附件2：Position + Depth (RGBA32F)
+	RenderTargetAttachmentConfig GBufferPositionAttachment;
+	Memory::Zero(&GBufferPositionAttachment, sizeof(RenderTargetAttachmentConfig));
+	GBufferPositionAttachment.type = RenderTargetAttachmentType::eRender_Target_Attachment_Type_Color;
+	GBufferPositionAttachment.source = RenderTargetAttachmentSource::eRender_Target_Attachment_Source_View;
+	GBufferPositionAttachment.loadOperation = RenderTargetAttachmentLoadOperation::eRender_Target_Attachment_Load_Operation_DontCare;
+	GBufferPositionAttachment.storeOperation = RenderTargetAttachmentStoreOperation::eRender_Target_Attachment_Store_Operation_Store;
+	GBufferPositionAttachment.presentAfter = false;
+	GBufferPositionAttachment.index = 2;
+	WorldPasses[0].target.attachments.push_back(GBufferPositionAttachment);
 
+	// G-Buffer深度附件
+	RenderTargetAttachmentConfig GBufferDepthAttachment;
+	Memory::Zero(&GBufferDepthAttachment, sizeof(RenderTargetAttachmentConfig));
+	GBufferDepthAttachment.type = RenderTargetAttachmentType::eRender_Target_Attachment_Type_Depth;
+	GBufferDepthAttachment.source = RenderTargetAttachmentSource::eRender_Target_Attachment_Source_Default;
+	GBufferDepthAttachment.loadOperation = RenderTargetAttachmentLoadOperation::eRender_Target_Attachment_Load_Operation_DontCare;
+	GBufferDepthAttachment.storeOperation = RenderTargetAttachmentStoreOperation::eRender_Target_Attachment_Store_Operation_Store;
+	GBufferDepthAttachment.presentAfter = false;
+	GBufferDepthAttachment.index = 0;
+	WorldPasses[0].target.attachments.push_back(GBufferDepthAttachment);
+
+	// 设置G-Buffer通道的渲染目标数量
+	WorldPasses[0].renderTargetCount = Renderer->GetWindowAttachmentCount();  // 双缓冲
+
+	// 第二通道：延迟光照
+	Memory::Zero(&WorldPasses[1], sizeof(RenderpassConfig));
+
+	WorldPasses[1].name = "Renderpass.Builtin.DeferredLighting";
+	WorldPasses[1].render_area = Vector4(0, 0, (float)GetWindowWidth(), (float)GetWindowHeight());
+	WorldPasses[1].clear_color = Vector4(0.0f, 0.2f, 0.0f, 1.0f);  // 最终输出的清除色
+	WorldPasses[1].clear_flags = RenderpassClearFlags::eRenderpass_Clear_Color_Buffer;  // 只清除颜色，不需要深度
+	WorldPasses[1].depth = 1.0f;       
+	WorldPasses[1].stencil = 0;        
+
+	// 光照通道的颜色输出（通常是swapchain或者屏幕缓冲）
+	RenderTargetAttachmentConfig LightingColorAttachment;
+	Memory::Zero(&LightingColorAttachment, sizeof(RenderTargetAttachmentConfig));
+	LightingColorAttachment.type = RenderTargetAttachmentType::eRender_Target_Attachment_Type_Color;
+	LightingColorAttachment.source = RenderTargetAttachmentSource::eRender_Target_Attachment_Source_Default;
+	LightingColorAttachment.loadOperation = RenderTargetAttachmentLoadOperation::eRender_Target_Attachment_Load_Operation_Clear;
+	LightingColorAttachment.storeOperation = RenderTargetAttachmentStoreOperation::eRender_Target_Attachment_Store_Operation_Store;
+	LightingColorAttachment.presentAfter = false; 
+	LightingColorAttachment.index = 0;
+	WorldPasses[1].target.attachments.push_back(LightingColorAttachment);
+
+	// 设置光照通道的渲染目标数量
+	WorldPasses[1].renderTargetCount = Renderer->GetWindowAttachmentCount();
+
+	// 最终配置
 	WorldViewConfig.passes = WorldPasses;
 	WorldViewConfig.pass_count = (unsigned char)WorldPasses.size();
 	Renderviews.push_back(WorldViewConfig);

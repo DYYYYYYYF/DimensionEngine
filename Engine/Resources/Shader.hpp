@@ -91,19 +91,36 @@ struct MaterialShaderUniformLocations {
 	unsigned short projection = INVALID_ID_U16;
 	unsigned short view = INVALID_ID_U16;
 	unsigned short ambient_color = INVALID_ID_U16;
-	unsigned short diffuse_color = INVALID_ID_U16;
-	unsigned short diffuse_texture = INVALID_ID_U16;
-	unsigned short normal_texture = INVALID_ID_U16;
-	unsigned short specular_texture = INVALID_ID_U16;
-	unsigned short roughness_metallic_texture = INVALID_ID_U16;
-	unsigned short shininess = INVALID_ID_U16;
 	unsigned short view_position = INVALID_ID_U16;
 	unsigned short model = INVALID_ID_U16;
 	unsigned short time = INVALID_ID_U16;
-	unsigned short render_mode = INVALID_ID_U16;
+	unsigned short diffuse_color = INVALID_ID_U16;
+	unsigned short shininess = INVALID_ID_U16;
 	unsigned short metallic = INVALID_ID_U16;
 	unsigned short roughness = INVALID_ID_U16;
 	unsigned short ambient_occlusion = INVALID_ID_U16;
+	unsigned short normal_intensity = INVALID_ID_U16;
+
+	unsigned short diffuse_texture = INVALID_ID_U16;
+	unsigned short specular_texture = INVALID_ID_U16;
+	unsigned short normal_texture = INVALID_ID_U16;
+	unsigned short roughness_metallic_texture = INVALID_ID_U16;
+
+	unsigned short render_mode = INVALID_ID_U16;
+};
+
+struct DRShaderUniformLocations {
+	unsigned short projection = INVALID_ID_U16;
+	unsigned short view = INVALID_ID_U16;
+	unsigned short ambient_color = INVALID_ID_U16;
+	unsigned short view_position = INVALID_ID_U16;
+	unsigned short mode = INVALID_ID_U16;
+	unsigned short time = INVALID_ID_U16;
+	unsigned short albedo_texture = INVALID_ID_U16;
+	unsigned short normal_texture = INVALID_ID_U16;
+	unsigned short position_texture = INVALID_ID_U16;
+	unsigned short light_intensity = INVALID_ID_U16;
+	unsigned short debug_mode = INVALID_ID_U16;
 };
 
 struct UIShaderUniformLocations {

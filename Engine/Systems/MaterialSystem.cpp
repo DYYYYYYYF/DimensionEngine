@@ -15,6 +15,8 @@ bool MaterialSystem::Initilized = false;
 IRenderer* MaterialSystem::Renderer = nullptr;
 MaterialShaderUniformLocations MaterialSystem::MaterialLocations;
 uint32_t MaterialSystem::MaterialShaderID = INVALID_ID;
+DRShaderUniformLocations MaterialSystem::DeferredLightMaterialLocations;
+uint32_t MaterialSystem::DeferredLightMaterialShaderID = INVALID_ID;
 UIShaderUniformLocations MaterialSystem::UILocations;
 uint32_t MaterialSystem::UIShaderID = INVALID_ID;
 std::vector<Material*> MaterialSystem::RegisteredMaterials;
@@ -136,24 +138,41 @@ Material* MaterialSystem::AcquireFromConfig(SMaterialConfig config) {
 		// Get the uniform indices.
 		Shader* s = ShaderSystem::GetByID(m->ShaderID);
 		// Save off the locations for known types for quick lookups.
-		if (MaterialShaderID == INVALID_ID && config.shader_name.compare("Shader.Builtin.World") == 0) {
+		if (MaterialShaderID == INVALID_ID && config.shader_name.compare("Shader.Builtin.GBuffer") == 0) {
 			MaterialShaderID = s->ID;
 			MaterialLocations.projection = ShaderSystem::GetUniformIndex(s, "projection");
 			MaterialLocations.view = ShaderSystem::GetUniformIndex(s, "view");
 			MaterialLocations.ambient_color = ShaderSystem::GetUniformIndex(s, "ambient_color");
-			MaterialLocations.diffuse_color = ShaderSystem::GetUniformIndex(s, "diffuse_color");
-			MaterialLocations.diffuse_texture = ShaderSystem::GetUniformIndex(s, "diffuse_texture");
-			MaterialLocations.specular_texture = ShaderSystem::GetUniformIndex(s, "specular_texture");
-			MaterialLocations.normal_texture = ShaderSystem::GetUniformIndex(s, "normal_texture");
-			MaterialLocations.roughness_metallic_texture = ShaderSystem::GetUniformIndex(s, "roughness_metallic_texture");
 			MaterialLocations.view_position = ShaderSystem::GetUniformIndex(s, "view_position");
 			MaterialLocations.model = ShaderSystem::GetUniformIndex(s, "model");
 			MaterialLocations.time = ShaderSystem::GetUniformIndex(s, "time");
-			MaterialLocations.render_mode = ShaderSystem::GetUniformIndex(s, "mode");
+			MaterialLocations.diffuse_color = ShaderSystem::GetUniformIndex(s, "diffuse_color");
 			MaterialLocations.shininess = ShaderSystem::GetUniformIndex(s, "shininess");
 			MaterialLocations.metallic = ShaderSystem::GetUniformIndex(s, "metallic");
 			MaterialLocations.roughness = ShaderSystem::GetUniformIndex(s, "roughness");
 			MaterialLocations.ambient_occlusion = ShaderSystem::GetUniformIndex(s, "ambient_occlusion");
+			MaterialLocations.normal_intensity = ShaderSystem::GetUniformIndex(s, "normal_intensity");
+
+			MaterialLocations.diffuse_texture = ShaderSystem::GetUniformIndex(s, "diffuse_texture");
+			MaterialLocations.normal_texture = ShaderSystem::GetUniformIndex(s, "normal_texture");
+			MaterialLocations.specular_texture = ShaderSystem::GetUniformIndex(s, "specular_texture");
+			MaterialLocations.roughness_metallic_texture = ShaderSystem::GetUniformIndex(s, "roughness_metallic_texture");
+
+			MaterialLocations.render_mode = ShaderSystem::GetUniformIndex(s, "mode");
+		}
+		else if (DeferredLightMaterialShaderID == INVALID_ID && config.shader_name.compare("Shader.Builtin.DeferredLighting") == 0) {
+			DeferredLightMaterialShaderID = s->ID;
+			DeferredLightMaterialLocations.projection = ShaderSystem::GetUniformIndex(s, "projection");
+			DeferredLightMaterialLocations.view = ShaderSystem::GetUniformIndex(s, "view");
+			DeferredLightMaterialLocations.ambient_color = ShaderSystem::GetUniformIndex(s, "ambient_color");
+			DeferredLightMaterialLocations.view_position = ShaderSystem::GetUniformIndex(s, "view_position");
+			DeferredLightMaterialLocations.mode = ShaderSystem::GetUniformIndex(s, "mode");
+			DeferredLightMaterialLocations.time = ShaderSystem::GetUniformIndex(s, "time");
+			DeferredLightMaterialLocations.albedo_texture = ShaderSystem::GetUniformIndex(s, "albedo_texture");
+			DeferredLightMaterialLocations.normal_texture = ShaderSystem::GetUniformIndex(s, "normal_texture");
+			DeferredLightMaterialLocations.position_texture = ShaderSystem::GetUniformIndex(s, "position_texture");
+			DeferredLightMaterialLocations.light_intensity = ShaderSystem::GetUniformIndex(s, "light_intensity");
+			DeferredLightMaterialLocations.debug_mode = ShaderSystem::GetUniformIndex(s, "debug_mode");
 		}
 		else if (UIShaderID == INVALID_ID && config.shader_name.compare("Shader.Builtin.UI") == 0) {
 			UIShaderID = s->ID;
@@ -359,8 +378,8 @@ bool MaterialSystem::LoadMaterial(SMaterialConfig config, Material* mat) {
 
 	// Gather a list of pointers to texture maps.
 	std::vector<TextureMap*> Maps = { &mat->DiffuseMap, &mat->SpecularMap, &mat->NormalMap, &mat->RoughnessMetallicMap };
-	mat->InternalId = Renderer->AcquireInstanceResource(s, Maps);
-	if (mat->InternalId == INVALID_ID) {
+	mat->InternalID = Renderer->AcquireInstanceResource(s, Maps);
+	if (mat->InternalID == INVALID_ID) {
 		GLOG(Log::eError, "Failed to acquire renderer resources for material '%s'.", mat->Name.c_str());
 		return false;
 	}
@@ -392,16 +411,16 @@ void MaterialSystem::DestroyMaterial(Material* mat) {
 	Renderer->ReleaseTextureMap(&mat->RoughnessMetallicMap);
 
 	//Release renderer resources.
-	if (mat->ShaderID != INVALID_ID && mat->InternalId != INVALID_ID) {
+	if (mat->ShaderID != INVALID_ID && mat->InternalID != INVALID_ID) {
 		Shader* s = ShaderSystem::GetByID(mat->ShaderID);
-		Renderer->ReleaseInstanceResource(s, mat->InternalId);
+		Renderer->ReleaseInstanceResource(s, mat->InternalID);
 		mat->ShaderID = INVALID_ID;
 	}
 
 	// Zero it out, invalidate Ids.
 	mat->SetID(INVALID_ID);
 	mat->Generation = INVALID_ID;
-	mat->InternalId = INVALID_ID;
+	mat->InternalID = INVALID_ID;
 	mat->RenderFrameNumer = INVALID_ID;
 }
 
@@ -466,15 +485,15 @@ bool MaterialSystem::CreateDefaultMaterial() {
 
 	std::vector<TextureMap*> Maps = { &DefaultMaterial->DiffuseMap, &DefaultMaterial->SpecularMap, &DefaultMaterial->NormalMap, &DefaultMaterial->RoughnessMetallicMap };
 
-	Shader* s = ShaderSystem::Get("Shader.Builtin.World");
+	Shader* s = ShaderSystem::Get("Shader.Builtin.GBuffer");
 	if (s == nullptr) {
-		GLOG(Log::eFatal, "Shader.Builtin.World shader is nullptr.");
+		GLOG(Log::eFatal, "Shader.Builtin.GBuffer shader is nullptr.");
 		ASSERT(s);
 		return false;
 	}
 
-	DefaultMaterial->InternalId = Renderer->AcquireInstanceResource(s, Maps);
-	if (DefaultMaterial->InternalId == INVALID_ID) {
+	DefaultMaterial->InternalID = Renderer->AcquireInstanceResource(s, Maps);
+	if (DefaultMaterial->InternalID == INVALID_ID) {
 		GLOG(Log::eError, "Create default material failed. Application quit now!");
 		return false;
 	}
@@ -533,12 +552,12 @@ bool MaterialSystem::ApplyGlobal(uint32_t shader_id, size_t renderer_frame_numbe
 }
 
 bool MaterialSystem::ApplyInstance(Material* mat, bool need_update) {
-	if (mat->InternalId == INVALID_ID) {
+	if (mat->InternalID == INVALID_ID) {
 		return false;
 	}
 
 	// Apply instance-level uniforms.
-	MATERIAL_APPLY_OR_FAIL(ShaderSystem::BindInstance(mat->InternalId));
+	MATERIAL_APPLY_OR_FAIL(ShaderSystem::BindInstance(mat->InternalID));
 	if (need_update) {
 		if (mat->ShaderID == MaterialShaderID) {
 			MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(MaterialLocations.diffuse_color, &mat->DiffuseColor));

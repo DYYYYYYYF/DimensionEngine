@@ -109,6 +109,14 @@ public:
 	static SGeometryConfig GenerateCubeConfig(float width, float height, 
 		float depth, float tile_x, float tile_y, const char* name, const char* material_name);
 
+	/*
+	*@brief Obtains a pointer to the quad 2D geometry. Default generate full screen quad.
+	*
+	* @returns A pointer to the quad 2D geometry.
+	*/
+	static Geometry* GenerateQuad(const char* name, const char* material_name);
+
+
 	static void ConfigDispose(SGeometryConfig* config);
 
 private:

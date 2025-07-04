@@ -10,6 +10,7 @@
 // TODO: temp
 #include "Renderer/Views/RenderViewUI.hpp"
 #include "Renderer/Views/RenderViewWorld.hpp"
+#include "Renderer/Views/RenderViewDeferred.hpp"
 #include "Renderer/Views/RenderViewSkybox.hpp"
 #include "Renderer/Views/RenderViewPick.hpp"
 
@@ -102,6 +103,9 @@ bool RenderViewSystem::Create(const RenderViewConfig& config) {
 	if (RegisteredViews[ID] == nullptr) {
 		if (config.type == RenderViewKnownType::eRender_View_Known_Type_World) {
 			RegisteredViews[ID] = new RenderViewWorld(config);
+		}
+		else if (config.type == RenderViewKnownType::eRender_View_Known_Type_Deferred) {
+			RegisteredViews[ID] = new RenderViewWorldDeferred(config);
 		}
 		else if (config.type == RenderViewKnownType::eRender_View_Known_Type_UI) {
 			RegisteredViews[ID] = new RenderViewUI(config);

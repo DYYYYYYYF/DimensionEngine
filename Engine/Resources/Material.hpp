@@ -34,7 +34,7 @@ public:
 		AutoRelease = false;
 		ID = INVALID_ID;
 		Generation = INVALID_ID;
-		InternalId = INVALID_ID;
+		InternalID = INVALID_ID;
 		DiffuseColor = Vector4(1.0f);
 		Shininess = 32.0f;
 		ShaderID = INVALID_ID;
@@ -49,7 +49,7 @@ public:
 		AutoRelease = false;
 		ID = INVALID_ID;
 		Generation = INVALID_ID;
-		InternalId = INVALID_ID;
+		InternalID = INVALID_ID;
 		DiffuseColor = Vector4(1.0f);
 		Shininess = 32.0f;
 		ShaderID = INVALID_ID;
@@ -78,7 +78,7 @@ private:
 
 public:
 	uint32_t Generation;
-	uint32_t InternalId;
+	uint32_t InternalID;
 	std::string Name;
 	Vector4 DiffuseColor;
 	TextureMap DiffuseMap;

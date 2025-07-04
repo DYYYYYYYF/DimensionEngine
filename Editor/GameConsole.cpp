@@ -8,6 +8,7 @@
 bool DebugConsoleActor::Write(Log::Logger::Level level, const std::string& msg) {
 	std::vector<std::string> SplitMessage = Utils::StringSplit(msg, '\n', true, false);
 	for (size_t i = 0; i < SplitMessage.size(); ++i) {
+		MutexGuard Gurad(MsgMutex);
 		Lines.push_back(SplitMessage[i]);
 	}
 

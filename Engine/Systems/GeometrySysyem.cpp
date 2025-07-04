@@ -553,3 +553,19 @@ SGeometryConfig GeometrySystem::GenerateCubeConfig(float width, float height,
 
 		return Config;
 }
+
+Geometry* GeometrySystem::GenerateQuad(const char* name, const char* material_name) {
+	if (material_name == nullptr)
+	{
+		material_name = "Material.Builtin.DeferredLighting";
+	}
+
+	SGeometryConfig Config = GeneratePlaneConfig(1, 1, 1, 1, 1, 1, name, material_name);
+	Geometry* NewGeom = AcquireFromConfig(Config, true);
+	if (!NewGeom) {
+		GLOG(Log::eWarn, "Generated simple fullscreen quad geometry configuration falied.");
+		return nullptr;
+	}
+
+	return NewGeom;
+}

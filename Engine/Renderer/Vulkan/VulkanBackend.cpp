@@ -1674,6 +1674,7 @@ bool VulkanBackend::CreateRenderpass(IRenderpass* out_renderpass, const Renderpa
 			RenderTargetAttachment* Attachment = &Target->attachments[a];
 			const RenderTargetAttachmentConfig* AttachmentConfig = &config.target.attachments[a];
 
+			Attachment->index = AttachmentConfig->index;
 			Attachment->source = AttachmentConfig->source;
 			Attachment->type = AttachmentConfig->type;
 			Attachment->loadOperation = AttachmentConfig->loadOperation;

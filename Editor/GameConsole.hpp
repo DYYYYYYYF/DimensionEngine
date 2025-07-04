@@ -1,6 +1,7 @@
 ﻿#include <Core/Event.hpp>
 #include <Resources/UIText.hpp>
 #include <Frameworks/Classes/Actor.h>
+#include <Core/DMutex.hpp>
 
 class IRenderer;
 
@@ -50,4 +51,6 @@ private:
 	UIText* EntryControl;	// Command text.
 
 	IRenderer* Renderer;
+
+	Mutex MsgMutex;
 };

@@ -62,26 +62,36 @@ bool VulkanPipeline::Create(VulkanContext* context, const VulkanPipelineConfig& 
 			.setStencilTestEnable(VK_FALSE);
 	}
 
-	vk::PipelineColorBlendAttachmentState ColorBlendAttachmentState;
-	ColorBlendAttachmentState.setBlendEnable(VK_TRUE)
-		.setSrcColorBlendFactor(vk::BlendFactor::eSrcAlpha)
-		.setDstColorBlendFactor(vk::BlendFactor::eOneMinusSrcAlpha)
-		.setColorBlendOp(vk::BlendOp::eAdd)
-		.setSrcAlphaBlendFactor(vk::BlendFactor::eSrcAlpha)
-		.setDstAlphaBlendFactor(vk::BlendFactor::eOneMinusSrcAlpha)
-		.setAlphaBlendOp(vk::BlendOp::eAdd)
-		.setColorWriteMask(
-			vk::ColorComponentFlagBits::eR | 
-			vk::ColorComponentFlagBits::eG | 
-			vk::ColorComponentFlagBits::eB | 
-			vk::ColorComponentFlagBits::eA
-		);
+	uint32_t ColorAttachmentCount = 0;
+	uint32_t AttachmentCount = static_cast<uint32_t>(config.renderpass->Targets[0].attachments.size());
+	for (uint32_t i = 0; i < AttachmentCount; ++i) {
+		if (config.renderpass->Targets[0].attachments[i].type & RenderTargetAttachmentType::eRender_Target_Attachment_Type_Color) {
+			ColorAttachmentCount++;
+		}
+	}
 
+	std::vector<vk::PipelineColorBlendAttachmentState> ColorBlendAttachmentStates(ColorAttachmentCount);
+	for (uint32_t i = 0; i < ColorAttachmentCount; ++i) {
+		ColorBlendAttachmentStates[i].setBlendEnable(VK_TRUE)
+			.setSrcColorBlendFactor(vk::BlendFactor::eSrcAlpha)
+			.setDstColorBlendFactor(vk::BlendFactor::eOneMinusSrcAlpha)
+			.setColorBlendOp(vk::BlendOp::eAdd)
+			.setSrcAlphaBlendFactor(vk::BlendFactor::eSrcAlpha)
+			.setDstAlphaBlendFactor(vk::BlendFactor::eOneMinusSrcAlpha)
+			.setAlphaBlendOp(vk::BlendOp::eAdd)
+			.setColorWriteMask(
+				vk::ColorComponentFlagBits::eR |
+				vk::ColorComponentFlagBits::eG |
+				vk::ColorComponentFlagBits::eB |
+				vk::ColorComponentFlagBits::eA
+			);
+	}
+	
 	vk::PipelineColorBlendStateCreateInfo ColorBlendStateCreateInfo;
 	ColorBlendStateCreateInfo.setLogicOpEnable(VK_FALSE)
 		.setLogicOp(vk::LogicOp::eCopy)
-		.setAttachmentCount(1)
-		.setPAttachments(&ColorBlendAttachmentState);
+		.setAttachmentCount(ColorAttachmentCount)
+		.setPAttachments(ColorBlendAttachmentStates.data());
 
 	// Dynamic state
 	const uint32_t DynamicStateCount = 3;
