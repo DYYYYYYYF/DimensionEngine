@@ -93,7 +93,7 @@ public:
 	* @returns A geometry configuration which can then be fed into AcquireFromConfig().
 	*/
 	static SGeometryConfig GeneratePlaneConfig(float width, float height, uint32_t x_segment_count, uint32_t y_segment_count,
-		float tile_x, float tile_y, const char* name, const char* material_name);
+		float tile_x, float tile_y, const std::string& name, const std::string& material_name);
 
 	/*
 	* @brief Generates configuration for cube geometries given the provided parameters.
@@ -107,14 +107,14 @@ public:
 	* @returns A geometry configuration which can then be fed into AcquireFromConfig().
 	*/
 	static SGeometryConfig GenerateCubeConfig(float width, float height, 
-		float depth, float tile_x, float tile_y, const char* name, const char* material_name);
+		float depth, float tile_x, float tile_y, const std::string& name, const std::string& material_name);
 
 	/*
 	*@brief Obtains a pointer to the quad 2D geometry. Default generate full screen quad.
 	*
 	* @returns A pointer to the quad 2D geometry.
 	*/
-	static Geometry* GenerateQuad(const char* name, const char* material_name);
+	static Geometry* GenerateQuad(const std::string& name, const std::string& material_name);
 
 
 	static void ConfigDispose(SGeometryConfig* config);

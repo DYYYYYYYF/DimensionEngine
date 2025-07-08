@@ -4,8 +4,6 @@
 
 struct SRenderPacket;
 
-static IRenderer* Renderer = nullptr;
-
 class IGame {
 private:
 	struct GameFrameData {

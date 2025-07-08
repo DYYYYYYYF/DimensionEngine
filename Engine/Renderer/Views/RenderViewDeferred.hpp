@@ -1,18 +1,23 @@
 ﻿#pragma once
 
 #include "Defines.hpp"
+#include "Resources/Texture.hpp"
 #include "Renderer/Interface/IRenderView.hpp"
 
 class Camera;
 class Shader;
-class Texture;
 
 // G-Buffer纹理
 struct GBufferSet {
-	Texture* AlbedoTexture;
-	Texture* NormalTexture;
-	Texture* PositionTexture;
-	Texture* DepthTexture;
+	Texture* AlbedoTexture = nullptr;
+	Texture* NormalTexture = nullptr;
+	Texture* PositionTexture = nullptr;
+	Texture* DepthTexture = nullptr;
+
+	TextureMap AlbedoTextureMap;
+	TextureMap NormalTextureMap;
+	TextureMap PositionTextureMap;
+	TextureMap DepthTextureMap;
 };
 
 class RenderViewWorldDeferred : public IRenderView {
@@ -46,6 +51,8 @@ private:
 	}
 
 private:
+	IRenderer* Renderer;
+
 	// G-Buffer渲染着色器
 	Shader* GBufferShader = nullptr;
 	// 光照计算着色器

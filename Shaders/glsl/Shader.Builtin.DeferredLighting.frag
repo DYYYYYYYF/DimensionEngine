@@ -2,15 +2,6 @@
 
 layout (location = 0) out vec4 FragColor;
 
-layout (set = 0, binding = 0, std140) uniform GlobalUniformObject{
-    mat4 projection;
-    mat4 view;
-    vec4 ambient_color;
-    vec3 view_position;
-    int mode;
-    float time;  // 改为time，匹配scfg配置
-}GlobalUBO;
-
 layout (set = 1, binding = 0) uniform InstanceUniformObject{
     vec4 light_intensity;
     int debug_mode;
@@ -19,11 +10,13 @@ layout (set = 1, binding = 0) uniform InstanceUniformObject{
 const int SAMP_ALBEDO = 0;
 const int SAMP_NORMAL = 1;
 const int SAMP_POSITION = 2;
-layout (set = 1, binding = 1) uniform sampler2D Samplers[4];
+layout (set = 1, binding = 1) uniform sampler2D Samplers[3];
 
 layout (location = 0) flat in int in_mode;
 layout (location = 1) in struct dto{
     vec2 vTexcoord;
+    vec4 ambient_color;
+    vec3 view_position;
 }in_dto;
 
 // 光源定义（与原World着色器保持一致）
@@ -84,7 +77,7 @@ void main(){
     
     // 早期深度测试 - 如果深度为0说明没有几何体
     if (depth == 0.0) {
-        FragColor = vec4(GlobalUBO.ambient_color.rgb, 1.0);
+        FragColor = vec4(in_dto.ambient_color.rgb, 1.0);
         return;
     }
     
@@ -107,10 +100,10 @@ void main(){
     }
     else {
         // 标准光照计算
-        vec3 viewDirection = normalize(GlobalUBO.view_position - worldPosition);
+        vec3 viewDirection = normalize(in_dto.view_position - worldPosition);
         
         // PBR光照计算
-        FragColor = PBR(point_light_0, worldNormal, albedo, GlobalUBO.view_position, worldPosition, metallic, roughness, 1.0);
+        FragColor = PBR(point_light_0, worldNormal, albedo, in_dto.view_position, worldPosition, metallic, roughness, 1.0);
         
         // 添加方向光
         FragColor += CalculateDirectionalLight(dir_light, worldNormal, viewDirection, albedo, metallic, roughness);
@@ -119,7 +112,7 @@ void main(){
         FragColor += CalculatePointLight(point_light_1, worldNormal, worldPosition, viewDirection, albedo, metallic, roughness);
         
         // 应用环境光
-        vec3 ambient = GlobalUBO.ambient_color.rgb * albedo;
+        vec3 ambient = in_dto.ambient_color.rgb * albedo;
         FragColor.rgb += ambient;
         
         // 确保alpha为1
@@ -133,7 +126,7 @@ vec4 CalculateDirectionalLight(DirectionalLight light, vec3 normal, vec3 view_di
     vec3 HalfDirection = normalize(-view_direction - light.direction);
     float SpecularFactor = pow(max(dot(HalfDirection, normal), 0.0f), (1.0 - roughness) * 128.0);
     
-    vec4 Ambient = vec4(vec3(GlobalUBO.ambient_color * vec4(albedo, 1.0)), 1.0);
+    vec4 Ambient = vec4(vec3(in_dto.ambient_color * vec4(albedo, 1.0)), 1.0);
     vec4 Diffuse = vec4(vec3(albedo * fDiffuseFactor), 1.0);
     vec4 Specular = vec4(vec3(light.color * SpecularFactor * (1.0 - metallic)), 1.0);
     
@@ -151,7 +144,7 @@ vec4 CalculatePointLight(PointLight light, vec3 normal, vec3 frag_position, vec3
     float Distance = length(light.position - frag_position);
     float Attenuation = 1.0f / (light.fconstant + light.linear * Distance + light.quadratic * (Distance * Distance));
     
-    vec4 Ambient = GlobalUBO.ambient_color;
+    vec4 Ambient = in_dto.ambient_color;
     vec4 Diffuse = light.color * Diff;
     vec4 Specular = light.color * Spec * (1.0 - metallic);
     

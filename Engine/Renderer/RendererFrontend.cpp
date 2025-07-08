@@ -18,6 +18,8 @@
 #include "Core/Event.hpp"
 // TODO: temp
 
+IRenderer* IRenderer::Renderer = nullptr;
+
 IRenderer::IRenderer() {
 	Backend = nullptr;
 	BackendType = RendererBackendType::eRenderer_Backend_Type_Vulkan;
@@ -55,6 +57,14 @@ IRenderer::~IRenderer() {
 	Shutdown();
 }
 
+IRenderer* IRenderer::GetRenderer() {
+	if (!Renderer) {
+		GLOG(Log::Level::eError, "Function IRenderer::GetRenderer() should called after initialization. Return nullptr.");
+		return nullptr;
+	}
+	return Renderer;
+}
+
 bool IRenderer::Initialize(const std::string& application_name, Vector2 window_size, struct SPlatformState* plat_state) {
 	if (Backend == nullptr) {
 		return false;
@@ -73,6 +83,8 @@ bool IRenderer::Initialize(const std::string& application_name, Vector2 window_s
 		GLOG(Log::eFatal, "Renderer backend init failed.");
 		return false;
 	}
+
+	Renderer = this;
 
 	return true;
 }

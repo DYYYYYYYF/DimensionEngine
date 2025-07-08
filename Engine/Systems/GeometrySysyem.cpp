@@ -272,7 +272,7 @@ void GeometrySystem::DestroyGeometry(Geometry* geometry) {
 }
 
 SGeometryConfig GeometrySystem::GeneratePlaneConfig(float width, float height, uint32_t x_segment_count,
-	uint32_t y_segment_count, float tile_x, float tile_y, const char* name, const char* material_name) {
+	uint32_t y_segment_count, float tile_x, float tile_y, const std::string& name, const std::string& material_name) {
 	if (width == 0) {
 		GLOG(Log::eWarn, "width must be non-zero. Defauting to one.");
 		width = 1.0f;
@@ -365,26 +365,15 @@ SGeometryConfig GeometrySystem::GeneratePlaneConfig(float width, float height, u
 		}
 	}
 
-	if (name && strlen(name) > 0) {
-		Config.name = name;
-	}
-	else {
-		Config.name = DEFAULT_GEOMETRY_PLANE_NAME;
-	}
-
-	if (material_name && strlen(material_name) > 0) {
-		Config.material_name = material_name;
-	}
-	else {
-		Config.material_name = DEFAULT_MATERIAL_NAME;
-	}
+	Config.name = name.empty() ? DEFAULT_GEOMETRY_PLANE_NAME : name;
+	Config.material_name = material_name.empty() ? DEFAULT_MATERIAL_NAME : material_name;
 
 	return Config;
 }
 
 SGeometryConfig GeometrySystem::GenerateCubeConfig(float width, float height,
-	float depth, float tile_x, float tile_y, const char* name, const char* material_name) {
-		if (width == 0) {
+	float depth, float tile_x, float tile_y, const std::string& name, const std::string& material_name) {
+	if (width == 0) {
 			GLOG(Log::eWarn, "width must be non-zero. Defauting to one.");
 			width = 1.0f;
 		}
@@ -535,31 +524,14 @@ SGeometryConfig GeometrySystem::GenerateCubeConfig(float width, float height,
 			((uint32_t*)Config.indices)[OffsetI + 5] = OffsetV + 1;
 		}
 
-		if (name && strlen(name) > 0) {
-			Config.name = name;
-		}
-		else {
-			Config.name = DEFAULT_GEOMETRY_CUBE_NAME;
-		}
-
-		if (material_name && strlen(material_name) > 0) {
-			Config.material_name = material_name;
-		}
-		else {
-			Config.material_name = DEFAULT_MATERIAL_NAME;
-		}
-
+		Config.name = name.empty() ? DEFAULT_GEOMETRY_PLANE_NAME : name;
+		Config.material_name = material_name.empty() ? DEFAULT_MATERIAL_NAME : material_name;
 		GeometryUtils::GenerateTangents(Config.vertex_count, (Vertex*)Config.vertices, Config.index_count, (uint32_t*)Config.indices);
 
 		return Config;
 }
 
-Geometry* GeometrySystem::GenerateQuad(const char* name, const char* material_name) {
-	if (material_name == nullptr)
-	{
-		material_name = "Material.Builtin.DeferredLighting";
-	}
-
+Geometry* GeometrySystem::GenerateQuad(const std::string& name, const std::string& material_name) {
 	SGeometryConfig Config = GeneratePlaneConfig(1, 1, 1, 1, 1, 1, name, material_name);
 	Geometry* NewGeom = AcquireFromConfig(Config, true);
 	if (!NewGeom) {

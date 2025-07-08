@@ -111,19 +111,7 @@ DebugConsoleActor::DebugConsoleActor(){
 	LineOffset = 0;
 	Visible = false;
 	Dirty = false;
-	Renderer = nullptr;
-	TextControl = nullptr;
-	EntryControl = nullptr;
-
-	Console::RegisterConsumer(std::bind(&DebugConsoleActor::Write, this, std::placeholders::_1, std::placeholders::_2));
-}
-
-DebugConsoleActor::DebugConsoleActor(IRenderer* renderer) {
-	DisplayLineCount = 10;
-	LineOffset = 0;
-	Visible = false;
-	Dirty = false;
-	Renderer = renderer;
+	Renderer = IRenderer::GetRenderer();
 	TextControl = nullptr;
 	EntryControl = nullptr;
 
@@ -151,7 +139,7 @@ bool DebugConsoleActor::Initialize() {
 
 	// Create UI text control for rendering.
 	TextControl = NewObject<UIText>();
-	if (!TextControl->Create(Renderer, UITextType::eUI_Text_Type_system, "Noto Sans CJK JP", 26, "No Log.")) {
+	if (!TextControl->Create(UITextType::eUI_Text_Type_system, "Noto Sans CJK JP", 26, "No Log.")) {
 		GLOG(Log::eFatal, "Unable to create text control for debug console.");
 		return false;
 	}
@@ -160,7 +148,7 @@ bool DebugConsoleActor::Initialize() {
 
 	// Create another ui text control for rendering typed text.
 	EntryControl = NewObject<UIText>();
-	if (!EntryControl->Create(Renderer, UITextType::eUI_Text_Type_system, "Noto Sans CJK JP", 26, "Press 'entry' to record command.")) {
+	if (!EntryControl->Create(UITextType::eUI_Text_Type_system, "Noto Sans CJK JP", 26, "Press 'entry' to record command.")) {
 		GLOG(Log::eFatal, "Unable to create entry control for debug console.");
 		return false;
 	}

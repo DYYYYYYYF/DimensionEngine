@@ -5,7 +5,7 @@ class IRenderer;
 
 class DAPI Skybox {
 public:
-	bool Create(const char* cubeName, IRenderer* renderer);
+	bool Create(const std::string& cubeName);
 	void Destroy();
 
 public:

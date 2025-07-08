@@ -73,8 +73,7 @@ bool GameInstance::Boot(IRenderer* renderer) {
 	WindowSize.Width = YamlReader.ReadPropertyInt("Window.Width");
 	WindowSize.Height = YamlReader.ReadPropertyInt("Window.Height");
 
-	Renderer = renderer;
-	GameConsole = NewObject<DebugConsoleActor>(Renderer);
+	GameConsole = NewObject<DebugConsoleActor>();
 
 	Keybind GameKeybind;
 	GameKeybind.Setup(this);
@@ -127,14 +126,14 @@ bool GameInstance::Initialize() {
 	WorldCamera->SetEulerAngles(Rotation);
 
 	// Create test ui text objects.
-	if (!TestText.Create(Renderer, UITextType::eUI_Text_Type_Bitmap, "Ubuntu Mono 21px", 21, "Test! \n Yooo!")) {
+	if (!TestText.Create(UITextType::eUI_Text_Type_Bitmap, "Ubuntu Mono 21px", 21, "Test! \n Yooo!")) {
 		GLOG(Log::eError, "Failed to load basic ui bitmap text.");
 		return false;
 	}
 	TestText.SetLocation(Vector3(150, 450, 0));
 	TestText.SetName("Render information window.");
 
-	if (!TestSysText.Create(Renderer, UITextType::eUI_Text_Type_system, 
+	if (!TestSysText.Create(UITextType::eUI_Text_Type_system, 
 		"Noto Sans CJK JP", 25, "Keyboard map:\
 		\nLoad models:\
 		\n\tO: Scene1 P: Scene2\
@@ -155,7 +154,7 @@ bool GameInstance::Initialize() {
 	GameConsole->Initialize();
 
 	// Skybox
-	if (!SB.Create("SkyboxCube", Renderer)) {
+	if (!SB.Create("SkyboxCube")) {
 		GLOG(Log::eError, "Failed to create skybox. Exiting...");
 		return false;
 	}
@@ -620,6 +619,8 @@ void GameInstance::OnResize(unsigned int width, unsigned int height) {
 }
 
 bool GameInstance::ConfigureRenderviews() {
+	IRenderer* Renderer = IRenderer::GetRenderer();
+
 	RenderViewConfig SkyboxConfig;
 	SkyboxConfig.type = RenderViewKnownType::eRender_View_Known_Type_Skybox;
 	SkyboxConfig.width = GetWindowWidth();
@@ -644,6 +645,7 @@ bool GameInstance::ConfigureRenderviews() {
 	SkyboxTargetAttachment.loadOperation = RenderTargetAttachmentLoadOperation::eRender_Target_Attachment_Load_Operation_DontCare;
 	SkyboxTargetAttachment.storeOperation = RenderTargetAttachmentStoreOperation::eRender_Target_Attachment_Store_Operation_Store;
 	SkyboxTargetAttachment.presentAfter = false;
+	SkyboxTargetAttachment.index = 0;
 
 	SkyboxPasses[0].target.attachments.push_back(SkyboxTargetAttachment);
 	SkyboxPasses[0].renderTargetCount = Renderer->GetWindowAttachmentCount();
@@ -651,46 +653,6 @@ bool GameInstance::ConfigureRenderviews() {
 	SkyboxConfig.passes = SkyboxPasses;
 	SkyboxConfig.pass_count = (unsigned char)SkyboxPasses.size();
 	Renderviews.push_back(SkyboxConfig);
-
-	//// World view
-	/*RenderViewConfig WorldViewConfig;
-	WorldViewConfig.type = RenderViewKnownType::eRender_View_Known_Type_World;
-	WorldViewConfig.width = GetWindowWidth();
-	WorldViewConfig.height = GetWindowHeight();
-	WorldViewConfig.name = "World";
-	WorldViewConfig.pass_count = 1;
-	WorldViewConfig.view_matrix_source = RenderViewViewMatrixtSource::eRender_View_View_Matrix_Source_Scene_Camera;*/
-
-	//// Renderpass config.
-	//std::vector<RenderpassConfig> WorldPasses(1);
-	//WorldPasses[0].name = "Renderpass.Builtin.World";
-	//WorldPasses[0].render_area = Vector4(0, 0, (float)GetWindowWidth(), (float)GetWindowHeight());
-	//WorldPasses[0].clear_color = Vector4(0, 0.2f, 0, 1.0f);
-	//WorldPasses[0].clear_flags = RenderpassClearFlags::eRenderpass_Clear_Stencil_Buffer | RenderpassClearFlags::eRenderpass_Clear_Depth_Buffer;
-	//WorldPasses[0].depth = 1.0f;
-	//WorldPasses[0].stencil = 0;
-
-	//RenderTargetAttachmentConfig WorldTargetColorAttachments;
-	//WorldTargetColorAttachments.type = RenderTargetAttachmentType::eRender_Target_Attachment_Type_Color;
-	//WorldTargetColorAttachments.source = RenderTargetAttachmentSource::eRender_Target_Attachment_Source_Default;
-	//WorldTargetColorAttachments.loadOperation = RenderTargetAttachmentLoadOperation::eRender_Target_Attachment_Load_Operation_Load;
-	//WorldTargetColorAttachments.storeOperation = RenderTargetAttachmentStoreOperation::eRender_Target_Attachment_Store_Operation_Store;
-	//WorldTargetColorAttachments.presentAfter = false;
-	//WorldPasses[0].target.attachments.push_back(WorldTargetColorAttachments);
-
-	//RenderTargetAttachmentConfig WorldTargetDepthAttachments;
-	//WorldTargetDepthAttachments.type = RenderTargetAttachmentType::eRender_Target_Attachment_Type_Depth;
-	//WorldTargetDepthAttachments.source = RenderTargetAttachmentSource::eRender_Target_Attachment_Source_Default;
-	//WorldTargetDepthAttachments.loadOperation = RenderTargetAttachmentLoadOperation::eRender_Target_Attachment_Load_Operation_DontCare;
-	//WorldTargetDepthAttachments.storeOperation = RenderTargetAttachmentStoreOperation::eRender_Target_Attachment_Store_Operation_Store;
-	//WorldTargetDepthAttachments.presentAfter = false;
-	//WorldPasses[0].target.attachments.push_back(WorldTargetDepthAttachments);
-
-	//WorldPasses[0].renderTargetCount = Renderer->GetWindowAttachmentCount();
-
-	//WorldViewConfig.passes = WorldPasses;
-	//WorldViewConfig.pass_count = (unsigned char)WorldPasses.size();
-	//Renderviews.push_back(WorldViewConfig);
 
 	// Deferred render
 	RenderViewConfig WorldViewConfig;
@@ -709,9 +671,8 @@ bool GameInstance::ConfigureRenderviews() {
 	WorldPasses[0].name = "Renderpass.Builtin.GBuffer";
 	WorldPasses[0].render_area = Vector4(0, 0, (float)GetWindowWidth(), (float)GetWindowHeight());
 	WorldPasses[0].clear_color = Vector4(0.0f, 0.0f, 0.0f, 0.0f);  // 明确设置为0.0f
-	WorldPasses[0].clear_flags = RenderpassClearFlags::eRenderpass_Clear_Color_Buffer |
-		RenderpassClearFlags::eRenderpass_Clear_Depth_Buffer |
-		RenderpassClearFlags::eRenderpass_Clear_Stencil_Buffer;
+	WorldPasses[0].clear_flags = RenderpassClearFlags::eRenderpass_Clear_Depth_Buffer |
+								 RenderpassClearFlags::eRenderpass_Clear_Stencil_Buffer;
 	WorldPasses[0].depth = 1.0f;        // 深度清除值：1.0f (最远)
 	WorldPasses[0].stencil = 0;         // 模板清除值：0
 
@@ -720,7 +681,7 @@ bool GameInstance::ConfigureRenderviews() {
 	Memory::Zero(&GBufferAlbedoAttachment, sizeof(RenderTargetAttachmentConfig));
 	GBufferAlbedoAttachment.type = RenderTargetAttachmentType::eRender_Target_Attachment_Type_Color;
 	GBufferAlbedoAttachment.source = RenderTargetAttachmentSource::eRender_Target_Attachment_Source_View;
-	GBufferAlbedoAttachment.loadOperation = RenderTargetAttachmentLoadOperation::eRender_Target_Attachment_Load_Operation_DontCare;
+	GBufferAlbedoAttachment.loadOperation = RenderTargetAttachmentLoadOperation::eRender_Target_Attachment_Load_Operation_Clear;
 	GBufferAlbedoAttachment.storeOperation = RenderTargetAttachmentStoreOperation::eRender_Target_Attachment_Store_Operation_Store;
 	GBufferAlbedoAttachment.presentAfter = false;
 	GBufferAlbedoAttachment.index = 0;
@@ -731,7 +692,7 @@ bool GameInstance::ConfigureRenderviews() {
 	Memory::Zero(&GBufferNormalAttachment, sizeof(RenderTargetAttachmentConfig));
 	GBufferNormalAttachment.type = RenderTargetAttachmentType::eRender_Target_Attachment_Type_Color;
 	GBufferNormalAttachment.source = RenderTargetAttachmentSource::eRender_Target_Attachment_Source_View;
-	GBufferNormalAttachment.loadOperation = RenderTargetAttachmentLoadOperation::eRender_Target_Attachment_Load_Operation_DontCare;
+	GBufferNormalAttachment.loadOperation = RenderTargetAttachmentLoadOperation::eRender_Target_Attachment_Load_Operation_Clear;
 	GBufferNormalAttachment.storeOperation = RenderTargetAttachmentStoreOperation::eRender_Target_Attachment_Store_Operation_Store;
 	GBufferNormalAttachment.presentAfter = false;
 	GBufferNormalAttachment.index = 1;
@@ -742,7 +703,7 @@ bool GameInstance::ConfigureRenderviews() {
 	Memory::Zero(&GBufferPositionAttachment, sizeof(RenderTargetAttachmentConfig));
 	GBufferPositionAttachment.type = RenderTargetAttachmentType::eRender_Target_Attachment_Type_Color;
 	GBufferPositionAttachment.source = RenderTargetAttachmentSource::eRender_Target_Attachment_Source_View;
-	GBufferPositionAttachment.loadOperation = RenderTargetAttachmentLoadOperation::eRender_Target_Attachment_Load_Operation_DontCare;
+	GBufferPositionAttachment.loadOperation = RenderTargetAttachmentLoadOperation::eRender_Target_Attachment_Load_Operation_Clear;
 	GBufferPositionAttachment.storeOperation = RenderTargetAttachmentStoreOperation::eRender_Target_Attachment_Store_Operation_Store;
 	GBufferPositionAttachment.presentAfter = false;
 	GBufferPositionAttachment.index = 2;
@@ -753,7 +714,7 @@ bool GameInstance::ConfigureRenderviews() {
 	Memory::Zero(&GBufferDepthAttachment, sizeof(RenderTargetAttachmentConfig));
 	GBufferDepthAttachment.type = RenderTargetAttachmentType::eRender_Target_Attachment_Type_Depth;
 	GBufferDepthAttachment.source = RenderTargetAttachmentSource::eRender_Target_Attachment_Source_Default;
-	GBufferDepthAttachment.loadOperation = RenderTargetAttachmentLoadOperation::eRender_Target_Attachment_Load_Operation_DontCare;
+	GBufferDepthAttachment.loadOperation = RenderTargetAttachmentLoadOperation::eRender_Target_Attachment_Load_Operation_Clear;
 	GBufferDepthAttachment.storeOperation = RenderTargetAttachmentStoreOperation::eRender_Target_Attachment_Store_Operation_Store;
 	GBufferDepthAttachment.presentAfter = false;
 	GBufferDepthAttachment.index = 0;
@@ -764,11 +725,10 @@ bool GameInstance::ConfigureRenderviews() {
 
 	// 第二通道：延迟光照
 	Memory::Zero(&WorldPasses[1], sizeof(RenderpassConfig));
-
 	WorldPasses[1].name = "Renderpass.Builtin.DeferredLighting";
 	WorldPasses[1].render_area = Vector4(0, 0, (float)GetWindowWidth(), (float)GetWindowHeight());
 	WorldPasses[1].clear_color = Vector4(0.0f, 0.2f, 0.0f, 1.0f);  // 最终输出的清除色
-	WorldPasses[1].clear_flags = RenderpassClearFlags::eRenderpass_Clear_Color_Buffer;  // 只清除颜色，不需要深度
+	WorldPasses[1].clear_flags = RenderpassClearFlags::eRenderpass_Clear_None;  
 	WorldPasses[1].depth = 1.0f;       
 	WorldPasses[1].stencil = 0;        
 
@@ -777,7 +737,7 @@ bool GameInstance::ConfigureRenderviews() {
 	Memory::Zero(&LightingColorAttachment, sizeof(RenderTargetAttachmentConfig));
 	LightingColorAttachment.type = RenderTargetAttachmentType::eRender_Target_Attachment_Type_Color;
 	LightingColorAttachment.source = RenderTargetAttachmentSource::eRender_Target_Attachment_Source_Default;
-	LightingColorAttachment.loadOperation = RenderTargetAttachmentLoadOperation::eRender_Target_Attachment_Load_Operation_Clear;
+	LightingColorAttachment.loadOperation = RenderTargetAttachmentLoadOperation::eRender_Target_Attachment_Load_Operation_Load;
 	LightingColorAttachment.storeOperation = RenderTargetAttachmentStoreOperation::eRender_Target_Attachment_Store_Operation_Store;
 	LightingColorAttachment.presentAfter = false; 
 	LightingColorAttachment.index = 0;

@@ -15,6 +15,8 @@ layout (set = 0, binding = 0, std140) uniform GlobalUniformObject{
 layout (location = 0) out int out_mode;
 layout (location = 1) out struct out_dto{
     vec2 vTexcoord;
+    vec4 ambient_color;
+    vec3 view_position;
 }OutDto;
 
 void main(){

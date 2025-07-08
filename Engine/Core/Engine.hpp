@@ -31,6 +31,8 @@ public:
 	bool OnResized(eEventCode code, void* sender, void* listener_instance, SEventContext context);
 
 public:
+	IRenderer* Renderer;
+
 	// Instance
 	IGame* GameInst;
 	SPlatformState platform;

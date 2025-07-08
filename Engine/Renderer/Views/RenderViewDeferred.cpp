@@ -9,7 +9,6 @@
 #include "Containers/TArray.hpp"
 #include "Containers/TString.hpp"
 #include "Containers/FString.hpp"
-#include "Resources/Texture.hpp"
 
 #include "Systems/MaterialSystem.h"
 #include "Systems/ShaderSystem.h"
@@ -22,7 +21,6 @@
 #include "Renderer/RendererFrontend.hpp"
 #include "Renderer/Interface/IRenderpass.hpp"
 #include "Renderer/Interface/IRendererBackend.hpp"
-#include "../../IGame.hpp"
 
 static bool RenderViewWorldDeferredOnEvent(eEventCode code, void* sender, void* listenerInst, SEventContext context) {
 	IRenderView* self = (IRenderView*)listenerInst;
@@ -66,6 +64,7 @@ static bool RenderViewWorldDeferredOnEvent(eEventCode code, void* sender, void* 
 
 RenderViewWorldDeferred::RenderViewWorldDeferred() {
 	FullscreenQuad = nullptr;
+	Renderer = nullptr;
 }
 
 RenderViewWorldDeferred::RenderViewWorldDeferred(const RenderViewConfig& config) {
@@ -75,6 +74,7 @@ RenderViewWorldDeferred::RenderViewWorldDeferred(const RenderViewConfig& config)
 	RenderpassCount = config.pass_count; // 应该是2个通道：G-Buffer和光照
 	Passes.resize(RenderpassCount);
 	FullscreenQuad = nullptr;
+	Renderer = IRenderer::GetRenderer();
 }
 
 bool RenderViewWorldDeferred::OnCreate(const RenderViewConfig& config) {
@@ -376,17 +376,18 @@ bool RenderViewWorldDeferred::OnRender(struct RenderViewPacket* packet, IRendere
 	// 创建延迟光照材质并应用
 	Material* DeferredLightingMat = FullscreenQuad->Material;
 	// 绑定G-Buffer纹理作为材质纹理
-	DeferredLightingMat->DiffuseMap.texture = CurrentGBuffer->AlbedoTexture;      // 复用DiffuseMap绑定点
-	DeferredLightingMat->NormalMap.texture = CurrentGBuffer->NormalTexture;      // 复用NormalMap绑定点  
-	DeferredLightingMat->SpecularMap.texture = CurrentGBuffer->PositionTexture;  // 复用SpecularMap绑定点
+	DeferredLightingMat->DiffuseMap.texture = CurrentGBuffer->AlbedoTexture;
+	DeferredLightingMat->NormalMap.texture = CurrentGBuffer->NormalTexture;
+	DeferredLightingMat->SpecularMap.texture = CurrentGBuffer->PositionTexture;
 
 	// 应用延迟光照材质
 	bool LightingNeedsUpdate = DeferredLightingMat->RenderFrameNumer != frame_number;
 	if (LightingNeedsUpdate) {
 		ShaderSystem::BindInstance(DeferredLightingMat->InternalID);
-		ShaderSystem::SetUniform("albedo_texture", CurrentGBuffer->AlbedoTexture);
-		ShaderSystem::SetUniform("normal_texture", CurrentGBuffer->NormalTexture);
-		ShaderSystem::SetUniform("position_texture", CurrentGBuffer->PositionTexture);
+		ShaderSystem::SetUniform("albedo_texture", &CurrentGBuffer->AlbedoTextureMap);		 // 复用DiffuseMap绑定点
+		ShaderSystem::SetUniform("normal_texture", &CurrentGBuffer->NormalTextureMap);		 // 复用NormalMap绑定点  
+		ShaderSystem::SetUniform("position_texture", &CurrentGBuffer->PositionTextureMap);	 // 复用SpecularMap绑定点
+		ShaderSystem::ApplyInstance(LightingNeedsUpdate);
 	}
 	else {
 		DeferredLightingMat->RenderFrameNumer = (uint32_t)frame_number;
@@ -408,15 +409,26 @@ bool RenderViewWorldDeferred::CreateGBufferTextures(uint32_t width, uint32_t hei
 		// 创建反照率+金属度纹理 (RGBA8)
 		FString ALbedoTextureName("GBuffer_Albedo_%d", bufferIndex);
 		GBuffers[bufferIndex].AlbedoTexture = TextureSystem::AcquireWriteable(ALbedoTextureName.CStr(), width, height, 4, false);
+		GBuffers[bufferIndex].AlbedoTextureMap.texture = GBuffers[bufferIndex].AlbedoTexture;
+		Renderer->AcquireTextureMap(&GBuffers[bufferIndex].AlbedoTextureMap);
+
 		// 创建法线+粗糙度纹理 (RGBA16F)
 		FString NormalTextureName("GBuffer_Normal_%d", bufferIndex);
 		GBuffers[bufferIndex].NormalTexture = TextureSystem::AcquireWriteable(NormalTextureName.CStr(), width, height, 4, false);
+		GBuffers[bufferIndex].NormalTextureMap.texture = GBuffers[bufferIndex].NormalTexture;
+		Renderer->AcquireTextureMap(&GBuffers[bufferIndex].NormalTextureMap);
+
 		// 创建位置纹理 (RGBA32F)
 		FString PositionTextureName("GBuffer_Position_%d", bufferIndex);
 		GBuffers[bufferIndex].PositionTexture = TextureSystem::AcquireWriteable(PositionTextureName.CStr(), width, height, 4, false);
+		GBuffers[bufferIndex].PositionTextureMap.texture = GBuffers[bufferIndex].PositionTexture;
+		Renderer->AcquireTextureMap(&GBuffers[bufferIndex].PositionTextureMap);
+
 		// 创建深度纹理
 		FString DepthTextureName("GBuffer_Depth_%d", bufferIndex);
 		GBuffers[bufferIndex].DepthTexture = TextureSystem::AcquireWriteable(DepthTextureName.CStr(), width, height, 1, false);
+		GBuffers[bufferIndex].DepthTextureMap.texture = GBuffers[bufferIndex].DepthTexture;
+		Renderer->AcquireTextureMap(&GBuffers[bufferIndex].DepthTextureMap);
 	}
 
 	return true;
@@ -434,7 +446,7 @@ void RenderViewWorldDeferred::DestroyGBufferTextures() {
 
 bool RenderViewWorldDeferred::CreateFullscreenQuad() {
 	// 创建全屏四边形几何体
-	FullscreenQuad = GeometrySystem::GenerateQuad("DFFullScreenQuad", nullptr);
+	FullscreenQuad = GeometrySystem::GenerateQuad("DFFullScreenQuad", "Material.Builtin.DeferredLighting");
 	return FullscreenQuad != nullptr;
 }
 

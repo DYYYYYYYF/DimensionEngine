@@ -8,7 +8,6 @@ class IRenderer;
 class DebugConsoleActor : public Actor{
 public:
 	DebugConsoleActor();
-	DebugConsoleActor(IRenderer* renderer);
 	virtual ~DebugConsoleActor();
 
 public:

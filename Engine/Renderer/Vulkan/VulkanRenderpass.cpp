@@ -86,9 +86,20 @@ bool VulkanRenderPass::Create(VulkanContext* context, const RenderpassConfig& co
 			AttachmentDesc.setInitialLayout(AttachmentConfig->loadOperation ==
 				RenderTargetAttachmentLoadOperation::eRender_Target_Attachment_Load_Operation_Load ? vk::ImageLayout::eColorAttachmentOptimal : vk::ImageLayout::eUndefined);
 			// If this is the last pass writing to this attachment, present after should be set to true.
-			AttachmentDesc.setFinalLayout(AttachmentConfig->presentAfter ? vk::ImageLayout::ePresentSrcKHR : vk::ImageLayout::eColorAttachmentOptimal);
+			if (AttachmentConfig->presentAfter) {
+				// 如果需要呈现到屏幕，使用present layout
+				AttachmentDesc.setFinalLayout(vk::ImageLayout::ePresentSrcKHR);
+			}
+			else if (AttachmentConfig->source == RenderTargetAttachmentSource::eRender_Target_Attachment_Source_View) {
+				// 如果这是G-Buffer attachment（会被后续pass作为shader输入），使用shader read layout
+				AttachmentDesc.setFinalLayout(vk::ImageLayout::eShaderReadOnlyOptimal);
+			}
+			else {
+				// 其他情况使用color attachment layout
+				AttachmentDesc.setFinalLayout(vk::ImageLayout::eColorAttachmentOptimal);
+			}
 
-			// Push to co
+			// Push to color attachment description.
 			ColorAttachmentDescriptions.push_back(AttachmentDesc);
 		}	// Color attachment
 		else if (AttachmentConfig->type & RenderTargetAttachmentType::eRender_Target_Attachment_Type_Depth) {
@@ -209,15 +220,42 @@ bool VulkanRenderPass::Create(VulkanContext* context, const RenderpassConfig& co
 	Subpass.setPreserveAttachmentCount(0);
 	Subpass.setPPreserveAttachments(nullptr);
 
-	// Render pass dependencies. TODO: make this configurable
-	vk::SubpassDependency Dependency;
-	Dependency.setSrcSubpass(VK_SUBPASS_EXTERNAL)
+	//增强的Render pass dependencies处理
+	std::vector<vk::SubpassDependency> Dependencies;
+
+	// 外部到当前subpass的依赖（标准依赖）
+	vk::SubpassDependency ExternalToSubpass;
+	ExternalToSubpass.setSrcSubpass(VK_SUBPASS_EXTERNAL)
 		.setDstSubpass(0)
 		.setSrcStageMask(vk::PipelineStageFlagBits::eColorAttachmentOutput)
 		.setSrcAccessMask(vk::AccessFlagBits::eNone)
 		.setDstStageMask(vk::PipelineStageFlagBits::eColorAttachmentOutput)
 		.setDstAccessMask(vk::AccessFlagBits::eColorAttachmentRead | vk::AccessFlagBits::eColorAttachmentWrite)
 		.setDependencyFlags(vk::DependencyFlagBits::eByRegion);
+	Dependencies.push_back(ExternalToSubpass);
+
+	// 检查是否有G-Buffer attachments需要被后续pass读取
+	bool HasGBufferAttachments = false;
+	for (const auto& attachment : config.target.attachments) {
+		if (attachment.type & RenderTargetAttachmentType::eRender_Target_Attachment_Type_Color &&
+			attachment.source == RenderTargetAttachmentSource::eRender_Target_Attachment_Source_View) {
+			HasGBufferAttachments = true;
+			break;
+		}
+	}
+
+	// 如果有G-Buffer attachments，添加从当前subpass到外部的依赖
+	if (HasGBufferAttachments) {
+		vk::SubpassDependency SubpassToExternal;
+		SubpassToExternal.setSrcSubpass(0)
+			.setDstSubpass(VK_SUBPASS_EXTERNAL)
+			.setSrcStageMask(vk::PipelineStageFlagBits::eColorAttachmentOutput)
+			.setDstStageMask(vk::PipelineStageFlagBits::eFragmentShader)
+			.setSrcAccessMask(vk::AccessFlagBits::eColorAttachmentWrite)
+			.setDstAccessMask(vk::AccessFlagBits::eShaderRead)
+			.setDependencyFlags(vk::DependencyFlagBits::eByRegion);
+		Dependencies.push_back(SubpassToExternal);
+	}
 
 	// Render pass create
 	vk::RenderPassCreateInfo CreateInfo;
@@ -225,8 +263,8 @@ bool VulkanRenderPass::Create(VulkanContext* context, const RenderpassConfig& co
 		.setAttachments(AttachmentDescriptions)
 		.setSubpassCount(1)
 		.setPSubpasses(&Subpass)
-		.setDependencyCount(1)
-		.setPDependencies(&Dependency)
+		.setDependencyCount((uint32_t)Dependencies.size())
+		.setPDependencies(Dependencies.data())
 		.setPNext(nullptr);
 
 	if (context->Device.GetLogicalDevice().createRenderPass(&CreateInfo,
