@@ -139,9 +139,9 @@ bool GameInstance::Initialize() {
 		\n\tO: Scene1 P: Scene2\
 		\n\tK: Scene3 L: Scene4\
 		\nM: Watch memory usage.\
-		\nF1: Physics Based Render Render.\
-		\nF2: Blinn-Phong.\
-		\nF3: Light view.\
+		\nF1: Default view.\
+		\nF2: Normal view.\
+		\nF3: Material view.\
 		\nF4: Depth view."))
 	{
 		GLOG(Log::eError, "Failed to load basic ui system text.");
