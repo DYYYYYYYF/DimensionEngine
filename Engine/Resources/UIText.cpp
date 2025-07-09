@@ -13,7 +13,7 @@
 #include "Systems/ShaderSystem.h"
 
 
-bool UIText::Create(class IRenderer* renderer, UITextType type, const std::string& fontName, unsigned short fontSize, const char* textContent) {
+bool UIText::Create(UITextType type, const std::string& fontName, unsigned short fontSize, const char* textContent) {
 	if (fontName.length() == 0 || textContent == nullptr || textContent[0] == '\0') {
 		GLOG(Log::eError, " UIText::Create() Requires a valid pointer to fontName and textContent.");
 		return false;
@@ -21,7 +21,7 @@ bool UIText::Create(class IRenderer* renderer, UITextType type, const std::strin
 
 	// Assign the type first.
 	Type = type;
-	Renderer = renderer;
+	Renderer = IRenderer::GetRenderer();
 
 	// Acquire the font of the correct type and assign its internal data.
 	// This also gets the atlas texture.
@@ -43,7 +43,7 @@ bool UIText::Create(class IRenderer* renderer, UITextType type, const std::strin
 	// Acquire resource for font texture map.
 	Shader* UIShader = ShaderSystem::Get("Shader.Builtin.UI");	// TODO: Text shader.
 	std::vector<TextureMap*> FontMaps = { &Data->atlas };
-	InstanceID = renderer->AcquireInstanceResource(UIShader, FontMaps);
+	InstanceID = Renderer->AcquireInstanceResource(UIShader, FontMaps);
 	if (InstanceID == INVALID_ID) {
 		GLOG(Log::eFatal, "Unable to acquire shader resource for font texture map.");
 		return false;
@@ -52,12 +52,12 @@ bool UIText::Create(class IRenderer* renderer, UITextType type, const std::strin
 	// Generate the vertex buffer.
 	VertexBuffer = (VulkanBuffer*)Memory::Allocate(sizeof(VulkanBuffer), MemoryType::eMemory_Type_Vulkan);
 	VertexBuffer = new (VertexBuffer)VulkanBuffer();
-	if (!renderer->CreateRenderbuffer(RenderbufferType::eRenderbuffer_Type_Vertex, TextLength * QuadSize, false, VertexBuffer)) {
+	if (!Renderer->CreateRenderbuffer(RenderbufferType::eRenderbuffer_Type_Vertex, TextLength * QuadSize, false, VertexBuffer)) {
 		GLOG(Log::eError, "UIText::Create() Failed to create vertex renderbuffer.");
 		return false;
 	}
 
-	if (!renderer->BindRenderbuffer(VertexBuffer, 0)) {
+	if (!Renderer->BindRenderbuffer(VertexBuffer, 0)) {
 		GLOG(Log::eError, "UIText::Create() Failed to bind vertex renderbuffer.");
 		return false;
 	}
@@ -66,12 +66,12 @@ bool UIText::Create(class IRenderer* renderer, UITextType type, const std::strin
 	IndexBuffer = (VulkanBuffer*)Memory::Allocate(sizeof(VulkanBuffer), MemoryType::eMemory_Type_Vulkan);
 	IndexBuffer = new (IndexBuffer)VulkanBuffer();
 	static const unsigned char QuadIndexSize = sizeof(uint32_t) * 6;
-	if (!renderer->CreateRenderbuffer(RenderbufferType::eRenderbuffer_Type_Index, TextLength * QuadIndexSize, false, IndexBuffer)) {
+	if (!Renderer->CreateRenderbuffer(RenderbufferType::eRenderbuffer_Type_Index, TextLength * QuadIndexSize, false, IndexBuffer)) {
 		GLOG(Log::eError, "UIText::Create() Failed to create index renderbuffer.");
 		return false;
 	}
 
-	if (!renderer->BindRenderbuffer(IndexBuffer, 0)) {
+	if (!Renderer->BindRenderbuffer(IndexBuffer, 0)) {
 		GLOG(Log::eError, "UIText::Create() Failed to bind index renderbuffer.");
 		return false;
 	}

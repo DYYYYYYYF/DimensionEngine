@@ -219,7 +219,12 @@ public:
 	uint32_t GetWidth() const { return FramebufferWidth; }
 	uint32_t GetHeight() const { return FramebufferHeight; }
 
+public:
+	DAPI static IRenderer* GetRenderer();
+
 protected:
+	static IRenderer* Renderer;
+
 	RendererBackendType BackendType;
 	class IRendererBackend* Backend;
 

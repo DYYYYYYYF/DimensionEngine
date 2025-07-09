@@ -20,7 +20,7 @@ public:
 	DAPI virtual ~UIText() {}
 
 public:
-	DAPI bool Create(class IRenderer* renderer, UITextType type, const std::string& fontName, unsigned short fontSize, const char* textContent);
+	DAPI bool Create(UITextType type, const std::string& fontName, unsigned short fontSize, const char* textContent);
 	DAPI void Destroy();
 	DAPI void SetText(const char* text);
 

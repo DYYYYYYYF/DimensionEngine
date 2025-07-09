@@ -21,6 +21,7 @@ struct VulkanPipelineConfig {
 	vk::Viewport viewport;
 	vk::Rect2D scissor;
 	FaceCullMode cull_mode = FaceCullMode::eFace_Cull_Mode_Back;
+	PrimitiveTopology PrimTopo = PrimitiveTopology::eTriangleList;
 	bool is_wireframe = false;
 	bool depth_test_enabled = true;
 	uint32_t push_constant_range_count = 0;

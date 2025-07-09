@@ -284,7 +284,7 @@ bool MeshLoader::ProcessAssimpMaterials(const aiScene* scene, const char* out_ds
 		// 处理贴图
 		ProcessAssimpTextures(mat, config);
 
-		config.shader_name = "Shader.Builtin.World";
+		config.shader_name = DEFAULT_SHADER;
 
 		// 环境光遮蔽默认值（通常通过贴图处理，而不是材质属性）
 		config.AmbientOcclusion = 1.0f;
@@ -307,7 +307,7 @@ bool MeshLoader::ProcessAssimpMaterials(const aiScene* scene, const char* out_ds
 		defaultConfig.Roughness = 0.5f;
 		defaultConfig.AmbientOcclusion = 1.0f;
 		defaultConfig.EmissiveColor = Vector4(0.0f, 0.0f, 0.0f, 1.0f);
-		defaultConfig.shader_name = "Shader.Builtin.World";
+		defaultConfig.shader_name = DEFAULT_SHADER;
 		materialConfigs.push_back(defaultConfig);
 	}
 

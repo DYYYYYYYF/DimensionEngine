@@ -70,6 +70,10 @@ public:
 	static MaterialShaderUniformLocations MaterialLocations;
 	static uint32_t MaterialShaderID;
 
+	// Know locations for the deferred lighting material shader.
+	static DRShaderUniformLocations DeferredLightMaterialLocations;
+	static uint32_t DeferredLightMaterialShaderID;
+
 	// Know locations for the ui shader.
 	static UIShaderUniformLocations UILocations;
 	static uint32_t UIShaderID;

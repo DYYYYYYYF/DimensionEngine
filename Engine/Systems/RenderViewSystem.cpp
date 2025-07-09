@@ -10,6 +10,7 @@
 // TODO: temp
 #include "Renderer/Views/RenderViewUI.hpp"
 #include "Renderer/Views/RenderViewWorld.hpp"
+#include "Renderer/Views/RenderViewDeferred.hpp"
 #include "Renderer/Views/RenderViewSkybox.hpp"
 #include "Renderer/Views/RenderViewPick.hpp"
 
@@ -103,6 +104,9 @@ bool RenderViewSystem::Create(const RenderViewConfig& config) {
 		if (config.type == RenderViewKnownType::eRender_View_Known_Type_World) {
 			RegisteredViews[ID] = new RenderViewWorld(config);
 		}
+		else if (config.type == RenderViewKnownType::eRender_View_Known_Type_Deferred) {
+			RegisteredViews[ID] = new RenderViewWorldDeferred(config);
+		}
 		else if (config.type == RenderViewKnownType::eRender_View_Known_Type_UI) {
 			RegisteredViews[ID] = new RenderViewUI(config);
 		}
@@ -186,7 +190,7 @@ void RenderViewSystem::OnWindowResize(uint32_t width, uint32_t height) {
 IRenderView* RenderViewSystem::Get(const std::string& name) {
 	if (Initialized) {
 		if (RegisteredViewMap.find(name) == RegisteredViewMap.end()){
-			GLOG(Log::eWarn, "Can not find render view '%s', return nullptr.", name.c_str());
+			GLOG(Log::eDebug, "Can not find render view '%s', return nullptr.", name.c_str());
 			return nullptr;
 		}
 

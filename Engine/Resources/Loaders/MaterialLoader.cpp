@@ -133,6 +133,12 @@ bool MaterialLoader::Load(const std::string& name, void* params, Resource* resou
 				ResourceData->AmbientOcclusion = 0.7f;
 			}
 		}
+		else if (strcmp(TrimmedVarName, "normal_intensity") == 0) {
+			if (!StringToFloat(TrimmedValue, &ResourceData->NormalIntensity)) {
+				GLOG(Log::eWarn, "Error parsing AmbientOcclusion in file '%s'. Using default of 0.7f instead.", FullFilePath);
+				ResourceData->NormalIntensity = 1.0f;
+			}
+		}
 		// TODO: more fields.
 
 		// Clear the line buffer.

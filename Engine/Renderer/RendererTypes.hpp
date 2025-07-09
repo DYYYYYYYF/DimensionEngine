@@ -34,20 +34,21 @@ enum RenderTargetAttachmentSource {
 
 enum RenderTargetAttachmentLoadOperation {
 	eRender_Target_Attachment_Load_Operation_DontCare = 0x0,
-	eRender_Target_Attachment_Load_Operation_Load = 0x1
+	eRender_Target_Attachment_Load_Operation_Load = 0x1,
+	eRender_Target_Attachment_Load_Operation_Clear = 0x2
 };
 
 enum RenderTargetAttachmentStoreOperation {
 	eRender_Target_Attachment_Store_Operation_DontCare = 0x0,
-	eRender_Target_Attachment_Store_Operation_Store = 0x1
+	eRender_Target_Attachment_Store_Operation_Store = 0x1,
 };
 
 struct RenderTargetAttachmentConfig {
+	uint32_t index = 0;
 	RenderTargetAttachmentType type = RenderTargetAttachmentType::eRender_Target_Attachment_Type_Color;
 	RenderTargetAttachmentSource source = RenderTargetAttachmentSource::eRender_Target_Attachment_Source_Default;
 	RenderTargetAttachmentLoadOperation loadOperation = RenderTargetAttachmentLoadOperation::eRender_Target_Attachment_Load_Operation_Load;
 	RenderTargetAttachmentStoreOperation storeOperation = RenderTargetAttachmentStoreOperation::eRender_Target_Attachment_Store_Operation_Store;
-
 	// 如果当前Attachment是需要渲染到屏幕的则为true
 	bool presentAfter = true;
 };
@@ -57,6 +58,7 @@ struct RenderTargetConfig {
 };
 
 struct RenderTargetAttachment {
+	uint32_t index = 0;	// 用于区分多个颜色附件的索引
 	RenderTargetAttachmentType type = RenderTargetAttachmentType::eRender_Target_Attachment_Type_Color;
 	RenderTargetAttachmentSource source = RenderTargetAttachmentSource::eRender_Target_Attachment_Source_Default;
 	RenderTargetAttachmentLoadOperation loadOperation = RenderTargetAttachmentLoadOperation::eRender_Target_Attachment_Load_Operation_Load;

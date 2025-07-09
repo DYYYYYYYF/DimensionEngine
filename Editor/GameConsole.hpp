@@ -1,13 +1,13 @@
 ﻿#include <Core/Event.hpp>
 #include <Resources/UIText.hpp>
 #include <Frameworks/Classes/Actor.h>
+#include <Core/DMutex.hpp>
 
 class IRenderer;
 
 class DebugConsoleActor : public Actor{
 public:
 	DebugConsoleActor();
-	DebugConsoleActor(IRenderer* renderer);
 	virtual ~DebugConsoleActor();
 
 public:
@@ -50,4 +50,6 @@ private:
 	UIText* EntryControl;	// Command text.
 
 	IRenderer* Renderer;
+
+	Mutex MsgMutex;
 };

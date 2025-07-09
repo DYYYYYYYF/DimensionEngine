@@ -15,6 +15,8 @@ bool MaterialSystem::Initilized = false;
 IRenderer* MaterialSystem::Renderer = nullptr;
 MaterialShaderUniformLocations MaterialSystem::MaterialLocations;
 uint32_t MaterialSystem::MaterialShaderID = INVALID_ID;
+DRShaderUniformLocations MaterialSystem::DeferredLightMaterialLocations;
+uint32_t MaterialSystem::DeferredLightMaterialShaderID = INVALID_ID;
 UIShaderUniformLocations MaterialSystem::UILocations;
 uint32_t MaterialSystem::UIShaderID = INVALID_ID;
 std::vector<Material*> MaterialSystem::RegisteredMaterials;
@@ -136,24 +138,35 @@ Material* MaterialSystem::AcquireFromConfig(SMaterialConfig config) {
 		// Get the uniform indices.
 		Shader* s = ShaderSystem::GetByID(m->ShaderID);
 		// Save off the locations for known types for quick lookups.
-		if (MaterialShaderID == INVALID_ID && config.shader_name.compare("Shader.Builtin.World") == 0) {
+		if (MaterialShaderID == INVALID_ID && config.shader_name.compare("Shader.Builtin.GBuffer") == 0) {
 			MaterialShaderID = s->ID;
 			MaterialLocations.projection = ShaderSystem::GetUniformIndex(s, "projection");
 			MaterialLocations.view = ShaderSystem::GetUniformIndex(s, "view");
 			MaterialLocations.ambient_color = ShaderSystem::GetUniformIndex(s, "ambient_color");
-			MaterialLocations.diffuse_color = ShaderSystem::GetUniformIndex(s, "diffuse_color");
-			MaterialLocations.diffuse_texture = ShaderSystem::GetUniformIndex(s, "diffuse_texture");
-			MaterialLocations.specular_texture = ShaderSystem::GetUniformIndex(s, "specular_texture");
-			MaterialLocations.normal_texture = ShaderSystem::GetUniformIndex(s, "normal_texture");
-			MaterialLocations.roughness_metallic_texture = ShaderSystem::GetUniformIndex(s, "roughness_metallic_texture");
 			MaterialLocations.view_position = ShaderSystem::GetUniformIndex(s, "view_position");
 			MaterialLocations.model = ShaderSystem::GetUniformIndex(s, "model");
 			MaterialLocations.time = ShaderSystem::GetUniformIndex(s, "time");
-			MaterialLocations.render_mode = ShaderSystem::GetUniformIndex(s, "mode");
+			MaterialLocations.diffuse_color = ShaderSystem::GetUniformIndex(s, "diffuse_color");
 			MaterialLocations.shininess = ShaderSystem::GetUniformIndex(s, "shininess");
 			MaterialLocations.metallic = ShaderSystem::GetUniformIndex(s, "metallic");
 			MaterialLocations.roughness = ShaderSystem::GetUniformIndex(s, "roughness");
 			MaterialLocations.ambient_occlusion = ShaderSystem::GetUniformIndex(s, "ambient_occlusion");
+			MaterialLocations.normal_intensity = ShaderSystem::GetUniformIndex(s, "normal_intensity");
+
+			MaterialLocations.diffuse_texture = ShaderSystem::GetUniformIndex(s, "diffuse_texture");
+			MaterialLocations.normal_texture = ShaderSystem::GetUniformIndex(s, "normal_texture");
+			MaterialLocations.roughness_metallic_texture = ShaderSystem::GetUniformIndex(s, "roughness_metallic_texture");
+
+			MaterialLocations.render_mode = ShaderSystem::GetUniformIndex(s, "mode");
+		}
+		else if (DeferredLightMaterialShaderID == INVALID_ID && config.shader_name.compare("Shader.Builtin.DeferredLighting") == 0) {
+			DeferredLightMaterialShaderID = s->ID;
+			DeferredLightMaterialLocations.time = ShaderSystem::GetUniformIndex(s, "time");
+			DeferredLightMaterialLocations.albedo_texture = ShaderSystem::GetUniformIndex(s, "albedo_texture");
+			DeferredLightMaterialLocations.normal_texture = ShaderSystem::GetUniformIndex(s, "normal_texture");
+			DeferredLightMaterialLocations.position_texture = ShaderSystem::GetUniformIndex(s, "position_texture");
+			DeferredLightMaterialLocations.light_intensity = ShaderSystem::GetUniformIndex(s, "light_intensity");
+			DeferredLightMaterialLocations.debug_mode = ShaderSystem::GetUniformIndex(s, "debug_mode");
 		}
 		else if (UIShaderID == INVALID_ID && config.shader_name.compare("Shader.Builtin.UI") == 0) {
 			UIShaderID = s->ID;
@@ -245,6 +258,7 @@ bool MaterialSystem::LoadMaterial(SMaterialConfig config, Material* mat) {
 	mat->Metallic = config.Metallic;
 	mat->Roughness = config.Roughness;
 	mat->AmbientOcclusion = config.AmbientOcclusion;
+	mat->NormalIntensity = config.NormalIntensity;
 
 	// Diffuse map
 	// TODO: Make configurable.
@@ -270,31 +284,6 @@ bool MaterialSystem::LoadMaterial(SMaterialConfig config, Material* mat) {
 		// NOTE: Only set for clarity, as call to Memory::Zero above does this already.
 		mat->DiffuseMap.usage = TextureUsage::eTexture_Usage_Map_Diffuse;
 		mat->DiffuseMap.texture = TextureSystem::GetDefaultDiffuseTexture();
-	}
-
-	// Specular map
-	mat->SpecularMap.filter_minify = TextureFilter::eTexture_Filter_Mode_Linear;
-	mat->SpecularMap.filter_magnify = TextureFilter::eTexture_Filter_Mode_Linear;
-	mat->SpecularMap.repeat_u = TextureRepeat::eTexture_Repeat_Repeat;
-	mat->SpecularMap.repeat_v = TextureRepeat::eTexture_Repeat_Repeat;
-	mat->SpecularMap.repeat_w = TextureRepeat::eTexture_Repeat_Repeat;
-	if (!Renderer->AcquireTextureMap(&mat->SpecularMap)) {
-		GLOG(Log::eError, "Unable to acquire resources for specular texture map.");
-		return false;
-	}
-
-	if (strlen(config.specular_map_name) > 0) {
-		mat->SpecularMap.usage = TextureUsage::eTexture_Usage_Map_Specular;
-		mat->SpecularMap.texture = TextureSystem::Acquire(config.specular_map_name, true);
-		if (mat->SpecularMap.texture == nullptr) {
-			GLOG(Log::eWarn, "Unable to load texture '%s' for material '%s', using default.", config.specular_map_name, mat->Name.c_str());
-			mat->SpecularMap.texture = TextureSystem::GetDefaultSpecularTexture();
-		}
-	}
-	else {
-		// NOTE: Only set for clarity, as call to Memory::Zero above does this already.
-		mat->SpecularMap.usage = TextureUsage::eTexture_Usage_Map_Specular;
-		mat->SpecularMap.texture = TextureSystem::GetDefaultSpecularTexture();
 	}
 
 	// Normal map
@@ -358,9 +347,9 @@ bool MaterialSystem::LoadMaterial(SMaterialConfig config, Material* mat) {
 	}
 
 	// Gather a list of pointers to texture maps.
-	std::vector<TextureMap*> Maps = { &mat->DiffuseMap, &mat->SpecularMap, &mat->NormalMap, &mat->RoughnessMetallicMap };
-	mat->InternalId = Renderer->AcquireInstanceResource(s, Maps);
-	if (mat->InternalId == INVALID_ID) {
+	std::vector<TextureMap*> Maps = { &mat->DiffuseMap, &mat->NormalMap, &mat->RoughnessMetallicMap };
+	mat->InternalID = Renderer->AcquireInstanceResource(s, Maps);
+	if (mat->InternalID == INVALID_ID) {
 		GLOG(Log::eError, "Failed to acquire renderer resources for material '%s'.", mat->Name.c_str());
 		return false;
 	}
@@ -375,9 +364,6 @@ void MaterialSystem::DestroyMaterial(Material* mat) {
 	if (mat->DiffuseMap.texture != nullptr) {
 		TextureSystem::Release(mat->DiffuseMap.texture->GetName());
 	}
-	if (mat->SpecularMap.texture != nullptr) {
-		TextureSystem::Release(mat->SpecularMap.texture->GetName());
-	}
 	if (mat->NormalMap.texture != nullptr) {
 		TextureSystem::Release(mat->NormalMap.texture->GetName());
 	}
@@ -387,21 +373,20 @@ void MaterialSystem::DestroyMaterial(Material* mat) {
 
 	// Release texture map resources.
 	Renderer->ReleaseTextureMap(&mat->DiffuseMap);
-	Renderer->ReleaseTextureMap(&mat->SpecularMap);
 	Renderer->ReleaseTextureMap(&mat->NormalMap);
 	Renderer->ReleaseTextureMap(&mat->RoughnessMetallicMap);
 
 	//Release renderer resources.
-	if (mat->ShaderID != INVALID_ID && mat->InternalId != INVALID_ID) {
+	if (mat->ShaderID != INVALID_ID && mat->InternalID != INVALID_ID) {
 		Shader* s = ShaderSystem::GetByID(mat->ShaderID);
-		Renderer->ReleaseInstanceResource(s, mat->InternalId);
+		Renderer->ReleaseInstanceResource(s, mat->InternalID);
 		mat->ShaderID = INVALID_ID;
 	}
 
 	// Zero it out, invalidate Ids.
 	mat->SetID(INVALID_ID);
 	mat->Generation = INVALID_ID;
-	mat->InternalId = INVALID_ID;
+	mat->InternalID = INVALID_ID;
 	mat->RenderFrameNumer = INVALID_ID;
 }
 
@@ -424,18 +409,6 @@ bool MaterialSystem::CreateDefaultMaterial() {
 	DefaultMaterial->DiffuseMap.repeat_w = eTexture_Repeat_Repeat;
 	DefaultMaterial->DiffuseMap.texture = TextureSystem::GetDefaultDiffuseTexture();
 	if (!Renderer->AcquireTextureMap(&DefaultMaterial->DiffuseMap)) {
-		GLOG(Log::eError, "Unable to acquire resources for diffuse texture map.");
-		return false;
-	}
-
-	DefaultMaterial->SpecularMap.usage = TextureUsage::eTexture_Usage_Map_Specular;
-	DefaultMaterial->SpecularMap.filter_magnify = TextureFilter::eTexture_Filter_Mode_Linear;
-	DefaultMaterial->SpecularMap.filter_minify = TextureFilter::eTexture_Filter_Mode_Linear;
-	DefaultMaterial->SpecularMap.repeat_u = eTexture_Repeat_Repeat;
-	DefaultMaterial->SpecularMap.repeat_v = eTexture_Repeat_Repeat;
-	DefaultMaterial->SpecularMap.repeat_w = eTexture_Repeat_Repeat;
-	DefaultMaterial->SpecularMap.texture = TextureSystem::GetDefaultSpecularTexture();
-	if (!Renderer->AcquireTextureMap(&DefaultMaterial->SpecularMap)) {
 		GLOG(Log::eError, "Unable to acquire resources for diffuse texture map.");
 		return false;
 	}
@@ -464,17 +437,17 @@ bool MaterialSystem::CreateDefaultMaterial() {
 		return false;
 	}
 
-	std::vector<TextureMap*> Maps = { &DefaultMaterial->DiffuseMap, &DefaultMaterial->SpecularMap, &DefaultMaterial->NormalMap, &DefaultMaterial->RoughnessMetallicMap };
+	std::vector<TextureMap*> Maps = { &DefaultMaterial->DiffuseMap, &DefaultMaterial->NormalMap, &DefaultMaterial->RoughnessMetallicMap };
 
-	Shader* s = ShaderSystem::Get("Shader.Builtin.World");
+	Shader* s = ShaderSystem::Get("Shader.Builtin.GBuffer");
 	if (s == nullptr) {
-		GLOG(Log::eFatal, "Shader.Builtin.World shader is nullptr.");
+		GLOG(Log::eFatal, "Shader.Builtin.GBuffer shader is nullptr.");
 		ASSERT(s);
 		return false;
 	}
 
-	DefaultMaterial->InternalId = Renderer->AcquireInstanceResource(s, Maps);
-	if (DefaultMaterial->InternalId == INVALID_ID) {
+	DefaultMaterial->InternalID = Renderer->AcquireInstanceResource(s, Maps);
+	if (DefaultMaterial->InternalID == INVALID_ID) {
 		GLOG(Log::eError, "Create default material failed. Application quit now!");
 		return false;
 	}
@@ -533,23 +506,24 @@ bool MaterialSystem::ApplyGlobal(uint32_t shader_id, size_t renderer_frame_numbe
 }
 
 bool MaterialSystem::ApplyInstance(Material* mat, bool need_update) {
-	if (mat->InternalId == INVALID_ID) {
+	if (mat->InternalID == INVALID_ID) {
 		return false;
 	}
 
 	// Apply instance-level uniforms.
-	MATERIAL_APPLY_OR_FAIL(ShaderSystem::BindInstance(mat->InternalId));
+	MATERIAL_APPLY_OR_FAIL(ShaderSystem::BindInstance(mat->InternalID));
 	if (need_update) {
 		if (mat->ShaderID == MaterialShaderID) {
 			MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(MaterialLocations.diffuse_color, &mat->DiffuseColor));
-			MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(MaterialLocations.diffuse_texture, &mat->DiffuseMap));
-			MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(MaterialLocations.specular_texture, &mat->SpecularMap));
-			MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(MaterialLocations.normal_texture, &mat->NormalMap));
-			MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(MaterialLocations.roughness_metallic_texture, &mat->RoughnessMetallicMap));
 			MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(MaterialLocations.shininess, &mat->Shininess));
 			MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(MaterialLocations.metallic, &mat->Metallic));
 			MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(MaterialLocations.roughness, &mat->Roughness));
 			MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(MaterialLocations.ambient_occlusion, &mat->AmbientOcclusion));
+			MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(MaterialLocations.normal_intensity, &mat->NormalIntensity));
+
+			MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(MaterialLocations.diffuse_texture, &mat->DiffuseMap));
+			MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(MaterialLocations.normal_texture, &mat->NormalMap));
+			MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(MaterialLocations.roughness_metallic_texture, &mat->RoughnessMetallicMap));
 		}
 		else if (mat->ShaderID == UIShaderID) {
 			MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(UILocations.diffuse_color, &mat->DiffuseColor));

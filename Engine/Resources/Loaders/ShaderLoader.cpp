@@ -136,6 +136,14 @@ bool ShaderLoader::Load(const std::string& name, void* params, Resource* resourc
 				ResourceData->polygon_mode = PolygonMode::ePology_Mode_Fill;
 			}
 		}
+		else if (strcmp(TrimmedVarName, "primitive_topology") == 0) {
+			if (strcmp(TrimmedValue, "triangle_list") == 0) {
+				ResourceData->PrimTopo = PrimitiveTopology::eTriangleList;
+			}
+			else if (strcmp(TrimmedValue, "triangle_strip") == 0) {
+				ResourceData->PrimTopo = PrimitiveTopology::eTriangleStrip;
+			}
+		}
 		else if (strcmp(TrimmedVarName, "depth_test") == 0) {
 			ResourceData->depthTest = StringToBool(TrimmedValue);
 		}

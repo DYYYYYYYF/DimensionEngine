@@ -327,6 +327,7 @@ bool VulkanShader::CreatePipeline() {
 	PipelineConfig.viewport = Viewport;
 	PipelineConfig.scissor = Scissor;
 	PipelineConfig.cull_mode = Config.cull_mode;
+	PipelineConfig.PrimTopo = Config.PrimTopo;
 	PipelineConfig.is_wireframe = Config.pology_mode == ePology_Mode_Fill ? ePology_Mode_Fill : ePology_Mode_Line;
 	PipelineConfig.shaderFlags = Flags;
 	PipelineConfig.push_constant_range_count = PushConstantsRangeCount;

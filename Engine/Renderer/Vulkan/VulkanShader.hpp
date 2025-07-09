@@ -39,6 +39,7 @@ struct VulkanShaderConfig {
 
 	FaceCullMode cull_mode = FaceCullMode::eFace_Cull_Mode_Back;
 	PolygonMode pology_mode = PolygonMode::ePology_Mode_Fill;
+	PrimitiveTopology PrimTopo = PrimitiveTopology::eTriangleList;
 };
 
 struct VulkanDescriptorState {

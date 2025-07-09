@@ -107,7 +107,8 @@ Texture* TextureSystem::AcquireCube(const char* name, bool auto_release) {
 	return OutTexture;
 }
 
-Texture* TextureSystem::AcquireWriteable(const char* name, uint32_t width, uint32_t height, unsigned char channel_count, bool has_transparency){
+Texture* TextureSystem::AcquireWriteable(const char* name, uint32_t width, uint32_t height, 
+	unsigned char channel_count, bool has_transparency, bool has_depth){
 	uint32_t ID = INVALID_ID;
 	// NOTE: Wrapped textures are never auto-release because it means that their
 	// resources are created and managed somewhere within the renderer internals.
@@ -125,6 +126,7 @@ Texture* TextureSystem::AcquireWriteable(const char* name, uint32_t width, uint3
 	t->ChannelCount = channel_count;
 	t->Generation = INVALID_ID;
 	t->Flags |= has_transparency ? TextureFlagBits::eTexture_Flag_Has_Transparency : 0;
+	t->Flags |= has_depth ? TextureFlagBits::eTexture_Flag_Depth : 0;
 	t->Flags |= TextureFlagBits::eTexture_Flag_Is_Writeable;
 	t->InternalData = nullptr;
 

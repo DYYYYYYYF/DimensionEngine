@@ -1164,6 +1164,7 @@ bool VulkanBackend::CreateShader(Shader* shader, const ShaderConfig* config, IRe
 	// Keep a copy of the cull mode.
 	OutShader->Config.cull_mode = config->cull_mode;
 	OutShader->Config.pology_mode = config->polygon_mode;
+	OutShader->Config.PrimTopo = config->PrimTopo;
 
 	return true;
 }
@@ -1674,6 +1675,7 @@ bool VulkanBackend::CreateRenderpass(IRenderpass* out_renderpass, const Renderpa
 			RenderTargetAttachment* Attachment = &Target->attachments[a];
 			const RenderTargetAttachmentConfig* AttachmentConfig = &config.target.attachments[a];
 
+			Attachment->index = AttachmentConfig->index;
 			Attachment->source = AttachmentConfig->source;
 			Attachment->type = AttachmentConfig->type;
 			Attachment->loadOperation = AttachmentConfig->loadOperation;

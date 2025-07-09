@@ -31,7 +31,8 @@ public:
 
 	static Texture* Acquire(const char* name, bool auto_release);
 	static Texture* AcquireCube(const char* name, bool auto_release);
-	static Texture* AcquireWriteable(const char* name, uint32_t width, uint32_t height, unsigned char channel_count, bool has_transparency);
+	static Texture* AcquireWriteable(const char* name, uint32_t width, uint32_t height, 
+		unsigned char channel_count, bool has_transparency, bool has_depth = false);
 	static void Release(const std::string& name);
 
 	static void WrapInternal(const char* name, uint32_t width, uint32_t height, unsigned char channel_count,
