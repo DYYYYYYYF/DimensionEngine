@@ -421,10 +421,10 @@ bool RenderViewWorldDeferred::CreateGBufferTextures(uint32_t width, uint32_t hei
 void RenderViewWorldDeferred::DestroyGBufferTextures() {
 	// 销毁G-Buffer纹理
 	for (uint32_t bufferIndex = 0; bufferIndex < MAX_RENDER_TARGETS; ++bufferIndex) {
-		TextureSystem::Release(GBuffers[bufferIndex].AlbedoTexture->GetName());
-		TextureSystem::Release(GBuffers[bufferIndex].NormalTexture->GetName());
-		TextureSystem::Release(GBuffers[bufferIndex].PositionTexture->GetName());
-		TextureSystem::Release(GBuffers[bufferIndex].DepthTexture->GetName());
+		Renderer->DestroyTexture(GBuffers[bufferIndex].AlbedoTexture);
+		Renderer->DestroyTexture(GBuffers[bufferIndex].NormalTexture);
+		Renderer->DestroyTexture(GBuffers[bufferIndex].PositionTexture);
+		Renderer->DestroyTexture(GBuffers[bufferIndex].DepthTexture);
 
 		Renderer->ReleaseTextureMap(&GBuffers[bufferIndex].AlbedoTextureMap);
 		Renderer->ReleaseTextureMap(&GBuffers[bufferIndex].NormalTextureMap);
