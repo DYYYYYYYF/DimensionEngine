@@ -21,7 +21,11 @@ float4 main(PSInput pin) : SV_TARGET
     if (FontColor.a > 0.35f)
     {
         FontColor *= localuniform.DiffusrColor;
-    } 
+    }
+    else
+    {
+        discard;
+    }
     
     return FontColor;
 }
