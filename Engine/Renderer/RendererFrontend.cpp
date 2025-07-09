@@ -180,16 +180,29 @@ void IRenderer::ResetScissor() {
 	Backend->ResetScissor();
 }
 
+static std::vector<std::string> ImageNames;
 void IRenderer::CreateTexture(const unsigned char* pixels, Texture* texture) {
 	Backend->CreateTexture(pixels, texture);
+	ImageNames.push_back(texture->GetName());
 }
 
 void IRenderer::DestroyTexture(Texture* texture) {
 	Backend->DestroyTexture(texture);
+
+	auto it = std::find(ImageNames.begin(), ImageNames.end(), texture->GetName());
+	if (it != ImageNames.end()) {
+		ImageNames.erase(it);
+	}
+
+	GLOG(Log::Level::eDebug, "Image contains: %d", ImageNames.size());
+	for (auto ImageName : ImageNames) {
+		GLOG(Log::Level::eDebug, ImageName.c_str());
+	}
 }
 
 void IRenderer::CreateWriteableTexture(Texture* tex) {
 	Backend->CreateWriteableTexture(tex);
+	ImageNames.push_back(tex->GetName());
 }
 
 void IRenderer::ResizeTexture(Texture* tex, uint32_t new_width, uint32_t new_height) {

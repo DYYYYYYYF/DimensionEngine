@@ -144,6 +144,7 @@ bool VulkanBackend::Initialize(const RenderBackendConfig* config, unsigned char*
 	GLOG(Log::eInfo, "Validation layers enabled. Enumerating ...");
 	// List of validation layers required
 	RequiredValidationLayerName.push_back("VK_LAYER_KHRONOS_validation");
+	RequiredValidationLayerName.push_back("VK_LAYER_LUNARG_object_tracker");
 
 	// Obtain a list of available validation layers
 	uint32_t AvailableLayersCount = 0;
