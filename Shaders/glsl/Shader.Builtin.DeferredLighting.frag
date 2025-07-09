@@ -12,7 +12,7 @@ const int SAMP_NORMAL = 1;
 const int SAMP_POSITION = 2;
 layout (set = 1, binding = 1) uniform sampler2D Samplers[3];
 
-layout (location = 0) flat in int in_mode;
+layout (location = 0) flat in float global_time;
 layout (location = 1) in struct dto{
     vec2 vTexcoord;
     vec4 ambient_color;
@@ -77,20 +77,19 @@ void main(){
     
     // 早期深度测试 - 如果深度为0说明没有几何体
     if (depth == 0.0) {
-        FragColor = vec4(in_dto.ambient_color.rgb, 1.0);
-        return;
+        discard;
     }
     
     // 根据模式渲染不同内容
-    if (in_mode == 1 || InstanceUBO.debug_mode == 1) {
+    if (InstanceUBO.debug_mode == 1) {
         // 法线可视化
         FragColor = vec4(worldNormal * 0.5 + 0.5, 1.0);
     }
-    else if (in_mode == 2 || InstanceUBO.debug_mode == 2) {
+    else if (InstanceUBO.debug_mode == 2) {
         // 材质属性可视化
         FragColor = vec4(metallic, roughness, 0.0, 1.0);
     }
-    else if (in_mode == 3 || InstanceUBO.debug_mode == 3) {
+    else if (InstanceUBO.debug_mode == 3) {
         // 深度可视化
         FragColor = vec4(depth, depth, depth, 1.0);
     }

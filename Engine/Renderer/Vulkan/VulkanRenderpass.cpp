@@ -83,8 +83,22 @@ bool VulkanRenderPass::Create(VulkanContext* context, const RenderpassConfig& co
 			AttachmentDesc.setStencilStoreOp(vk::AttachmentStoreOp::eDontCare);
 			
 			// If loading, that means coming from another pass, meaning the format should be  vk::ImageLayout::eColorAttachmentOptimal.
-			AttachmentDesc.setInitialLayout(AttachmentConfig->loadOperation ==
-				RenderTargetAttachmentLoadOperation::eRender_Target_Attachment_Load_Operation_Load ? vk::ImageLayout::eColorAttachmentOptimal : vk::ImageLayout::eUndefined);
+			if (AttachmentConfig->loadOperation == RenderTargetAttachmentLoadOperation::eRender_Target_Attachment_Load_Operation_Load) {
+				// 如果是Load操作，检查是否来自前一个pass
+				if (AttachmentConfig->source == RenderTargetAttachmentSource::eRender_Target_Attachment_Source_View) {
+					// G-Buffer attachment在后续pass中被load，应该来自shader-read布局
+					AttachmentDesc.setInitialLayout(vk::ImageLayout::eShaderReadOnlyOptimal);
+				}
+				else {
+					// 其他情况使用color attachment布局
+					AttachmentDesc.setInitialLayout(vk::ImageLayout::eColorAttachmentOptimal);
+				}
+			}
+			else {
+				// Clear或DontCare操作，从UNDEFINED开始
+				AttachmentDesc.setInitialLayout(vk::ImageLayout::eUndefined);
+			}
+
 			// If this is the last pass writing to this attachment, present after should be set to true.
 			if (AttachmentConfig->presentAfter) {
 				// 如果需要呈现到屏幕，使用present layout

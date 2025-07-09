@@ -5,6 +5,8 @@
 #include <vector>
 #include <unordered_map>
 
+#define DEFAULT_SHADER "Shader.Builtin.GBuffer"
+
 struct FileHandle;
 struct SGeometryConfig;
 struct SMaterialConfig;

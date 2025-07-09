@@ -254,31 +254,25 @@ bool RenderViewWorldDeferred::RegenerateAttachmentTarget(uint32_t passIndex, Ren
 		// G-Buffer通道 - 多个渲染目标
 		if (attachment->type & eRender_Target_Attachment_Type_Color) {
 			// 根据attachment的索引来决定使用哪个G-Buffer纹理
-			// 注意：这里需要为每个render_target_index创建对应的attachment
 			uint32_t bufferIndex = 0; // 默认使用第一个缓冲，实际应该根据当前渲染目标索引确定
 
 			switch (attachment->index) {
 			case 0:
 				attachment->texture = GBuffers[bufferIndex].AlbedoTexture;
-				GLOG(Log::eDebug, "G-Buffer: Binding Albedo texture to color attachment %d", attachment->index);
 				break;
 			case 1:
 				attachment->texture = GBuffers[bufferIndex].NormalTexture;
-				GLOG(Log::eDebug, "G-Buffer: Binding Normal texture to color attachment %d", attachment->index);
 				break;
 			case 2:
 				attachment->texture = GBuffers[bufferIndex].PositionTexture;
-				GLOG(Log::eDebug, "G-Buffer: Binding Position texture to color attachment %d", attachment->index);
 				break;
 			default:
-				GLOG(Log::eError, "G-Buffer: Unsupported color attachment index %d", attachment->index);
 				return false;
 			}
 		}
 		else if (attachment->type & eRender_Target_Attachment_Type_Depth) {
 			uint32_t bufferIndex = 0; // 默认使用第一个缓冲
 			attachment->texture = GBuffers[bufferIndex].DepthTexture;
-			GLOG(Log::eDebug, "G-Buffer: Binding Depth texture");
 		}
 		else {
 			GLOG(Log::eError, "G-Buffer: Unsupported attachment type %d", attachment->type);
@@ -290,7 +284,6 @@ bool RenderViewWorldDeferred::RegenerateAttachmentTarget(uint32_t passIndex, Ren
 		// 这里通常不需要重新生成attachment，直接使用默认的
 		if ((attachment->type & eRender_Target_Attachment_Type_Color) && attachment->index == 0) {
 			// 主颜色输出，通常是swapchain图像
-			GLOG(Log::eDebug, "Lighting Pass: Using default color attachment");
 			return true;
 		}
 	}
@@ -312,7 +305,8 @@ bool RenderViewWorldDeferred::OnRender(struct RenderViewPacket* packet, IRendere
 	}
 
 	// 获取当前GBuffer纹理组
-	GBufferSet* CurrentGBuffer = GetCurrentGBufferSet(render_target_index);
+	// TODO: 这里应该使用 render_target_index 获取当前GBuffer
+	GBufferSet* CurrentGBuffer = GetCurrentGBufferSet(0);
 
 	// 第一通道：G-Buffer渲染
 	IRenderpass* GBufferPass = (IRenderpass*)&Passes[0];
@@ -366,24 +360,20 @@ bool RenderViewWorldDeferred::OnRender(struct RenderViewPacket* packet, IRendere
 	}
 
 	// 应用全局uniform (环境光、视角位置等) - 延迟光照专用接口
-	ShaderSystem::SetUniform("projection", &packet->projection_matrix);
-	ShaderSystem::SetUniform("view", &packet->view_matrix);
-	ShaderSystem::SetUniform("view_position", &packet->view_position);
-	ShaderSystem::SetUniform("mode", &render_mode);
 	ShaderSystem::SetUniform("time", &packet->global_time);
 	ShaderSystem::ApplyGlobal();
 
 	// 创建延迟光照材质并应用
 	Material* DeferredLightingMat = FullscreenQuad->Material;
-	// 绑定G-Buffer纹理作为材质纹理
-	DeferredLightingMat->DiffuseMap.texture = CurrentGBuffer->AlbedoTexture;
-	DeferredLightingMat->NormalMap.texture = CurrentGBuffer->NormalTexture;
-	DeferredLightingMat->SpecularMap.texture = CurrentGBuffer->PositionTexture;
 
 	// 应用延迟光照材质
 	bool LightingNeedsUpdate = DeferredLightingMat->RenderFrameNumer != frame_number;
 	if (LightingNeedsUpdate) {
 		ShaderSystem::BindInstance(DeferredLightingMat->InternalID);
+		Vector4 LightIntensity = { 1.0f };
+		ShaderSystem::SetUniform("light_intensity", &LightIntensity);
+		ShaderSystem::SetUniform("debug_mode", &render_mode);
+
 		ShaderSystem::SetUniform("albedo_texture", &CurrentGBuffer->AlbedoTextureMap);		 // 复用DiffuseMap绑定点
 		ShaderSystem::SetUniform("normal_texture", &CurrentGBuffer->NormalTextureMap);		 // 复用NormalMap绑定点  
 		ShaderSystem::SetUniform("position_texture", &CurrentGBuffer->PositionTextureMap);	 // 复用SpecularMap绑定点
@@ -412,13 +402,13 @@ bool RenderViewWorldDeferred::CreateGBufferTextures(uint32_t width, uint32_t hei
 		GBuffers[bufferIndex].AlbedoTextureMap.texture = GBuffers[bufferIndex].AlbedoTexture;
 		Renderer->AcquireTextureMap(&GBuffers[bufferIndex].AlbedoTextureMap);
 
-		// 创建法线+粗糙度纹理 (RGBA16F)
+		// 创建法线+粗糙度纹理 (RGBA8)
 		FString NormalTextureName("GBuffer_Normal_%d", bufferIndex);
 		GBuffers[bufferIndex].NormalTexture = TextureSystem::AcquireWriteable(NormalTextureName.CStr(), width, height, 4, false);
 		GBuffers[bufferIndex].NormalTextureMap.texture = GBuffers[bufferIndex].NormalTexture;
 		Renderer->AcquireTextureMap(&GBuffers[bufferIndex].NormalTextureMap);
 
-		// 创建位置纹理 (RGBA32F)
+		// 创建位置纹理 (RGBA8)
 		FString PositionTextureName("GBuffer_Position_%d", bufferIndex);
 		GBuffers[bufferIndex].PositionTexture = TextureSystem::AcquireWriteable(PositionTextureName.CStr(), width, height, 4, false);
 		GBuffers[bufferIndex].PositionTextureMap.texture = GBuffers[bufferIndex].PositionTexture;
@@ -441,6 +431,11 @@ void RenderViewWorldDeferred::DestroyGBufferTextures() {
 		TextureSystem::Release(GBuffers[bufferIndex].NormalTexture->GetName());
 		TextureSystem::Release(GBuffers[bufferIndex].PositionTexture->GetName());
 		TextureSystem::Release(GBuffers[bufferIndex].DepthTexture->GetName());
+
+		Renderer->ReleaseTextureMap(&GBuffers[bufferIndex].AlbedoTextureMap);
+		Renderer->ReleaseTextureMap(&GBuffers[bufferIndex].NormalTextureMap);
+		Renderer->ReleaseTextureMap(&GBuffers[bufferIndex].PositionTextureMap);
+		Renderer->ReleaseTextureMap(&GBuffers[bufferIndex].DepthTextureMap);
 	}
 }
 

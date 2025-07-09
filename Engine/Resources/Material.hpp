@@ -25,6 +25,8 @@ struct SMaterialConfig {
 	Vector4 EmissiveColor;						// 自发光
 	std::string MetallicRoughnessTexName;	// 金属度/粗糙度Texture
 	std::string EmissiveFactorTexName;		// 自发光Texture
+
+	float NormalIntensity = 1.0f;
 };
 
 class Material {
@@ -82,7 +84,6 @@ public:
 	std::string Name;
 	Vector4 DiffuseColor;
 	TextureMap DiffuseMap;
-	TextureMap SpecularMap;
 	TextureMap NormalMap;
 	TextureMap RoughnessMetallicMap;
 	float Shininess;
@@ -94,4 +95,5 @@ public:
 	float Metallic;
 	float Roughness;
 	float AmbientOcclusion;
+	float NormalIntensity;
 };

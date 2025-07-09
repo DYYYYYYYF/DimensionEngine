@@ -74,6 +74,11 @@ enum FaceCullMode {
 	eFace_Cull_Mode_Front_And_Back = 0x3,
 };
 
+enum class PrimitiveTopology {
+	eTriangleList = 0x00,
+	eTriangleStrip = 0x01,
+};
+
 enum PolygonMode {
 	ePology_Mode_Fill = 0x0,
 	ePology_Mode_Line = 0x1,
@@ -197,6 +202,7 @@ public:
 		name = nullptr;
 		cull_mode = FaceCullMode::eFace_Cull_Mode_Back;
 		polygon_mode = PolygonMode::ePology_Mode_Fill;
+		PrimTopo = PrimitiveTopology::eTriangleList;
 		depthTest = true;
 		depthWrite = true;
 	}
@@ -205,6 +211,7 @@ public:
 	float time = 0.0f;
 	FaceCullMode cull_mode;
 	PolygonMode polygon_mode;
+	PrimitiveTopology PrimTopo;
 
 	std::vector<ShaderAttributeConfig> attributes;
 	std::vector<ShaderUniformConfig> uniforms;

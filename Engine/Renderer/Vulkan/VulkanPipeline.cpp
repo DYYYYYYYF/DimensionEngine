@@ -72,7 +72,7 @@ bool VulkanPipeline::Create(VulkanContext* context, const VulkanPipelineConfig& 
 
 	std::vector<vk::PipelineColorBlendAttachmentState> ColorBlendAttachmentStates(ColorAttachmentCount);
 	for (uint32_t i = 0; i < ColorAttachmentCount; ++i) {
-		ColorBlendAttachmentStates[i].setBlendEnable(VK_TRUE)
+		ColorBlendAttachmentStates[i].setBlendEnable(VK_FALSE)		// 开启VK_TRUE时可能会导致透明
 			.setSrcColorBlendFactor(vk::BlendFactor::eSrcAlpha)
 			.setDstColorBlendFactor(vk::BlendFactor::eOneMinusSrcAlpha)
 			.setColorBlendOp(vk::BlendOp::eAdd)
@@ -120,8 +120,19 @@ bool VulkanPipeline::Create(VulkanContext* context, const VulkanPipelineConfig& 
 
 	// Input assembly
 	vk::PipelineInputAssemblyStateCreateInfo InputAssembly;
-	InputAssembly.setPrimitiveRestartEnable(VK_FALSE)
-		.setTopology(vk::PrimitiveTopology::eTriangleList);
+	InputAssembly.setPrimitiveRestartEnable(VK_FALSE);
+	switch (config.PrimTopo)
+	{
+	case PrimitiveTopology::eTriangleList: {
+		InputAssembly.setTopology(vk::PrimitiveTopology::eTriangleList);
+	} break;
+	case PrimitiveTopology::eTriangleStrip: {
+		InputAssembly.setTopology(vk::PrimitiveTopology::eTriangleStrip);
+	}break;
+	default: {
+		InputAssembly.setTopology(vk::PrimitiveTopology::eTriangleList);
+	}break;
+	}
 
 	//Push constants
 	vk::PipelineLayoutCreateInfo LayoutCreateInfo;

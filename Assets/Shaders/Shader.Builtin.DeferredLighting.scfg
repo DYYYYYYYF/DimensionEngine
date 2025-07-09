@@ -1,7 +1,7 @@
 # Deferred Lighting shader config file
 version=1.0
 name=Shader.Builtin.DeferredLighting
-language=hlsl
+language=glsl
 renderpass=Renderpass.Builtin.DeferredLighting
 stages=vertex,fragment
 stagefiles=Shaders/Shader.Builtin.DeferredLighting.vert.spv,Shaders/Shader.Builtin.DeferredLighting.frag.spv
@@ -13,17 +13,17 @@ depth_write=0
 # line / fill
 polygon_mode=fill
 
+cull_mode=none
+
+#triangle_list / triangle_strip
+#primitive_topology=triangle_strip
+
 # Attributes: type,name (minimal for fullscreen quad)
 attribute=vec3,in_position
 attribute=vec2,in_texcoord
 
 # Uniforms: type,scope,name
 # NOTE: For scope: 0=global, 1=instance, 2=local
-uniform=mat4,0,projection
-uniform=mat4,0,view
-uniform=vec4,0,ambient_color
-uniform=vec3,0,view_position
-uniform=u32,0,mode
 uniform=float,0,time
 uniform=vec4,1,light_intensity
 uniform=u32,1,debug_mode

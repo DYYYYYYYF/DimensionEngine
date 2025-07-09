@@ -162,11 +162,6 @@ Material* MaterialSystem::AcquireFromConfig(SMaterialConfig config) {
 		}
 		else if (DeferredLightMaterialShaderID == INVALID_ID && config.shader_name.compare("Shader.Builtin.DeferredLighting") == 0) {
 			DeferredLightMaterialShaderID = s->ID;
-			DeferredLightMaterialLocations.projection = ShaderSystem::GetUniformIndex(s, "projection");
-			DeferredLightMaterialLocations.view = ShaderSystem::GetUniformIndex(s, "view");
-			DeferredLightMaterialLocations.ambient_color = ShaderSystem::GetUniformIndex(s, "ambient_color");
-			DeferredLightMaterialLocations.view_position = ShaderSystem::GetUniformIndex(s, "view_position");
-			DeferredLightMaterialLocations.mode = ShaderSystem::GetUniformIndex(s, "mode");
 			DeferredLightMaterialLocations.time = ShaderSystem::GetUniformIndex(s, "time");
 			DeferredLightMaterialLocations.albedo_texture = ShaderSystem::GetUniformIndex(s, "albedo_texture");
 			DeferredLightMaterialLocations.normal_texture = ShaderSystem::GetUniformIndex(s, "normal_texture");
@@ -264,6 +259,7 @@ bool MaterialSystem::LoadMaterial(SMaterialConfig config, Material* mat) {
 	mat->Metallic = config.Metallic;
 	mat->Roughness = config.Roughness;
 	mat->AmbientOcclusion = config.AmbientOcclusion;
+	mat->NormalIntensity = config.NormalIntensity;
 
 	// Diffuse map
 	// TODO: Make configurable.
@@ -289,31 +285,6 @@ bool MaterialSystem::LoadMaterial(SMaterialConfig config, Material* mat) {
 		// NOTE: Only set for clarity, as call to Memory::Zero above does this already.
 		mat->DiffuseMap.usage = TextureUsage::eTexture_Usage_Map_Diffuse;
 		mat->DiffuseMap.texture = TextureSystem::GetDefaultDiffuseTexture();
-	}
-
-	// Specular map
-	mat->SpecularMap.filter_minify = TextureFilter::eTexture_Filter_Mode_Linear;
-	mat->SpecularMap.filter_magnify = TextureFilter::eTexture_Filter_Mode_Linear;
-	mat->SpecularMap.repeat_u = TextureRepeat::eTexture_Repeat_Repeat;
-	mat->SpecularMap.repeat_v = TextureRepeat::eTexture_Repeat_Repeat;
-	mat->SpecularMap.repeat_w = TextureRepeat::eTexture_Repeat_Repeat;
-	if (!Renderer->AcquireTextureMap(&mat->SpecularMap)) {
-		GLOG(Log::eError, "Unable to acquire resources for specular texture map.");
-		return false;
-	}
-
-	if (strlen(config.specular_map_name) > 0) {
-		mat->SpecularMap.usage = TextureUsage::eTexture_Usage_Map_Specular;
-		mat->SpecularMap.texture = TextureSystem::Acquire(config.specular_map_name, true);
-		if (mat->SpecularMap.texture == nullptr) {
-			GLOG(Log::eWarn, "Unable to load texture '%s' for material '%s', using default.", config.specular_map_name, mat->Name.c_str());
-			mat->SpecularMap.texture = TextureSystem::GetDefaultSpecularTexture();
-		}
-	}
-	else {
-		// NOTE: Only set for clarity, as call to Memory::Zero above does this already.
-		mat->SpecularMap.usage = TextureUsage::eTexture_Usage_Map_Specular;
-		mat->SpecularMap.texture = TextureSystem::GetDefaultSpecularTexture();
 	}
 
 	// Normal map
@@ -377,7 +348,7 @@ bool MaterialSystem::LoadMaterial(SMaterialConfig config, Material* mat) {
 	}
 
 	// Gather a list of pointers to texture maps.
-	std::vector<TextureMap*> Maps = { &mat->DiffuseMap, &mat->SpecularMap, &mat->NormalMap, &mat->RoughnessMetallicMap };
+	std::vector<TextureMap*> Maps = { &mat->DiffuseMap, &mat->NormalMap, &mat->RoughnessMetallicMap };
 	mat->InternalID = Renderer->AcquireInstanceResource(s, Maps);
 	if (mat->InternalID == INVALID_ID) {
 		GLOG(Log::eError, "Failed to acquire renderer resources for material '%s'.", mat->Name.c_str());
@@ -394,9 +365,6 @@ void MaterialSystem::DestroyMaterial(Material* mat) {
 	if (mat->DiffuseMap.texture != nullptr) {
 		TextureSystem::Release(mat->DiffuseMap.texture->GetName());
 	}
-	if (mat->SpecularMap.texture != nullptr) {
-		TextureSystem::Release(mat->SpecularMap.texture->GetName());
-	}
 	if (mat->NormalMap.texture != nullptr) {
 		TextureSystem::Release(mat->NormalMap.texture->GetName());
 	}
@@ -406,7 +374,6 @@ void MaterialSystem::DestroyMaterial(Material* mat) {
 
 	// Release texture map resources.
 	Renderer->ReleaseTextureMap(&mat->DiffuseMap);
-	Renderer->ReleaseTextureMap(&mat->SpecularMap);
 	Renderer->ReleaseTextureMap(&mat->NormalMap);
 	Renderer->ReleaseTextureMap(&mat->RoughnessMetallicMap);
 
@@ -447,18 +414,6 @@ bool MaterialSystem::CreateDefaultMaterial() {
 		return false;
 	}
 
-	DefaultMaterial->SpecularMap.usage = TextureUsage::eTexture_Usage_Map_Specular;
-	DefaultMaterial->SpecularMap.filter_magnify = TextureFilter::eTexture_Filter_Mode_Linear;
-	DefaultMaterial->SpecularMap.filter_minify = TextureFilter::eTexture_Filter_Mode_Linear;
-	DefaultMaterial->SpecularMap.repeat_u = eTexture_Repeat_Repeat;
-	DefaultMaterial->SpecularMap.repeat_v = eTexture_Repeat_Repeat;
-	DefaultMaterial->SpecularMap.repeat_w = eTexture_Repeat_Repeat;
-	DefaultMaterial->SpecularMap.texture = TextureSystem::GetDefaultSpecularTexture();
-	if (!Renderer->AcquireTextureMap(&DefaultMaterial->SpecularMap)) {
-		GLOG(Log::eError, "Unable to acquire resources for diffuse texture map.");
-		return false;
-	}
-
 	DefaultMaterial->NormalMap.usage = TextureUsage::eTexture_Usage_Map_Normal;
 	DefaultMaterial->NormalMap.filter_magnify = TextureFilter::eTexture_Filter_Mode_Linear;
 	DefaultMaterial->NormalMap.filter_minify = TextureFilter::eTexture_Filter_Mode_Linear;
@@ -483,7 +438,7 @@ bool MaterialSystem::CreateDefaultMaterial() {
 		return false;
 	}
 
-	std::vector<TextureMap*> Maps = { &DefaultMaterial->DiffuseMap, &DefaultMaterial->SpecularMap, &DefaultMaterial->NormalMap, &DefaultMaterial->RoughnessMetallicMap };
+	std::vector<TextureMap*> Maps = { &DefaultMaterial->DiffuseMap, &DefaultMaterial->NormalMap, &DefaultMaterial->RoughnessMetallicMap };
 
 	Shader* s = ShaderSystem::Get("Shader.Builtin.GBuffer");
 	if (s == nullptr) {
@@ -561,14 +516,15 @@ bool MaterialSystem::ApplyInstance(Material* mat, bool need_update) {
 	if (need_update) {
 		if (mat->ShaderID == MaterialShaderID) {
 			MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(MaterialLocations.diffuse_color, &mat->DiffuseColor));
-			MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(MaterialLocations.diffuse_texture, &mat->DiffuseMap));
-			MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(MaterialLocations.specular_texture, &mat->SpecularMap));
-			MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(MaterialLocations.normal_texture, &mat->NormalMap));
-			MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(MaterialLocations.roughness_metallic_texture, &mat->RoughnessMetallicMap));
 			MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(MaterialLocations.shininess, &mat->Shininess));
 			MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(MaterialLocations.metallic, &mat->Metallic));
 			MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(MaterialLocations.roughness, &mat->Roughness));
 			MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(MaterialLocations.ambient_occlusion, &mat->AmbientOcclusion));
+			MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(MaterialLocations.normal_intensity, &mat->NormalIntensity));
+
+			MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(MaterialLocations.diffuse_texture, &mat->DiffuseMap));
+			MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(MaterialLocations.normal_texture, &mat->NormalMap));
+			MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(MaterialLocations.roughness_metallic_texture, &mat->RoughnessMetallicMap));
 		}
 		else if (mat->ShaderID == UIShaderID) {
 			MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(UILocations.diffuse_color, &mat->DiffuseColor));

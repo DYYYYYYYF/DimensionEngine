@@ -29,5 +29,7 @@ void main(){
     if (FragColor.a > 0.35f)
     {
         FragColor *= ObjectUbo.diffuse_color;
-    } 
+    } else {
+        discard;
+    }
 }

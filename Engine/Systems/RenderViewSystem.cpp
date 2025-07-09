@@ -190,7 +190,7 @@ void RenderViewSystem::OnWindowResize(uint32_t width, uint32_t height) {
 IRenderView* RenderViewSystem::Get(const std::string& name) {
 	if (Initialized) {
 		if (RegisteredViewMap.find(name) == RegisteredViewMap.end()){
-			GLOG(Log::eWarn, "Can not find render view '%s', return nullptr.", name.c_str());
+			GLOG(Log::eDebug, "Can not find render view '%s', return nullptr.", name.c_str());
 			return nullptr;
 		}
 

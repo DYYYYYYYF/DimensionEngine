@@ -65,7 +65,7 @@ private:
 	Camera* WorldCamera = nullptr;
 	Vector4 AmbientColor;
 
-	static const uint32_t MAX_RENDER_TARGETS = 2;  // 双缓冲
+	static const uint32_t MAX_RENDER_TARGETS = 3;  // 双缓冲
 	GBufferSet GBuffers[MAX_RENDER_TARGETS];        // 两套完整的G-Buffer
 
 	uint32_t InstanceID = INVALID_ID;

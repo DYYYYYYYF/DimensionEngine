@@ -1,7 +1,7 @@
 # G-Buffer shader config file
 version=1.0
 name=Shader.Builtin.GBuffer
-language=hlsl
+language=glsl
 renderpass=Renderpass.Builtin.GBuffer
 stages=vertex,fragment
 stagefiles=Shaders/Shader.Builtin.GBuffer.vert.spv,Shaders/Shader.Builtin.GBuffer.frag.spv
@@ -35,7 +35,6 @@ uniform=float,1,roughness
 uniform=float,1,ambient_occlusion
 uniform=float,1,normal_intensity
 uniform=samp,1,diffuse_texture
-uniform=samp,1,specular_texture
 uniform=samp,1,normal_texture
 uniform=samp,1,roughness_metallic_texture
 uniform=mat4,2,model

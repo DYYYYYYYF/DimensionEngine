@@ -1164,6 +1164,7 @@ bool VulkanBackend::CreateShader(Shader* shader, const ShaderConfig* config, IRe
 	// Keep a copy of the cull mode.
 	OutShader->Config.cull_mode = config->cull_mode;
 	OutShader->Config.pology_mode = config->polygon_mode;
+	OutShader->Config.PrimTopo = config->PrimTopo;
 
 	return true;
 }

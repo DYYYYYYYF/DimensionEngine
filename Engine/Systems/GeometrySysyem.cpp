@@ -338,21 +338,33 @@ SGeometryConfig GeometrySystem::GeneratePlaneConfig(float width, float height, u
 			v0->position.y = min_y;
 			v0->texcoord.x = min_uvx;
 			v0->texcoord.y = min_uvy;
+			v0->normal = Vector3(0.0f, 1.0f, 0.0f);
+			v0->color = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
+			v0->tangent = Vector4(0.0, 0.0f, 0.0, 1.0f);
 
 			v1->position.x = max_x;
 			v1->position.y = max_y;
 			v1->texcoord.x = max_uvx;
 			v1->texcoord.y = max_uvy;
+			v1->normal = Vector3(0.0f, 1.0f, 0.0f);
+			v1->color = Vector3(0.0f, 1.0f, 0.0f);
+			v1->tangent = Vector4(0.0, 0.0f, 0.0, 1.0f);
 
 			v2->position.x = min_x;
 			v2->position.y = max_y;
 			v2->texcoord.x = min_uvx;
 			v2->texcoord.y = max_uvy;
+			v2->normal = Vector3(0.0f, 1.0f, 0.0f);
+			v2->color = Vector3(0.0f, 1.0f, 0.0f);
+			v2->tangent = Vector4(0.0, 0.0f, 0.0, 1.0f);
 
 			v3->position.x = max_x;
 			v3->position.y = min_y;
 			v3->texcoord.x = max_uvx;
 			v3->texcoord.y = min_uvy;
+			v3->normal = Vector3(0.0f, 1.0f, 0.0f);
+			v3->color = Vector3(0.0f, 1.0f, 0.0f);
+			v3->tangent = Vector4(0.0, 0.0f, 0.0, 1.0f);
 
 			// Generate indices.
 			uint32_t i_offset = ((y * x_segment_count) + x) * 6;
@@ -526,13 +538,14 @@ SGeometryConfig GeometrySystem::GenerateCubeConfig(float width, float height,
 
 		Config.name = name.empty() ? DEFAULT_GEOMETRY_PLANE_NAME : name;
 		Config.material_name = material_name.empty() ? DEFAULT_MATERIAL_NAME : material_name;
+
 		GeometryUtils::GenerateTangents(Config.vertex_count, (Vertex*)Config.vertices, Config.index_count, (uint32_t*)Config.indices);
 
 		return Config;
 }
 
 Geometry* GeometrySystem::GenerateQuad(const std::string& name, const std::string& material_name) {
-	SGeometryConfig Config = GeneratePlaneConfig(1, 1, 1, 1, 1, 1, name, material_name);
+	SGeometryConfig Config = GeneratePlaneConfig(2, 2, 1, 1, 1, 1, name, material_name);
 	Geometry* NewGeom = AcquireFromConfig(Config, true);
 	if (!NewGeom) {
 		GLOG(Log::eWarn, "Generated simple fullscreen quad geometry configuration falied.");

@@ -39,8 +39,6 @@ bool Engine::Initialize(){
 		return false;
 	}
 
-	Renderer = IRenderer::GetRenderer();
-
 	UID::Seed(101);
 
 	// Controller
