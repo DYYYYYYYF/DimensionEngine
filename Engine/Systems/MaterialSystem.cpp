@@ -155,7 +155,6 @@ Material* MaterialSystem::AcquireFromConfig(SMaterialConfig config) {
 
 			MaterialLocations.diffuse_texture = ShaderSystem::GetUniformIndex(s, "diffuse_texture");
 			MaterialLocations.normal_texture = ShaderSystem::GetUniformIndex(s, "normal_texture");
-			MaterialLocations.specular_texture = ShaderSystem::GetUniformIndex(s, "specular_texture");
 			MaterialLocations.roughness_metallic_texture = ShaderSystem::GetUniformIndex(s, "roughness_metallic_texture");
 
 			MaterialLocations.render_mode = ShaderSystem::GetUniformIndex(s, "mode");

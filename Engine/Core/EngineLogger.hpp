@@ -23,7 +23,7 @@ public:
 		char* str = AppendLogMessage(format, args...);
 		Log::Logger::Level ULevel = (Log::Logger::Level)level;
 		if (str == nullptr
-#ifdef LEVEL_DEBUG
+#ifndef LEVEL_DEBUG
 			|| ULevel < Log::Logger::eINFO
 #endif
 			) return;

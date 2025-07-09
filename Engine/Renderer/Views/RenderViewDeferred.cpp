@@ -130,12 +130,6 @@ bool RenderViewWorldDeferred::OnCreate(const RenderViewConfig& config) {
 		return false;
 	}
 
-	// 创建延迟光照材质
-	/*if (!MaterialSystem::CreateDeferredLightingMaterial(&AlbedoTexture, &NormalTexture, &PositionTexture)) {
-		GLOG(Log::eError, "Failed to create deferred lighting material.");
-		return false;
-	}*/
-
 	if (!EngineEvent::Register(eEventCode::Default_Rendertarget_Refresh_Required, this, RenderViewWorldDeferredOnEvent)) {
 		GLOG(Log::eError, "Unable to listen for refresh required event, creation failed.");
 		return false;

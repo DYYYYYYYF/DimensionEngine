@@ -386,10 +386,6 @@ void VulkanRenderPass::Begin(RenderTarget* target) {
 					ClearValues[i].color.float32[2] = 0.0f;
 					ClearValues[i].color.float32[3] = 0.0f;
 				}
-
-				GLOG(Log::eDebug, "Color attachment %u clear value: (%f, %f, %f, %f)",
-					i, ClearValues[i].color.float32[0], ClearValues[i].color.float32[1],
-					ClearValues[i].color.float32[2], ClearValues[i].color.float32[3]);
 			}
 			else if (attachment.type == RenderTargetAttachmentType::eRender_Target_Attachment_Type_Depth) {
 				// 深度附件
@@ -408,9 +404,6 @@ void VulkanRenderPass::Begin(RenderTarget* target) {
 				else {
 					ClearValues[i].depthStencil.stencil = 0;
 				}
-
-				GLOG(Log::eDebug, "Depth attachment %u clear value: depth=%f, stencil=%u",
-					i, ClearValues[i].depthStencil.depth, ClearValues[i].depthStencil.stencil);
 			}
 			else {
 				GLOG(Log::eWarn, "VulkanRenderPass::Begin - Unknown attachment type %d at index %u",
@@ -421,17 +414,12 @@ void VulkanRenderPass::Begin(RenderTarget* target) {
 		// 设置清除值
 		BeginInfo.setClearValueCount(AttachmentCount);
 		BeginInfo.setPClearValues(ClearValues);
-
-		GLOG(Log::eDebug, "VulkanRenderPass::Begin - Set %u clear values for %u attachments",
-			AttachmentCount, AttachmentCount);
 	}
 
 	// 开始渲染通道
 	try {
 		CmdBuffer->CommandBuffer.beginRenderPass(BeginInfo, vk::SubpassContents::eInline);
 		CmdBuffer->State = VulkanCommandBufferState::eCommand_Buffer_State_In_Renderpass;
-
-		GLOG(Log::eDebug, "VulkanRenderPass::Begin - Render pass started successfully");
 	}
 	catch (const vk::SystemError& e) {
 		GLOG(Log::eError, "VulkanRenderPass::Begin - Failed to begin render pass: %s", e.what());
