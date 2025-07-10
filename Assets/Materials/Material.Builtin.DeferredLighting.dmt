@@ -1,0 +1,26 @@
+#material file - Deferred Lighting Material
+
+version=0.1
+name=Material.Builtin.DeferredLighting
+
+# 延迟光照不需要传统的材质颜色属性，因为从G-Buffer读取
+# 但保留一些用于调试和fallback的默认值
+diffuse_color=0.18 0.18 0.18 1.0
+shininess=32.0
+
+# PBR - 延迟光照中这些值从G-Buffer读取，这里只是默认值
+metallic=0.0
+ambient_occlusion=1.0
+normal_intensity=1.0
+
+# 光照参数
+ambient_color=0.2 0.2 0.2 1.0
+light_intensity=1.0
+shadow_bias=0.005
+
+# 调试选项
+debug_mode=0  # 0=normal, 1=albedo, 2=normal, 3=position, 4=depth
+tonemap_exposure=1.0
+
+# Shader
+shader=Shader.Builtin.DeferredLighting

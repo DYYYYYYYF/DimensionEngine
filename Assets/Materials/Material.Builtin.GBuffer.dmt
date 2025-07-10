@@ -1,0 +1,35 @@
+#material file - G-Buffer Material (基于原World材质结构)
+
+#材质类型建议
+#非金属材质（大多数情况）：
+#metallic = 0.0
+#roughness = 0.7-0.9
+#diffuse_color = 实际颜色
+
+#金属材质：
+#metallic = 1.0
+#roughness = 0.1-0.3
+#diffuse_color = 金属的F0值
+
+version=0.1
+name=Material.Builtin.GBuffer
+
+# 基础材质属性 - 这些会写入G-Buffer (与World材质保持一致)
+diffuse_color=0.18 0.18 0.18 1.0
+shininess=32.0
+
+# PBR属性 - 写入G-Buffer的金属度和粗糙度通道
+metallic=0.0
+roughness=0.8
+ambient_occlusion=1.0
+
+# 法线贴图强度 (新增G-Buffer特有属性)
+normal_intensity=1.0
+
+# 材质纹理 - G-Buffer渲染阶段需要的输入纹理 (与World材质命名保持一致)
+diffuse_map_name=default_diffuse_texture
+normal_map_name=default_normal_texture
+roughness_metallic_map_name=default_orm_texture
+
+# Shader - 使用G-Buffer着色器
+shader=Shader.Builtin.GBuffer
