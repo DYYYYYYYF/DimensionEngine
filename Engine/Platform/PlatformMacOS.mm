@@ -526,6 +526,15 @@ int Platform::GetProcessorCount(){
 	return (int)[[NSProcessInfo processInfo]processorCount];
 }
 
+void Platform::SetLogo(void* WindowHandle, const std::string& IconPath) {
+	NSString* path = [NSString stringWithUTF8String:IconPath];
+    NSImage* icon = [[NSImage alloc] initWithContentsOfFile:path];
+
+    if (icon) {
+        [NSApp setApplicationIconImage:icon];
+    }
+}
+
 // Vulkan
 bool PlatformCreateVulkanSurface(SPlatformState* plat_state, VulkanContext* context) {
 	// Simple cold-cast to then know type

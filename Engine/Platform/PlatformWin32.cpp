@@ -33,7 +33,7 @@ bool Platform::PlatformStartup(SPlatformState* platform_state, const std::string
 	state->h_instance = GetModuleHandleA(0);
 
 	// Setup & register window class
-	HICON icon = LoadIcon(state->h_instance, IDI_APPLICATION);
+	HICON icon = LoadIcon(state->h_instance, "IDI_LOGO");
 	WNDCLASSA wc;
 	memset(&wc, 0, sizeof(wc));
 	wc.style = CS_DBLCLKS;						// Get double clicks
@@ -180,6 +180,19 @@ int Platform::GetProcessorCount() {
 	GetSystemInfo(&SystemInfo);
 	GLOG(Log::eInfo, "%i processor cores detected.", SystemInfo.dwNumberOfProcessors);
 	return SystemInfo.dwNumberOfProcessors;
+}
+
+void Platform::SetLogo(void* WindowHandle, const std::string& IconPath) {
+	HWND hwnd = static_cast<HWND>(WindowHandle);
+
+	HICON hIcon = (
+		(HICON)LoadImageA(NULL, IconPath.c_str(), IMAGE_ICON, 32, 32, LR_LOADFROMFILE)
+	);
+
+	if (hIcon) {
+		SendMessage(hwnd, WM_SETICON, ICON_SMALL, (LPARAM)hIcon);
+		SendMessage(hwnd, WM_SETICON, ICON_BIG, (LPARAM)hIcon);
+	}
 }
 
 // NOTE: Begin Threads

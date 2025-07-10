@@ -32,5 +32,7 @@ public:
 	static void PlatformSleep(size_t ms);
 
 	static int GetProcessorCount();
+
+	static void SetLogo(void* WindowHandle, const std::string& IconPath);
 };
 
