@@ -1,4 +1,4 @@
-## Dimension Engine
+## DeltaRay Engine
 3D-Rendering of Vulkan 
 
 git clone --recursive git@github.com:DYYYYYYYF/DimensionEngine.git  
@@ -79,11 +79,11 @@ UncleDon-Logger: https://github.com/DYYYYYYYF/UncleDon-Logger
 
 stb: https://github.com/nothings/stb/tree/master  
 
-gltf：https://github.com/syoyo/tinygltf  
+assimp：https://github.com/syoyo/tinygltf  
 
 audio：  
 https://github.com/kcat/openal-soft  
 https://github.com/libsndfile/libsndfile 
 
-JSON：https://github.com/Tencent/rapidjson
+YAML：https://github.com/Tencent/rapidjson 
 
