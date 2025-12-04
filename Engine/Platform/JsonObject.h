@@ -22,20 +22,18 @@ public:
 	DAPI void SetArray(const std::string& key, const std::vector<T>& values);
 
 	// 设置向量
-	DAPI void SetVector2(const std::string& key, const Vector2& value);
-	DAPI void SetVector3(const std::string& key, const Vector3& value);
-	DAPI void SetVector4(const std::string& key, const Vector4& value);
+	DAPI void WriteVector2(const std::string& key, const Vector2& value);
+	DAPI void WriteVector3(const std::string& key, const Vector3& value);
+	DAPI void WriteVector4(const std::string& key, const Vector4& value);
 
 	// 获取向量（带默认值）
-	DAPI Vector2 GetVector2(const std::string& key, const Vector2& defaultValue = Vector2()) const;
-	DAPI Vector3 GetVector3(const std::string& key, const Vector3& defaultValue = Vector3()) const;
-	DAPI Vector4 GetVector4(const std::string& key, const Vector4& defaultValue = Vector4()) const;
+	DAPI Vector2 ReadVector2(const std::string& key, const Vector2& defaultValue = Vector2()) const;
+	DAPI Vector3 ReadVector3(const std::string& key, const Vector3& defaultValue = Vector3()) const;
+	DAPI Vector4 ReadVector4(const std::string& key, const Vector4& defaultValue = Vector4()) const;
 
 	// 设置矩阵
-	DAPI void SetMatrix4(const std::string& key, const Matrix4& value);
-
-	// 获取矩阵（带默认值）
-	DAPI Matrix4 GetMatrix4(const std::string& key, const Matrix4& defaultValue = Matrix4()) const;
+	DAPI void WriteMatrix4(const std::string& key, const Matrix4& value);
+	DAPI Matrix4 ReadMatrix4(const std::string& key, const Matrix4& defaultValue = Matrix4()) const;
 
 	// 获取
 	DAPI JsonObject Read(const std::string& path) const;

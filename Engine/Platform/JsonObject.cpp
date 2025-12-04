@@ -70,7 +70,7 @@ void JsonObject::SetArray<JsonObject>(const std::string& key, const std::vector<
 }
 
 // SetVector2
-void JsonObject::SetVector2(const std::string& key, const Vector2& value) {
+void JsonObject::WriteVector2(const std::string& key, const Vector2& value) {
 	nlohmann::json arr = nlohmann::json::array();
 	arr.push_back(value.x);
 	arr.push_back(value.y);
@@ -81,7 +81,7 @@ void JsonObject::SetVector2(const std::string& key, const Vector2& value) {
 }
 
 // SetVector3
-void JsonObject::SetVector3(const std::string& key, const Vector3& value) {
+void JsonObject::WriteVector3(const std::string& key, const Vector3& value) {
 	nlohmann::json arr = nlohmann::json::array();
 	arr.push_back(value.x);
 	arr.push_back(value.y);
@@ -93,7 +93,7 @@ void JsonObject::SetVector3(const std::string& key, const Vector3& value) {
 }
 
 // SetVector4
-void JsonObject::SetVector4(const std::string& key, const Vector4& value) {
+void JsonObject::WriteVector4(const std::string& key, const Vector4& value) {
 	nlohmann::json arr = nlohmann::json::array();
 	for (size_t i = 0; i < 4; ++i) {
 		arr.push_back(value[i]);
@@ -105,7 +105,7 @@ void JsonObject::SetVector4(const std::string& key, const Vector4& value) {
 }
 
 // SetMatrix4
-void JsonObject::SetMatrix4(const std::string& key, const Matrix4& value) {
+void JsonObject::WriteMatrix4(const std::string& key, const Matrix4& value) {
 	nlohmann::json arr = nlohmann::json::array();
 	// 按行存储 4x4 矩阵
 	for (size_t i = 0; i < 16; ++i) {
@@ -118,7 +118,7 @@ void JsonObject::SetMatrix4(const std::string& key, const Matrix4& value) {
 }
 
 // GetVector2
-Vector2 JsonObject::GetVector2(const std::string& key, const Vector2& defaultValue) const {
+Vector2 JsonObject::ReadVector2(const std::string& key, const Vector2& defaultValue) const {
 	JsonObject obj = Read(key);
 	if (!obj.IsArray() || obj.Size() != 2) return defaultValue;
 
@@ -129,7 +129,7 @@ Vector2 JsonObject::GetVector2(const std::string& key, const Vector2& defaultVal
 }
 
 // GetVector3
-Vector3 JsonObject::GetVector3(const std::string& key, const Vector3& defaultValue) const {
+Vector3 JsonObject::ReadVector3(const std::string& key, const Vector3& defaultValue) const {
 	JsonObject obj = Read(key);
 	if (!obj.IsArray() || obj.Size() != 3) return defaultValue;
 
@@ -141,7 +141,7 @@ Vector3 JsonObject::GetVector3(const std::string& key, const Vector3& defaultVal
 }
 
 // GetVector4
-Vector4 JsonObject::GetVector4(const std::string& key, const Vector4& defaultValue) const {
+Vector4 JsonObject::ReadVector4(const std::string& key, const Vector4& defaultValue) const {
 	JsonObject obj = Read(key);
 	if (!obj.IsArray() || obj.Size() != 4) return defaultValue;
 
@@ -154,7 +154,7 @@ Vector4 JsonObject::GetVector4(const std::string& key, const Vector4& defaultVal
 }
 
 // GetMatrix4
-Matrix4 JsonObject::GetMatrix4(const std::string& key, const Matrix4& defaultValue) const {
+Matrix4 JsonObject::ReadMatrix4(const std::string& key, const Matrix4& defaultValue) const {
 	JsonObject obj = Read(key);
 	if (!obj.IsArray() || obj.Size() != 16) return defaultValue;
 

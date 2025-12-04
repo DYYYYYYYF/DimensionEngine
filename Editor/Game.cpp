@@ -124,13 +124,13 @@ bool GameInstance::Initialize() {
 
 	// Get transform
 	JsonObject Content = JsonObject(MaterialAsset.ReadBytes());
-	Matrix4 Mat = Content.GetMatrix4("Camera.Transform");
+	Matrix4 Mat = Content.ReadMatrix4("Camera.Transform");
 	
 	// Load python script
 	TestPython.SetPythonFile("recompile_shader");
 
-	Vector3 Position = Content.GetVector3("Camera.Position");
-	Vector3 Rotation = Content.GetVector3("Camera.Rotation");
+	Vector3 Position = Content.ReadVector3("Camera.Position");
+	Vector3 Rotation = Content.ReadVector3("Camera.Rotation");
 
 	WorldCamera = CameraSystem::GetDefault();
 	WorldCamera->SetPosition(Position);
@@ -295,8 +295,8 @@ void GameInstance::Shutdown() {
 	JsonObject Content = JsonObject(MaterialAsset.ReadBytes());
 	Content.WriteInt("Window.Width", (int)WindowSize.Width);
 	Content.WriteInt("Window.Height", (int)WindowSize.Height);
-	Content.SetVector3("Camera.Position", WorldCamera->GetPosition());
-	Content.SetVector3("Camera.Rotation", WorldCamera->GetEulerAngles());
+	Content.WriteVector3("Camera.Position", WorldCamera->GetPosition());
+	Content.WriteVector3("Camera.Rotation", WorldCamera->GetEulerAngles());
 	Content.SaveToFile(MaterialAsset);
 
 	// TODO: TEMP
