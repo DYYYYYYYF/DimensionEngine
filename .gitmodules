@@ -1,18 +1,15 @@
 [submodule "3rd/UncleDon-Logger"]
 	path = 3rd/UncleDon-Logger
 	url = https://github.com/DYYYYYYYF/UncleDon-Logger
+[submodule "3rd/nlohmann-json"]
+	path = 3rd/nlohmann-json
+	url = https://github.com/nlohmann/json.git
 [submodule "3rd/stb"]
 	path = 3rd/stb
 	url = https://github.com/nothings/stb.git
-[submodule "3rd/openal-soft"]
-	path = 3rd/openal-soft
-	url = https://github.com/kcat/openal-soft.git
-[submodule "3rd/sndfile-audio-loader"]
-	path = 3rd/sndfile-audio-loader
-	url = https://github.com/libsndfile/libsndfile.git
-[submodule "3rd/yaml-cpp"]
-	path = 3rd/yaml-cpp
-	url = https://github.com/jbeder/yaml-cpp.git
 [submodule "3rd/assimp"]
 	path = 3rd/assimp
 	url = https://github.com/assimp/assimp.git
+[submodule "3rd/openal-soft"]
+	path = 3rd/openal-soft
+	url = https://github.com/kcat/openal-soft.git
