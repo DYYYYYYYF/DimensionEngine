@@ -122,40 +122,15 @@ bool GameInstance::Initialize() {
 		return false;
 	}
 
+	// Get transform
 	JsonObject Content = JsonObject(MaterialAsset.ReadBytes());
-	JsonObject Value = Content.Get("Camera").Get("Transform");
-
-	// TODO: 提供直接获取的接口
-	Matrix4 Mat = Matrix4::Identity();
-	if (Value.IsArray()) {
-		size_t size = Value.Size();
-		for (size_t ni = 0; ni < size; ++ni) {
-			Mat[ni] = Value.ArrayItemAt(ni).GetFloat();
-		}
-	}
-
+	Matrix4 Mat = Content.GetMatrix4("Camera.Transform");
+	
 	// Load python script
 	TestPython.SetPythonFile("recompile_shader");
 
-	Value = Content.Get("Camera").Get("Position");
-	Vector3 Position;
-	if (Value.IsArray()) {
-		size_t size = Value.Size();
-		ASSERT(size == 3);
-		Position.x = Value.ArrayItemAt(0).GetFloat();
-		Position.y = Value.ArrayItemAt(1).GetFloat();
-		Position.z = Value.ArrayItemAt(2).GetFloat();
-	}
-
-	Value = Content.Get("Camera").Get("Rotation");
-	Vector3 Rotation;
-	if (Value.IsArray()) {
-		size_t size = Value.Size();
-		ASSERT(size == 3);
-		Rotation.x = Value.ArrayItemAt(0).GetFloat();
-		Rotation.y = Value.ArrayItemAt(1).GetFloat();
-		Rotation.z = Value.ArrayItemAt(2).GetFloat();
-	}
+	Vector3 Position = Content.GetVector3("Camera.Position");
+	Vector3 Rotation = Content.GetVector3("Camera.Rotation");
 
 	WorldCamera = CameraSystem::GetDefault();
 	WorldCamera->SetPosition(Position);
@@ -318,10 +293,11 @@ void GameInstance::Shutdown() {
 	}
 
 	JsonObject Content = JsonObject(MaterialAsset.ReadBytes());
-	Content.Get("Window").SetInt("Width", (int)WindowSize.Width);
-	Content.Get("Window").SetInt("Height", (int)WindowSize.Height);
+	Content.WriteInt("Window.Width", (int)WindowSize.Width);
+	Content.WriteInt("Window.Height", (int)WindowSize.Height);
 	Content.SetVector3("Camera.Position", WorldCamera->GetPosition());
 	Content.SetVector3("Camera.Rotation", WorldCamera->GetEulerAngles());
+	Content.SaveToFile(MaterialAsset);
 
 	// TODO: TEMP
 	EngineEvent::Unregister(eEventCode::Debug_0, this, GameOnDebugEvent);

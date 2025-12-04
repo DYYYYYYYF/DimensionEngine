@@ -63,7 +63,10 @@ void JsonObject::SetArray<JsonObject>(const std::string& key, const std::vector<
 	for (const auto& val : values) {
 		arr.push_back(val.Handle->value);
 	}
-	Handle->value[key] = arr;
+	
+	JsonObject temp;
+	temp.Handle->value = arr;
+	Write(key, temp);
 }
 
 // SetVector2
@@ -71,7 +74,10 @@ void JsonObject::SetVector2(const std::string& key, const Vector2& value) {
 	nlohmann::json arr = nlohmann::json::array();
 	arr.push_back(value.x);
 	arr.push_back(value.y);
-	Handle->value[key] = arr;
+
+	JsonObject temp;
+	temp.Handle->value = arr;
+	Write(key, temp);
 }
 
 // SetVector3
@@ -80,7 +86,10 @@ void JsonObject::SetVector3(const std::string& key, const Vector3& value) {
 	arr.push_back(value.x);
 	arr.push_back(value.y);
 	arr.push_back(value.z);
-	Handle->value[key] = arr;
+	
+	JsonObject temp;
+	temp.Handle->value = arr;
+	Write(key, temp);
 }
 
 // SetVector4
@@ -89,18 +98,11 @@ void JsonObject::SetVector4(const std::string& key, const Vector4& value) {
 	for (size_t i = 0; i < 4; ++i) {
 		arr.push_back(value[i]);
 	}
-	Handle->value[key] = arr;
+	
+	JsonObject temp;
+	temp.Handle->value = arr;
+	Write(key, temp);
 }
-
-// SetMatrix3
-//void JsonObject::SetMatrix3(const std::string& key, const FMatrix3& value) {
-//	nlohmann::json arr = nlohmann::json::array();
-//	// 按行存储 3x3 矩阵
-//	for (size_t i = 0; i < 9; ++i) {
-//		arr.push_back(value.data()[i]);
-//	}
-//	Handle->value[key] = arr;
-//}
 
 // SetMatrix4
 void JsonObject::SetMatrix4(const std::string& key, const Matrix4& value) {
@@ -109,72 +111,58 @@ void JsonObject::SetMatrix4(const std::string& key, const Matrix4& value) {
 	for (size_t i = 0; i < 16; ++i) {
 		arr.push_back(value[i]);
 	}
-	Handle->value[key] = arr;
+	
+	JsonObject temp;
+    temp.Handle->value = arr;
+    Write(key, temp); 
 }
 
 // GetVector2
 Vector2 JsonObject::GetVector2(const std::string& key, const Vector2& defaultValue) const {
-	auto it = Handle->value.find(key);
-	if (it != Handle->value.end() && it->is_array() && it->size() >= 2) {
-		Vector2 result;
-		result.x = (*it)[0].get<float>();
-		result.y = (*it)[1].get<float>();
-		return result;
-	}
-	return defaultValue;
+	JsonObject obj = Read(key);
+	if (!obj.IsArray() || obj.Size() != 2) return defaultValue;
+
+	Vector2 result;
+	result.x = obj.ArrayItemAt(0).GetFloat();
+	result.y = obj.ArrayItemAt(1).GetFloat();
+	return result;
 }
 
 // GetVector3
 Vector3 JsonObject::GetVector3(const std::string& key, const Vector3& defaultValue) const {
-	auto it = Handle->value.find(key);
-	if (it != Handle->value.end() && it->is_array() && it->size() >= 3) {
-		Vector3 result;
-		result.x = (*it)[0].get<float>();
-		result.y = (*it)[1].get<float>();
-		result.z = (*it)[2].get<float>();
-		return result;
-	}
-	return defaultValue;
+	JsonObject obj = Read(key);
+	if (!obj.IsArray() || obj.Size() != 3) return defaultValue;
+
+	Vector3 result;
+	result.x = obj.ArrayItemAt(0).GetFloat();
+	result.y = obj.ArrayItemAt(1).GetFloat();
+	result.z = obj.ArrayItemAt(2).GetFloat();
+	return result;
 }
 
 // GetVector4
 Vector4 JsonObject::GetVector4(const std::string& key, const Vector4& defaultValue) const {
-	auto it = Handle->value.find(key);
-	if (it != Handle->value.end() && it->is_array() && it->size() >= 4) {
-		Vector4 result;
-		result[0] = (*it)[0].get<float>();
-		result[1] = (*it)[1].get<float>();
-		result[2] = (*it)[2].get<float>();
-		result[3] = (*it)[3].get<float>();
-		return result;
-	}
-	return defaultValue;
-}
+	JsonObject obj = Read(key);
+	if (!obj.IsArray() || obj.Size() != 4) return defaultValue;
 
-// GetMatrix3
-//TMatrix4 JsonObject::GetMatrix3(const std::string& key, const TMatrix4& defaultValue) const {
-//	auto it = Handle->value.find(key);
-//	if (it != Handle->value.end() && it->is_array() && it->size() >= 9) {
-//		TMatrix4 result;
-//		for (size_t i = 0; i < 9; ++i) {
-//			result.data()[i] = (*it)[i].get<float>();
-//		}
-//		return result;
-//	}
-//	return defaultValue;
-//}
+	Vector4 result;
+	result.x = obj.ArrayItemAt(0).GetFloat();
+	result.y = obj.ArrayItemAt(1).GetFloat();
+	result.z = obj.ArrayItemAt(2).GetFloat();
+	result.w = obj.ArrayItemAt(3).GetFloat();
+	return result;
+}
 
 // GetMatrix4
 Matrix4 JsonObject::GetMatrix4(const std::string& key, const Matrix4& defaultValue) const {
-	auto it = Handle->value.find(key);
-	if (it != Handle->value.end() && it->is_array() && it->size() >= 16) {
-		Matrix4 result;
-		for (size_t i = 0; i < 16; ++i) {
-			result[i] = (*it)[i].get<float>();
-		}
-		return result;
+	JsonObject obj = Read(key);
+	if (!obj.IsArray() || obj.Size() != 16) return defaultValue;
+
+	Matrix4 result;
+	for (size_t i = 0; i < 16; ++i) {
+		result[i] = obj.ArrayItemAt(i).GetFloat();
 	}
-	return defaultValue;
+	return result;
 }
 
 // Read - 支持路径访问

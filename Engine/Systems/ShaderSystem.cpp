@@ -41,7 +41,7 @@ bool ShaderSystem::Initialize(IRenderer* renderer, ShaderSystem::Config config) 
 	}
 
 	JsonObject Content = JsonObject(MaterialAsset.ReadBytes());
-	GLOBAL_SHADER_TYPE = Content.Get("renderer").Get("shader_language").GetString()
+	GLOBAL_SHADER_TYPE = Content.ReadString("renderer.shader_language")
 		.compare("glsl") == 0 ? ShaderLanguage::eGLSL : ShaderLanguage::eHLSL;
 
 	Renderer = renderer;
@@ -98,7 +98,8 @@ void ShaderSystem::Shutdown() {
 
 		JsonObject Content = JsonObject(MaterialAsset.ReadBytes());
 		std::string Lan = GLOBAL_SHADER_TYPE == ShaderLanguage::eGLSL ? "glsl" : "hlsl";
-		Content.Get("renderer").SetString("shader_language", Lan);
+		Content.WriteString("renderer.shader_language", Lan);
+		Content.SaveToFile(MaterialAsset);
 	}
 }
 

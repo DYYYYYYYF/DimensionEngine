@@ -32,13 +32,12 @@ public:
 	DAPI Vector4 GetVector4(const std::string& key, const Vector4& defaultValue = Vector4()) const;
 
 	// 设置矩阵
-	//DAPI void SetMatrix3(const std::string& key, const Matrix3f& value);
 	DAPI void SetMatrix4(const std::string& key, const Matrix4& value);
 
 	// 获取矩阵（带默认值）
-	//DAPI FMatrix3 GetMatrix3(const std::string& key, const FMatrix3& defaultValue = FMatrix3()) const;
 	DAPI Matrix4 GetMatrix4(const std::string& key, const Matrix4& defaultValue = Matrix4()) const;
 
+	// 获取
 	DAPI JsonObject Read(const std::string& path) const;
 	DAPI std::string ReadString(const std::string& path, const std::string& defaultValue = "") const;
 	DAPI int ReadInt(const std::string& path, int defaultValue = 0) const;
@@ -46,6 +45,7 @@ public:
 	DAPI bool ReadBool(const std::string& path, bool defaultValue = false) const;
 	DAPI double ReadDouble(const std::string& path, double defaultValue = 0.0) const;
 
+	// 设置
 	DAPI void Write(const std::string& path, const JsonObject& value);
 	DAPI void WriteString(const std::string& path, const std::string& value);
 	DAPI void WriteInt(const std::string& path, int value);
@@ -60,19 +60,7 @@ public:
 	DAPI bool IsBool() const;
 	DAPI bool IsNumber() const;
 
-	// 获取
-	DAPI float GetFloat() const;
-	DAPI std::string GetString() const;
-	DAPI bool GetBool(bool defaultValue = false) const;
-	DAPI int GetInt(int defaultValue = 0) const;
-	DAPI double GetDouble(double defaultValue = 0.0) const;
 	DAPI JsonObject Get(const std::string& key) const;
-
-	// 设置
-	DAPI void SetString(const std::string& key, const std::string& value);
-	DAPI void SetInt(const std::string& key, int value);
-	DAPI void SetFloat(const std::string& key, float value);
-	DAPI void SetBool(const std::string& key, bool value);
 	DAPI void Set(const std::string& key, const JsonObject& value);
 
 	// 数组
@@ -99,6 +87,16 @@ public:
 	DAPI void Clear();
 
 private:
+	float GetFloat() const;
+	std::string GetString() const;
+	bool GetBool(bool defaultValue = false) const;
+	int GetInt(int defaultValue = 0) const;
+	double GetDouble(double defaultValue = 0.0) const;
+	void SetString(const std::string& key, const std::string& value);
+	void SetInt(const std::string& key, int value);
+	void SetFloat(const std::string& key, float value);
+	void SetBool(const std::string& key, bool value);
+
 	std::vector<std::string> SplitPath(const std::string& path) const;
 
 private:

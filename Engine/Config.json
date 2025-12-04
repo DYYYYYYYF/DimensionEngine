@@ -1,5 +1,5 @@
 {
-  "renderer":{
-    "shader_language": "glsl"
+  "renderer": {
+    "shader_language": "hlsl"
   }
 }

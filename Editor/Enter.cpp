@@ -18,11 +18,11 @@ extern bool CreateGame(IGame* out_game) {
 
 	JsonObject Content = JsonObject(MaterialAsset.ReadBytes());
 
-	out_game->SetWindowWidth(Content.Get("Window").Get("Width").GetInt());
-	out_game->SetWindowHeight(Content.Get("Window").Get("Height").GetInt()); 
-	out_game->SetWindowOffsetX(Content.Get("Window").Get("OffsetX").GetInt()); 
-	out_game->SetWindowOffsetY(Content.Get("Window").Get("OffsetY").GetInt()); 
-	out_game->SetApplicationName(Content.Get("Window").Get("Title").GetString()); 
+	out_game->SetWindowWidth(Content.ReadInt("Window.Width"));
+	out_game->SetWindowHeight(Content.ReadInt("Window.Height"));
+	out_game->SetWindowOffsetX(Content.ReadInt("Window.OffsetX"));
+	out_game->SetWindowOffsetY(Content.ReadInt("Window.OffsetY"));
+	out_game->SetApplicationName(Content.ReadString("Window.Title")); 
 
     return true;
 }
