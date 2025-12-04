@@ -36,14 +36,14 @@ target_include_directories(
     engine 
     PUBLIC 
     UL::Logger
-    yaml-cpp
     assimp::assimp
+    nlohmann_json::nlohmann_json
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${STB_DIR}
     ${Python3_INCLUDE_DIRS}
 )
 
-if(${APPLE})
+if(APPLE)
     target_link_libraries(engine PUBLIC libshaderc_combined.a)
     target_link_libraries(engine PUBLIC Vulkan::Vulkan)
 
@@ -59,21 +59,26 @@ if(${APPLE})
     # target_link_libraries(program PUBLIC "-framework ")
 
     set_target_properties(engine PROPERTIES LINK_FLAGS "-Wl,-F/Library/Frameworks")
-elseif(${WIN32})
+elseif(WIN32)
     # 设置库名称基于配置
-    set(GLSLANGL_IBS 
-    "$<$<CONFIG:Debug>:shaderc_combinedd.lib>"
-    "$<$<CONFIG:Release>:shaderc_combined.lib>"
-    "$<$<CONFIG:RelWithDebInfo>:shaderc_combined.lib>"
+    set(GLSLANGL_LIBS 
+        "$<$<CONFIG:Debug>:shaderc_combinedd.lib>"
+        "$<$<CONFIG:Release>:shaderc_combined.lib>"
+        "$<$<CONFIG:RelWithDebInfo>:shaderc_combined.lib>"
 	)
 
 # 链接库
-message("-- Shaderc: ${GLSLANGL_IBS}")
-    target_link_libraries(engine PUBLIC ${GLSLANGL_IBS})
+message("-- Shaderc: ${GLSLANGL_LIBS}")
+    target_link_libraries(engine PUBLIC ${GLSLANGL_LIBS})
     target_link_libraries(engine PUBLIC "vulkan-1.lib")
 endif()
 
-target_link_libraries(engine PUBLIC ${Python3_LIBRARIES} UL::Logger yaml-cpp assimp::assimp)
+target_link_libraries(engine PUBLIC 
+    ${Python3_LIBRARIES} 
+    UL::Logger 
+    nlohmann_json::nlohmann_json
+    assimp::assimp
+)
 
 if(WIN32)
     add_custom_command(TARGET engine POST_BUILD

@@ -4,9 +4,9 @@
 #include <Core/Controller.hpp>
 #include <Core/Event.hpp>
 #include <Core/Metrics.hpp>
-#include "Utils/YAMLReader.h"
 #include <Systems/CameraSystem.h>
 #include <Containers/TString.hpp>
+#include <Platform/JsonObject.h>
 
 // TODO: Temp
 #include <Systems/GeometrySystem.h>
@@ -69,9 +69,14 @@ bool GameOnDebugEvent(eEventCode code, void* sender, void* listener_instance, SE
 bool GameInstance::Boot(IRenderer* renderer) {
 	GLOG(Log::eInfo, "Booting...");
 
-	YAMLReader YamlReader(EDITOR_CONFIG_PATH);
-	WindowSize.Width = YamlReader.ReadPropertyInt("Window.Width");
-	WindowSize.Height = YamlReader.ReadPropertyInt("Window.Height");
+	File MaterialAsset(EDITOR_CONFIG_PATH);
+	if (!MaterialAsset.IsExist()) {
+		return false;
+	}
+
+	JsonObject Content = JsonObject(MaterialAsset.ReadBytes());
+	WindowSize.Width = Content.ReadInt("Window.Width");
+	WindowSize.Height = Content.ReadInt("Window.Height");
 
 	GameConsole = NewObject<DebugConsoleActor>();
 
@@ -112,14 +117,45 @@ bool GameInstance::Boot(IRenderer* renderer) {
 
 bool GameInstance::Initialize() {
 	GLOG(Log::eDebug, "GameInitialize() called.");
-	YAMLReader YamlReader(EDITOR_CONFIG_PATH);
-	Matrix4 Mat = YamlReader.ReadPropertyMatrix("Camera.Transform");
+	File MaterialAsset(EDITOR_CONFIG_PATH);
+	if (!MaterialAsset.IsExist()) {
+		return false;
+	}
+
+	JsonObject Content = JsonObject(MaterialAsset.ReadBytes());
+	JsonObject Value = Content.Get("Camera").Get("Transform");
+
+	// TODO: 提供直接获取的接口
+	Matrix4 Mat = Matrix4::Identity();
+	if (Value.IsArray()) {
+		size_t size = Value.Size();
+		for (size_t ni = 0; ni < size; ++ni) {
+			Mat[ni] = Value.ArrayItemAt(ni).GetFloat();
+		}
+	}
 
 	// Load python script
 	TestPython.SetPythonFile("recompile_shader");
 
-	Vector3 Position = YamlReader.ReadPropertyVector("Camera.Position");
-	Vector3 Rotation = YamlReader.ReadPropertyVector("Camera.Rotation");
+	Value = Content.Get("Camera").Get("Position");
+	Vector3 Position;
+	if (Value.IsArray()) {
+		size_t size = Value.Size();
+		ASSERT(size == 3);
+		Position.x = Value.ArrayItemAt(0).GetFloat();
+		Position.y = Value.ArrayItemAt(1).GetFloat();
+		Position.z = Value.ArrayItemAt(2).GetFloat();
+	}
+
+	Value = Content.Get("Camera").Get("Rotation");
+	Vector3 Rotation;
+	if (Value.IsArray()) {
+		size_t size = Value.Size();
+		ASSERT(size == 3);
+		Rotation.x = Value.ArrayItemAt(0).GetFloat();
+		Rotation.y = Value.ArrayItemAt(1).GetFloat();
+		Rotation.z = Value.ArrayItemAt(2).GetFloat();
+	}
 
 	WorldCamera = CameraSystem::GetDefault();
 	WorldCamera->SetPosition(Position);
@@ -276,11 +312,16 @@ void GameInstance::Shutdown() {
 	TestText.Destroy();
 	TestSysText.Destroy();
 
-	YAMLReader YamlReader(EDITOR_CONFIG_PATH);
-	YamlReader.SetPropertyInt("Window.Width", WindowSize.Width);
-	YamlReader.SetPropertyInt("Window.Height", WindowSize.Height);
-	YamlReader.SetPropertyVector("Camera.Position", WorldCamera->GetPosition());
-	YamlReader.SetPropertyVector("Camera.Rotation", WorldCamera->GetEulerAngles());
+	File MaterialAsset(EDITOR_CONFIG_PATH);
+	if (!MaterialAsset.IsExist()) {
+		return;
+	}
+
+	JsonObject Content = JsonObject(MaterialAsset.ReadBytes());
+	Content.Get("Window").SetInt("Width", (int)WindowSize.Width);
+	Content.Get("Window").SetInt("Height", (int)WindowSize.Height);
+	Content.SetVector3("Camera.Position", WorldCamera->GetPosition());
+	Content.SetVector3("Camera.Rotation", WorldCamera->GetEulerAngles());
 
 	// TODO: TEMP
 	EngineEvent::Unregister(eEventCode::Debug_0, this, GameOnDebugEvent);

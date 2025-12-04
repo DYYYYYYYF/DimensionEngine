@@ -1,18 +1,52 @@
-﻿cmake_minimum_required(VERSION 3.10)
-project(DuckDuck VERSION 0.1.0)
+﻿cmake_minimum_required(VERSION 3.21)
+project(DuckDuck 
+    VERSION 1.0.0
+    DESCRIPTION "A simple game engine"
+    LANGUAGES CXX
+)
 
+# C++标准
 set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+# 生成Cmake指令
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-set(LIBRARY_OUTPUT_PATH  ${PROJECT_SOURCE_DIR}/Bin)
+# 输出目录
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/Bin)
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/Library)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/Bin)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/Lib)
 
 set(STB_DIR ${PROJECT_SOURCE_DIR}/3rd/stb)
 
-# Plugins
+# 多配置生成器
+foreach(CONFIG ${CMAKE_CONFIGURATION_TYPES})
+    string(TOUPPER ${CONFIG} CONFIG_UPPER)
+    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_${CONFIG_UPPER} ${CMAKE_BINARY_DIR}/Bin/${CONFIG})
+    set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_${CONFIG_UPPER} ${CMAKE_BINARY_DIR}/Lib/${CONFIG})
+    set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_${CONFIG_UPPER} ${CMAKE_BINARY_DIR}/Lib/${CONFIG})
+endforeach()
+
+# 构建选项
 option(ENABLE_PLUGINS_AUDIO "Enable audio module" OFF)
 option(GENERATE_TEST_PROGRAME "Generate test module" ON)
+
+# 第三方库
+message(STATUS "Configuring Third-Party Libraries...")
+add_subdirectory(3rd)
+
+# 编译器设置
+if(MSVC)
+    add_compile_options(/W4 /permissive- /MP /utf-8)
+    add_compile_definitions(
+        _CRT_SECURE_NO_WARNINGS
+        NOMINMAX
+        WIN32_LEAN_AND_MEAN
+    )
+else()
+    add_compile_options(-Wall -Wextra -Wpedantic)
+endif()
 
 ## Set build type
 if (NOT CMAKE_BUILD_TYPE)
@@ -40,10 +74,9 @@ elseif(${LOG_LEVEL}  STREQUAL "FATAL")
     add_definitions(-DLEVEL_FATAL)
 endif()
 
-# Public header files
-include_directories(${PROJECT_SOURCE_DIR}/3rd/gltf)
+source_group(TREE ${CMAKE_SOURCE_DIR} FILES ${ALL_SRCS})
 
-if(${APPLE})
+if(APPLE)
     message("-- Current environment: MacOS")
 
     set(SYSTEM_LIBRARY_DIR "/usr/local/lib")
@@ -52,27 +85,25 @@ if(${APPLE})
     include_directories(${Vulkan_INCLUDE_DIRS})
     link_directories( ${SYSTEM_LIBRARY_DIR} ${LIBRARY_OUTPUT_PATH})
 
-elseif(${WIN32})
+elseif(WIN32)
     message("-- Current environment: Windows")
-
-    add_definitions(-D_CRT_SECURE_NO_WARNINGS)
 	
-if(DEFINED ENV{VULKAN_SDK})
-    set(Vulkan_DIR $ENV{VULKAN_SDK})
-else()
-    message(FATAL_ERROR "VULKAN_SDK environment variable is not set.")
-endif()
+    if(DEFINED ENV{VULKAN_SDK})
+        set(Vulkan_DIR $ENV{VULKAN_SDK})
+    else()
+        message(FATAL_ERROR "VULKAN_SDK environment variable is not set.")
+    endif()
 
     set(Vulkan_LIBRARY_DIRS "${Vulkan_DIR}/Lib")
     set(Vulkan_INCLUDE_DIRS "${Vulkan_DIR}/Include")
 	
+    message("-- Vulkan Lib: ${Vulkan_LIBRARY_DIRS}")
+    message("-- Vulkan Inc: ${Vulkan_INCLUDE_DIRS}")
+
     include_directories(${Vulkan_INCLUDE_DIRS})
     link_directories(${Vulkan_LIBRARY_DIRS})
 endif()
 
-source_group(TREE ${CMAKE_SOURCE_DIR} FILES ${ALL_SRCS})
-
-add_subdirectory(3rd)
 add_subdirectory(engine)
 add_subdirectory(Plugins)
 add_subdirectory(Editor)

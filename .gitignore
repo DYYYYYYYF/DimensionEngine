@@ -9,6 +9,7 @@
 bin/
 build/
 library/
+Lib/
 .cache/
 *.DS_Store
 .vs/

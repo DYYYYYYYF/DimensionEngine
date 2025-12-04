@@ -8,7 +8,7 @@
 #include <Core/Keymap.hpp>
 #include <Containers/TArray.hpp>
 
-#define EDITOR_CONFIG_PATH std::string(ROOT_PATH) + "/Editor/Config.yaml"
+#define EDITOR_CONFIG_PATH std::string(ROOT_PATH) + "/Editor/Config.json"
 
 class Camera;
 

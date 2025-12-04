@@ -9,6 +9,9 @@
 #include <sys/stat.h>
 #endif
 
+File::File() : IsValid(false) {}
+File::~File() {}
+
 File::File(const std::string& fn) {
 	FullPath = fn;
 	std::replace(FullPath.begin(), FullPath.end(), '\\', '/');
@@ -28,7 +31,7 @@ File::File(const std::string& fn) {
 	FileType = FullPath.substr(SufPathIndex);
 }
 
-std::string File::ReadBytes() {
+std::string File::ReadBytes() const {
 	std::stringstream buffer;
 	std::ifstream inFile(FullPath); // 打开文件
 
@@ -62,7 +65,7 @@ bool File::WriteBytes(const char* source, size_t size, std::ios::openmode mode) 
 	return true;
 }
 
-bool File::IsExist() {
+bool File::IsExist() const {
 #ifdef _MSC_VER
 	struct _stat buffer;
 	return _stat(FullPath.c_str(), &buffer) == 0;

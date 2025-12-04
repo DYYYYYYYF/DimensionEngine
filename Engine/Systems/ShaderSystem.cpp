@@ -6,9 +6,9 @@
 #include "Core/Event.hpp"
 #include "Core/DMemory.hpp"
 #include "Core/EngineLogger.hpp"
+#include "Platform/JsonObject.h"
 #include "Containers/TString.hpp"
 #include "Renderer/Vulkan/VulkanShader.hpp"
-#include "Utils/YAMLReader.h"
 
 IRenderer* ShaderSystem::Renderer = nullptr;
 ShaderSystem::Config ShaderSystem::ShaderSystemConfig;
@@ -35,8 +35,13 @@ bool ShaderSystem::Initialize(IRenderer* renderer, ShaderSystem::Config config) 
 	}
 
 	// Read current config
-	YAMLReader YamlReader(ENGINE_CONFIG_PATH);
-	GLOBAL_SHADER_TYPE = YamlReader.ReadPropertyString("renderer.shader_language")
+	File MaterialAsset(ENGINE_CONFIG_PATH);
+	if (!MaterialAsset.IsExist()) {
+		return false;
+	}
+
+	JsonObject Content = JsonObject(MaterialAsset.ReadBytes());
+	GLOBAL_SHADER_TYPE = Content.Get("renderer").Get("shader_language").GetString()
 		.compare("glsl") == 0 ? ShaderLanguage::eGLSL : ShaderLanguage::eHLSL;
 
 	Renderer = renderer;
@@ -86,9 +91,14 @@ void ShaderSystem::Shutdown() {
 		std::vector<Shader*>().swap(Shaders);
 
 		// Save current config
-		YAMLReader YamlReader(ENGINE_CONFIG_PATH);
+		File MaterialAsset(ENGINE_CONFIG_PATH);
+		if (!MaterialAsset.IsExist()) {
+			return;
+		}
+
+		JsonObject Content = JsonObject(MaterialAsset.ReadBytes());
 		std::string Lan = GLOBAL_SHADER_TYPE == ShaderLanguage::eGLSL ? "glsl" : "hlsl";
-		YamlReader.SetPropertyString("renderer.shader_language", Lan);
+		Content.Get("renderer").SetString("shader_language", Lan);
 	}
 }
 

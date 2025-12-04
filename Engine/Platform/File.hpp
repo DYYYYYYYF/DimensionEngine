@@ -14,18 +14,18 @@ enum class eFileMode {
 
 class File {
 public:
-	File() : IsValid(false){}
-	File(const std::string& filename);
-	virtual ~File() {}
+	DAPI File();
+	DAPI File(const std::string& filename);
+	DAPI virtual ~File();
 
 public:
 	std::string GetFilename() const { return FileName; }
 	std::string GetFullPath() const { return FullPath; }
 	std::string GetPrePath() const { return PrePath; }
 	std::string GetFileType() const { return FileType; }
-	std::string ReadBytes();
-	bool WriteBytes(const char* source, size_t size, std::ios::openmode mode = std::ios::ate);
-	bool IsExist();
+	DAPI std::string ReadBytes() const;
+	DAPI bool WriteBytes(const char* source, size_t size, std::ios::openmode mode = std::ios::ate);
+	DAPI bool IsExist() const;
 
 protected:
 	std::string FullPath;
