@@ -1,13 +1,13 @@
 {
   "Camera": {
     "Position": [
-      -74.0,
-      28.0,
-      105.0
+      0.0,
+      0.0,
+      60.0
     ],
     "Rotation": [
-      -5.318593502044678,
-      -46.74561309814453,
+      0.0,
+      0.0,
       0.0
     ],
     "Transform": [
@@ -30,10 +30,10 @@
     ]
   },
   "Window": {
-    "Height": 1053,
+    "Height": 819,
     "OffsetX": 100,
     "OffsetY": 100,
     "Title": "Game Window",
-    "Width": 1951
+    "Width": 1506
   }
 }
