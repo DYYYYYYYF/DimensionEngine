@@ -32,21 +32,15 @@ endforeach()
 option(ENABLE_PLUGINS_AUDIO "Enable audio module" OFF)
 option(GENERATE_TEST_PROGRAME "Generate test module" ON)
 
+if(MSVC)
+    # 强制所有目标使用统一的警告级别（包含第三方库）
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4")
+    string(REGEX REPLACE "/W[0-4]" "/W4" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+endif()
+
 # 第三方库
 message(STATUS "Configuring Third-Party Libraries...")
 add_subdirectory(3rd)
-
-# 编译器设置
-if(MSVC)
-    add_compile_options(/W4 /permissive- /MP /utf-8)
-    add_compile_definitions(
-        _CRT_SECURE_NO_WARNINGS
-        NOMINMAX
-        WIN32_LEAN_AND_MEAN
-    )
-else()
-    add_compile_options(-Wall -Wextra -Wpedantic)
-endif()
 
 ## Set build type
 if (NOT CMAKE_BUILD_TYPE)
