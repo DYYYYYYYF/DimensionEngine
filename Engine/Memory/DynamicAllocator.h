@@ -48,7 +48,7 @@ public:
 	 * @param alignment The alignment size.
 	 * @return The allocated block of memory unless this operation fails, then nullptr.
 	 */
-	void* AllocateAligned(size_t size, unsigned short alignment);
+	void* AllocateAligned(size_t size, size_t alignment);
 
 	/**
 	 * @brief Free the given block of memory.

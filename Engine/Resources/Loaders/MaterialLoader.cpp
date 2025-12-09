@@ -19,7 +19,7 @@ bool MaterialLoader::Load(const std::string& name, void* params, Resource* resou
 
 	const char* FormatStr = "%s/%s/%s%s";
 	char FullFilePath[512];
-	StringFormat(FullFilePath, 512, FormatStr, ResourceSystem::GetRootPath(), TypePath.c_str(), name.c_str(), ".dmt");
+	StringFormat(FullFilePath, FormatStr, ResourceSystem::GetRootPath(), TypePath.c_str(), name.c_str(), ".dmt");
 
 	FileHandle File;
 	if (!FileSystemOpen(FullFilePath, eFile_Mode_Read, false, &File)) {
@@ -164,7 +164,7 @@ void MaterialLoader::Unload(Resource* resource) {
 	}
 
 	if (resource->Data) {
-		Memory::Free(resource->Data, resource->DataSize * resource->DataCount, MemoryType::eMemory_Type_Material_Instance);
+		Memory::Free(resource->Data, MemoryType::eMemory_Type_Material_Instance);
 		resource->Data = nullptr;
 		resource->DataSize = 0;
 		resource->DataCount = 0;

@@ -4,7 +4,7 @@
 #include "Core/EngineLogger.hpp"
 
 bool JobSystem::IsRunning = false;
-unsigned char JobSystem::ThreadCount;
+unsigned int JobSystem::ThreadCount;
 JobThread JobSystem::JobThreads[32];
 std::queue<JobInfo> JobSystem::LowPriorityQueue;
 std::queue<JobInfo> JobSystem::NormalPriorityQueue;
@@ -87,7 +87,7 @@ uint32_t JobSystem::RunJobThread(void* param) {
 	return 1;
 }
 
-bool JobSystem::Initialize(unsigned char job_thread_count, unsigned int type_masks[]) {
+bool JobSystem::Initialize(unsigned int job_thread_count, unsigned int type_masks[]) {
 	IsRunning = true;
 	ThreadCount = job_thread_count;
 

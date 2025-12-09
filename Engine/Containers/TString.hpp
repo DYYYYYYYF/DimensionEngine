@@ -14,7 +14,7 @@
 #endif
 
 template<typename... Args>
-inline void StringFormat(char* dst, size_t size, const char* format, Args... args) {
+inline void StringFormat(char* dst, const char* format, Args... args) {
 	size_t len = snprintf(NULL, 0, format, args...);
 	if (len > 0) {
 		snprintf(dst, len + 1, format, args...);
@@ -91,34 +91,12 @@ private:
 			size_t Size = 0;
 			unsigned short  Alignment = 0;
 			if (Memory::GetAlignmentSize(Str, &Size, &Alignment)) {
-				Memory::FreeAligned(Str, Size, Alignment, MemoryType::eMemory_Type_String);
+				Memory::FreeAligned(Str, Size, MemoryType::eMemory_Type_String);
 			}
 
 			Str = nullptr;
 			Len = 0;
 		}
-	}
-
-// TODO: Remove above functions. Use class func.
-public:
-	static void Append(char* dst, size_t size, const char* src, const char* append) {
-		StringFormat(dst, 512, "%s%s", src, append);
-	}
-
-	static void Append(char* dst, size_t size, const char* src, int append) {
-		StringFormat(dst, 512, "%s%i", src, append);
-	}
-
-	static void Append(char* dst, size_t size, const char* src, bool append) {
-		StringFormat(dst, 512, "%s%s", src, append ? "true" : "false");
-	}
-
-	static void Append(char* dst, size_t size, const char* src, float append) {
-		StringFormat(dst, 512, "%s%f", src, append);
-	}
-
-	static void Append(char* dst, size_t size, const char* src, char append) {
-		StringFormat(dst, 512, "%s%c", src, append);
 	}
 
 private:
@@ -137,7 +115,7 @@ inline void StringFree(char* str) {
 	size_t Size = 0;
 	unsigned short  Alignment = 0;
 	if (Memory::GetAlignmentSize(str, &Size, &Alignment)) {
-		Memory::FreeAligned(str, Size, Alignment, MemoryType::eMemory_Type_String);
+		Memory::FreeAligned(str, Size, MemoryType::eMemory_Type_String);
 	}
 	else {
 
@@ -318,7 +296,6 @@ inline bool StringEquali(const char* str0, const char* str1) {
 #elif (defined _MSC_VER)
 	return _strcmpi(str0, str1) == 0;
 #endif
-	return false;
 }
 
 inline bool StringNequal(const char* str0, const char* str1, size_t len) {

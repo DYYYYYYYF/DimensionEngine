@@ -9,7 +9,7 @@ bool CameraSystem::Initialized = false;
 SCameraSystemConfig CameraSystem::Config;
 Camera* CameraSystem::DefaultCamera = nullptr;
 std::vector<Camera*> CameraSystem::Cameras;
-std::unordered_map<std::string, uint32_t> CameraSystem::CameraMap;
+std::unordered_map<std::string, uint16_t> CameraSystem::CameraMap;
 
 bool CameraSystem::Initialize(IRenderer* renderer, SCameraSystemConfig config) {
 	if (config.max_camera_count == 0) {
@@ -57,7 +57,7 @@ Camera* CameraSystem::Acquire(const char* name) {
 			return DefaultCamera;
 		}
 
-		unsigned short ID = INVALID_ID_U16;
+		uint16_t ID = INVALID_ID_U16;
 		if (CameraMap.find(name) == CameraMap.end()) {
 			GLOG(Log::eError, "Camera system Acquire() failed lookup. returned nullptr.");
 			return nullptr;
@@ -66,7 +66,7 @@ Camera* CameraSystem::Acquire(const char* name) {
 		ID = CameraMap[name];
 		if (ID == INVALID_ID_U16) {
 			// Find free slot
-			for (unsigned short i = 0; i < Config.max_camera_count; ++i) {
+			for (uint16_t i = 0; i < Config.max_camera_count; ++i) {
 				if (Cameras[i] == nullptr || Cameras[i]->GetID() == INVALID_ID_U16) {
 					ID = i;
 					break;
@@ -105,7 +105,7 @@ void CameraSystem::Release(const char* name) {
 			return;
 		}
 
-		unsigned short ID = INVALID_ID_U16;
+		uint16_t ID = INVALID_ID_U16;
 		if (CameraMap.find(name) == CameraMap.end()) {
 			GLOG(Log::eWarn, "Camera system release failed lookup. Nothing was done.");
 			return;

@@ -238,7 +238,7 @@ bool FontSystem::Acquire(const std::string& fontName, unsigned short fontSize, c
 		}
 
 		// Get the lookup.
-		unsigned short ID = BitmapFontMap[fontName];
+		uint32_t ID = (uint16_t)BitmapFontMap[fontName];
 		BitmapFontLookup* Lookup = BitmapFonts[ID];
 
 		// Assign the data, increment the reference.
@@ -254,7 +254,7 @@ bool FontSystem::Acquire(const std::string& fontName, unsigned short fontSize, c
 		}
 
 		// Get the lookup.
-		unsigned short ID = SystemFontMap[fontName];
+		uint32_t ID = SystemFontMap[fontName];
 		SystemFontLookup* Lookup = SystemFonts[ID];
 
 		// Search the size variants for the correct size.
@@ -313,7 +313,7 @@ bool FontSystem::VerifyAtlas(IFontDataBase* font, const std::string& text) {
 		}
 
 		// Get the lookup.
-		unsigned short ID = SystemFontMap[font->face];
+		uint32_t ID = SystemFontMap[font->face];
 		SystemFontLookup* Lookup = SystemFonts[ID];
 
 		return VerifySystemFontSizeVariant(Lookup, font, text);
@@ -396,7 +396,7 @@ SystemFontVariantData* FontSystem::CreateSystemFontVariant(SystemFontLookup* loo
 
 	// Create textures.
 	char FontTexName[255];
-	StringFormat(FontTexName, 255, "__system_text_atlas_%s_i%i_sz%i__", fontName.c_str(), lookup->index, size);
+	StringFormat(FontTexName, "__system_text_atlas_%s_i%i_sz%i__", fontName.c_str(), lookup->index, size);
 	InternalData->atlas.texture = TextureSystem::AcquireWriteable(FontTexName, InternalData->atlasSizeX, InternalData->atlasSizeY, 4, true);
 
 	// Obtain some metrics.
@@ -456,14 +456,14 @@ bool FontSystem::RebuildSystemFontVariantAtlas(SystemFontLookup* lookip, IFontDa
 	TextureSystem::WriteData(variant->atlas.texture, 0, PackImageSize * 4, RGBAPixels);
 
 	// Free pixel/rgba pixel data.
-	Memory::Free(Pixels, PackImageSize, MemoryType::eMemory_Type_Array);
+	Memory::Free(Pixels, MemoryType::eMemory_Type_Array);
 	Pixels = nullptr;
-	Memory::Free(RGBAPixels, PackImageSize * 4, MemoryType::eMemory_Type_Array);
+	Memory::Free(RGBAPixels, MemoryType::eMemory_Type_Array);
 	RGBAPixels = nullptr;
 
 	// Regenerate glyphs
 	if (variant->glyphs && variant->glyphCount) {
-		Memory::Free(variant->glyphs, sizeof(FontGlyph) * variant->glyphCount, MemoryType::eMemory_Type_Array);
+		Memory::Free(variant->glyphs, MemoryType::eMemory_Type_Array);
 		variant->glyphs = nullptr;
 	}
 
@@ -485,7 +485,7 @@ bool FontSystem::RebuildSystemFontVariantAtlas(SystemFontLookup* lookip, IFontDa
 
 	// Regenerate kernings.
 	if (variant->kerningCount && variant->kernings) {
-		Memory::Free(variant->kernings, sizeof(FontKerning) * variant->kerningCount, MemoryType::eMemory_Type_Array);
+		Memory::Free(variant->kernings, MemoryType::eMemory_Type_Array);
 		variant->kernings = nullptr;
 	}
 
@@ -495,7 +495,7 @@ bool FontSystem::RebuildSystemFontVariantAtlas(SystemFontLookup* lookip, IFontDa
 		// Get the kerning table for the current font.
 		stbtt_kerningentry* KerningTable = (stbtt_kerningentry*)Memory::Allocate(sizeof(stbtt_kerningentry) * variant->kerningCount, MemoryType::eMemory_Type_Array);
 		int EntryCount = stbtt_GetKerningTable(&lookip->info, KerningTable, variant->kerningCount);
-		if (EntryCount != variant->kerningCount) {
+		if (EntryCount != (int)variant->kerningCount) {
 			GLOG(Log::eError, "Kerning entry count mismatch: %i -> %i.", EntryCount, variant->kerningCount);
 			return false;
 		}
@@ -504,7 +504,7 @@ bool FontSystem::RebuildSystemFontVariantAtlas(SystemFontLookup* lookip, IFontDa
 			FontKerning* k = &variant->kernings[i];
 			k->codePoint0 = KerningTable[i].glyph1;
 			k->codePoint1 = KerningTable[i].glyph2;
-			k->amount = KerningTable[i].advance;
+			k->amount = (short)KerningTable[i].advance;
 		}
 	}
 	else {

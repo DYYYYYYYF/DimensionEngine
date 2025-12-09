@@ -431,7 +431,7 @@ public:
 		ASSERT_TRUE(out_vertex_count == 3, "GeometryUtils vertex deduplication - count");
 
 		if (out_vertices) {
-			Memory::Free(out_vertices, sizeof(Vertex) * out_vertex_count, MemoryType::eMemory_Type_Array);
+			Memory::Free(out_vertices, MemoryType::eMemory_Type_Array);
 		}
 	}
 

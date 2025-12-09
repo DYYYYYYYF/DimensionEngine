@@ -680,12 +680,13 @@ public:
 
                 return TVector3<T>(result_data[0], result_data[1], result_data[2]);
             }
-    #endif
+    #else
             return TVector3<T>(
                 v.x * m.data[0] + v.y * m.data[4] + v.z * m.data[8] + m.data[12],
                 v.x * m.data[1] + v.y * m.data[5] + v.z * m.data[9] + m.data[13],
                 v.x * m.data[2] + v.y * m.data[6] + v.z * m.data[10] + m.data[14]
             );
+	#endif
         }
 
         /**

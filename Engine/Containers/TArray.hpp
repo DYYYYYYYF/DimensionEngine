@@ -60,7 +60,7 @@ public:
 				for (size_t j = 0; j < i; ++j) {
 					ArrayMemory[j].~ElementType();
 				}
-				Memory::Free(ArrayMemory, ArrayMemSize, MemoryType::eMemory_Type_Array);
+				Memory::Free(ArrayMemory, MemoryType::eMemory_Type_Array);
 				ArrayMemory = nullptr;
 				Capacity = 0;
 				Length = 0;
@@ -99,7 +99,7 @@ public:
 					for (size_t j = 0; j < i; ++j) {
 						ArrayMemory[j].~ElementType();
 					}
-					Memory::Free(ArrayMemory, ArrayMemSize, MemoryType::eMemory_Type_Array);
+					Memory::Free(ArrayMemory, MemoryType::eMemory_Type_Array);
 					ArrayMemory = nullptr;
 					Capacity = 0;
 					Length = 0;
@@ -180,7 +180,7 @@ public:
 					for (size_t j = 0; j < i; ++j) {
 						TempMemory[j].~ElementType();
 					}
-					Memory::Free(TempMemory, NewCapacity * Stride, MemoryType::eMemory_Type_Array);
+					Memory::Free(TempMemory, MemoryType::eMemory_Type_Array);
 					throw;
 				}
 			}
@@ -191,7 +191,7 @@ public:
 					ArrayMemory[i].~ElementType();
 				}
 			}
-			Memory::Free(ArrayMemory, Capacity * Stride, MemoryType::eMemory_Type_Array);
+			Memory::Free(ArrayMemory, MemoryType::eMemory_Type_Array);
 		}
 
 		// 如果新大小大于原长度，构造新元素
@@ -311,7 +311,7 @@ public:
 					ArrayMemory[i].~ElementType();
 				}
 			}
-			Memory::Free(ArrayMemory, Capacity * Stride, MemoryType::eMemory_Type_Array);
+			Memory::Free(ArrayMemory, MemoryType::eMemory_Type_Array);
 			ArrayMemory = nullptr;
 		}
 

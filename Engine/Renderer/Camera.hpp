@@ -14,7 +14,7 @@ public:
 	 * of doing so directly.
 	 */
 	Camera();
-	Camera(unsigned short id);
+	Camera(uint32_t id);
 
 public:
 	/**
@@ -148,24 +148,24 @@ public:
 	}
 
 public:
-	unsigned short GetID() const { return ID; }
-	void SetID(unsigned short id) { ID = id; }
+	uint32_t GetID() const { return ID; }
+	void SetID(uint32_t id) { ID = id; }
 
-	unsigned short GetReferenceCount() const { return ReferenceCount; }
-	void SetReferenceCount(unsigned short count) { ReferenceCount = count; }
-	void IncreaseReferenceCount(unsigned short count = 1) { ReferenceCount += count; }
-	void DecreaseReferenceCount(unsigned short count = 1) { ReferenceCount -= count; }
+	uint32_t GetReferenceCount() const { return ReferenceCount; }
+	void SetReferenceCount(uint32_t count) { ReferenceCount = count; }
+	void IncreaseReferenceCount(uint32_t count = 1) { ReferenceCount += count; }
+	void DecreaseReferenceCount(uint32_t count = 1) { ReferenceCount -= count; }
 
 private:
 	/**
 	 * @brief The symbol of this camera.
 	 */
-	unsigned short ID;
+	uint32_t ID;
 
 	/**
 	 * @brief The reference count of this camera.
 	 */
-	unsigned short ReferenceCount;
+	uint32_t ReferenceCount;
 
 	/**
 	 * @brief The position of this camera.

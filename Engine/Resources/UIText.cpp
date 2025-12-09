@@ -89,8 +89,7 @@ bool UIText::Create(UITextType type, const std::string& fontName, unsigned short
 }
 void UIText::Destroy() {
 	if (Text != nullptr) {
-		uint32_t TextLength = (uint32_t)strlen(Text);
-		Memory::Free(Text, sizeof(char) * TextLength, MemoryType::eMemory_Type_String);
+		Memory::Free(Text, MemoryType::eMemory_Type_String);
 		Text = nullptr;
 	}
 
@@ -118,8 +117,7 @@ void UIText::SetText(const char* text) {
 			return;
 		}
 
-		uint32_t TextLength = (uint32_t)strlen(Text) + 1;
-		Memory::Free(Text, sizeof(char) * TextLength, MemoryType::eMemory_Type_String);
+		Memory::Free(Text, MemoryType::eMemory_Type_String);
 		Text = StringCopy(text);
 
 		// Verify atlas has the glyphs needed
@@ -305,8 +303,8 @@ void UIText::RegenerateGeometry() {
 	bool IndexLoadResult = Renderer->LoadRange(IndexBuffer, 0, tIndexBufferSize, IndexBufferData);
 
 	// Clean up.
-	Memory::Free(VertexBufferData, tVertexBufferSize, MemoryType::eMemory_Type_Array);
-	Memory::Free(IndexBufferData, tIndexBufferSize, MemoryType::eMemory_Type_Array);
+	Memory::Free(VertexBufferData, MemoryType::eMemory_Type_Array);
+	Memory::Free(IndexBufferData, MemoryType::eMemory_Type_Array);
 
 	// Verify results.
 	if (!VertexLoadResult) {

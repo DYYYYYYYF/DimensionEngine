@@ -17,7 +17,6 @@ bool VulkanRenderPass::Create(VulkanContext* context, const RenderpassConfig& co
 	Subpass.setPipelineBindPoint(vk::PipelineBindPoint::eGraphics);
 
 	// Attachments TODO:
-	uint32_t AttachmentDescriptionCount = 0;
 	std::vector<vk::AttachmentDescription> AttachmentDescriptions;
 	std::vector<vk::AttachmentDescription> ColorAttachmentDescriptions;
 	std::vector<vk::AttachmentDescription> DepthAttachmentDescriptions;

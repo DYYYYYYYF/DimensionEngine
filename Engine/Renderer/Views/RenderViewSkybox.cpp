@@ -98,8 +98,8 @@ void RenderViewSkybox::OnResize(uint32_t width, uint32_t height) {
 		return;
 	}
 
-	Width = width;
-	Height = height;
+	Width = (uint16_t)width;
+	Height = (uint16_t)height;
 	ProjectionMatrix = Matrix4::Perspective(Fov, (float)Width / (float)Height, NearClip, FarClip);
 
 	for (uint32_t i = 0; i < RenderpassCount; ++i) {

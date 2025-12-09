@@ -62,7 +62,7 @@ String& String::operator=(const char* str) {
 String& String::operator+=(const String& str) {
 	String Temp = *this;
 	if (Str != nullptr) {
-		Memory::Free(Str, Len + 1, MemoryType::eMemory_Type_String);
+		Memory::Free(Str, MemoryType::eMemory_Type_String);
 		Str = nullptr;
 	}
 
@@ -105,7 +105,6 @@ bool  String::Equali(const char* str) {
 #elif (defined _MSC_VER)
 	return _strcmpi(this->Str, str) == 0;
 #endif
-	return false;
 }
 
 bool String::Nequal(const char* str, size_t len) {
@@ -118,7 +117,6 @@ bool String::Nequali(const char* str, size_t len) {
 #elif (defined _MSC_VER)
 	return _strnicmp(this->Str, str, len) == 0;
 #endif
-	return false;
 }
 
 std::vector<char*> String::Split(char delimiter, bool trim_entries /*= true*/, bool include_empty /*= true*/) {

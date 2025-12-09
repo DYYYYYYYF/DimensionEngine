@@ -7,20 +7,13 @@
  */
 class BaseObject {
 public:
-	CORE_API BaseObject() {
-		UniqueID = Identifier::AcquireNewID(this);
-	}
-
-	CORE_API virtual ~BaseObject() {
-		Identifier::ReleaseID(UniqueID);
-	}
-
-	CORE_API virtual void PreInitialize() = 0;
-	CORE_API virtual bool Initialize() = 0;
-	CORE_API virtual void PostInitialize() = 0;
+	BaseObject() = default;
+	virtual ~BaseObject() = default;
 
 public:
-	CORE_API uint32_t GetUniqueID() const { return UniqueID; }
+	virtual void PreInitialize() = 0;
+	virtual bool Initialize() = 0;
+	virtual void PostInitialize() = 0;
 
 protected:
 	uint32_t UniqueID;

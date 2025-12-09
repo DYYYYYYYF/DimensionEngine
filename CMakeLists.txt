@@ -34,8 +34,19 @@ option(GENERATE_TEST_PROGRAME "Generate test module" ON)
 
 if(MSVC)
     # 强制所有目标使用统一的警告级别（包含第三方库）
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4 /permissive- /MP /wd4201 /wd4324 /wd4100")
     string(REGEX REPLACE "/W[0-4]" "/W4" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+
+    add_compile_definitions(
+        _CRT_SECURE_NO_WARNINGS
+        NOMINMAX
+        WIN32_LEAN_AND_MEAN
+    )
+
+else()
+    add_compile_options(${PROJECT_NAME} PRIVATE
+        -Wall -Wextra -Wpedantic
+    )
 endif()
 
 # 第三方库

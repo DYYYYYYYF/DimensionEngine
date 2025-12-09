@@ -56,7 +56,6 @@ static bool RenderViewWorldDeferredOnEvent(eEventCode code, void* sender, void* 
 		}
 		return true;
 	}
-	default: return true;
 	}
 
 	return false;
@@ -156,8 +155,8 @@ void RenderViewWorldDeferred::OnResize(uint32_t width, uint32_t height) {
 		return;
 	}
 
-	Width = width;
-	Height = height;
+	Width = (uint16_t)width;
+	Height = (uint16_t)height;
 	ProjectionMatrix = Matrix4::Perspective(Fov, (float)Width / (float)Height, NearClip, FarClip);
 
 	// 重新创建G-Buffer纹理

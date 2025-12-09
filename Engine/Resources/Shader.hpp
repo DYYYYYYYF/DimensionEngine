@@ -93,47 +93,47 @@ enum ShaderFlags {
 typedef unsigned int ShaderFlagBits;
 
 struct MaterialShaderUniformLocations {
-	unsigned short projection = INVALID_ID_U16;
-	unsigned short view = INVALID_ID_U16;
-	unsigned short ambient_color = INVALID_ID_U16;
-	unsigned short view_position = INVALID_ID_U16;
-	unsigned short model = INVALID_ID_U16;
-	unsigned short time = INVALID_ID_U16;
-	unsigned short diffuse_color = INVALID_ID_U16;
-	unsigned short shininess = INVALID_ID_U16;
-	unsigned short metallic = INVALID_ID_U16;
-	unsigned short roughness = INVALID_ID_U16;
-	unsigned short ambient_occlusion = INVALID_ID_U16;
-	unsigned short normal_intensity = INVALID_ID_U16;
+	uint32_t projection = INVALID_ID;
+	uint32_t view = INVALID_ID;
+	uint32_t ambient_color = INVALID_ID;
+	uint32_t view_position = INVALID_ID;
+	uint32_t model = INVALID_ID;
+	uint32_t time = INVALID_ID;
+	uint32_t diffuse_color = INVALID_ID;
+	uint32_t shininess = INVALID_ID;
+	uint32_t metallic = INVALID_ID;
+	uint32_t roughness = INVALID_ID;
+	uint32_t ambient_occlusion = INVALID_ID;
+	uint32_t normal_intensity = INVALID_ID;
 
-	unsigned short diffuse_texture = INVALID_ID_U16;
-	unsigned short specular_texture = INVALID_ID_U16;
-	unsigned short normal_texture = INVALID_ID_U16;
-	unsigned short roughness_metallic_texture = INVALID_ID_U16;
+	uint32_t diffuse_texture = INVALID_ID;
+	uint32_t specular_texture = INVALID_ID;
+	uint32_t normal_texture = INVALID_ID;
+	uint32_t roughness_metallic_texture = INVALID_ID;
 
-	unsigned short render_mode = INVALID_ID_U16;
+	uint32_t render_mode = INVALID_ID;
 };
 
 struct DRShaderUniformLocations {
-	unsigned short projection = INVALID_ID_U16;
-	unsigned short view = INVALID_ID_U16;
-	unsigned short ambient_color = INVALID_ID_U16;
-	unsigned short view_position = INVALID_ID_U16;
-	unsigned short mode = INVALID_ID_U16;
-	unsigned short time = INVALID_ID_U16;
-	unsigned short albedo_texture = INVALID_ID_U16;
-	unsigned short normal_texture = INVALID_ID_U16;
-	unsigned short position_texture = INVALID_ID_U16;
-	unsigned short light_intensity = INVALID_ID_U16;
-	unsigned short debug_mode = INVALID_ID_U16;
+	uint32_t projection = INVALID_ID;
+	uint32_t view = INVALID_ID;
+	uint32_t ambient_color = INVALID_ID;
+	uint32_t view_position = INVALID_ID;
+	uint32_t mode = INVALID_ID;
+	uint32_t time = INVALID_ID;
+	uint32_t albedo_texture = INVALID_ID;
+	uint32_t normal_texture = INVALID_ID;
+	uint32_t position_texture = INVALID_ID;
+	uint32_t light_intensity = INVALID_ID;
+	uint32_t debug_mode = INVALID_ID;
 };
 
 struct UIShaderUniformLocations {
-	unsigned short projection = INVALID_ID_U16;
-	unsigned short view = INVALID_ID_U16;
-	unsigned short diffuse_color = INVALID_ID_U16;
-	unsigned short diffuse_texture = INVALID_ID_U16;
-	unsigned short model = INVALID_ID_U16;
+	uint32_t projection = INVALID_ID_U16;
+	uint32_t view = INVALID_ID_U16;
+	uint32_t diffuse_color = INVALID_ID_U16;
+	uint32_t diffuse_texture = INVALID_ID_U16;
+	uint32_t model = INVALID_ID_U16;
 };
 
 /**
@@ -148,10 +148,10 @@ enum ShaderScope {
 
 struct ShaderUniform {
 	size_t offset;
-	unsigned short location;
-	unsigned short index;
-	unsigned short size;
-	unsigned short set_index;
+	uint32_t location;
+	uint32_t index;
+	uint32_t size;
+	uint32_t set_index;
 
 	ShaderScope scope;
 	ShaderUniformType type;
@@ -305,11 +305,11 @@ public:
 	ShaderScope BoundScope;
 	uint32_t BoundInstanceId;
 	uint32_t BoundUboOffset;
-	std::unordered_map<std::string, unsigned short> HashMap;
+	std::unordered_map<std::string, uint32_t> HashMap;
 	ShaderStatus Status;
-	unsigned short PushConstantsRangeCount;
+	uint16_t PushConstantsRangeCount;
 	Range PushConstantsRanges[32];
-	unsigned short AttributeStride;
+	uint16_t AttributeStride;
 
 	std::vector<ShaderUniform> Uniforms;
 	std::vector<ShaderAttribute> Attributes;

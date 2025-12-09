@@ -32,7 +32,6 @@ bool GameOnEvent(eEventCode code, void* sender, void* listender_inst, SEventCont
             GameInst->HoveredObjectID = context.data.u32[0];
             return true;
         }break;
-        default: return true;
     }
 
 	return false;
@@ -75,8 +74,8 @@ bool GameInstance::Boot(IRenderer* renderer) {
 	}
 
 	JsonObject Content = JsonObject(MaterialAsset.ReadBytes());
-	WindowSize.Width = Content.ReadInt("Window.Width");
-	WindowSize.Height = Content.ReadInt("Window.Height");
+	WindowSize.Width = (uint16_t)Content.ReadInt("Window.Width");
+	WindowSize.Height = (uint16_t)Content.ReadInt("Window.Height");
 
 	GameConsole = NewObject<DebugConsoleActor>();
 
@@ -347,7 +346,7 @@ bool GameInstance::Update(float delta_time) {
 	Meshes[2]->Rotate(RotationY);
 
 	// Text
-	Camera* WorldCamera = CameraSystem::GetDefault();
+	WorldCamera = CameraSystem::GetDefault();
 	Vector3 Pos = WorldCamera->GetPosition();
 	Vector3 Rot = WorldCamera->GetEulerAngles();
 
@@ -481,7 +480,7 @@ bool GameInstance::Update(float delta_time) {
 	}
 
 	char FPSText[512];
-	StringFormat(FPSText, 512,
+	StringFormat(FPSText,
 		"\
 	Camera Pos: [%.3f %.3f %.3f]\tCamera Rot: [%.3f %.3f %.3f]\n\
 	L=%s R=%s\tNDC: x=%.2f, y=%.2f\tHovered Object: %s\n\
@@ -586,7 +585,7 @@ bool GameInstance::Render(SRenderPacket* packet, float delta_time) {
 }
 
 void GameInstance::OnResize(unsigned int width, unsigned int height) {
-	WindowSize = { (int)width, (int)height };
+	WindowSize = { (uint16_t)width, (uint16_t)height };
 
 	TestText.SetLocation(Vector3(180, (float)height - 150, 0));
 	TestSysText.SetLocation(Vector3(100, (float)height - 400, 0));

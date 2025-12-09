@@ -35,7 +35,7 @@ void VulkanAllocator::Free(void* user_date, void* memory) {
 #ifdef DVULKAN_ALLOCATOR_TRACE
 		GLOG(Log::eInfo, "Block %p found with size/alignment: %llu/%llu. Freeing aligned block.", memory, size, alignment);
 #endif
-		Memory::FreeAligned(memory, size, alignment, MemoryType::eMemory_Type_Vulkan);
+		Memory::FreeAligned(memory, size, MemoryType::eMemory_Type_Vulkan);
 	}
 	else {
 		GLOG(Log::eError, "VulkanAllocFree failed to get alignment lookup for block %p.", memory);
@@ -81,7 +81,7 @@ void* VulkanAllocator::Reallocation(void* user_data, void* original, size_t size
 		GLOG(Log::eInfo, "Freeing original aligned block %p.", original);
 #endif
 		// Free the original memory only if the new allocation was successful.
-		Memory::FreeAligned(original, alloc_size, alloc_alignment, MemoryType::eMemory_Type_Vulkan);
+		Memory::Free(original, MemoryType::eMemory_Type_Vulkan);
 	}
 	else {
 #ifdef DVULKAN_ALLOCATOR_TRACE

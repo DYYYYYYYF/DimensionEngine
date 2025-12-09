@@ -103,8 +103,4 @@ void TestArray(){
 			cout << b->Str << endl;
 		}
 	}
-
-	TCopy T;
-	TCopy* Test1 = new TCopy(T);
-	TCopy* Test2 = NewObject<TCopy>(T);
 }

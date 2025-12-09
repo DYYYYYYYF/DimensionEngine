@@ -4,7 +4,7 @@ Camera::Camera() {
 	Reset();
 }
 
-Camera::Camera(unsigned short id) {
+Camera::Camera(uint32_t id) {
 	Reset();
 	ID = id;
 }

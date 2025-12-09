@@ -247,10 +247,10 @@ bool GeometrySystem::CreateGeometry(SGeometryConfig config, Geometry* geometry) 
 void GeometrySystem::ConfigDispose(SGeometryConfig* config) {
 	if (config) {
 		if (config->vertices) {
-			Memory::Free(config->vertices, config->vertex_count * config->vertex_size, MemoryType::eMemory_Type_Array);
+			Memory::Free(config->vertices, MemoryType::eMemory_Type_Array);
 		}
 		if (config->indices) {
-			Memory::Free(config->indices, config->index_count * config->index_size, MemoryType::eMemory_Type_Array);
+			Memory::Free(config->indices, MemoryType::eMemory_Type_Array);
 		}
 		Memory::Zero(config, sizeof(SGeometryConfig));
 	}

@@ -1,14 +1,16 @@
 ﻿#pragma once
 
-#include "Frameworks/Classes/BaseObject.h"
+#include "BaseObject.h"
 
 class Object : public BaseObject {
 public:
-	CORE_API Object() : BaseObject() {}
-	CORE_API virtual ~Object() {}
+	Object() { UniqueID = Identifier::AcquireNewID(this); }
+	virtual ~Object() { Identifier::ReleaseID(UniqueID); }
 
 public:
-	CORE_API virtual void PreInitialize() override {};
-	CORE_API virtual bool Initialize() override { return true; };
-	CORE_API virtual void PostInitialize() override {};
+	virtual void PreInitialize() override {};
+	virtual bool Initialize() override { return true; };
+	virtual void PostInitialize() override {};
+	uint32_t GetUniqueID() const { return UniqueID; }
+
 };

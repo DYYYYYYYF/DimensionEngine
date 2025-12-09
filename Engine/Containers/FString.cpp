@@ -129,7 +129,7 @@ void FString::InitializeEmpty() {
 
 void FString::ReleaseMemory() {
 	if (Str != nullptr) {
-		Memory::Free(Str, Capacity + 1, MemoryType::eMemory_Type_String);
+		Memory::Free(Str, MemoryType::eMemory_Type_String);
 		Str = nullptr;
 		Len = 0;
 		Capacity = 0;
@@ -148,7 +148,7 @@ void FString::EnsureCapacity(size_t required_size) {
 
 		if (Str != nullptr && Len > 0) {
 			Memory::Copy(new_str, Str, Len);
-			Memory::Free(Str, Capacity + 1, MemoryType::eMemory_Type_String);
+			Memory::Free(Str, MemoryType::eMemory_Type_String);
 		}
 
 		Str = new_str;
@@ -328,12 +328,10 @@ void FString::Free(char* str) {
 	size_t size = 0;
 	unsigned short alignment = 0;
 	if (Memory::GetAlignmentSize(str, &size, &alignment)) {
-		Memory::FreeAligned(str, size, alignment, MemoryType::eMemory_Type_String);
+		Memory::FreeAligned(str, size, MemoryType::eMemory_Type_String);
 	}
 	else {
-		// 如果无法获取对齐信息，尝试使用strlen估算大小
-		size_t estimated_size = strlen(str) + 1;
-		Memory::Free(str, estimated_size, MemoryType::eMemory_Type_String);
+		Memory::Free(str, MemoryType::eMemory_Type_String);
 	}
 }
 

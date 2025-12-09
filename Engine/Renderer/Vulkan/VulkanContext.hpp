@@ -44,7 +44,7 @@ public:
 		}
 
 		GLOG(Log::eWarn, "Unable to find suitable memory type!");
-		return -1;
+		return INVALID_ID;
 	}
 
 public:

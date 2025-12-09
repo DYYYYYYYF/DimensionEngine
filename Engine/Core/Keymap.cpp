@@ -38,6 +38,9 @@ void Keymap::AddBinding(eKeys key, KeymapEntryBindType type, KeymapModifierFlags
 }
 
 void Keymap::RemoveBinding(eKeys key, KeymapEntryBindType type, KeymapModifierFlags modifiers, PFN_KeybindCallback callback) {
+	(void)modifiers;
+	(void)type;
+
 	Entry* Ety = &Entries[(size_t)key];
 	Binding* Node = Ety->Bindings;
 	Binding* Previous = Ety->Bindings;
@@ -48,6 +51,7 @@ void Keymap::RemoveBinding(eKeys key, KeymapEntryBindType type, KeymapModifierFl
 			// Remove
 			Previous->Next = Node->Next;
 			DeleteObject(Node);
+			Node = nullptr;
 			return;
 		}
 

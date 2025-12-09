@@ -235,7 +235,7 @@ void MaterialSystem::Release(const char* name) {
 		MaterialMap.erase(CopyMatName);
 	}
 
-	Memory::Free(CopyMatName, sizeof(char) * strlen(CopyMatName) + 1, MemoryType::eMemory_Type_String);
+	Memory::Free(CopyMatName, MemoryType::eMemory_Type_String);
 	CopyMatName = nullptr;
 }
 

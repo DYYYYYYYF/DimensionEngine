@@ -36,7 +36,7 @@ void* Memory::Allocate(size_t size, MemoryType type) {
 	return AllocateAligned(size, DEFAULT_ALIGNMENT_SIZE, type);
 }
 
-void* Memory::AllocateAligned(size_t size, unsigned short alignment, MemoryType type) {
+void* Memory::AllocateAligned(size_t size, size_t alignment, MemoryType type) {
 	if (type == eMemory_Type_Unknow) {
 		GLOG(Log::eWarn, "Called allocate using eMemory_Type_Unknow. Re-class this allocation.");
 	}
@@ -83,11 +83,13 @@ void Memory::AllocateReport(size_t size, MemoryType type) {
 	AllocationMutex.UnLock();
 }
 
-void  Memory::Free(void* block, size_t size, MemoryType type) {
-	FreeAligned(block, size, DEFAULT_ALIGNMENT_SIZE, type);
+void  Memory::Free(void* block, MemoryType type) {
+	size_t alloc_size = 0;
+	Memory::GetAlignmentSize(block, &alloc_size, nullptr);
+	FreeAligned(block, alloc_size, type);
 }
 
-void Memory::FreeAligned(void* block, size_t size, unsigned short alignment, MemoryType type) {
+void Memory::FreeAligned(void* block, size_t size, MemoryType type) {
 	if (type == eMemory_Type_Unknow) {
 		GLOG(Log::eWarn, "Called free using eMemory_Type_Unknow. Re-class this allocation.");
 	}

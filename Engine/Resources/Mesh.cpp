@@ -65,7 +65,7 @@ void Mesh::Unload() {
 		GeometrySystem::Release(geometries[i]);
 	}
 
-	Memory::Free(geometries, sizeof(Geometry*) * geometry_count, MemoryType::eMemory_Type_Array);
+	Memory::Free(geometries, MemoryType::eMemory_Type_Array);
 	geometries = nullptr;
 
 	// For good measure. Invalidate the geometry so it doesn't attemp to be renderer.

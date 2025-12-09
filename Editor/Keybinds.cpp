@@ -6,10 +6,18 @@
 #include <Renderer/Camera.hpp>
 
 void GameOnEscape(eKeys key, KeymapEntryBindType type, KeymapModifierFlags modifiers, void* user_data) {
+	(void)modifiers;
+	(void)user_data;
+	(void)type;
+	(void)key;
+
 	EngineEvent::Fire(eEventCode::Application_Quit, nullptr, SEventContext());
 }
 
 void GameOnYaw(eKeys key, KeymapEntryBindType type, KeymapModifierFlags modifiers, void* user_data) {
+	(void)modifiers;
+	(void)type;
+
 	GameInstance* GameInst = (GameInstance*)user_data;
 	if (GameInst == nullptr) {
 		return;
@@ -27,6 +35,9 @@ void GameOnYaw(eKeys key, KeymapEntryBindType type, KeymapModifierFlags modifier
 }
 
 void GameOnPitch(eKeys key, KeymapEntryBindType type, KeymapModifierFlags modifiers, void* user_data) {
+	(void)modifiers;
+	(void)type;
+
 	GameInstance* GameInst = (GameInstance*)user_data;
 	if (GameInst == nullptr) {
 		return;
@@ -44,6 +55,10 @@ void GameOnPitch(eKeys key, KeymapEntryBindType type, KeymapModifierFlags modifi
 }
 
 void GameOnMoveForward(eKeys key, KeymapEntryBindType type, KeymapModifierFlags modifiers, void* user_data) {
+	(void)modifiers;
+	(void)type;
+	(void)key;
+
 	GameInstance* GameInst = (GameInstance*)user_data;
 	if (GameInst == nullptr) {
 		return;
@@ -57,6 +72,10 @@ void GameOnMoveForward(eKeys key, KeymapEntryBindType type, KeymapModifierFlags 
 }
 
 void GameOnMoveBackward(eKeys key, KeymapEntryBindType type, KeymapModifierFlags modifiers, void* user_data) {
+	(void)modifiers;
+	(void)type;
+	(void)key;
+
 	GameInstance* GameInst = (GameInstance*)user_data;
 	if (GameInst == nullptr) {
 		return;
@@ -70,6 +89,10 @@ void GameOnMoveBackward(eKeys key, KeymapEntryBindType type, KeymapModifierFlags
 }
 
 void GameOnMoveLeft(eKeys key, KeymapEntryBindType type, KeymapModifierFlags modifiers, void* user_data) {
+	(void)modifiers;
+	(void)type;
+	(void)key;
+
 	GameInstance* GameInst = (GameInstance*)user_data;
 	if (GameInst == nullptr) {
 		return;
@@ -83,6 +106,10 @@ void GameOnMoveLeft(eKeys key, KeymapEntryBindType type, KeymapModifierFlags mod
 }
 
 void GameOnMoveRight(eKeys key, KeymapEntryBindType type, KeymapModifierFlags modifiers, void* user_data) {
+	(void)modifiers;
+	(void)type;
+	(void)key;
+
 	GameInstance* GameInst = (GameInstance*)user_data;
 	if (GameInst == nullptr) {
 		return;
@@ -96,6 +123,10 @@ void GameOnMoveRight(eKeys key, KeymapEntryBindType type, KeymapModifierFlags mo
 }
 
 void GameOnMoveUp(eKeys key, KeymapEntryBindType type, KeymapModifierFlags modifiers, void* user_data) {
+	(void)modifiers;
+	(void)type;
+	(void)key;
+
 	GameInstance* GameInst = (GameInstance*)user_data;
 	if (GameInst == nullptr) {
 		return;
@@ -109,6 +140,10 @@ void GameOnMoveUp(eKeys key, KeymapEntryBindType type, KeymapModifierFlags modif
 }
 
 void GameOnMoveDown(eKeys key, KeymapEntryBindType type, KeymapModifierFlags modifiers, void* user_data) {
+	(void)modifiers;
+	(void)type;
+	(void)key;
+
 	GameInstance* GameInst = (GameInstance*)user_data;
 	if (GameInst == nullptr) {
 		return;
@@ -122,6 +157,10 @@ void GameOnMoveDown(eKeys key, KeymapEntryBindType type, KeymapModifierFlags mod
 }
 
 void GameOnChangeConsoleVisibility(eKeys key, KeymapEntryBindType type, KeymapModifierFlags modifiers, void* user_data) {
+	(void)modifiers;
+	(void)type;
+	(void)key;
+
 	GameInstance* GameInst = (GameInstance*)user_data;
 	if (GameInst == nullptr) {
 		return;
@@ -143,30 +182,55 @@ void GameOnChangeConsoleVisibility(eKeys key, KeymapEntryBindType type, KeymapMo
 }
 
 void GameOnSetRenderModeDefault(eKeys key, KeymapEntryBindType type, KeymapModifierFlags modifiers, void* user_data) {
+	(void)modifiers;
+	(void)type;
+	(void)user_data;
+	(void)key;
+
 	SEventContext Context;
 	Context.data.i32[0] = ShaderRenderMode::eShader_Render_Mode_Default;
 	EngineEvent::Fire(eEventCode::Set_Render_Mode, nullptr, Context);
 }
 
 void GameOnSetRenderModeNormal(eKeys key, KeymapEntryBindType type, KeymapModifierFlags modifiers, void* user_data) {
+	(void)modifiers;
+	(void)type;
+	(void)user_data;
+	(void)key;
+
 	SEventContext Context;
 	Context.data.i32[0] = ShaderRenderMode::eShader_Render_Mode_Normals;
 	EngineEvent::Fire(eEventCode::Set_Render_Mode, nullptr, Context);
 }
 
 void GameOnSetRenderModeBlinnphong(eKeys key, KeymapEntryBindType type, KeymapModifierFlags modifiers, void* user_data) {
+	(void)modifiers;
+	(void)type;
+	(void)user_data;
+	(void)key;
+
 	SEventContext Context;
 	Context.data.i32[0] = ShaderRenderMode::eShader_Render_Mode_Lighting;
 	EngineEvent::Fire(eEventCode::Set_Render_Mode, nullptr, Context);
 }
 
 void GameOnSetRenderModeDepth(eKeys key, KeymapEntryBindType type, KeymapModifierFlags modifiers, void* user_data) {
+	(void)modifiers;
+	(void)type;
+	(void)user_data;
+	(void)key;
+
 	SEventContext Context;
 	Context.data.i32[0] = ShaderRenderMode::eShader_Render_Mode_Depth;
 	EngineEvent::Fire(eEventCode::Set_Render_Mode, nullptr, Context);
 }
 
 void GameOnPrintMemory(eKeys key, KeymapEntryBindType type, KeymapModifierFlags modifiers, void* user_data) {
+	(void)modifiers;
+	(void)type;
+	(void)user_data;
+	(void)key;
+
 	static size_t AllocCount = 0;
 	size_t PrevAllocCount = AllocCount;
 	AllocCount = Memory::GetAllocateCount();
@@ -175,14 +239,16 @@ void GameOnPrintMemory(eKeys key, KeymapEntryBindType type, KeymapModifierFlags 
 	GLOG(Log::eInfo, Usage);
 
 	size_t Size = 0;
-	unsigned short  Alignment = 0;
-	if (Memory::GetAlignmentSize(Usage, &Size, &Alignment)) {
-		Memory::FreeAligned(Usage, Size, Alignment, MemoryType::eMemory_Type_String);
+	if (Memory::GetAlignmentSize(Usage, &Size, nullptr)) {
+		Memory::FreeAligned(Usage, Size, MemoryType::eMemory_Type_String);
 	}
 	GLOG(Log::eDebug, "Allocations: %llu (%llu this frame)", AllocCount, UsedMemory);
 }
 
 void GameOnLoadScene(eKeys key, KeymapEntryBindType type, KeymapModifierFlags modifiers, void* user_data) {
+	(void)modifiers;
+	(void)type;
+
 	if (key == eKeys::O) {
 		EngineEvent::Fire(eEventCode::Debug_0, user_data, SEventContext());
 	}
@@ -198,6 +264,10 @@ void GameOnLoadScene(eKeys key, KeymapEntryBindType type, KeymapModifierFlags mo
 }
 
 void GameOnCompilerShader(eKeys key, KeymapEntryBindType type, KeymapModifierFlags modifiers, void* user_data) {
+	(void)modifiers;
+	(void)type;
+	(void)key;
+
 	GameInstance* GameInst = (GameInstance*)user_data;
 	if (GameInst == nullptr) {
 		return;
@@ -211,10 +281,18 @@ void GameOnCompilerShader(eKeys key, KeymapEntryBindType type, KeymapModifierFla
 	EngineEvent::Fire(eEventCode::Reload_Shader_Module, GameInst, Context);
 }
 
-void GameOnTemplate(eKeys key, KeymapEntryBindType type, KeymapModifierFlags modifiers, void* user_data) {}
+void GameOnTemplate(eKeys key, KeymapEntryBindType type, KeymapModifierFlags modifiers, void* user_data) {
+	(void)modifiers;
+	(void)type;
+	(void)user_data;
+	(void)key;
+}
 
 // ------------------------------- Console ---------------------------------- //
 void GameOnConsoleScroll(eKeys key, KeymapEntryBindType type, KeymapModifierFlags modifiers, void* user_data) {
+	(void)modifiers;
+	(void)type;
+
 	DebugConsoleActor* Console = (DebugConsoleActor*)user_data;
 	if (Console) {
 		if (key == eKeys::Up) {
@@ -227,6 +305,9 @@ void GameOnConsoleScroll(eKeys key, KeymapEntryBindType type, KeymapModifierFlag
 }
 
 void GameOnConsoleScrollHold(eKeys key, KeymapEntryBindType type, KeymapModifierFlags modifiers, void* user_data) {
+	(void)modifiers;
+	(void)type;
+
 	GameInstance* GameInst = (GameInstance*)user_data;
 	if (GameInst == nullptr) {
 		GLOG(Log::eError, "Keybind::Setup() Invalid game pointer.");

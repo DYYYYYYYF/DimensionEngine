@@ -75,13 +75,13 @@ public:
 
 	TQuaternion(const TVector3<T>& axis, T angle, bool normalize = true) {
 		T HalfAngle = 0.5f * angle;
-		T s = DSin(HalfAngle);
-		T c = DCos(HalfAngle);
+		T ds = DSin(HalfAngle);
+		T dc = DCos(HalfAngle);
 
-		x = s * axis.x;
-		y = s * axis.y;
-		z = s * axis.z;
-		w = c;
+		x = ds * axis.x;
+		y = ds * axis.y;
+		z = ds * axis.z;
+		w = dc;
 
 		if (normalize) {
 			Normalize();
@@ -173,12 +173,12 @@ public:
 		return Matrix;
 	}
 
-	inline static TQuaternion Slerp(TQuaternion<T> q0, TQuaternion<T> q1, T t) {
+	inline static TQuaternion Slerp(TQuaternion<T> q0, TQuaternion<T> q1, T val) {
 		// 参数验证
-		if (t <= static_cast<T>(0)) {
+		if (val <= static_cast<T>(0)) {
 			return q0;
 		}
-		if (t >= static_cast<T>(1)) {
+		if (val >= static_cast<T>(1)) {
 			return q1;
 		}
 
@@ -200,17 +200,17 @@ public:
 		// 如果四元数非常接近，使用线性插值避免数值不稳定
 		if (dot > DOT_THRESHOLD) {
 			TQuaternion result(
-				v0.x + (v1.x - v0.x) * t,  // 现在使用正确的变量 t
-				v0.y + (v1.y - v0.y) * t,
-				v0.z + (v1.z - v0.z) * t,
-				v0.w + (v1.w - v0.w) * t
+				v0.x + (v1.x - v0.x) * val,  // 现在使用正确的变量 t
+				v0.y + (v1.y - v0.y) * val,
+				v0.z + (v1.z - v0.z) * val,
+				v0.w + (v1.w - v0.w) * val
 			);
 			return result.Normalize();
 		}
 
 		// 球面线性插值
 		T theta_0 = std::acos(std::clamp(dot, static_cast<T>(-1), static_cast<T>(1)));  // 防止 acos 域错误
-		T theta = theta_0 * t;  // 现在使用正确的变量 t
+		T theta = theta_0 * val;  // 现在使用正确的变量 t
 		T sin_theta = std::sin(theta);
 		T sin_theta_0 = std::sin(theta_0);
 
@@ -281,24 +281,24 @@ public:
 		Conjugate();
 	}
 
-	inline TQuaternion<T> Multiply(const TQuaternion<T>& q) const {
+	inline TQuaternion<T> Multiply(const TQuaternion<T>& rhs) const {
 		Quaternion NewQuat;
-		NewQuat.x = x * q.w +
-			y * q.z -
-			z * q.y +
-			w * q.x;
-		NewQuat.y = -x * q.z +
-			y * q.w +
-			z * q.x +
-			w * q.y;
-		NewQuat.z = x * q.y -
-			y * q.x +
-			z * q.w +
-			w * q.z;
-		NewQuat.w = -x * q.x -
-			y * q.y -
-			z * q.z +
-			w * q.w;
+		NewQuat.x = x * rhs.w +
+			y * rhs.z -
+			z * rhs.y +
+			w * rhs.x;
+		NewQuat.y = -x * rhs.z +
+			y * rhs.w +
+			z * rhs.x +
+			w * rhs.y;
+		NewQuat.z = x * rhs.y -
+			y * rhs.x +
+			z * rhs.w +
+			w * rhs.z;
+		NewQuat.w = -x * rhs.x -
+			y * rhs.y -
+			z * rhs.z +
+			w * rhs.w;
 
 		return NewQuat;
 	}
@@ -331,11 +331,11 @@ public:
 		return TQuaternion(x * invLen, y * invLen, z * invLen, w * invLen);
 	}
 
-	float Dot(const TQuaternion<T>& v) {
-		return x * v.x + y * v.y + z * v.z + w * v.w;
+	float Dot(const TQuaternion<T>& rhs) {
+		return x * rhs.x + y * rhs.y + z * rhs.z + w * rhs.w;
 	}
 
-	friend std::ostream& operator<<(std::ostream& os, const TQuaternion<T>& q) {
-		return os << q.x << " " << q.y << " " << q.z << " " << q.w;
+	friend std::ostream& operator<<(std::ostream& os, const TQuaternion<T>& rhs) {
+		return os << rhs.x << " " << rhs.y << " " << rhs.z << " " << rhs.w;
 	}
 };

@@ -49,7 +49,7 @@ private:
 
 	static SCameraSystemConfig Config;
 	static std::vector<Camera*> Cameras;
-	static std::unordered_map<std::string, uint32_t> CameraMap;
+	static std::unordered_map<std::string, uint16_t> CameraMap;
 	
 	static Camera* DefaultCamera;
 };

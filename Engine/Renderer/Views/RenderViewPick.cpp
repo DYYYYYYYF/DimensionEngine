@@ -190,8 +190,8 @@ void RenderViewPick::OnResize(uint32_t width, uint32_t height) {
 		return;
 	}
 
-	Width = width;
-	Height = height;
+	Width = (uint16_t)width;
+	Height = (uint16_t)height;
 
 	// UI
 	UIShaderInfo.ProjectionMatrix = Matrix4::Orthographic(0.0f, (float)Width, (float)Height, 0.0f, UIShaderInfo.NearClip, UIShaderInfo.FarClip);
@@ -323,15 +323,15 @@ bool RenderViewPick::RegenerateAttachmentTarget(uint32_t passIndex, RenderTarget
 	// Setup a new texture.
 	// Generate a UUID to act as the texture name.
 	UID TextureNameUID;
-	uint32_t Width = (uint32_t)Passes[passIndex].GetRenderArea().z;
-	uint32_t Height = (uint32_t)Passes[passIndex].GetRenderArea().w;
+	uint32_t RenderAreaWidth = (uint32_t)Passes[passIndex].GetRenderArea().z;
+	uint32_t RenderAreaHeight = (uint32_t)Passes[passIndex].GetRenderArea().w;
 	bool HasTransparency = false;
 
 	attachment->texture->SetID(INVALID_ID);
 	attachment->texture->Type = TextureType::eTexture_Type_2D;
 	attachment->texture->SetName(TextureNameUID.Value);
-	attachment->texture->Width = Width;
-	attachment->texture->Height = Height;
+	attachment->texture->Width = RenderAreaWidth;
+	attachment->texture->Height = RenderAreaHeight;
 	attachment->texture->ChannelCount = 4;
 	attachment->texture->Generation = INVALID_ID;
 	attachment->texture->Flags |= HasTransparency ? TextureFlagBits::eTexture_Flag_Has_Transparency : 0;
@@ -503,15 +503,15 @@ bool RenderViewPick::OnRender(struct RenderViewPacket* packet, IRendererBackend*
 	Renderer->ReadTexturePixel(t, CoordX, CoordY, &Pixel);
 
 	// Extract the id from the sampled color.
-	uint32_t ID = INVALID_ID;
-	RGB2Uint(Pixel[0], Pixel[1], Pixel[2], &ID);
-	if (ID == 0x00FFFFFF) {
+	uint32_t ObjID = INVALID_ID;
+	RGB2Uint(Pixel[0], Pixel[1], Pixel[2], &ObjID);
+	if (ObjID == 0x00FFFFFF) {
 		// This is pure white.
-		ID = INVALID_ID;
+		ObjID = INVALID_ID;
 	}
 
 	SEventContext Context;
-	Context.data.u32[0] = ID;
+	Context.data.u32[0] = ObjID;
 	EngineEvent::Fire(eEventCode::Object_Hover_ID_Changed, 0, Context);
 
 	return true;

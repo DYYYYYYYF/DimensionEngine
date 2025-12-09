@@ -49,7 +49,7 @@ void* DynamicAllocator::Allocate(size_t size) {
 	return AllocateAligned(size, 1);
 }
 
-void* DynamicAllocator::AllocateAligned(size_t size, unsigned short alignment) {
+void* DynamicAllocator::AllocateAligned(size_t size, size_t alignment) {
 	if (size > 0 && alignment > 0) {
 		// The size required is based on the requested size, plus the alignment, header and a u32 to hold
 		// the size for quick/easy lookups.
@@ -131,7 +131,7 @@ bool DynamicAllocator::FreeAligned(void* block) {
 
 bool DynamicAllocator::GetAlignmentSize(void* block, size_t* out_size, unsigned short* out_alignment) {
 	// 添加基本的安全检查
-	if (block == nullptr || MemoryBlock == nullptr || out_size == nullptr || out_alignment == nullptr) {
+	if (block == nullptr || MemoryBlock == nullptr) {
 		return false;
 	}
 
@@ -172,8 +172,9 @@ bool DynamicAllocator::GetAlignmentSize(void* block, size_t* out_size, unsigned 
 		return false;
 	}
 
-	*out_size = block_size;
-	*out_alignment = Header->alignment;
+	if (out_size) *out_size = block_size;
+	if (out_alignment) *out_alignment = Header->alignment;
+	
 	return true;
 }
 

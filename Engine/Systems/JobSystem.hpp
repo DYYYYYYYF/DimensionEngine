@@ -127,7 +127,7 @@ struct JobResultEntry {
 
 class JobSystem {
 public:
-	static bool Initialize(unsigned char job_thread_count, unsigned int type_masks[]);
+	static bool Initialize(unsigned int job_thread_count, unsigned int type_masks[]);
 	static void Shutdown();
 
 	/**
@@ -215,7 +215,7 @@ private:
 
 private:
 	static bool IsRunning;
-	static unsigned char ThreadCount;
+	static unsigned int ThreadCount;
 	static JobThread JobThreads[32];
 	
 	static std::queue<JobInfo> LowPriorityQueue;

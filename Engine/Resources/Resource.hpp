@@ -6,7 +6,7 @@
 #define RESOURCES_MAGIC 0xdddddddd
 
 enum ResourceType {
-	eResource_type_Text,
+	eResource_type_Text = 0,
 	eResource_type_Binary,
 	eResource_type_Image,
 	eResource_type_Material,

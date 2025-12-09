@@ -26,7 +26,7 @@ private:
 	Matrix4 ProjectionMatrix;
 	Camera* WorldCamera = nullptr;
 	// Uniform locations
-	unsigned short ProjectionLocation;
-	unsigned short ViewLocation;
-	unsigned short CubeMapLocation;
+	uint32_t ProjectionLocation;
+	uint32_t ViewLocation;
+	uint32_t CubeMapLocation;
 };

@@ -32,6 +32,8 @@ void Controller::Shutdown() {
 }
 
 void Controller::Update(double delta_time) {
+	(void)delta_time;
+
 	if (!Initialized) {
 		return;
 	}
@@ -112,7 +114,7 @@ void Controller::ProcessKey(eKeys key, bool pressed) {
 		}
 
 		SEventContext context;
-		context.data.u16[0] = (unsigned int)key;
+		context.data.u16[0] = (unsigned short)key;
 		EngineEvent::Fire(pressed ? eEventCode::Key_Pressed : eEventCode::Key_Released, 0, context);
 	}
 }

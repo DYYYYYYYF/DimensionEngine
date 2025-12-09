@@ -51,17 +51,17 @@ public:
 	virtual bool RegenerateAttachmentTarget(uint32_t passIndex, RenderTargetAttachment* attachment) = 0;
 
 public:
-	virtual unsigned short GetID() { return ID; }
-	virtual void SetID(unsigned short id) { ID = id; }
+	virtual uint16_t GetID() { return ID; }
+	virtual void SetID(uint16_t id) { ID = id; }
 	virtual ShaderRenderMode GetRenderMode() const { return render_mode; }
 	virtual void SetRenderMode(ShaderRenderMode mode) { render_mode = mode; }
 	virtual std::vector<class VulkanRenderPass>& GetRenderpass() { return Passes; }
 
 public:
-	unsigned short ID = INVALID_ID_U16;
+	uint16_t ID = INVALID_ID_U16;
 	const char* Name = nullptr;
-	unsigned short Width = 1920;
-	unsigned short Height = 1080;
+	uint16_t Width = 1920;
+	uint16_t Height = 1080;
 	RenderViewKnownType Type = RenderViewKnownType::eRender_View_Known_Type_World;
 	unsigned char RenderpassCount = 0;
 	std::vector<class VulkanRenderPass> Passes;

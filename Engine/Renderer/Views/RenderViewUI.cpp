@@ -92,8 +92,8 @@ void RenderViewUI::OnResize(uint32_t width, uint32_t height) {
 		return;
 	}
 
-	Width = width;
-	Height = height;
+	Width = (uint16_t)width;
+	Height = (uint16_t)height;
 	ProjectionMatrix = Matrix4::Orthographic(0.0f, (float)Width, (float)Height, 0.0f, NearClip, FarClip);
 
 	for (uint32_t i = 0; i < RenderpassCount; ++i) {
@@ -141,12 +141,12 @@ void RenderViewUI::OnDestroyPacket(struct RenderViewPacket* packet) {
 	if (packet->extended_data) {
 		UIPacketData* PacketData = (UIPacketData*)packet->extended_data;
 		if (PacketData->Textes != nullptr) {
-			Memory::Free(PacketData->Textes, sizeof(UIText) * PacketData->textCount, MemoryType::eMemory_Type_Array);
+			Memory::Free(PacketData->Textes, MemoryType::eMemory_Type_Array);
 			PacketData->Textes = nullptr;
 		}
 
 		if (PacketData->meshData.meshes != nullptr) {
-			Memory::Free(PacketData->meshData.meshes, sizeof(Mesh) * PacketData->meshData.mesh_count, MemoryType::eMemory_Type_Array);
+			Memory::Free(PacketData->meshData.meshes, MemoryType::eMemory_Type_Array);
 			PacketData->meshData.meshes = nullptr;
 		}
 

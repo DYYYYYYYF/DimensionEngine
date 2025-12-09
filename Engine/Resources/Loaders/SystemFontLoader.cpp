@@ -29,21 +29,21 @@ bool SystemFontLoader::Load(const std::string& name, void* params, Resource* res
 	SupportedFieTypes[1] = SupportedSystemFontFiletype{ ".fontcfg", SystemFontFileType::eSystem_Font_File_Type_Font_Config, false };
 
 	char FullFilePath[512];
-	SystemFontFileType Type = SystemFontFileType::eSystem_Font_File_Type_Not_Found;
+	SystemFontFileType FontType = SystemFontFileType::eSystem_Font_File_Type_Not_Found;
 	// Try each supported extension.
 	for (uint32_t i = 0; i < SUPPORTED_FILETYPE_COUNT; ++i) {
-		StringFormat(FullFilePath, 512, FormatStr, ResourceSystem::GetRootPath(), TypePath.c_str(), name.c_str(), SupportedFieTypes[i].extension);
+		StringFormat(FullFilePath, FormatStr, ResourceSystem::GetRootPath(), TypePath.c_str(), name.c_str(), SupportedFieTypes[i].extension);
 		// If the file exist, open it and stop looking.
 		if (FileSystemExists(FullFilePath)) {
 			if (FileSystemOpen(FullFilePath, FileMode::eFile_Mode_Read, SupportedFieTypes[i].isBinary, &f)) {
-				Type = SupportedFieTypes[i].type;
+				FontType = SupportedFieTypes[i].type;
 				break;
 			}
 		}
 
 	}
 
-	if (Type == SystemFontFileType::eSystem_Font_File_Type_Not_Found) {
+	if (FontType == SystemFontFileType::eSystem_Font_File_Type_Not_Found) {
 		GLOG(Log::eError, "Unable to find system font of supported type called: '%s'.", name.c_str());
 		return false;
 	}
@@ -52,7 +52,7 @@ bool SystemFontLoader::Load(const std::string& name, void* params, Resource* res
 	resource->Name = name;
 
 	bool Result = false;
-	switch (Type)
+	switch (FontType)
 	{
 	case eSystem_Font_File_Type_Not_Found:
 		GLOG(Log::eError, "Unable to find system font of supported type called '%s'.", name.c_str());
@@ -64,7 +64,7 @@ bool SystemFontLoader::Load(const std::string& name, void* params, Resource* res
 	case eSystem_Font_File_Type_Font_Config:
 		// Generate the dsf file.
 		char DSFFilename[512];
-		StringFormat(DSFFilename, 512, "%s/%s/%s%s", ResourceSystem::GetRootPath(), TypePath.c_str(), name.c_str(), ".dsf");
+		StringFormat(DSFFilename, "%s/%s/%s%s", ResourceSystem::GetRootPath(), TypePath.c_str(), name.c_str(), ".dsf");
 		Result = ImportFontconfigFile(&f, TypePath.c_str(), DSFFilename, ResourceData);
 		break;
 	}
@@ -95,12 +95,12 @@ void SystemFontLoader::Unload(Resource* resource) {
 		}
 
 		if (Data->fontBinary) {
-			Memory::Free(Data->fontBinary, Data->binarySize, MemoryType::eMemory_Type_Resource);
+			Memory::Free(Data->fontBinary, MemoryType::eMemory_Type_Resource);
 			Data->fontBinary = nullptr;
 			Data->binarySize = 0;
 		}
 
-		Memory::Free(resource->Data, resource->DataSize * resource->DataCount, MemoryType::eMemory_Type_System_Font);
+		Memory::Free(resource->Data, MemoryType::eMemory_Type_System_Font);
 		resource->Data = nullptr;
 		resource->DataSize = 0;
 		resource->DataCount = 0;
@@ -160,7 +160,7 @@ bool SystemFontLoader::ImportFontconfigFile(FileHandle* f, const char* typePath,
 		else if (StringEquali(TrimmedVarName, "file")) {
 			const char* FormatStr = "%s/%s/%s";
 			char FullFilePath[512];
-			StringFormat(FullFilePath, 511, FormatStr, ResourceSystem::GetRootPath(), typePath, TrimmedValue);
+			StringFormat(FullFilePath, FormatStr, ResourceSystem::GetRootPath(), typePath, TrimmedValue);
 
 			// Open and read the font file as binary, and save into an allocated.
 			FileHandle FontBinaryHandle;
@@ -213,9 +213,7 @@ bool SystemFontLoader::ImportFontconfigFile(FileHandle* f, const char* typePath,
 
 bool SystemFontLoader::ReadDSFFile(FileHandle* file, SystemFontResourceData* data) {
 	Memory::Zero(data, sizeof(SystemFontResourceData));
-
 	size_t BytesRead = 0;
-	uint32_t ReadSize = 0;
 
 	// Write the resource header first.
 	ResourceHeader Header;
@@ -250,7 +248,7 @@ bool SystemFontLoader::ReadDSFFile(FileHandle* file, SystemFontResourceData* dat
 		char* f = (char*)Memory::Allocate(sizeof(char) * FaceLength, MemoryType::eMemory_Type_String);
 		CLOSE_IF_FAILED(FileSystemRead(file, sizeof(char) * FaceLength, f, &BytesRead), file);
 		data->fonts[i].name = std::move(f);
-		Memory::Free(f, sizeof(char) * FaceLength, MemoryType::eMemory_Type_String);
+		Memory::Free(f, MemoryType::eMemory_Type_String);
 	}
 
 	return true;

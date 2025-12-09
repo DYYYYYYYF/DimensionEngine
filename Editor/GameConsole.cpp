@@ -45,7 +45,7 @@ bool DebugConsoleActor::OnKey(eEventCode code, void* sender, void* listener_inst
 				char* str = StringCopy(EntryControl->Text);
 				str[Length - 1] = '\0';
 				EntryControl->SetText(str);
-				Memory::Free(str, Length + 1, MemoryType::eMemory_Type_String);
+				Memory::Free(str, MemoryType::eMemory_Type_String);
 			}
 		}
 		else {
@@ -96,9 +96,9 @@ bool DebugConsoleActor::OnKey(eEventCode code, void* sender, void* listener_inst
 				uint32_t Length = (uint32_t)strlen(EntryControl->Text);
 				char* NewText = (char*)Memory::Allocate(Length + 2, MemoryType::eMemory_Type_String);
 				ASSERT(NewText);
-				StringFormat(NewText, Length + 2, "%s%c", EntryControl->Text, cKeyCode);
+				StringFormat(NewText, "%s%c", EntryControl->Text, cKeyCode);
 				EntryControl->SetText(NewText);
-				Memory::Free(NewText, Length + 1, MemoryType::eMemory_Type_String);
+				Memory::Free(NewText, MemoryType::eMemory_Type_String);
 			}
 		}
 	}
