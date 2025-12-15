@@ -5,6 +5,32 @@
 
 class Material;
 
+enum MeshFileType {
+	eMesh_File_Type_Not_Found,
+	eMesh_File_Type_DSM,
+	eMesh_File_Type_3D_Model
+};
+
+struct SupportedMeshFileType {
+	std::string extension;
+	MeshFileType type;
+	bool is_binary;
+};
+
+struct MeshVertexIndexData {
+	uint32_t position_index;
+	uint32_t normal_index;
+	uint32_t texcoord_index;
+};
+
+struct MeshFaceData {
+	MeshVertexIndexData vertices[3];
+};
+
+struct MeshGroupData {
+	std::vector<MeshFaceData> Faces;
+};
+
 struct SGeometryConfig {
 public:
 	void SetMaterialName(const std::string& mn) { material_name = mn; }

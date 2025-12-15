@@ -5,6 +5,7 @@
 #include "Containers/TArray.hpp"
 #include "Resources/Shader.hpp"
 #include "Renderer/Interface/IRenderbuffer.hpp"
+#include "Framework/Classes/MeshActor.h"
 
 #include <vector>
 #include <functional>
@@ -103,7 +104,7 @@ public:
 
 struct MeshPacketData : public IRenderviewPacketData {
 	uint32_t mesh_count = 0;
-	Mesh** meshes = nullptr;
+	MeshActor** meshes = nullptr;
 };
 
 struct UIPacketData : public IRenderviewPacketData {

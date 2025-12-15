@@ -7,7 +7,7 @@
  */
 class IObject {
 public:
-	IObject() = default;
+	IObject() : UniqueID_(Identifier::AcquireNewID(this)) {}
 	virtual ~IObject() = default;
 
 public:
@@ -16,5 +16,5 @@ public:
 	virtual void PostInitialize() = 0;
 
 protected:
-	uint32_t UniqueID;
+	uint32_t UniqueID_;
 };

@@ -18,6 +18,7 @@
 #include "Keybinds.hpp"
 #include "GameCommands.hpp"
 #include "Math/ForwardDeclarations.hpp"
+#include "Framework/Classes/StaticMeshActor.hpp"
 
 static FrustumCullMode CullMode = FrustumCullMode::eAABB_Cull;
 static bool EnableFrustumCulling = true;
@@ -170,8 +171,7 @@ bool GameInstance::Initialize() {
 	}
 
 	// World meshes
-	Mesh* CubeMesh = NewObject<Mesh>();
-	CubeMesh->Name = "TestCube";
+	StaticMeshActor* CubeMesh = NewObject<StaticMeshActor>("TestCube");
 	CubeMesh->geometry_count = 1;
 	CubeMesh->geometries = (Geometry**)Memory::Allocate(sizeof(Geometry*) * CubeMesh->geometry_count, MemoryType::eMemory_Type_Array);
 	SGeometryConfig GeoConfig = GeometrySystem::GenerateCubeConfig(10.0f, 10.0f, 10.0f, 1.0f, 1.0f, "TestCube", "Material.Builtin.GBuffer");
@@ -180,8 +180,7 @@ bool GameInstance::Initialize() {
 	CubeMesh->SetTransform(Vector(0.0f, 0.0f, 0.0f), Quaternion(Vector(0.0f, 0.0f, 0.0f)));
 	Meshes.Push(CubeMesh);
 
-	Mesh* CubeMesh2 = NewObject<Mesh>();
-	CubeMesh2->Name = "TestCube2";
+	StaticMeshActor* CubeMesh2 = NewObject<StaticMeshActor>("TestCube2");
 	CubeMesh2->geometry_count = 1;
 	CubeMesh2->geometries = (Geometry**)Memory::Allocate(sizeof(Geometry*) * CubeMesh2->geometry_count, MemoryType::eMemory_Type_Array);
 	SGeometryConfig GeoConfig2 = GeometrySystem::GenerateCubeConfig(5.0f, 5.0f, 5.0f, 1.0f, 1.0f, "TestCube2", "Material.Builtin.GBuffer");
@@ -191,8 +190,7 @@ bool GameInstance::Initialize() {
 	CubeMesh2->AttachTo(CubeMesh);
 	Meshes.Push(CubeMesh2);
 
-	Mesh* CubeMesh3 = NewObject<Mesh>();
-	CubeMesh3->Name = "TestCube3";
+	StaticMeshActor* CubeMesh3 = NewObject<StaticMeshActor>("TestCube3");
 	CubeMesh3->geometry_count = 1;
 	CubeMesh3->geometries = (Geometry**)Memory::Allocate(sizeof(Geometry*) * CubeMesh3->geometry_count, MemoryType::eMemory_Type_Array);
 	SGeometryConfig GeoConfig3 = GeometrySystem::GenerateCubeConfig(2.0f, 2.0f, 2.0f, 1.0f, 1.0f, "TestCube3", "Material.Builtin.GBuffer");
@@ -249,8 +247,7 @@ bool GameInstance::Initialize() {
 	UIConfig.indices = UIIndices;
 
 	// Get UI geometry from config.
-	Mesh* UIMesh = NewObject<Mesh>();
-	UIMesh->Name = "Engine Logo UI";
+	TextActor* UIMesh = NewObject<TextActor>("Engine Logo UI");
 	UIMesh->geometry_count = 1;
 	UIMesh->geometries = (Geometry**)Memory::Allocate(sizeof(Geometry*), MemoryType::eMemory_Type_Array);
 	UIMesh->geometries[0] = GeometrySystem::AcquireFromConfig(UIConfig, true);
@@ -277,7 +274,7 @@ void GameInstance::Shutdown() {
 	}
 
 	// Delete meshes.
-	for (Mesh* m : Meshes) {
+	for (StaticMeshActor* m : Meshes) {
 		if (m) {
 			DeleteObject(m);
 		}
@@ -374,7 +371,7 @@ bool GameInstance::Update(float delta_time) {
 	// NOTE: starting at a reasonable default to avoid too many realloc.
 	uint32_t DrawCount = 0;
 	for (uint32_t i = 0; i < (uint32_t)Meshes.Size(); ++i) {
-		Mesh* m = Meshes[i];
+		StaticMeshActor* m = Meshes[i];
 		if (m == nullptr) {
 			continue;
 		}
@@ -463,17 +460,17 @@ bool GameInstance::Update(float delta_time) {
 			HoverdObjectName = TestSysText.GetName();
 		}
 
-		for (Mesh* Mesh : Meshes) {
+		for (StaticMeshActor* Mesh : Meshes) {
 			if (Mesh->GetUniqueID() == HoveredObjectID)
 			{
-				HoverdObjectName = Mesh->Name;
+				HoverdObjectName = Mesh->GetName();
 				break;
 			}
 		}
-		for (Mesh* UI : UIMeshes) {
+		for (TextActor* UI : UIMeshes) {
 			if (UI->GetUniqueID() == HoveredObjectID)
 			{
-				HoverdObjectName = UI->Name;
+				HoverdObjectName = UI->GetName();
 				break;
 			}
 		}
@@ -537,7 +534,7 @@ bool GameInstance::Render(SRenderPacket* packet, float delta_time) {
 	
 	// UI
 	uint32_t UIMeshCount = 0;
-	Mesh** TempUIMeshes = (Mesh**)Memory::Allocate(sizeof(Mesh*) * 10, MemoryType::eMemory_Type_Array);
+	MeshActor** TempUIMeshes = (MeshActor**)Memory::Allocate(sizeof(StaticMeshActor*) * 10, MemoryType::eMemory_Type_Array);
 	// TODO: Flexible size array.
 	for (uint32_t i = 0; i < (uint32_t)UIMeshes.Size(); ++i) {
 		if (UIMeshes[i]->Generation != INVALID_ID_U8) {
@@ -865,67 +862,37 @@ bool GameInstance::ConfigureRenderviews() {
 
 
 void LoadScene1(GameInstance* GameInst) {
-	for (size_t i = GameInst->Meshes.Size() - 1; i >= 3; --i) {
-		Mesh* M = GameInst->Meshes[i];
-		DeleteObject(M);
-		GameInst->Meshes[i] = nullptr;
-		GameInst->Meshes.Pop();
-	}
-
-	Mesh* Model = NewObject<Mesh>();
-	Model->LoadFromResource("mountain_part");	// It always return true.
-	Model->SetTransform(Vector3(300.0f, -50.0f, 0.0f), Quaternion(Vector3(0.0f, 0.0f, 0.0f)), Vector3(50.f));
-	GameInst->Meshes.Push(Model);
+	
 }
 
 void LoadScene2(GameInstance* GameInst) {
 	for (size_t i = GameInst->Meshes.Size() - 1; i >= 3; --i) {
-		Mesh* M = GameInst->Meshes[i];
+		StaticMeshActor* M = GameInst->Meshes[i];
 		DeleteObject(M);
 		GameInst->Meshes[i] = nullptr;
 		GameInst->Meshes.Pop();
 	}
 
-	Mesh* Model1 = NewObject<Mesh>();
-	Model1->LoadFromResource("sponza");	// It always return true.
+	StaticMeshActor* Model1 = NewObject<StaticMeshActor>("sponza");
+	Model1->LoadFromResource("sponza");
 	Model1->SetTransform(Vector3(0.0f, -10.0f, 0.0f), Quaternion(Vector3(0.0f, 90.0f, 0.0f)), Vector3(0.1f));
 	GameInst->Meshes.Push(Model1);
 
-	Mesh* Model2 = NewObject<Mesh>();
-	Model2->LoadFromResource("bunny");	// It always return true.
+	StaticMeshActor* Model2 = NewObject<StaticMeshActor>("bunny");
+	Model2->LoadFromResource("bunny");
 	Model2->SetTransform(Vector3(30.0f, 0.0f, 0.0f), Quaternion(Vector3(0.0f, 0.0f, 0.0f)), Vector3(5.0f));
 	GameInst->Meshes.Push(Model2);
 
-	Mesh* Model3 = NewObject<Mesh>();
-	Model3->LoadFromResource("falcon");	// It always return true.
+	StaticMeshActor* Model3 = NewObject<StaticMeshActor>("falcon");
+	Model3->LoadFromResource("falcon");
 	Model3->SetTransform(Vector3(-30.0f, 0.0f, 0.0f), Quaternion(Vector3(0.0f, 0.0f, 0.0f)));
 	GameInst->Meshes.Push(Model3);
 }
 
 void LoadScene3(GameInstance* GameInst) {
-	for (size_t i = GameInst->Meshes.Size() - 1; i >= 3; --i) {
-		Mesh* M = GameInst->Meshes[i];
-		DeleteObject(M);
-		GameInst->Meshes[i] = nullptr;
-		GameInst->Meshes.Pop();
-	}
-
-	Mesh* Model = NewObject<Mesh>();
-	Model->LoadFromResource("Axis");	
-	Model->SetTransform(Vector3(0.0f, 10.0f, 0.0f), Quaternion(Vector3(0.0f, 0.0f, 0.0f)), Vector3(500.f));
-	GameInst->Meshes.Push(Model);
+	
 }
 
 void LoadScene4(GameInstance* GameInst) {
-	for (size_t i = GameInst->Meshes.Size() - 1; i >= 3; --i) {
-		Mesh* M = GameInst->Meshes[i];
-		DeleteObject(M);
-		GameInst->Meshes[i] = nullptr;
-		GameInst->Meshes.Pop();
-	}
-
-	Mesh* Model = NewObject<Mesh>();
-	Model->LoadFromResource("LegoCar");	
-	Model->SetTransform(Vector3(0.0f, 0.0f, -50.0f), Quaternion(Vector3(0.0f, 0.0f, 0.0f)), Vector3(0.5f));
-	GameInst->Meshes.Push(Model);
+	
 }

@@ -1,6 +1,7 @@
 ﻿#include "Actor.h"
 
 Actor::Actor() :BaseObject(), Parent(nullptr) {}
+Actor::Actor(std::string Name) : BaseObject(), Name_(Name), Parent(nullptr) {}
 
 void Actor::Tick(float DeltaTime) {
 	if (LocalTransform.IsDirty()) {

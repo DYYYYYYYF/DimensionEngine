@@ -6,10 +6,13 @@
 class Actor : public BaseObject {
 public:
 	ENGINE_API Actor();
+	ENGINE_API Actor(std::string Name);
 	ENGINE_API virtual ~Actor() {}
 
 public:
+	ENGINE_API virtual void BeginPlay() {};
 	ENGINE_API virtual void Tick(float DeltaTime);
+	ENGINE_API virtual void Destroy() {};
 
 public:
 	ENGINE_API void SetLocation(const Vector3& Loc) { LocalTransform.SetLocation(Loc); }
@@ -40,7 +43,10 @@ public:
 
 	ENGINE_API bool AttachTo(Actor* Own);
 
+	std::string GetName() const { return Name_; }
+
 protected:
+	std::string Name_;
 	// 父对象
 	Actor* Parent;
 	// Actor Transform

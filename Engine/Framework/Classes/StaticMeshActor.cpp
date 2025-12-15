@@ -1,4 +1,4 @@
-﻿#include "Mesh.hpp"
+﻿#include "StaticMeshActor.hpp"
 
 #include "Core/DMemory.hpp"
 #include "Core/EngineLogger.hpp"
@@ -7,7 +7,16 @@
 #include "Systems/GeometrySystem.h"
 #include "Systems/JobSystem.hpp"
 
-void Mesh::LoadJobSuccess(void* params) {
+void StaticMeshActor::Draw() {
+	for (uint32_t j = 0; j < geometry_count; j++) {
+		GeometryRenderData RenderData;
+		RenderData.geometry = geometries[j];
+		RenderData.model = GetWorldTransform();
+		RenderData.uniqueID = GetUniqueID();
+	}
+}
+
+void StaticMeshActor::LoadJobSuccess(void* params) {
 	MeshLoadParams* MeshParams = (MeshLoadParams*)params;
 
 	// This also handle the GPU upload. Can't be jobified until the renderer is multithread.
@@ -24,13 +33,13 @@ void Mesh::LoadJobSuccess(void* params) {
 	ResourceSystem::Unload(&MeshParams->mesh_resource);
 }
 
-void Mesh::LoadJobFail(void* params) {
+void StaticMeshActor::LoadJobFail(void* params) {
 	MeshLoadParams* MeshParams = (MeshLoadParams*)params;
 	GLOG(Log::eError, "Failed to load mesh: '%s'.", MeshParams->resource_name.c_str());
 	ResourceSystem::Unload(&MeshParams->mesh_resource);
 }
 
-bool Mesh::LoadJobStart(void* params, void* result_data) {
+bool StaticMeshActor::LoadJobStart(void* params, void* result_data) {
 	MeshLoadParams* LoadParams = (MeshLoadParams*)params;
 	bool Result = ResourceSystem::Load(LoadParams->resource_name, ResourceType::eResource_type_Static_Mesh, nullptr, &LoadParams->mesh_resource);
 
@@ -39,19 +48,19 @@ bool Mesh::LoadJobStart(void* params, void* result_data) {
 	return Result;
 }
 
-bool Mesh::LoadFromResource(const std::string& resource_name) {
+bool StaticMeshActor::LoadFromResource(const std::string& resource_name) {
 	Generation = INVALID_ID_U8;
 
 	MeshLoadParams Params;
 	Params.resource_name = resource_name;
 	Params.out_mesh = this;
 	Params.mesh_resource = {};
-	Name = resource_name;
+	Name_ = resource_name;
 
 	JobInfo Job = JobSystem::CreateJob(
-		std::bind(&Mesh::LoadJobStart, this, std::placeholders::_1, std::placeholders::_2),
-		std::bind(&Mesh::LoadJobSuccess, this, std::placeholders::_1),
-		std::bind(&Mesh::LoadJobFail, this, std::placeholders::_1),
+		std::bind(&StaticMeshActor::LoadJobStart, this, std::placeholders::_1, std::placeholders::_2),
+		std::bind(&StaticMeshActor::LoadJobSuccess, this, std::placeholders::_1),
+		std::bind(&StaticMeshActor::LoadJobFail, this, std::placeholders::_1),
 		std::make_shared<MeshLoadParams>(Params), 
 		sizeof(MeshLoadParams), 
 		sizeof(MeshLoadParams));
@@ -60,7 +69,7 @@ bool Mesh::LoadFromResource(const std::string& resource_name) {
 	return true;
 }
 
-void Mesh::Unload() {
+void StaticMeshActor::Unload() {
 	for (uint32_t i = 0; i < geometry_count; ++i) {
 		GeometrySystem::Release(geometries[i]);
 	}

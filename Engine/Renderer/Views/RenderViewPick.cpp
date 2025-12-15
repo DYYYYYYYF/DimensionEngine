@@ -235,15 +235,10 @@ bool RenderViewPick::OnBuildPacket(IRenderviewPacketData* data, struct RenderVie
 
 	// Iterate all meshes in UI data.
 	for (uint32_t i = 0; i < PacketData->UIMeshData.mesh_count; ++i) {
-		Mesh* m = PacketData->UIMeshData.meshes[i];
-		for (uint32_t j = 0; j < m->geometry_count; j++) {
-			GeometryRenderData RenderData;
-			RenderData.geometry = m->geometries[j];
-			RenderData.model = m->GetWorldTransform();
-			RenderData.uniqueID = m->GetUniqueID();
-			out_packet->geometries.push_back(RenderData);
-			PacketData->UIGeometryCount++;
-		}
+		MeshActor* m = PacketData->UIMeshData.meshes[i];
+		if (m) m->Draw();
+		/*out_packet->geometries.push_back(RenderData);
+		PacketData->UIGeometryCount++;*/
 
 		// Count all geometries as a single id.
 		if (m->GetUniqueID() > HighestInstanceID) {
