@@ -1,11 +1,6 @@
 ﻿#include "Actor.h"
 
-Actor::Actor():Object(), Parent(nullptr) {
-	ActorComp = NewObject<ActorComponent>();
-	if (ActorComp) {
-		ActorComp->AttachTo(this);
-	}
-}
+Actor::Actor() :BaseObject(), Parent(nullptr) {}
 
 void Actor::Tick(float DeltaTime) {
 	if (LocalTransform.IsDirty()) {

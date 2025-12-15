@@ -3,7 +3,7 @@
 #include "Resource.hpp"
 #include "Geometry.hpp"
 #include "Math/Transform.hpp"
-#include "Frameworks/Classes/Actor.h"
+#include "Framework/Classes/Actor.h"
 #include <vector>
 
 enum MeshFileType {

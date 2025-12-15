@@ -1,9 +1,9 @@
 ﻿#pragma once
 
-#include "Object.h"
-#include "Frameworks/Components/ActorComponent.h"
+#include "BaseObject.h"
+#include "Math/Transform.hpp"
 
-class Actor : public Object{
+class Actor : public BaseObject {
 public:
 	ENGINE_API Actor();
 	ENGINE_API virtual ~Actor() {}
@@ -43,8 +43,6 @@ public:
 protected:
 	// 父对象
 	Actor* Parent;
-	// 对象组件
-	ActorComponent* ActorComp;
 	// Actor Transform
 	Transform LocalTransform;
 

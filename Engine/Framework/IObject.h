@@ -5,10 +5,10 @@
 /**
  * 仅定义Engine中最基础的数据
  */
-class BaseObject {
+class IObject {
 public:
-	BaseObject() = default;
-	virtual ~BaseObject() = default;
+	IObject() = default;
+	virtual ~IObject() = default;
 
 public:
 	virtual void PreInitialize() = 0;

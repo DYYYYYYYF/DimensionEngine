@@ -5,7 +5,7 @@
 #include "Renderer/RendererTypes.hpp"
 #include "Renderer/Vulkan/VulkanBuffer.hpp"
 #include "Renderer/Interface/IRenderbuffer.hpp"
-#include "Frameworks/Classes/Actor.h"
+#include "Framework/Classes/Actor.h"
 
 class IFontDataBase;
 
