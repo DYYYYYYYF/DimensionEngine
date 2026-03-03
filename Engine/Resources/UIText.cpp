@@ -5,7 +5,8 @@
 #include "Core/Identifier.hpp"
 #include "Containers/TString.hpp"
 #include "Math/MathTypes.hpp"
-#include "Math/Transform.hpp"
+#include "Framework/Components/TransformComponent.hpp"
+
 #include "Renderer/RendererTypes.hpp"
 #include "Renderer/RendererFrontend.hpp"
 

@@ -1,11 +1,11 @@
 ﻿#pragma once
 
 #include "Math/MathTypes.hpp"
-#include "Math/Transform.hpp"
 #include "Renderer/RendererTypes.hpp"
 #include "Renderer/Vulkan/VulkanBuffer.hpp"
 #include "Renderer/Interface/IRenderbuffer.hpp"
 #include "Framework/Classes/Actor.h"
+#include "Framework/Components/TransformComponent.hpp"
 
 class IFontDataBase;
 

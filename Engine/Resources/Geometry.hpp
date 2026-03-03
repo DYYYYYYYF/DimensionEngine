@@ -1,7 +1,7 @@
 ﻿#pragma once
 
 #include "Math/MathTypes.hpp"
-#include "Math/Transform.hpp"
+#include "Framework/Components/TransformComponent.hpp"
 
 class Material;
 

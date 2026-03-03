@@ -4,7 +4,8 @@
 #include "Core/DMemory.hpp"
 #include "Core/Event.hpp"
 #include "Math/DMath.hpp"
-#include "Math/Transform.hpp"
+#include "Framework/Components/TransformComponent.hpp"
+
 #include "Containers/TArray.hpp"
 #include "Containers/TString.hpp"
 #include "Resources/Skybox.hpp"

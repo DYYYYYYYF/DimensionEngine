@@ -1,7 +1,7 @@
 ﻿#pragma once
 
 #include "BaseObject.h"
-#include "Math/Transform.hpp"
+#include "Framework/Components/TransformComponent.hpp"
 
 class Actor : public BaseObject {
 public:
@@ -26,7 +26,7 @@ public:
 
 	ENGINE_API void Rotate(const Quaternion& Quat) { LocalTransform.Rotate(Quat); }
 
-	ENGINE_API void SetTransform(const Transform& Trans) { LocalTransform = Trans; }
+	ENGINE_API void SetTransform(const TransformComponent& Trans) { LocalTransform = Trans; }
 	ENGINE_API void SetTransform(const Vector3& Location, const Quaternion& Rotation) { 
 		LocalTransform.SetLocation(Location); 
 		LocalTransform.SetQuaternion(Rotation); 
@@ -36,7 +36,7 @@ public:
 		LocalTransform.SetQuaternion(Rotation);
 		LocalTransform.SetScale(Scale);
 	}
-	ENGINE_API Transform GetTransform() const { return LocalTransform; }
+	ENGINE_API TransformComponent GetTransform() const { return LocalTransform; }
 
 	ENGINE_API Matrix4 GetLocalTransform() { return LocalTransform.GetLocal(); }
 	ENGINE_API Matrix4 GetWorldTransform();
@@ -50,6 +50,6 @@ protected:
 	// 父对象
 	Actor* Parent;
 	// Actor Transform
-	Transform LocalTransform;
+	TransformComponent LocalTransform;
 
 };

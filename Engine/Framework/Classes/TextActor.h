@@ -3,7 +3,7 @@
 #include "MeshActor.h"
 #include "Resources/Resource.hpp"
 #include "Resources/Geometry.hpp"
-#include "Math/Transform.hpp"
+#include "Framework/Components/TransformComponent.hpp"
 #include <vector>
 
 class TextActor : public MeshActor {
