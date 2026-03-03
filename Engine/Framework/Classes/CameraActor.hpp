@@ -12,7 +12,7 @@
 class ENGINE_API ACameraActor : public Actor {
 public:
     ACameraActor();
-    explicit ACameraActor(const std::string& Name);
+    explicit ACameraActor(const FString& Name);
     virtual ~ACameraActor() = default;
 
 public:

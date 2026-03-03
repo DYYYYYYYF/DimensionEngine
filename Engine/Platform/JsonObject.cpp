@@ -357,7 +357,7 @@ bool JsonObject::SaveToFile(File file) const {
 	try {
 		std::string content = Dump(2);
 		file.WriteBytes(content.c_str(), content.size());
-		IsDirty_ = true;
+		IsDirty_ = false;
 		return true;
 	}
 	catch (...) {

@@ -1,12 +1,13 @@
 ﻿#pragma once
 
 #include "BaseObject.h"
+#include "Containers/FString.hpp"
 #include "Framework/Components/TransformComponent.hpp"
 
 class ENGINE_API Actor : public BaseObject {
 public:
 	Actor();
-	Actor(std::string Name);
+	Actor(const FString& Name);
 	virtual ~Actor() {}
 
 public:
@@ -43,10 +44,10 @@ public:
 
 	bool AttachTo(Actor* Own);
 
-	std::string GetName() const { return Name_; }
+	FString GetName() const { return Name_; }
 
 protected:
-	std::string Name_;
+	FString Name_;
 	// 父对象
 	Actor* Parent;
 	// Actor Transform

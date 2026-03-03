@@ -10,7 +10,7 @@
 class StaticMeshActor : public MeshActor{
 public:
 	StaticMeshActor() : MeshActor(), geometries(nullptr), geometry_count(0), Generation(INVALID_ID_U8){}
-	StaticMeshActor(std::string Name) : MeshActor(Name), geometries(nullptr), geometry_count(0), Generation(INVALID_ID_U8){}
+	StaticMeshActor(const FString& Name) : MeshActor(Name), geometries(nullptr), geometry_count(0), Generation(INVALID_ID_U8){}
 	virtual ~StaticMeshActor() { Unload(); }
 
 public:

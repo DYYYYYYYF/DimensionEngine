@@ -9,7 +9,7 @@ bool CameraSystem::Initialized = false;
 SCameraSystemConfig CameraSystem::Config;
 ACameraActor* CameraSystem::DefaultCamera = nullptr;
 std::vector<ACameraActor*> CameraSystem::Cameras;
-std::unordered_map<std::string, uint16_t> CameraSystem::CameraMap;
+std::unordered_map<std::string, uint32_t> CameraSystem::CameraMap;
 
 bool CameraSystem::Initialize(IRenderer* renderer, SCameraSystemConfig config) {
 	if (config.max_camera_count == 0) {
@@ -57,7 +57,7 @@ ACameraActor* CameraSystem::Acquire(const std::string& name) {
 			return DefaultCamera;
 		}
 
-		uint16_t ID = INVALID_ID;
+		uint32_t ID = INVALID_ID;
 		if (CameraMap.find(name) == CameraMap.end()) {
 			GLOG(Log::eError, "Camera system Acquire() failed lookup. returned nullptr.");
 			return nullptr;
@@ -70,11 +70,11 @@ ACameraActor* CameraSystem::Acquire(const std::string& name) {
 		}
 
 		// Create/register the new camera.
-		GLOG(Log::eInfo, "Creating new camera named '%s'.", name);
+		GLOG(Log::eInfo, "Creating new camera named '%s'.", name.c_str());
 		ACameraActor* NewCamera = NewObject<ACameraActor>();
 		ID = NewCamera->GetUniqueID();
 		if (NewCamera == nullptr || ID == INVALID_ID) {
-			GLOG(Log::eError, "Create camera %s failed.", name);
+			GLOG(Log::eError, "Create camera %s failed.", name.c_str());
 			return nullptr;
 		}
 
@@ -97,7 +97,7 @@ void CameraSystem::Release(const std::string& name) {
 			return;
 		}
 
-		uint16_t ID = INVALID_ID;
+		uint32_t ID = INVALID_ID;
 		if (CameraMap.find(name) == CameraMap.end()) {
 			GLOG(Log::eWarn, "Camera system release failed lookup. Nothing was done.");
 			return;

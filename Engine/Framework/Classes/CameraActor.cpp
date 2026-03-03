@@ -9,7 +9,7 @@ ACameraActor::ACameraActor()
 	ViewMatrix_ = Matrix4::Identity();
 }
 
-ACameraActor::ACameraActor(const std::string& Name)
+ACameraActor::ACameraActor(const FString& Name)
 	: Actor(Name) {
 	ViewMatrix_ = Matrix4::Identity();
 }

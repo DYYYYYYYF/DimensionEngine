@@ -9,7 +9,7 @@
 class TextActor : public MeshActor {
 public:
 	TextActor() : MeshActor(), geometries(nullptr), geometry_count(0), Generation(INVALID_ID_U8) {}
-	TextActor(std::string Name) : MeshActor(Name), geometries(nullptr), geometry_count(0), Generation(INVALID_ID_U8) {}
+	TextActor(const FString& Name) : MeshActor(Name), geometries(nullptr), geometry_count(0), Generation(INVALID_ID_U8) {}
 	virtual ~TextActor() { Unload(); }
 
 public:

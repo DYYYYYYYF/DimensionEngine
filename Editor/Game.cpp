@@ -463,14 +463,14 @@ bool GameInstance::Update(float delta_time) {
 		for (StaticMeshActor* Mesh : Meshes) {
 			if (Mesh->GetUniqueID() == HoveredObjectID)
 			{
-				HoverdObjectName = Mesh->GetName();
+				HoverdObjectName = Mesh->GetName().CStr();
 				break;
 			}
 		}
 		for (TextActor* UI : UIMeshes) {
 			if (UI->GetUniqueID() == HoveredObjectID)
 			{
-				HoverdObjectName = UI->GetName();
+				HoverdObjectName = UI->GetName().CStr();
 				break;
 			}
 		}

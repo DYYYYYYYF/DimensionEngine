@@ -2,16 +2,16 @@
 
 #include "Framework/IObject.h"
 
-class BaseObject : public IObject {
+class ENGINE_API BaseObject : public IObject {
 public:
-	ENGINE_API BaseObject() : IObject() {}
-	ENGINE_API ~BaseObject() = default;
+	BaseObject() : IObject() {}
+	~BaseObject() = default;
 
 public:
-	ENGINE_API virtual void PreInitialize() override {};
-	ENGINE_API virtual bool Initialize() override { return true; };
-	ENGINE_API virtual void PostInitialize() override {};
+	virtual void PreInitialize() override {};
+	virtual bool Initialize() override { return true; };
+	virtual void PostInitialize() override {};
 
-	ENGINE_API uint32_t GetUniqueID() const { return UniqueID_; }
+	uint32_t GetUniqueID() const { return UniqueID_; }
 
 };

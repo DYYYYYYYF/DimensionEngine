@@ -55,7 +55,7 @@ bool StaticMeshActor::LoadFromResource(const std::string& resource_name) {
 	Params.resource_name = resource_name;
 	Params.out_mesh = this;
 	Params.mesh_resource = {};
-	Name_ = resource_name;
+	Name_ = resource_name.c_str();
 
 	JobInfo Job = JobSystem::CreateJob(
 		std::bind(&StaticMeshActor::LoadJobStart, this, std::placeholders::_1, std::placeholders::_2),

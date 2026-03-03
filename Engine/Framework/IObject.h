@@ -5,7 +5,7 @@
 /**
  * 仅定义Engine中最基础的数据
  */
-class IObject {
+class ENGINE_API IObject {
 public:
 	IObject() : UniqueID_(Identifier::AcquireNewID(this)) {}
 	virtual ~IObject() { Identifier::ReleaseID(UniqueID_); }

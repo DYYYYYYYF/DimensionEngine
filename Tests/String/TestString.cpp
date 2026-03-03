@@ -217,20 +217,18 @@ public:
 		std::cout << "格式化结果: " << formatted.CStr() << std::endl;
 
 		// 路径处理测试
-		const char* test_path = "/home/user/documents/file.txt";
-		char dir[256], filename[256], name_no_ext[256];
-
-		FString::DirectoryFromPath(dir, test_path);
-		FString::FilenameFromPath(filename, test_path);
-		FString::FilenameNoExtensionFromPath(name_no_ext, test_path);
+		FString test_path = "/home/user/documents/file.txt";
+		FString dir = test_path.DirectoryFromPath(test_path);
+		FString filename = test_path.FilenameFromPath(test_path);
+		FString name_no_ext = test_path.FilenameNoExtensionFromPath(test_path);
 
 		std::cout << "目录: " << dir << std::endl;
 		std::cout << "文件名: " << filename << std::endl;
 		std::cout << "无扩展名文件名: " << name_no_ext << std::endl;
 
-		TEST_ASSERT(strcmp(dir, "/home/user/documents/") == 0, "目录提取正确");
-		TEST_ASSERT(strcmp(filename, "file.txt") == 0, "文件名提取正确");
-		TEST_ASSERT(strcmp(name_no_ext, "file") == 0, "无扩展名文件名提取正确");
+		TEST_ASSERT(strcmp(dir.CStr(), "/home/user/documents/") == 0, "目录提取正确");
+		TEST_ASSERT(strcmp(filename.CStr(), "file.txt") == 0, "文件名提取正确");
+		TEST_ASSERT(strcmp(name_no_ext.CStr(), "file") == 0, "无扩展名文件名提取正确");
 
 		// UTF-8长度测试
 		uint32_t utf8_len = FString::UTF8Length("Hello世界");
