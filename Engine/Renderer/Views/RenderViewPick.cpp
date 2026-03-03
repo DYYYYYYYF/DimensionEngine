@@ -216,7 +216,7 @@ bool RenderViewPick::OnBuildPacket(IRenderviewPacketData* data, struct RenderVie
 	out_packet->view = this;
 
 	// TODO: Get active camera.
-	Camera* WorldCamera = CameraSystem::GetDefault();
+	ACameraActor* WorldCamera = CameraSystem::GetDefault();
 	WorldShaderInfo.ViewMatrix = WorldCamera->GetViewMatrix();
 
 	// Set the pick packet data to extended data.

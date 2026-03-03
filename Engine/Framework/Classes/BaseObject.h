@@ -4,14 +4,14 @@
 
 class BaseObject : public IObject {
 public:
-	BaseObject() : IObject() {}
-	~BaseObject() = default;
+	ENGINE_API BaseObject() : IObject() {}
+	ENGINE_API ~BaseObject() = default;
 
 public:
-	virtual void PreInitialize() override {};
-	virtual bool Initialize() override { return true; };
-	virtual void PostInitialize() override {};
+	ENGINE_API virtual void PreInitialize() override {};
+	ENGINE_API virtual bool Initialize() override { return true; };
+	ENGINE_API virtual void PostInitialize() override {};
 
-	uint32_t GetUniqueID() const { return UniqueID_; }
+	ENGINE_API uint32_t GetUniqueID() const { return UniqueID_; }
 
 };

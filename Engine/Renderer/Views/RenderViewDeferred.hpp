@@ -4,8 +4,8 @@
 #include "Resources/Texture.hpp"
 #include "Renderer/Interface/IRenderView.hpp"
 
-class Camera;
 class Shader;
+class ACameraActor;
 
 // G-Buffer纹理
 struct GBufferSet {
@@ -62,7 +62,7 @@ private:
 	float FarClip;
 	float Fov;
 	Matrix4 ProjectionMatrix;
-	Camera* WorldCamera = nullptr;
+	ACameraActor* WorldCamera = nullptr;
 	Vector4 AmbientColor;
 
 	static const uint32_t MAX_RENDER_TARGETS = 3;  // 双缓冲

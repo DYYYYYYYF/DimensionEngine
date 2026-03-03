@@ -7,8 +7,8 @@
 IRenderer* CameraSystem::Renderer = nullptr;
 bool CameraSystem::Initialized = false;
 SCameraSystemConfig CameraSystem::Config;
-Camera* CameraSystem::DefaultCamera = nullptr;
-std::vector<Camera*> CameraSystem::Cameras;
+ACameraActor* CameraSystem::DefaultCamera = nullptr;
+std::vector<ACameraActor*> CameraSystem::Cameras;
 std::unordered_map<std::string, uint16_t> CameraSystem::CameraMap;
 
 bool CameraSystem::Initialize(IRenderer* renderer, SCameraSystemConfig config) {
@@ -31,7 +31,7 @@ bool CameraSystem::Initialize(IRenderer* renderer, SCameraSystemConfig config) {
 	Cameras.resize(Config.max_camera_count);
 
 	// Setup default camera.
-	DefaultCamera = NewObject<Camera>(0);
+	DefaultCamera = NewObject<ACameraActor>();
 	Cameras[0] = DefaultCamera;
 	CameraMap[DEFAULT_CAMERA_NAME] = 0;
 
@@ -40,7 +40,7 @@ bool CameraSystem::Initialize(IRenderer* renderer, SCameraSystemConfig config) {
 }
 
 void CameraSystem::Shutdown() {
-	for (Camera* c : Cameras) {
+	for (ACameraActor* c : Cameras) {
 		if (c) {
 			DeleteObject(c);
 			c = nullptr;
@@ -48,48 +48,40 @@ void CameraSystem::Shutdown() {
 	}
 
 	Cameras.clear();
-	std::vector<Camera*>().swap(Cameras);
+	std::vector<ACameraActor*>().swap(Cameras);
 }
 
-Camera* CameraSystem::Acquire(const char* name) {
+ACameraActor* CameraSystem::Acquire(const std::string& name) {
 	if (Initialized) {
-		if (StringEquali(name, DEFAULT_CAMERA_NAME)) {
+		if (StringEquali(name.c_str(), DEFAULT_CAMERA_NAME)) {
 			return DefaultCamera;
 		}
 
-		uint16_t ID = INVALID_ID_U16;
+		uint16_t ID = INVALID_ID;
 		if (CameraMap.find(name) == CameraMap.end()) {
 			GLOG(Log::eError, "Camera system Acquire() failed lookup. returned nullptr.");
 			return nullptr;
 		}
 
 		ID = CameraMap[name];
-		if (ID == INVALID_ID_U16) {
-			// Find free slot
-			for (uint16_t i = 0; i < Config.max_camera_count; ++i) {
-				if (Cameras[i] == nullptr || Cameras[i]->GetID() == INVALID_ID_U16) {
-					ID = i;
-					break;
-				}
-			}
-
-			if (ID == INVALID_ID_U16) {
-				GLOG(Log::eError, "Camera system Acquire() failed to acquire new slot. Adjust camera system config to allow more, return nullptr.");
-				return nullptr;
-			}
-
-			// Create/register the new camera.
-			GLOG(Log::eInfo, "Creating new camera named '%s'.", name);
-			Camera* NewCamera = NewObject<Camera>(ID);
-			if (NewCamera == nullptr) {
-				GLOG(Log::eError, "Create camera %s failed.", name);
-				return nullptr;
-			}
-
-			// Update the hashtable.
-			CameraMap[name] = ID;
+		if (ID != INVALID_ID) {
+			Cameras[ID]->IncreaseReferenceCount();
+			return Cameras[ID];
 		}
 
+		// Create/register the new camera.
+		GLOG(Log::eInfo, "Creating new camera named '%s'.", name);
+		ACameraActor* NewCamera = NewObject<ACameraActor>();
+		ID = NewCamera->GetUniqueID();
+		if (NewCamera == nullptr || ID == INVALID_ID) {
+			GLOG(Log::eError, "Create camera %s failed.", name);
+			return nullptr;
+		}
+
+		ASSERT(!Cameras[ID])
+
+		// Update the hashtable.
+		CameraMap[name] = ID;
 		Cameras[ID]->IncreaseReferenceCount();
 		return Cameras[ID];
 	}
@@ -98,23 +90,23 @@ Camera* CameraSystem::Acquire(const char* name) {
 	return nullptr;
 }
 
-void CameraSystem::Release(const char* name) {
+void CameraSystem::Release(const std::string& name) {
 	if (Initialized) {
-		if (StringEquali(name, DEFAULT_CAMERA_NAME)) {
+		if (StringEquali(name.c_str(), DEFAULT_CAMERA_NAME)) {
 			GLOG(Log::eWarn, "Cannot release default camera. Nothing was done.");
 			return;
 		}
 
-		uint16_t ID = INVALID_ID_U16;
+		uint16_t ID = INVALID_ID;
 		if (CameraMap.find(name) == CameraMap.end()) {
 			GLOG(Log::eWarn, "Camera system release failed lookup. Nothing was done.");
 			return;
 		}
 
 		ID = CameraMap[name];
-		if (ID != INVALID_ID_U16) {
+		if (ID != INVALID_ID) {
 			// Decrement the reference count, and reset the camera if the counter reaches 0.
-			Camera* Cam = Cameras[ID];
+			ACameraActor* Cam = Cameras[ID];
 			if (Cam == nullptr) {
 				GLOG(Log::eFatal, "Invalid camera refer. It should not happened.");
 				return;
@@ -123,14 +115,13 @@ void CameraSystem::Release(const char* name) {
 			Cam->DecreaseReferenceCount();
 			if (Cam->GetReferenceCount() < 1) {
 				Cam->Reset();
-				Cam->SetID(INVALID_ID_U16);
-				CameraMap[name] = INVALID_ID_U16;
+				CameraMap[name] = INVALID_ID;
 			}
 		}
 	}
 }
 
-Camera* CameraSystem::GetDefault() {
+ACameraActor* CameraSystem::GetDefault() {
 	if (Initialized && DefaultCamera) {
 		return DefaultCamera;
 	}

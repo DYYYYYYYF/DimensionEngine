@@ -3,7 +3,7 @@
 #include <Core/Keymap.hpp>
 #include <Core/DMemory.hpp>
 #include <Core/EngineLogger.hpp>
-#include <Renderer/Camera.hpp>
+#include <Framework/Classes/CameraActor.hpp>
 
 void GameOnEscape(eKeys key, KeymapEntryBindType type, KeymapModifierFlags modifiers, void* user_data) {
 	(void)modifiers;

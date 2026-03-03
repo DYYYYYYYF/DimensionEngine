@@ -97,6 +97,7 @@ public:
 	Vector3 InverseTransformPoint(const Vector3& point) const;
 
 	bool IsDirty() const { return bIsDirty; }
+	void SetDirty() { bIsDirty = true; }
 	void UpdateLocal() const;
 
 private:

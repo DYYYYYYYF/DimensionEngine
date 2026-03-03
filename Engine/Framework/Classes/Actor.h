@@ -3,45 +3,45 @@
 #include "BaseObject.h"
 #include "Framework/Components/TransformComponent.hpp"
 
-class Actor : public BaseObject {
+class ENGINE_API Actor : public BaseObject {
 public:
-	ENGINE_API Actor();
-	ENGINE_API Actor(std::string Name);
-	ENGINE_API virtual ~Actor() {}
-
-public:
-	ENGINE_API virtual void BeginPlay() {};
-	ENGINE_API virtual void Tick(float DeltaTime);
-	ENGINE_API virtual void Destroy() {};
+	Actor();
+	Actor(std::string Name);
+	virtual ~Actor() {}
 
 public:
-	ENGINE_API void SetLocation(const Vector3& Loc) { LocalTransform.SetLocation(Loc); }
-	ENGINE_API Vector3 GetLocation() const { return LocalTransform.GetLocation(); }
+	virtual void BeginPlay() {};
+	virtual void Tick(float DeltaTime);
+	virtual void Destroy() {};
 
-	ENGINE_API void SetQuaternion(const Quaternion& Quat) { LocalTransform.SetQuaternion(Quat); }
-	ENGINE_API Quaternion GetQuaternion() const { return LocalTransform.GetQuaternion(); }
+public:
+	void SetLocation(const Vector3& Loc) { LocalTransform.SetLocation(Loc); }
+	Vector3 GetLocation() const { return LocalTransform.GetLocation(); }
 
-	ENGINE_API void SetScale(const Vector3& Sca) { LocalTransform.SetScale(Sca); }
-	ENGINE_API Vector3 GetScale() const { return LocalTransform.GetScale(); }
+	void SetQuaternion(const Quaternion& Quat) { LocalTransform.SetQuaternion(Quat); }
+	Quaternion GetQuaternion() const { return LocalTransform.GetQuaternion(); }
 
-	ENGINE_API void Rotate(const Quaternion& Quat) { LocalTransform.Rotate(Quat); }
+	void SetScale(const Vector3& Sca) { LocalTransform.SetScale(Sca); }
+	Vector3 GetScale() const { return LocalTransform.GetScale(); }
 
-	ENGINE_API void SetTransform(const TransformComponent& Trans) { LocalTransform = Trans; }
-	ENGINE_API void SetTransform(const Vector3& Location, const Quaternion& Rotation) { 
+	void Rotate(const Quaternion& Quat) { LocalTransform.Rotate(Quat); }
+
+	void SetTransform(const TransformComponent& Trans) { LocalTransform = Trans; }
+	void SetTransform(const Vector3& Location, const Quaternion& Rotation) {
 		LocalTransform.SetLocation(Location); 
 		LocalTransform.SetQuaternion(Rotation); 
 	}
-	ENGINE_API void SetTransform(const Vector3& Location, const Quaternion& Rotation, const Vector3& Scale) {
+	void SetTransform(const Vector3& Location, const Quaternion& Rotation, const Vector3& Scale) {
 		LocalTransform.SetLocation(Location);
 		LocalTransform.SetQuaternion(Rotation);
 		LocalTransform.SetScale(Scale);
 	}
-	ENGINE_API TransformComponent GetTransform() const { return LocalTransform; }
+	TransformComponent GetTransform() const { return LocalTransform; }
 
-	ENGINE_API Matrix4 GetLocalTransform() { return LocalTransform.GetLocal(); }
-	ENGINE_API Matrix4 GetWorldTransform();
+	Matrix4 GetLocalTransform() { return LocalTransform.GetLocal(); }
+	Matrix4 GetWorldTransform();
 
-	ENGINE_API bool AttachTo(Actor* Own);
+	bool AttachTo(Actor* Own);
 
 	std::string GetName() const { return Name_; }
 

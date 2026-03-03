@@ -8,7 +8,7 @@
 class IObject {
 public:
 	IObject() : UniqueID_(Identifier::AcquireNewID(this)) {}
-	virtual ~IObject() = default;
+	virtual ~IObject() { Identifier::ReleaseID(UniqueID_); }
 
 public:
 	virtual void PreInitialize() = 0;

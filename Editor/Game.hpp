@@ -12,7 +12,7 @@
 
 #define EDITOR_CONFIG_PATH std::string(ROOT_PATH) + "/Editor/Config.json"
 
-class Camera;
+class ACameraActor;
 
 class GameInstance : public IGame {
 public:
@@ -31,7 +31,7 @@ private:
 	bool ConfigureRenderviews();
 
 public:
-	Camera* WorldCamera;
+	ACameraActor* WorldCamera;
 	Frustum CameraFrustum;
 
 	// TODO: temp
