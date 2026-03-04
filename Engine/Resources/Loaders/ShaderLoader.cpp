@@ -147,10 +147,10 @@ bool ShaderLoader::Load(const std::string& name, void* params, Resource* resourc
 			}
 		}
 		else if (strcmp(TrimmedVarName, "depth_test") == 0) {
-			ResourceData->depthTest = StringToBool(TrimmedValue);
+			ResourceData->depthTest = FString::ToBool(TrimmedValue);
 		}
 		else if (strcmp(TrimmedVarName, "depth_write") == 0) {
-			ResourceData->depthWrite = StringToBool(TrimmedValue);
+			ResourceData->depthWrite = FString::ToBool(TrimmedValue);
 		}
 		else if (strcmp(TrimmedVarName, "attribute") == 0) {
 			// Parse attribute.

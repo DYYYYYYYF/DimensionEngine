@@ -192,7 +192,7 @@ void ATextActor::RegenerateGeometry() {
 	for (uint32_t c = 0, uc = 0; c < CharLength; ++c) {
 		int CodePoint = Content[c];
 
-		// COntinue to next line for newline.
+		// Continue to next line for newline.
 		if (CodePoint == '\n') {
 			x = 0;
 			y += Data->lineHeight;
@@ -208,8 +208,8 @@ void ATextActor::RegenerateGeometry() {
 		}
 
 		// NOTE: UTF-8 codepoint handing.
-		unsigned char Advance = 0;
-		if (!StringBytesToCodepoint(Content.CStr(), c, &CodePoint, &Advance)) {
+		FCodepointResult Decoded = FString::BytesToCodepoint(Content.CStr(), Content.Length(), c);
+		if (!Decoded.bValid) {
 			GLOG(Log::eWarn, "Invalid UTF-8 found in string, using unknown codepoint of -1.");
 			CodePoint = -1;
 		}
@@ -264,21 +264,19 @@ void ATextActor::RegenerateGeometry() {
 
 			// Get the offset of the next character. If there is no advance, move forward one,
 			// otherwise use advance as-is.
-			uint32_t Offset = c + Advance;
+			uint32_t Offset = c + Decoded.Advance;
 			if (Offset < TextLengthUTF8 - 1) {
 				// Get the next codepoint.
-				int NextCodepoint = 0;
-				unsigned char NextAdvance = 0;
-
-				if (!StringBytesToCodepoint(Content.CStr(), Offset, &NextCodepoint, &NextAdvance)) {
+				FCodepointResult Next = FString::BytesToCodepoint(Content.CStr(), Content.Length(), Offset);
+				if (!Next.bValid) {
 					GLOG(Log::eWarn, "Invalid UTF-8 found in string, using unknown codepoint of -1.");
-					CodePoint = -1;
 				}
 				else {
 					for (uint32_t i = 0; i < Data->kerningCount; ++i) {
 						FontKerning* k = &Data->kernings[i];
-						if (k->codePoint0 == CodePoint && k->codePoint1 == NextCodepoint) {
+						if (k->codePoint0 == CodePoint && k->codePoint1 == Next.Codepoint) {
 							Kerning = k->amount;
+							break;
 						}
 					}
 				}
@@ -302,7 +300,7 @@ void ATextActor::RegenerateGeometry() {
 		IndexBufferData[(uc * 6) + 5] = (uc * 4) + 1;
 
 		// Now advance c
-		c += Advance - 1;
+		c += Decoded.Advance - 1;
 		uc++;
 	}
 

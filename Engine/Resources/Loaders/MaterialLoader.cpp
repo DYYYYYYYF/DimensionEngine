@@ -110,31 +110,31 @@ bool MaterialLoader::Load(const std::string& name, void* params, Resource* resou
 			ResourceData->shader_name = std::string(TrimmedValue);
 		}
 		else if (strcmp(TrimmedVarName, "shininess") == 0){
-			if (!StringToFloat(TrimmedValue, &ResourceData->shininess)) {
+			if (!FString::ToFloat(TrimmedValue, &ResourceData->shininess)) {
 				GLOG(Log::eWarn, "Error parsing shininess in file '%s'. Using default of 32.0f instead.", FullFilePath);
 				ResourceData->shininess = 32.0f;
 			}
 		}
 		else if (strcmp(TrimmedVarName, "metallic") == 0) {
-			if (!StringToFloat(TrimmedValue, &ResourceData->Metallic)) {
+			if (!FString::ToFloat(TrimmedValue, &ResourceData->Metallic)) {
 				GLOG(Log::eWarn, "Error parsing metallic in file '%s'. Using default of 0.1f instead.", FullFilePath);
 				ResourceData->Metallic = 0.1f;
 			}
 		}
 		else if (strcmp(TrimmedVarName, "roughness") == 0) {
-			if (!StringToFloat(TrimmedValue, &ResourceData->Roughness)) {
+			if (!FString::ToFloat(TrimmedValue, &ResourceData->Roughness)) {
 				GLOG(Log::eWarn, "Error parsing Roughness in file '%s'. Using default of 0.5f instead.", FullFilePath);
 				ResourceData->Roughness = 0.5f;
 			}
 		}
 		else if (strcmp(TrimmedVarName, "ambient_occlusion") == 0) {
-			if (!StringToFloat(TrimmedValue, &ResourceData->AmbientOcclusion)) {
+			if (!FString::ToFloat(TrimmedValue, &ResourceData->AmbientOcclusion)) {
 				GLOG(Log::eWarn, "Error parsing AmbientOcclusion in file '%s'. Using default of 0.7f instead.", FullFilePath);
 				ResourceData->AmbientOcclusion = 0.7f;
 			}
 		}
 		else if (strcmp(TrimmedVarName, "normal_intensity") == 0) {
-			if (!StringToFloat(TrimmedValue, &ResourceData->NormalIntensity)) {
+			if (!FString::ToFloat(TrimmedValue, &ResourceData->NormalIntensity)) {
 				GLOG(Log::eWarn, "Error parsing AmbientOcclusion in file '%s'. Using default of 0.7f instead.", FullFilePath);
 				ResourceData->NormalIntensity = 1.0f;
 			}

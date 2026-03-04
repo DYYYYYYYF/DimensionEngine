@@ -517,30 +517,29 @@ bool FontSystem::VerifySystemFontSizeVariant(SystemFontLookup* lookup, IFontData
 	uint32_t CharLength = (uint32_t)text.Length();
 	uint32_t AddedCodepointCount = 0;
 	for (uint32_t i = 0; i < CharLength;) {
-		int Codepoint;
-		unsigned char Advance;
-		if (!StringBytesToCodepoint(text.CStr(), i, &Codepoint, &Advance)) {
+		FCodepointResult Result = FString::BytesToCodepoint(text, text.Length(), i);
+		if (!Result.bValid) {
 			GLOG(Log::eError, "BytesToCodepoint() Failed to get codepoint.");
 			++i;
 			continue;
 		}
 		else {
-			i += Advance;
-			if (Codepoint < 128) {
+			i += Result.Advance;
+			if (Result.Codepoint < 128) {
 				continue;
 			}
 
 			uint32_t CodepointCount = (uint32_t)InternalData->codepoints.size();
 			bool Found = false;
 			for (uint32_t j = 95; j < CodepointCount; j++) {
-				if (InternalData->codepoints[j] == Codepoint) {
+				if (InternalData->codepoints[j] == Result.Codepoint) {
 					Found = true;
 					break;
 				}
 			}
 
 			if (!Found) {
-				InternalData->codepoints.push_back(Codepoint);
+				InternalData->codepoints.push_back(Result.Codepoint);
 				AddedCodepointCount++;
 			}
 		}
