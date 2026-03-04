@@ -95,7 +95,7 @@ public:
 	// =========================================================
 	size_t      Length() const { return Len; }
 	size_t      Size()   const { return Len; }
-	bool        Empty()  const { return Len == 0; }
+	bool        IsEmpty()  const { return Len == 0; }
 	char* Data() { return Str; }
 	const char* Data()   const { return Str; }
 	const char* CStr()   const { return Str ? Str : ""; }
@@ -161,6 +161,10 @@ public:
 
 	// bytes / bytes_len 是原始字节缓冲区，语义上不是"字符串内容"，
 	// 保留 const char* 更准确（它可能含 \0 中间字节）
+	static FCodepointResult BytesToCodepoint(const FString& string,
+		size_t      bytes_len,
+		uint32_t    offset);
+
 	static FCodepointResult BytesToCodepoint(const char* bytes,
 		size_t      bytes_len,
 		uint32_t    offset);
@@ -263,4 +267,20 @@ inline FString::FString(const char* format, Args... args)
 template<typename... Args>
 inline FString FString::Format(const char* format, Args... args) {
 	return FString(format, args...);
+}
+
+namespace std {
+	template<>
+	struct hash<FString> {
+		size_t operator()(const FString& str) const noexcept {
+			// DJB2 哈希算法
+			size_t hash = 5381;
+			const char* s = str.CStr();
+			while (*s) {
+				hash = ((hash << 5) + hash) ^ static_cast<unsigned char>(*s);
+				++s;
+			}
+			return hash;
+		}
+	};
 }

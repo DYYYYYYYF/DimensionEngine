@@ -14,7 +14,7 @@
 #include "Renderer/RendererFrontend.hpp"
 #include "Renderer/Interface/IRenderpass.hpp"
 #include "Renderer/Interface/IRendererBackend.hpp"
-#include "Resources/UIText.hpp"
+#include "Framework/Classes/TextActor.h"
 
 static bool RenderViewUIOnEvent(eEventCode code, void* sender, void* listenerInst, SEventContext context) {
 	IRenderView* self = (IRenderView*)listenerInst;
@@ -196,7 +196,7 @@ bool RenderViewUI::OnRender(struct RenderViewPacket* packet, IRendererBackend* b
 			}
 
 			// Apply local
-			MaterialSystem::ApplyLocal(Mat, packet->geometries[i].model);
+			MaterialSystem::ApplyLocal(Mat, packet->geometries[i].model_mat);
 
 			// Draw
 			back_renderer->DrawGeometry(&packet->geometries[i]);
@@ -205,7 +205,7 @@ bool RenderViewUI::OnRender(struct RenderViewPacket* packet, IRendererBackend* b
 		// Draw bitmap text.
 		UIPacketData* PacketData = (UIPacketData*)packet->extended_data;
 		for (uint32_t i = 0; i < PacketData->textCount; ++i) {
-			UIText* Text = PacketData->Textes[i];
+			ATextActor* Text = PacketData->Textes[i];
 			ShaderSystem::BindInstance(Text->InstanceID);
 
 			if (!ShaderSystem::SetUniformByIndex(DiffuseMapLocation, &Text->Data->atlas)) {
@@ -220,11 +220,11 @@ bool RenderViewUI::OnRender(struct RenderViewPacket* packet, IRendererBackend* b
 				return false;
 			}
 
-			bool NeedUpdate = Text->RenderFrameNumber != frame_number;
+			bool NeedUpdate = Text->GetFrameNumber() != frame_number;
 			ShaderSystem::ApplyInstance(NeedUpdate);
 
 			// Sync frame number.
-			Text->RenderFrameNumber = frame_number;
+			Text->SetFrameNumber(frame_number);
 
 			// Apply the locals.
 			Matrix4 Model = Text->GetLocalTransform();

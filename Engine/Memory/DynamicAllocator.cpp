@@ -9,7 +9,7 @@
 
 struct AllocHeader {
 	void* start;
-	unsigned short alignment;
+	size_t alignment;
 };
 
 bool DynamicAllocator::Create(size_t total_size) {
@@ -39,6 +39,8 @@ bool DynamicAllocator::Destroy() {
 		Platform::PlatformFree(MemoryBlock, false);
 		MemoryBlock = nullptr;
 		TotalSize = 0;
+
+		GLOG(Log::eInfo, "Shutdown memory system, left memory: %llu.", GetFreeSpace());
 		return true;
 	}
 
@@ -93,7 +95,7 @@ void* DynamicAllocator::AllocateAligned(size_t size, size_t alignment) {
 bool DynamicAllocator::Free(void* block, size_t size) {
 	if (block != nullptr) {
 		size_t stored_size;
-		unsigned short alignment;
+		size_t alignment;
 		if (GetAlignmentSize(block, &stored_size, &alignment)) {
 			if (stored_size != size) {
 				GLOG(Log::eWarn, "Size mismatch in Free: expected %zu, got %zu", stored_size, size);
@@ -129,7 +131,7 @@ bool DynamicAllocator::FreeAligned(void* block) {
 	return true;
 }
 
-bool DynamicAllocator::GetAlignmentSize(void* block, size_t* out_size, unsigned short* out_alignment) {
+bool DynamicAllocator::GetAlignmentSize(void* block, size_t* out_size, size_t* out_alignment) {
 	// 添加基本的安全检查
 	if (block == nullptr || MemoryBlock == nullptr) {
 		return false;

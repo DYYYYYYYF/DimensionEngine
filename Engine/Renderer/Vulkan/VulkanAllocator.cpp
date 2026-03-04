@@ -29,7 +29,7 @@ void VulkanAllocator::Free(void* user_date, void* memory) {
 	GLOG(Log::eInfo, "Attempting to free block %p.", memory);
 #endif
 	size_t size;
-	unsigned short alignment;
+	size_t alignment;
 	bool Result = Memory::GetAlignmentSize(memory, &size, &alignment);
 	if (Result) {
 #ifdef DVULKAN_ALLOCATOR_TRACE
@@ -53,7 +53,7 @@ void* VulkanAllocator::Reallocation(void* user_data, void* original, size_t size
 
 	// NOTE: If pOriginal is not nullptr, the same alignment must be used for the new allocation as original.
 	size_t alloc_size;
-	unsigned short alloc_alignment;
+	size_t alloc_alignment;
 	bool IsAligned = Memory::GetAlignmentSize(original, &alloc_size, &alloc_alignment);
 	if (!IsAligned) {
 		GLOG(Log::eError, "VulkanAllocReallocation of unaligned block %p.", original);

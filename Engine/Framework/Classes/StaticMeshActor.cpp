@@ -6,12 +6,13 @@
 #include "Systems/ResourceSystem.h"
 #include "Systems/GeometrySystem.h"
 #include "Systems/JobSystem.hpp"
+#include "Renderer/RendererTypes.hpp"
 
 void AStaticMeshActor::Draw() {
 	for (uint32_t j = 0; j < geometry_count; j++) {
 		GeometryRenderData RenderData;
 		RenderData.geometry = geometries[j];
-		RenderData.model = GetWorldTransform();
+		RenderData.model_mat = GetWorldTransform();
 		RenderData.uniqueID = GetUniqueID();
 	}
 }

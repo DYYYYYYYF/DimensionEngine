@@ -40,9 +40,9 @@ public:
 	DebugConsoleActor* GameConsole = nullptr;
 
 	TArray<AStaticMeshActor*> Meshes;
-	TArray<ATextActor*> UIMeshes;
-	UIText TestText;
-	UIText TestSysText;
+	TArray<AStaticMeshActor*> UIMeshes;
+	ATextActor* TestText = nullptr;
+	ATextActor* TestSysText = nullptr;
 
 	uint32_t HoveredObjectID = INVALID_ID;
 	CPythonModule TestPython;

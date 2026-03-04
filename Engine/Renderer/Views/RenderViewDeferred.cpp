@@ -336,7 +336,7 @@ bool RenderViewWorldDeferred::OnRender(struct RenderViewPacket* packet, IRendere
 		Mat->RenderFrameNumer = (uint32_t)frame_number;
 
 		// 应用模型矩阵
-		MaterialSystem::ApplyLocal(Mat, packet->geometries[i].model);
+		MaterialSystem::ApplyLocal(Mat, packet->geometries[i].model_mat);
 
 		// 绘制几何体
 		back_renderer->DrawGeometry(&packet->geometries[i]);
@@ -380,7 +380,7 @@ bool RenderViewWorldDeferred::OnRender(struct RenderViewPacket* packet, IRendere
 	// 渲染全屏四边形进行光照计算
 	GeometryRenderData QuadRenderData;
 	QuadRenderData.geometry = FullscreenQuad;
-	QuadRenderData.model = Matrix4::Identity();
+	QuadRenderData.model_mat = Matrix4::Identity();
 	back_renderer->DrawGeometry(&QuadRenderData);
 
 	LightingPass->End();

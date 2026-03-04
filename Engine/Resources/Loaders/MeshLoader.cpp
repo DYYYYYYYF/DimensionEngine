@@ -69,8 +69,8 @@ bool MeshLoader::Load(const std::string& name, void* params, Resource* resource)
 		return false;
 	}
 
-	resource->FullPath = std::string(FullFilePath);
-	resource->Name = std::move(name);
+	resource->FullPath = FullFilePath;
+	resource->Name = name.c_str();
 
 	// 资源数据是几何体配置的数组
 	std::vector<SGeometryConfig> ResourceDatas;

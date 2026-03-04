@@ -110,7 +110,7 @@ public:
 
 			// 验证对齐信息
 			size_t size;
-			unsigned short stored_alignment;
+			size_t stored_alignment;
 			if (!allocator.GetAlignmentSize(ptr, &size, &stored_alignment)) {
 				std::cout << "[FAIL] 获取对齐信息失败" << std::endl;
 				return false;

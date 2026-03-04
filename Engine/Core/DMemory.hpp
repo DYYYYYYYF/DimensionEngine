@@ -93,7 +93,7 @@ public:
 
 	static DAPI void AllocateReport(size_t size, MemoryType type);
 	static DAPI void FreeReport(size_t size, MemoryType type);
-	static DAPI bool GetAlignmentSize(void* block, size_t* out_size, unsigned short* out_alignment);
+	static DAPI bool GetAlignmentSize(void* block, size_t* out_size, size_t* out_alignment);
 
 	static DAPI size_t GetAllocateCount();
 

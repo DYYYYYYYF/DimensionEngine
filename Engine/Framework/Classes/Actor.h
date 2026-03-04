@@ -44,6 +44,7 @@ public:
 
 	bool AttachTo(AActor* Own);
 
+	void SetName(const FString& Name) { Name_ = Name; }
 	FString GetName() const { return Name_; }
 
 protected:

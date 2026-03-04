@@ -137,14 +137,13 @@ bool GameInstance::Initialize() {
 	WorldCamera->SetEulerAngles(Rotation);
 
 	// Create test ui text objects.
-	if (!TestText.Create(UITextType::eUI_Text_Type_Bitmap, "Ubuntu Mono 21px", 21, "Test! \n Yooo!")) {
-		GLOG(Log::eError, "Failed to load basic ui bitmap text.");
-		return false;
+	TestText = NewObject<ATextActor>(UITextType::eUI_Text_Type_Bitmap, "Ubuntu Mono 21px", 21, "Test! \n Yooo!");
+	if (TestText) {
+		TestText->SetLocation(Vector3(150, 450, 0));
+		TestText->SetName("Render information window.");
 	}
-	TestText.SetLocation(Vector3(150, 450, 0));
-	TestText.SetName("Render information window.");
 
-	if (!TestSysText.Create(UITextType::eUI_Text_Type_system, 
+	TestSysText = NewObject<ATextActor>(UITextType::eUI_Text_Type_system,
 		"Noto Sans CJK JP", 25, "Keyboard map:\
 		\nLoad models:\
 		\n\tO: Scene1 P: Scene2\
@@ -153,13 +152,12 @@ bool GameInstance::Initialize() {
 		\nF1: Default view.\
 		\nF2: Normal view.\
 		\nF3: Material view.\
-		\nF4: Depth view."))
-	{
-		GLOG(Log::eError, "Failed to load basic ui system text.");
-		return false;
+		\nF4: Depth view.");
+
+	if (TestText) {
+		TestSysText->SetLocation(Vector3(100, 200, 0));
+		TestSysText->SetName("Keyboard map texts.");
 	}
-	TestSysText.SetLocation(Vector3(100, 200, 0));
-	TestSysText.SetName("Keyboard map texts.");
 
 	// Load console
 	GameConsole->Initialize();
@@ -247,7 +245,7 @@ bool GameInstance::Initialize() {
 	UIConfig.indices = UIIndices;
 
 	// Get UI geometry from config.
-	ATextActor* UIMesh = NewObject<ATextActor>("Engine Logo UI");
+	AStaticMeshActor* UIMesh = NewObject<AStaticMeshActor>("Engine Logo UI");
 	UIMesh->geometry_count = 1;
 	UIMesh->geometries = (Geometry**)Memory::Allocate(sizeof(Geometry*), MemoryType::eMemory_Type_Array);
 	UIMesh->geometries[0] = GeometrySystem::AcquireFromConfig(UIConfig, true);
@@ -280,8 +278,17 @@ void GameInstance::Shutdown() {
 		}
 	}
 
-	TestText.Destroy();
-	TestSysText.Destroy();
+	if (TestSysText) {
+		TestText->Destroy();
+		DeleteObject(TestText);
+		TestText = nullptr;
+	}
+
+	if (TestSysText) {
+		TestSysText->Destroy();
+		DeleteObject(TestSysText);
+		TestSysText = nullptr;
+	}
 
 	File MaterialAsset(EDITOR_CONFIG_PATH);
 	if (!MaterialAsset.IsExist()) {
@@ -313,8 +320,8 @@ bool GameInstance::Update(float delta_time) {
 		UIMeshes[i]->Tick(delta_time);
 	}
 
-	TestText.Tick(delta_time);
-	TestSysText.Tick(delta_time);
+	TestText->Tick(delta_time);
+	TestSysText->Tick(delta_time);
 
 	// Ensure this is cleaned up to avoid leaking memory.
 	// TODO: Need a version of this that uses the frame allocator.
@@ -404,7 +411,7 @@ bool GameInstance::Update(float delta_time) {
 					if (CameraFrustum.IntersectsSphere(Center, Radius)) {
 						// Add it to the list to be rendered.
 						GeometryRenderData Data;
-						Data.model = Model;
+						Data.model_mat = Model;
 						Data.geometry = g;
 						Data.uniqueID = m->GetUniqueID();
 						FrameData.WorldGeometries.push_back(Data);
@@ -428,7 +435,7 @@ bool GameInstance::Update(float delta_time) {
 					if (CameraFrustum.IntersectsAABB(Center, HalfExtents) && EnableFrustumCulling) {
 						// Add it to the list to be rendered.
 						GeometryRenderData Data;
-						Data.model = Model;
+						Data.model_mat = Model;
 						Data.geometry = g;
 						Data.uniqueID = m->GetUniqueID();
 						FrameData.WorldGeometries.push_back(Data);
@@ -437,7 +444,7 @@ bool GameInstance::Update(float delta_time) {
 					else if (!EnableFrustumCulling) {
 						// Add it to the list to be rendered.
 						GeometryRenderData Data;
-						Data.model = Model;
+						Data.model_mat = Model;
 						Data.geometry = g;
 						Data.uniqueID = m->GetUniqueID();
 						FrameData.WorldGeometries.push_back(Data);
@@ -453,11 +460,11 @@ bool GameInstance::Update(float delta_time) {
 	// TODO: Temp
 	std::string HoverdObjectName = "None";
 	if (HoveredObjectID != INVALID_ID) {
-		if (HoveredObjectID == TestText.GetUniqueID()) {
-			HoverdObjectName = TestText.GetName();
+		if (HoveredObjectID == TestText->GetUniqueID()) {
+			HoverdObjectName = TestText->GetName().CStr();
 		}
-		if (HoveredObjectID == TestSysText.GetUniqueID()) {
-			HoverdObjectName = TestSysText.GetName();
+		if (HoveredObjectID == TestSysText->GetUniqueID()) {
+			HoverdObjectName = TestSysText->GetName().CStr();
 		}
 
 		for (AStaticMeshActor* Mesh : Meshes) {
@@ -467,7 +474,7 @@ bool GameInstance::Update(float delta_time) {
 				break;
 			}
 		}
-		for (ATextActor* UI : UIMeshes) {
+		for (AStaticMeshActor* UI : UIMeshes) {
 			if (UI->GetUniqueID() == HoveredObjectID)
 			{
 				HoverdObjectName = UI->GetName().CStr();
@@ -492,7 +499,7 @@ bool GameInstance::Update(float delta_time) {
 		(float)FrameTime,
 		DrawCount
 	);
-	TestText.SetText(FPSText);
+	TestText->SetContent(FPSText);
 
 	GameConsole->Tick(delta_time);
 
@@ -543,9 +550,9 @@ bool GameInstance::Render(SRenderPacket* packet, float delta_time) {
 		}
 	}
 
-	UIText** Texts = (UIText**)Memory::Allocate(sizeof(UIText*) * 4, MemoryType::eMemory_Type_Array);
-	Texts[0] = &TestText;
-	Texts[1] = &TestSysText;
+	ATextActor** Texts = (ATextActor**)Memory::Allocate(sizeof(ATextActor*) * 4, MemoryType::eMemory_Type_Array);
+	Texts[0] = TestText;
+	Texts[1] = TestSysText;
 	Texts[2] = GameConsole->GetText();
 	Texts[3] = GameConsole->GetEntryText();
 
@@ -584,8 +591,8 @@ bool GameInstance::Render(SRenderPacket* packet, float delta_time) {
 void GameInstance::OnResize(unsigned int width, unsigned int height) {
 	WindowSize = { (uint16_t)width, (uint16_t)height };
 
-	TestText.SetLocation(Vector3(180, (float)height - 150, 0));
-	TestSysText.SetLocation(Vector3(100, (float)height - 400, 0));
+	TestText->SetLocation(Vector3(180, (float)height - 150, 0));
+	TestSysText->SetLocation(Vector3(100, (float)height - 400, 0));
 
 	// TODO: Temp
 	SGeometryConfig UIConfig;

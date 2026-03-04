@@ -50,7 +50,7 @@ bool BinaryLoader::Load(const std::string& name, void* params, Resource* resourc
 	resource->Data = ResourceData;
 	resource->DataSize = ReadSize;
 	resource->FullPath = FullFilePath;
-	resource->Name = name;
+	resource->Name = name.c_str();
 
 	return true;
 }

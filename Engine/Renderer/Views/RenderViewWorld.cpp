@@ -187,7 +187,7 @@ bool RenderViewWorld::OnBuildPacket(IRenderviewPacketData* data, struct RenderVi
 			// Get the center, extract the global position from the model matrix and add it to the center,
 			// then calculate the distance between it and the camera, and finally save it to a list to be sorted.
 			// NOTE: This isn't perfect for translucent meshes that intersect, but is enough for our purposes now.
-			Vector3 Center = GeometryData[i].geometry->Center.Transform(GData.model);
+			Vector3 Center = GeometryData[i].geometry->Center.Transform(GData.model_mat);
 			float Distance = Center.Distance(WorldCamera->GetPosition());
 
 			GeometryDistance gDist;
@@ -268,7 +268,7 @@ bool RenderViewWorld::OnRender(struct RenderViewPacket* packet, IRendererBackend
 			}
 
 			// Apply local
-			MaterialSystem::ApplyLocal(Mat, packet->geometries[i].model);
+			MaterialSystem::ApplyLocal(Mat, packet->geometries[i].model_mat);
 
 			// Draw
 			back_renderer->DrawGeometry(&packet->geometries[i]);

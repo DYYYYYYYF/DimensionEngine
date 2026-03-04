@@ -253,7 +253,7 @@ FString& FString::ToUpper() {
 
 // Insert(size_t, const FString&) —— 单一入口
 FString& FString::Insert(size_t pos, const FString& str) {
-	if (str.Empty()) return *this;
+	if (str.IsEmpty()) return *this;
 	if (pos > Len) pos = Len;
 	EnsureCapacity(Len + str.Len);
 	memmove(Str + pos + str.Len, Str + pos, Len - pos + 1);
@@ -264,7 +264,7 @@ FString& FString::Insert(size_t pos, const FString& str) {
 
 // Replace(const FString&, const FString&)
 FString& FString::Replace(const FString& old_str, const FString& new_str) {
-	if (old_str.Empty() || !Str) return *this;
+	if (old_str.IsEmpty() || !Str) return *this;
 
 	const char* o = old_str.CStr();
 	const char* n = new_str.CStr();
@@ -317,7 +317,7 @@ TArray<FString> FString::Split(char delimiter, bool trim_entries, bool include_e
 			if (seg_len > 0 || include_empty) {
 				FString seg = SubStr(start, static_cast<int>(seg_len));
 				if (trim_entries) seg.Trim();
-				if (!seg.Empty() || include_empty)
+				if (!seg.IsEmpty() || include_empty)
 					result.Push(static_cast<FString&&>(seg));
 			}
 			start = i + 1;
@@ -340,6 +340,10 @@ double FString::ToDouble() const { double v = 0.0;  FString::ToDouble(*this, &v)
 // ============================================================
 
 uint32_t FString::UTF8Length() const { return FString::UTF8Length(*this); }
+
+FCodepointResult FString::BytesToCodepoint(const FString& string, size_t bytes_len, uint32_t offset) {
+	return FString::BytesToCodepoint(string.CStr(), bytes_len, offset);
+}
 
 FCodepointResult FString::BytesToCodepoint(const char* bytes, size_t bytes_len, uint32_t offset) {
 	FCodepointResult r{ 0, 0, false };
@@ -480,14 +484,14 @@ bool FString::ToBool(const FString& str) {
 }
 
 bool FString::ToFloat(const FString& str, float* out_value) {
-	if (!out_value || str.Empty()) return false;
+	if (!out_value || str.IsEmpty()) return false;
 	char* end; float v = strtof(str.CStr(), &end);
 	if (end == str.CStr() || (*end != '\0' && !isspace((unsigned char)*end))) return false;
 	*out_value = v; return true;
 }
 
 bool FString::ToInt(const FString& str, int* out_value) {
-	if (!out_value || str.Empty()) return false;
+	if (!out_value || str.IsEmpty()) return false;
 	char* end; long v = strtol(str.CStr(), &end, 10);
 	if (end == str.CStr() || (*end != '\0' && !isspace((unsigned char)*end))) return false;
 	if (v < INT_MIN || v > INT_MAX) return false;
@@ -495,7 +499,7 @@ bool FString::ToInt(const FString& str, int* out_value) {
 }
 
 bool FString::ToDouble(const FString& str, double* out_value) {
-	if (!out_value || str.Empty()) return false;
+	if (!out_value || str.IsEmpty()) return false;
 	char* end; double v = strtod(str.CStr(), &end);
 	if (end == str.CStr() || (*end != '\0' && !isspace((unsigned char)*end))) return false;
 	*out_value = v; return true;

@@ -150,7 +150,7 @@ bool MaterialLoader::Load(const std::string& name, void* params, Resource* resou
 
 	resource->Data = ResourceData;
 	resource->DataSize = sizeof(SMaterialConfig);
-	resource->Name = name;
+	resource->Name = name.c_str();
 	resource->FullPath = FullFilePath;
 	resource->DataCount = 1;
 

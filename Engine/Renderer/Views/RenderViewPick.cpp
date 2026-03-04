@@ -17,7 +17,7 @@
 #include "Renderer/RendererFrontend.hpp"
 #include "Renderer/Interface/IRenderpass.hpp"
 #include "Renderer/Interface/IRendererBackend.hpp"
-#include "Resources/UIText.hpp"
+#include "Framework/Classes/TextActor.h"
 
 static bool RenderViewPickOnEvent(eEventCode code, void* sender, void* listenerInst, SEventContext context) {
 	IRenderView* self = (IRenderView*)listenerInst;
@@ -396,7 +396,7 @@ bool RenderViewPick::OnRender(struct RenderViewPacket* packet, IRendererBackend*
 			InstanceUpdated[CurrentInstanceID] = true;
 
 			// Apply the locals.
-			if (!ShaderSystem::SetUniformByIndex(WorldShaderInfo.ModelLocation, &Geo->model)) {
+			if (!ShaderSystem::SetUniformByIndex(WorldShaderInfo.ModelLocation, &Geo->model_mat)) {
 				GLOG(Log::eError, "Failed to apply model matrix for world geometry.");
 			}
 
@@ -449,7 +449,7 @@ bool RenderViewPick::OnRender(struct RenderViewPacket* packet, IRendererBackend*
 			InstanceUpdated[CurrentInstanceID] = true;
 
 			// Apply the locals.
-			if (!ShaderSystem::SetUniformByIndex(WorldShaderInfo.ModelLocation, &Geo->model)) {
+			if (!ShaderSystem::SetUniformByIndex(WorldShaderInfo.ModelLocation, &Geo->model_mat)) {
 				GLOG(Log::eError, "Failed to apply model matrix for world geometry.");
 			}
 
@@ -459,7 +459,7 @@ bool RenderViewPick::OnRender(struct RenderViewPacket* packet, IRendererBackend*
 
 		// Draw bitmap text.
  		for (uint32_t i = 0; i < PacketData->TextCount; ++i) {
-			UIText* Text = PacketData->Texts[i];
+			ATextActor* Text = PacketData->Texts[i];
 			CurrentInstanceID = Text->GetUniqueID();
 			ShaderSystem::BindInstance(CurrentInstanceID);
 

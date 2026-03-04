@@ -47,7 +47,7 @@ bool BitmapFontLoader::Load(const std::string& name, void* params, Resource* res
 	}
 
 	resource->FullPath = FullFilePath;
-	resource->Name = name;
+	resource->Name = name.c_str();
 
 	BitmapFontResourceData ResourceData;
 	bool Result = false;
@@ -155,7 +155,7 @@ bool BitmapFontLoader::ImportFntFile(FileHandle* fntFile, const char* outDbfFile
 				TempFacePoint,
 				&out_data->data->size
 			);
-			out_data->data->face = std::string(TempFacePoint);
+			out_data->data->face = TempFacePoint;
 			VERIFY_LINE("info", LineNum, 2, ElementsRead);
 			break;
 		}
@@ -316,7 +316,7 @@ bool BitmapFontLoader::ReadDbfFile(FileHandle* file, BitmapFontResourceData* dat
 	ReadSize = sizeof(char) * FaceLength;
 	char* ff = (char*)Memory::Allocate(sizeof(char) * ReadSize, MemoryType::eMemory_Type_String);
 	CLOSE_IF_FAILED(FileSystemRead(file, ReadSize, ff, &BytesRead), file);
-	data->data->face = std::string(ff);
+	data->data->face = ff;
 	Memory::Free(ff, MemoryType::eMemory_Type_String);
 
 	// Font size.
@@ -405,13 +405,13 @@ bool BitmapFontLoader::WriteDbfFile(const char* path, BitmapFontResourceData* da
 	CLOSE_IF_FAILED(FileSystemWrite(&file, WriteSize, &Header, &BytesWritten), &file);
 
 	// Length of face string.
-	uint32_t FaceLength = (uint32_t)data->data->face.length() + 1;
+	uint32_t FaceLength = (uint32_t)data->data->face.Length() + 1;
 	WriteSize = sizeof(uint32_t);
 	CLOSE_IF_FAILED(FileSystemWrite(&file, WriteSize, &FaceLength, &BytesWritten), &file);
 
 	// Face string
 	WriteSize = sizeof(char) * FaceLength;
-	CLOSE_IF_FAILED(FileSystemWrite(&file, WriteSize, (void*)data->data->face.c_str(), &BytesWritten), &file);
+	CLOSE_IF_FAILED(FileSystemWrite(&file, WriteSize, (void*)data->data->face.CStr(), &BytesWritten), &file);
 
 	// Font size
 	WriteSize = sizeof(uint32_t);

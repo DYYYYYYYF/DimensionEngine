@@ -49,7 +49,7 @@ bool SystemFontLoader::Load(const std::string& name, void* params, Resource* res
 	}
 
 	resource->FullPath = FullFilePath;
-	resource->Name = name;
+	resource->Name = name.c_str();
 
 	bool Result = false;
 	switch (FontType)
@@ -241,7 +241,7 @@ bool SystemFontLoader::ReadDSFFile(FileHandle* file, SystemFontResourceData* dat
 	// Iterate faces metedata and output as well.
 	for (uint32_t i = 0; i < FontCount; ++i) {
 		// Length of face name string.
-		uint32_t FaceLength = (uint32_t)data->fonts[i].name.length();
+		uint32_t FaceLength = (uint32_t)data->fonts[i].name.Length();
 		CLOSE_IF_FAILED(FileSystemRead(file, sizeof(uint32_t), &FaceLength, &BytesRead), file);
 
 		// Face string.

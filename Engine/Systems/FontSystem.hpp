@@ -1,13 +1,13 @@
 #pragma once
 
 #include "Math/MathTypes.hpp"
+#include "Framework/Classes/TextActor.h"
 #include "Resources/ResourceTypes.hpp"
 #include "Renderer/RendererTypes.hpp"
 
 #include <string>
 #include <unordered_map>
 
-class UIText;
 struct BitmapFontLookup;
 struct SystemFontLookup;
 
@@ -23,8 +23,8 @@ public:
 		resourceName = s.resourceName;
 	}
 
-	std::string name;
-	std::string resourceName;
+	FString name;
+	FString resourceName;
 	unsigned short defaultSize;
 };
 
@@ -40,8 +40,8 @@ public:
 		resourceName = b.resourceName;
 	}
 
-	std::string name;
-	std::string resourceName;
+	FString name;
+	FString resourceName;
 	unsigned short size;
 };
 
@@ -63,10 +63,10 @@ public:
 	static bool LoadSystemFont(SystemFontConfig* config);
 	static bool LoadBitmapFont(BitmapFontConfig* config);
 
-	static bool Acquire(const std::string& fontName, unsigned short fontSize, class UIText* text);
-	static bool Release(UIText* text);
+	static IFontDataBase* Acquire(const FString& fontName, UITextType type, int fontSize);
+	static bool Release(IFontDataBase* text);
 
-	static bool VerifyAtlas(IFontDataBase* data, const std::string& text);
+	static bool VerifyAtlas(IFontDataBase* data, const FString& text);
 
 
 private:
@@ -74,9 +74,9 @@ private:
 	static void CleanupFontData(IFontDataBase* font);
 
 	// System fonts.
-	static SystemFontVariantData* CreateSystemFontVariant(SystemFontLookup* lookup, unsigned short size, const std::string& fontName);
+	static SystemFontVariantData* CreateSystemFontVariant(SystemFontLookup* lookup, int size, const FString& fontName);
 	static bool RebuildSystemFontVariantAtlas(SystemFontLookup* lookip, IFontDataBase* variant);
-	static bool VerifySystemFontSizeVariant(SystemFontLookup* lookup, IFontDataBase* variant, const std::string& text);
+	static bool VerifySystemFontSizeVariant(SystemFontLookup* lookup, IFontDataBase* variant, const FString& text);
 
 private:
 	static bool Initilized;
@@ -85,7 +85,7 @@ private:
 
 	static std::vector<BitmapFontLookup*> BitmapFonts;
 	static std::vector<SystemFontLookup*> SystemFonts;
-	static std::unordered_map<std::string, uint32_t> SystemFontMap;
-	static std::unordered_map<std::string, uint32_t> BitmapFontMap;
+	static std::unordered_map<FString, uint32_t> SystemFontMap;
+	static std::unordered_map<FString, uint32_t> BitmapFontMap;
 
 };

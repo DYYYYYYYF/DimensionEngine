@@ -54,7 +54,7 @@ bool ImageLoader::Load(const std::string& name, void* params, Resource* resource
 	}
 
 	// Take a copy of the resource full path and name first.
-	resource->Name = name;
+	resource->Name = name.c_str();
 	resource->FullPath = FullFilePath;
 
 	FileHandle f;

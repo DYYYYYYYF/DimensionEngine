@@ -1879,7 +1879,15 @@ bool VulkanBackend::CopyRange(IRenderbuffer* src, size_t src_offset, IRenderbuff
 }
 
 bool VulkanBackend::DrawRenderbuffer(IRenderbuffer* buffer, size_t offset, uint32_t element_count, bool bind_only) {
+	if (!buffer) {
+		return false;
+	}
+
 	VulkanCommandBuffer* CmdBuffer = &Context.GraphicsCommandBuffers[Context.ImageIndex];
+	if (!CmdBuffer)
+	{
+		return false;
+	}
 
 	if (buffer->Type == RenderbufferType::eRenderbuffer_Type_Vertex) {
 		// Bind vertex buffer at offset.

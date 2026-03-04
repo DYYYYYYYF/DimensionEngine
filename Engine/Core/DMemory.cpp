@@ -25,11 +25,8 @@ bool Memory::Initialize(size_t size) {
 }
 
 void Memory::Shutdown() {
-	DynamicAlloc.Destroy();
 	AllocateCount = 0;
 	TotalAllocateSize = 0;
-
-	GLOG(Log::eInfo, "Shutdown memory system, left memory: %llu.", DynamicAlloc.GetFreeSpace());
 }
 
 void* Memory::Allocate(size_t size, MemoryType type) {
@@ -127,7 +124,7 @@ void Memory::FreeReport(size_t size, MemoryType type) {
 	AllocationMutex.UnLock();
 }
 
-bool Memory::GetAlignmentSize(void* block, size_t* out_size, unsigned short* out_alignment) {
+bool Memory::GetAlignmentSize(void* block, size_t* out_size, size_t* out_alignment) {
 	return DynamicAlloc.GetAlignmentSize(block, out_size, out_alignment);
 }
 

@@ -17,6 +17,7 @@
 class DAPI DynamicAllocator {
 public:
 	DynamicAllocator() : TotalSize(0), MemoryBlock(nullptr) {}
+	virtual ~DynamicAllocator() { Destroy(); }
 public:					 
 	  /**					
 	 * @brief Creates a new dynamic allocator.
@@ -73,7 +74,7 @@ public:
 	 * @param out_alignment A pointer to hold the alignment.
 	 * @return True on success.
 	 */
-	bool GetAlignmentSize(void* block, size_t* out_size, unsigned short* out_alignment);
+	bool GetAlignmentSize(void* block, size_t* out_size, size_t* out_alignment);
 
 	/**
 	 * @brief Obtains the amount of free space left in the allocator.

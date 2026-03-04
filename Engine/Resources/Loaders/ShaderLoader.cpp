@@ -31,7 +31,7 @@ bool ShaderLoader::Load(const std::string& name, void* params, Resource* resourc
 		return false;
 	}
 	resource->FullPath = FullFilePath;
-	resource->Name = name;
+	resource->Name = name.c_str();
 
 	// Set some defaults, create arrays.
 	ShaderConfig* ResourceData = (ShaderConfig*)Memory::Allocate(sizeof(ShaderConfig), MemoryType::eMemory_Type_Resource);

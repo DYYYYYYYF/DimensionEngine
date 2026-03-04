@@ -2,6 +2,7 @@
 
 #include <vulkan/vulkan.hpp>
 #include "VulkanPipeline.hpp"
+#include "VulkanBuffer.hpp"
 #include "Resources/ResourceTypes.hpp"
 
 class VulkanRenderPass;

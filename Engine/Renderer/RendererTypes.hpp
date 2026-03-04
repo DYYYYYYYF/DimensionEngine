@@ -69,7 +69,7 @@ struct RenderTargetAttachment {
 };
 
 struct GeometryRenderData {
-	Matrix4 model;
+	Matrix4 model_mat;
 	class Geometry* geometry = nullptr;
 	uint32_t uniqueID = INVALID_ID;
 };
@@ -119,7 +119,7 @@ public:
 	MeshPacketData meshData;
 	// TODO: temp
 	uint32_t textCount = 0;
-	class UIText** Textes = nullptr;
+	class ATextActor** Textes = nullptr;
 };
 
 struct PickPacketData : public IRenderviewPacketData {
@@ -138,7 +138,7 @@ public:
 	uint32_t UIGeometryCount = 0;
 	// TODO: Temp.
 	uint32_t TextCount = 0;
-	class UIText** Texts = nullptr;
+	class ATextActor** Texts = nullptr;
 };
 
 struct SkyboxPacketData : public IRenderviewPacketData {

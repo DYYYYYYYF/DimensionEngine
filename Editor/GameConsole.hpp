@@ -1,8 +1,8 @@
 ﻿#include <Core/Event.hpp>
-#include <Resources/UIText.hpp>
 #include <Framework/Classes/Actor.h>
 #include <Core/DMutex.hpp>
 
+class ATextActor;
 class IRenderer;
 
 class DebugConsoleActor : public AActor {
@@ -14,8 +14,8 @@ public:
 	virtual bool Initialize() override;
 	virtual void Tick(float DeltaTime) override;
 
-	UIText* GetText();
-	UIText* GetEntryText();
+	ATextActor* GetText();
+	ATextActor* GetEntryText();
 
 	void MoveUp();
 	void MoveDown();
@@ -23,15 +23,7 @@ public:
 	void MoveToBottom();
 
 	bool IsVisible() const { return Visible; }
-	void SetVisible(bool visiblable) { 
-		Visible = visiblable; 
-		if (Visible) {
-			EntryControl->SetText(" ");
-		}
-		else {
-			EntryControl->SetText("Press 'entry' to record command.");
-		}
-	}
+	void SetVisible(bool visiblable);
 
 	bool OnKey(eEventCode code, void* sender, void* listener_inst, SEventContext context);
 
@@ -46,8 +38,8 @@ private:
 	bool Dirty;
 	bool Visible;
 
-	UIText* TextControl;	// Log text.
-	UIText* EntryControl;	// Command text.
+	ATextActor* TextControl;	// Log text.
+	ATextActor* EntryControl;	// Command text.
 
 	IRenderer* Renderer;
 

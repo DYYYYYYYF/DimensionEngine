@@ -89,7 +89,7 @@ private:
 	void ReleaseMemory() {
 		if (Str != nullptr) {
 			size_t Size = 0;
-			unsigned short  Alignment = 0;
+			size_t  Alignment = 0;
 			if (Memory::GetAlignmentSize(Str, &Size, &Alignment)) {
 				Memory::FreeAligned(Str, Size, MemoryType::eMemory_Type_String);
 			}
@@ -113,7 +113,7 @@ inline void StringFree(char* str) {
 	}
 
 	size_t Size = 0;
-	unsigned short  Alignment = 0;
+	size_t  Alignment = 0;
 	if (Memory::GetAlignmentSize(str, &Size, &Alignment)) {
 		Memory::FreeAligned(str, Size, MemoryType::eMemory_Type_String);
 	}

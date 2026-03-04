@@ -7,6 +7,7 @@
 #include <map>
 
 class IRenderer;
+class IRenderpass;
 
 class ShaderSystem {
 public:
