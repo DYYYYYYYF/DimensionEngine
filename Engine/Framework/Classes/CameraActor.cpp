@@ -5,12 +5,12 @@
 // ============================================================
 
 ACameraActor::ACameraActor()
-	: Actor("CameraActor") {
+	: AActor("CameraActor") {
 	ViewMatrix_ = Matrix4::Identity();
 }
 
 ACameraActor::ACameraActor(const FString& Name)
-	: Actor(Name) {
+	: AActor(Name) {
 	ViewMatrix_ = Matrix4::Identity();
 }
 
@@ -19,7 +19,7 @@ ACameraActor::ACameraActor(const FString& Name)
 // ============================================================
 
 void ACameraActor::BeginPlay() {
-	Actor::BeginPlay();
+	AActor::BeginPlay();
 	// 以 LocalTransform 的初始值初始化旋转状态
 	// （允许外部在 BeginPlay 前通过 Actor::SetLocation 等接口预设位置）
 	Quaternion Q = LocalTransform.GetQuaternion();
@@ -30,11 +30,11 @@ void ACameraActor::BeginPlay() {
 }
 
 void ACameraActor::Tick(float DeltaTime) {
-	Actor::Tick(DeltaTime);
+	AActor::Tick(DeltaTime);
 }
 
 void ACameraActor::Destroy() {
-	Actor::Destroy();
+	AActor::Destroy();
 }
 
 // ============================================================

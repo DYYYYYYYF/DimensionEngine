@@ -6,11 +6,11 @@
 #include "Framework/Components/TransformComponent.hpp"
 #include <vector>
 
-class TextActor : public MeshActor {
+class ATextActor : public AMeshActor {
 public:
-	TextActor() : MeshActor(), geometries(nullptr), geometry_count(0), Generation(INVALID_ID_U8) {}
-	TextActor(const FString& Name) : MeshActor(Name), geometries(nullptr), geometry_count(0), Generation(INVALID_ID_U8) {}
-	virtual ~TextActor() { Unload(); }
+	ATextActor() : AMeshActor(), geometries(nullptr), geometry_count(0), Generation(INVALID_ID_U8) {}
+	ATextActor(const FString& Name) : AMeshActor(Name), geometries(nullptr), geometry_count(0), Generation(INVALID_ID_U8) {}
+	virtual ~ATextActor() { Unload(); }
 
 public:
 	DAPI virtual void Draw() override;

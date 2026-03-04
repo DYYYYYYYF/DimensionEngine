@@ -104,7 +104,7 @@ public:
 
 struct MeshPacketData : public IRenderviewPacketData {
 	uint32_t mesh_count = 0;
-	MeshActor** meshes = nullptr;
+	AMeshActor** meshes = nullptr;
 };
 
 struct UIPacketData : public IRenderviewPacketData {

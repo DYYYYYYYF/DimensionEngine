@@ -7,11 +7,11 @@
 
 #include <vector>
 
-class StaticMeshActor : public MeshActor{
+class AStaticMeshActor : public AMeshActor{
 public:
-	StaticMeshActor() : MeshActor(), geometries(nullptr), geometry_count(0), Generation(INVALID_ID_U8){}
-	StaticMeshActor(const FString& Name) : MeshActor(Name), geometries(nullptr), geometry_count(0), Generation(INVALID_ID_U8){}
-	virtual ~StaticMeshActor() { Unload(); }
+	AStaticMeshActor() : AMeshActor(), geometries(nullptr), geometry_count(0), Generation(INVALID_ID_U8){}
+	AStaticMeshActor(const FString& Name) : AMeshActor(Name), geometries(nullptr), geometry_count(0), Generation(INVALID_ID_U8){}
+	virtual ~AStaticMeshActor() { Unload(); }
 
 public:
 	DAPI virtual void Draw() override;
@@ -30,8 +30,8 @@ public:
 	Geometry** geometries;
 };
 
-struct MeshLoadParams {
+struct FMeshLoadParams {
 	std::string resource_name;
-	StaticMeshActor* out_mesh = nullptr;
+	AStaticMeshActor* out_mesh = nullptr;
 	class Resource mesh_resource;
 };

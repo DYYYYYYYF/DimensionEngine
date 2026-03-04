@@ -120,7 +120,7 @@ bool RenderViewUI::OnBuildPacket(IRenderviewPacketData* data, struct RenderViewP
 	// Obtain all geometries from the current scene.
 	// Iterate all meshes and them to the packet's geometries collection.
 	for (uint32_t i = 0; i < PacketData->meshData.mesh_count; ++i) {
-		MeshActor* pMesh = PacketData->meshData.meshes[i];
+		AMeshActor* pMesh = PacketData->meshData.meshes[i];
 		if (pMesh) pMesh->Draw();
 		/*out_packet->geometries.push_back(RenderData);
 		out_packet->geometry_count++;*/

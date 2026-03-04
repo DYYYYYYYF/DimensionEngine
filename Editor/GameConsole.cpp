@@ -135,7 +135,7 @@ DebugConsoleActor::~DebugConsoleActor() {
 }
 
 bool DebugConsoleActor::Initialize() {
-	Actor::Initialize();
+	AActor::Initialize();
 
 	// Create UI text control for rendering.
 	TextControl = NewObject<UIText>();

@@ -2,7 +2,7 @@
 
 #include "Framework/IObject.h"
 
-class Actor;
+class AActor;
 
 class IComponent : public IObject {
 public:
@@ -18,8 +18,8 @@ public:
 	virtual void Tick(float deltaTime) = 0;
 
 	// 获取所属Actor
-	virtual Actor* GetOwner() const = 0;
-	virtual void SetOwner(Actor* owner) = 0;
+	virtual AActor* GetOwner() const = 0;
+	virtual void SetOwner(AActor* owner) = 0;
 	
 	// 启用/禁用
 	virtual bool IsEnabled() const = 0;

@@ -5,7 +5,7 @@
 #include "Renderer/RendererTypes.hpp"
 #include "Systems/GeometrySystem.h"
 
-void TextActor::Draw() {
+void ATextActor::Draw() {
 	for (uint32_t j = 0; j < geometry_count; j++) {
 		GeometryRenderData RenderData;
 		RenderData.geometry = geometries[j];
@@ -15,7 +15,7 @@ void TextActor::Draw() {
 }
 
 
-void TextActor::Unload() {
+void ATextActor::Unload() {
 	for (uint32_t i = 0; i < geometry_count; ++i) {
 		GeometrySystem::Release(geometries[i]);
 	}

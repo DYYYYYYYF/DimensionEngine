@@ -3,12 +3,12 @@
 #include "IComponent.h"
 #include <string>
 
-class Actor;
+class AActor;
 
-class BaseComponent : public IComponent {
+class UBaseComponent : public IComponent {
 public:
-	BaseComponent() = default;
-	BaseComponent(Actor* Owner, const std::string& Name) : Name_(Name) { SetOwner(Owner); }
+	UBaseComponent() = default;
+	UBaseComponent(AActor* Owner, const std::string& Name) : Name_(Name) { SetOwner(Owner); }
 
 	virtual void OnAttach() override {}
 	virtual void OnDetach() override {}
@@ -17,8 +17,8 @@ public:
 
 	virtual void Tick(float DeltaTime) { (void)DeltaTime; };
 
-	Actor* GetOwner() const { return Owner_; }
-	void SetOwner(Actor* Owner) { Owner_ = Owner; }
+	AActor* GetOwner() const { return Owner_; }
+	void SetOwner(AActor* Owner) { Owner_ = Owner; }
 
 	bool IsEnabled() const { return IsEnabled_; }
 	void SetEnabled(bool Enabled) {
@@ -33,6 +33,6 @@ protected:
 	bool IsEnabled_ = true;
 
 private:
-	Actor* Owner_ = nullptr;
+	AActor* Owner_ = nullptr;
 
 };

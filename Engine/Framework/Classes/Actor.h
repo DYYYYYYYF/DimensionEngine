@@ -4,11 +4,11 @@
 #include "Containers/FString.hpp"
 #include "Framework/Components/TransformComponent.hpp"
 
-class ENGINE_API Actor : public BaseObject {
+class ENGINE_API AActor : public ABaseObject {
 public:
-	Actor();
-	Actor(const FString& Name);
-	virtual ~Actor() {}
+	AActor();
+	AActor(const FString& Name);
+	virtual ~AActor() {}
 
 public:
 	virtual void BeginPlay() {};
@@ -27,7 +27,7 @@ public:
 
 	void Rotate(const Quaternion& Quat) { LocalTransform.Rotate(Quat); }
 
-	void SetTransform(const TransformComponent& Trans) { LocalTransform = Trans; }
+	void SetTransform(const UTransformComponent& Trans) { LocalTransform = Trans; }
 	void SetTransform(const Vector3& Location, const Quaternion& Rotation) {
 		LocalTransform.SetLocation(Location); 
 		LocalTransform.SetQuaternion(Rotation); 
@@ -37,20 +37,20 @@ public:
 		LocalTransform.SetQuaternion(Rotation);
 		LocalTransform.SetScale(Scale);
 	}
-	TransformComponent GetTransform() const { return LocalTransform; }
+	UTransformComponent GetTransform() const { return LocalTransform; }
 
 	Matrix4 GetLocalTransform() { return LocalTransform.GetLocal(); }
 	Matrix4 GetWorldTransform();
 
-	bool AttachTo(Actor* Own);
+	bool AttachTo(AActor* Own);
 
 	FString GetName() const { return Name_; }
 
 protected:
 	FString Name_;
 	// 父对象
-	Actor* Parent;
+	AActor* Parent;
 	// Actor Transform
-	TransformComponent LocalTransform;
+	UTransformComponent LocalTransform;
 
 };

@@ -5,7 +5,7 @@
 
 class IRenderer;
 
-class DebugConsoleActor : public Actor{
+class DebugConsoleActor : public AActor {
 public:
 	DebugConsoleActor();
 	virtual ~DebugConsoleActor();

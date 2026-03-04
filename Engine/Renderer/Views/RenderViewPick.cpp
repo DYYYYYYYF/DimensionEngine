@@ -236,7 +236,7 @@ bool RenderViewPick::OnBuildPacket(IRenderviewPacketData* data, struct RenderVie
 
 	// Iterate all meshes in UI data.
 	for (uint32_t i = 0; i < PacketData->UIMeshData.mesh_count; ++i) {
-		MeshActor* m = PacketData->UIMeshData.meshes[i];
+		AMeshActor* m = PacketData->UIMeshData.meshes[i];
 		if (m) m->Draw();
 		/*out_packet->geometries.push_back(RenderData);
 		PacketData->UIGeometryCount++;*/

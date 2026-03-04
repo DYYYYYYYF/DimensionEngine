@@ -330,7 +330,7 @@ public:
 		std::cout << "\n=== Testing Transform ===" << std::endl;
 
 		// 默认构造函数
-		TransformComponent t1;
+		UTransformComponent t1;
 		ASSERT_VECTOR3_EQUAL(Vector3(0.0f), t1.GetLocation(), "Transform default - position");
 		ASSERT_VECTOR3_EQUAL(Vector3(1.0f), t1.GetScale(), "Transform default - scale");
 
@@ -340,7 +340,7 @@ public:
 		Vector3 scale(2.0f, 2.0f, 2.0f);
 
 		Quaternion rot(euler);
-		TransformComponent t2(pos, rot, scale);
+		UTransformComponent t2(pos, rot, scale);
 
 		ASSERT_VECTOR3_EQUAL(pos, t2.GetLocation(), "Transform constructor - position");
 		ASSERT_VECTOR3_EQUAL(scale, t2.GetScale(), "Transform constructor - scale");
@@ -365,7 +365,7 @@ public:
 		ASSERT_VECTOR3_EQUAL(expected_dir, world_dir, "Transform direction transformation");
 
 		// 变换组合测试
-		TransformComponent t3;
+		UTransformComponent t3;
 		t3.Translate(Vector3(1.0f, 0.0f, 0.0f));
 		t3.Scale(Vector3(2.0f, 2.0f, 2.0f));
 
@@ -602,7 +602,7 @@ public:
 		ASSERT_TRUE(v1 == v2, "Vertex equality operator regression test");
 
 		// 测试Transform const正确性
-		const TransformComponent t_const(Vector3(1.0f, 2.0f, 3.0f));
+		const UTransformComponent t_const(Vector3(1.0f, 2.0f, 3.0f));
 		Vector3 world_pos = t_const.TransformPoint(Vector3(0.0f, 0.0f, 0.0f));
 		ASSERT_VECTOR3_EQUAL(Vector3(1.0f, 2.0f, 3.0f), world_pos, "Transform const member function regression test");
 

@@ -2,10 +2,10 @@
 
 #include "Framework/IObject.h"
 
-class ENGINE_API BaseObject : public IObject {
+class ENGINE_API ABaseObject : public IObject {
 public:
-	BaseObject() : IObject() {}
-	~BaseObject() = default;
+	ABaseObject() : IObject() {}
+	~ABaseObject() = default;
 
 public:
 	virtual void PreInitialize() override {};

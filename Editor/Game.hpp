@@ -39,8 +39,8 @@ public:
 	Keymap* ConsoleKeymap;
 	DebugConsoleActor* GameConsole = nullptr;
 
-	TArray<StaticMeshActor*> Meshes;
-	TArray<TextActor*> UIMeshes;
+	TArray<AStaticMeshActor*> Meshes;
+	TArray<ATextActor*> UIMeshes;
 	UIText TestText;
 	UIText TestSysText;
 

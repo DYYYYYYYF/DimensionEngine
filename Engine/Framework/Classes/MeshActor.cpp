@@ -1,5 +1,5 @@
 #include "MeshActor.h"
 
-MeshActor::MeshActor() : Actor() {}
-MeshActor::MeshActor(const FString& Name) : Actor(Name) {}
-MeshActor::~MeshActor() {}
+AMeshActor::AMeshActor() : AActor() {}
+AMeshActor::AMeshActor(const FString& Name) : AActor(Name) {}
+AMeshActor::~AMeshActor() {}

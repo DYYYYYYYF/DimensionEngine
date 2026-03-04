@@ -1,11 +1,11 @@
 #pragma once
 #include "Actor.h"
 
-class ENGINE_API MeshActor : public Actor {
+class ENGINE_API AMeshActor : public AActor {
 public:
-	MeshActor();
-	MeshActor(const FString& Name);
-	virtual ~MeshActor();
+	AMeshActor();
+	AMeshActor(const FString& Name);
+	virtual ~AMeshActor();
 
 public:
 	virtual void Draw() = 0;

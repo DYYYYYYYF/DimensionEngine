@@ -9,7 +9,7 @@
  * ViewMatrix 按需重建（IsDirty 标志驱动），
  * 位置和旋转同时维护在 Actor::LocalTransform，保持变换系统统一。
  */
-class ENGINE_API ACameraActor : public Actor {
+class ENGINE_API ACameraActor : public AActor {
 public:
     ACameraActor();
     explicit ACameraActor(const FString& Name);

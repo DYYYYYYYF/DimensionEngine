@@ -14,9 +14,9 @@ enum UITextType {
 	eUI_Text_Type_system
 };
 
-class UIText : public Actor {
+class UIText : public AActor {
 public:
-	DAPI UIText() : Actor() {}
+	DAPI UIText() : AActor() {}
 	DAPI virtual ~UIText() {}
 
 public:
