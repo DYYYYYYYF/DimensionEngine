@@ -2,7 +2,7 @@
 #pragma once
 
 #include <Math/MathTypes.hpp>
-#include "Framework/Components/TransformComponent.hpp"
+#include "Framework/Components/TransformComponent.h"
 
 #include <Math/GeometryUtils.hpp>
 #include <iostream>

@@ -1,4 +1,4 @@
-﻿#include "TransformComponent.hpp"
+﻿#include "TransformComponent.h"
 
 UTransformComponent::UTransformComponent() {
 	SetPRS(Vector3(0.0f), Quaternion(), Vector3(1.0f));

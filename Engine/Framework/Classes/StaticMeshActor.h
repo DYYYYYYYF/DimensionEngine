@@ -3,7 +3,6 @@
 #include "MeshActor.h"
 #include "Resources/Resource.hpp"
 #include "Resources/Geometry.hpp"
-#include "Framework/Components/TransformComponent.hpp"
 
 #include <vector>
 

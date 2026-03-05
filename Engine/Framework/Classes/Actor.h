@@ -2,7 +2,7 @@
 
 #include "BaseObject.h"
 #include "Containers/FString.hpp"
-#include "Framework/Components/TransformComponent.hpp"
+#include "Framework/Components/TransformComponent.h"
 
 class ENGINE_API AActor : public ABaseObject {
 public:

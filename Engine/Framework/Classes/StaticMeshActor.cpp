@@ -1,4 +1,4 @@
-﻿#include "StaticMeshActor.hpp"
+﻿#include "StaticMeshActor.h"
 
 #include "Core/DMemory.hpp"
 #include "Core/EngineLogger.hpp"

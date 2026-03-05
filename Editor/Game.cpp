@@ -18,7 +18,8 @@
 #include "Keybinds.hpp"
 #include "GameCommands.hpp"
 #include "Math/ForwardDeclarations.hpp"
-#include "Framework/Classes/StaticMeshActor.hpp"
+#include "Framework/Classes/StaticMeshActor.h"
+#include "GameLogic/TestActors/RotationCubeActor.h"
 
 static FrustumCullMode CullMode = FrustumCullMode::eAABB_Cull;
 static bool EnableFrustumCulling = true;
@@ -169,39 +170,19 @@ bool GameInstance::Initialize() {
 	}
 
 	// World meshes
-	AStaticMeshActor* CubeMesh = NewObject<AStaticMeshActor>("TestCube");
-	CubeMesh->geometry_count = 1;
-	CubeMesh->geometries = (Geometry**)Memory::Allocate(sizeof(Geometry*) * CubeMesh->geometry_count, MemoryType::eMemory_Type_Array);
-	SGeometryConfig GeoConfig = GeometrySystem::GenerateCubeConfig(10.0f, 10.0f, 10.0f, 1.0f, 1.0f, "TestCube", "Material.Builtin.GBuffer");
-	CubeMesh->geometries[0] = GeometrySystem::AcquireFromConfig(GeoConfig, true);
-	CubeMesh->Generation = 0;
-	CubeMesh->SetTransform(Vector(0.0f, 0.0f, 0.0f), Quaternion(Vector(0.0f, 0.0f, 0.0f)));
+	ARotationCubeActor* CubeMesh = NewObject<ARotationCubeActor>("TestCube");
+	CubeMesh->SetTransform(Vector(0.0f, 0.0f, 0.0f), Quaternion(Vector(0.0f)));
 	Meshes.Push(CubeMesh);
 
-	AStaticMeshActor* CubeMesh2 = NewObject<AStaticMeshActor>("TestCube2");
-	CubeMesh2->geometry_count = 1;
-	CubeMesh2->geometries = (Geometry**)Memory::Allocate(sizeof(Geometry*) * CubeMesh2->geometry_count, MemoryType::eMemory_Type_Array);
-	SGeometryConfig GeoConfig2 = GeometrySystem::GenerateCubeConfig(5.0f, 5.0f, 5.0f, 1.0f, 1.0f, "TestCube2", "Material.Builtin.GBuffer");
-	CubeMesh2->geometries[0] = GeometrySystem::AcquireFromConfig(GeoConfig2, true);
-	CubeMesh2->SetTransform(Vector3(10.0f, 0.0f, 1.0f), Quaternion(Vector(0.0f, 0.0f, 0.0f)));
-	CubeMesh2->Generation = 0;
+	ARotationCubeActor* CubeMesh2 = NewObject<ARotationCubeActor>("TestCube2");
+	CubeMesh2->SetTransform(Vector3(10.0f, 0.0f, 0.0f), Quaternion(Vector(0.0f)), Vector3(0.5f));
 	CubeMesh2->AttachTo(CubeMesh);
 	Meshes.Push(CubeMesh2);
 
-	AStaticMeshActor* CubeMesh3 = NewObject<AStaticMeshActor>("TestCube3");
-	CubeMesh3->geometry_count = 1;
-	CubeMesh3->geometries = (Geometry**)Memory::Allocate(sizeof(Geometry*) * CubeMesh3->geometry_count, MemoryType::eMemory_Type_Array);
-	SGeometryConfig GeoConfig3 = GeometrySystem::GenerateCubeConfig(2.0f, 2.0f, 2.0f, 1.0f, 1.0f, "TestCube3", "Material.Builtin.GBuffer");
-	CubeMesh3->geometries[0] = GeometrySystem::AcquireFromConfig(GeoConfig3, true);
-	CubeMesh3->SetTransform(Vector3(5.0f, 0.0f, 1.0f));
-	CubeMesh3->Generation = 0;
+	ARotationCubeActor* CubeMesh3 = NewObject<ARotationCubeActor>("TestCube3");
+	CubeMesh3->SetTransform(Vector3(15.0f, 0.0f, 0.0f), Quaternion(Vector(0.0f)), Vector3(0.3f));
 	CubeMesh3->AttachTo(CubeMesh2);
 	Meshes.Push(CubeMesh3);
-
-	// Clean up the allocations for the geometry config.
-	GeometrySystem::ConfigDispose(&GeoConfig);
-	GeometrySystem::ConfigDispose(&GeoConfig2);
-	GeometrySystem::ConfigDispose(&GeoConfig3);
 
 	// Load up some test UI geometry.
 	SGeometryConfig UIConfig;
@@ -342,12 +323,6 @@ bool GameInstance::Update(float delta_time) {
 			WorldCamera->RotatePitch((py - cy) * MouseMoveSpeed);
 		}
 	}
-
-	Quaternion RotationY = Quaternion(Axis::Y, 0.5f * (float)delta_time, false);
-	Quaternion RotationX = Quaternion(Axis::X, 0.5f * (float)delta_time, false);
-	Meshes[0]->Rotate(RotationY);
-	Meshes[1]->Rotate(RotationY);
-	Meshes[2]->Rotate(RotationY);
 
 	// Text
 	WorldCamera = CameraSystem::GetDefault();

@@ -3,7 +3,7 @@
 #include <string>
 #include <unordered_map>
 #include <Defines.hpp>
-#include "Framework/Classes/CameraActor.hpp"
+#include "Framework/Classes/CameraActor.h"
 
 class IRenderer;
 

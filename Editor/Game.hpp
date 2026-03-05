@@ -7,7 +7,7 @@
 #include <Core/CPython.hpp>
 #include <Core/Keymap.hpp>
 #include <Containers/TArray.hpp>
-#include "Framework/Classes/StaticMeshActor.hpp"
+#include "Framework/Classes/StaticMeshActor.h"
 #include "Framework/Classes/TextActor.h"
 
 #define EDITOR_CONFIG_PATH std::string(ROOT_PATH) + "/Editor/Config.json"

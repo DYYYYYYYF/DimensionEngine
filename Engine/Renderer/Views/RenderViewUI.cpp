@@ -4,7 +4,7 @@
 #include "Core/DMemory.hpp"
 #include "Core/Event.hpp"
 #include "Math/DMath.hpp"
-#include "Framework/Components/TransformComponent.hpp"
+#include "Framework/Components/TransformComponent.h"
 #include "Containers/TArray.hpp"
 #include "Containers/TString.hpp"
 #include "Systems/MaterialSystem.h"
