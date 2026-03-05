@@ -1,6 +1,6 @@
 ﻿#include <Core/Event.hpp>
-#include <Framework/Classes/Actor.h>
 #include <Core/DMutex.hpp>
+#include <Framework/Classes/Actor.h>
 
 class ATextActor;
 class IRenderer;
