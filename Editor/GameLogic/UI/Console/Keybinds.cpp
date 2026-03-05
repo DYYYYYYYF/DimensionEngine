@@ -1,15 +1,22 @@
-﻿#include "Keybinds.hpp"
-#include "Game.hpp"
-#include <Core/Keymap.hpp>
+﻿#include "Keybinds.h"
+#include "Game.h"
 #include <Core/DMemory.hpp>
 #include <Core/EngineLogger.hpp>
-#include <Renderer/Camera.hpp>
+#include <Framework/Classes/CameraActor.h>
 
-void GameOnEscape(eKeys key, KeymapEntryBindType type, KeymapModifierFlags modifiers, void* user_data) {
+void Keybind::GameOnEscape(eKeys key, KeymapEntryBindType type, KeymapModifierFlags modifiers, void* user_data) {
+	(void)modifiers;
+	(void)user_data;
+	(void)type;
+	(void)key;
+
 	EngineEvent::Fire(eEventCode::Application_Quit, nullptr, SEventContext());
 }
 
-void GameOnYaw(eKeys key, KeymapEntryBindType type, KeymapModifierFlags modifiers, void* user_data) {
+void Keybind::GameOnYaw(eKeys key, KeymapEntryBindType type, KeymapModifierFlags modifiers, void* user_data) {
+	(void)modifiers;
+	(void)type;
+
 	GameInstance* GameInst = (GameInstance*)user_data;
 	if (GameInst == nullptr) {
 		return;
@@ -26,7 +33,10 @@ void GameOnYaw(eKeys key, KeymapEntryBindType type, KeymapModifierFlags modifier
 	GameInst->WorldCamera->RotateYaw(f * GameInst->DeltaTime);
 }
 
-void GameOnPitch(eKeys key, KeymapEntryBindType type, KeymapModifierFlags modifiers, void* user_data) {
+void Keybind::GameOnPitch(eKeys key, KeymapEntryBindType type, KeymapModifierFlags modifiers, void* user_data) {
+	(void)modifiers;
+	(void)type;
+
 	GameInstance* GameInst = (GameInstance*)user_data;
 	if (GameInst == nullptr) {
 		return;
@@ -43,7 +53,11 @@ void GameOnPitch(eKeys key, KeymapEntryBindType type, KeymapModifierFlags modifi
 	GameInst->WorldCamera->RotatePitch(f * GameInst->DeltaTime);
 }
 
-void GameOnMoveForward(eKeys key, KeymapEntryBindType type, KeymapModifierFlags modifiers, void* user_data) {
+void Keybind::GameOnMoveForward(eKeys key, KeymapEntryBindType type, KeymapModifierFlags modifiers, void* user_data) {
+	(void)modifiers;
+	(void)type;
+	(void)key;
+
 	GameInstance* GameInst = (GameInstance*)user_data;
 	if (GameInst == nullptr) {
 		return;
@@ -56,7 +70,11 @@ void GameOnMoveForward(eKeys key, KeymapEntryBindType type, KeymapModifierFlags 
 	GameInst->WorldCamera->MoveForward(TempSpeed * GameInst->DeltaTime);
 }
 
-void GameOnMoveBackward(eKeys key, KeymapEntryBindType type, KeymapModifierFlags modifiers, void* user_data) {
+void Keybind::GameOnMoveBackward(eKeys key, KeymapEntryBindType type, KeymapModifierFlags modifiers, void* user_data) {
+	(void)modifiers;
+	(void)type;
+	(void)key;
+
 	GameInstance* GameInst = (GameInstance*)user_data;
 	if (GameInst == nullptr) {
 		return;
@@ -69,7 +87,11 @@ void GameOnMoveBackward(eKeys key, KeymapEntryBindType type, KeymapModifierFlags
 	GameInst->WorldCamera->MoveBackward(TempSpeed * GameInst->DeltaTime);
 }
 
-void GameOnMoveLeft(eKeys key, KeymapEntryBindType type, KeymapModifierFlags modifiers, void* user_data) {
+void Keybind::GameOnMoveLeft(eKeys key, KeymapEntryBindType type, KeymapModifierFlags modifiers, void* user_data) {
+	(void)modifiers;
+	(void)type;
+	(void)key;
+
 	GameInstance* GameInst = (GameInstance*)user_data;
 	if (GameInst == nullptr) {
 		return;
@@ -82,7 +104,11 @@ void GameOnMoveLeft(eKeys key, KeymapEntryBindType type, KeymapModifierFlags mod
 	GameInst->WorldCamera->MoveLeft(TempSpeed * GameInst->DeltaTime);
 }
 
-void GameOnMoveRight(eKeys key, KeymapEntryBindType type, KeymapModifierFlags modifiers, void* user_data) {
+void Keybind::GameOnMoveRight(eKeys key, KeymapEntryBindType type, KeymapModifierFlags modifiers, void* user_data) {
+	(void)modifiers;
+	(void)type;
+	(void)key;
+
 	GameInstance* GameInst = (GameInstance*)user_data;
 	if (GameInst == nullptr) {
 		return;
@@ -95,7 +121,11 @@ void GameOnMoveRight(eKeys key, KeymapEntryBindType type, KeymapModifierFlags mo
 	GameInst->WorldCamera->MoveRight(TempSpeed * GameInst->DeltaTime);
 }
 
-void GameOnMoveUp(eKeys key, KeymapEntryBindType type, KeymapModifierFlags modifiers, void* user_data) {
+void Keybind::GameOnMoveUp(eKeys key, KeymapEntryBindType type, KeymapModifierFlags modifiers, void* user_data) {
+	(void)modifiers;
+	(void)type;
+	(void)key;
+
 	GameInstance* GameInst = (GameInstance*)user_data;
 	if (GameInst == nullptr) {
 		return;
@@ -108,7 +138,11 @@ void GameOnMoveUp(eKeys key, KeymapEntryBindType type, KeymapModifierFlags modif
 	GameInst->WorldCamera->MoveUp(TempSpeed * GameInst->DeltaTime);
 }
 
-void GameOnMoveDown(eKeys key, KeymapEntryBindType type, KeymapModifierFlags modifiers, void* user_data) {
+void Keybind::GameOnMoveDown(eKeys key, KeymapEntryBindType type, KeymapModifierFlags modifiers, void* user_data) {
+	(void)modifiers;
+	(void)type;
+	(void)key;
+
 	GameInstance* GameInst = (GameInstance*)user_data;
 	if (GameInst == nullptr) {
 		return;
@@ -121,7 +155,11 @@ void GameOnMoveDown(eKeys key, KeymapEntryBindType type, KeymapModifierFlags mod
 	GameInst->WorldCamera->MoveDown(TempSpeed * GameInst->DeltaTime);
 }
 
-void GameOnChangeConsoleVisibility(eKeys key, KeymapEntryBindType type, KeymapModifierFlags modifiers, void* user_data) {
+void Keybind::GameOnChangeConsoleVisibility(eKeys key, KeymapEntryBindType type, KeymapModifierFlags modifiers, void* user_data) {
+	(void)modifiers;
+	(void)type;
+	(void)key;
+
 	GameInstance* GameInst = (GameInstance*)user_data;
 	if (GameInst == nullptr) {
 		return;
@@ -142,31 +180,56 @@ void GameOnChangeConsoleVisibility(eKeys key, KeymapEntryBindType type, KeymapMo
 	}
 }
 
-void GameOnSetRenderModeDefault(eKeys key, KeymapEntryBindType type, KeymapModifierFlags modifiers, void* user_data) {
+void Keybind::GameOnSetRenderModeDefault(eKeys key, KeymapEntryBindType type, KeymapModifierFlags modifiers, void* user_data) {
+	(void)modifiers;
+	(void)type;
+	(void)user_data;
+	(void)key;
+
 	SEventContext Context;
 	Context.data.i32[0] = ShaderRenderMode::eShader_Render_Mode_Default;
 	EngineEvent::Fire(eEventCode::Set_Render_Mode, nullptr, Context);
 }
 
-void GameOnSetRenderModeNormal(eKeys key, KeymapEntryBindType type, KeymapModifierFlags modifiers, void* user_data) {
+void Keybind::GameOnSetRenderModeNormal(eKeys key, KeymapEntryBindType type, KeymapModifierFlags modifiers, void* user_data) {
+	(void)modifiers;
+	(void)type;
+	(void)user_data;
+	(void)key;
+
 	SEventContext Context;
 	Context.data.i32[0] = ShaderRenderMode::eShader_Render_Mode_Normals;
 	EngineEvent::Fire(eEventCode::Set_Render_Mode, nullptr, Context);
 }
 
-void GameOnSetRenderModeBlinnphong(eKeys key, KeymapEntryBindType type, KeymapModifierFlags modifiers, void* user_data) {
+void Keybind::GameOnSetRenderModeBlinnphong(eKeys key, KeymapEntryBindType type, KeymapModifierFlags modifiers, void* user_data) {
+	(void)modifiers;
+	(void)type;
+	(void)user_data;
+	(void)key;
+
 	SEventContext Context;
 	Context.data.i32[0] = ShaderRenderMode::eShader_Render_Mode_Lighting;
 	EngineEvent::Fire(eEventCode::Set_Render_Mode, nullptr, Context);
 }
 
-void GameOnSetRenderModeDepth(eKeys key, KeymapEntryBindType type, KeymapModifierFlags modifiers, void* user_data) {
+void Keybind::GameOnSetRenderModeDepth(eKeys key, KeymapEntryBindType type, KeymapModifierFlags modifiers, void* user_data) {
+	(void)modifiers;
+	(void)type;
+	(void)user_data;
+	(void)key;
+
 	SEventContext Context;
 	Context.data.i32[0] = ShaderRenderMode::eShader_Render_Mode_Depth;
 	EngineEvent::Fire(eEventCode::Set_Render_Mode, nullptr, Context);
 }
 
-void GameOnPrintMemory(eKeys key, KeymapEntryBindType type, KeymapModifierFlags modifiers, void* user_data) {
+void Keybind::GameOnPrintMemory(eKeys key, KeymapEntryBindType type, KeymapModifierFlags modifiers, void* user_data) {
+	(void)modifiers;
+	(void)type;
+	(void)user_data;
+	(void)key;
+
 	static size_t AllocCount = 0;
 	size_t PrevAllocCount = AllocCount;
 	AllocCount = Memory::GetAllocateCount();
@@ -175,14 +238,16 @@ void GameOnPrintMemory(eKeys key, KeymapEntryBindType type, KeymapModifierFlags 
 	GLOG(Log::eInfo, Usage);
 
 	size_t Size = 0;
-	unsigned short  Alignment = 0;
-	if (Memory::GetAlignmentSize(Usage, &Size, &Alignment)) {
-		Memory::FreeAligned(Usage, Size, Alignment, MemoryType::eMemory_Type_String);
+	if (Memory::GetAlignmentSize(Usage, &Size, nullptr)) {
+		Memory::FreeAligned(Usage, Size, MemoryType::eMemory_Type_String);
 	}
 	GLOG(Log::eDebug, "Allocations: %llu (%llu this frame)", AllocCount, UsedMemory);
 }
 
-void GameOnLoadScene(eKeys key, KeymapEntryBindType type, KeymapModifierFlags modifiers, void* user_data) {
+void Keybind::GameOnLoadScene(eKeys key, KeymapEntryBindType type, KeymapModifierFlags modifiers, void* user_data) {
+	(void)modifiers;
+	(void)type;
+
 	if (key == eKeys::O) {
 		EngineEvent::Fire(eEventCode::Debug_0, user_data, SEventContext());
 	}
@@ -197,7 +262,11 @@ void GameOnLoadScene(eKeys key, KeymapEntryBindType type, KeymapModifierFlags mo
 	}
 }
 
-void GameOnCompilerShader(eKeys key, KeymapEntryBindType type, KeymapModifierFlags modifiers, void* user_data) {
+void Keybind::GameOnCompilerShader(eKeys key, KeymapEntryBindType type, KeymapModifierFlags modifiers, void* user_data) {
+	(void)modifiers;
+	(void)type;
+	(void)key;
+
 	GameInstance* GameInst = (GameInstance*)user_data;
 	if (GameInst == nullptr) {
 		return;
@@ -211,10 +280,18 @@ void GameOnCompilerShader(eKeys key, KeymapEntryBindType type, KeymapModifierFla
 	EngineEvent::Fire(eEventCode::Reload_Shader_Module, GameInst, Context);
 }
 
-void GameOnTemplate(eKeys key, KeymapEntryBindType type, KeymapModifierFlags modifiers, void* user_data) {}
+void Keybind::GameOnTemplate(eKeys key, KeymapEntryBindType type, KeymapModifierFlags modifiers, void* user_data) {
+	(void)modifiers;
+	(void)type;
+	(void)user_data;
+	(void)key;
+}
 
 // ------------------------------- Console ---------------------------------- //
-void GameOnConsoleScroll(eKeys key, KeymapEntryBindType type, KeymapModifierFlags modifiers, void* user_data) {
+void Keybind::GameOnConsoleScroll(eKeys key, KeymapEntryBindType type, KeymapModifierFlags modifiers, void* user_data) {
+	(void)modifiers;
+	(void)type;
+
 	DebugConsoleActor* Console = (DebugConsoleActor*)user_data;
 	if (Console) {
 		if (key == eKeys::Up) {
@@ -226,7 +303,10 @@ void GameOnConsoleScroll(eKeys key, KeymapEntryBindType type, KeymapModifierFlag
 	}
 }
 
-void GameOnConsoleScrollHold(eKeys key, KeymapEntryBindType type, KeymapModifierFlags modifiers, void* user_data) {
+void Keybind::GameOnConsoleScrollHold(eKeys key, KeymapEntryBindType type, KeymapModifierFlags modifiers, void* user_data) {
+	(void)modifiers;
+	(void)type;
+
 	GameInstance* GameInst = (GameInstance*)user_data;
 	if (GameInst == nullptr) {
 		GLOG(Log::eError, "Keybind::Setup() Invalid game pointer.");
@@ -257,70 +337,70 @@ void Keybind::Setup(IGame* game) {
 	// Global keymap
 	Keymap* GlobalKeymap = NewObject<Keymap>();
 	GlobalKeymap->AddBinding(eKeys::Escape, KeymapEntryBindType::ePress, (uint32_t)KeymapModifierFlagBits::eNone, GameInst,
-		std::bind(&GameOnEscape, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
+		std::bind(&Keybind::GameOnEscape, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
 	Controller::PushKeymap(GlobalKeymap);
 
 	// Game keymap
 	Keymap* GameKeymap = NewObject<Keymap>();
 	// Left
 	GameKeymap->AddBinding(eKeys::A, KeymapEntryBindType::eHold, (uint32_t)KeymapModifierFlagBits::eNone, GameInst,
-		std::bind(&GameOnMoveLeft, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
+		std::bind(&Keybind::GameOnMoveLeft, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
 	GameKeymap->AddBinding(eKeys::Left, KeymapEntryBindType::eHold, (uint32_t)KeymapModifierFlagBits::eNone, GameInst,
-		std::bind(&GameOnYaw, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
+		std::bind(&Keybind::GameOnYaw, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
 	// Right
 	GameKeymap->AddBinding(eKeys::D, KeymapEntryBindType::eHold, (uint32_t)KeymapModifierFlagBits::eNone, GameInst,
-		std::bind(&GameOnMoveRight, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
+		std::bind(&Keybind::GameOnMoveRight, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
 	GameKeymap->AddBinding(eKeys::Right, KeymapEntryBindType::eHold, (uint32_t)KeymapModifierFlagBits::eNone, GameInst,
-		std::bind(&GameOnYaw, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
+		std::bind(&Keybind::GameOnYaw, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
 	// Up
 	GameKeymap->AddBinding(eKeys::Up, KeymapEntryBindType::eHold, (uint32_t)KeymapModifierFlagBits::eNone, GameInst,
-		std::bind(&GameOnPitch, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
+		std::bind(&Keybind::GameOnPitch, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
 	// Down
 	GameKeymap->AddBinding(eKeys::Down, KeymapEntryBindType::eHold, (uint32_t)KeymapModifierFlagBits::eNone, GameInst,
-		std::bind(&GameOnPitch, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
+		std::bind(&Keybind::GameOnPitch, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
 	// Console visible
 	GameKeymap->AddBinding(eKeys::Grave, KeymapEntryBindType::ePress, (uint32_t)KeymapModifierFlagBits::eNone, GameInst,
-		std::bind(&GameOnChangeConsoleVisibility, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
+		std::bind(&Keybind::GameOnChangeConsoleVisibility, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
 
 	// Forward
 	GameKeymap->AddBinding(eKeys::W, KeymapEntryBindType::eHold, (uint32_t)KeymapModifierFlagBits::eNone, GameInst,
-		std::bind(&GameOnMoveForward, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
+		std::bind(&Keybind::GameOnMoveForward, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
 	// Backward
 	GameKeymap->AddBinding(eKeys::S, KeymapEntryBindType::eHold, (uint32_t)KeymapModifierFlagBits::eNone, GameInst,
-		std::bind(&GameOnMoveBackward, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
+		std::bind(&Keybind::GameOnMoveBackward, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
 	// Up
 	GameKeymap->AddBinding(eKeys::E, KeymapEntryBindType::eHold, (uint32_t)KeymapModifierFlagBits::eNone, GameInst,
-		std::bind(&GameOnMoveUp, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
+		std::bind(&Keybind::GameOnMoveUp, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
 	// Down
 	GameKeymap->AddBinding(eKeys::Q, KeymapEntryBindType::eHold, (uint32_t)KeymapModifierFlagBits::eNone, GameInst,
-		std::bind(&GameOnMoveDown, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
+		std::bind(&Keybind::GameOnMoveDown, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
 
 	// Renderview mode
 	GameKeymap->AddBinding(eKeys::F1, KeymapEntryBindType::ePress, (uint32_t)KeymapModifierFlagBits::eNone, GameInst,
-		std::bind(&GameOnSetRenderModeDefault, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
+		std::bind(&Keybind::GameOnSetRenderModeDefault, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
 	GameKeymap->AddBinding(eKeys::F2, KeymapEntryBindType::ePress, (uint32_t)KeymapModifierFlagBits::eNone, GameInst,
-		std::bind(&GameOnSetRenderModeBlinnphong, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
+		std::bind(&Keybind::GameOnSetRenderModeBlinnphong, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
 	GameKeymap->AddBinding(eKeys::F3, KeymapEntryBindType::ePress, (uint32_t)KeymapModifierFlagBits::eNone, GameInst,
-		std::bind(&GameOnSetRenderModeNormal, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
+		std::bind(&Keybind::GameOnSetRenderModeNormal, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
 	GameKeymap->AddBinding(eKeys::F4, KeymapEntryBindType::ePress, (uint32_t)KeymapModifierFlagBits::eNone, GameInst,
-		std::bind(&GameOnSetRenderModeDepth, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
+		std::bind(&Keybind::GameOnSetRenderModeDepth, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
 
 	// Load models
 	GameKeymap->AddBinding(eKeys::O, KeymapEntryBindType::ePress, (uint32_t)KeymapModifierFlagBits::eNone, GameInst,
-		std::bind(&GameOnLoadScene, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
+		std::bind(&Keybind::GameOnLoadScene, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
 	GameKeymap->AddBinding(eKeys::P, KeymapEntryBindType::ePress, (uint32_t)KeymapModifierFlagBits::eNone, GameInst,
-		std::bind(&GameOnLoadScene, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
+		std::bind(&Keybind::GameOnLoadScene, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
 	GameKeymap->AddBinding(eKeys::K, KeymapEntryBindType::ePress, (uint32_t)KeymapModifierFlagBits::eNone, GameInst,
-		std::bind(&GameOnLoadScene, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
+		std::bind(&Keybind::GameOnLoadScene, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
 	GameKeymap->AddBinding(eKeys::L, KeymapEntryBindType::ePress, (uint32_t)KeymapModifierFlagBits::eNone, GameInst,
-		std::bind(&GameOnLoadScene, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
+		std::bind(&Keybind::GameOnLoadScene, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
 
 	// Print memory
 	GameKeymap->AddBinding(eKeys::M, KeymapEntryBindType::ePress, (uint32_t)KeymapModifierFlagBits::eNone, GameInst,
-		std::bind(&GameOnPrintMemory, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
+		std::bind(&Keybind::GameOnPrintMemory, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
 	// Compiler shader
 	GameKeymap->AddBinding(eKeys::G, KeymapEntryBindType::ePress, (uint32_t)KeymapModifierFlagBits::eNone, GameInst,
-		std::bind(&GameOnCompilerShader, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
+		std::bind(&Keybind::GameOnCompilerShader, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
 	Controller::PushKeymap(GameKeymap);
 
 	// Console keymap
@@ -332,16 +412,16 @@ void Keybind::Setup(IGame* game) {
 	GameInst->ConsoleKeymap = NewObject<Keymap>();
 	GameInst->ConsoleKeymap->OverrideAll = true;
 	GameInst->ConsoleKeymap->AddBinding(eKeys::Grave, KeymapEntryBindType::ePress, (uint32_t)KeymapModifierFlagBits::eNone, GameInst,
-		std::bind(&GameOnChangeConsoleVisibility, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
+		std::bind(&Keybind::GameOnChangeConsoleVisibility, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
 	GameInst->ConsoleKeymap->AddBinding(eKeys::Escape, KeymapEntryBindType::ePress, (uint32_t)KeymapModifierFlagBits::eNone, GameInst,
-		std::bind(&GameOnChangeConsoleVisibility, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
+		std::bind(&Keybind::GameOnChangeConsoleVisibility, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
 
 	GameInst->ConsoleKeymap->AddBinding(eKeys::Up, KeymapEntryBindType::ePress, (uint32_t)KeymapModifierFlagBits::eNone, GameInst->GameConsole,
-		std::bind(&GameOnConsoleScroll, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
+		std::bind(&Keybind::GameOnConsoleScroll, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
 	GameInst->ConsoleKeymap->AddBinding(eKeys::Down, KeymapEntryBindType::ePress, (uint32_t)KeymapModifierFlagBits::eNone, GameInst->GameConsole,
-		std::bind(&GameOnConsoleScroll, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
+		std::bind(&Keybind::GameOnConsoleScroll, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
 	GameInst->ConsoleKeymap->AddBinding(eKeys::Up, KeymapEntryBindType::eHold, (uint32_t)KeymapModifierFlagBits::eNone, GameInst,
-		std::bind(&GameOnConsoleScrollHold, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
+		std::bind(&Keybind::GameOnConsoleScrollHold, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
 	GameInst->ConsoleKeymap->AddBinding(eKeys::Down, KeymapEntryBindType::eHold, (uint32_t)KeymapModifierFlagBits::eNone, GameInst,
-		std::bind(&GameOnConsoleScrollHold, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
+		std::bind(&Keybind::GameOnConsoleScrollHold, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
 }

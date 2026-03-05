@@ -25,7 +25,7 @@ private:
 	Matrix4 ViewMatrix;
 
 	// UI text
-	unsigned short DiffuseMapLocation;
-	unsigned short DiffuseColorLocation;
-	unsigned short ModelLocation;
+	uint32_t DiffuseMapLocation;
+	uint32_t DiffuseColorLocation;
+	uint32_t ModelLocation;
 };

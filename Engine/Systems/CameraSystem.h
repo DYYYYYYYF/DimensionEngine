@@ -1,7 +1,9 @@
 ﻿#pragma once
 
-#include "Renderer/Camera.hpp"
+#include <string>
 #include <unordered_map>
+#include <Defines.hpp>
+#include "Framework/Classes/CameraActor.h"
 
 class IRenderer;
 
@@ -25,7 +27,7 @@ public:
 	 * @param name The name of the camera to acquire.
 	 * @return A pointer to a camera if successful.
 	 */
-	static Camera* Acquire(const char* name);
+	static ACameraActor* Acquire(const std::string& name);
 
 	/**
 	 * @brief Releases a camera with the given name, Internal reference counter is
@@ -34,23 +36,23 @@ public:
 	 * 
 	 * @param name The name of the camera to release.
 	 */
-	static void Release(const char* name);
+	static void Release(const std::string& name);
 
 	/**
 	 * @brief Gets a pointer to the default camera.
 	 * 
 	 * @return A pointer to default camera.
 	 */
-	DAPI static Camera* GetDefault();
+	DAPI static ACameraActor* GetDefault();
 
 private:
 	static IRenderer* Renderer;
 	static bool Initialized;
 
 	static SCameraSystemConfig Config;
-	static std::vector<Camera*> Cameras;
+	static std::vector<ACameraActor*> Cameras;
 	static std::unordered_map<std::string, uint32_t> CameraMap;
 	
-	static Camera* DefaultCamera;
+	static ACameraActor* DefaultCamera;
 };
 

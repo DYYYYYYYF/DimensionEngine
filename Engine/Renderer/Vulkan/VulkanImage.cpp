@@ -48,7 +48,7 @@ void VulkanImage::CreateImage(VulkanContext* context, TextureType type, uint32_t
 	// Query memory requirements
 	MemoryRequirements = LogicalDevice.getImageMemoryRequirements(Image);
 	uint32_t MemoryType = context->FindMemoryIndex(MemoryRequirements.memoryTypeBits, MemoryFlags);
-	if (MemoryType == -1) {
+	if (MemoryType == INVALID_ID) {
 		GLOG(Log::eError, "Required memory type not found. Image not vaild.");
 	}
 

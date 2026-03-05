@@ -4,7 +4,7 @@
 #include "Core/DMemory.hpp"
 #include "Core/Event.hpp"
 #include "Math/DMath.hpp"
-#include "Math/Transform.hpp"
+#include "Framework/Components/TransformComponent.h"
 #include "Containers/TArray.hpp"
 #include "Containers/TString.hpp"
 #include "Systems/MaterialSystem.h"
@@ -14,7 +14,7 @@
 #include "Renderer/RendererFrontend.hpp"
 #include "Renderer/Interface/IRenderpass.hpp"
 #include "Renderer/Interface/IRendererBackend.hpp"
-#include "Resources/UIText.hpp"
+#include "Framework/Classes/TextActor.h"
 
 static bool RenderViewUIOnEvent(eEventCode code, void* sender, void* listenerInst, SEventContext context) {
 	IRenderView* self = (IRenderView*)listenerInst;
@@ -92,8 +92,8 @@ void RenderViewUI::OnResize(uint32_t width, uint32_t height) {
 		return;
 	}
 
-	Width = width;
-	Height = height;
+	Width = (uint16_t)width;
+	Height = (uint16_t)height;
 	ProjectionMatrix = Matrix4::Orthographic(0.0f, (float)Width, (float)Height, 0.0f, NearClip, FarClip);
 
 	for (uint32_t i = 0; i < RenderpassCount; ++i) {
@@ -120,14 +120,10 @@ bool RenderViewUI::OnBuildPacket(IRenderviewPacketData* data, struct RenderViewP
 	// Obtain all geometries from the current scene.
 	// Iterate all meshes and them to the packet's geometries collection.
 	for (uint32_t i = 0; i < PacketData->meshData.mesh_count; ++i) {
-		Mesh* pMesh = PacketData->meshData.meshes[i];
-		for (uint32_t j = 0; j < pMesh->geometry_count; j++) {
-			GeometryRenderData RenderData;
-			RenderData.geometry = pMesh->geometries[j];
-			RenderData.model = pMesh->GetWorldTransform();
-			out_packet->geometries.push_back(RenderData);
-			out_packet->geometry_count++;
-		}
+		AMeshActor* pMesh = PacketData->meshData.meshes[i];
+		if (pMesh) pMesh->Draw();
+		/*out_packet->geometries.push_back(RenderData);
+		out_packet->geometry_count++;*/
 	}
 
 	return true;
@@ -141,12 +137,12 @@ void RenderViewUI::OnDestroyPacket(struct RenderViewPacket* packet) {
 	if (packet->extended_data) {
 		UIPacketData* PacketData = (UIPacketData*)packet->extended_data;
 		if (PacketData->Textes != nullptr) {
-			Memory::Free(PacketData->Textes, sizeof(UIText) * PacketData->textCount, MemoryType::eMemory_Type_Array);
+			Memory::Free(PacketData->Textes, MemoryType::eMemory_Type_Array);
 			PacketData->Textes = nullptr;
 		}
 
 		if (PacketData->meshData.meshes != nullptr) {
-			Memory::Free(PacketData->meshData.meshes, sizeof(Mesh) * PacketData->meshData.mesh_count, MemoryType::eMemory_Type_Array);
+			Memory::Free(PacketData->meshData.meshes, MemoryType::eMemory_Type_Array);
 			PacketData->meshData.meshes = nullptr;
 		}
 
@@ -200,7 +196,7 @@ bool RenderViewUI::OnRender(struct RenderViewPacket* packet, IRendererBackend* b
 			}
 
 			// Apply local
-			MaterialSystem::ApplyLocal(Mat, packet->geometries[i].model);
+			MaterialSystem::ApplyLocal(Mat, packet->geometries[i].model_mat);
 
 			// Draw
 			back_renderer->DrawGeometry(&packet->geometries[i]);
@@ -209,7 +205,7 @@ bool RenderViewUI::OnRender(struct RenderViewPacket* packet, IRendererBackend* b
 		// Draw bitmap text.
 		UIPacketData* PacketData = (UIPacketData*)packet->extended_data;
 		for (uint32_t i = 0; i < PacketData->textCount; ++i) {
-			UIText* Text = PacketData->Textes[i];
+			ATextActor* Text = PacketData->Textes[i];
 			ShaderSystem::BindInstance(Text->InstanceID);
 
 			if (!ShaderSystem::SetUniformByIndex(DiffuseMapLocation, &Text->Data->atlas)) {
@@ -224,11 +220,11 @@ bool RenderViewUI::OnRender(struct RenderViewPacket* packet, IRendererBackend* b
 				return false;
 			}
 
-			bool NeedUpdate = Text->RenderFrameNumber != frame_number;
+			bool NeedUpdate = Text->GetFrameNumber() != frame_number;
 			ShaderSystem::ApplyInstance(NeedUpdate);
 
 			// Sync frame number.
-			Text->RenderFrameNumber = frame_number;
+			Text->SetFrameNumber(frame_number);
 
 			// Apply the locals.
 			Matrix4 Model = Text->GetLocalTransform();

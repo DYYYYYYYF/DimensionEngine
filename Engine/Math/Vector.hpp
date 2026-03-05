@@ -65,12 +65,12 @@ public:
 	}
 
 	// 性能优化：操作符添加const和noexcept
-	constexpr TVector2_Base operator+(const TVector2_Base& v) const noexcept {
-		return TVector2_Base{ x + v.x, y + v.y };
+	constexpr TVector2_Base operator+(const TVector2_Base& vec) const noexcept {
+		return TVector2_Base{ x + vec.x, y + vec.y };
 	}
 
-	constexpr TVector2_Base operator-(const TVector2_Base& v) const noexcept {
-		return TVector2_Base{ x - v.x, y - v.y };
+	constexpr TVector2_Base operator-(const TVector2_Base& vec) const noexcept {
+		return TVector2_Base{ x - vec.x, y - vec.y };
 	}
 
 	constexpr TVector2_Base operator*(T num) const noexcept {
@@ -116,9 +116,9 @@ public:
 	constexpr TVector3_Base(const TVector3_Base& v) noexcept = default;
 
 	// 添加移动语义
-	constexpr TVector3_Base(TVector3_Base&& v) noexcept = default;
-	TVector3_Base& operator=(const TVector3_Base& v) noexcept = default;
-	TVector3_Base& operator=(TVector3_Base&& v) noexcept = default;
+	constexpr TVector3_Base(TVector3_Base&& vec) noexcept = default;
+	TVector3_Base& operator=(const TVector3_Base& vec) noexcept = default;
+	TVector3_Base& operator=(TVector3_Base&& vec) noexcept = default;
 
 	constexpr void Zero() noexcept { x = T(0); y = T(0); z = T(0); }
 	constexpr void One() noexcept { x = T(1); y = T(1); z = T(1); }
@@ -180,34 +180,34 @@ public:
 	static constexpr TVector3_Base Up() noexcept { return TVector3_Base(T(0), T(1), T(0)); }
 	static constexpr TVector3_Base Down() noexcept { return TVector3_Base(T(0), T(-1), T(0)); }
 
-	constexpr TVector3_Base operator+(const TVector3_Base& v) const noexcept {
-		return TVector3_Base{ x + v.x, y + v.y, z + v.z };
+	constexpr TVector3_Base operator+(const TVector3_Base& vec) const noexcept {
+		return TVector3_Base{ x + vec.x, y + vec.y, z + vec.z };
 	}
 
-	TVector3_Base operator+(TVector3_Base&& v) const noexcept {
-		v.x += x; v.y += y; v.z += z;
-		return std::move(v);
+	TVector3_Base operator+(TVector3_Base&& vec) const noexcept {
+		vec.x += x; vec.y += y; vec.z += z;
+		return std::move(vec);
 	}
 
-	constexpr TVector3_Base operator-(const TVector3_Base& v) const noexcept {
-		return TVector3_Base{ x - v.x, y - v.y, z - v.z };
+	constexpr TVector3_Base operator-(const TVector3_Base& vec) const noexcept {
+		return TVector3_Base{ x - vec.x, y - vec.y, z - vec.z };
 	}
 
-	TVector3_Base operator-(TVector3_Base&& v) const noexcept {
-		v.x = x - v.x; v.y = y - v.y; v.z = z - v.z;
-		return std::move(v);
+	TVector3_Base operator-(TVector3_Base&& vec) const noexcept {
+		vec.x = x - vec.x; vec.y = y - vec.y; vec.z = z - vec.z;
+		return std::move(vec);
 	}
 
-	constexpr TVector3_Base operator*(const TVector3_Base& v) const noexcept {
-		return TVector3_Base{ x * v.x, y * v.y, z * v.z };
+	constexpr TVector3_Base operator*(const TVector3_Base& vec) const noexcept {
+		return TVector3_Base{ x * vec.x, y * vec.y, z * vec.z };
 	}
 
 	constexpr TVector3_Base operator*(T num) const noexcept {
 		return TVector3_Base{ x * num, y * num, z * num };
 	}
 
-	constexpr TVector3_Base operator/(const TVector3_Base& v) const noexcept {
-		return TVector3_Base{ x / v.x, y / v.y, z / v.z };
+	constexpr TVector3_Base operator/(const TVector3_Base& vec) const noexcept {
+		return TVector3_Base{ x / vec.x, y / vec.y, z / vec.z };
 	}
 
 	constexpr TVector3_Base operator/(T num) const noexcept {
@@ -218,13 +218,13 @@ public:
 		return TVector3_Base(-x, -y, -z);
 	}
 
-	TVector3_Base& operator+=(const TVector3_Base& v) noexcept {
-		x += v.x; y += v.y; z += v.z;
+	TVector3_Base& operator+=(const TVector3_Base& vec) noexcept {
+		x += vec.x; y += vec.y; z += vec.z;
 		return *this;
 	}
 
-	TVector3_Base& operator-=(const TVector3_Base& v) noexcept {
-		x -= v.x; y -= v.y; z -= v.z;
+	TVector3_Base& operator-=(const TVector3_Base& vec) noexcept {
+		x -= vec.x; y -= vec.y; z -= vec.z;
 		return *this;
 	}
 
@@ -260,9 +260,9 @@ public:
 	constexpr TVector3_16(const TVector3_16& v) noexcept = default;
 
 	// 添加移动语义
-	constexpr TVector3_16(TVector3_16&& v) noexcept = default;
-	TVector3_16& operator=(const TVector3_16& v) noexcept = default;
-	TVector3_16& operator=(TVector3_16&& v) noexcept = default;
+	constexpr TVector3_16(TVector3_16&& vec) noexcept = default;
+	TVector3_16& operator=(const TVector3_16& vec) noexcept = default;
+	TVector3_16& operator=(TVector3_16&& vec) noexcept = default;
 
 	constexpr void Zero() noexcept { x = T(0); y = T(0); z = T(0); }
 	constexpr void One() noexcept { x = T(1); y = T(1); z = T(1); }
@@ -323,34 +323,34 @@ public:
 	static constexpr TVector3_16 Up() noexcept { return TVector3_16(T(0), T(1), T(0)); }
 	static constexpr TVector3_16 Down() noexcept { return TVector3_16(T(0), T(-1), T(0)); }
 
-	constexpr TVector3_16 operator+(const TVector3_16& v) const noexcept {
-		return TVector3_16{ x + v.x, y + v.y, z + v.z };
+	constexpr TVector3_16 operator+(const TVector3_16& vec) const noexcept {
+		return TVector3_16{ x + vec.x, y + vec.y, z + vec.z };
 	}
 
-	TVector3_16 operator+(TVector3_16&& v) const noexcept {
-		v.x += x; v.y += y; v.z += z;
-		return std::move(v);
+	TVector3_16 operator+(TVector3_16&& vec) const noexcept {
+		vec.x += x; vec.y += y; vec.z += z;
+		return std::move(vec);
 	}
 
-	constexpr TVector3_16 operator-(const TVector3_16& v) const noexcept {
-		return TVector3_16{ x - v.x, y - v.y, z - v.z };
+	constexpr TVector3_16 operator-(const TVector3_16& vec) const noexcept {
+		return TVector3_16{ x - vec.x, y - vec.y, z - vec.z };
 	}
 
-	TVector3_16 operator-(TVector3_16&& v) const noexcept {
-		v.x = x - v.x; v.y = y - v.y; v.z = z - v.z;
-		return std::move(v);
+	TVector3_16 operator-(TVector3_16&& vec) const noexcept {
+		vec.x = x - vec.x; vec.y = y - vec.y; vec.z = z - vec.z;
+		return std::move(vec);
 	}
 
-	constexpr TVector3_16 operator*(const TVector3_16& v) const noexcept {
-		return TVector3_16{ x * v.x, y * v.y, z * v.z };
+	constexpr TVector3_16 operator*(const TVector3_16& vec) const noexcept {
+		return TVector3_16{ x * vec.x, y * vec.y, z * vec.z };
 	}
 
 	constexpr TVector3_16 operator*(T num) const noexcept {
 		return TVector3_16{ x * num, y * num, z * num };
 	}
 
-	constexpr TVector3_16 operator/(const TVector3_16& v) const noexcept {
-		return TVector3_16{ x / v.x, y / v.y, z / v.z };
+	constexpr TVector3_16 operator/(const TVector3_16& vec) const noexcept {
+		return TVector3_16{ x / vec.x, y / vec.y, z / vec.z };
 	}
 
 	constexpr TVector3_16 operator/(T num) const noexcept {
@@ -361,13 +361,13 @@ public:
 		return TVector3_16(-x, -y, -z);
 	}
 
-	TVector3_16& operator+=(const TVector3_16& v) noexcept {
-		x += v.x; y += v.y; z += v.z;
+	TVector3_16& operator+=(const TVector3_16& vec) noexcept {
+		x += vec.x; y += vec.y; z += vec.z;
 		return *this;
 	}
 
-	TVector3_16& operator-=(const TVector3_16& v) noexcept {
-		x -= v.x; y -= v.y; z -= v.z;
+	TVector3_16& operator-=(const TVector3_16& vec) noexcept {
+		x -= vec.x; y -= vec.y; z -= vec.z;
 		return *this;
 	}
 
@@ -439,10 +439,10 @@ public:
 #endif
     }
 
-    TVector4_Base(const TVector4_Base& v) noexcept = default;
-    TVector4_Base(TVector4_Base&& v) noexcept = default;
-    TVector4_Base& operator=(const TVector4_Base& v) noexcept = default;
-    TVector4_Base& operator=(TVector4_Base&& v) noexcept = default;
+    TVector4_Base(const TVector4_Base& vec) noexcept = default;
+    TVector4_Base(TVector4_Base&& vec) noexcept = default;
+    TVector4_Base& operator=(const TVector4_Base& vec) noexcept = default;
+    TVector4_Base& operator=(TVector4_Base&& vec) noexcept = default;
 
     void Zero() noexcept {
         x = y = z = w = T(0);
@@ -665,10 +665,10 @@ public:
 #endif
     }
 
-    TVector4_SIMD(const TVector4_SIMD& v) noexcept = default;
-    TVector4_SIMD(TVector4_SIMD&& v) noexcept = default;
-    TVector4_SIMD& operator=(const TVector4_SIMD& v) noexcept = default;
-    TVector4_SIMD& operator=(TVector4_SIMD&& v) noexcept = default;
+    TVector4_SIMD(const TVector4_SIMD& vec) noexcept = default;
+    TVector4_SIMD(TVector4_SIMD&& vec) noexcept = default;
+    TVector4_SIMD& operator=(const TVector4_SIMD& vec) noexcept = default;
+    TVector4_SIMD& operator=(TVector4_SIMD&& vec) noexcept = default;
 
     void Zero() noexcept {
         x = y = z = w = T(0);

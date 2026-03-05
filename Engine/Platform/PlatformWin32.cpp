@@ -362,13 +362,13 @@ LRESULT CALLBACK win32_process_message(HWND hwnd, UINT32 msg, WPARAM w_param, LP
 			int PositionY = GET_Y_LPARAM(l_param);
 
 			// Pass over to the input subsystem
-			Controller::ProcessMouseMove(PositionX, PositionY);
+			Controller::ProcessMouseMove((short)PositionX, (short)PositionY);
 		}break;
 		case WM_MOUSEWHEEL: {
 			int DeltaZ = GET_WHEEL_DELTA_WPARAM(w_param);
 			if (DeltaZ != 0) {
 				DeltaZ = (DeltaZ < 0) ? -1 : 1;
-				Controller::ProcessMouseWheel(DeltaZ);
+				Controller::ProcessMouseWheel((char)DeltaZ);
 			}
 		}break;
 		case WM_LBUTTONDOWN:

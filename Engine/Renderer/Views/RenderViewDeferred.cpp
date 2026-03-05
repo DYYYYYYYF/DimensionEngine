@@ -5,7 +5,7 @@
 #include "Core/DMemory.hpp"
 #include "Core/UID.hpp"
 #include "Math/DMath.hpp"
-#include "Math/Transform.hpp"
+
 #include "Containers/TArray.hpp"
 #include "Containers/TString.hpp"
 #include "Containers/FString.hpp"
@@ -56,7 +56,6 @@ static bool RenderViewWorldDeferredOnEvent(eEventCode code, void* sender, void* 
 		}
 		return true;
 	}
-	default: return true;
 	}
 
 	return false;
@@ -156,8 +155,8 @@ void RenderViewWorldDeferred::OnResize(uint32_t width, uint32_t height) {
 		return;
 	}
 
-	Width = width;
-	Height = height;
+	Width = (uint16_t)width;
+	Height = (uint16_t)height;
 	ProjectionMatrix = Matrix4::Perspective(Fov, (float)Width / (float)Height, NearClip, FarClip);
 
 	// 重新创建G-Buffer纹理
@@ -336,7 +335,7 @@ bool RenderViewWorldDeferred::OnRender(struct RenderViewPacket* packet, IRendere
 		Mat->RenderFrameNumer = (uint32_t)frame_number;
 
 		// 应用模型矩阵
-		MaterialSystem::ApplyLocal(Mat, packet->geometries[i].model);
+		MaterialSystem::ApplyLocal(Mat, packet->geometries[i].model_mat);
 
 		// 绘制几何体
 		back_renderer->DrawGeometry(&packet->geometries[i]);
@@ -380,7 +379,7 @@ bool RenderViewWorldDeferred::OnRender(struct RenderViewPacket* packet, IRendere
 	// 渲染全屏四边形进行光照计算
 	GeometryRenderData QuadRenderData;
 	QuadRenderData.geometry = FullscreenQuad;
-	QuadRenderData.model = Matrix4::Identity();
+	QuadRenderData.model_mat = Matrix4::Identity();
 	back_renderer->DrawGeometry(&QuadRenderData);
 
 	LightingPass->End();

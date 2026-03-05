@@ -23,7 +23,7 @@ public:
 
 		// 默认构造函数
 		FString empty;
-		TEST_ASSERT(empty.Empty(), "默认构造函数创建空字符串");
+		TEST_ASSERT(empty.IsEmpty(), "默认构造函数创建空字符串");
 		TEST_ASSERT(empty.Length() == 0, "默认构造函数长度为0");
 
 		// C字符串构造函数
@@ -40,12 +40,12 @@ public:
 		FString temp("Temporary");
 		FString moved(std::move(temp));
 		TEST_ASSERT(moved.Equal("Temporary"), "移动构造函数内容正确");
-		TEST_ASSERT(temp.Empty(), "移动后原对象为空");
+		TEST_ASSERT(temp.IsEmpty(), "移动后原对象为空");
 
 		// 格式化构造函数
 		FString formatted("Number: %d, Float: %.2f", 42, 3.14f);
 		std::cout << "格式化字符串: " << formatted.CStr() << std::endl;
-		TEST_ASSERT(!formatted.Empty(), "格式化构造函数创建非空字符串");
+		TEST_ASSERT(!formatted.IsEmpty(), "格式化构造函数创建非空字符串");
 
 		return true;
 	}
@@ -68,7 +68,7 @@ public:
 		FString temp("World");
 		str3 = std::move(temp);
 		TEST_ASSERT(str3.Equal("World"), "移动赋值内容正确");
-		TEST_ASSERT(temp.Empty(), "移动赋值后原对象为空");
+		TEST_ASSERT(temp.IsEmpty(), "移动赋值后原对象为空");
 
 		return true;
 	}
@@ -217,20 +217,18 @@ public:
 		std::cout << "格式化结果: " << formatted.CStr() << std::endl;
 
 		// 路径处理测试
-		const char* test_path = "/home/user/documents/file.txt";
-		char dir[256], filename[256], name_no_ext[256];
-
-		FString::DirectoryFromPath(dir, test_path);
-		FString::FilenameFromPath(filename, test_path);
-		FString::FilenameNoExtensionFromPath(name_no_ext, test_path);
+		FString test_path = "/home/user/documents/file.txt";
+		FString dir = test_path.DirectoryFromPath(test_path);
+		FString filename = test_path.FilenameFromPath(test_path);
+		FString name_no_ext = test_path.FilenameNoExtensionFromPath(test_path);
 
 		std::cout << "目录: " << dir << std::endl;
 		std::cout << "文件名: " << filename << std::endl;
 		std::cout << "无扩展名文件名: " << name_no_ext << std::endl;
 
-		TEST_ASSERT(strcmp(dir, "/home/user/documents/") == 0, "目录提取正确");
-		TEST_ASSERT(strcmp(filename, "file.txt") == 0, "文件名提取正确");
-		TEST_ASSERT(strcmp(name_no_ext, "file") == 0, "无扩展名文件名提取正确");
+		TEST_ASSERT(strcmp(dir.CStr(), "/home/user/documents/") == 0, "目录提取正确");
+		TEST_ASSERT(strcmp(filename.CStr(), "file.txt") == 0, "文件名提取正确");
+		TEST_ASSERT(strcmp(name_no_ext.CStr(), "file") == 0, "无扩展名文件名提取正确");
 
 		// UTF-8长度测试
 		uint32_t utf8_len = FString::UTF8Length("Hello世界");
@@ -252,7 +250,7 @@ public:
 
 		// 测试Clear
 		str.Clear();
-		TEST_ASSERT(str.Empty(), "Clear操作正确");
+		TEST_ASSERT(str.IsEmpty(), "Clear操作正确");
 		TEST_ASSERT(str.Length() == 0, "Clear后长度为0");
 
 		return true;

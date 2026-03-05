@@ -1,19 +1,19 @@
 ﻿#pragma once
-#include "MathTypes.hpp"
+#include "Math/MathTypes.hpp"
 
-class DAPI alignas(16) Transform {
+class DAPI alignas(16) UTransformComponent {
 public:
 	/**
 	 * @brief Creates and returns a new transform, using a zero vector for position,
 	 * identity quaternion for rotation, and a one vector for scale. Also has a nullptr
 	 * parent. Marked dirty by default.
 	 */
-	Transform();
+	UTransformComponent();
 
-	Transform(const Transform& trans);
+	UTransformComponent(const UTransformComponent& trans);
 
 	template<typename T>
-	Transform(const std::vector<T>& dat) {
+	UTransformComponent(const std::vector<T>& dat) {
 		SetLocation(Vector3((float)dat[12], (float)dat[13], (float)dat[14]));
 
 		float ScaleX = Vector3((float)dat[0], (float)dat[1], (float)dat[2]).Length();
@@ -42,7 +42,7 @@ public:
 	 * 
 	 * @param position The position to be used.
 	 */
-	Transform(const Vector3& position);
+	UTransformComponent(const Vector3& position);
 
 	/**
 	 * @brief Creates a transform from the given rotation.
@@ -50,7 +50,7 @@ public:
 	 *
 	 * @param rotation The rotation to be used.
 	 */
-	Transform(const Quaternion& rotation);
+	UTransformComponent(const Quaternion& rotation);
 
 	/**
 	 * @brief Creates a transform from the given rotation and position.
@@ -59,7 +59,7 @@ public:
 	 * @param position The position to be used.
 	 * @param rotation The rotation to be used.
 	 */
-	Transform(const Vector3& position, const Quaternion& rotation);
+	UTransformComponent(const Vector3& position, const Quaternion& rotation);
 
 	/**
 	 * @brief Creates a transform.
@@ -68,7 +68,7 @@ public:
 	 * @param rotation The rotation to be used.
 	 * @param scale The scale to be used.
 	 */
-	Transform(const Vector3& position, const Quaternion& rotation, const Vector3& scale);
+	UTransformComponent(const Vector3& position, const Quaternion& rotation, const Vector3& scale);
 
 public:
 	void SetLocation(Vector3 pos) { vPosition = pos; bIsDirty = true; }
@@ -97,6 +97,7 @@ public:
 	Vector3 InverseTransformPoint(const Vector3& point) const;
 
 	bool IsDirty() const { return bIsDirty; }
+	void SetDirty() { bIsDirty = true; }
 	void UpdateLocal() const;
 
 private:

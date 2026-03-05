@@ -7,6 +7,7 @@
 #include <map>
 
 class IRenderer;
+class IRenderpass;
 
 class ShaderSystem {
 public:
@@ -88,7 +89,7 @@ public:
 	 * @param uniform_name The name of the uniform to search for.
 	 * @return The uniform index, if found; otherwise INVALID_ID_U16.
 	 */
-	static unsigned short GetUniformIndex(Shader* shader, const char* uniform_name);
+	static uint32_t GetUniformIndex(Shader* shader, const char* uniform_name);
 
 	/**
 	 * @brief Sets the value of a uniform with the given name to the supplied value.
@@ -118,7 +119,7 @@ public:
 	 * @param value The value of the uniform.
 	 * @return True on success; otherwise false.
 	 */
-	static bool SetUniformByIndex(unsigned short index, const void* value);
+	static bool SetUniformByIndex(uint32_t index, const void* value);
 
 	/**
 	 * @brief Sets a sampler value by index.

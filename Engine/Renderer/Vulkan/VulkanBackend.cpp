@@ -72,7 +72,7 @@ bool VulkanBackend::Initialize(const RenderBackendConfig* config, unsigned char*
 	if (Context.Allocator != nullptr) {
 		if (!VulkanAllocator::Create(Context.Allocator, &Context)) {
 			GLOG(Log::eWarn, "Failed to create custom vulkan allocator! Continuing using the default allocator.");
-			Memory::Free(Context.Allocator, sizeof(vk::AllocationCallbacks), MemoryType::eMemory_Type_Application);
+			Memory::Free(Context.Allocator, MemoryType::eMemory_Type_Application);
 			Context.Allocator = nullptr;
 		}
 	}
@@ -254,7 +254,7 @@ bool VulkanBackend::Initialize(const RenderBackendConfig* config, unsigned char*
 	CreateCommandBuffer();
 
 	// Save off the number of images we have as the number of render targets needed.
-	*out_window_render_target_count = Context.Swapchain.ImageCount;
+	*out_window_render_target_count = (unsigned char)Context.Swapchain.ImageCount;
 
 	// Sync objects
 	Context.ImageAvailableSemaphores.resize(Context.Swapchain.MaxFramesInFlight);
@@ -366,7 +366,7 @@ void VulkanBackend::Shutdown() {
 
 	// Destroy the allocator callbacks if set.
 	if (Context.Allocator) {
-		Memory::Free(Context.Allocator, sizeof(vk::AllocationCallbacks), MemoryType::eMemory_Type_Renderer);
+		Memory::Free(Context.Allocator, MemoryType::eMemory_Type_Renderer);
 		Context.Allocator = nullptr;
 	}
 }
@@ -407,7 +407,7 @@ bool VulkanBackend::BeginFrame(double delta_time){
 	// Acquire the next image from the swap chain. Pass along the semaphore that should signaled when this completes.
 	// This same semaphore will later be waited on by the queue submission to ensure this image is available.
 	Context.ImageIndex = Context.Swapchain.AcquireNextImageIndex(&Context, UINT64_MAX, Context.ImageAvailableSemaphores[Context.CurrentFrame], nullptr);
-	if (Context.ImageIndex == -1) {
+	if (Context.ImageIndex == INVALID_ID) {
 		return false;
 	}
 
@@ -632,7 +632,7 @@ void VulkanBackend::DestroyTexture(Texture* texture) {
 
 	if (Image != nullptr) {
 		Image->Destroy(&Context);
-		Memory::Free(texture->InternalData, sizeof(VulkanImage), MemoryType::eMemory_Type_Texture);
+		Memory::Free(texture->InternalData, MemoryType::eMemory_Type_Texture);
 		texture->InternalData = nullptr;
 	}
 }
@@ -670,7 +670,7 @@ void VulkanBackend::CreateWriteableTexture(Texture* tex) {
 		Usage = vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst
 			| vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eColorAttachment;
 		Aspect = vk::ImageAspectFlagBits::eColor;
-		ImageFormat = ChannelCountToFormat(tex->ChannelCount, vk::Format::eR8G8B8A8Unorm);
+		ImageFormat = ChannelCountToFormat((unsigned char)tex->ChannelCount, vk::Format::eR8G8B8A8Unorm);
 	}
 
 	Image->CreateImage(&Context, tex->Type, tex->Width,  tex->Height, ImageFormat, vk::ImageTiling::eOptimal,
@@ -694,7 +694,7 @@ void VulkanBackend::ResizeTexture(Texture* tex, uint32_t new_width, uint32_t new
 	VulkanImage* Image = (VulkanImage*)tex->InternalData;
 	Image->Destroy(&Context);
 
-	vk::Format ImageFormat = ChannelCountToFormat(tex->ChannelCount, vk::Format::eR8G8B8A8Unorm);
+	vk::Format ImageFormat = ChannelCountToFormat((unsigned char)tex->ChannelCount, vk::Format::eR8G8B8A8Unorm);
 
 	// TODO: Lots of assumptions here, different texture types will require different options here.
 	Image->CreateImage(&Context, tex->Type, new_width, new_height, ImageFormat, vk::ImageTiling::eOptimal,
@@ -1012,7 +1012,7 @@ bool VulkanBackend::CreateShader(Shader* shader, const ShaderConfig* config, IRe
 	// Take a copy of the pointer to the context.
 	VulkanShader* OutShader = (VulkanShader*)shader;
 	OutShader->Renderpass = (VulkanRenderPass*)pass;
-	OutShader->Config.max_descriptor_set_count = MaxDescriptorAllocateCount;
+	OutShader->Config.max_descriptor_set_count = (uint16_t)MaxDescriptorAllocateCount;
 
 	// Shader stages. Parse out the flags.
 	Memory::Zero(OutShader->Config.stages, sizeof(VulkanShaderStageConfig) * VULKAN_SHADER_MAX_STAGES);
@@ -1879,7 +1879,15 @@ bool VulkanBackend::CopyRange(IRenderbuffer* src, size_t src_offset, IRenderbuff
 }
 
 bool VulkanBackend::DrawRenderbuffer(IRenderbuffer* buffer, size_t offset, uint32_t element_count, bool bind_only) {
+	if (!buffer) {
+		return false;
+	}
+
 	VulkanCommandBuffer* CmdBuffer = &Context.GraphicsCommandBuffers[Context.ImageIndex];
+	if (!CmdBuffer)
+	{
+		return false;
+	}
 
 	if (buffer->Type == RenderbufferType::eRenderbuffer_Type_Vertex) {
 		// Bind vertex buffer at offset.

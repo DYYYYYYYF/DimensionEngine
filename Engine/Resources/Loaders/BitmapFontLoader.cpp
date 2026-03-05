@@ -27,31 +27,31 @@ bool BitmapFontLoader::Load(const std::string& name, void* params, Resource* res
 	SupportedFieTypes[1] = SupportedBitmapFontFileType{ ".fnt", BitmapFontFileType::eBitmap_Font_File_Type_FNT, false };
 
 	char FullFilePath[512];
-	BitmapFontFileType Type = BitmapFontFileType::eBitmap_Font_File_Type_Not_Found;
+	BitmapFontFileType FontType = BitmapFontFileType::eBitmap_Font_File_Type_Not_Found;
 	// Try each supported extension.
 	for (uint32_t i = 0; i < SUPPORTED_FILETYPE_COUNT; ++i) {
-		StringFormat(FullFilePath, 512, FormatStr, ResourceSystem::GetRootPath(), TypePath.c_str(), name.c_str(), SupportedFieTypes[i].extension);
+		StringFormat(FullFilePath, FormatStr, ResourceSystem::GetRootPath(), TypePath.c_str(), name.c_str(), SupportedFieTypes[i].extension);
 		// If the file exist, open it and stop looking.
 		if (FileSystemExists(FullFilePath)) {
 			if (FileSystemOpen(FullFilePath, FileMode::eFile_Mode_Read, SupportedFieTypes[i].isBinary, &f)) {
-				Type = SupportedFieTypes[i].type;
+				FontType = SupportedFieTypes[i].type;
 				break;
 			}
 		}
 
 	}
 
-	if (Type == BitmapFontFileType::eBitmap_Font_File_Type_Not_Found) {
+	if (FontType == BitmapFontFileType::eBitmap_Font_File_Type_Not_Found) {
 		GLOG(Log::eError, "Unable to find bit map font of supported type called: '%s'.", name.c_str());
 		return false;
 	}
 
 	resource->FullPath = FullFilePath;
-	resource->Name = name;
+	resource->Name = name.c_str();
 
 	BitmapFontResourceData ResourceData;
 	bool Result = false;
-	switch (Type)
+	switch (FontType)
 	{
 	case eBitmap_Font_File_Type_Not_Found:
 		GLOG(Log::eError, "Unable to find bitmap font of supported type called '%s'.", name.c_str());
@@ -63,7 +63,7 @@ bool BitmapFontLoader::Load(const std::string& name, void* params, Resource* res
 	case eBitmap_Font_File_Type_FNT:
 		// Generate the DBF filename.
 		char DBFFileName[512];
-		StringFormat(DBFFileName, 512, "%s/%s/%s%s", ResourceSystem::GetRootPath(), TypePath.c_str(), name.c_str(), ".dbf");
+		StringFormat(DBFFileName, "%s/%s/%s%s", ResourceSystem::GetRootPath(), TypePath.c_str(), name.c_str(), ".dbf");
 		Result = ImportFntFile(&f, DBFFileName, &ResourceData);
 		break;
 	}
@@ -92,21 +92,21 @@ void BitmapFontLoader::Unload(Resource* resource) {
 	if (resource->Data) {
 		BitmapFontResourceData* Data = (BitmapFontResourceData*)resource->Data;
 		if (Data->data->glyphCount && Data->data->glyphs) {
-			Memory::Free(Data->data->glyphs, sizeof(FontGlyph) * Data->data->glyphCount, MemoryType::eMemory_Type_Array);
+			Memory::Free(Data->data->glyphs, MemoryType::eMemory_Type_Array);
 			Data->data->glyphs = nullptr;
 		}
 
 		if (Data->data->kerningCount && Data->data->kernings) {
-			Memory::Free(Data->data->kernings, sizeof(FontKerning) * Data->data->kerningCount, MemoryType::eMemory_Type_Array);
+			Memory::Free(Data->data->kernings, MemoryType::eMemory_Type_Array);
 			Data->data->kernings = nullptr;
 		}
 
 		if (Data->pageCount && Data->Pages) {
-			Memory::Free(Data->Pages, sizeof(BitmapFontPage) * Data->pageCount, MemoryType::eMemory_Type_Array);
+			Memory::Free(Data->Pages, MemoryType::eMemory_Type_Array);
 			Data->Pages = nullptr;
 		}
 
-		Memory::Free(resource->Data, resource->DataSize * resource->DataCount, MemoryType::eMemory_Type_Bitmap_Font);
+		Memory::Free(resource->Data, MemoryType::eMemory_Type_Bitmap_Font);
 		resource->Data = nullptr;
 		resource->DataSize = 0;
 		resource->DataCount = 0;
@@ -155,7 +155,7 @@ bool BitmapFontLoader::ImportFntFile(FileHandle* fntFile, const char* outDbfFile
 				TempFacePoint,
 				&out_data->data->size
 			);
-			out_data->data->face = std::string(TempFacePoint);
+			out_data->data->face = TempFacePoint;
 			VERIFY_LINE("info", LineNum, 2, ElementsRead);
 			break;
 		}
@@ -233,13 +233,13 @@ bool BitmapFontLoader::ImportFntFile(FileHandle* fntFile, const char* outDbfFile
 				&page->id,
 				TempFilePoint);
 			page->file = std::string(TempFilePoint);
-			Memory::Free(TempFilePoint, sizeof(char) * 512, MemoryType::eMemory_Type_String);
+			Memory::Free(TempFilePoint, MemoryType::eMemory_Type_String);
 
 			// Strip the extension.
 			char* f = (char*)Memory::Allocate(sizeof(char) * page->file.length() + 1, MemoryType::eMemory_Type_String);
 			StringFilenameNoExtensionFromPath(f, page->file.c_str());
 			page->file = std::string(f);
-			Memory::Free(f, sizeof(char)* page->file.length() + 1, MemoryType::eMemory_Type_String);
+			Memory::Free(f, MemoryType::eMemory_Type_String);
 
 			VERIFY_LINE("page", LineNum, 2, ElementsRead);
 		}break;	// case 'p'
@@ -314,10 +314,10 @@ bool BitmapFontLoader::ReadDbfFile(FileHandle* file, BitmapFontResourceData* dat
 
 	// Face string.
 	ReadSize = sizeof(char) * FaceLength;
-	char* f = (char*)Memory::Allocate(sizeof(char) * ReadSize, MemoryType::eMemory_Type_String);
-	CLOSE_IF_FAILED(FileSystemRead(file, ReadSize, f, &BytesRead), file);
-	data->data->face = std::string(f);
-	Memory::Free(f, sizeof(char) * ReadSize, MemoryType::eMemory_Type_String);
+	char* ff = (char*)Memory::Allocate(sizeof(char) * ReadSize, MemoryType::eMemory_Type_String);
+	CLOSE_IF_FAILED(FileSystemRead(file, ReadSize, ff, &BytesRead), file);
+	data->data->face = ff;
+	Memory::Free(ff, MemoryType::eMemory_Type_String);
 
 	// Font size.
 	CLOSE_IF_FAILED(FileSystemRead(file, sizeof(uint32_t), &data->data->size, &BytesRead), file);
@@ -351,10 +351,10 @@ bool BitmapFontLoader::ReadDbfFile(FileHandle* file, BitmapFontResourceData* dat
 
 		// The file name
 		ReadSize = sizeof(char) * FilenameLength;
-		char* f = (char*)Memory::Allocate(sizeof(char) * ReadSize, MemoryType::eMemory_Type_String);
-		CLOSE_IF_FAILED(FileSystemRead(file, ReadSize, f, &BytesRead), file);
-		data->Pages[i].file = std::string(f);
-		Memory::Free(f, sizeof(char) * ReadSize, MemoryType::eMemory_Type_String);
+		char* frd = (char*)Memory::Allocate(sizeof(char) * ReadSize, MemoryType::eMemory_Type_String);
+		CLOSE_IF_FAILED(FileSystemRead(file, ReadSize, frd, &BytesRead), file);
+		data->Pages[i].file = std::string(frd);
+		Memory::Free(frd, MemoryType::eMemory_Type_String);
 	}
 
 	// Glyph count
@@ -405,13 +405,13 @@ bool BitmapFontLoader::WriteDbfFile(const char* path, BitmapFontResourceData* da
 	CLOSE_IF_FAILED(FileSystemWrite(&file, WriteSize, &Header, &BytesWritten), &file);
 
 	// Length of face string.
-	uint32_t FaceLength = (uint32_t)data->data->face.length() + 1;
+	uint32_t FaceLength = (uint32_t)data->data->face.Length() + 1;
 	WriteSize = sizeof(uint32_t);
 	CLOSE_IF_FAILED(FileSystemWrite(&file, WriteSize, &FaceLength, &BytesWritten), &file);
 
 	// Face string
 	WriteSize = sizeof(char) * FaceLength;
-	CLOSE_IF_FAILED(FileSystemWrite(&file, WriteSize, (void*)data->data->face.c_str(), &BytesWritten), &file);
+	CLOSE_IF_FAILED(FileSystemWrite(&file, WriteSize, (void*)data->data->face.CStr(), &BytesWritten), &file);
 
 	// Font size
 	WriteSize = sizeof(uint32_t);

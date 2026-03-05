@@ -3,8 +3,8 @@
 #include "Defines.hpp"
 #include "Renderer/Interface/IRenderView.hpp"
 
-class Camera;
 class Shader;
+class ACameraActor;
 
 class RenderViewSkybox : public IRenderView {
 public:
@@ -24,9 +24,9 @@ private:
 	float NearClip;
 	float FarClip;
 	Matrix4 ProjectionMatrix;
-	Camera* WorldCamera = nullptr;
+	ACameraActor* WorldCamera = nullptr;
 	// Uniform locations
-	unsigned short ProjectionLocation;
-	unsigned short ViewLocation;
-	unsigned short CubeMapLocation;
+	uint32_t ProjectionLocation;
+	uint32_t ViewLocation;
+	uint32_t CubeMapLocation;
 };

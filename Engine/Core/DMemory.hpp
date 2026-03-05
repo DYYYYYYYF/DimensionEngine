@@ -82,9 +82,9 @@ public:
 	static DAPI void Shutdown();
 
 	static DAPI void* Allocate(size_t size, MemoryType type = MemoryType::eMemory_Type_Unknow);
-	static DAPI void* AllocateAligned(size_t size, unsigned short alignment, MemoryType type);
-	static DAPI void Free(void* block, size_t size, MemoryType type = MemoryType::eMemory_Type_Unknow);
-	static DAPI void FreeAligned(void* block, size_t size, unsigned short alignment, MemoryType type);
+	static DAPI void* AllocateAligned(size_t size, size_t alignment, MemoryType type);
+	static DAPI void Free(void* block, MemoryType type = MemoryType::eMemory_Type_Unknow);
+	static DAPI void FreeAligned(void* block, size_t size, MemoryType type);
 	static DAPI void* Zero(void* block, size_t size);
 	static DAPI void* Copy(void* dst, const void* src, size_t size);
 	static DAPI void* Set(void* dst, int val, size_t size);
@@ -93,7 +93,7 @@ public:
 
 	static DAPI void AllocateReport(size_t size, MemoryType type);
 	static DAPI void FreeReport(size_t size, MemoryType type);
-	static DAPI bool GetAlignmentSize(void* block, size_t* out_size, unsigned short* out_alignment);
+	static DAPI bool GetAlignmentSize(void* block, size_t* out_size, size_t* out_alignment);
 
 	static DAPI size_t GetAllocateCount();
 
@@ -125,7 +125,7 @@ T* NewObject(Args&&... args) {
 		return new(memory) T(std::forward<Args>(args)...);
 	}
 	catch (...) {
-		Memory::Free(memory, sizeof(T), MemoryType::eMemory_Type_Entity);
+		Memory::Free(memory, MemoryType::eMemory_Type_Entity);
 		throw;
 	}
 }
@@ -141,5 +141,5 @@ void DeleteObject(T* obj) noexcept {
 		GLOG(Log::eError, "Exception during destruction");
 	}
 
-	Memory::Free(obj, sizeof(T), MemoryType::eMemory_Type_Entity);
+	Memory::Free(obj, MemoryType::eMemory_Type_Entity);
 }

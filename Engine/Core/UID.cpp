@@ -31,6 +31,8 @@ UID::UID() {
 
 void UID::Seed(size_t seed) {
 #ifdef UID_QUICK_AND_DIRTY
+	(void)seed;
+	// NOTE: this implementation does not gurantee any form of uniqueness as it just		
 
 #endif
 }

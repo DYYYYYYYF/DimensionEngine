@@ -100,10 +100,10 @@ void VulkanDevice::Destroy() {
 		SwapchainSupport.present_mode_count = 0;
 	}
 
-	QueueFamilyInfo.graphics_index = -1;
-	QueueFamilyInfo.compute_index = -1;
-	QueueFamilyInfo.transfer_index = -1;
-	QueueFamilyInfo.present_index = -1;
+	QueueFamilyInfo.graphics_index = INVALID_ID;
+	QueueFamilyInfo.compute_index = INVALID_ID;
+	QueueFamilyInfo.transfer_index = INVALID_ID;
+	QueueFamilyInfo.present_index = INVALID_ID;
 
 	LogicalDevice.destroyCommandPool(GraphicsCommandPool, Context->Allocator);
 	LogicalDevice.destroy(Context->Allocator);
@@ -174,11 +174,11 @@ bool VulkanDevice::SelectPhysicalDevice(vk::SurfaceKHR surface) {
 
 		// Check if device supports local/host visible combo
 		bool bSupportDeviceLocalHostVisible = false;
-		for (uint32_t i = 0; i < memory.memoryTypeCount; ++i) {
+		for (uint32_t j = 0; j < memory.memoryTypeCount; ++j) {
 			// Check each memory type to see if its bit is set to one.
 			if (
-				((memory.memoryTypes[i].propertyFlags & vk::MemoryPropertyFlagBits::eHostVisible)) &&
-				((memory.memoryTypes[i].propertyFlags & vk::MemoryPropertyFlagBits::eDeviceLocal)) 
+				((memory.memoryTypes[j].propertyFlags & vk::MemoryPropertyFlagBits::eHostVisible)) &&
+				((memory.memoryTypes[j].propertyFlags & vk::MemoryPropertyFlagBits::eDeviceLocal))
 			){
 				bSupportDeviceLocalHostVisible = true;
 				break;
@@ -260,10 +260,10 @@ bool VulkanDevice::SelectPhysicalDevice(vk::SurfaceKHR surface) {
 bool VulkanDevice::MeetsRequirements(vk::PhysicalDevice device, vk::SurfaceKHR surface, const vk::PhysicalDeviceProperties* properties,
 	const vk::PhysicalDeviceFeatures* features) {
 
-	QueueFamilyInfo.compute_index = -1;
-	QueueFamilyInfo.graphics_index = -1;
-	QueueFamilyInfo.present_index = -1;
-	QueueFamilyInfo.transfer_index = -1;
+	QueueFamilyInfo.compute_index = INVALID_ID;
+	QueueFamilyInfo.graphics_index = INVALID_ID;
+	QueueFamilyInfo.present_index = INVALID_ID;
+	QueueFamilyInfo.transfer_index = INVALID_ID;
 
 	// If not MacOS, discrete GPU is not allowed.
 #if !defined(DPLATFORM_MACOS)

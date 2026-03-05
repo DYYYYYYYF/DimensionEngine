@@ -1,9 +1,10 @@
-﻿#include "GameConsole.hpp"
+﻿#include "GameConsole.h"
 #include <Core/Utils.hpp>
 #include <Core/Console.hpp>
 #include <Core/Controller.hpp>
 #include <Containers/TString.hpp>
 #include <Renderer/RendererFrontend.hpp>
+#include <Framework/Classes/TextActor.h>
 
 bool DebugConsoleActor::Write(Log::Logger::Level level, const std::string& msg) {
 	std::vector<std::string> SplitMessage = Utils::StringSplit(msg, '\n', true, false);
@@ -14,6 +15,16 @@ bool DebugConsoleActor::Write(Log::Logger::Level level, const std::string& msg) 
 
 	Dirty = true;
 	return true;
+}
+
+void DebugConsoleActor::SetVisible(bool visiblable) {
+	Visible = visiblable;
+	if (Visible) {
+		EntryControl->SetContent(" ");
+	}
+	else {
+		EntryControl->SetContent("Press ' ~ ' to record command.");
+	}
 }
 
 bool DebugConsoleActor::OnKey(eEventCode code, void* sender, void* listener_inst, SEventContext context) {
@@ -28,24 +39,24 @@ bool DebugConsoleActor::OnKey(eEventCode code, void* sender, void* listener_inst
 			Controller::IsKeyDown(eKeys::Shift);
 
 		if (KeyCode == eKeys::Enter) {
-			uint32_t Length = (uint32_t)strlen(EntryControl->Text);
-			if (Length > 0 && EntryControl->Text[0] != '\0') {
+			FString Content = EntryControl->GetContent();
+			uint32_t Length = (uint32_t)Content.Length();
+			if (Length > 0 && Content[0] != '\0') {
 				// Execute the command and clear the text.
-				if (!Console::ExecuteCommand(EntryControl->Text)) {
+				if (!Console::ExecuteCommand(Content.CStr())) {
 					// TODO: Handle the error.
 				}
 
 				// Clear text.
-				EntryControl->SetText(" ");
+				EntryControl->SetContent(" ");
 			}
 		}
 		else if (KeyCode == eKeys::BackSpace) {
-			uint32_t Length = (uint32_t)strlen(EntryControl->Text);
+			FString Content = EntryControl->GetContent();
+			uint32_t Length = (uint32_t)Content.Length();
 			if (Length > 0) {
-				char* str = StringCopy(EntryControl->Text);
-				str[Length - 1] = '\0';
-				EntryControl->SetText(str);
-				Memory::Free(str, Length + 1, MemoryType::eMemory_Type_String);
+				Content = Content.SubStr(0, Content.Length() - 1);
+				EntryControl->SetContent(Content);
 			}
 		}
 		else {
@@ -93,12 +104,9 @@ bool DebugConsoleActor::OnKey(eEventCode code, void* sender, void* listener_inst
 			}
 
 			if (cKeyCode != 0) {
-				uint32_t Length = (uint32_t)strlen(EntryControl->Text);
-				char* NewText = (char*)Memory::Allocate(Length + 2, MemoryType::eMemory_Type_String);
-				ASSERT(NewText);
-				StringFormat(NewText, Length + 2, "%s%c", EntryControl->Text, cKeyCode);
-				EntryControl->SetText(NewText);
-				Memory::Free(NewText, Length + 1, MemoryType::eMemory_Type_String);
+				FString Content = EntryControl->GetContent();
+				FString NewContent = FString::Format("%s%c", Content.CStr(), cKeyCode);
+				EntryControl->SetContent(NewContent);
 			}
 		}
 	}
@@ -135,11 +143,11 @@ DebugConsoleActor::~DebugConsoleActor() {
 }
 
 bool DebugConsoleActor::Initialize() {
-	Actor::Initialize();
+	AActor::Initialize();
 
 	// Create UI text control for rendering.
-	TextControl = NewObject<UIText>();
-	if (!TextControl->Create(UITextType::eUI_Text_Type_system, "Noto Sans CJK JP", 26, "No Log.")) {
+	TextControl = NewObject<ATextActor>(UITextType::eUI_Text_Type_system, "Noto Sans CJK JP", 26, "No Log.");
+	if (!TextControl) {
 		GLOG(Log::eFatal, "Unable to create text control for debug console.");
 		return false;
 	}
@@ -147,8 +155,8 @@ bool DebugConsoleActor::Initialize() {
 	TextControl->SetLocation(Vector3(0.7f * Renderer->GetWidth(), 100, 0));
 
 	// Create another ui text control for rendering typed text.
-	EntryControl = NewObject<UIText>();
-	if (!EntryControl->Create(UITextType::eUI_Text_Type_system, "Noto Sans CJK JP", 26, "Press 'entry' to record command.")) {
+	EntryControl = NewObject<ATextActor>(UITextType::eUI_Text_Type_system, "Noto Sans CJK JP", 26, "Press ' ~ ' to record command.");
+	if (!EntryControl) {
 		GLOG(Log::eFatal, "Unable to create entry control for debug console.");
 		return false;
 	}
@@ -182,15 +190,12 @@ void DebugConsoleActor::Tick(float DeltaTime) {
 		return;
 	}
 
-	TextControl->Tick(DeltaTime);
-	EntryControl->Tick(DeltaTime);
-
 	size_t LineCount = Lines.size();
 	size_t MaxLines = DMIN(DisplayLineCount, LineCount);
 
 	// Calculate the min line first, taking into account the line offset as well.
 	size_t MinLine = DMAX(LineCount - MaxLines - LineOffset, 0);
-	size_t MaxLine = MinLine + MaxLines - 1;
+	size_t MaxLine = MinLine + MaxLines;
 
 	std::string Buffer = " ";
 	for (size_t i = MinLine; i < MaxLine; ++i) {
@@ -203,15 +208,18 @@ void DebugConsoleActor::Tick(float DeltaTime) {
 	}
 
 	// Once the string is built, set the text.
-	TextControl->SetText(Buffer.c_str());
+	TextControl->SetContent(Buffer.c_str());
 	Dirty = false;
+
+	TextControl->Tick(DeltaTime);
+	EntryControl->Tick(DeltaTime);
 }
 
-UIText* DebugConsoleActor::GetText() {
+ATextActor* DebugConsoleActor::GetText() {
 	return TextControl;
 }
 
-UIText* DebugConsoleActor::GetEntryText() {
+ATextActor* DebugConsoleActor::GetEntryText() {
 	return EntryControl;
 }
 

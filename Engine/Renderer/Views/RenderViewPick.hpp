@@ -16,10 +16,10 @@ struct RenderviewPickShaderInfo {
 	Matrix4 ProjectionMatrix;
 	Matrix4 ViewMatrix;
 
-	unsigned short IDColorLocation = 0;
-	unsigned short ViewLocation = 0;
-	unsigned short ModelLocation = 0;
-	unsigned short ProjectionLocation = 0;
+	uint32_t IDColorLocation = 0;
+	uint32_t ViewLocation = 0;
+	uint32_t ModelLocation = 0;
+	uint32_t ProjectionLocation = 0;
 };
 
 class RenderViewPick : public IRenderView {

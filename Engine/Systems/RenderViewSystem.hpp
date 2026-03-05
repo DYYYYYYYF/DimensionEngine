@@ -30,8 +30,8 @@ public:
 private:
 	static bool Initialized;
 	static IRenderer* Renderer;
-	static uint32_t MaxViewCount;
+	static uint16_t MaxViewCount;
 
 	static std::vector<IRenderView*> RegisteredViews;
-	static std::unordered_map<std::string, uint32_t> RegisteredViewMap;
+	static std::unordered_map<std::string, uint16_t> RegisteredViewMap;
 };

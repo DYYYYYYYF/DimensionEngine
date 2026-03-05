@@ -1,12 +1,13 @@
 ﻿#pragma once
 
 #include "Math/MathTypes.hpp"
+#include "Containers/FString.hpp"
 
 /** @brief A magic number indicating the file as engine file. */
 #define RESOURCES_MAGIC 0xdddddddd
 
 enum ResourceType {
-	eResource_type_Text,
+	eResource_type_Text = 0,
 	eResource_type_Binary,
 	eResource_type_Image,
 	eResource_type_Material,
@@ -43,8 +44,8 @@ public:
 
 public:
 	uint32_t LoaderID = INVALID_ID;
-	std::string Name;
-	std::string FullPath;
+	FString Name;
+	FString FullPath;
 	size_t DataSize = 0;
 	size_t DataCount = 0;
 	void* Data = nullptr;

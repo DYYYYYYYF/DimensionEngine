@@ -1,13 +1,12 @@
-﻿#include "GameCommands.hpp"
-#include <Core/Console.hpp>
+﻿#include "GameCommand.h"
 #include <Core/Event.hpp>
 #include <Core/EngineLogger.hpp>
 
-void GameExit(CommandContext cmd) {
+void GameCommand::GameExit(CommandContext cmd) {
 	EngineEvent::Fire(eEventCode::Application_Quit, nullptr, SEventContext());
 }
 
-void GameOnCompilerShader(CommandContext cmd) {
+void GameCommand::GameOnCompilerShader(CommandContext cmd) {
     size_t ArgCount = cmd.Arguments.size();
     if (ArgCount > 0){
         std::string args = "";
@@ -19,14 +18,10 @@ void GameOnCompilerShader(CommandContext cmd) {
     } else {
         GLOG(Log::eInfo, "Please complete 'GameOnCompilerShader' method.");
     }
-	
-	// Reload
-	// SEventContext Context = {};
-	// EngineEvent::Fire(eEventCode::Reload_Shader_Module, nullptr, Context);
 }
 
 void GameCommand::Setup() {
-	Console::RegisterCommand("exit", 0, &GameExit);
-	Console::RegisterCommand("quit", 0, &GameExit);
-    Console::RegisterCommand("compile shader", 1, &GameOnCompilerShader);
+	Console::RegisterCommand("exit", 0, std::bind(&GameCommand::GameExit, this, std::placeholders::_1));
+	Console::RegisterCommand("quit", 0, std::bind(&GameCommand::GameExit, this, std::placeholders::_1));
+    Console::RegisterCommand("compile shader", 1, std::bind(&GameCommand::GameOnCompilerShader, this, std::placeholders::_1));
 }

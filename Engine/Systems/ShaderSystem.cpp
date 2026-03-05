@@ -280,7 +280,7 @@ bool ShaderSystem::UseByID(uint32_t shader_id) {
 	return true;
 }
 
-unsigned short ShaderSystem::GetUniformIndex(Shader* shader, const char* uniform_name) {
+uint32_t ShaderSystem::GetUniformIndex(Shader* shader, const char* uniform_name) {
 	if (!shader || shader->ID == INVALID_ID) {
 		GLOG(Log::eError, "shader_system_uniform_location called with invalid shader.");
 		return INVALID_ID_U16;
@@ -292,7 +292,7 @@ unsigned short ShaderSystem::GetUniformIndex(Shader* shader, const char* uniform
 		return INVALID_ID_U16;
 	}
 
-	unsigned short Index = it->second;
+	uint32_t Index = it->second;
 	if ( Index == INVALID_ID_U16) {
 		GLOG(Log::eError, "Shader '%s' does not have a registered uniform named '%s'", shader->Name.c_str(), uniform_name);
 		return INVALID_ID_U16;
@@ -312,7 +312,7 @@ bool ShaderSystem::SetUniform(const char* uniform_name, const void* value) {
 		return false;
 	}
 	Shader* s = Shaders[CurrentShaderID];
-	unsigned short Index = GetUniformIndex(s, uniform_name);
+	uint32_t Index = GetUniformIndex(s, uniform_name);
 	return SetUniformByIndex(Index, value);
 }
 
@@ -320,8 +320,8 @@ bool ShaderSystem::SetSampler(const char* sampler_name, const Texture* tex) {
 	return SetUniform(sampler_name, tex);
 }
 
-bool ShaderSystem::SetUniformByIndex(unsigned short index, const void* value) {
-	if (index == INVALID_ID_U16 || value == nullptr) {
+bool ShaderSystem::SetUniformByIndex(uint32_t index, const void* value) {
+	if (index == INVALID_ID || value == nullptr) {
 		GLOG(Log::eWarn, "ShaderSystem::SetUniformByIndex failed! It looks like out of boundings or invalid value. index: %d value: %#x", index, value);
 		return false;
 	}
@@ -398,7 +398,7 @@ bool ShaderSystem::AddAttribute(Shader* shader, const ShaderAttributeConfig& con
 		break;
 	}
 
-	shader->AttributeStride += Size;
+	shader->AttributeStride += (uint16_t)Size;
 
 	// Create/push the attribute.
 	ShaderAttribute Attrib = {};
@@ -484,7 +484,6 @@ bool ShaderSystem::AddUniform(Shader* shader, ShaderUniformConfig& config) {
 }
 
 uint32_t ShaderSystem::GetShaderID(const std::string& shader_name) {
-	uint32_t ShaderID = INVALID_ID;
 	auto it = ShaderMap.find(shader_name);
 	if (it == ShaderMap.end()){
 		return INVALID_ID;
@@ -505,7 +504,7 @@ uint32_t ShaderSystem::NewShaderID() {
 
 bool ShaderSystem::AddUniform(Shader* shader, const char* uniform_name, uint32_t size,
 	ShaderUniformType type, ShaderScope scope, uint32_t set_location, bool is_sampler) {
-	unsigned short UniformCount = (unsigned short)shader->Uniforms.size();
+	uint16_t UniformCount = (uint16_t)shader->Uniforms.size();
 	if (UniformCount + 1 > ShaderSystemConfig.max_uniform_count) {
 		GLOG(Log::eError, "A shader can only accept a combined maximum of %d uniforms and samplers at global, instance and local scopes.", ShaderSystemConfig.max_uniform_count);
 		return false; 
@@ -544,7 +543,7 @@ bool ShaderSystem::AddUniform(Shader* shader, const char* uniform_name, uint32_t
 		shader->PushConstantsSize += r.size;
 	}
 
-	shader->HashMap[uniform_name] = Entry.index;
+	shader->HashMap[uniform_name] = (uint16_t)Entry.index;
 	shader->Uniforms.push_back(Entry);
 
 	if (!is_sampler) {

@@ -1,4 +1,4 @@
-﻿#include "Game.hpp"
+﻿#include "Game.h"
 
 #include <Core/EngineLogger.hpp>
 #include <Core/Controller.hpp>
@@ -15,9 +15,11 @@
 #include <Systems/RenderViewSystem.hpp>
 #include <Core/Identifier.hpp>
 #include <Renderer/RendererFrontend.hpp>
-#include "Keybinds.hpp"
-#include "GameCommands.hpp"
+#include "UI/Console/Keybinds.h"
+#include "UI/Console/GameCommand.h"
 #include "Math/ForwardDeclarations.hpp"
+#include "Framework/Classes/StaticMeshActor.h"
+#include "GameLogic/TestActors/RotationCubeActor.h"
 
 static FrustumCullMode CullMode = FrustumCullMode::eAABB_Cull;
 static bool EnableFrustumCulling = true;
@@ -32,7 +34,6 @@ bool GameOnEvent(eEventCode code, void* sender, void* listender_inst, SEventCont
             GameInst->HoveredObjectID = context.data.u32[0];
             return true;
         }break;
-        default: return true;
     }
 
 	return false;
@@ -75,8 +76,8 @@ bool GameInstance::Boot(IRenderer* renderer) {
 	}
 
 	JsonObject Content = JsonObject(MaterialAsset.ReadBytes());
-	WindowSize.Width = Content.ReadInt("Window.Width");
-	WindowSize.Height = Content.ReadInt("Window.Height");
+	WindowSize.Width = (uint16_t)Content.ReadInt("Window.Width");
+	WindowSize.Height = (uint16_t)Content.ReadInt("Window.Height");
 
 	GameConsole = NewObject<DebugConsoleActor>();
 
@@ -137,14 +138,13 @@ bool GameInstance::Initialize() {
 	WorldCamera->SetEulerAngles(Rotation);
 
 	// Create test ui text objects.
-	if (!TestText.Create(UITextType::eUI_Text_Type_Bitmap, "Ubuntu Mono 21px", 21, "Test! \n Yooo!")) {
-		GLOG(Log::eError, "Failed to load basic ui bitmap text.");
-		return false;
+	TestText = NewObject<ATextActor>(UITextType::eUI_Text_Type_Bitmap, "Ubuntu Mono 21px", 21, "Test! \n Yooo!");
+	if (TestText) {
+		TestText->SetLocation(Vector3(150, 450, 0));
+		TestText->SetName("Render information window.");
 	}
-	TestText.SetLocation(Vector3(150, 450, 0));
-	TestText.SetName("Render information window.");
 
-	if (!TestSysText.Create(UITextType::eUI_Text_Type_system, 
+	TestSysText = NewObject<ATextActor>(UITextType::eUI_Text_Type_system,
 		"Noto Sans CJK JP", 25, "Keyboard map:\
 		\nLoad models:\
 		\n\tO: Scene1 P: Scene2\
@@ -153,13 +153,12 @@ bool GameInstance::Initialize() {
 		\nF1: Default view.\
 		\nF2: Normal view.\
 		\nF3: Material view.\
-		\nF4: Depth view."))
-	{
-		GLOG(Log::eError, "Failed to load basic ui system text.");
-		return false;
+		\nF4: Depth view.");
+
+	if (TestText) {
+		TestSysText->SetLocation(Vector3(100, 200, 0));
+		TestSysText->SetName("Keyboard map texts.");
 	}
-	TestSysText.SetLocation(Vector3(100, 200, 0));
-	TestSysText.SetName("Keyboard map texts.");
 
 	// Load console
 	GameConsole->Initialize();
@@ -171,42 +170,19 @@ bool GameInstance::Initialize() {
 	}
 
 	// World meshes
-	Mesh* CubeMesh = NewObject<Mesh>();
-	CubeMesh->Name = "TestCube";
-	CubeMesh->geometry_count = 1;
-	CubeMesh->geometries = (Geometry**)Memory::Allocate(sizeof(Geometry*) * CubeMesh->geometry_count, MemoryType::eMemory_Type_Array);
-	SGeometryConfig GeoConfig = GeometrySystem::GenerateCubeConfig(10.0f, 10.0f, 10.0f, 1.0f, 1.0f, "TestCube", "Material.Builtin.GBuffer");
-	CubeMesh->geometries[0] = GeometrySystem::AcquireFromConfig(GeoConfig, true);
-	CubeMesh->Generation = 0;
-	CubeMesh->SetTransform(Vector(0.0f, 0.0f, 0.0f), Quaternion(Vector(0.0f, 0.0f, 0.0f)));
+	ARotationCubeActor* CubeMesh = NewObject<ARotationCubeActor>("TestCube");
+	CubeMesh->SetTransform(Vector(0.0f, 0.0f, 0.0f), Quaternion(Vector(0.0f)));
 	Meshes.Push(CubeMesh);
 
-	Mesh* CubeMesh2 = NewObject<Mesh>();
-	CubeMesh2->Name = "TestCube2";
-	CubeMesh2->geometry_count = 1;
-	CubeMesh2->geometries = (Geometry**)Memory::Allocate(sizeof(Geometry*) * CubeMesh2->geometry_count, MemoryType::eMemory_Type_Array);
-	SGeometryConfig GeoConfig2 = GeometrySystem::GenerateCubeConfig(5.0f, 5.0f, 5.0f, 1.0f, 1.0f, "TestCube2", "Material.Builtin.GBuffer");
-	CubeMesh2->geometries[0] = GeometrySystem::AcquireFromConfig(GeoConfig2, true);
-	CubeMesh2->SetTransform(Vector3(10.0f, 0.0f, 1.0f), Quaternion(Vector(0.0f, 0.0f, 0.0f)));
-	CubeMesh2->Generation = 0;
+	ARotationCubeActor* CubeMesh2 = NewObject<ARotationCubeActor>("TestCube2");
+	CubeMesh2->SetTransform(Vector3(10.0f, 0.0f, 0.0f), Quaternion(Vector(0.0f)), Vector3(0.5f));
 	CubeMesh2->AttachTo(CubeMesh);
 	Meshes.Push(CubeMesh2);
 
-	Mesh* CubeMesh3 = NewObject<Mesh>();
-	CubeMesh3->Name = "TestCube3";
-	CubeMesh3->geometry_count = 1;
-	CubeMesh3->geometries = (Geometry**)Memory::Allocate(sizeof(Geometry*) * CubeMesh3->geometry_count, MemoryType::eMemory_Type_Array);
-	SGeometryConfig GeoConfig3 = GeometrySystem::GenerateCubeConfig(2.0f, 2.0f, 2.0f, 1.0f, 1.0f, "TestCube3", "Material.Builtin.GBuffer");
-	CubeMesh3->geometries[0] = GeometrySystem::AcquireFromConfig(GeoConfig3, true);
-	CubeMesh3->SetTransform(Vector3(5.0f, 0.0f, 1.0f));
-	CubeMesh3->Generation = 0;
+	ARotationCubeActor* CubeMesh3 = NewObject<ARotationCubeActor>("TestCube3");
+	CubeMesh3->SetTransform(Vector3(15.0f, 0.0f, 0.0f), Quaternion(Vector(0.0f)), Vector3(0.3f));
 	CubeMesh3->AttachTo(CubeMesh2);
 	Meshes.Push(CubeMesh3);
-
-	// Clean up the allocations for the geometry config.
-	GeometrySystem::ConfigDispose(&GeoConfig);
-	GeometrySystem::ConfigDispose(&GeoConfig2);
-	GeometrySystem::ConfigDispose(&GeoConfig3);
 
 	// Load up some test UI geometry.
 	SGeometryConfig UIConfig;
@@ -250,8 +226,7 @@ bool GameInstance::Initialize() {
 	UIConfig.indices = UIIndices;
 
 	// Get UI geometry from config.
-	Mesh* UIMesh = NewObject<Mesh>();
-	UIMesh->Name = "Engine Logo UI";
+	AStaticMeshActor* UIMesh = NewObject<AStaticMeshActor>("Engine Logo UI");
 	UIMesh->geometry_count = 1;
 	UIMesh->geometries = (Geometry**)Memory::Allocate(sizeof(Geometry*), MemoryType::eMemory_Type_Array);
 	UIMesh->geometries[0] = GeometrySystem::AcquireFromConfig(UIConfig, true);
@@ -278,14 +253,23 @@ void GameInstance::Shutdown() {
 	}
 
 	// Delete meshes.
-	for (Mesh* m : Meshes) {
+	for (AStaticMeshActor* m : Meshes) {
 		if (m) {
 			DeleteObject(m);
 		}
 	}
 
-	TestText.Destroy();
-	TestSysText.Destroy();
+	if (TestSysText) {
+		TestText->Destroy();
+		DeleteObject(TestText);
+		TestText = nullptr;
+	}
+
+	if (TestSysText) {
+		TestSysText->Destroy();
+		DeleteObject(TestSysText);
+		TestSysText = nullptr;
+	}
 
 	File MaterialAsset(EDITOR_CONFIG_PATH);
 	if (!MaterialAsset.IsExist()) {
@@ -317,8 +301,8 @@ bool GameInstance::Update(float delta_time) {
 		UIMeshes[i]->Tick(delta_time);
 	}
 
-	TestText.Tick(delta_time);
-	TestSysText.Tick(delta_time);
+	TestText->Tick(delta_time);
+	TestSysText->Tick(delta_time);
 
 	// Ensure this is cleaned up to avoid leaking memory.
 	// TODO: Need a version of this that uses the frame allocator.
@@ -340,14 +324,8 @@ bool GameInstance::Update(float delta_time) {
 		}
 	}
 
-	Quaternion RotationY = Quaternion(Axis::Y, 0.5f * (float)delta_time, false);
-	Quaternion RotationX = Quaternion(Axis::X, 0.5f * (float)delta_time, false);
-	Meshes[0]->Rotate(RotationY);
-	Meshes[1]->Rotate(RotationY);
-	Meshes[2]->Rotate(RotationY);
-
 	// Text
-	Camera* WorldCamera = CameraSystem::GetDefault();
+	WorldCamera = CameraSystem::GetDefault();
 	Vector3 Pos = WorldCamera->GetPosition();
 	Vector3 Rot = WorldCamera->GetEulerAngles();
 
@@ -375,7 +353,7 @@ bool GameInstance::Update(float delta_time) {
 	// NOTE: starting at a reasonable default to avoid too many realloc.
 	uint32_t DrawCount = 0;
 	for (uint32_t i = 0; i < (uint32_t)Meshes.Size(); ++i) {
-		Mesh* m = Meshes[i];
+		AStaticMeshActor* m = Meshes[i];
 		if (m == nullptr) {
 			continue;
 		}
@@ -408,7 +386,7 @@ bool GameInstance::Update(float delta_time) {
 					if (CameraFrustum.IntersectsSphere(Center, Radius)) {
 						// Add it to the list to be rendered.
 						GeometryRenderData Data;
-						Data.model = Model;
+						Data.model_mat = Model;
 						Data.geometry = g;
 						Data.uniqueID = m->GetUniqueID();
 						FrameData.WorldGeometries.push_back(Data);
@@ -432,7 +410,7 @@ bool GameInstance::Update(float delta_time) {
 					if (CameraFrustum.IntersectsAABB(Center, HalfExtents) && EnableFrustumCulling) {
 						// Add it to the list to be rendered.
 						GeometryRenderData Data;
-						Data.model = Model;
+						Data.model_mat = Model;
 						Data.geometry = g;
 						Data.uniqueID = m->GetUniqueID();
 						FrameData.WorldGeometries.push_back(Data);
@@ -441,7 +419,7 @@ bool GameInstance::Update(float delta_time) {
 					else if (!EnableFrustumCulling) {
 						// Add it to the list to be rendered.
 						GeometryRenderData Data;
-						Data.model = Model;
+						Data.model_mat = Model;
 						Data.geometry = g;
 						Data.uniqueID = m->GetUniqueID();
 						FrameData.WorldGeometries.push_back(Data);
@@ -457,31 +435,31 @@ bool GameInstance::Update(float delta_time) {
 	// TODO: Temp
 	std::string HoverdObjectName = "None";
 	if (HoveredObjectID != INVALID_ID) {
-		if (HoveredObjectID == TestText.GetUniqueID()) {
-			HoverdObjectName = TestText.GetName();
+		if (HoveredObjectID == TestText->GetUniqueID()) {
+			HoverdObjectName = TestText->GetName().CStr();
 		}
-		if (HoveredObjectID == TestSysText.GetUniqueID()) {
-			HoverdObjectName = TestSysText.GetName();
+		if (HoveredObjectID == TestSysText->GetUniqueID()) {
+			HoverdObjectName = TestSysText->GetName().CStr();
 		}
 
-		for (Mesh* Mesh : Meshes) {
+		for (AStaticMeshActor* Mesh : Meshes) {
 			if (Mesh->GetUniqueID() == HoveredObjectID)
 			{
-				HoverdObjectName = Mesh->Name;
+				HoverdObjectName = Mesh->GetName().CStr();
 				break;
 			}
 		}
-		for (Mesh* UI : UIMeshes) {
+		for (AStaticMeshActor* UI : UIMeshes) {
 			if (UI->GetUniqueID() == HoveredObjectID)
 			{
-				HoverdObjectName = UI->Name;
+				HoverdObjectName = UI->GetName().CStr();
 				break;
 			}
 		}
 	}
 
 	char FPSText[512];
-	StringFormat(FPSText, 512,
+	StringFormat(FPSText,
 		"\
 	Camera Pos: [%.3f %.3f %.3f]\tCamera Rot: [%.3f %.3f %.3f]\n\
 	L=%s R=%s\tNDC: x=%.2f, y=%.2f\tHovered Object: %s\n\
@@ -496,7 +474,7 @@ bool GameInstance::Update(float delta_time) {
 		(float)FrameTime,
 		DrawCount
 	);
-	TestText.SetText(FPSText);
+	TestText->SetContent(FPSText);
 
 	GameConsole->Tick(delta_time);
 
@@ -538,7 +516,7 @@ bool GameInstance::Render(SRenderPacket* packet, float delta_time) {
 	
 	// UI
 	uint32_t UIMeshCount = 0;
-	Mesh** TempUIMeshes = (Mesh**)Memory::Allocate(sizeof(Mesh*) * 10, MemoryType::eMemory_Type_Array);
+	AMeshActor** TempUIMeshes = (AMeshActor**)Memory::Allocate(sizeof(AStaticMeshActor*) * 10, MemoryType::eMemory_Type_Array);
 	// TODO: Flexible size array.
 	for (uint32_t i = 0; i < (uint32_t)UIMeshes.Size(); ++i) {
 		if (UIMeshes[i]->Generation != INVALID_ID_U8) {
@@ -547,9 +525,9 @@ bool GameInstance::Render(SRenderPacket* packet, float delta_time) {
 		}
 	}
 
-	UIText** Texts = (UIText**)Memory::Allocate(sizeof(UIText*) * 4, MemoryType::eMemory_Type_Array);
-	Texts[0] = &TestText;
-	Texts[1] = &TestSysText;
+	ATextActor** Texts = (ATextActor**)Memory::Allocate(sizeof(ATextActor*) * 4, MemoryType::eMemory_Type_Array);
+	Texts[0] = TestText;
+	Texts[1] = TestSysText;
 	Texts[2] = GameConsole->GetText();
 	Texts[3] = GameConsole->GetEntryText();
 
@@ -586,10 +564,10 @@ bool GameInstance::Render(SRenderPacket* packet, float delta_time) {
 }
 
 void GameInstance::OnResize(unsigned int width, unsigned int height) {
-	WindowSize = { (int)width, (int)height };
+	WindowSize = { (uint16_t)width, (uint16_t)height };
 
-	TestText.SetLocation(Vector3(180, (float)height - 150, 0));
-	TestSysText.SetLocation(Vector3(100, (float)height - 400, 0));
+	TestText->SetLocation(Vector3(180, (float)height - 150, 0));
+	TestSysText->SetLocation(Vector3(100, (float)height - 400, 0));
 
 	// TODO: Temp
 	SGeometryConfig UIConfig;
@@ -866,67 +844,37 @@ bool GameInstance::ConfigureRenderviews() {
 
 
 void LoadScene1(GameInstance* GameInst) {
-	for (size_t i = GameInst->Meshes.Size() - 1; i >= 3; --i) {
-		Mesh* M = GameInst->Meshes[i];
-		DeleteObject(M);
-		GameInst->Meshes[i] = nullptr;
-		GameInst->Meshes.Pop();
-	}
-
-	Mesh* Model = NewObject<Mesh>();
-	Model->LoadFromResource("mountain_part");	// It always return true.
-	Model->SetTransform(Vector3(300.0f, -50.0f, 0.0f), Quaternion(Vector3(0.0f, 0.0f, 0.0f)), Vector3(50.f));
-	GameInst->Meshes.Push(Model);
+	
 }
 
 void LoadScene2(GameInstance* GameInst) {
 	for (size_t i = GameInst->Meshes.Size() - 1; i >= 3; --i) {
-		Mesh* M = GameInst->Meshes[i];
+		AStaticMeshActor* M = GameInst->Meshes[i];
 		DeleteObject(M);
 		GameInst->Meshes[i] = nullptr;
 		GameInst->Meshes.Pop();
 	}
 
-	Mesh* Model1 = NewObject<Mesh>();
-	Model1->LoadFromResource("sponza");	// It always return true.
+	AStaticMeshActor* Model1 = NewObject<AStaticMeshActor>("sponza");
+	Model1->LoadFromResource("sponza");
 	Model1->SetTransform(Vector3(0.0f, -10.0f, 0.0f), Quaternion(Vector3(0.0f, 90.0f, 0.0f)), Vector3(0.1f));
 	GameInst->Meshes.Push(Model1);
 
-	Mesh* Model2 = NewObject<Mesh>();
-	Model2->LoadFromResource("bunny");	// It always return true.
+	AStaticMeshActor* Model2 = NewObject<AStaticMeshActor>("bunny");
+	Model2->LoadFromResource("bunny");
 	Model2->SetTransform(Vector3(30.0f, 0.0f, 0.0f), Quaternion(Vector3(0.0f, 0.0f, 0.0f)), Vector3(5.0f));
 	GameInst->Meshes.Push(Model2);
 
-	Mesh* Model3 = NewObject<Mesh>();
-	Model3->LoadFromResource("falcon");	// It always return true.
+	AStaticMeshActor* Model3 = NewObject<AStaticMeshActor>("falcon");
+	Model3->LoadFromResource("falcon");
 	Model3->SetTransform(Vector3(-30.0f, 0.0f, 0.0f), Quaternion(Vector3(0.0f, 0.0f, 0.0f)));
 	GameInst->Meshes.Push(Model3);
 }
 
 void LoadScene3(GameInstance* GameInst) {
-	for (size_t i = GameInst->Meshes.Size() - 1; i >= 3; --i) {
-		Mesh* M = GameInst->Meshes[i];
-		DeleteObject(M);
-		GameInst->Meshes[i] = nullptr;
-		GameInst->Meshes.Pop();
-	}
-
-	Mesh* Model = NewObject<Mesh>();
-	Model->LoadFromResource("Axis");	
-	Model->SetTransform(Vector3(0.0f, 10.0f, 0.0f), Quaternion(Vector3(0.0f, 0.0f, 0.0f)), Vector3(500.f));
-	GameInst->Meshes.Push(Model);
+	
 }
 
 void LoadScene4(GameInstance* GameInst) {
-	for (size_t i = GameInst->Meshes.Size() - 1; i >= 3; --i) {
-		Mesh* M = GameInst->Meshes[i];
-		DeleteObject(M);
-		GameInst->Meshes[i] = nullptr;
-		GameInst->Meshes.Pop();
-	}
-
-	Mesh* Model = NewObject<Mesh>();
-	Model->LoadFromResource("LegoCar");	
-	Model->SetTransform(Vector3(0.0f, 0.0f, -50.0f), Quaternion(Vector3(0.0f, 0.0f, 0.0f)), Vector3(0.5f));
-	GameInst->Meshes.Push(Model);
+	
 }

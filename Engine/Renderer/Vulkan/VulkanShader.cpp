@@ -15,7 +15,7 @@ bool VulkanShader::Initialize() {
 	VulkanBackend* vkRenderer = static_cast<VulkanBackend*>(Renderer->GetRenderBackend());
 	VulkanContext& Context = vkRenderer->Context;
 	vk::Device LogicalDevice = vkRenderer->Context.Device.GetLogicalDevice();
-	vk::AllocationCallbacks* VkAllocator = vkRenderer->Context.Allocator;
+	vk::AllocationCallbacks* VkAllocator = Context.Allocator;
 	ASSERT(VkAllocator);
 
 	// Static lookup table for our types->vulkan once.
@@ -90,8 +90,8 @@ bool VulkanShader::Reload() {
 
 	VulkanBackend* vkRenderer = static_cast<VulkanBackend*>(Renderer->GetRenderBackend());
 	VulkanContext& Context = vkRenderer->Context;
-	vk::Device LogicalDevice = vkRenderer->Context.Device.GetLogicalDevice();
-	vk::AllocationCallbacks* VkAllocator = vkRenderer->Context.Allocator;
+	vk::Device LogicalDevice = Context.Device.GetLogicalDevice();
+	vk::AllocationCallbacks* VkAllocator = Context.Allocator;
 
 	// Wait for frame. Can not reload when the shader in used.
 	LogicalDevice.waitIdle();
@@ -242,12 +242,11 @@ bool VulkanShader::CompileShaderFile(bool writeToDisk/* = true*/){
 	for (uint32_t i = 0; i < Config.stage_count; ++i) {
 		VulkanShaderConfig vkShaderConfig = Config;
 		VulkanShaderStageConfig vkShaderStageConfig = Config.stages[i];
-		VulkanShaderStage* vkShaderStage = &Stages[i];
 
 		// Read the resource.
 		Resource BinaryResource;
 		std::string ShaderFile = ResourceSystem::GetRootPath() + std::string("/")
-			+ std::string(vkShaderConfig.stages[i].filename);
+			+ std::string(vkShaderStageConfig.filename);
 
 		File SPVFile(ShaderFile);
 		if (!SPVFile.IsExist() || Status == ShaderStatus::eShader_State_Reloading){
@@ -367,7 +366,7 @@ bool VulkanShader::CreatePipeline() {
 	// The index of the global descriptor set.
 	const uint32_t DESC_SET_INDEX_GLOBAL = 0;
 	// The index of the instance descriptor set.
-	const uint32_t DESC_SET_INDEX_INSTANCE = 1;
+	//const uint32_t DESC_SET_INDEX_INSTANCE = 1;
 
 	// Allocate global descriptor sets, one per frame. Global is always the first set.
 	vk::DescriptorSetLayout GlobalLayouts[3] = {

@@ -5,7 +5,7 @@
 #include "Core/Event.hpp"
 #include "Core/UID.hpp"
 #include "Math/DMath.hpp"
-#include "Math/Transform.hpp"
+
 #include "Containers/TArray.hpp"
 #include "Containers/TString.hpp"
 #include "Systems/MaterialSystem.h"
@@ -16,7 +16,7 @@
 #include "Renderer/RendererFrontend.hpp"
 #include "Renderer/Interface/IRenderpass.hpp"
 #include "Renderer/Interface/IRendererBackend.hpp"
-#include "Resources/UIText.hpp"
+#include "Framework/Classes/TextActor.h"
 
 static bool RenderViewPickOnEvent(eEventCode code, void* sender, void* listenerInst, SEventContext context) {
 	IRenderView* self = (IRenderView*)listenerInst;
@@ -190,8 +190,8 @@ void RenderViewPick::OnResize(uint32_t width, uint32_t height) {
 		return;
 	}
 
-	Width = width;
-	Height = height;
+	Width = (uint16_t)width;
+	Height = (uint16_t)height;
 
 	// UI
 	UIShaderInfo.ProjectionMatrix = Matrix4::Orthographic(0.0f, (float)Width, (float)Height, 0.0f, UIShaderInfo.NearClip, UIShaderInfo.FarClip);
@@ -215,7 +215,7 @@ bool RenderViewPick::OnBuildPacket(IRenderviewPacketData* data, struct RenderVie
 	out_packet->view = this;
 
 	// TODO: Get active camera.
-	Camera* WorldCamera = CameraSystem::GetDefault();
+	ACameraActor* WorldCamera = CameraSystem::GetDefault();
 	WorldShaderInfo.ViewMatrix = WorldCamera->GetViewMatrix();
 
 	// Set the pick packet data to extended data.
@@ -235,15 +235,10 @@ bool RenderViewPick::OnBuildPacket(IRenderviewPacketData* data, struct RenderVie
 
 	// Iterate all meshes in UI data.
 	for (uint32_t i = 0; i < PacketData->UIMeshData.mesh_count; ++i) {
-		Mesh* m = PacketData->UIMeshData.meshes[i];
-		for (uint32_t j = 0; j < m->geometry_count; j++) {
-			GeometryRenderData RenderData;
-			RenderData.geometry = m->geometries[j];
-			RenderData.model = m->GetWorldTransform();
-			RenderData.uniqueID = m->GetUniqueID();
-			out_packet->geometries.push_back(RenderData);
-			PacketData->UIGeometryCount++;
-		}
+		AMeshActor* m = PacketData->UIMeshData.meshes[i];
+		if (m) m->Draw();
+		/*out_packet->geometries.push_back(RenderData);
+		PacketData->UIGeometryCount++;*/
 
 		// Count all geometries as a single id.
 		if (m->GetUniqueID() > HighestInstanceID) {
@@ -323,15 +318,15 @@ bool RenderViewPick::RegenerateAttachmentTarget(uint32_t passIndex, RenderTarget
 	// Setup a new texture.
 	// Generate a UUID to act as the texture name.
 	UID TextureNameUID;
-	uint32_t Width = (uint32_t)Passes[passIndex].GetRenderArea().z;
-	uint32_t Height = (uint32_t)Passes[passIndex].GetRenderArea().w;
+	uint32_t RenderAreaWidth = (uint32_t)Passes[passIndex].GetRenderArea().z;
+	uint32_t RenderAreaHeight = (uint32_t)Passes[passIndex].GetRenderArea().w;
 	bool HasTransparency = false;
 
 	attachment->texture->SetID(INVALID_ID);
 	attachment->texture->Type = TextureType::eTexture_Type_2D;
 	attachment->texture->SetName(TextureNameUID.Value);
-	attachment->texture->Width = Width;
-	attachment->texture->Height = Height;
+	attachment->texture->Width = RenderAreaWidth;
+	attachment->texture->Height = RenderAreaHeight;
 	attachment->texture->ChannelCount = 4;
 	attachment->texture->Generation = INVALID_ID;
 	attachment->texture->Flags |= HasTransparency ? TextureFlagBits::eTexture_Flag_Has_Transparency : 0;
@@ -400,7 +395,7 @@ bool RenderViewPick::OnRender(struct RenderViewPacket* packet, IRendererBackend*
 			InstanceUpdated[CurrentInstanceID] = true;
 
 			// Apply the locals.
-			if (!ShaderSystem::SetUniformByIndex(WorldShaderInfo.ModelLocation, &Geo->model)) {
+			if (!ShaderSystem::SetUniformByIndex(WorldShaderInfo.ModelLocation, &Geo->model_mat)) {
 				GLOG(Log::eError, "Failed to apply model matrix for world geometry.");
 			}
 
@@ -453,7 +448,7 @@ bool RenderViewPick::OnRender(struct RenderViewPacket* packet, IRendererBackend*
 			InstanceUpdated[CurrentInstanceID] = true;
 
 			// Apply the locals.
-			if (!ShaderSystem::SetUniformByIndex(WorldShaderInfo.ModelLocation, &Geo->model)) {
+			if (!ShaderSystem::SetUniformByIndex(WorldShaderInfo.ModelLocation, &Geo->model_mat)) {
 				GLOG(Log::eError, "Failed to apply model matrix for world geometry.");
 			}
 
@@ -463,7 +458,7 @@ bool RenderViewPick::OnRender(struct RenderViewPacket* packet, IRendererBackend*
 
 		// Draw bitmap text.
  		for (uint32_t i = 0; i < PacketData->TextCount; ++i) {
-			UIText* Text = PacketData->Texts[i];
+			ATextActor* Text = PacketData->Texts[i];
 			CurrentInstanceID = Text->GetUniqueID();
 			ShaderSystem::BindInstance(CurrentInstanceID);
 
@@ -503,15 +498,15 @@ bool RenderViewPick::OnRender(struct RenderViewPacket* packet, IRendererBackend*
 	Renderer->ReadTexturePixel(t, CoordX, CoordY, &Pixel);
 
 	// Extract the id from the sampled color.
-	uint32_t ID = INVALID_ID;
-	RGB2Uint(Pixel[0], Pixel[1], Pixel[2], &ID);
-	if (ID == 0x00FFFFFF) {
+	uint32_t ObjID = INVALID_ID;
+	RGB2Uint(Pixel[0], Pixel[1], Pixel[2], &ObjID);
+	if (ObjID == 0x00FFFFFF) {
 		// This is pure white.
-		ID = INVALID_ID;
+		ObjID = INVALID_ID;
 	}
 
 	SEventContext Context;
-	Context.data.u32[0] = ID;
+	Context.data.u32[0] = ObjID;
 	EngineEvent::Fire(eEventCode::Object_Hover_ID_Changed, 0, Context);
 
 	return true;

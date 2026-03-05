@@ -2,7 +2,7 @@
 #pragma comment( linker, "/subsystem:windows /entry:mainCRTStartup" )
 #endif
 
-#include "Game.hpp"
+#include "Game.h"
 #include "Entry.hpp"
 #include <Platform/JsonObject.h>
 

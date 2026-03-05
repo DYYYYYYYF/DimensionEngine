@@ -15,10 +15,10 @@
 #include "Renderer/Views/RenderViewPick.hpp"
 
 bool RenderViewSystem::Initialized = false;
-uint32_t RenderViewSystem::MaxViewCount = 0;
+uint16_t RenderViewSystem::MaxViewCount = 0;
 IRenderer* RenderViewSystem::Renderer = nullptr;
 std::vector<IRenderView*> RenderViewSystem::RegisteredViews;
-std::unordered_map<std::string, uint32_t> RenderViewSystem::RegisteredViewMap;
+std::unordered_map<std::string, uint16_t> RenderViewSystem::RegisteredViewMap;
 
 bool RenderViewSystem::Initialize(IRenderer* renderer, SRenderViewSystemConfig config) {
 	if (renderer == nullptr) {
@@ -78,14 +78,14 @@ bool RenderViewSystem::Create(const RenderViewConfig& config) {
 		return false;
 	}
 
-	unsigned short ID = INVALID_ID_U16;
+	uint16_t ID = INVALID_ID_U16;
 	if (RegisteredViewMap.find(config.name) != RegisteredViewMap.end()){
 		GLOG(Log::eError, "RenderViewSystem::Create() A view named '%s' already exists. A new one will not be created.", config.name);
 		return false;
 	}
 
 	// Find a new ID.
-	for (uint32_t i = 0; i < MaxViewCount; ++i) {
+	for (uint16_t i = 0; i < MaxViewCount; ++i) {
 		if (RegisteredViews[i] == nullptr) {
 			ID = i;
 			break;
@@ -148,7 +148,7 @@ void RenderViewSystem::RegenerateRendertargets(IRenderView* view) {
 			// TODO: check if a resize is actually needed for this target.
 			Renderer->DestroyRenderTarget(Target, false);
 
-			uint32_t AttachCount = (uint32_t)Target->attachments.size();
+			unsigned char AttachCount = (unsigned char)Target->attachments.size();
 			for (uint32_t a = 0; a < AttachCount; ++a) {
 				RenderTargetAttachment* Attachment = &Target->attachments[a];
 				if (Attachment->source == RenderTargetAttachmentSource::eRender_Target_Attachment_Source_Default) {

@@ -1,4 +1,4 @@
-﻿#include "Mesh.hpp"
+﻿#include "StaticMeshActor.h"
 
 #include "Core/DMemory.hpp"
 #include "Core/EngineLogger.hpp"
@@ -6,9 +6,19 @@
 #include "Systems/ResourceSystem.h"
 #include "Systems/GeometrySystem.h"
 #include "Systems/JobSystem.hpp"
+#include "Renderer/RendererTypes.hpp"
 
-void Mesh::LoadJobSuccess(void* params) {
-	MeshLoadParams* MeshParams = (MeshLoadParams*)params;
+void AStaticMeshActor::Draw() {
+	for (uint32_t j = 0; j < geometry_count; j++) {
+		GeometryRenderData RenderData;
+		RenderData.geometry = geometries[j];
+		RenderData.model_mat = GetWorldTransform();
+		RenderData.uniqueID = GetUniqueID();
+	}
+}
+
+void AStaticMeshActor::LoadJobSuccess(void* params) {
+	FMeshLoadParams* MeshParams = (FMeshLoadParams*)params;
 
 	// This also handle the GPU upload. Can't be jobified until the renderer is multithread.
 	SGeometryConfig* Configs = (SGeometryConfig*)MeshParams->mesh_resource.Data;
@@ -24,48 +34,48 @@ void Mesh::LoadJobSuccess(void* params) {
 	ResourceSystem::Unload(&MeshParams->mesh_resource);
 }
 
-void Mesh::LoadJobFail(void* params) {
-	MeshLoadParams* MeshParams = (MeshLoadParams*)params;
+void AStaticMeshActor::LoadJobFail(void* params) {
+	FMeshLoadParams* MeshParams = (FMeshLoadParams*)params;
 	GLOG(Log::eError, "Failed to load mesh: '%s'.", MeshParams->resource_name.c_str());
 	ResourceSystem::Unload(&MeshParams->mesh_resource);
 }
 
-bool Mesh::LoadJobStart(void* params, void* result_data) {
-	MeshLoadParams* LoadParams = (MeshLoadParams*)params;
+bool AStaticMeshActor::LoadJobStart(void* params, void* result_data) {
+	FMeshLoadParams* LoadParams = (FMeshLoadParams*)params;
 	bool Result = ResourceSystem::Load(LoadParams->resource_name, ResourceType::eResource_type_Static_Mesh, nullptr, &LoadParams->mesh_resource);
 
 	// NOTE: The load params are also used as the result data here, only the mesh)resource field is populated now.
-	Memory::Copy(result_data, LoadParams, sizeof(MeshLoadParams));
+	Memory::Copy(result_data, LoadParams, sizeof(FMeshLoadParams));
 	return Result;
 }
 
-bool Mesh::LoadFromResource(const std::string& resource_name) {
+bool AStaticMeshActor::LoadFromResource(const std::string& resource_name) {
 	Generation = INVALID_ID_U8;
 
-	MeshLoadParams Params;
+	FMeshLoadParams Params;
 	Params.resource_name = resource_name;
 	Params.out_mesh = this;
 	Params.mesh_resource = {};
-	Name = resource_name;
+	Name_ = resource_name.c_str();
 
 	JobInfo Job = JobSystem::CreateJob(
-		std::bind(&Mesh::LoadJobStart, this, std::placeholders::_1, std::placeholders::_2),
-		std::bind(&Mesh::LoadJobSuccess, this, std::placeholders::_1),
-		std::bind(&Mesh::LoadJobFail, this, std::placeholders::_1),
-		std::make_shared<MeshLoadParams>(Params), 
-		sizeof(MeshLoadParams), 
-		sizeof(MeshLoadParams));
+		std::bind(&AStaticMeshActor::LoadJobStart, this, std::placeholders::_1, std::placeholders::_2),
+		std::bind(&AStaticMeshActor::LoadJobSuccess, this, std::placeholders::_1),
+		std::bind(&AStaticMeshActor::LoadJobFail, this, std::placeholders::_1),
+		std::make_shared<FMeshLoadParams>(Params), 
+		sizeof(FMeshLoadParams), 
+		sizeof(FMeshLoadParams));
 	JobSystem::Submit(Job);
 
 	return true;
 }
 
-void Mesh::Unload() {
+void AStaticMeshActor::Unload() {
 	for (uint32_t i = 0; i < geometry_count; ++i) {
 		GeometrySystem::Release(geometries[i]);
 	}
 
-	Memory::Free(geometries, sizeof(Geometry*) * geometry_count, MemoryType::eMemory_Type_Array);
+	Memory::Free(geometries, MemoryType::eMemory_Type_Array);
 	geometries = nullptr;
 
 	// For good measure. Invalidate the geometry so it doesn't attemp to be renderer.

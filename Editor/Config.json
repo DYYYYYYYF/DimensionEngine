@@ -3,7 +3,7 @@
     "Position": [
       0.0,
       0.0,
-      60.0
+      100.0
     ],
     "Rotation": [
       0.0,
@@ -30,10 +30,10 @@
     ]
   },
   "Window": {
-    "Height": 819,
+    "Height": 908,
     "OffsetX": 100,
     "OffsetY": 100,
     "Title": "Game Window",
-    "Width": 1506
+    "Width": 1712
   }
 }

@@ -41,7 +41,7 @@ bool ImageLoader::Load(const std::string& name, void* params, Resource* resource
 	bool Found = false;
 	const char* Extensions[IMAGE_EXTENSION_COUNT] = { ".tga", ".png", ".jpg", ".bmp" };
 	for (uint32_t i = 0; i < IMAGE_EXTENSION_COUNT; ++i) {
-		StringFormat(FullFilePath, 512, FormatStr, ResourceSystem::GetRootPath(), TypePath.c_str(), name.c_str(), Extensions[i]);
+		StringFormat(FullFilePath, FormatStr, ResourceSystem::GetRootPath(), TypePath.c_str(), name.c_str(), Extensions[i]);
 		if (FileSystemExists(FullFilePath)) {
 			Found = true;
 			break;
@@ -54,7 +54,7 @@ bool ImageLoader::Load(const std::string& name, void* params, Resource* resource
 	}
 
 	// Take a copy of the resource full path and name first.
-	resource->Name = name;
+	resource->Name = name.c_str();
 	resource->FullPath = FullFilePath;
 
 	FileHandle f;
@@ -109,7 +109,7 @@ bool ImageLoader::Load(const std::string& name, void* params, Resource* resource
 	resource->DataSize = sizeof(ImageResourceData);
 	resource->DataCount = 1;
 
-	Memory::Free(RawData, FileSize, MemoryType::eMemory_Type_Texture);
+	Memory::Free(RawData, MemoryType::eMemory_Type_Texture);
 	RawData = nullptr;
 
 	return true;
@@ -123,7 +123,7 @@ void ImageLoader::Unload(Resource* resource) {
 	stbi_image_free(((ImageResourceData*)resource->Data)->pixels);
 
 	if (resource->Data) {
-		Memory::Free(resource->Data, resource->DataSize * resource->DataCount, MemoryType::eMemory_Type_Texture);
+		Memory::Free(resource->Data, MemoryType::eMemory_Type_Texture);
 		resource->Data = nullptr;
 		resource->DataSize = 0;
 		resource->DataCount = 0;

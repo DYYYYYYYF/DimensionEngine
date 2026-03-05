@@ -1,16 +1,18 @@
 ﻿#pragma once
 
-#include "GameConsole.hpp"
+#include "UI/Console/GameConsole.h"
 #include <Defines.hpp>
 #include <IGame.hpp>
 #include <Math/MathTypes.hpp>
 #include <Core/CPython.hpp>
 #include <Core/Keymap.hpp>
 #include <Containers/TArray.hpp>
+#include "Framework/Classes/StaticMeshActor.h"
+#include "Framework/Classes/TextActor.h"
 
 #define EDITOR_CONFIG_PATH std::string(ROOT_PATH) + "/Editor/Config.json"
 
-class Camera;
+class ACameraActor;
 
 class GameInstance : public IGame {
 public:
@@ -29,7 +31,7 @@ private:
 	bool ConfigureRenderviews();
 
 public:
-	Camera* WorldCamera;
+	ACameraActor* WorldCamera;
 	Frustum CameraFrustum;
 
 	// TODO: temp
@@ -37,10 +39,10 @@ public:
 	Keymap* ConsoleKeymap;
 	DebugConsoleActor* GameConsole = nullptr;
 
-	TArray<Mesh*> Meshes;
-	TArray<Mesh*> UIMeshes;
-	UIText TestText;
-	UIText TestSysText;
+	TArray<AStaticMeshActor*> Meshes;
+	TArray<AStaticMeshActor*> UIMeshes;
+	ATextActor* TestText = nullptr;
+	ATextActor* TestSysText = nullptr;
 
 	uint32_t HoveredObjectID = INVALID_ID;
 	CPythonModule TestPython;

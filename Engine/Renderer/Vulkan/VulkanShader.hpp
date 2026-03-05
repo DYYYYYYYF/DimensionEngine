@@ -2,6 +2,7 @@
 
 #include <vulkan/vulkan.hpp>
 #include "VulkanPipeline.hpp"
+#include "VulkanBuffer.hpp"
 #include "Resources/ResourceTypes.hpp"
 
 class VulkanRenderPass;
@@ -28,12 +29,12 @@ struct VulkanDescriptorSetConfig {
 };
 
 struct VulkanShaderConfig {
-	unsigned short stage_count = 0;
+	uint16_t stage_count = 0;
 	VulkanShaderStageConfig stages[VULKAN_SHADER_MAX_STAGES];
 	vk::DescriptorPoolSize pool_sizes[2];
 
-	unsigned short max_descriptor_set_count = 0;
-	unsigned short descriptor_set_count = 0;
+	uint16_t max_descriptor_set_count = 0;
+	uint16_t descriptor_set_count = 0;
 	VulkanDescriptorSetConfig descriptor_sets[2];
 	vk::VertexInputAttributeDescription attributes[VULKAN_SHADER_MAX_ATTRIBUTES];
 

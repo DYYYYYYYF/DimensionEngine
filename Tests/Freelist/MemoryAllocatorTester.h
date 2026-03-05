@@ -110,7 +110,7 @@ public:
 
 			// 验证对齐信息
 			size_t size;
-			unsigned short stored_alignment;
+			size_t stored_alignment;
 			if (!allocator.GetAlignmentSize(ptr, &size, &stored_alignment)) {
 				std::cout << "[FAIL] 获取对齐信息失败" << std::endl;
 				return false;
@@ -251,8 +251,6 @@ public:
 			allocator.Free(ptrs[i], 256);
 		}
 
-		size_t free_space_before = allocator.GetFreeSpace();
-
 		// 尝试分配一个大块（应该能合并碎片）
 		void* large_ptr = allocator.Allocate(512);
 		if (!large_ptr) {
@@ -374,8 +372,8 @@ public:
 			// 使用更大的分配器以确保有足够内存
 			size_t allocator_size = 128 * 1024 * 1024; // 128MB
 
-			DynamicAllocator allocator;
-			if (!allocator.Create(allocator_size)) {
+			DynamicAllocator TempAllocator;
+			if (!TempAllocator.Create(allocator_size)) {
 				std::cout << "   [FAIL] 创建分配器失败" << std::endl;
 				continue;
 			}
@@ -388,7 +386,7 @@ public:
 			// 分配阶段
 			int successful_allocations = 0;
 			for (int i = 0; i < num_ops; i++) {
-				void* ptr = allocator.Allocate(size);
+				void* ptr = TempAllocator.Allocate(size);
 				if (ptr) {
 					ptrs.push_back(ptr);
 					successful_allocations++;
@@ -401,7 +399,7 @@ public:
 
 			// 释放阶段
 			for (void* ptr : ptrs) {
-				allocator.Free(ptr, size);
+				TempAllocator.Free(ptr, size);
 			}
 
 			auto end = std::chrono::high_resolution_clock::now();
@@ -413,7 +411,7 @@ public:
 				<< (double)duration.count() / successful_allocations << " μs/次 "
 				<< "(" << successful_allocations << "/" << num_ops << ")" << std::endl;
 
-			allocator.Destroy();
+			TempAllocator.Destroy();
 		}
 	}
 

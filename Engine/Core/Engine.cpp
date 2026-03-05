@@ -73,8 +73,8 @@ bool Engine::Initialize(){
 		return false;
     }
 
-	width = GameInst->GetWindowWidth();
-	height = GameInst->GetWindowHeight();
+	width = (short)GameInst->GetWindowWidth();
+	height = (short)GameInst->GetWindowHeight();
 
 	// Init texture system
 	SResourceSystemConfig ResourceSystemConfig;
@@ -345,7 +345,7 @@ bool Engine::Run() {
 	ShaderSystem::Shutdown();
 
 	Renderer->Shutdown();
-	Memory::Free(Renderer, sizeof(IRenderer), MemoryType::eMemory_Type_Renderer);
+	Memory::Free(Renderer, MemoryType::eMemory_Type_Renderer);
 
 	EngineEvent::Shutdown();
 	Controller::Shutdown();
@@ -356,6 +356,10 @@ bool Engine::Run() {
 }
 
 bool Engine::OnEvent(eEventCode code, void* sender, void* listener_instance, SEventContext context) {
+	(void)context;
+	(void)listener_instance;
+	(void)sender;
+
 	switch (code){
 	case eEventCode::Application_Quit: {
 		GLOG(Log::eInfo, "Application quit now.");
@@ -369,6 +373,9 @@ bool Engine::OnEvent(eEventCode code, void* sender, void* listener_instance, SEv
 }
 
 bool Engine::OnResized(eEventCode code, void* sender, void* listener_instance, SEventContext context) {
+	(void)listener_instance;
+	(void)sender;
+
 	if (Renderer == nullptr) {
 		return false;
 	}
@@ -406,7 +413,7 @@ bool Engine::OnResized(eEventCode code, void* sender, void* listener_instance, S
 	return true;
 }
 
-void Engine::GetFramebufferSize(unsigned int* width, unsigned int* height) {
-	*width = this->width;
-	*height = this->height;
+void Engine::GetFramebufferSize(unsigned int* w, unsigned int* h) {
+	*w = this->width;
+	*h = this->height;
 }

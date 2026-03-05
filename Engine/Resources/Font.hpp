@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "Resource.hpp"
+#include "Texture.hpp"
 #include <vector>
 #include <string>
 
@@ -41,7 +42,7 @@ struct BitmapFontResourceData {
 };
 
 struct SystemFontFace {
-	std::string name;
+	FString name;
 };
 
 struct SystemFontResourceData {
@@ -54,7 +55,7 @@ struct SystemFontResourceData {
 class IFontDataBase {
 public:
 	FontType type;
-	std::string face;
+	FString face;
 	unsigned int size = 0;
 	int lineHeight = -1;
 	int baseLine = -1;

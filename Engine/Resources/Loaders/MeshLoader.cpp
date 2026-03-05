@@ -42,47 +42,47 @@ bool MeshLoader::Load(const std::string& name, void* params, Resource* resource)
 	SupportedFileTypes[6] = SupportedMeshFileType{ ".3ds", MeshFileType::eMesh_File_Type_3D_Model, true };  // 3DS Max
 
 	char FullFilePath[512];
-	MeshFileType Type = MeshFileType::eMesh_File_Type_Not_Found;
+	MeshFileType MeshFileType = MeshFileType::eMesh_File_Type_Not_Found;
 	// 尝试每种支持的扩展名
 	for (uint32_t i = 0; i < SUPPORTED_FILETYPE_COUNT; ++i) {
-		StringFormat(FullFilePath, 512, FormatStr, ResourceSystem::GetRootPath(), TypePath.c_str(), name.c_str(), SupportedFileTypes[i].extension.c_str());
+		StringFormat(FullFilePath, FormatStr, ResourceSystem::GetRootPath(), TypePath.c_str(), name.c_str(), SupportedFileTypes[i].extension.c_str());
 
 		// 如果文件存在
 		if (FileSystemExists(FullFilePath)) {
 			// 对于DSM文件，需要打开文件句柄
 			if (SupportedFileTypes[i].type == MeshFileType::eMesh_File_Type_DSM) {
 				if (FileSystemOpen(FullFilePath, FileMode::eFile_Mode_Read, SupportedFileTypes[i].is_binary, &f)) {
-					Type = SupportedFileTypes[i].type;
+					MeshFileType = SupportedFileTypes[i].type;
 					break;
 				}
 			}
 			else {
 				// 对于3D模型文件，不需要提前打开文件句柄
-				Type = SupportedFileTypes[i].type;
+				MeshFileType = SupportedFileTypes[i].type;
 				break;
 			}
 		}
 	}
 
-	if (Type == MeshFileType::eMesh_File_Type_Not_Found) {
+	if (MeshFileType == MeshFileType::eMesh_File_Type_Not_Found) {
 		GLOG(Log::eError, "Unable to find mesh of supported type called '%s'.", name.c_str());
 		return false;
 	}
 
-	resource->FullPath = std::string(FullFilePath);
-	resource->Name = std::move(name);
+	resource->FullPath = FullFilePath;
+	resource->Name = name.c_str();
 
 	// 资源数据是几何体配置的数组
 	std::vector<SGeometryConfig> ResourceDatas;
 	ResourceDatas.reserve(25968);
 	bool Result = false;
 
-	switch (Type) {
+	switch (MeshFileType) {
 	case MeshFileType::eMesh_File_Type_3D_Model:
 	{
 		// 生成DSM文件名
 		char DsmFileName[512];
-		StringFormat(DsmFileName, 512, "%s/%s/%s%s", ResourceSystem::GetRootPath(), TypePath.c_str(), name.c_str(), ".dsm");
+		StringFormat(DsmFileName, "%s/%s/%s%s", ResourceSystem::GetRootPath(), TypePath.c_str(), name.c_str(), ".dsm");
 
 		// 使用统一的Assimp加载器处理所有3D模型格式
 		Result = Import3DModelFile(FullFilePath, DsmFileName, ResourceDatas);
@@ -103,7 +103,7 @@ bool MeshLoader::Load(const std::string& name, void* params, Resource* resource)
 	}
 
 	// 如果打开了文件句柄，需要关闭
-	if (Type == MeshFileType::eMesh_File_Type_DSM) {
+	if (MeshFileType == MeshFileType::eMesh_File_Type_DSM) {
 		FileSystemClose(&f);
 	}
 
@@ -145,7 +145,7 @@ void MeshLoader::Unload(Resource* resource) {
 	}
 
 	if (resource->Data) {
-		Memory::Free(resource->Data, resource->DataSize * resource->DataCount, MemoryType::eMemory_Type_Array);
+		Memory::Free(resource->Data, MemoryType::eMemory_Type_Array);
 		resource->Data = nullptr;
 		resource->DataSize = 0;
 		resource->DataCount = 0;
@@ -663,7 +663,7 @@ bool MeshLoader::WriteDmtFile(const char* mtl_file_path, SMaterialConfig* config
 	StringDirectoryFromPath(Directory, mtl_file_path);
 
 	char FullFilePath[512];
-	StringFormat(FullFilePath, 512, FormatStr, Directory, config->name.c_str(), ".dmt");
+	StringFormat(FullFilePath, FormatStr, Directory, config->name.c_str(), ".dmt");
 	if (!FileSystemOpen(FullFilePath, FileMode::eFile_Mode_Write, false, &f)) {
 		GLOG(Log::eError, "Error opening material file for writing: '%s'.", FullFilePath);
 		return false;
@@ -674,41 +674,41 @@ bool MeshLoader::WriteDmtFile(const char* mtl_file_path, SMaterialConfig* config
 	FileSystemWriteLine(&f, "#material file");
 	FileSystemWriteLine(&f, "");
 	FileSystemWriteLine(&f, "version=0.1");	// TODO: hardcoded version.
-	StringFormat(LineBuf, 512, "name=%s", config->name.c_str());
+	StringFormat(LineBuf, "name=%s", config->name.c_str());
 	// BlinnPhong
 	FileSystemWriteLine(&f, LineBuf);
-	StringFormat(LineBuf, 512, "diffuse_color=%.6f %.6f %.6f %.6f", config->diffuse_color.r, config->diffuse_color.g, config->diffuse_color.b, config->diffuse_color.a);
+	StringFormat(LineBuf, "diffuse_color=%.6f %.6f %.6f %.6f", config->diffuse_color.r, config->diffuse_color.g, config->diffuse_color.b, config->diffuse_color.a);
 	FileSystemWriteLine(&f, LineBuf);
-	StringFormat(LineBuf, 512, "shininess=%.6f", config->shininess);
+	StringFormat(LineBuf, "shininess=%.6f", config->shininess);
 
 	// PBR
 	FileSystemWriteLine(&f, LineBuf);
-	StringFormat(LineBuf, 512, "metallic=%.6f", config->Metallic);
+	StringFormat(LineBuf, "metallic=%.6f", config->Metallic);
 	FileSystemWriteLine(&f, LineBuf);
-	StringFormat(LineBuf, 512, "roughness=%.6f", config->Roughness);
+	StringFormat(LineBuf, "roughness=%.6f", config->Roughness);
 	FileSystemWriteLine(&f, LineBuf);
-	StringFormat(LineBuf, 512, "ambient_occlusion=%.6f", config->AmbientOcclusion);
+	StringFormat(LineBuf, "ambient_occlusion=%.6f", config->AmbientOcclusion);
 	FileSystemWriteLine(&f, LineBuf);
 
 	// Textures
 	if (config->diffuse_map_name[0]) {
-		StringFormat(LineBuf, 512, "diffuse_map_name=%s", config->diffuse_map_name);
+		StringFormat(LineBuf, "diffuse_map_name=%s", config->diffuse_map_name);
 		FileSystemWriteLine(&f, LineBuf);
 	}
 	if (config->specular_map_name[0]) {
-		StringFormat(LineBuf, 512, "specular_map_name=%s", config->specular_map_name);
+		StringFormat(LineBuf, "specular_map_name=%s", config->specular_map_name);
 		FileSystemWriteLine(&f, LineBuf);
 	}
 	if (config->normal_map_name[0]) {
-		StringFormat(LineBuf, 512, "normal_map_name=%s", config->normal_map_name);
+		StringFormat(LineBuf, "normal_map_name=%s", config->normal_map_name);
 		FileSystemWriteLine(&f, LineBuf);
 	}
 	if (!config->MetallicRoughnessTexName.empty()) {
-		StringFormat(LineBuf, 512, "roughness_metallic_map_name=%s", config->MetallicRoughnessTexName.c_str());
+		StringFormat(LineBuf, "roughness_metallic_map_name=%s", config->MetallicRoughnessTexName.c_str());
 		FileSystemWriteLine(&f, LineBuf);
 	}
 
-	StringFormat(LineBuf, 512, "shader=%s", config->shader_name.c_str());
+	StringFormat(LineBuf, "shader=%s", config->shader_name.c_str());
 	FileSystemWriteLine(&f, LineBuf);
 
 	FileSystemClose(&f);
@@ -754,7 +754,7 @@ bool MeshLoader::LoadDsmFile(FileHandle* dsm_file, std::vector<SGeometryConfig>&
 		char* gn = (char*)Memory::Allocate(sizeof(char) * GNameLength, MemoryType::eMemory_Type_String);
 		FileSystemRead(dsm_file, sizeof(char) * GNameLength, gn, &BytesRead);
 		g.name = std::string(gn);
-		Memory::Free(gn, sizeof(char) * GNameLength, MemoryType::eMemory_Type_String);
+		Memory::Free(gn, MemoryType::eMemory_Type_String);
 
 		// Material name.
 		uint32_t MNameLength = 0;
@@ -762,7 +762,7 @@ bool MeshLoader::LoadDsmFile(FileHandle* dsm_file, std::vector<SGeometryConfig>&
 		char* mn = (char*)Memory::Allocate(sizeof(char) * MNameLength, MemoryType::eMemory_Type_String);
 		FileSystemRead(dsm_file, sizeof(char) * MNameLength, mn, &BytesRead);
 		g.material_name = std::string(mn);
-		Memory::Free(mn, sizeof(char) * MNameLength, MemoryType::eMemory_Type_String);
+		Memory::Free(mn, MemoryType::eMemory_Type_String);
 
 		// Center
 		FileSystemRead(dsm_file, sizeof(Vector3), &g.center, &BytesRead);
@@ -852,7 +852,7 @@ bool MeshLoader::DeduplicateGeometry(std::vector<SGeometryConfig>& outGeometries
 		GeometryUtils::DeduplicateVertices(g->vertex_count, (Vertex*)g->vertices, g->index_count, (uint32_t*)g->indices, &NewVertCount, &UniqueVerts);
 
 		// Destroy the old, large array.
-		Memory::Free(g->vertices, g->vertex_count * g->vertex_size, MemoryType::eMemory_Type_Array);
+		Memory::Free(g->vertices, MemoryType::eMemory_Type_Array);
 
 		// And replace with the de-duplicated one.k
 		g->vertex_count = NewVertCount;
@@ -862,7 +862,7 @@ bool MeshLoader::DeduplicateGeometry(std::vector<SGeometryConfig>& outGeometries
 		uint32_t* Indices = (uint32_t*)Memory::Allocate(sizeof(uint32_t) * g->index_count, MemoryType::eMemory_Type_Array);
 		Memory::Copy(Indices, g->indices, sizeof(uint32_t) * g->index_count);
 		// Destroy.
-		Memory::Free(g->indices, sizeof(uint32_t) * g->index_count, MemoryType::eMemory_Type_Array);
+		Memory::Free(g->indices, MemoryType::eMemory_Type_Array);
 		g->indices = Indices;
 	}
 

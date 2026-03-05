@@ -13,8 +13,8 @@ private:
 
 	struct WindowRect {
 	public:
-		int Width;
-		int Height;
+		uint16_t Width;
+		uint16_t Height;
 	};
 
 public:
@@ -30,12 +30,12 @@ public:
 
 public:
 	// 基础属性
-	int GetWindowWidth() const { return WindowSize.Width; }
+	uint16_t GetWindowWidth() const { return WindowSize.Width; }
 	template<typename T>
-	void SetWindowWidth(T W) { WindowSize.Width = (int)W; }
-	int GetWindowHeight() const { return WindowSize.Height; }
+	void SetWindowWidth(T W) { WindowSize.Width = (uint16_t)W; }
+	uint16_t GetWindowHeight() const { return WindowSize.Height; }
 	template<typename T>
-	void SetWindowHeight(T H) { WindowSize.Height = (int)H; }
+	void SetWindowHeight(T H) { WindowSize.Height = (uint16_t)H; }
 	WindowRect GetWindowSize() const { return WindowSize; }
 	void SetWindowSize(const WindowRect& Rect) { WindowSize = Rect; }
 

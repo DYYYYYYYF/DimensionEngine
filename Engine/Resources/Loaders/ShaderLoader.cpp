@@ -14,13 +14,15 @@ ShaderLoader::ShaderLoader() {
 }
 
 bool ShaderLoader::Load(const std::string& name, void* params, Resource* resource) {
+	(void)params;
+
 	if (name.length() == 0 || resource == nullptr) {
 		return false;
 	}
 
 	const char* FormatStr = "%s/%s/%s%s";
 	char FullFilePath[512];
-	StringFormat(FullFilePath, 512, FormatStr, ResourceSystem::GetRootPath(), TypePath.c_str(), name.c_str(), ".scfg");	// shader config
+	StringFormat(FullFilePath, FormatStr, ResourceSystem::GetRootPath(), TypePath.c_str(), name.c_str(), ".scfg");	// shader config
 
 
 	FileHandle File;
@@ -29,7 +31,7 @@ bool ShaderLoader::Load(const std::string& name, void* params, Resource* resourc
 		return false;
 	}
 	resource->FullPath = FullFilePath;
-	resource->Name = name;
+	resource->Name = name.c_str();
 
 	// Set some defaults, create arrays.
 	ShaderConfig* ResourceData = (ShaderConfig*)Memory::Allocate(sizeof(ShaderConfig), MemoryType::eMemory_Type_Resource);
@@ -145,10 +147,10 @@ bool ShaderLoader::Load(const std::string& name, void* params, Resource* resourc
 			}
 		}
 		else if (strcmp(TrimmedVarName, "depth_test") == 0) {
-			ResourceData->depthTest = StringToBool(TrimmedValue);
+			ResourceData->depthTest = FString::ToBool(TrimmedValue);
 		}
 		else if (strcmp(TrimmedVarName, "depth_write") == 0) {
-			ResourceData->depthWrite = StringToBool(TrimmedValue);
+			ResourceData->depthWrite = FString::ToBool(TrimmedValue);
 		}
 		else if (strcmp(TrimmedVarName, "attribute") == 0) {
 			// Parse attribute.
@@ -308,8 +310,7 @@ bool ShaderLoader::Load(const std::string& name, void* params, Resource* resourc
 			}
 
 			for (uint32_t i = 0; i < Fields.size(); ++i) {
-				size_t len = strlen(Fields[i]);
-				Memory::Free(Fields[i], sizeof(char) * (len + 1), MemoryType::eMemory_Type_String);
+				Memory::Free(Fields[i], MemoryType::eMemory_Type_String);
 			}
 			Fields.clear();
 		}
@@ -334,40 +335,36 @@ void ShaderLoader::Unload(Resource* resource) {
 	ShaderConfig* Data = (ShaderConfig*)resource->Data;
 
 	for (uint32_t i = 0; i < Data->stage_filenames.size(); ++i) {
-		size_t len = strlen(Data->stage_filenames[i]);
-		Memory::Free(Data->stage_filenames[i], sizeof(char) * (len + 1), MemoryType::eMemory_Type_String);
+		Memory::Free(Data->stage_filenames[i], MemoryType::eMemory_Type_String);
 	}
 	Data->stage_filenames.clear();
 
 	for (uint32_t i = 0; i < Data->stage_names.size(); ++i) {
-		size_t len = strlen(Data->stage_names[i]);
-		Memory::Free(Data->stage_names[i], sizeof(char) * (len + 1), MemoryType::eMemory_Type_String);
+		Memory::Free(Data->stage_names[i], MemoryType::eMemory_Type_String);
 	}
 	Data->stage_names.clear();
 
 	// Clean up attributes.
 	uint32_t Count = (uint32_t)Data->attributes.size();
 	for (uint32_t i = 0; i < Count; ++i) {
-		uint32_t Len = (uint32_t)strlen(Data->attributes[i].name);
-		Memory::Free(Data->attributes[i].name, sizeof(char) * (Len + 1), eMemory_Type_String);
+		Memory::Free(Data->attributes[i].name, eMemory_Type_String);
 	}
 	Data->attributes.clear();
 
 	// Clean up uniforms.
 	Count = (uint32_t)Data->uniforms.size();
 	for (uint32_t i = 0; i < Count; ++i) {
-		uint32_t Len = (uint32_t)strlen(Data->uniforms[i].name);
-		Memory::Free(Data->uniforms[i].name, sizeof(char) * (Len + 1), eMemory_Type_String);
+		Memory::Free(Data->uniforms[i].name, eMemory_Type_String);
 	}
 	Data->uniforms.clear();
 
 	if (Data->name) {
-		Memory::Free(Data->name, sizeof(char) * (strlen(Data->name) + 1), MemoryType::eMemory_Type_String);
+		Memory::Free(Data->name, MemoryType::eMemory_Type_String);
 		Data->name = nullptr;
 	}
 
 	if (resource->Data) {
-		Memory::Free(resource->Data, resource->DataSize * resource->DataCount, MemoryType::eMemory_Type_Texture);
+		Memory::Free(resource->Data, MemoryType::eMemory_Type_Texture);
 		resource->Data = nullptr;
 		resource->DataSize = 0;
 		resource->DataCount = 0;

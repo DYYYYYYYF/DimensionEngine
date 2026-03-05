@@ -1,7 +1,7 @@
 ﻿#pragma once
 
 #include "Resources/Loaders/IResourceLoader.hpp"
-#include "Resources/Mesh.hpp"
+#include "Resources/Geometry.hpp"
 #include <vector>
 #include <unordered_map>
 

@@ -13,13 +13,15 @@ BinaryLoader::BinaryLoader() {
 }
 
 bool BinaryLoader::Load(const std::string& name, void* params, Resource* resource) {
+	(void)params;
+
 	if (name.size() == 0 || resource == nullptr) {
 		return false;
 	}
 
 	const char* FormatStr = "%s/%s/%s%s";
 	char FullFilePath[512];
-	StringFormat(FullFilePath, 512, FormatStr, ResourceSystem::GetRootPath(), TypePath.c_str(), name.c_str(), "");
+	StringFormat(FullFilePath, FormatStr, ResourceSystem::GetRootPath(), TypePath.c_str(), name.c_str(), "");
 
 	FileHandle File;
 	if (!FileSystemOpen(FullFilePath, eFile_Mode_Read, true, &File)) {
@@ -48,7 +50,7 @@ bool BinaryLoader::Load(const std::string& name, void* params, Resource* resourc
 	resource->Data = ResourceData;
 	resource->DataSize = ReadSize;
 	resource->FullPath = FullFilePath;
-	resource->Name = name;
+	resource->Name = name.c_str();
 
 	return true;
 }
@@ -60,7 +62,7 @@ void BinaryLoader::Unload(Resource* resource) {
 	}
 
 	if (resource->Data) {
-		Memory::Free(resource->Data, resource->DataSize, MemoryType::eMemory_Type_Array);
+		Memory::Free(resource->Data, MemoryType::eMemory_Type_Array);
 		resource->Data = nullptr;
 		resource->DataSize = 0;
 		resource->LoaderID = INVALID_ID;

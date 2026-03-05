@@ -49,7 +49,7 @@ bool VulkanBuffer::Create(VulkanContext* context) {
 	// Gather memory requirement.
 	MemoryRequirements = context->Device.GetLogicalDevice().getBufferMemoryRequirements(Buffer);
 	MemoryIndex = context->FindMemoryIndex(MemoryRequirements.memoryTypeBits, MemoryPropertyFlags);
-	if (MemoryIndex == -1) {
+	if (MemoryIndex == INVALID_ID) {
 		GLOG(Log::eError, "Unable to create vulkan buffer because the required memory type index was not found.");
 		return false;
 	}

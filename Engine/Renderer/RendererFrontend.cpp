@@ -92,7 +92,7 @@ bool IRenderer::Initialize(const std::string& application_name, Vector2 window_s
 void IRenderer::Shutdown() {
 	if (Backend != nullptr) {
 		Backend->Shutdown();
-		Memory::Free(Backend, sizeof(IRendererBackend), eMemory_Type_Renderer);
+		Memory::Free(Backend, eMemory_Type_Renderer);
 	}
 
 	Backend = nullptr;

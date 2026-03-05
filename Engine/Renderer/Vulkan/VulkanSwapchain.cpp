@@ -257,11 +257,11 @@ uint32_t VulkanSwapchain::AcquireNextImageIndex(VulkanContext* context, size_t t
 	vk::ResultValue<uint32_t> Result = context->Device.GetLogicalDevice().acquireNextImageKHR(Handle, timeout_ns, image_available_semaphore, fence);
 	if (Result.result == vk::Result::eErrorOutOfDateKHR) {
 		Recreate(context, context->FrameBufferWidth, context->FrameBufferHeight);
-		return -1;
+		return INVALID_ID;
 	}
 	else if (Result.result != vk::Result::eSuccess && Result.result != vk::Result::eSuboptimalKHR) {
 		GLOG(Log::eFatal, "Acquire swapchain image failed.");
-		return -1;
+		return INVALID_ID;
 	}
 
 	return Result.value;

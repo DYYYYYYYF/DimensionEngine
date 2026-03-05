@@ -3,8 +3,8 @@
 #include "Defines.hpp"
 #include "Renderer/Interface/IRenderView.hpp"
 
-class Camera;
 class Shader;
+class ACameraActor;
 
 class RenderViewWorld : public IRenderView {
 public:
@@ -37,6 +37,6 @@ private:
 	float FarClip;
 	float Fov;
 	Matrix4 ProjectionMatrix;
-	Camera* WorldCamera = nullptr;
+	ACameraActor* WorldCamera = nullptr;
 	Vector4 AmbientColor;
 };

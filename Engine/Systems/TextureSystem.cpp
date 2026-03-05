@@ -66,7 +66,6 @@ Texture* TextureSystem::Acquire(const char* name, bool auto_release) {
 		return OutTexture;
 	}
 
-	uint32_t ID = INVALID_ID;
 	// NOTE: Increments reference_cout, or creates new entry.
 	if (!ProcessTextureReference(name, TextureType::eTexture_Type_2D, 1, auto_release, false)) {
 		GLOG(Log::eError, "TextureSystem::Acquire() failed to obtain a new texture id.");
@@ -91,7 +90,6 @@ Texture* TextureSystem::AcquireCube(const char* name, bool auto_release) {
 		return OutTexture;
 	}
 
-	uint32_t ID = INVALID_ID;
 	// NOTE: Increments reference_cout, or creates new entry.
 	if (!ProcessTextureReference(name, TextureType::eTexture_Type_Cube, 1, auto_release, false)) {
 		GLOG(Log::eError, "TextureSystem::AcquireCube() failed to obtain a new texture id.");
@@ -144,7 +142,6 @@ void TextureSystem::Release(const std::string& name) {
 		return;
 	}
 
-	uint32_t ID = INVALID_ID;
 	// NOTE: Decrement the reference count.
 	if (!ProcessTextureReference(name, TextureType::eTexture_Type_2D, -1, false, false)) {
 		GLOG(Log::eError, "TextureSystem::Release() failed to release texture '%s' properly.", name.c_str());
@@ -376,8 +373,6 @@ bool TextureSystem::CreateDefaultTexture() {
 	if (DefaultRoughnessMetallicTexture == nullptr) {
 		GLOG(Log::eInfo, "Creating default roughness metallic texture...");
 		unsigned char RoughnessMetallicPixels[16 * 16 * 4];
-		size_t tt = sizeof(float);
-		size_t tt1 = sizeof(char);
 		// Default spec map is black (no specular).
 		Memory::Set(RoughnessMetallicPixels, 0, sizeof(unsigned char) * 16 * 16 * 4);
 
@@ -463,7 +458,7 @@ bool TextureSystem::LoadCubeTexture(const std::string& name, const char texture_
 			// verify all textures are the same size.
 			if (t->Width != ResourceData->width || t->Height != ResourceData->height || t->ChannelCount != ResourceData->channel_count) {
 				GLOG(Log::eError, "TextureSystem::LoadCubeTexture() All textures must be the same resolution and bit depth.");
-				Memory::Free(piexels, sizeof(unsigned char) * ImageSize * 6, MemoryType::eMemory_Type_Array);
+				Memory::Free(piexels, MemoryType::eMemory_Type_Array);
 				piexels = nullptr;
 				return false;
 			}
@@ -479,7 +474,7 @@ bool TextureSystem::LoadCubeTexture(const std::string& name, const char texture_
 	// Acquire internal texture resources and upload to GPU.
 	Renderer->CreateTexture(piexels, t);
 
-	Memory::Free(piexels, sizeof(unsigned char) * ImageSize * 6, MemoryType::eMemory_Type_Array);
+	Memory::Free(piexels, MemoryType::eMemory_Type_Array);
 	piexels = nullptr;
 	return true;
 }
@@ -658,12 +653,12 @@ bool TextureSystem::ProcessTextureReference(const std::string& name, TextureType
 					char TextureNames[6][TEXTURE_NAME_MAX_LENGTH];
 
 					// +x,-X,+y,-Y,+Z,-Z in _cubemap_ space, which is LH y-down.
-					StringFormat(TextureNames[0], 512, "%s_r", name.c_str());		// Right texture.
-					StringFormat(TextureNames[1], 512, "%s_l", name.c_str());		// Left texture.
-					StringFormat(TextureNames[2], 512, "%s_u", name.c_str());		// Up texture.
-					StringFormat(TextureNames[3], 512, "%s_d", name.c_str());		// Down texture.
-					StringFormat(TextureNames[4], 512, "%s_f", name.c_str());		// Front texture.
-					StringFormat(TextureNames[5], 512, "%s_b", name.c_str());		// Back texture.
+					StringFormat(TextureNames[0], "%s_r", name.c_str());		// Right texture.
+					StringFormat(TextureNames[1], "%s_l", name.c_str());		// Left texture.
+					StringFormat(TextureNames[2], "%s_u", name.c_str());		// Up texture.
+					StringFormat(TextureNames[3], "%s_d", name.c_str());		// Down texture.
+					StringFormat(TextureNames[4], "%s_f", name.c_str());		// Front texture.
+					StringFormat(TextureNames[5], "%s_b", name.c_str());		// Back texture.
 
 					if (!LoadCubeTexture(name, TextureNames, Tex)) {
 						GLOG(Log::eError, "Failed to load cube texture '%s'.", name.c_str());
