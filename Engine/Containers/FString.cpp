@@ -209,7 +209,7 @@ int FString::LastIndexOf(char c) const {
 //  子串 / 修改
 // ============================================================
 
-FString FString::SubStr(size_t start, int length) const {
+FString FString::SubStr(size_t start, size_t length) const {
 	if (start >= Len) return FString();
 	size_t actual = (length < 0)
 		? Len - start

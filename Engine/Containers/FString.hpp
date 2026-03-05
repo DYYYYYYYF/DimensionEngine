@@ -125,7 +125,7 @@ public:
 	// =========================================================
 	//  子串 / 修改
 	// =========================================================
-	FString  SubStr(size_t start, int length = -1) const;
+	FString  SubStr(size_t start, size_t length = -1) const;
 	FString& Trim();
 	FString  Trimmed()                              const;
 	FString& ToLower();
