@@ -1,5 +1,5 @@
-﻿#include "Keybinds.hpp"
-#include "Game.hpp"
+﻿#include "Keybinds.h"
+#include "Game.h"
 #include <Core/DMemory.hpp>
 #include <Core/EngineLogger.hpp>
 #include <Framework/Classes/CameraActor.h>

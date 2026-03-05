@@ -1,4 +1,4 @@
-﻿#include "GameConsole.hpp"
+﻿#include "GameConsole.h"
 #include <Core/Utils.hpp>
 #include <Core/Console.hpp>
 #include <Core/Controller.hpp>
@@ -23,7 +23,7 @@ void DebugConsoleActor::SetVisible(bool visiblable) {
 		EntryControl->SetContent(" ");
 	}
 	else {
-		EntryControl->SetContent("Press 'entry' to record command.");
+		EntryControl->SetContent("Press ' ~ ' to record command.");
 	}
 }
 
@@ -55,6 +55,7 @@ bool DebugConsoleActor::OnKey(eEventCode code, void* sender, void* listener_inst
 			FString Content = EntryControl->GetContent();
 			uint32_t Length = (uint32_t)Content.Length();
 			if (Length > 0) {
+				Content = Content.SubStr(0, Content.Length() - 1);
 				EntryControl->SetContent(Content);
 			}
 		}
@@ -154,7 +155,7 @@ bool DebugConsoleActor::Initialize() {
 	TextControl->SetLocation(Vector3(0.7f * Renderer->GetWidth(), 100, 0));
 
 	// Create another ui text control for rendering typed text.
-	EntryControl = NewObject<ATextActor>(UITextType::eUI_Text_Type_system, "Noto Sans CJK JP", 26, "No Log.");
+	EntryControl = NewObject<ATextActor>(UITextType::eUI_Text_Type_system, "Noto Sans CJK JP", 26, "Press ' ~ ' to record command.");
 	if (!EntryControl) {
 		GLOG(Log::eFatal, "Unable to create entry control for debug console.");
 		return false;
@@ -189,15 +190,12 @@ void DebugConsoleActor::Tick(float DeltaTime) {
 		return;
 	}
 
-	TextControl->Tick(DeltaTime);
-	EntryControl->Tick(DeltaTime);
-
 	size_t LineCount = Lines.size();
 	size_t MaxLines = DMIN(DisplayLineCount, LineCount);
 
 	// Calculate the min line first, taking into account the line offset as well.
 	size_t MinLine = DMAX(LineCount - MaxLines - LineOffset, 0);
-	size_t MaxLine = MinLine + MaxLines - 1;
+	size_t MaxLine = MinLine + MaxLines;
 
 	std::string Buffer = " ";
 	for (size_t i = MinLine; i < MaxLine; ++i) {
@@ -212,6 +210,9 @@ void DebugConsoleActor::Tick(float DeltaTime) {
 	// Once the string is built, set the text.
 	TextControl->SetContent(Buffer.c_str());
 	Dirty = false;
+
+	TextControl->Tick(DeltaTime);
+	EntryControl->Tick(DeltaTime);
 }
 
 ATextActor* DebugConsoleActor::GetText() {

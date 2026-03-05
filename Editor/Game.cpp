@@ -1,4 +1,4 @@
-﻿#include "Game.hpp"
+﻿#include "Game.h"
 
 #include <Core/EngineLogger.hpp>
 #include <Core/Controller.hpp>
@@ -15,8 +15,8 @@
 #include <Systems/RenderViewSystem.hpp>
 #include <Core/Identifier.hpp>
 #include <Renderer/RendererFrontend.hpp>
-#include "Keybinds.hpp"
-#include "GameCommands.hpp"
+#include "UI/Console/Keybinds.h"
+#include "UI/Console/GameCommand.h"
 #include "Math/ForwardDeclarations.hpp"
 #include "Framework/Classes/StaticMeshActor.h"
 #include "GameLogic/TestActors/RotationCubeActor.h"
@@ -311,7 +311,7 @@ bool GameInstance::Update(float delta_time) {
 		std::vector<GeometryRenderData>().swap(FrameData.WorldGeometries);
 	}
 
-	/*int px, py, cx, cy;
+	int px, py, cx, cy;
 	Controller::GetMousePosition(cx, cy);
 	Controller::GetPreviousMousePosition(px, py);
 	float MouseMoveSpeed = 0.005f;
@@ -322,7 +322,7 @@ bool GameInstance::Update(float delta_time) {
 		if (cy != py) {
 			WorldCamera->RotatePitch((py - cy) * MouseMoveSpeed);
 		}
-	}*/
+	}
 
 	// Text
 	WorldCamera = CameraSystem::GetDefault();

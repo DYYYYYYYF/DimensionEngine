@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-#include "GameConsole.hpp"
+#include "UI/Console/GameConsole.h"
 #include <Defines.hpp>
 #include <IGame.hpp>
 #include <Math/MathTypes.hpp>

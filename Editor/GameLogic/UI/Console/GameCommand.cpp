@@ -1,4 +1,4 @@
-﻿#include "GameCommands.hpp"
+﻿#include "GameCommand.h"
 #include <Core/Event.hpp>
 #include <Core/EngineLogger.hpp>
 
@@ -21,7 +21,7 @@ void GameCommand::GameOnCompilerShader(CommandContext cmd) {
 }
 
 void GameCommand::Setup() {
-	Console::RegisterCommand("exit", 0, &GameCommand::GameExit, this);
-	Console::RegisterCommand("quit", 0, &GameCommand::GameExit, this);
-    Console::RegisterCommand("compile shader", 1, &GameCommand::GameOnCompilerShader, this);
+	Console::RegisterCommand("exit", 0, std::bind(&GameCommand::GameExit, this, std::placeholders::_1));
+	Console::RegisterCommand("quit", 0, std::bind(&GameCommand::GameExit, this, std::placeholders::_1));
+    Console::RegisterCommand("compile shader", 1, std::bind(&GameCommand::GameOnCompilerShader, this, std::placeholders::_1));
 }
