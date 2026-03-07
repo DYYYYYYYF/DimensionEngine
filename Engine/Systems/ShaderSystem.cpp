@@ -355,13 +355,13 @@ bool ShaderSystem::ApplyInstance(bool need_update) {
 	return Renderer->ApplyInstanceRenderShader(Shaders[CurrentShaderID], need_update);
 }
 
-bool ShaderSystem::BindGlobal(uint32_t instance_id) {
+bool ShaderSystem::BindGlobal(uint64_t instance_id) {
 	Shader* s = Shaders[CurrentShaderID];
 	s->BoundInstanceId = instance_id;
 	return Renderer->BindGlobalsRenderShader(s);
 }
 
-bool ShaderSystem::BindInstance(uint32_t instance_id) {
+bool ShaderSystem::BindInstance(uint64_t instance_id) {
 	Shader* s = Shaders[CurrentShaderID];
 	s->BoundInstanceId = instance_id;
 	return Renderer->BindInstanceRenderShader(s, instance_id);

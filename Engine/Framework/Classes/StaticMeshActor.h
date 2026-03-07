@@ -1,19 +1,22 @@
 ﻿#pragma once
 
-#include "MeshActor.h"
+#include "Actor.h"
 #include "Resources/Resource.hpp"
 #include "Resources/Geometry.hpp"
 
 #include <vector>
 
-class AStaticMeshActor : public AMeshActor{
+class AStaticMeshActor : public AActor{
 public:
-	AStaticMeshActor() : AMeshActor(), geometries(nullptr), geometry_count(0), Generation(INVALID_ID_U8){}
-	AStaticMeshActor(const FString& Name) : AMeshActor(Name), geometries(nullptr), geometry_count(0), Generation(INVALID_ID_U8){}
+	DECLARE_CLASS_TYPE(AStaticMeshActor)
+
+public:
+	AStaticMeshActor() : AActor(), geometries(nullptr), geometry_count(0), Generation(INVALID_ID_U8){}
+	AStaticMeshActor(const FString& Name) : AActor(Name), geometries(nullptr), geometry_count(0), Generation(INVALID_ID_U8){}
 	virtual ~AStaticMeshActor() { Unload(); }
 
 public:
-	DAPI virtual void Draw() override;
+	DAPI virtual void Draw();
 
 	DAPI bool LoadFromResource(const std::string& resource_name);
 	DAPI void Unload();

@@ -5,7 +5,7 @@
 #include "Containers/TArray.hpp"
 #include "Resources/Shader.hpp"
 #include "Renderer/Interface/IRenderbuffer.hpp"
-#include "Framework/Classes/MeshActor.h"
+#include "Framework/Classes/Actor.h"
 
 #include <vector>
 #include <functional>
@@ -71,7 +71,8 @@ struct RenderTargetAttachment {
 struct GeometryRenderData {
 	Matrix4 model_mat;
 	class Geometry* geometry = nullptr;
-	uint32_t uniqueID = INVALID_ID;
+	uint64_t uniqueID = INVALID_ID;
+	uint32_t InstanceIndex = 0;		// 用来存Shader
 };
 
 struct SRenderViewPassConfig {
@@ -104,7 +105,7 @@ public:
 
 struct MeshPacketData : public IRenderviewPacketData {
 	uint32_t mesh_count = 0;
-	AMeshActor** meshes = nullptr;
+	AActor** meshes = nullptr;
 };
 
 struct UIPacketData : public IRenderviewPacketData {

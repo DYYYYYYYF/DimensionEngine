@@ -1,4 +1,4 @@
-#include "TextActor.h"
+ï»¿#include "TextActor.h"
 
 #include "Systems/ShaderSystem.h"
 #include "Systems/FontSystem.hpp"
@@ -49,7 +49,7 @@ void ATextActor::Draw() {
 	if (TextLength > 0) {
 		static const size_t QuadVertCount = 4;
 
-		// ÄÚ²¿ÓÐÅÐ¿Õ
+		// å†…éƒ¨æœ‰åˆ¤ç©º
 		if (!Renderer->DrawRenderbuffer(VertexBuffer, 0, TextLength * QuadVertCount, true)) {
 			GLOG(Log::eError, "Failed to draw ui font vertex buffer.");
 		}

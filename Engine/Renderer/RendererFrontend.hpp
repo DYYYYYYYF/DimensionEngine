@@ -115,7 +115,7 @@ public:
 	 * @param instance_id The identifier of the instance to be bound.
 	 * @return True on success; otherwise false.
 	 */
-	virtual bool BindInstanceRenderShader(Shader* shader, uint32_t instance_id);
+	virtual bool BindInstanceRenderShader(Shader* shader, uint64_t instance_id);
 
 	/**
 	 * @brief Applies global data to the uniform buffer.

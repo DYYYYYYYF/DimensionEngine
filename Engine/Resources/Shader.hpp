@@ -303,7 +303,7 @@ public:
 	size_t PushConstantsStride;
 	uint32_t InstanceTextureCount;
 	ShaderScope BoundScope;
-	uint32_t BoundInstanceId;
+	uint64_t BoundInstanceId;
 	uint32_t BoundUboOffset;
 	std::unordered_map<std::string, uint32_t> HashMap;
 	ShaderStatus Status;

@@ -1190,7 +1190,7 @@ bool VulkanBackend::BindGlobalsShader(Shader* shader) {
 	return true;
 }
 
-bool VulkanBackend::BindInstanceShader(Shader* shader, uint32_t instance_id) {
+bool VulkanBackend::BindInstanceShader(Shader* shader, uint64_t instance_id) {
 	if (shader == nullptr) {
 		GLOG(Log::eError, "vulkan_shader_bind_instance requires a valid pointer to a shader.");
 		return false;
@@ -1525,7 +1525,7 @@ uint32_t VulkanBackend::AcquireInstanceResource(Shader* shader, std::vector<Text
 	return OutInstanceID;
 }
 
-bool VulkanBackend::ReleaseInstanceResource(Shader* shader, uint32_t instance_id) {
+bool VulkanBackend::ReleaseInstanceResource(Shader* shader, uint64_t instance_id) {
 	if (shader == nullptr) {
 		return false;
 	}

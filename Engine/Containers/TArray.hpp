@@ -168,12 +168,15 @@ public:
 		if (ArrayMemory) {
 			for (size_t i = 0; i < copyLength; ++i) {
 				try {
-					if constexpr (std::is_move_constructible<ElementType>::value && !std::is_pointer<ElementType>::value) {
+					// 如果ElementType为unique_ptr会失败
+					/*if constexpr (std::is_move_constructible<ElementType>::value && !std::is_pointer<ElementType>::value) {
 						new(TempMemory + i) ElementType(std::move(ArrayMemory[i]));
 					}
 					else {
 						new(TempMemory + i) ElementType(ArrayMemory[i]);
-					}
+					}*/
+
+					new(TempMemory + i) ElementType(std::move(ArrayMemory[i]));
 				}
 				catch (...) {
 					// 异常安全：清理已构造的元素
@@ -219,6 +222,30 @@ public:
 			GLOG(Log::eError, "Failed to push element");
 			throw;
 		}
+	}
+
+	void Push(ElementType&& value)
+	{
+		if (Length >= Capacity)
+			Resize();
+
+		new(ArrayMemory + Length) ElementType(std::move(value));
+		Length++;
+	}
+
+	// 直接构造对象
+	/**
+	 * XXX.Emplace(std::make_unique<AActor>());
+	 * XXX.Emplace(std::move(child));
+	 */
+	template<typename... Args>
+	ElementType& Emplace(Args&&... args)
+	{
+		if (Length >= Capacity)
+			Resize();
+
+		new(ArrayMemory + Length) ElementType(std::forward<Args>(args)...);
+		return ArrayMemory[Length++];
 	}
 
 	// 修正了InsertAt函数的逻辑错误
@@ -363,7 +390,7 @@ public:
 				for (size_t j = 0; j < i; ++j) {
 					ArrayMemory[j].~ElementType();
 				}
-				Memory::Free(ArrayMemory, ArrayMemSize, MemoryType::eMemory_Type_Array);
+				Memory::Free(ArrayMemory, MemoryType::eMemory_Type_Array);
 				ArrayMemory = nullptr;
 				Capacity = 0;
 				Length = 0;

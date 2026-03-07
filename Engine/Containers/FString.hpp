@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "TArray.hpp"
+#include "TMap.hpp"
 
 #include <cstdio>
 #include <cstring>
@@ -269,6 +270,19 @@ inline FString FString::Format(const char* format, Args... args) {
 	return FString(format, args...);
 }
 
+// 自定义类型的Hash
+template<>
+struct TDefaultHasher<FString> {
+	size_t operator()(const FString& str) const noexcept {
+		size_t hash = 5381;
+		const char* s = str.CStr();
+		while (*s)
+			hash = ((hash << 5) + hash) ^ static_cast<unsigned char>(*s++);
+		return hash;
+	}
+};
+
+// std::string类型的Hash
 namespace std {
 	template<>
 	struct hash<FString> {

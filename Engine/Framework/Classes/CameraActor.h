@@ -11,6 +11,9 @@
  */
 class ENGINE_API ACameraActor : public AActor {
 public:
+    DECLARE_CLASS_TYPE(ACameraActor)
+
+public:
     ACameraActor();
     explicit ACameraActor(const FString& Name);
     virtual ~ACameraActor() = default;
@@ -28,7 +31,7 @@ public:
     //  位置（覆盖 Actor 基类，额外标记 IsDirty）
     // ----------------------------------------------------------------
     void    SetPosition(const Vector3& Pos);
-    Vector3 GetPosition() const { return LocalTransform.GetLocation(); }
+    Vector3 GetPosition() const { return LocalTransform->GetLocation(); }
 
     // ----------------------------------------------------------------
     //  旋转 —— Euler 角度制（与原 Camera 接口保持一致）

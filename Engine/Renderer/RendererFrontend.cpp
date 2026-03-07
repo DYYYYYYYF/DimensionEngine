@@ -241,7 +241,7 @@ bool IRenderer::BindGlobalsRenderShader(Shader* shader) {
 	return Backend->BindGlobalsShader(shader);
 }
 
-bool IRenderer::BindInstanceRenderShader(Shader* shader, uint32_t instance_id) {
+bool IRenderer::BindInstanceRenderShader(Shader* shader, uint64_t instance_id) {
 	return Backend->BindInstanceShader(shader, instance_id);
 }
 

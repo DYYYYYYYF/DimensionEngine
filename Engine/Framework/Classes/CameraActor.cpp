@@ -22,7 +22,7 @@ void ACameraActor::BeginPlay() {
 	AActor::BeginPlay();
 	// 以 LocalTransform 的初始值初始化旋转状态
 	// （允许外部在 BeginPlay 前通过 Actor::SetLocation 等接口预设位置）
-	Quaternion Q = LocalTransform.GetQuaternion();
+	Quaternion Q = LocalTransform->GetQuaternion();
 	Matrix4 RotMat = Q.ToRotationMatrix();
 	// 从旋转矩阵反解 Euler（通过 MatrixToQuat 再 ToEuler 保持一致性）
 	EulerRotation_ = MatrixToQuat(RotMat).ToEuler();
@@ -42,7 +42,7 @@ void ACameraActor::Destroy() {
 // ============================================================
 
 void ACameraActor::SetPosition(const Vector3& Pos) {
-	LocalTransform.SetLocation(Pos);
+	LocalTransform->SetLocation(Pos);
 	IsDirty_ = true;
 }
 
@@ -72,7 +72,7 @@ Vector3 ACameraActor::GetEulerAngles() const {
 
 void ACameraActor::RebuildViewMatrix() {
 	Matrix4 R = Matrix4::EulerXYZ(EulerRotation_.x, EulerRotation_.y, EulerRotation_.z);
-	Matrix4 T = Matrix4::FromTranslation(LocalTransform.GetLocation());
+	Matrix4 T = Matrix4::FromTranslation(LocalTransform->GetLocation());
 	ViewMatrix_ = T.Multiply(R).Inverse();
 	IsDirty_ = false;
 }
@@ -90,7 +90,7 @@ void ACameraActor::SetViewMatrix(const Matrix4& Mat) {
 	Matrix4 WorldMat = Mat.Inverse();
 
 	Vector3 Pos = WorldMat.GetTranslation();
-	LocalTransform.SetLocation(Pos);
+	LocalTransform->SetLocation(Pos);
 
 	Quaternion Q = MatrixToQuat(WorldMat);
 	EulerRotation_ = Q.ToEuler();
@@ -106,32 +106,32 @@ void ACameraActor::SetViewMatrix(const Matrix4& Mat) {
 // ============================================================
 
 void ACameraActor::MoveForward(float Amount) {
-	LocalTransform.SetLocation(LocalTransform.GetLocation() + Forward() * Amount);
+	LocalTransform->SetLocation(LocalTransform->GetLocation() + Forward() * Amount);
 	IsDirty_ = true;
 }
 
 void ACameraActor::MoveBackward(float Amount) {
-	LocalTransform.SetLocation(LocalTransform.GetLocation() + Backward() * Amount);
+	LocalTransform->SetLocation(LocalTransform->GetLocation() + Backward() * Amount);
 	IsDirty_ = true;
 }
 
 void ACameraActor::MoveLeft(float Amount) {
-	LocalTransform.SetLocation(LocalTransform.GetLocation() + Left() * Amount);
+	LocalTransform->SetLocation(LocalTransform->GetLocation() + Left() * Amount);
 	IsDirty_ = true;
 }
 
 void ACameraActor::MoveRight(float Amount) {
-	LocalTransform.SetLocation(LocalTransform.GetLocation() + Right() * Amount);
+	LocalTransform->SetLocation(LocalTransform->GetLocation() + Right() * Amount);
 	IsDirty_ = true;
 }
 
 void ACameraActor::MoveUp(float Amount) {
-	LocalTransform.SetLocation(LocalTransform.GetLocation() + Vector3::Up() * Amount);
+	LocalTransform->SetLocation(LocalTransform->GetLocation() + Vector3::Up() * Amount);
 	IsDirty_ = true;
 }
 
 void ACameraActor::MoveDown(float Amount) {
-	LocalTransform.SetLocation(LocalTransform.GetLocation() + Vector3::Down() * Amount);
+	LocalTransform->SetLocation(LocalTransform->GetLocation() + Vector3::Down() * Amount);
 	IsDirty_ = true;
 }
 
@@ -158,8 +158,8 @@ void ACameraActor::RotatePitch(float Amount) {
 
 void ACameraActor::Reset() {
 	EulerRotation_ = Vector3(0.0f);
-	LocalTransform.SetLocation(Vector3(0.0f));
-	LocalTransform.SetQuaternion(Quaternion());
+	LocalTransform->SetLocation(Vector3(0.0f));
+	LocalTransform->SetQuaternion(Quaternion());
 	ViewMatrix_ = Matrix4::Identity();
 	IsDirty_ = false;
 }
@@ -172,5 +172,5 @@ void ACameraActor::Reset() {
 void ACameraActor::SyncToTransform() {
 	Matrix4    RotMat = Matrix4::EulerXYZ(EulerRotation_.x, EulerRotation_.y, EulerRotation_.z);
 	Quaternion Quat = MatrixToQuat(RotMat);
-	LocalTransform.SetQuaternion(Quat);
+	LocalTransform->SetQuaternion(Quat);
 }

@@ -3,7 +3,7 @@
 #include "Core/EngineLogger.hpp"
 #include "Core/DMemory.hpp"
 #include "Core/Event.hpp"
-#include "Core/UID.hpp"
+#include "Core/ID/UID.hpp"
 #include "Math/DMath.hpp"
 
 #include "Containers/TArray.hpp"
@@ -17,6 +17,7 @@
 #include "Renderer/Interface/IRenderpass.hpp"
 #include "Renderer/Interface/IRendererBackend.hpp"
 #include "Framework/Classes/TextActor.h"
+#include "Framework/Components/StaticMeshComponent.h"
 
 static bool RenderViewPickOnEvent(eEventCode code, void* sender, void* listenerInst, SEventContext context) {
 	IRenderView* self = (IRenderView*)listenerInst;
@@ -222,7 +223,7 @@ bool RenderViewPick::OnBuildPacket(IRenderviewPacketData* data, struct RenderVie
 	PacketData->UIGeometryCount = 0;
 	uint32_t WorldGeometryCount = (uint32_t)PacketData->WorldMeshData.size();
 
-	uint32_t HighestInstanceID = 0;
+	uint64_t HighestInstanceID = 0;
 	// Iterate all geometries in world data.
 	for (uint32_t i = 0; i < WorldGeometryCount; ++i) {
 		out_packet->geometries.push_back(PacketData->WorldMeshData[i]);
@@ -235,14 +236,18 @@ bool RenderViewPick::OnBuildPacket(IRenderviewPacketData* data, struct RenderVie
 
 	// Iterate all meshes in UI data.
 	for (uint32_t i = 0; i < PacketData->UIMeshData.mesh_count; ++i) {
-		AMeshActor* m = PacketData->UIMeshData.meshes[i];
-		if (m) m->Draw();
+		UStaticMeshComponent* MeshComp = PacketData->UIMeshData.meshes[i]->GetComponent<UStaticMeshComponent>();
+		if (!MeshComp) {
+			continue;
+		}
+
+		MeshComp->DrawMesh();
 		/*out_packet->geometries.push_back(RenderData);
 		PacketData->UIGeometryCount++;*/
 
 		// Count all geometries as a single id.
-		if (m->GetUniqueID() > HighestInstanceID) {
-			HighestInstanceID = m->GetUniqueID();
+		if (MeshComp->GetUniqueID() > HighestInstanceID) {
+			HighestInstanceID = MeshComp->GetUniqueID();
 		}
 	}
 
@@ -253,17 +258,17 @@ bool RenderViewPick::OnBuildPacket(IRenderviewPacketData* data, struct RenderVie
 		}
 	}
 
-	uint32_t RequiredInstanceCount = HighestInstanceID + 1;
+	uint64_t RequiredInstanceCount = HighestInstanceID + 1;
 
 	// TODO: this needs to take into account the highest id, not the count, because they can and do skip ids.
 	// Verify instance resources exist.
 	if (RequiredInstanceCount > (uint32_t)InstanceCount) {
-		uint32_t Diff = RequiredInstanceCount - InstanceCount;
-		for (uint32_t i = 0; i < Diff; ++i) {
+		uint64_t Diff = RequiredInstanceCount - InstanceCount;
+		for (uint64_t i = 0; i < Diff; ++i) {
 			AcquireShaderInstance();
 		}
 	}
-
+	
 	// Copy over the packet data.
 	out_packet->extended_data = NewObject<PickPacketData>(*PacketData);
 
@@ -317,14 +322,12 @@ bool RenderViewPick::RegenerateAttachmentTarget(uint32_t passIndex, RenderTarget
 
 	// Setup a new texture.
 	// Generate a UUID to act as the texture name.
-	UID TextureNameUID;
 	uint32_t RenderAreaWidth = (uint32_t)Passes[passIndex].GetRenderArea().z;
 	uint32_t RenderAreaHeight = (uint32_t)Passes[passIndex].GetRenderArea().w;
 	bool HasTransparency = false;
 
 	attachment->texture->SetID(INVALID_ID);
 	attachment->texture->Type = TextureType::eTexture_Type_2D;
-	attachment->texture->SetName(TextureNameUID.Value);
 	attachment->texture->Width = RenderAreaWidth;
 	attachment->texture->Height = RenderAreaHeight;
 	attachment->texture->ChannelCount = 4;
@@ -355,7 +358,7 @@ bool RenderViewPick::OnRender(struct RenderViewPacket* packet, IRendererBackend*
 		Pass->Begin(&Pass->Targets[render_target_index]);
 		PickPacketData* PacketData = (PickPacketData*)packet->extended_data;
 
-		int CurrentInstanceID = 0;
+		uint64_t CurrentInstanceID = 0;
 
 		// World
 		if (!ShaderSystem::UseByID(WorldShaderInfo.UsedShader->ID)) {

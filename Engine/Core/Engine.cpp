@@ -5,7 +5,6 @@
 #include "Controller.hpp"
 #include "DMemory.hpp"
 #include "Clock.hpp"
-#include "UID.hpp"
 #include "Metrics.hpp"
 
 #include "IGame.hpp"
@@ -38,8 +37,6 @@ bool Engine::Initialize(){
 		GLOG(Log::eError, "Create application failed! Game instance is nullptr!");
 		return false;
 	}
-
-	UID::Seed(101);
 
 	// Controller
 	Controller::Initialize();

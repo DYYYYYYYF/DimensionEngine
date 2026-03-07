@@ -171,16 +171,24 @@ bool GameInstance::Initialize() {
 
 	// World meshes
 	ARotationCubeActor* CubeMesh = NewObject<ARotationCubeActor>("TestCube");
-	CubeMesh->SetTransform(Vector(0.0f, 0.0f, 0.0f), Quaternion(Vector(0.0f)));
+	UTransformComponent* TansformComp1 = CubeMesh->GetComponent<UTransformComponent>();
+	TansformComp1->SetLocation(Vector(0.0f, 0.0f, 0.0f));
+	TansformComp1->SetRotation(Vector(0.0f));
 	Meshes.Push(CubeMesh);
 
 	ARotationCubeActor* CubeMesh2 = NewObject<ARotationCubeActor>("TestCube2");
-	CubeMesh2->SetTransform(Vector3(10.0f, 0.0f, 0.0f), Quaternion(Vector(0.0f)), Vector3(0.5f));
+	UTransformComponent* TansformComp2 = CubeMesh2->GetComponent<UTransformComponent>();
+	TansformComp2->SetLocation(Vector(10.0f, 0.0f, 0.0f));
+	TansformComp2->SetRotation(Vector(0.0f));
+	TansformComp2->SetScale(Vector(0.5f));
 	CubeMesh2->AttachTo(CubeMesh);
 	Meshes.Push(CubeMesh2);
 
 	ARotationCubeActor* CubeMesh3 = NewObject<ARotationCubeActor>("TestCube3");
-	CubeMesh3->SetTransform(Vector3(15.0f, 0.0f, 0.0f), Quaternion(Vector(0.0f)), Vector3(0.3f));
+	UTransformComponent* TansformComp3 = CubeMesh3->GetComponent<UTransformComponent>();
+	TansformComp3->SetLocation(Vector(15.0f, 0.0f, 0.0f));
+	TansformComp3->SetRotation(Vector(0.0f));
+	TansformComp3->SetScale(Vector(0.3f));
 	CubeMesh3->AttachTo(CubeMesh2);
 	Meshes.Push(CubeMesh3);
 
@@ -516,7 +524,7 @@ bool GameInstance::Render(SRenderPacket* packet, float delta_time) {
 	
 	// UI
 	uint32_t UIMeshCount = 0;
-	AMeshActor** TempUIMeshes = (AMeshActor**)Memory::Allocate(sizeof(AStaticMeshActor*) * 10, MemoryType::eMemory_Type_Array);
+	AStaticMeshActor** TempUIMeshes = (AStaticMeshActor**)Memory::Allocate(sizeof(AStaticMeshActor*) * 10, MemoryType::eMemory_Type_Array);
 	// TODO: Flexible size array.
 	for (uint32_t i = 0; i < (uint32_t)UIMeshes.Size(); ++i) {
 		if (UIMeshes[i]->Generation != INVALID_ID_U8) {
@@ -533,7 +541,7 @@ bool GameInstance::Render(SRenderPacket* packet, float delta_time) {
 
 	UIPacketData UIPacket;
 	UIPacket.meshData.mesh_count = UIMeshCount;
-	UIPacket.meshData.meshes = TempUIMeshes;
+	UIPacket.meshData.meshes = (AActor**)TempUIMeshes;
 	UIPacket.textCount = 4;
 	UIPacket.Textes = Texts;
 
@@ -857,17 +865,23 @@ void LoadScene2(GameInstance* GameInst) {
 
 	AStaticMeshActor* Model1 = NewObject<AStaticMeshActor>("sponza");
 	Model1->LoadFromResource("sponza");
-	Model1->SetTransform(Vector3(0.0f, -10.0f, 0.0f), Quaternion(Vector3(0.0f, 90.0f, 0.0f)), Vector3(0.1f));
+	UTransformComponent* TansformComp1 = Model1->GetComponent<UTransformComponent>();
+	TansformComp1->SetLocation(Vector(0.0f, -10.0f, 0.0f));
+	TansformComp1->SetRotation(Vector(0.0f, 90.0f, 0.0f));
+	TansformComp1->SetScale(Vector(0.1f));
 	GameInst->Meshes.Push(Model1);
 
 	AStaticMeshActor* Model2 = NewObject<AStaticMeshActor>("bunny");
 	Model2->LoadFromResource("bunny");
-	Model2->SetTransform(Vector3(30.0f, 0.0f, 0.0f), Quaternion(Vector3(0.0f, 0.0f, 0.0f)), Vector3(5.0f));
+	UTransformComponent* TansformComp2 = Model2->GetComponent<UTransformComponent>();
+	TansformComp2->SetLocation(Vector(30.0f, 0.0f, 0.0f));
+	TansformComp2->SetScale(Vector(5.0f));
 	GameInst->Meshes.Push(Model2);
 
 	AStaticMeshActor* Model3 = NewObject<AStaticMeshActor>("falcon");
 	Model3->LoadFromResource("falcon");
-	Model3->SetTransform(Vector3(-30.0f, 0.0f, 0.0f), Quaternion(Vector3(0.0f, 0.0f, 0.0f)));
+	UTransformComponent* TansformComp3 = Model3->GetComponent<UTransformComponent>();
+	TansformComp3->SetLocation(Vector(-30.0f, 0.0f, 0.0f));
 	GameInst->Meshes.Push(Model3);
 }
 

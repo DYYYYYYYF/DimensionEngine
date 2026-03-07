@@ -15,6 +15,7 @@
 #include "Renderer/Interface/IRenderpass.hpp"
 #include "Renderer/Interface/IRendererBackend.hpp"
 #include "Framework/Classes/TextActor.h"
+#include "Framework/Components/StaticMeshComponent.h"
 
 static bool RenderViewUIOnEvent(eEventCode code, void* sender, void* listenerInst, SEventContext context) {
 	IRenderView* self = (IRenderView*)listenerInst;
@@ -120,8 +121,12 @@ bool RenderViewUI::OnBuildPacket(IRenderviewPacketData* data, struct RenderViewP
 	// Obtain all geometries from the current scene.
 	// Iterate all meshes and them to the packet's geometries collection.
 	for (uint32_t i = 0; i < PacketData->meshData.mesh_count; ++i) {
-		AMeshActor* pMesh = PacketData->meshData.meshes[i];
-		if (pMesh) pMesh->Draw();
+		UStaticMeshComponent* MeshComp = PacketData->meshData.meshes[i]->GetComponent<UStaticMeshComponent>();
+		if (!MeshComp) {
+			continue;
+		}
+
+		MeshComp->DrawMesh();
 		/*out_packet->geometries.push_back(RenderData);
 		out_packet->geometry_count++;*/
 	}

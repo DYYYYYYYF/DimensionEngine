@@ -12,7 +12,7 @@
 enum MemoryType {
 	eMemory_Type_Unknow,
 	eMemory_Type_Array,
-	eMemory_Type_DArray,
+	eMemory_Type_Map,
 	eMemory_Type_Hashtable,
 	eMemory_Type_Dict,
 	eMemory_Type_Ring_Queue,

@@ -1,6 +1,6 @@
-#pragma once
+Ôªø#pragma once
 
-#include "MeshActor.h"
+#include "Actor.h"
 #include "Resources/Font.hpp"
 #include <vector>
 
@@ -12,15 +12,18 @@ enum class UITextType {
 	eUI_Text_Type_system
 };
 
-class ENGINE_API ATextActor : public AMeshActor {
+class ENGINE_API ATextActor : public AActor {
 public:
-	ATextActor() : AMeshActor(){}
-	ATextActor(const FString& Name) : AMeshActor(Name){}
+	DECLARE_CLASS_TYPE(ATextActor)
+
+public:
+	ATextActor() : AActor(){}
+	ATextActor(const FString& Name) : AActor(Name){}
 	ATextActor(UITextType type, const FString& fontName, int fontSize, const FString& textContent);
 	virtual ~ATextActor() { Unload(); }
 
 public:
-	virtual void Draw() override;
+	virtual void Draw();
 
 	bool Load(UITextType type, const FString& fontName, int fontSize, const FString& textContent);
 	void Unload();
@@ -50,7 +53,7 @@ public:
 	Vector4 Color = Vector4(1.0f);
 	size_t RenderFrameNumber = 0;
 
-	// –Ë“™ π”√Material
+	// ÈúÄË¶Å‰ΩøÁî®Material
 	uint32_t InstanceID = INVALID_ID;
 
 };
