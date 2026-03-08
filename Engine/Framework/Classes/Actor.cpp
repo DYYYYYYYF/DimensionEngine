@@ -10,11 +10,29 @@ AActor::AActor(const FString& Name) : Name_(Name), ParentActor(nullptr) {
 	ASSERT(LocalTransform);
 }
 
+void AActor::BeginPlay() {
+	for (auto& Pair : ContainComponents) {
+		if (Pair.Value && Pair.Value->IsEnabled()) {
+			Pair.Value->OnEnable();
+		}
+	}
+}
+
 void AActor::Tick(float DeltaTime) {
 	if (LocalTransform->IsDirty()) {
 		LocalTransform->UpdateLocal();
 	}
 
+}
+
+void AActor::Destroy() {
+	for (auto& Pair : ContainComponents) {
+		if (Pair.Value && Pair.Value->IsEnabled()) {
+			Pair.Value->OnDisable();
+		}
+	}
+
+	ContainComponents.Clear(); 
 }
 
 bool AActor::AttachTo(AActor* Own) {

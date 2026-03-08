@@ -19,9 +19,9 @@ public:
 	virtual ~AActor() {}
 
 public:
-	virtual void BeginPlay() {};
+	virtual void BeginPlay();
 	virtual void Tick(float DeltaTime);
-	virtual void Destroy() { ContainComponents.Clear(); };
+	virtual void Destroy();
 
 public:
 	void SetLocation(const Vector3& Loc) { LocalTransform->SetLocation(Loc); }
