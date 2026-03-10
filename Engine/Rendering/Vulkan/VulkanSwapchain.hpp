@@ -1,7 +1,7 @@
 ﻿#pragma once
 
 #include "vulkan/vulkan.hpp"
-#include "Rendering/RendererTypes.hpp"
+#include "Rendering/RenderTypes.hpp"
 
 class VulkanContext;
 class VulkanFrameBuffer;

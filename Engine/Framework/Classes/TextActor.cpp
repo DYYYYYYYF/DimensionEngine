@@ -2,7 +2,7 @@
 
 #include "Systems/ShaderSystem.h"
 #include "Systems/FontSystem.hpp"
-#include "Rendering/RendererFrontend.hpp"
+#include "Rendering/Renderer.hpp"
 #include "Rendering/Vulkan/VulkanBuffer.hpp"
 #include "Containers/TString.hpp"
 

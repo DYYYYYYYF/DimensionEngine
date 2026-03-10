@@ -17,7 +17,7 @@
 #include "Systems/TextureSystem.h"
 #include "Systems/GeometrySystem.h"
 
-#include "Rendering/RendererFrontend.hpp"
+#include "Rendering/Renderer.hpp"
 #include "Rendering/Interface/IRenderpass.hpp"
 #include "Rendering/Interface/IRendererBackend.hpp"
 

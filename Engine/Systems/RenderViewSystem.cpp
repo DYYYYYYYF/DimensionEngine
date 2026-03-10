@@ -4,7 +4,7 @@
 #include "Containers/TString.hpp"
 #include "Core/EngineLogger.hpp"
 #include "Core/DMemory.hpp"
-#include "Rendering/RendererFrontend.hpp"
+#include "Rendering/Renderer.hpp"
 #include "Rendering/Interface/IRenderpass.hpp"
 
 // TODO: temp

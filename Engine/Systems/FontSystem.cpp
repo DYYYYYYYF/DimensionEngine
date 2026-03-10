@@ -4,7 +4,7 @@
 #include "Core/EngineLogger.hpp"
 #include "Containers/TString.hpp"
 #include "Rendering/Resources/ResourceTypes.hpp"
-#include "Rendering/RendererFrontend.hpp"
+#include "Rendering/Renderer.hpp"
 #include "Systems/TextureSystem.h"
 #include "Systems/ResourceSystem.h"
 

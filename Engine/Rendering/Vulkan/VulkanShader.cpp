@@ -2,7 +2,7 @@
 #include "Systems/ResourceSystem.h"
 #include "Core/EngineLogger.hpp"
 #include "Platform/File.hpp"
-#include "Rendering/RendererFrontend.hpp"
+#include "Rendering/Renderer.hpp"
 #include "VulkanBackend.hpp"
 #include "Core/Utils.hpp"
 

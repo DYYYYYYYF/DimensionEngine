@@ -11,7 +11,7 @@
 #include "Systems/ShaderSystem.h"
 #include "Systems/ResourceSystem.h"
 #include "Systems/RenderViewSystem.hpp"
-#include "Rendering/RendererFrontend.hpp"
+#include "Rendering/Renderer.hpp"
 #include "Rendering/Interface/IRenderpass.hpp"
 #include "Rendering/Interface/IRendererBackend.hpp"
 #include "Framework/Classes/TextActor.h"

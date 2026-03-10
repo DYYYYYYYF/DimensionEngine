@@ -14,7 +14,7 @@
 #include <Systems/ShaderSystem.h>
 #include <Systems/RenderViewSystem.hpp>
 #include <Core/Identifier.hpp>
-#include <Rendering/RendererFrontend.hpp>
+#include <Rendering/Renderer.hpp>
 #include "UI/Console/Keybinds.h"
 #include "UI/Console/GameCommand.h"
 #include "Math/ForwardDeclarations.hpp"

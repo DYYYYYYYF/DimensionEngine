@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-#include "Rendering/RendererTypes.hpp"
+#include "Rendering/RenderTypes.hpp"
 #include "Rendering/Resources/Texture.hpp"
 #include "Rendering/Resources/Resource.hpp"
 #include "Containers/THashTable.hpp"

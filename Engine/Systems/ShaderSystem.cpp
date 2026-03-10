@@ -1,6 +1,6 @@
 ﻿#include "ShaderSystem.h"
 
-#include "Rendering/RendererFrontend.hpp"
+#include "Rendering/Renderer.hpp"
 #include "Systems/TextureSystem.h"
 
 #include "Core/Event.hpp"

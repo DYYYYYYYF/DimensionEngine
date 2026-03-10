@@ -6,7 +6,7 @@
 #include "Systems/ResourceSystem.h"
 #include "Systems/GeometrySystem.h"
 #include "Systems/JobSystem.hpp"
-#include "Rendering/RendererTypes.hpp"
+#include "Rendering/RenderTypes.hpp"
 
 void AStaticMeshActor::Draw() {
 	for (uint32_t j = 0; j < geometry_count; j++) {

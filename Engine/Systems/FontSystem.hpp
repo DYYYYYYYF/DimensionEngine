@@ -3,7 +3,7 @@
 #include "Math/MathTypes.hpp"
 #include "Framework/Classes/TextActor.h"
 #include "Rendering/Resources/ResourceTypes.hpp"
-#include "Rendering/RendererTypes.hpp"
+#include "Rendering/RenderTypes.hpp"
 
 #include <string>
 #include <unordered_map>

@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-#include "RendererTypes.hpp"
+#include "RenderTypes.hpp"
 #include "Resources/ResourceTypes.hpp"
 
 struct SStaticMeshData;
