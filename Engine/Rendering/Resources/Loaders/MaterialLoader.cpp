@@ -8,11 +8,11 @@
 #include "Platform/FileSystem.hpp"
 
 MaterialLoader::MaterialLoader() {
-	Type = eResource_type_Material;
+	Type = EResourceType::eResource_type_Material;
 	TypePath = "Materials";
 }
 
-bool MaterialLoader::Load(const std::string& name, void* params, Resource* resource) {
+bool MaterialLoader::Load(const std::string& name, void* params, UAsset* resource) {
 	if (name.length() == 0 || resource == nullptr) {
 		return false;
 	}
@@ -157,7 +157,7 @@ bool MaterialLoader::Load(const std::string& name, void* params, Resource* resou
 	return true;
 }
 
-void MaterialLoader::Unload(Resource* resource) {
+void MaterialLoader::Unload(UAsset* resource) {
 	if (resource == nullptr) {
 		GLOG(Log::eWarn, "Material loader unload called with nullptr.");
 		return;

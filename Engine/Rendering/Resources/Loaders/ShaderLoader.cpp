@@ -9,11 +9,11 @@
 #include "Containers/TString.hpp"
 
 ShaderLoader::ShaderLoader() {
-	Type = eResource_Type_Shader;
+	Type = EResourceType::eResource_Type_Shader;
 	TypePath = "Shaders";
 }
 
-bool ShaderLoader::Load(const std::string& name, void* params, Resource* resource) {
+bool ShaderLoader::Load(const std::string& name, void* params, UAsset* resource) {
 	(void)params;
 
 	if (name.length() == 0 || resource == nullptr) {
@@ -331,7 +331,7 @@ bool ShaderLoader::Load(const std::string& name, void* params, Resource* resourc
 	return true;
 }
 
-void ShaderLoader::Unload(Resource* resource) {
+void ShaderLoader::Unload(UAsset* resource) {
 	ShaderConfig* Data = (ShaderConfig*)resource->Data;
 
 	for (uint32_t i = 0; i < Data->stage_filenames.size(); ++i) {

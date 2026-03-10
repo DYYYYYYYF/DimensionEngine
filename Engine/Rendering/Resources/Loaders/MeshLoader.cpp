@@ -19,11 +19,11 @@
 #include <assimp/material.h>
 
 MeshLoader::MeshLoader() {
-	Type = ResourceType::eResource_type_Static_Mesh;
+	Type = EResourceType::eResource_type_Static_Mesh;
 	TypePath = "Models";
 }
 
-bool MeshLoader::Load(const std::string& name, void* params, Resource* resource) {
+bool MeshLoader::Load(const std::string& name, void* params, UAsset* resource) {
 	if (name.length() == 0 || resource == nullptr) {
 		return false;
 	}
@@ -137,7 +137,7 @@ bool MeshLoader::Load(const std::string& name, void* params, Resource* resource)
 	return true;
 }
 
-void MeshLoader::Unload(Resource* resource) {
+void MeshLoader::Unload(UAsset* resource) {
 	for (uint32_t i = 0; i < resource->DataCount; ++i) {
 		SGeometryConfig* Config = &((SGeometryConfig*)resource->Data)[i];
 		GeometrySystem::ConfigDispose(Config);

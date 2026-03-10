@@ -50,8 +50,8 @@ RenderViewSkybox::RenderViewSkybox(const RenderViewConfig& config) {
 
 bool RenderViewSkybox::OnCreate(const RenderViewConfig& config) {
 	const char* ShaderName = "Shader.Builtin.Skybox";
-	Resource ConfigResource;
-	if (!ResourceSystem::Load(ShaderName, ResourceType::eResource_Type_Shader, nullptr, &ConfigResource)) {
+	UAsset ConfigResource;
+	if (!ResourceSystem::Load(ShaderName, EResourceType::eResource_Type_Shader, nullptr, &ConfigResource)) {
 		GLOG(Log::eError, "Failed to load builtin skybox shader.");
 		return false;
 	}

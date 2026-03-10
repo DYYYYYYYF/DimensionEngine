@@ -8,11 +8,11 @@
 #include "stdio.h"
 
 SystemFontLoader::SystemFontLoader() {
-	Type = ResourceType::eResource_Type_System_Font;
+	Type = EResourceType::eResource_Type_System_Font;
 	TypePath = "Fonts";
 }
 
-bool SystemFontLoader::Load(const std::string& name, void* params, Resource* resource) {
+bool SystemFontLoader::Load(const std::string& name, void* params, UAsset* resource) {
 	if (name.length() == 0 || resource == nullptr) {
 		return false;
 	}
@@ -83,7 +83,7 @@ bool SystemFontLoader::Load(const std::string& name, void* params, Resource* res
 	return true;
 }
 
-void SystemFontLoader::Unload(Resource* resource) {
+void SystemFontLoader::Unload(UAsset* resource) {
 	if (resource == nullptr) {
 		return;
 	}
@@ -220,7 +220,7 @@ bool SystemFontLoader::ReadDSFFile(FileHandle* file, SystemFontResourceData* dat
 	CLOSE_IF_FAILED(FileSystemRead(file, sizeof(ResourceHeader), &Header, &BytesRead), file);
 
 	// Verify header contents.
-	if (Header.magicNumber != RESOURCES_MAGIC && Header.resourceType == ResourceType::eResource_Type_System_Font) {
+	if (Header.magicNumber != RESOURCES_MAGIC && Header.resourceType == (char)EResourceType::eResource_Type_System_Font) {
 		GLOG(Log::eError, "DSF file header is invalid and can not be read.");
 		FileSystemClose(file);
 		return false;

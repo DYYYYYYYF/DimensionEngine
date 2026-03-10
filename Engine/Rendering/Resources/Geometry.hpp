@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include "Asset.hpp"
 #include "Math/MathTypes.hpp"
 
 class Material;

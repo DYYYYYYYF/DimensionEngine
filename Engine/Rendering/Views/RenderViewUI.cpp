@@ -47,8 +47,8 @@ RenderViewUI::RenderViewUI(const RenderViewConfig& config) {
 bool RenderViewUI::OnCreate(const RenderViewConfig& config) {
 	// Builtin ui shader.
 	const char* ShaderName = "Shader.Builtin.UI";
-	Resource ConfigResource;
-	if (!ResourceSystem::Load(ShaderName, ResourceType::eResource_Type_Shader, nullptr, &ConfigResource)) {
+	UAsset ConfigResource;
+	if (!ResourceSystem::Load(ShaderName, EResourceType::eResource_Type_Shader, nullptr, &ConfigResource)) {
 		GLOG(Log::eError, "Failed to load builtin UI shader.");
 		return false;
 	}

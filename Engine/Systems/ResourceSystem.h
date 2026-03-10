@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-#include "Rendering/Resources/Resource.hpp"
+#include "Rendering/Resources/Asset.hpp"
 #include <vector>
 
 class IResourceLoader;
@@ -19,10 +19,10 @@ public:
 
 public:
 	static bool RegisterLoader(IResourceLoader* loader);
-	static bool Load(const std::string& name, ResourceType type, void* params, Resource* resource);
-	static bool LoadCustom(const std::string& name, const char* custom_type, void* params, Resource* resource);
+	static bool Load(const std::string& name, EResourceType type, void* params, UAsset* resource);
+	static bool LoadCustom(const std::string& name, const char* custom_type, void* params, UAsset* resource);
 
-	static void Unload(Resource* resource);
+	static void Unload(UAsset* resource);
 	static const char* GetRootPath();
 
 public:

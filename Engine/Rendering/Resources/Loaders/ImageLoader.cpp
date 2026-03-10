@@ -16,11 +16,11 @@
 #include "stb_image.h"
 
 ImageLoader::ImageLoader() {
-	Type = eResource_type_Image;
+	Type = EResourceType::eResource_type_Image;
 	TypePath = "Textures";
 }
 
-bool ImageLoader::Load(const std::string& name, void* params, Resource* resource) {
+bool ImageLoader::Load(const std::string& name, void* params, UAsset* resource) {
 	if (name.size() == 0 || resource == nullptr) {
 		return false;
 	}
@@ -115,7 +115,7 @@ bool ImageLoader::Load(const std::string& name, void* params, Resource* resource
 	return true;
 }
 
-void ImageLoader::Unload(Resource* resource) {
+void ImageLoader::Unload(UAsset* resource) {
 	if (resource == nullptr) {
 		return;
 	}

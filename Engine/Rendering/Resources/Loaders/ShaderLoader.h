@@ -1,5 +1,5 @@
 ﻿#pragma once
-#include "IResourceLoader.hpp"
+#include "Rendering/Interface/IResourceLoader.hpp"
 
 class ShaderLoader : public IResourceLoader {
 public:
@@ -7,7 +7,7 @@ public:
 
 public:
 	std::string GetPath() { return TypePath; }
-	virtual bool Load(const std::string& name, void* params, Resource* resource) override;
-	virtual void Unload(Resource* resource) override;
+	virtual bool Load(const std::string& name, void* params, UAsset* resource) override;
+	virtual void Unload(UAsset* resource) override;
 
 };

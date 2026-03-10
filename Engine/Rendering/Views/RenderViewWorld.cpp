@@ -88,8 +88,8 @@ RenderViewWorld::RenderViewWorld(const RenderViewConfig& config) {
 bool RenderViewWorld::OnCreate(const RenderViewConfig& config) {
 	// Builtin world shader.
 	const char* ShaderName = "Shader.Builtin.World";
-	Resource ConfigResource;
-	if (!ResourceSystem::Load(ShaderName, ResourceType::eResource_Type_Shader, nullptr, &ConfigResource)) {
+	UAsset ConfigResource;
+	if (!ResourceSystem::Load(ShaderName, EResourceType::eResource_Type_Shader, nullptr, &ConfigResource)) {
 		GLOG(Log::eError, "Failed to load builtin skybox shader.");
 		return false;
 	}

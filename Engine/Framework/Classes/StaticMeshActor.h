@@ -1,7 +1,6 @@
 ﻿#pragma once
 
 #include "Actor.h"
-#include "Rendering/Resources/Resource.hpp"
 #include "Rendering/Resources/Geometry.hpp"
 
 #include <vector>
@@ -35,5 +34,5 @@ public:
 struct FMeshLoadParams {
 	std::string resource_name;
 	AStaticMeshActor* out_mesh = nullptr;
-	class Resource mesh_resource;
+	class UAsset mesh_resource;
 };

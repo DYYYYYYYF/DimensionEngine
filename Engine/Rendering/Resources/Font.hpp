@@ -1,6 +1,5 @@
 ﻿#pragma once
 
-#include "Resource.hpp"
 #include "Texture.hpp"
 #include <vector>
 #include <string>
@@ -77,7 +76,7 @@ public:
 	}
 
 public:
-	Resource loadedResource;
+	UAsset loadedResource;
 	// Casted pointer to resource data for convenience.
 	BitmapFontResourceData* resourceData = nullptr;
 };

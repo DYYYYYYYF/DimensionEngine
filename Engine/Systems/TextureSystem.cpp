@@ -437,8 +437,8 @@ bool TextureSystem::LoadCubeTexture(const std::string& name, const char texture_
 		ImageResourceParams Params;
 		Params.flip_y = false;
 
-		Resource ImageResource;
-		if (!ResourceSystem::Load(texture_names[i], ResourceType::eResource_type_Image, &Params, &ImageResource)) {
+		UAsset ImageResource;
+		if (!ResourceSystem::Load(texture_names[i], EResourceType::eResource_type_Image, &Params, &ImageResource)) {
 			GLOG(Log::eError, "TextureSystem::LoadCubeTexture() Failed to load image resource for texture '%s'.", texture_names[i]);
 			return false;
 		}
@@ -523,7 +523,7 @@ bool TextureSystem::LoadJobStart(void* params, void* result_data) {
 	ImageResourceParams ResourceParams;
 	ResourceParams.flip_y = true;
 
-	bool Result = ResourceSystem::Load(LoadParams->resource_name, ResourceType::eResource_type_Image, &ResourceParams, &LoadParams->ImageResource);
+	bool Result = ResourceSystem::Load(LoadParams->resource_name, EResourceType::eResource_type_Image, &ResourceParams, &LoadParams->ImageResource);
 	if (!Result) {
 		return false;
 	}

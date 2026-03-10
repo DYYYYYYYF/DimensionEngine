@@ -79,8 +79,8 @@ Material* MaterialSystem::Acquire(const char* name) {
 	}
 
 	// Load the given material configuration from disk.
-	Resource MatResource;
-	if (!ResourceSystem::Load(name, eResource_type_Material, nullptr, &MatResource)) {
+	UAsset MatResource;
+	if (!ResourceSystem::Load(name, EResourceType::eResource_type_Material, nullptr, &MatResource)) {
 		GLOG(Log::eError, "Failed to load material resource, returning nullptr.");
 		return nullptr;
 	}

@@ -2,7 +2,6 @@
 
 #include "Rendering/RenderTypes.hpp"
 #include "Rendering/Resources/Texture.hpp"
-#include "Rendering/Resources/Resource.hpp"
 
 #define DEFAULT_DIFFUSE_TEXTURE_NAME "DefaultBaseColorTexture"
 #define DEFAULT_SPECULAR_TEXTURE_NAME "DefaultSpecularTexture"
@@ -20,7 +19,7 @@ struct TextureLoadParams {
 	Texture* out_texture = nullptr;
 	Texture temp_texture;
 	uint32_t current_generation;
-	Resource ImageResource;
+	UAsset ImageResource;
 };
 
 class TextureSystem {

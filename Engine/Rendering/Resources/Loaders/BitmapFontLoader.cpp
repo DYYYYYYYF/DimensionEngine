@@ -9,11 +9,11 @@
 #include "stdio.h"
 
 BitmapFontLoader::BitmapFontLoader() {
-	Type = ResourceType::eResource_Type_Bitmap_Font;
+	Type = EResourceType::eResource_Type_Bitmap_Font;
 	TypePath = "Fonts";
 }
 
-bool BitmapFontLoader::Load(const std::string& name, void* params, Resource* resource) {
+bool BitmapFontLoader::Load(const std::string& name, void* params, UAsset* resource) {
 	if (name.size() == 0 || resource == nullptr) {
 		return false;
 	}
@@ -84,7 +84,7 @@ bool BitmapFontLoader::Load(const std::string& name, void* params, Resource* res
 	return true;
 }
 
-void BitmapFontLoader::Unload(Resource* resource) {
+void BitmapFontLoader::Unload(UAsset* resource) {
 	if (resource == nullptr) {
 		return;
 	}
@@ -287,12 +287,12 @@ bool BitmapFontLoader::ReadDbfFile(FileHandle* file, BitmapFontResourceData* dat
 	// Write the resource header first.
 	ResourceHeader Header;
 	CLOSE_IF_FAILED(FileSystemRead(file, sizeof(ResourceHeader), &Header, &BytesRead), file);
-	switch (Header.resourceType)
+	switch ((EResourceType)Header.resourceType)
 	{
-	case ResourceType::eResource_Type_Bitmap_Font: {
+	case EResourceType::eResource_Type_Bitmap_Font: {
 		data->data = NewObject<BitmapFontInternalData>();
 	} break;
-	case ResourceType::eResource_Type_System_Font: {
+	case EResourceType::eResource_Type_System_Font: {
 		data->data = NewObject<SystemFontVariantData>();
 	}break;
 	default:
@@ -300,7 +300,7 @@ bool BitmapFontLoader::ReadDbfFile(FileHandle* file, BitmapFontResourceData* dat
 	}
 
 	// Verify hreader contents.
-	if (Header.magicNumber != RESOURCES_MAGIC && Header.resourceType == ResourceType::eResource_Type_Bitmap_Font) {
+	if (Header.magicNumber != RESOURCES_MAGIC && Header.resourceType == (char)EResourceType::eResource_Type_Bitmap_Font) {
 		GLOG(Log::eError, "DBF File header is invalid and cannot be read.");
 		FileSystemClose(file);
 		return false;
@@ -398,7 +398,7 @@ bool BitmapFontLoader::WriteDbfFile(const char* path, BitmapFontResourceData* da
 	// Write the resource header first.
 	ResourceHeader Header;
 	Header.magicNumber = RESOURCES_MAGIC;
-	Header.resourceType = ResourceType::eResource_Type_Bitmap_Font;
+	Header.resourceType = (char)EResourceType::eResource_Type_Bitmap_Font;
 	Header.version = 0x01U;
 	Header.reserved = 0;
 	WriteSize = sizeof(ResourceHeader);

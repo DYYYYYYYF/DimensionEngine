@@ -8,11 +8,11 @@
 #include "Platform/FileSystem.hpp"
 
 BinaryLoader::BinaryLoader() {
-	Type = eResource_type_Binary;
+	Type = EResourceType::eResource_type_Binary;
 	TypePath = "";
 }
 
-bool BinaryLoader::Load(const std::string& name, void* params, Resource* resource) {
+bool BinaryLoader::Load(const std::string& name, void* params, UAsset* resource) {
 	(void)params;
 
 	if (name.size() == 0 || resource == nullptr) {
@@ -55,7 +55,7 @@ bool BinaryLoader::Load(const std::string& name, void* params, Resource* resourc
 	return true;
 }
 
-void BinaryLoader::Unload(Resource* resource) {
+void BinaryLoader::Unload(UAsset* resource) {
 	if (resource == nullptr) {
 		GLOG(Log::eWarn, "Material loader unload called with nullptr.");
 		return;

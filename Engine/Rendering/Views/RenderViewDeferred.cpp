@@ -78,8 +78,8 @@ RenderViewWorldDeferred::RenderViewWorldDeferred(const RenderViewConfig& config)
 bool RenderViewWorldDeferred::OnCreate(const RenderViewConfig& config) {
 	// 加载G-Buffer着色器
 	const char* GBufferShaderName = "Shader.Builtin.GBuffer";
-	Resource ConfigResource;
-	if (!ResourceSystem::Load(GBufferShaderName, ResourceType::eResource_Type_Shader, nullptr, &ConfigResource)) {
+	UAsset ConfigResource;
+	if (!ResourceSystem::Load(GBufferShaderName, EResourceType::eResource_Type_Shader, nullptr, &ConfigResource)) {
 		GLOG(Log::eError, "Failed to load builtin G-Buffer shader.");
 		return false;
 	}
@@ -96,7 +96,7 @@ bool RenderViewWorldDeferred::OnCreate(const RenderViewConfig& config) {
 
 	// 加载延迟光照着色器
 	const char* LightingShaderName = "Shader.Builtin.DeferredLighting";
-	if (!ResourceSystem::Load(LightingShaderName, ResourceType::eResource_Type_Shader, nullptr, &ConfigResource)) {
+	if (!ResourceSystem::Load(LightingShaderName, EResourceType::eResource_Type_Shader, nullptr, &ConfigResource)) {
 		GLOG(Log::eError, "Failed to load builtin deferred lighting shader.");
 		return false;
 	}
