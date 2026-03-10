@@ -11,7 +11,7 @@
 #include "Platform/Platform.hpp"
 #include "Math/MathTypes.hpp"
 
-#include "Rendering/Resources/Texture.hpp"
+#include "Rendering/Resources/Texture/Texture.hpp"
 #include "Rendering/Resources/Geometry.hpp"
 
 #include "Systems/MaterialSystem.h"

@@ -15,6 +15,7 @@
 #include <Systems/RenderViewSystem.hpp>
 #include <Core/Identifier.hpp>
 #include <Rendering/Renderer.hpp>
+#include <Rendering/Resources/Skybox/Skybox.hpp>
 #include "UI/Console/Keybinds.h"
 #include "UI/Console/GameCommand.h"
 #include "Math/ForwardDeclarations.hpp"
@@ -164,7 +165,13 @@ bool GameInstance::Initialize() {
 	GameConsole->Initialize();
 
 	// Skybox
-	if (!SB.Create("SkyboxCube")) {
+	SB = NewObject<Skybox>();
+	if (!SB) {
+		GLOG(Log::eError, "Failed to create skybox. Exiting...");
+		return false;
+	}
+
+	if (!SB->Create("SkyboxCube")) {
 		GLOG(Log::eError, "Failed to create skybox. Exiting...");
 		return false;
 	}
@@ -254,7 +261,10 @@ bool GameInstance::Initialize() {
 
 void GameInstance::Shutdown() {
 	// TODO: Temp
-	SB.Destroy();
+	if (SB) {
+		SB->Destroy();
+		DeleteObject(SB);
+	}
 
 	if (GameConsole) {
 		DeleteObject(GameConsole);
@@ -501,7 +511,7 @@ bool GameInstance::Render(SRenderPacket* packet, float delta_time) {
 
 	// Skybox
 	SkyboxPacketData SkyboxData;
-	SkyboxData.sb = &SB;
+	SkyboxData.sb = SB;
 	IRenderView* SkyboxView = RenderViewSystem::Get("Skybox");
 	if (SkyboxView) {
 		if (!RenderViewSystem::BuildPacket(SkyboxView, &SkyboxData, &packet->views[ViewCounter++])) {

@@ -80,7 +80,7 @@ Material* MaterialSystem::Acquire(const char* name) {
 
 	// Load the given material configuration from disk.
 	UAsset MatResource;
-	if (!ResourceSystem::Load(name, EResourceType::eResource_type_Material, nullptr, &MatResource)) {
+	if (!ResourceSystem::Load(name, EAssetType::Material, nullptr, &MatResource)) {
 		GLOG(Log::eError, "Failed to load material resource, returning nullptr.");
 		return nullptr;
 	}
@@ -272,11 +272,11 @@ bool MaterialSystem::LoadMaterial(SMaterialConfig config, Material* mat) {
 		return false;
 	}
 
-	if (strlen(config.diffuse_map_name) > 0) {
+	if (!config.diffuse_map_name.IsEmpty()) {
 		mat->DiffuseMap.usage = TextureUsage::eTexture_Usage_Map_Diffuse;
-		mat->DiffuseMap.texture = TextureSystem::Acquire(config.diffuse_map_name, true);
+		mat->DiffuseMap.texture = TextureSystem::Acquire(config.diffuse_map_name.CStr(), true);
 		if (mat->DiffuseMap.texture == nullptr) {
-			GLOG(Log::eWarn, "Unable to load texture '%s' for material '%s', using default.", config.diffuse_map_name, mat->Name.c_str());
+			GLOG(Log::eWarn, "Unable to load texture '%s' for material '%s', using default.", config.diffuse_map_name.CStr(), mat->Name.c_str());
 			mat->DiffuseMap.texture = TextureSystem::GetDefaultDiffuseTexture();
 		}
 	}
@@ -297,11 +297,11 @@ bool MaterialSystem::LoadMaterial(SMaterialConfig config, Material* mat) {
 		return false;
 	}
 
-	if (strlen(config.normal_map_name) > 0) {
+	if (!config.normal_map_name.IsEmpty()) {
 		mat->NormalMap.usage = TextureUsage::eTexture_Usage_Map_Normal;
-		mat->NormalMap.texture = TextureSystem::Acquire(config.normal_map_name, true);
+		mat->NormalMap.texture = TextureSystem::Acquire(config.normal_map_name.CStr(), true);
 		if (mat->NormalMap.texture == nullptr) {
-			GLOG(Log::eWarn, "Unable to load texture '%s' for material '%s', using default.", config.normal_map_name, mat->Name.c_str());
+			GLOG(Log::eWarn, "Unable to load texture '%s' for material '%s', using default.", config.normal_map_name.CStr(), mat->Name.c_str());
 			mat->NormalMap.texture = TextureSystem::GetDefaultNormalTexture();
 		}
 	}

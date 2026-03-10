@@ -110,7 +110,7 @@ bool FontSystem::LoadSystemFont(SystemFontConfig* config){
 	// a copy of the resource's data will be held in each resulting variant, and the
 	// resource will be released.
 	UAsset LoadedResource;
-	if (!ResourceSystem::Load(config->resourceName.CStr(), EResourceType::eResource_Type_System_Font, nullptr, &LoadedResource)) {
+	if (!ResourceSystem::Load(config->resourceName.CStr(), EAssetType::SystemFont, nullptr, &LoadedResource)) {
 		GLOG(Log::eError, "Failed to load system font.");
 		return false;
 	}
@@ -208,7 +208,7 @@ bool FontSystem::LoadBitmapFont(BitmapFontConfig* config) {
 	// Obtain the lookup.
 	BitmapFontLookup* Lookup = NewObject<BitmapFontLookup>();
 
-	if (!ResourceSystem::Load(config->resourceName.CStr(), EResourceType::eResource_Type_Bitmap_Font, nullptr, &Lookup->font.loadedResource)) {
+	if (!ResourceSystem::Load(config->resourceName.CStr(), EAssetType::BitmapFont, nullptr, &Lookup->font.loadedResource)) {
 		GLOG(Log::eError, "Failed to load bitmap font.");
 		return false;
 	}

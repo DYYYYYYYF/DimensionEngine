@@ -48,7 +48,7 @@ bool RenderViewUI::OnCreate(const RenderViewConfig& config) {
 	// Builtin ui shader.
 	const char* ShaderName = "Shader.Builtin.UI";
 	UAsset ConfigResource;
-	if (!ResourceSystem::Load(ShaderName, EResourceType::eResource_Type_Shader, nullptr, &ConfigResource)) {
+	if (!ResourceSystem::Load(ShaderName, EAssetType::Shader, nullptr, &ConfigResource)) {
 		GLOG(Log::eError, "Failed to load builtin UI shader.");
 		return false;
 	}
@@ -174,7 +174,7 @@ bool RenderViewUI::OnRender(struct RenderViewPacket* packet, IRendererBackend* b
 		}
 
 		// Apply globals.
-		if (!MaterialSystem::ApplyGlobal(SID, frame_number, packet->projection_matrix, packet->view_matrix, Vector4(0), Vector3(0), render_mode, 0.0f)) {
+		if (!MaterialSystem::ApplyGlobal(SID, frame_number, packet->projection_matrix, packet->view_matrix, Vector4(0), Vector3(0), (int)render_mode, 0.0f)) {
 			GLOG(Log::eError, "RenderViewUI::OnRender() Failed to use global shader. Render frame failed.");
 			return false;
 		}

@@ -17,7 +17,7 @@ std::unordered_map<std::string, uint32_t> ShaderSystem::ShaderMap;
 uint32_t ShaderSystem::CurrentShaderID;
 std::vector<Shader*> ShaderSystem::Shaders;
 bool ShaderSystem::Initilized = false;
-ShaderLanguage ShaderSystem::GLOBAL_SHADER_TYPE = ShaderLanguage::eGLSL;
+EShaderLanguage ShaderSystem::GLOBAL_SHADER_TYPE = EShaderLanguage::eGLSL;
 
 bool OnReloadShader(eEventCode code, void* sender, void* listenerInst, SEventContext context) {
 	std::string ShaderName = context.data.c;
@@ -42,7 +42,7 @@ bool ShaderSystem::Initialize(IRenderer* renderer, ShaderSystem::Config config) 
 
 	JsonObject Content = JsonObject(MaterialAsset.ReadBytes());
 	GLOBAL_SHADER_TYPE = Content.ReadString("renderer.shader_language")
-		.compare("glsl") == 0 ? ShaderLanguage::eGLSL : ShaderLanguage::eHLSL;
+		.compare("glsl") == 0 ? EShaderLanguage::eGLSL : EShaderLanguage::eHLSL;
 
 	Renderer = renderer;
 	if (config.max_shader_count < 512) {
@@ -97,13 +97,13 @@ void ShaderSystem::Shutdown() {
 		}
 
 		JsonObject Content = JsonObject(MaterialAsset.ReadBytes());
-		std::string Lan = GLOBAL_SHADER_TYPE == ShaderLanguage::eGLSL ? "glsl" : "hlsl";
+		std::string Lan = GLOBAL_SHADER_TYPE == EShaderLanguage::eGLSL ? "glsl" : "hlsl";
 		Content.WriteString("renderer.shader_language", Lan);
 		Content.SaveToFile(MaterialAsset);
 	}
 }
 
-bool ShaderSystem::ReloadShader(const std::string& shader_name, ShaderLanguage language) {
+bool ShaderSystem::ReloadShader(const std::string& shader_name, EShaderLanguage language) {
 	Shader* s = Get(shader_name);
 	if (s == nullptr) {
 		return false;
@@ -112,9 +112,9 @@ bool ShaderSystem::ReloadShader(const std::string& shader_name, ShaderLanguage l
 	return ReloadShader(s, language);
 }
 
-bool ShaderSystem::ReloadShader(Shader* shader, ShaderLanguage language) {
+bool ShaderSystem::ReloadShader(Shader* shader, EShaderLanguage language) {
 	// Change shader status.
-	shader->Status = ShaderStatus::eShader_State_Reloading;
+	shader->Status = EShaderStatus::eShader_State_Reloading;
 	GLOBAL_SHADER_TYPE = language;
 
 	if (!shader->Reload()) {
@@ -125,7 +125,7 @@ bool ShaderSystem::ReloadShader(Shader* shader, ShaderLanguage language) {
 	}
 
 
-	shader->Status = ShaderStatus::eShader_State_Initialized;
+	shader->Status = EShaderStatus::eShader_State_Initialized;
 	return true;
 }
 
@@ -215,7 +215,7 @@ bool ShaderSystem::Create(IRenderpass* pass, ShaderConfig* config) {
 		return false;
 	}
 
-	OutShader->Status = ShaderStatus::eShader_State_Initialized;
+	OutShader->Status = EShaderStatus::eShader_State_Initialized;
 	return true;
 }
 
@@ -574,7 +574,7 @@ bool ShaderSystem::IsUniformNameValid(Shader* shader, const char* uniform_name) 
 }
 
 bool ShaderSystem::IsUniformAddStateValid(Shader* shader) {
-	if (shader->Status != ShaderStatus::eShader_State_Uninitialized) {
+	if (shader->Status != EShaderStatus::eShader_State_Uninitialized) {
 		GLOG(Log::eError, "Uniforms may only be added to shaders before initialization.");
 		return false;
 	}

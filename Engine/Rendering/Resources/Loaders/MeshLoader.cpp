@@ -19,7 +19,7 @@
 #include <assimp/material.h>
 
 MeshLoader::MeshLoader() {
-	Type = EResourceType::eResource_type_Static_Mesh;
+	Type = EAssetType::StaticMesh;
 	TypePath = "Models";
 }
 
@@ -319,23 +319,23 @@ void MeshLoader::ProcessAssimpTextures(const aiMaterial* mat, SMaterialConfig& c
 
 	// 漫反射/基础颜色贴图
 	if (mat->GetTexture(aiTextureType_DIFFUSE, 0, &texPath) == AI_SUCCESS) {
-		StringFilenameNoExtensionFromPath(config.diffuse_map_name, texPath.C_Str());
+		config.diffuse_map_name = FString::FilenameNoExtensionFromPath(texPath.C_Str());
 	}
 	else if (mat->GetTexture(aiTextureType_BASE_COLOR, 0, &texPath) == AI_SUCCESS) {
-		StringFilenameNoExtensionFromPath(config.diffuse_map_name, texPath.C_Str());
+		config.diffuse_map_name = FString::FilenameNoExtensionFromPath(texPath.C_Str());
 	}
 
 	// 法线贴图
 	if (mat->GetTexture(aiTextureType_NORMALS, 0, &texPath) == AI_SUCCESS) {
-		StringFilenameNoExtensionFromPath(config.normal_map_name, texPath.C_Str());
+		config.normal_map_name = FString::FilenameNoExtensionFromPath(texPath.C_Str());
 	}
 	else if (mat->GetTexture(aiTextureType_HEIGHT, 0, &texPath) == AI_SUCCESS) {
-		StringFilenameNoExtensionFromPath(config.normal_map_name, texPath.C_Str());
+		config.normal_map_name = FString::FilenameNoExtensionFromPath(texPath.C_Str());
 	}
 
 	// 镜面反射贴图
 	if (mat->GetTexture(aiTextureType_SPECULAR, 0, &texPath) == AI_SUCCESS) {
-		StringFilenameNoExtensionFromPath(config.specular_map_name, texPath.C_Str());
+		config.specular_map_name = FString::FilenameNoExtensionFromPath(texPath.C_Str());
 	}
 
 	// 金属度贴图
@@ -692,15 +692,15 @@ bool MeshLoader::WriteDmtFile(const char* mtl_file_path, SMaterialConfig* config
 
 	// Textures
 	if (config->diffuse_map_name[0]) {
-		StringFormat(LineBuf, "diffuse_map_name=%s", config->diffuse_map_name);
+		StringFormat(LineBuf, "diffuse_map_name=%s", config->diffuse_map_name.CStr());
 		FileSystemWriteLine(&f, LineBuf);
 	}
 	if (config->specular_map_name[0]) {
-		StringFormat(LineBuf, "specular_map_name=%s", config->specular_map_name);
+		StringFormat(LineBuf, "specular_map_name=%s", config->specular_map_name.CStr());
 		FileSystemWriteLine(&f, LineBuf);
 	}
 	if (config->normal_map_name[0]) {
-		StringFormat(LineBuf, "normal_map_name=%s", config->normal_map_name);
+		StringFormat(LineBuf, "normal_map_name=%s", config->normal_map_name.CStr());
 		FileSystemWriteLine(&f, LineBuf);
 	}
 	if (!config->MetallicRoughnessTexName.empty()) {

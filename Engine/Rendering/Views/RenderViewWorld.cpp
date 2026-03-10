@@ -41,26 +41,26 @@ static bool RenderViewWorldOnEvent(eEventCode code, void* sender, void* listener
 
 	case eEventCode::Set_Render_Mode:
 	{
-		int RenderMode = context.data.i32[0];
+		EShaderRenderMode RenderMode = EShaderRenderMode(context.data.i32[0]);
 		switch (RenderMode)
 		{
-		case ShaderRenderMode::eShader_Render_Mode_Default:
-			self->render_mode = ShaderRenderMode::eShader_Render_Mode_Default;
+		case EShaderRenderMode::eShader_Render_Mode_Default:
+			self->render_mode = EShaderRenderMode::eShader_Render_Mode_Default;
 			GLOG(Log::eDebug, "Change render mode: eShader_Render_Mode_Default.");
 			break;
 
-		case ShaderRenderMode::eShader_Render_Mode_Lighting:
-			self->render_mode = ShaderRenderMode::eShader_Render_Mode_Lighting;
+		case EShaderRenderMode::eShader_Render_Mode_Lighting:
+			self->render_mode = EShaderRenderMode::eShader_Render_Mode_Lighting;
 			GLOG(Log::eDebug, "Change render mode: eShader_Render_Mode_Lighting.");
 			break;
 
-		case ShaderRenderMode::eShader_Render_Mode_Normals:
-			self->render_mode = ShaderRenderMode::eShader_Render_Mode_Normals;
+		case EShaderRenderMode::eShader_Render_Mode_Normals:
+			self->render_mode = EShaderRenderMode::eShader_Render_Mode_Normals;
 			GLOG(Log::eDebug, "Change render mode: eShader_Render_Mode_Normals.");
 			break;
 
-		case ShaderRenderMode::eShader_Render_Mode_Depth:
-			self->render_mode = ShaderRenderMode::eShader_Render_Mode_Depth;
+		case EShaderRenderMode::eShader_Render_Mode_Depth:
+			self->render_mode = EShaderRenderMode::eShader_Render_Mode_Depth;
 			GLOG(Log::eDebug, "Change render mode: eShader_Render_Mode_Depth.");
 			break;
 		}
@@ -89,7 +89,7 @@ bool RenderViewWorld::OnCreate(const RenderViewConfig& config) {
 	// Builtin world shader.
 	const char* ShaderName = "Shader.Builtin.World";
 	UAsset ConfigResource;
-	if (!ResourceSystem::Load(ShaderName, EResourceType::eResource_Type_Shader, nullptr, &ConfigResource)) {
+	if (!ResourceSystem::Load(ShaderName, EAssetType::Shader, nullptr, &ConfigResource)) {
 		GLOG(Log::eError, "Failed to load builtin skybox shader.");
 		return false;
 	}
@@ -236,7 +236,7 @@ bool RenderViewWorld::OnRender(struct RenderViewPacket* packet, IRendererBackend
 		}
 
 		// Apply globals.
-		if (!MaterialSystem::ApplyGlobal(SID, frame_number, packet->projection_matrix, packet->view_matrix, packet->ambient_color, packet->view_position, render_mode, packet->global_time)) {
+		if (!MaterialSystem::ApplyGlobal(SID, frame_number, packet->projection_matrix, packet->view_matrix, packet->ambient_color, packet->view_position, (int)render_mode, packet->global_time)) {
 			GLOG(Log::eError, "RenderViewUI::OnRender() Failed to use global shader. Render frame failed.");
 			return false;
 		}

@@ -94,7 +94,7 @@ public:
 	}
 
 	virtual ~VulkanShader() {
-		if (Status != ShaderStatus::eShader_State_Not_Created) {
+		if (Status != EShaderStatus::eShader_State_Not_Created) {
 			Destroy();
 		}
 	}

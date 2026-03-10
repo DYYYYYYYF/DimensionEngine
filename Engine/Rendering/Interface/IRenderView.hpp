@@ -53,8 +53,8 @@ public:
 public:
 	virtual uint16_t GetID() { return ID; }
 	virtual void SetID(uint16_t id) { ID = id; }
-	virtual ShaderRenderMode GetRenderMode() const { return render_mode; }
-	virtual void SetRenderMode(ShaderRenderMode mode) { render_mode = mode; }
+	virtual EShaderRenderMode GetRenderMode() const { return render_mode; }
+	virtual void SetRenderMode(EShaderRenderMode mode) { render_mode = mode; }
 	virtual std::vector<class VulkanRenderPass>& GetRenderpass() { return Passes; }
 
 public:
@@ -66,7 +66,7 @@ public:
 	unsigned char RenderpassCount = 0;
 	std::vector<class VulkanRenderPass> Passes;
 	const char* CustomShaderName = nullptr;
-	ShaderRenderMode render_mode = ShaderRenderMode::eShader_Render_Mode_Default;
+	EShaderRenderMode render_mode = EShaderRenderMode::eShader_Render_Mode_Default;
 
 };
 

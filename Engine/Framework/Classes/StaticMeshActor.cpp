@@ -42,7 +42,7 @@ void AStaticMeshActor::LoadJobFail(void* params) {
 
 bool AStaticMeshActor::LoadJobStart(void* params, void* result_data) {
 	FMeshLoadParams* LoadParams = (FMeshLoadParams*)params;
-	bool Result = ResourceSystem::Load(LoadParams->resource_name, EResourceType::eResource_type_Static_Mesh, nullptr, &LoadParams->mesh_resource);
+	bool Result = ResourceSystem::Load(LoadParams->resource_name, EAssetType::StaticMesh, nullptr, &LoadParams->mesh_resource);
 
 	// NOTE: The load params are also used as the result data here, only the mesh)resource field is populated now.
 	Memory::Copy(result_data, LoadParams, sizeof(FMeshLoadParams));

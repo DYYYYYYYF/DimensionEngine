@@ -1,9 +1,11 @@
 ﻿#pragma once
-#include "Texture.hpp"
+
+#include "Rendering/Resources/Asset.hpp"
+#include "Rendering/Resources/Texture/Texture.hpp"
 
 class IRenderer;
 
-class DAPI Skybox {
+class DAPI Skybox : public UAsset {
 public:
 	bool Create(const std::string& cubeName);
 	void Destroy();

@@ -34,22 +34,22 @@ static bool RenderViewWorldDeferredOnEvent(eEventCode code, void* sender, void* 
 	}
 
 	case eEventCode::Set_Render_Mode: {
-		int RenderMode = context.data.i32[0];
+		EShaderRenderMode RenderMode = EShaderRenderMode(context.data.i32[0]);
 		switch (RenderMode) {
-		case ShaderRenderMode::eShader_Render_Mode_Default:
-			self->render_mode = ShaderRenderMode::eShader_Render_Mode_Default;
+		case EShaderRenderMode::eShader_Render_Mode_Default:
+			self->render_mode = EShaderRenderMode::eShader_Render_Mode_Default;
 			GLOG(Log::eDebug, "Change render mode: eShader_Render_Mode_Default.");
 			break;
-		case ShaderRenderMode::eShader_Render_Mode_Lighting:
-			self->render_mode = ShaderRenderMode::eShader_Render_Mode_Lighting;
+		case EShaderRenderMode::eShader_Render_Mode_Lighting:
+			self->render_mode = EShaderRenderMode::eShader_Render_Mode_Lighting;
 			GLOG(Log::eDebug, "Change render mode: eShader_Render_Mode_Lighting.");
 			break;
-		case ShaderRenderMode::eShader_Render_Mode_Normals:
-			self->render_mode = ShaderRenderMode::eShader_Render_Mode_Normals;
+		case EShaderRenderMode::eShader_Render_Mode_Normals:
+			self->render_mode = EShaderRenderMode::eShader_Render_Mode_Normals;
 			GLOG(Log::eDebug, "Change render mode: eShader_Render_Mode_Normals.");
 			break;
-		case ShaderRenderMode::eShader_Render_Mode_Depth:
-			self->render_mode = ShaderRenderMode::eShader_Render_Mode_Depth;
+		case EShaderRenderMode::eShader_Render_Mode_Depth:
+			self->render_mode = EShaderRenderMode::eShader_Render_Mode_Depth;
 			GLOG(Log::eDebug, "Change render mode: eShader_Render_Mode_Depth.");
 			break;
 		}
@@ -79,7 +79,7 @@ bool RenderViewWorldDeferred::OnCreate(const RenderViewConfig& config) {
 	// 加载G-Buffer着色器
 	const char* GBufferShaderName = "Shader.Builtin.GBuffer";
 	UAsset ConfigResource;
-	if (!ResourceSystem::Load(GBufferShaderName, EResourceType::eResource_Type_Shader, nullptr, &ConfigResource)) {
+	if (!ResourceSystem::Load(GBufferShaderName, EAssetType::Shader, nullptr, &ConfigResource)) {
 		GLOG(Log::eError, "Failed to load builtin G-Buffer shader.");
 		return false;
 	}
@@ -96,7 +96,7 @@ bool RenderViewWorldDeferred::OnCreate(const RenderViewConfig& config) {
 
 	// 加载延迟光照着色器
 	const char* LightingShaderName = "Shader.Builtin.DeferredLighting";
-	if (!ResourceSystem::Load(LightingShaderName, EResourceType::eResource_Type_Shader, nullptr, &ConfigResource)) {
+	if (!ResourceSystem::Load(LightingShaderName, EAssetType::Shader, nullptr, &ConfigResource)) {
 		GLOG(Log::eError, "Failed to load builtin deferred lighting shader.");
 		return false;
 	}

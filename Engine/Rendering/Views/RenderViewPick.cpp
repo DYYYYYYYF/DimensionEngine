@@ -105,7 +105,7 @@ bool RenderViewPick::OnCreate(const RenderViewConfig& config) {
 	// Builtin UI Pick shader.
 	const char* UIShaderName = "Shader.Builtin.UIPick";
 	UAsset ConfigResource;
-	if (!ResourceSystem::Load(UIShaderName, EResourceType::eResource_Type_Shader, nullptr, &ConfigResource)) {
+	if (!ResourceSystem::Load(UIShaderName, EAssetType::Shader, nullptr, &ConfigResource)) {
 		GLOG(Log::eError, "Failed to load builtin UI Pick shader.");
 		return false;
 	}
@@ -132,7 +132,7 @@ bool RenderViewPick::OnCreate(const RenderViewConfig& config) {
 
 	// Builtin World pick shader.
 	const char* WorldShaderName = "Shader.Builtin.WorldPick";
-	if (!ResourceSystem::Load(WorldShaderName, EResourceType::eResource_Type_Shader, nullptr, &ConfigResource)) {
+	if (!ResourceSystem::Load(WorldShaderName, EAssetType::Shader, nullptr, &ConfigResource)) {
 		GLOG(Log::eError, "Failed to load builtin UI Pick shader.");
 		return false;
 	}

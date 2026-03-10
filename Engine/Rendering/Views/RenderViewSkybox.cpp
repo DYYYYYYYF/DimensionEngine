@@ -7,7 +7,7 @@
 
 #include "Containers/TArray.hpp"
 #include "Containers/TString.hpp"
-#include "Rendering/Resources/Skybox.hpp"
+#include "Rendering/Resources/Skybox/Skybox.hpp"
 
 #include "Systems/MaterialSystem.h"
 #include "Systems/ShaderSystem.h"
@@ -51,7 +51,7 @@ RenderViewSkybox::RenderViewSkybox(const RenderViewConfig& config) {
 bool RenderViewSkybox::OnCreate(const RenderViewConfig& config) {
 	const char* ShaderName = "Shader.Builtin.Skybox";
 	UAsset ConfigResource;
-	if (!ResourceSystem::Load(ShaderName, EResourceType::eResource_Type_Shader, nullptr, &ConfigResource)) {
+	if (!ResourceSystem::Load(ShaderName, EAssetType::Shader, nullptr, &ConfigResource)) {
 		GLOG(Log::eError, "Failed to load builtin skybox shader.");
 		return false;
 	}

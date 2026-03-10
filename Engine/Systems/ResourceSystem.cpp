@@ -84,8 +84,8 @@ bool ResourceSystem::RegisterLoader(IResourceLoader* loader) {
 	return true;
 }
 
-bool ResourceSystem::Load(const std::string& name, EResourceType type, void* params, UAsset* resource) {
-	if (type != EResourceType::eResource_type_Custom) {
+bool ResourceSystem::Load(const std::string& name, EAssetType type, void* params, UAsset* resource) {
+	if (type != EAssetType::Custom) {
 		// Select loader.
 		uint32_t Count = Config.max_loader_count;
 		for (uint32_t i = 0; i < Count; ++i) {
@@ -109,7 +109,7 @@ bool ResourceSystem::LoadCustom(const std::string& name, const char* custom_type
 
 	uint32_t Count = Config.max_loader_count;
 	for (uint32_t i = 0; i < Count; ++i) {
-		if (RegisteredLoaders[i]->Id != INVALID_ID && RegisteredLoaders[i]->Type == EResourceType::eResource_type_Custom && RegisteredLoaders[i]->CustomType.compare(custom_type)== 0) {
+		if (RegisteredLoaders[i]->Id != INVALID_ID && RegisteredLoaders[i]->Type == EAssetType::Custom && RegisteredLoaders[i]->CustomType.compare(custom_type)== 0) {
 			resource->LoaderID = RegisteredLoaders[i]->Id;
 			return RegisteredLoaders[i]->Load(name, params, resource);
 		}

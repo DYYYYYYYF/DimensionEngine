@@ -13,11 +13,11 @@ std::vector<uint32_t> Shader::CompileShaderToSPV(const std::string& filename, en
 	shaderc_source_language SourceLanguage;
 	switch (Language)
 	{
-	case ShaderLanguage::eGLSL:
+	case EShaderLanguage::eGLSL:
 		ShaderSourceFilename = ResourceSystem::GetRootPath() + std::string("/../Shaders/glsl") + SufPath;
 		SourceLanguage = shaderc_source_language_glsl;
 		break;
-	case ShaderLanguage::eHLSL:
+	case EShaderLanguage::eHLSL:
 		ShaderSourceFilename = ResourceSystem::GetRootPath() + std::string("/../Shaders/hlsl") + SufPath + ".hlsl";
 		SourceLanguage = shaderc_source_language_hlsl;
 		break;

@@ -1,7 +1,4 @@
 ﻿#include "Utils.hpp"
-#include "Platform/File.hpp"
-#include "Rendering/Resources/Shader.hpp"
-#include "Systems/ResourceSystem.h"
 
 std::string Utils::Strtrim(const std::string& str) {
 	// 找到左边第一个非空白字符

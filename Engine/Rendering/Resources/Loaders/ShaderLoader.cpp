@@ -3,13 +3,13 @@
 #include "Core/DMemory.hpp"
 #include "Core/EngineLogger.hpp"
 
-#include "Rendering/Resources/Shader.hpp"
+#include "Rendering/Resources/Shader/Shader.hpp"
 #include "Systems/ResourceSystem.h"
 #include "Platform/FileSystem.hpp"
 #include "Containers/TString.hpp"
 
 ShaderLoader::ShaderLoader() {
-	Type = EResourceType::eResource_Type_Shader;
+	Type = EAssetType::Shader;
 	TypePath = "Shaders";
 }
 

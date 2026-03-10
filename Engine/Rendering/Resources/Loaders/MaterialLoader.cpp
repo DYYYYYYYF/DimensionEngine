@@ -8,7 +8,7 @@
 #include "Platform/FileSystem.hpp"
 
 MaterialLoader::MaterialLoader() {
-	Type = EResourceType::eResource_type_Material;
+	Type = EAssetType::Material;
 	TypePath = "Materials";
 }
 
@@ -86,15 +86,15 @@ bool MaterialLoader::Load(const std::string& name, void* params, UAsset* resourc
 			ResourceData->name = std::move(TrimmedValue);
 		}
 		else if (strcmp(TrimmedVarName, "diffuse_map_name") == 0) {
-			strncpy(ResourceData->diffuse_map_name, TrimmedValue, TEXTURE_NAME_MAX_LENGTH);
+			ResourceData->diffuse_map_name = TrimmedValue;
 		}
 		else if (strcmp(TrimmedVarName, "specular_map_name") == 0) {
 			// Parse the color
-			strncpy(ResourceData->specular_map_name, TrimmedValue, TEXTURE_NAME_MAX_LENGTH);
+			ResourceData->specular_map_name = TrimmedValue;
 		}
 		else if (strcmp(TrimmedVarName, "normal_map_name") == 0) {
 			// Parse the color
-			strncpy(ResourceData->normal_map_name, TrimmedValue, TEXTURE_NAME_MAX_LENGTH);
+			ResourceData->normal_map_name = TrimmedValue;
 		}
 		else if (strcmp(TrimmedVarName, "roughness_metallic_map_name") == 0) {
 			// Parse the color

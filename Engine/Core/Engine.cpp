@@ -243,7 +243,7 @@ bool Engine::Run() {
 
 	GlobalFileWatcher = NewObject<FileWatcher>();
 
-	if (ShaderSystem::GLOBAL_SHADER_TYPE == ShaderLanguage::eGLSL) {
+	if (ShaderSystem::GLOBAL_SHADER_TYPE == EShaderLanguage::eGLSL) {
 		GlobalFileWatcher->AddWatchFolder("../Shaders/glsl/");
 	}
 	else {

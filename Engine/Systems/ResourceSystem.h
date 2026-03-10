@@ -19,7 +19,7 @@ public:
 
 public:
 	static bool RegisterLoader(IResourceLoader* loader);
-	static bool Load(const std::string& name, EResourceType type, void* params, UAsset* resource);
+	static bool Load(const std::string& name, EAssetType type, void* params, UAsset* resource);
 	static bool LoadCustom(const std::string& name, const char* custom_type, void* params, UAsset* resource);
 
 	static void Unload(UAsset* resource);

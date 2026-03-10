@@ -1,7 +1,7 @@
 ﻿#pragma once
 
 #include "Rendering/RenderTypes.hpp"
-#include "Rendering/Resources/Texture.hpp"
+#include "Rendering/Resources/Texture/Texture.hpp"
 
 #define DEFAULT_DIFFUSE_TEXTURE_NAME "DefaultBaseColorTexture"
 #define DEFAULT_SPECULAR_TEXTURE_NAME "DefaultSpecularTexture"
@@ -47,7 +47,7 @@ public:
 private:
 	static Texture* CheckTextureName(const std::string& name);
 	static bool LoadTexture(const std::string& name, Texture* texture);
-	static bool LoadCubeTexture(const std::string& name, const char texture_names[6][TEXTURE_NAME_MAX_LENGTH], Texture* t);
+	static bool LoadCubeTexture(const std::string& name, FString texture_names[6], Texture* t);
 	static void DestroyTexture(Texture* t);
 
 	static bool CreateDefaultTexture();

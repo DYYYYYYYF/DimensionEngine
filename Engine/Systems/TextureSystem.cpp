@@ -430,7 +430,7 @@ void TextureSystem::DestroyDefaultTexture() {
 	}
 }
 
-bool TextureSystem::LoadCubeTexture(const std::string& name, const char texture_names[6][TEXTURE_NAME_MAX_LENGTH], Texture* t) {
+bool TextureSystem::LoadCubeTexture(const std::string& name, FString texture_names[6], Texture* t) {
 	unsigned char* piexels = nullptr;
 	size_t ImageSize = 0;
 	for (unsigned char i = 0; i < 6; ++i) {
@@ -438,8 +438,8 @@ bool TextureSystem::LoadCubeTexture(const std::string& name, const char texture_
 		Params.flip_y = false;
 
 		UAsset ImageResource;
-		if (!ResourceSystem::Load(texture_names[i], EResourceType::eResource_type_Image, &Params, &ImageResource)) {
-			GLOG(Log::eError, "TextureSystem::LoadCubeTexture() Failed to load image resource for texture '%s'.", texture_names[i]);
+		if (!ResourceSystem::Load(texture_names[i].CStr(), EAssetType::Image, &Params, &ImageResource)) {
+			GLOG(Log::eError, "TextureSystem::LoadCubeTexture() Failed to load image resource for texture '%s'.", texture_names[i].CStr());
 			return false;
 		}
 
@@ -523,7 +523,7 @@ bool TextureSystem::LoadJobStart(void* params, void* result_data) {
 	ImageResourceParams ResourceParams;
 	ResourceParams.flip_y = true;
 
-	bool Result = ResourceSystem::Load(LoadParams->resource_name, EResourceType::eResource_type_Image, &ResourceParams, &LoadParams->ImageResource);
+	bool Result = ResourceSystem::Load(LoadParams->resource_name, EAssetType::Image, &ResourceParams, &LoadParams->ImageResource);
 	if (!Result) {
 		return false;
 	}
@@ -650,15 +650,15 @@ bool TextureSystem::ProcessTextureReference(const std::string& name, TextureType
 					}
 				}
 				else {
-					char TextureNames[6][TEXTURE_NAME_MAX_LENGTH];
+					FString TextureNames[6];
 
 					// +x,-X,+y,-Y,+Z,-Z in _cubemap_ space, which is LH y-down.
-					StringFormat(TextureNames[0], "%s_r", name.c_str());		// Right texture.
-					StringFormat(TextureNames[1], "%s_l", name.c_str());		// Left texture.
-					StringFormat(TextureNames[2], "%s_u", name.c_str());		// Up texture.
-					StringFormat(TextureNames[3], "%s_d", name.c_str());		// Down texture.
-					StringFormat(TextureNames[4], "%s_f", name.c_str());		// Front texture.
-					StringFormat(TextureNames[5], "%s_b", name.c_str());		// Back texture.
+					TextureNames[0] = FString::Format("%s_r", name.c_str());	// Right texture.
+					TextureNames[1] = FString::Format("%s_l", name.c_str());	// Left texture.
+					TextureNames[2] = FString::Format("%s_u", name.c_str());	// Up texture.
+					TextureNames[3] = FString::Format("%s_d", name.c_str());	// Down texture.
+					TextureNames[4] = FString::Format("%s_f", name.c_str());	// Front texture.
+					TextureNames[5] = FString::Format("%s_b", name.c_str());	// Back texture.
 
 					if (!LoadCubeTexture(name, TextureNames, Tex)) {
 						GLOG(Log::eError, "Failed to load cube texture '%s'.", name.c_str());
@@ -695,8 +695,7 @@ bool TextureSystem::ProcessTextureReference(const std::string& name, TextureType
 
 	// Take a copy of the name since it would be wiped out if destroyed,
 	// (as passed in name is generally a pointer to the actual texture's name).
-	char NameCopy[TEXTURE_NAME_MAX_LENGTH];
-	strncpy(NameCopy, name.c_str(), TEXTURE_NAME_MAX_LENGTH);
+	FString NameCopy = name.c_str();
 
 	// If decrementing, this means a release.
 	if (reference_diff < 0) {
@@ -709,7 +708,7 @@ bool TextureSystem::ProcessTextureReference(const std::string& name, TextureType
 			// Reset the reference.
 			Tex->SetID(INVALID_ID);
 			Tex->SetIsAutoRelease(false);
-			GLOG(Log::eDebug, "Released texture '%s', Texture unloaded because count=0 and auto_release=true.", NameCopy);
+			GLOG(Log::eDebug, "Released texture '%s', Texture unloaded because count=0 and auto_release=true.", NameCopy.CStr());
 		}
 	}
 	else {

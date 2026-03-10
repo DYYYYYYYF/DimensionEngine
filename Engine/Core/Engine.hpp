@@ -3,7 +3,6 @@
 #include "Defines.hpp"
 #include "Clock.hpp"
 #include "Event.hpp"
-#include "Rendering/Resources/Skybox.hpp"
 #include "Systems/FontSystem.hpp"
 #include "Rendering/Interface/IRenderView.hpp"
 

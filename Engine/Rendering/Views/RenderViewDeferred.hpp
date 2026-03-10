@@ -1,7 +1,7 @@
 ﻿#pragma once
 
 #include "Defines.hpp"
-#include "Rendering/Resources/Texture.hpp"
+#include "Rendering/Resources/Texture/Texture.hpp"
 #include "Rendering/Interface/IRenderView.hpp"
 
 class Shader;

@@ -12,6 +12,7 @@
 
 #define EDITOR_CONFIG_PATH std::string(ROOT_PATH) + "/Editor/Config.json"
 
+class Skybox;
 class ACameraActor;
 
 class GameInstance : public IGame {
@@ -35,7 +36,7 @@ public:
 	Frustum CameraFrustum;
 
 	// TODO: temp
-	Skybox SB;
+	Skybox* SB;
 	Keymap* ConsoleKeymap;
 	DebugConsoleActor* GameConsole = nullptr;
 

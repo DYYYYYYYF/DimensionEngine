@@ -2,7 +2,7 @@
 
 #include "Defines.hpp"
 #include "Rendering/Interface/IRenderView.hpp"
-#include "Rendering/Resources/Texture.hpp"
+#include "Rendering/Resources/Texture/Texture.hpp"
 
 class Shader;
 class IREnderer;

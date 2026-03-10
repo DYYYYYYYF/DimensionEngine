@@ -187,7 +187,7 @@ void Keybind::GameOnSetRenderModeDefault(eKeys key, KeymapEntryBindType type, Ke
 	(void)key;
 
 	SEventContext Context;
-	Context.data.i32[0] = ShaderRenderMode::eShader_Render_Mode_Default;
+	Context.data.i32[0] = (int)EShaderRenderMode::eShader_Render_Mode_Default;
 	EngineEvent::Fire(eEventCode::Set_Render_Mode, nullptr, Context);
 }
 
@@ -198,7 +198,7 @@ void Keybind::GameOnSetRenderModeNormal(eKeys key, KeymapEntryBindType type, Key
 	(void)key;
 
 	SEventContext Context;
-	Context.data.i32[0] = ShaderRenderMode::eShader_Render_Mode_Normals;
+	Context.data.i32[0] = (int)EShaderRenderMode::eShader_Render_Mode_Normals;
 	EngineEvent::Fire(eEventCode::Set_Render_Mode, nullptr, Context);
 }
 
@@ -209,7 +209,7 @@ void Keybind::GameOnSetRenderModeBlinnphong(eKeys key, KeymapEntryBindType type,
 	(void)key;
 
 	SEventContext Context;
-	Context.data.i32[0] = ShaderRenderMode::eShader_Render_Mode_Lighting;
+	Context.data.i32[0] = (int)EShaderRenderMode::eShader_Render_Mode_Lighting;
 	EngineEvent::Fire(eEventCode::Set_Render_Mode, nullptr, Context);
 }
 
@@ -220,7 +220,7 @@ void Keybind::GameOnSetRenderModeDepth(eKeys key, KeymapEntryBindType type, Keym
 	(void)key;
 
 	SEventContext Context;
-	Context.data.i32[0] = ShaderRenderMode::eShader_Render_Mode_Depth;
+	Context.data.i32[0] = (int)EShaderRenderMode::eShader_Render_Mode_Depth;
 	EngineEvent::Fire(eEventCode::Set_Render_Mode, nullptr, Context);
 }
 

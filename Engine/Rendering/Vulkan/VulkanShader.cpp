@@ -52,7 +52,7 @@ bool VulkanShader::Initialize() {
 	}
 
 	// Descriptor pool.
-	if (Status == ShaderStatus::eShader_State_Uninitialized) {
+	if (Status == EShaderStatus::eShader_State_Uninitialized) {
 		vk::DescriptorPoolCreateInfo PoolInfo;
 		PoolInfo.setPoolSizeCount(2)
 			.setPPoolSizes(Config.pool_sizes)
@@ -182,7 +182,7 @@ void VulkanShader::Destroy(){
 	HashMap.clear();
 
 	// Reset status.
-	Status = ShaderStatus::eShader_State_Not_Created;
+	Status = EShaderStatus::eShader_State_Not_Created;
 
 	uint32_t SamplerCount = (uint32_t)GlobalTextureMaps.size();
 	for (uint32_t i = 0; i < SamplerCount; ++i) {
@@ -203,7 +203,7 @@ bool VulkanShader::CreateModule() {
 		VulkanShaderStage* vkShaderStage = &Stages[i];
 
 		UAsset BinaryResource;
-		if (!ResourceSystem::Load(vkShaderStageConfig.filename, EResourceType::eResource_type_Binary, nullptr, &BinaryResource)) {
+		if (!ResourceSystem::Load(vkShaderStageConfig.filename, EAssetType::Binary, nullptr, &BinaryResource)) {
 			GLOG(Log::eError, "Unable to create %s shader module for '%s'. Shader will be destroyed.", vkShaderStageConfig.filename, Name.c_str());
 			return false;
 		}
@@ -249,7 +249,7 @@ bool VulkanShader::CompileShaderFile(bool writeToDisk/* = true*/){
 			+ std::string(vkShaderStageConfig.filename);
 
 		File SPVFile(ShaderFile);
-		if (!SPVFile.IsExist() || Status == ShaderStatus::eShader_State_Reloading){
+		if (!SPVFile.IsExist() || Status == EShaderStatus::eShader_State_Reloading){
 			ShaderStage ShadercStage;
 			switch (vkShaderStageConfig.stage)
 			{

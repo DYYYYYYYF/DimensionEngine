@@ -8,7 +8,7 @@
 #include "Platform/FileSystem.hpp"
 
 BinaryLoader::BinaryLoader() {
-	Type = EResourceType::eResource_type_Binary;
+	Type = EAssetType::Binary;
 	TypePath = "";
 }
 

@@ -9,7 +9,7 @@
 #include "stdio.h"
 
 BitmapFontLoader::BitmapFontLoader() {
-	Type = EResourceType::eResource_Type_Bitmap_Font;
+	Type = EAssetType::BitmapFont;
 	TypePath = "Fonts";
 }
 
@@ -287,12 +287,12 @@ bool BitmapFontLoader::ReadDbfFile(FileHandle* file, BitmapFontResourceData* dat
 	// Write the resource header first.
 	ResourceHeader Header;
 	CLOSE_IF_FAILED(FileSystemRead(file, sizeof(ResourceHeader), &Header, &BytesRead), file);
-	switch ((EResourceType)Header.resourceType)
+	switch (EAssetType(Header.resourceType))
 	{
-	case EResourceType::eResource_Type_Bitmap_Font: {
+	case EAssetType::BitmapFont: {
 		data->data = NewObject<BitmapFontInternalData>();
 	} break;
-	case EResourceType::eResource_Type_System_Font: {
+	case EAssetType::SystemFont: {
 		data->data = NewObject<SystemFontVariantData>();
 	}break;
 	default:
@@ -300,7 +300,7 @@ bool BitmapFontLoader::ReadDbfFile(FileHandle* file, BitmapFontResourceData* dat
 	}
 
 	// Verify hreader contents.
-	if (Header.magicNumber != RESOURCES_MAGIC && Header.resourceType == (char)EResourceType::eResource_Type_Bitmap_Font) {
+	if (Header.magicNumber != RESOURCES_MAGIC && Header.resourceType == (char)EAssetType::BitmapFont) {
 		GLOG(Log::eError, "DBF File header is invalid and cannot be read.");
 		FileSystemClose(file);
 		return false;
@@ -398,7 +398,7 @@ bool BitmapFontLoader::WriteDbfFile(const char* path, BitmapFontResourceData* da
 	// Write the resource header first.
 	ResourceHeader Header;
 	Header.magicNumber = RESOURCES_MAGIC;
-	Header.resourceType = (char)EResourceType::eResource_Type_Bitmap_Font;
+	Header.resourceType = (char)EAssetType::BitmapFont;
 	Header.version = 0x01U;
 	Header.reserved = 0;
 	WriteSize = sizeof(ResourceHeader);

@@ -1,28 +1,20 @@
-﻿#pragma once
+#pragma once
 
-#include "Asset.hpp"
 #include "Math/MathTypes.hpp"
-#include <unordered_map>
 
-// Shader compiler
-#include <shaderc/shaderc.hpp>
-
-struct TextureMap;
-class IRenderer;
-
-enum class ShaderLanguage {
+enum class EShaderLanguage {
 	eHLSL,
 	eGLSL
 };
 
-enum ShaderRenderMode {
+enum class EShaderRenderMode {
 	eShader_Render_Mode_Default,
 	eShader_Render_Mode_Lighting,
 	eShader_Render_Mode_Normals,
 	eShader_Render_Mode_Depth
 };
 
-enum ShaderStatus {
+enum class EShaderStatus {
 	eShader_State_Not_Created,
 	eShader_State_Uninitialized,
 	eShader_State_Initialized,
@@ -37,33 +29,33 @@ enum ShaderStage {
 };
 
 enum ShaderAttributeType {
-	eShader_Attribute_Type_Float	= 0U,
-	eShader_Attribute_Type_Float_2	= 1U,
-	eShader_Attribute_Type_Float_3	= 2U,
-	eShader_Attribute_Type_Float_4	= 3U,
-	eShader_Attribute_Type_Matrix	= 4U,
-	eShader_Attribute_Type_Int8		= 5U,
-	eShader_Attribute_Type_UInt8	= 6U,
-	eShader_Attribute_Type_Int16	= 7U,
-	eShader_Attribute_Type_UInt16	= 8U,
-	eShader_Attribute_Type_Int32	= 9U,
-	eShader_Attribute_Type_UInt32	= 10U
+	eShader_Attribute_Type_Float = 0U,
+	eShader_Attribute_Type_Float_2 = 1U,
+	eShader_Attribute_Type_Float_3 = 2U,
+	eShader_Attribute_Type_Float_4 = 3U,
+	eShader_Attribute_Type_Matrix = 4U,
+	eShader_Attribute_Type_Int8 = 5U,
+	eShader_Attribute_Type_UInt8 = 6U,
+	eShader_Attribute_Type_Int16 = 7U,
+	eShader_Attribute_Type_UInt16 = 8U,
+	eShader_Attribute_Type_Int32 = 9U,
+	eShader_Attribute_Type_UInt32 = 10U
 };
 
 enum ShaderUniformType {
-	eShader_Uniform_Type_Float		= 0U,
-	eShader_Uniform_Type_Float_2	= 1U,
-	eShader_Uniform_Type_Float_3	= 2U,
-	eShader_Uniform_Type_Float_4	= 3U,
-	eShader_Uniform_Type_Matrix		= 4U,
-	eShader_Uniform_Type_Int8		= 5U,
-	eShader_Uniform_Type_UInt8		= 6U,
-	eShader_Uniform_Type_Int16		= 7U,
-	eShader_Uniform_Type_UInt16		= 8U,
-	eShader_Uniform_Type_Int32		= 9U,
-	eShader_Uniform_Type_UInt32		= 10U,
-	eShader_Uniform_Type_Sampler	= 11U,
-	eShader_Uniform_Type_Custom		= 12U
+	eShader_Uniform_Type_Float = 0U,
+	eShader_Uniform_Type_Float_2 = 1U,
+	eShader_Uniform_Type_Float_3 = 2U,
+	eShader_Uniform_Type_Float_4 = 3U,
+	eShader_Uniform_Type_Matrix = 4U,
+	eShader_Uniform_Type_Int8 = 5U,
+	eShader_Uniform_Type_UInt8 = 6U,
+	eShader_Uniform_Type_Int16 = 7U,
+	eShader_Uniform_Type_UInt16 = 8U,
+	eShader_Uniform_Type_Int32 = 9U,
+	eShader_Uniform_Type_UInt32 = 10U,
+	eShader_Uniform_Type_Sampler = 11U,
+	eShader_Uniform_Type_Custom = 12U
 };
 
 enum FaceCullMode {
@@ -158,8 +150,8 @@ struct ShaderUniform {
 
 struct ShaderAttribute {
 	char* name = nullptr;
-	ShaderAttributeType type;
 	uint32_t size;
+	ShaderAttributeType type;
 };
 
 struct ShaderAttributeConfig {
@@ -220,98 +212,4 @@ public:
 
 	bool depthTest;
 	bool depthWrite;
-};
-
-class Shader{
-public:
-	Shader() {
-		this->ID = INVALID_ID;
-		this->RenderFrameNumber = INVALID_ID_U64;
-		this->BoundInstanceId = INVALID_ID;
-		this->Status = ShaderStatus::eShader_State_Uninitialized;
-		this->Language = ShaderLanguage::eGLSL;
-		this->Flags = 0;
-		this->AttributeStride = 0;
-		this->PushConstantsRangeCount = 0;
-		this->RenderFrameNumber = 0;
-		this->RequiredUboAlignment = 0;
-		this->GlobalUboSize = 0;
-		this->GlobalUboOffset = 0;
-		this->GlobalUboStride = 0;
-		this->UboSize = 0;
-		this->UboStride = 0;
-		this->PushConstantsSize = 0;
-		this->PushConstantsStride = 0;
-		this->InstanceTextureCount = 0;
-		this->BoundScope = ShaderScope::eShader_Scope_Instance;
-		this->BoundUboOffset = 0;
-		this->Renderer = nullptr;
-	}
-
-	Shader(IRenderer* Renderer)
-	{
-		this->ID = INVALID_ID;
-		this->RenderFrameNumber = INVALID_ID_U64;
-		this->BoundInstanceId = INVALID_ID;
-		this->Status = ShaderStatus::eShader_State_Uninitialized;
-		this->Language = ShaderLanguage::eGLSL;
-		this->Flags = 0;
-		this->AttributeStride = 0;
-		this->PushConstantsRangeCount = 0;
-		this->RenderFrameNumber = 0;
-		this->RequiredUboAlignment = 0;
-		this->GlobalUboSize = 0;
-		this->GlobalUboOffset = 0;
-		this->GlobalUboStride = 0;
-		this->UboSize = 0;
-		this->UboStride = 0;
-		this->PushConstantsSize = 0;
-		this->PushConstantsStride = 0;
-		this->InstanceTextureCount = 0;
-		this->BoundScope = ShaderScope::eShader_Scope_Instance;
-		this->BoundUboOffset = 0;
-		this->Renderer = Renderer;
-	}
-
-	virtual ~Shader() {}
-
-public:
-	virtual bool Initialize() = 0;
-	virtual bool Reload() = 0;
-	virtual void Destroy() = 0;
-
-	// Shader utils
-	virtual std::vector<uint32_t> CompileShaderToSPV(const std::string& filename, enum ShaderStage shaderStage, bool writeToDisk = true);
-
-
-public:
-	IRenderer* Renderer;
-	ShaderFlagBits Flags;
-	uint32_t ID;
-	std::string Name;
-	ShaderLanguage Language;
-
-	size_t RenderFrameNumber;
-	size_t RequiredUboAlignment;
-	size_t GlobalUboSize;
-	size_t GlobalUboOffset;
-	size_t GlobalUboStride;
-	size_t UboSize;
-	size_t UboStride;
-	size_t PushConstantsSize;
-	size_t PushConstantsStride;
-	uint32_t InstanceTextureCount;
-	ShaderScope BoundScope;
-	uint64_t BoundInstanceId;
-	uint32_t BoundUboOffset;
-	std::unordered_map<std::string, uint32_t> HashMap;
-	ShaderStatus Status;
-	uint16_t PushConstantsRangeCount;
-	Range PushConstantsRanges[32];
-	uint16_t AttributeStride;
-
-	std::vector<ShaderUniform> Uniforms;
-	std::vector<ShaderAttribute> Attributes;
-	std::vector<TextureMap*> GlobalTextureMaps;
-
 };

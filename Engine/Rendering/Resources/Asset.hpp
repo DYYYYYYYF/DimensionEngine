@@ -8,17 +8,17 @@
 #define RESOURCES_MAGIC 0xdddddddd
 #endif
 
-enum class EResourceType {
-	eResource_type_Text = 0,
-	eResource_type_Binary,
-	eResource_type_Image,
-	eResource_type_Material,
-	eResource_type_Static_Mesh,
-	eResource_Type_Shader,
-	eResource_Type_Bitmap_Font,
-	eResource_Type_System_Font,
-	eResource_type_Custom,
-	eResource_type_Unkonw
+enum class EAssetType {
+	Text = 0,
+	Binary,
+	Image,
+	Material,
+	StaticMesh,
+	Shader,
+	BitmapFont,
+	SystemFont,
+	Custom,
+	Unkonw
 };
 
 struct ResourceHeader {
@@ -28,7 +28,7 @@ struct ResourceHeader {
 	unsigned short reserved;
 };
 
-class UAsset : public IObject {
+class DAPI UAsset : public IObject {
 public:
 	UAsset() {
 		LoaderID = INVALID_ID;
@@ -51,6 +51,7 @@ public:
 	virtual void PostInitialize() override {}
 
 public:
+	EAssetType AssetType;
 	uint32_t LoaderID = INVALID_ID;
 	FString Name;
 	FString FullPath;
