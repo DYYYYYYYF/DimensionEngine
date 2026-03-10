@@ -1,8 +1,8 @@
 ﻿#pragma once
 
-#include "Renderer/RendererTypes.hpp"
-#include "Resources/Texture.hpp"
-#include "Resources/Resource.hpp"
+#include "Rendering/RendererTypes.hpp"
+#include "Rendering/Resources/Texture.hpp"
+#include "Rendering/Resources/Resource.hpp"
 #include "Containers/THashTable.hpp"
 
 #define DEFAULT_DIFFUSE_TEXTURE_NAME "DefaultBaseColorTexture"

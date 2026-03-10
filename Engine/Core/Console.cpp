@@ -1,6 +1,7 @@
 ﻿#include "Console.hpp"
 #include "Core/Utils.hpp"
 #include "Core/Event.hpp"
+#include "Core/EngineLogger.hpp"
 
 const uint32_t MAX_CONSUMER_COUNT = 10;
 

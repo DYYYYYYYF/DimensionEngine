@@ -4,15 +4,15 @@
 #include "Containers/TString.hpp"
 #include "Core/EngineLogger.hpp"
 #include "Core/DMemory.hpp"
-#include "Renderer/RendererFrontend.hpp"
-#include "Renderer/Interface/IRenderpass.hpp"
+#include "Rendering/RendererFrontend.hpp"
+#include "Rendering/Interface/IRenderpass.hpp"
 
 // TODO: temp
-#include "Renderer/Views/RenderViewUI.hpp"
-#include "Renderer/Views/RenderViewWorld.hpp"
-#include "Renderer/Views/RenderViewDeferred.hpp"
-#include "Renderer/Views/RenderViewSkybox.hpp"
-#include "Renderer/Views/RenderViewPick.hpp"
+#include "Rendering/Views/RenderViewUI.hpp"
+#include "Rendering/Views/RenderViewWorld.hpp"
+#include "Rendering/Views/RenderViewDeferred.hpp"
+#include "Rendering/Views/RenderViewSkybox.hpp"
+#include "Rendering/Views/RenderViewPick.hpp"
 
 bool RenderViewSystem::Initialized = false;
 uint16_t RenderViewSystem::MaxViewCount = 0;

@@ -6,8 +6,8 @@
 #include "Core/Event.hpp"
 #include "Core/DThread.hpp"
 #include "Core/DMutex.hpp"
-#include "Renderer/Vulkan/VulkanPlatform.hpp"
-#include "Renderer/Vulkan/VulkanContext.hpp"
+#include "Rendering/Vulkan/VulkanPlatform.hpp"
+#include "Rendering/Vulkan/VulkanContext.hpp"
 
 #include <windows.h>
 #include <windowsx.h>

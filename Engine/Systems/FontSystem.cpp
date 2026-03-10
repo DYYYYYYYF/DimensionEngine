@@ -3,8 +3,8 @@
 #include "Core/DMemory.hpp"
 #include "Core/EngineLogger.hpp"
 #include "Containers/TString.hpp"
-#include "Resources/ResourceTypes.hpp"
-#include "Renderer/RendererFrontend.hpp"
+#include "Rendering/Resources/ResourceTypes.hpp"
+#include "Rendering/RendererFrontend.hpp"
 #include "Systems/TextureSystem.h"
 #include "Systems/ResourceSystem.h"
 

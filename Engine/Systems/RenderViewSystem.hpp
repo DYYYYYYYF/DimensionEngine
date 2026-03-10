@@ -4,7 +4,7 @@
 #include "Math/MathTypes.hpp"
 #include "Containers/TArray.hpp"
 #include "Containers/THashTable.hpp"
-#include "Renderer/Interface/IRenderView.hpp"
+#include "Rendering/Interface/IRenderView.hpp"
 
 class IRenderer;
 

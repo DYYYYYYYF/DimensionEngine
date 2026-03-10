@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-#include "Resources/Resource.hpp"
+#include "Rendering/Resources/Resource.hpp"
 #include <vector>
 
 class IResourceLoader;

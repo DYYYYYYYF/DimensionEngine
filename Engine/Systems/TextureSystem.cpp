@@ -6,7 +6,7 @@
 
 #include "Systems/ResourceSystem.h"
 #include "Systems/JobSystem.hpp"
-#include "Renderer/RendererFrontend.hpp"
+#include "Rendering/RendererFrontend.hpp"
 
 STextureSystemConfig TextureSystem::TextureSystemConfig;
 Texture* TextureSystem::DefaultDiffuseTexture = nullptr;

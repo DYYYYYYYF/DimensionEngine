@@ -2,7 +2,7 @@
 
 #include "Defines.hpp"
 #include "Containers/THashTable.hpp"
-#include "Resources/ResourceTypes.hpp"
+#include "Rendering/Resources/ResourceTypes.hpp"
 #include <functional>
 #include <map>
 

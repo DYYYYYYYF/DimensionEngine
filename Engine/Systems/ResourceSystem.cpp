@@ -1,15 +1,15 @@
 ﻿#include "ResourceSystem.h"
 
-#include "Renderer/Vulkan/VulkanContext.hpp"
+#include "Rendering/Vulkan/VulkanContext.hpp"
 
 // Known resource loaders.
-#include "Resources/Loaders/BinaryLoader.h"
-#include "Resources/Loaders/ImageLoader.hpp"
-#include "Resources/Loaders/MaterialLoader.h"
-#include "Resources/Loaders/ShaderLoader.h"
-#include "Resources/Loaders/MeshLoader.h"
-#include "Resources/Loaders/BitmapFontLoader.hpp"
-#include "Resources/Loaders/SystemFontLoader.hpp"
+#include "Rendering/Resources/Loaders/BinaryLoader.h"
+#include "Rendering/Resources/Loaders/ImageLoader.hpp"
+#include "Rendering/Resources/Loaders/MaterialLoader.h"
+#include "Rendering/Resources/Loaders/ShaderLoader.h"
+#include "Rendering/Resources/Loaders/MeshLoader.h"
+#include "Rendering/Resources/Loaders/BitmapFontLoader.hpp"
+#include "Rendering/Resources/Loaders/SystemFontLoader.hpp"
 
 SResourceSystemConfig ResourceSystem::Config;
 std::vector<IResourceLoader*> ResourceSystem::RegisteredLoaders;

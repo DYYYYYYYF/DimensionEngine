@@ -3,7 +3,7 @@
 #include <Core/Console.hpp>
 #include <Core/Controller.hpp>
 #include <Containers/TString.hpp>
-#include <Renderer/RendererFrontend.hpp>
+#include <Rendering/RendererFrontend.hpp>
 #include <Framework/Classes/TextActor.h>
 
 bool DebugConsoleActor::Write(Log::Logger::Level level, const std::string& msg) {

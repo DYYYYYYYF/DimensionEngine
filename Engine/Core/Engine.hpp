@@ -3,9 +3,9 @@
 #include "Defines.hpp"
 #include "Clock.hpp"
 #include "Event.hpp"
-#include "Resources/Skybox.hpp"
+#include "Rendering/Resources/Skybox.hpp"
 #include "Systems/FontSystem.hpp"
-#include "Renderer/Interface/IRenderView.hpp"
+#include "Rendering/Interface/IRenderView.hpp"
 
 class IGame;
 struct SEventContext;

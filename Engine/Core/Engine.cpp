@@ -10,8 +10,8 @@
 #include "IGame.hpp"
 #include "Platform/Platform.hpp"
 
-#include "Renderer/RendererFrontend.hpp"
-#include "Renderer/Interface/IRenderpass.hpp"
+#include "Rendering/RendererFrontend.hpp"
+#include "Rendering/Interface/IRenderpass.hpp"
 #include "Math/MathTypes.hpp"
 #include "Containers/TString.hpp"
 

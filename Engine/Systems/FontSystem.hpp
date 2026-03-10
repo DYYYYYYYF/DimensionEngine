@@ -2,8 +2,8 @@
 
 #include "Math/MathTypes.hpp"
 #include "Framework/Classes/TextActor.h"
-#include "Resources/ResourceTypes.hpp"
-#include "Renderer/RendererTypes.hpp"
+#include "Rendering/Resources/ResourceTypes.hpp"
+#include "Rendering/RendererTypes.hpp"
 
 #include <string>
 #include <unordered_map>

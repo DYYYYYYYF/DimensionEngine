@@ -1,7 +1,7 @@
 ﻿#pragma once
 
 #include "MaterialSystem.h"
-#include "Resources/Geometry.hpp"
+#include "Rendering/Resources/Geometry.hpp"
 
 #define GEOMETRY_MAX_COUNT 4096
 #define DEFAULT_GEOMETRY_PLANE_NAME "DefaultGeometryPlane"

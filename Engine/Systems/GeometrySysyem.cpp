@@ -1,6 +1,6 @@
 ﻿#include "GeometrySystem.h"
 
-#include "Renderer/RendererFrontend.hpp"
+#include "Rendering/RendererFrontend.hpp"
 #include "Core/EngineLogger.hpp"
 #include "Core/DMemory.hpp"
 #include "Math/GeometryUtils.hpp"

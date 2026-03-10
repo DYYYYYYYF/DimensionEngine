@@ -1,6 +1,6 @@
 ﻿#include "Utils.hpp"
 #include "Platform/File.hpp"
-#include "Resources/Shader.hpp"
+#include "Rendering/Resources/Shader.hpp"
 #include "Systems/ResourceSystem.h"
 
 std::string Utils::Strtrim(const std::string& str) {

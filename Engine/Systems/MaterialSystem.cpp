@@ -3,7 +3,7 @@
 #include "Core/EngineLogger.hpp"
 #include "Containers/TString.hpp"
 #include "Math/MathTypes.hpp"
-#include "Renderer/RendererFrontend.hpp"
+#include "Rendering/RendererFrontend.hpp"
 
 #include "Systems/TextureSystem.h"
 #include "Systems/ResourceSystem.h"

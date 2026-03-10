@@ -1,7 +1,7 @@
 ﻿#pragma once
 
 #include "Actor.h"
-#include "Resources/Font.hpp"
+#include "Rendering/Resources/Font.hpp"
 #include <vector>
 
 class IFontDataBase;

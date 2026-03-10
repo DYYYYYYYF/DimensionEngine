@@ -1,8 +1,8 @@
 ﻿#pragma once
 
 #include "Actor.h"
-#include "Resources/Resource.hpp"
-#include "Resources/Geometry.hpp"
+#include "Rendering/Resources/Resource.hpp"
+#include "Rendering/Resources/Geometry.hpp"
 
 #include <vector>
 

@@ -1,6 +1,6 @@
 ﻿#include "ShaderSystem.h"
 
-#include "Renderer/RendererFrontend.hpp"
+#include "Rendering/RendererFrontend.hpp"
 #include "Systems/TextureSystem.h"
 
 #include "Core/Event.hpp"
@@ -8,7 +8,7 @@
 #include "Core/EngineLogger.hpp"
 #include "Platform/JsonObject.h"
 #include "Containers/TString.hpp"
-#include "Renderer/Vulkan/VulkanShader.hpp"
+#include "Rendering/Vulkan/VulkanShader.hpp"
 
 IRenderer* ShaderSystem::Renderer = nullptr;
 ShaderSystem::Config ShaderSystem::ShaderSystemConfig;

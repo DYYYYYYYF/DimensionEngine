@@ -1,7 +1,7 @@
 ﻿#pragma once
 
 #include "Defines.hpp"
-#include "Resources/ResourceTypes.hpp"
+#include "Rendering/Resources/ResourceTypes.hpp"
 #include <unordered_map>
 
 class IRenderer;

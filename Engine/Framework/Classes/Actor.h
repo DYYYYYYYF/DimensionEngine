@@ -7,8 +7,6 @@
 #include <typeinfo>
 #include <typeindex>
 
-class UComponent;
-
 class ENGINE_API AActor : public ABaseObject {
 public:
 	DECLARE_CLASS_TYPE(AActor)

@@ -2,8 +2,8 @@
 
 #include "Systems/ShaderSystem.h"
 #include "Systems/FontSystem.hpp"
-#include "Renderer/RendererFrontend.hpp"
-#include "Renderer/Vulkan/VulkanBuffer.hpp"
+#include "Rendering/RendererFrontend.hpp"
+#include "Rendering/Vulkan/VulkanBuffer.hpp"
 #include "Containers/TString.hpp"
 
 ATextActor::ATextActor(UITextType type, const FString& fontName,
