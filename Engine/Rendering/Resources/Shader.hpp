@@ -2,7 +2,6 @@
 
 #include "Resource.hpp"
 #include "Math/MathTypes.hpp"
-#include "Containers/THashTable.hpp"
 #include <unordered_map>
 
 // Shader compiler

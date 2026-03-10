@@ -3,7 +3,6 @@
 #include "Defines.hpp"
 #include "Math/MathTypes.hpp"
 #include "Containers/TArray.hpp"
-#include "Containers/THashTable.hpp"
 #include "Rendering/Interface/IRenderView.hpp"
 
 class IRenderer;

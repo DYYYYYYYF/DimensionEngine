@@ -3,7 +3,6 @@
 #include "Rendering/RenderTypes.hpp"
 #include "Rendering/Resources/Texture.hpp"
 #include "Rendering/Resources/Resource.hpp"
-#include "Containers/THashTable.hpp"
 
 #define DEFAULT_DIFFUSE_TEXTURE_NAME "DefaultBaseColorTexture"
 #define DEFAULT_SPECULAR_TEXTURE_NAME "DefaultSpecularTexture"

@@ -1,7 +1,6 @@
 ﻿#pragma once
 
 #include "Defines.hpp"
-#include "Containers/THashTable.hpp"
 #include "Rendering/Resources/ResourceTypes.hpp"
 #include <functional>
 #include <map>

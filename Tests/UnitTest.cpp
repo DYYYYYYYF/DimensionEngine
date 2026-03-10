@@ -1,5 +1,4 @@
-﻿#include "HashTable/TestHashtable.cpp"
-#include "Freelist/TestFreelist.cpp"
+﻿#include "Freelist/TestFreelist.cpp"
 #include "String/TestString.cpp"
 #include "Audio/TestAudio.cpp"
 #include "Array/UnitTestArray.cpp"
@@ -18,7 +17,6 @@ int main() {
 	Memory::Initialize(GIBIBYTES(1));
 	
 	CHECK_FUNC_CONTINUE(&TestArray, "TestArray Failed.");
-	CHECK_FUNC_CONTINUE(&TestHashTable, "TestHashTable Failed.");
 	CHECK_FUNC_CONTINUE(&TestString, "TestString Failed.");
 	CHECK_FUNC_CONTINUE(&UnitTestAudio, "UnitTestAudio Failed.");
 	CHECK_FUNC_CONTINUE(&TestSIMD, "TestSIMD Failed.");
