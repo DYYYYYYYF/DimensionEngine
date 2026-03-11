@@ -30,13 +30,13 @@ void AStaticMeshActor::LoadJobSuccess(void* params) {
 	}
 	MeshParams->out_mesh->Generation++;
 
-	GLOG(Log::eInfo, "Successfully loaded mesh: '%s'.", MeshParams->resource_name.c_str());
+	GLOG(Log::eInfo, "Successfully loaded mesh: '%s'.", MeshParams->resource_name.CStr());
 	ResourceSystem::Unload(&MeshParams->mesh_resource);
 }
 
 void AStaticMeshActor::LoadJobFail(void* params) {
 	FMeshLoadParams* MeshParams = (FMeshLoadParams*)params;
-	GLOG(Log::eError, "Failed to load mesh: '%s'.", MeshParams->resource_name.c_str());
+	GLOG(Log::eError, "Failed to load mesh: '%s'.", MeshParams->resource_name.CStr());
 	ResourceSystem::Unload(&MeshParams->mesh_resource);
 }
 
@@ -49,14 +49,14 @@ bool AStaticMeshActor::LoadJobStart(void* params, void* result_data) {
 	return Result;
 }
 
-bool AStaticMeshActor::LoadFromResource(const std::string& resource_name) {
+bool AStaticMeshActor::LoadFromResource(const FString& resource_name) {
 	Generation = INVALID_ID_U8;
 
 	FMeshLoadParams Params;
 	Params.resource_name = resource_name;
 	Params.out_mesh = this;
 	Params.mesh_resource = {};
-	Name_ = resource_name.c_str();
+	Name_ = resource_name;
 
 	JobInfo Job = JobSystem::CreateJob(
 		std::bind(&AStaticMeshActor::LoadJobStart, this, std::placeholders::_1, std::placeholders::_2),

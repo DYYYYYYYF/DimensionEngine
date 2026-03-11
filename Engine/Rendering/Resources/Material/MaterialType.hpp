@@ -9,8 +9,8 @@
 class Texture;
 
 struct SMaterialConfig {
-	std::string name;
-	std::string shader_name;
+	FString name;
+	FString shader_name;
 	bool auto_release;
 	Vector4 diffuse_color = Vector4(1.0f);
 	float shininess = 16.0f;

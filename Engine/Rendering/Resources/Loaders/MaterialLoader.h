@@ -8,7 +8,7 @@ public:
 	MaterialLoader();
 
 public:
-	virtual bool Load(const std::string&, void* params, UAsset* resource) override;
+	virtual bool Load(const FString&, void* params, UAsset* resource) override;
 	virtual void Unload(UAsset* resource) override;
 
 };

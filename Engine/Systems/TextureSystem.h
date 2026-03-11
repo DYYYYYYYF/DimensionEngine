@@ -15,7 +15,7 @@ struct STextureSystemConfig {
 };
 
 struct TextureLoadParams {
-	std::string resource_name;
+	FString resource_name;
 	Texture* out_texture = nullptr;
 	Texture temp_texture;
 	uint32_t current_generation;
@@ -27,11 +27,11 @@ public:
 	static bool Initialize(IRenderer* renderer, STextureSystemConfig config);
 	static void Shutdown();
 
-	static Texture* Acquire(const char* name, bool auto_release);
-	static Texture* AcquireCube(const char* name, bool auto_release);
-	static Texture* AcquireWriteable(const char* name, uint32_t width, uint32_t height, 
+	static Texture* Acquire(const FString& name, bool auto_release);
+	static Texture* AcquireCube(const FString& name, bool auto_release);
+	static Texture* AcquireWriteable(const FString& name, uint32_t width, uint32_t height,
 		unsigned char channel_count, bool has_transparency, bool has_depth = false);
-	static void Release(const std::string& name);
+	static void Release(const FString& name);
 
 	static void WrapInternal(const char* name, uint32_t width, uint32_t height, unsigned char channel_count,
 		bool has_transparency, bool is_writeable, bool register_texture, void* internal_data, Texture* tex);
@@ -45,14 +45,14 @@ public:
 	static Texture* GetDefaultRoughnessMetallicTexture();
 
 private:
-	static Texture* CheckTextureName(const std::string& name);
-	static bool LoadTexture(const std::string& name, Texture* texture);
-	static bool LoadCubeTexture(const std::string& name, FString texture_names[6], Texture* t);
+	static Texture* CheckTextureName(const FString& name);
+	static bool LoadTexture(const FString& name, Texture* texture);
+	static bool LoadCubeTexture(const FString& name, FString texture_names[6], Texture* t);
 	static void DestroyTexture(Texture* t);
 
 	static bool CreateDefaultTexture();
 	static void DestroyDefaultTexture();
-	static bool ProcessTextureReference(const std::string& name, TextureType type,
+	static bool ProcessTextureReference(const FString& name, TextureType type,
 		short reference_diff, bool auto_release, bool skip_load);
 
 	static void LoadJobSuccess(void* params);
@@ -67,7 +67,7 @@ private:
 	static Texture* DefaultRoughnessMetallicTexture;
 
 	// Hashtable for texture lookups.
-	static std::unordered_map<std::string, Texture*> TextureMap;
+	static std::unordered_map<FString, Texture*> TextureMap;
 
 	static bool Initilized;
 

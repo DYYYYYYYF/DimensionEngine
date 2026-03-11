@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "Defines.hpp"
+#include "Containers/FString.hpp"
 #include "Rendering/Resources/ResourceTypes.hpp"
 #include <unordered_map>
 
@@ -15,10 +16,10 @@ public:
 	static bool Initialize(IRenderer* renderer, SMaterialSystemConfig config);
 	static void Shutdown();
 
-	static Material* Acquire(const char* name);
+	static Material* Acquire(const FString& name);
 	static Material* AcquireFromConfig(SMaterialConfig config);
 
-	static void Release(const char* name);
+	static void Release(const FString& name);
 
 	static Material* GetDefaultMaterial();
 
@@ -64,7 +65,7 @@ public:
 	// Array of registered materials.
 	static std::vector<Material*> RegisteredMaterials;
 	// Hashtable for material lookups.
-	static std::unordered_map<std::string, uint32_t> MaterialMap;
+	static std::unordered_map<FString, uint32_t> MaterialMap;
 
 	// Know locations for the material shader.
 	static MaterialShaderUniformLocations MaterialLocations;

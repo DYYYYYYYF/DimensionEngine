@@ -5,6 +5,7 @@
 #include "Containers/TString.hpp"
 #include "Rendering/Resources/ResourceTypes.hpp"
 #include "Platform/FileSystem.hpp"
+#include "Systems/ResourceSystem.h"
 #include "stdio.h"
 
 SystemFontLoader::SystemFontLoader() {
@@ -12,8 +13,8 @@ SystemFontLoader::SystemFontLoader() {
 	TypePath = "Fonts";
 }
 
-bool SystemFontLoader::Load(const std::string& name, void* params, UAsset* resource) {
-	if (name.length() == 0 || resource == nullptr) {
+bool SystemFontLoader::Load(const FString& name, void* params, UAsset* resource) {
+	if (name.Length() == 0 || resource == nullptr) {
 		return false;
 	}
 
@@ -32,7 +33,7 @@ bool SystemFontLoader::Load(const std::string& name, void* params, UAsset* resou
 	SystemFontFileType FontType = SystemFontFileType::eSystem_Font_File_Type_Not_Found;
 	// Try each supported extension.
 	for (uint32_t i = 0; i < SUPPORTED_FILETYPE_COUNT; ++i) {
-		StringFormat(FullFilePath, FormatStr, ResourceSystem::GetRootPath(), TypePath.c_str(), name.c_str(), SupportedFieTypes[i].extension);
+		StringFormat(FullFilePath, FormatStr, ResourceSystem::GetRootPath(), TypePath.c_str(), name.CStr(), SupportedFieTypes[i].extension);
 		// If the file exist, open it and stop looking.
 		if (FileSystemExists(FullFilePath)) {
 			if (FileSystemOpen(FullFilePath, FileMode::eFile_Mode_Read, SupportedFieTypes[i].isBinary, &f)) {
@@ -44,18 +45,18 @@ bool SystemFontLoader::Load(const std::string& name, void* params, UAsset* resou
 	}
 
 	if (FontType == SystemFontFileType::eSystem_Font_File_Type_Not_Found) {
-		GLOG(Log::eError, "Unable to find system font of supported type called: '%s'.", name.c_str());
+		GLOG(Log::eError, "Unable to find system font of supported type called: '%s'.", name.CStr());
 		return false;
 	}
 
 	resource->FullPath = FullFilePath;
-	resource->Name = name.c_str();
+	resource->Name = name;
 
 	bool Result = false;
 	switch (FontType)
 	{
 	case eSystem_Font_File_Type_Not_Found:
-		GLOG(Log::eError, "Unable to find system font of supported type called '%s'.", name.c_str());
+		GLOG(Log::eError, "Unable to find system font of supported type called '%s'.", name.CStr());
 		Result = false;
 		break;
 	case eSystem_Font_File_Type_DSF:
@@ -64,7 +65,7 @@ bool SystemFontLoader::Load(const std::string& name, void* params, UAsset* resou
 	case eSystem_Font_File_Type_Font_Config:
 		// Generate the dsf file.
 		char DSFFilename[512];
-		StringFormat(DSFFilename, "%s/%s/%s%s", ResourceSystem::GetRootPath(), TypePath.c_str(), name.c_str(), ".dsf");
+		StringFormat(DSFFilename, "%s/%s/%s%s", ResourceSystem::GetRootPath(), TypePath.c_str(), name.CStr(), ".dsf");
 		Result = ImportFontconfigFile(&f, TypePath.c_str(), DSFFilename, ResourceData);
 		break;
 	}

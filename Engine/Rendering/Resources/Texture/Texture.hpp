@@ -22,12 +22,12 @@ public:
 	bool IsAutoRelease() const { return AutoRelease; }
 	void SetIsAutoRelease(bool b) { AutoRelease = b; }
 
-	std::string GetName() const { return Name; }
-	void SetName(const std::string& n) { Name = n; }
+	const FString& GetName() const { return Name; }
+	void SetName(const FString& n) { Name = n; }
 
 private:
 	uint32_t ID;
-	std::string Name;
+	FString Name;
 	size_t ReferenceCount;
 	bool AutoRelease;
 

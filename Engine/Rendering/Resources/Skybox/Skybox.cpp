@@ -6,7 +6,7 @@
 #include "Systems/TextureSystem.h"
 #include "Systems/GeometrySystem.h"
 
-bool Skybox::Create(const std::string& cubeName) {
+bool Skybox::Create(const FString& cubeName) {
 	Renderer = IRenderer::GetRenderer();
 
 	CubeMap.filter_magnify = TextureFilter::eTexture_Filter_Mode_Linear;
@@ -21,7 +21,7 @@ bool Skybox::Create(const std::string& cubeName) {
 	}
 
 	CubeMap.texture = TextureSystem::AcquireCube("skybox", true);
-	SGeometryConfig SkyboxCubeConfig = GeometrySystem::GenerateCubeConfig(10.0f, 10.0f, 10.0f, 1.0f, 1.0f, cubeName, std::string());
+	SGeometryConfig SkyboxCubeConfig = GeometrySystem::GenerateCubeConfig(10.0f, 10.0f, 10.0f, 1.0f, 1.0f, cubeName, FString());
 
 	// Clear out the material name.
 	g = GeometrySystem::AcquireFromConfig(SkyboxCubeConfig, true);

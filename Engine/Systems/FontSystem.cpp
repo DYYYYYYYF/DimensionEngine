@@ -87,6 +87,7 @@ void FontSystem::Shutdown() {
 				DeleteObject(BitmapFonts[i]);
 			}
 		}
+		BitmapFonts.clear();
 
 		// Clean up system fonts.
 		for (unsigned short i = 0; i < Config.maxSystemFontCount; ++i) {
@@ -102,6 +103,9 @@ void FontSystem::Shutdown() {
 				SystemFonts[i]->sizeVariants.clear();
 			}
 		}
+
+		SystemFontMap.clear();
+		BitmapFontMap.clear();
 	}
 }
 
@@ -208,13 +212,13 @@ bool FontSystem::LoadBitmapFont(BitmapFontConfig* config) {
 	// Obtain the lookup.
 	BitmapFontLookup* Lookup = NewObject<BitmapFontLookup>();
 
-	if (!ResourceSystem::Load(config->resourceName.CStr(), EAssetType::BitmapFont, nullptr, &Lookup->font.loadedResource)) {
+	if (!ResourceSystem::Load(config->resourceName, EAssetType::BitmapFont, nullptr, &Lookup->font)) {
 		GLOG(Log::eError, "Failed to load bitmap font.");
 		return false;
 	}
 
 	// Keep a casted pointer to the resource data for convenience.
-	Lookup->font.resourceData = (BitmapFontResourceData*)Lookup->font.loadedResource.Data;
+	Lookup->font.resourceData = (BitmapFontResourceData*)Lookup->font.Data;
 
 	// Acquire the texture.
 	// TODO: only accounts for one page at the moment.

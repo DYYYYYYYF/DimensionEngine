@@ -1,7 +1,7 @@
 ﻿#pragma once
 
 #include "Actor.h"
-#include "Rendering/Resources/Geometry.hpp"
+#include "Rendering/Resources/Geometry/Geometry.hpp"
 
 #include <vector>
 
@@ -17,7 +17,7 @@ public:
 public:
 	DAPI virtual void Draw();
 
-	DAPI bool LoadFromResource(const std::string& resource_name);
+	DAPI bool LoadFromResource(const FString& resource_name);
 	DAPI void Unload();
 
 private:
@@ -32,7 +32,7 @@ public:
 };
 
 struct FMeshLoadParams {
-	std::string resource_name;
+	FString resource_name;
 	AStaticMeshActor* out_mesh = nullptr;
 	class UAsset mesh_resource;
 };

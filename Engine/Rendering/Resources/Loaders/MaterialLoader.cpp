@@ -12,14 +12,14 @@ MaterialLoader::MaterialLoader() {
 	TypePath = "Materials";
 }
 
-bool MaterialLoader::Load(const std::string& name, void* params, UAsset* resource) {
-	if (name.length() == 0 || resource == nullptr) {
+bool MaterialLoader::Load(const FString& name, void* params, UAsset* resource) {
+	if (name.Length() == 0 || resource == nullptr) {
 		return false;
 	}
 
 	const char* FormatStr = "%s/%s/%s%s";
 	char FullFilePath[512];
-	StringFormat(FullFilePath, FormatStr, ResourceSystem::GetRootPath(), TypePath.c_str(), name.c_str(), ".dmt");
+	StringFormat(FullFilePath, FormatStr, ResourceSystem::GetRootPath(), TypePath.c_str(), name.CStr(), ".dmt");
 
 	FileHandle File;
 	if (!FileSystemOpen(FullFilePath, eFile_Mode_Read, false, &File)) {
@@ -33,12 +33,12 @@ bool MaterialLoader::Load(const std::string& name, void* params, UAsset* resourc
 	ResourceData->auto_release = true;
 	ResourceData->shader_name = "Shader.Builtin.World";
 	ResourceData->diffuse_color = Vector4(1.0f);	// White
-	ResourceData->diffuse_map_name[0] = '\0';
+	ResourceData->diffuse_map_name = "";
 	ResourceData->shininess = 32.0f;
 	ResourceData->Metallic = 1.0f;
 	ResourceData->Roughness = 0.0f;
 	ResourceData->AmbientOcclusion = 0.7f;
-	ResourceData->name = std::move(name);
+	ResourceData->name = name;
 
 	char LineBuffer[512] = "";
 	char* p = &LineBuffer[0];
@@ -107,7 +107,7 @@ bool MaterialLoader::Load(const std::string& name, void* params, UAsset* resourc
 			ResourceData->diffuse_color = Vector4::StringToVec4(TrimmedValue);
 		}
 		else if (strcmp(TrimmedVarName, "shader") == 0) {
-			ResourceData->shader_name = std::string(TrimmedValue);
+			ResourceData->shader_name = TrimmedValue;
 		}
 		else if (strcmp(TrimmedVarName, "shininess") == 0){
 			if (!FString::ToFloat(TrimmedValue, &ResourceData->shininess)) {
@@ -150,7 +150,7 @@ bool MaterialLoader::Load(const std::string& name, void* params, UAsset* resourc
 
 	resource->Data = ResourceData;
 	resource->DataSize = sizeof(SMaterialConfig);
-	resource->Name = name.c_str();
+	resource->Name = name;
 	resource->FullPath = FullFilePath;
 	resource->DataCount = 1;
 

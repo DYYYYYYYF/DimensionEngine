@@ -12,16 +12,16 @@ BinaryLoader::BinaryLoader() {
 	TypePath = "";
 }
 
-bool BinaryLoader::Load(const std::string& name, void* params, UAsset* resource) {
+bool BinaryLoader::Load(const FString& name, void* params, UAsset* resource) {
 	(void)params;
 
-	if (name.size() == 0 || resource == nullptr) {
+	if (name.Length() == 0 || resource == nullptr) {
 		return false;
 	}
 
 	const char* FormatStr = "%s/%s/%s%s";
 	char FullFilePath[512];
-	StringFormat(FullFilePath, FormatStr, ResourceSystem::GetRootPath(), TypePath.c_str(), name.c_str(), "");
+	StringFormat(FullFilePath, FormatStr, ResourceSystem::GetRootPath(), TypePath.c_str(), name.CStr(), "");
 
 	FileHandle File;
 	if (!FileSystemOpen(FullFilePath, eFile_Mode_Read, true, &File)) {
@@ -50,7 +50,7 @@ bool BinaryLoader::Load(const std::string& name, void* params, UAsset* resource)
 	resource->Data = ResourceData;
 	resource->DataSize = ReadSize;
 	resource->FullPath = FullFilePath;
-	resource->Name = name.c_str();
+	resource->Name = name;
 
 	return true;
 }

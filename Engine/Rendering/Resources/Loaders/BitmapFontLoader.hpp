@@ -1,7 +1,6 @@
 ﻿#pragma once
 
 #include "Rendering/Interface/IResourceLoader.hpp"
-#include "Systems/ResourceSystem.h"
 
 struct FileHandle;
 struct BitmapFontResourceData;
@@ -23,7 +22,7 @@ public:
 	BitmapFontLoader();
 
 public:
-	virtual bool Load(const std::string& name, void* params, UAsset* resource) override;
+	virtual bool Load(const FString& name, void* params, UAsset* resource) override;
 	virtual void Unload(UAsset* resource) override;
 
 public: 

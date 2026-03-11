@@ -13,6 +13,7 @@ enum class EAssetType {
 	Binary,
 	Image,
 	Material,
+	Geometry,
 	StaticMesh,
 	Shader,
 	BitmapFont,
@@ -37,6 +38,14 @@ public:
 		Data = nullptr;
 	}
 
+	UAsset(const FString& name) {
+		LoaderID = INVALID_ID;
+		DataSize = 0;
+		DataCount = 0;
+		Name = name;
+		Data = nullptr;
+	}
+
 	virtual ~UAsset() {
 		LoaderID = INVALID_ID;
 		DataSize = 0;
@@ -49,6 +58,10 @@ public:
 	virtual void PreInitialize() override {}
 	virtual bool Initialize() override { return true; }
 	virtual void PostInitialize() override {}
+
+public:
+	void SetName(const FString& n) { Name = n; }
+	const FString& GetName() { return Name; }
 
 public:
 	EAssetType AssetType;

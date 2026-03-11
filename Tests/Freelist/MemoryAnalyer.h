@@ -367,7 +367,7 @@ void RunAnalysis() {
 	DynamicAllocator allocator;
 
 	// 创建64MB内存池
-	if (!allocator.Create(64 * 1024 * 1024)) {
+	if (!allocator.Resize(64 * 1024 * 1024)) {
 		std::cout << "[ERROR] 分配器初始化失败" << std::endl;
 		return;
 	}
@@ -408,7 +408,7 @@ void RunAnalysis() {
 // 额外的单元测试
 bool TestAlignmentEdgeCases() {
 	DynamicAllocator allocator;
-	if (!allocator.Create(1024 * 1024)) return false;
+	if (!allocator.Resize(1024 * 1024)) return false;
 
 	// 测试各种对齐边界情况
 	for (unsigned short align = 1; align <= 256; align *= 2) {
@@ -430,7 +430,7 @@ bool TestAlignmentEdgeCases() {
 
 bool TestBoundaryWrites() {
 	DynamicAllocator allocator;
-	if (!allocator.Create(1024 * 1024)) return false;
+	if (!allocator.Resize(1024 * 1024)) return false;
 
 	// 分配相邻的内存块并验证边界
 	std::vector<std::pair<void*, size_t>> blocks;

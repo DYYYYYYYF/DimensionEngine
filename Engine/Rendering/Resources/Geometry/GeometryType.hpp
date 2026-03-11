@@ -1,9 +1,7 @@
 ﻿#pragma once
 
-#include "Asset.hpp"
 #include "Math/MathTypes.hpp"
-
-class Material;
+#include "Containers/FString.hpp"
 
 enum MeshFileType {
 	eMesh_File_Type_Not_Found,
@@ -33,10 +31,10 @@ struct MeshGroupData {
 
 struct SGeometryConfig {
 public:
-	void SetMaterialName(const std::string& mn) { material_name = mn; }
-	const std::string& GetMaterialName() const { return material_name; }
-	void SetName(const std::string& n) { name = n; }
-	const std::string& GetName() const { return name; }
+	void SetMaterialName(const FString& mn) { material_name = mn; }
+	const FString& GetMaterialName() const { return material_name; }
+	void SetName(const FString& n) { name = n; }
+	const FString& GetName() const { return name; }
 
 	// Vertices
 	uint32_t vertex_size = 0;
@@ -52,22 +50,6 @@ public:
 	Vector3 min_extents;
 	Vector3 max_extents;
 
-	std::string name;
-	std::string material_name;
-};
-
-class Geometry {
-public:
-	DAPI void SetName(const std::string& n) { name = n; }
-	DAPI std::string GetName() { return name; }
-
-public:
-	uint32_t ID;
-	uint32_t InternalID;
-	uint32_t Generation;
-	Vector3 Center;
-	Extents3D Extents;
-	std::string name;
-	Material* Material = nullptr;
-
+	FString name;
+	FString material_name;
 };

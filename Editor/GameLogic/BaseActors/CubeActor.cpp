@@ -1,9 +1,7 @@
 #include "CubeActor.h"
 #include <Systems/GeometrySystem.h>
 
-ACubeActor::ACubeActor() {
-	ACubeActor("CubeActor");
-}
+ACubeActor::ACubeActor() : ACubeActor("CubeActor") {}
 
 ACubeActor::ACubeActor(const FString& Name) : AStaticMeshActor(Name) {
 	// Default load cube model.

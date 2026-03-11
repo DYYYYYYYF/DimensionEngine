@@ -13,7 +13,7 @@ Texture* TextureSystem::DefaultDiffuseTexture = nullptr;
 Texture* TextureSystem::DefaultSpecularTexture = nullptr;
 Texture* TextureSystem::DefaultNormalTexture = nullptr;
 Texture* TextureSystem::DefaultRoughnessMetallicTexture = nullptr;
-std::unordered_map<std::string, Texture*> TextureSystem::TextureMap;
+std::unordered_map<FString, Texture*> TextureSystem::TextureMap;
 bool TextureSystem::Initilized = false;
 IRenderer* TextureSystem::Renderer = nullptr;
 
@@ -50,16 +50,18 @@ void TextureSystem::Shutdown() {
 	for (auto& PairsTex : TextureMap) {
 		Texture* tex = PairsTex.second;
 		if (tex != nullptr && tex->Generation != INVALID_ID) {
-			GLOG(Log::eDebug, "Destroying texture: '%s'.", tex->GetName().c_str());
+			GLOG(Log::eDebug, "Destroying texture: '%s'.", tex->GetName().CStr());
 			Renderer->DestroyTexture(tex);
 			DeleteObject(tex);
 		}
 	}
 
+	TextureMap.clear();
+
 	DestroyDefaultTexture();
 }
 
-Texture* TextureSystem::Acquire(const char* name, bool auto_release) {
+Texture* TextureSystem::Acquire(const FString& name, bool auto_release) {
 	// Return default texture, but warn about it since this should be returned via GetDefaultTexture()
 	Texture* OutTexture = CheckTextureName(name);
 	if (OutTexture) {
@@ -83,7 +85,7 @@ Texture* TextureSystem::Acquire(const char* name, bool auto_release) {
 	return OutTexture;
 }
 
-Texture* TextureSystem::AcquireCube(const char* name, bool auto_release) {
+Texture* TextureSystem::AcquireCube(const FString& name, bool auto_release) {
 	// Return default texture, but warn about it since this should be returned via GetDefaultTexture()
 	Texture* OutTexture = CheckTextureName(name);
 	if (OutTexture) {
@@ -105,7 +107,7 @@ Texture* TextureSystem::AcquireCube(const char* name, bool auto_release) {
 	return OutTexture;
 }
 
-Texture* TextureSystem::AcquireWriteable(const char* name, uint32_t width, uint32_t height, 
+Texture* TextureSystem::AcquireWriteable(const FString& name, uint32_t width, uint32_t height,
 	unsigned char channel_count, bool has_transparency, bool has_depth){
 	uint32_t ID = INVALID_ID;
 	// NOTE: Wrapped textures are never auto-release because it means that their
@@ -132,19 +134,19 @@ Texture* TextureSystem::AcquireWriteable(const char* name, uint32_t width, uint3
 	return t;
 }
 
-void TextureSystem::Release(const std::string& name) {
+void TextureSystem::Release(const FString& name) {
 	// Ignore release requests for the default texture.
-	if (strcmp(name.c_str(), DEFAULT_DIFFUSE_TEXTURE_NAME)				== 0 ||
-		strcmp(name.c_str(), DEFAULT_SPECULAR_TEXTURE_NAME)				== 0 ||
-		strcmp(name.c_str(), DEFAULT_NORMAL_TEXTURE_NAME)				== 0 ||
-		strcmp(name.c_str(), DEFAULT_ROUGHNESS_METALLIC_TEXTURE_NAME) == 0
+	if (strcmp(name.CStr(), DEFAULT_DIFFUSE_TEXTURE_NAME) == 0 ||
+		strcmp(name.CStr(), DEFAULT_SPECULAR_TEXTURE_NAME) == 0 ||
+		strcmp(name.CStr(), DEFAULT_NORMAL_TEXTURE_NAME) == 0 ||
+		strcmp(name.CStr(), DEFAULT_ROUGHNESS_METALLIC_TEXTURE_NAME) == 0
 	){
 		return;
 	}
 
 	// NOTE: Decrement the reference count.
 	if (!ProcessTextureReference(name, TextureType::eTexture_Type_2D, -1, false, false)) {
-		GLOG(Log::eError, "TextureSystem::Release() failed to release texture '%s' properly.", name.c_str());
+		GLOG(Log::eError, "TextureSystem::Release() failed to release texture '%s' properly.", name.CStr());
 	}
 }
 
@@ -430,7 +432,7 @@ void TextureSystem::DestroyDefaultTexture() {
 	}
 }
 
-bool TextureSystem::LoadCubeTexture(const std::string& name, FString texture_names[6], Texture* t) {
+bool TextureSystem::LoadCubeTexture(const FString& name, FString texture_names[6], Texture* t) {
 	unsigned char* piexels = nullptr;
 	size_t ImageSize = 0;
 	for (unsigned char i = 0; i < 6; ++i) {
@@ -505,7 +507,7 @@ void TextureSystem::LoadJobSuccess(void* params) {
 		TextureParams->out_texture->Generation = TextureParams->current_generation + 1;
 	}
 
-	GLOG(Log::eInfo, "Successfully loaded texture '%s.", TextureParams->resource_name.c_str());
+	GLOG(Log::eInfo, "Successfully loaded texture '%s.", TextureParams->resource_name.CStr());
 
 	// Clean up data.
 	ResourceSystem::Unload(&TextureParams->ImageResource);
@@ -513,7 +515,7 @@ void TextureSystem::LoadJobSuccess(void* params) {
 
 void TextureSystem::LoadJobFail(void* params) {
 	TextureLoadParams* TextureParams = (TextureLoadParams*)params;
-	GLOG(Log::eError, "Failed to load texture '%s'.", TextureParams->resource_name.c_str());
+	GLOG(Log::eError, "Failed to load texture '%s'.", TextureParams->resource_name.CStr());
 	ResourceSystem::Unload(&TextureParams->ImageResource);
 }
 
@@ -561,23 +563,23 @@ bool TextureSystem::LoadJobStart(void* params, void* result_data) {
 	return Result;
 }
 
-Texture* TextureSystem::CheckTextureName(const std::string& name) {
-	if (StringEquali(name.c_str(), DEFAULT_DIFFUSE_TEXTURE_NAME)) {
+Texture* TextureSystem::CheckTextureName(const FString& name) {
+	if (name.Equali(DEFAULT_DIFFUSE_TEXTURE_NAME)) {
 		GLOG(Log::eWarn, "Texture acquire return default texture. Use GetDefaultTexture() for texture 'DEFAULT_DIFFUSE_TEXTURE_NAME'");
 		return DefaultDiffuseTexture;
 	}
 
-	if (StringEquali(name.c_str(), DEFAULT_NORMAL_TEXTURE_NAME)) {
+	if (name.Equali(DEFAULT_NORMAL_TEXTURE_NAME)) {
 		GLOG(Log::eWarn, "Texture acquire return default texture. Use GetDefaultTexture() for texture 'DEFAULT_NORMAL_TEXTURE_NAME'");
 		return DefaultNormalTexture;
 	}
 
-	if (StringEquali(name.c_str(), DEFAULT_SPECULAR_TEXTURE_NAME)) {
+	if (name.Equali(DEFAULT_SPECULAR_TEXTURE_NAME)) {
 		GLOG(Log::eWarn, "Texture acquire return default texture. Use GetDefaultTexture() for texture 'DEFAULT_SPECULAR_TEXTURE_NAME'");
 		return DefaultSpecularTexture;
 	}
 
-	if (StringEquali(name.c_str(), DEFAULT_ROUGHNESS_METALLIC_TEXTURE_NAME)) {
+	if (name.Equali(DEFAULT_ROUGHNESS_METALLIC_TEXTURE_NAME)) {
 		GLOG(Log::eWarn, "Texture acquire return default texture. Use GetDefaultTexture() for texture 'DEFAULT_ROUGHNESS_METALLIC_TEXTURE_NAME'");
 		return DefaultRoughnessMetallicTexture;
 	}
@@ -585,7 +587,7 @@ Texture* TextureSystem::CheckTextureName(const std::string& name) {
 	return nullptr;
 }
 
-bool TextureSystem::LoadTexture(const std::string& name, Texture* texture) {
+bool TextureSystem::LoadTexture(const FString& name, Texture* texture) {
 	// Kick off a texture loading job. Only handles loading from disk to CPU.
 	// GPU upload is handled after completion of this job.
 	TextureLoadParams Params;
@@ -604,7 +606,7 @@ bool TextureSystem::LoadTexture(const std::string& name, Texture* texture) {
 	return true;
 }
 
-bool TextureSystem::ProcessTextureReference(const std::string& name, TextureType type ,
+bool TextureSystem::ProcessTextureReference(const FString& name, TextureType type ,
 	short reference_diff, bool auto_release, bool skip_load) {
 	if (!Initilized) {
 		return false;
@@ -640,12 +642,12 @@ bool TextureSystem::ProcessTextureReference(const std::string& name, TextureType
 			Tex->Type = type;
 			// Create new texture.
 			if (skip_load) {
-				GLOG(Log::eDebug, "Load skipped for texture '%s'. This is expected behaviour.", name.c_str());
+				GLOG(Log::eDebug, "Load skipped for texture '%s'. This is expected behaviour.", name.CStr());
 			}
 			else {
 				if (type == TextureType::eTexture_Type_2D) {
 					if (!LoadTexture(name, Tex)) {
-						GLOG(Log::eError, "Failed to load texture '%s'.", name.c_str());
+						GLOG(Log::eError, "Failed to load texture '%s'.", name.CStr());
 						return false;
 					}
 				}
@@ -653,20 +655,20 @@ bool TextureSystem::ProcessTextureReference(const std::string& name, TextureType
 					FString TextureNames[6];
 
 					// +x,-X,+y,-Y,+Z,-Z in _cubemap_ space, which is LH y-down.
-					TextureNames[0] = FString::Format("%s_r", name.c_str());	// Right texture.
-					TextureNames[1] = FString::Format("%s_l", name.c_str());	// Left texture.
-					TextureNames[2] = FString::Format("%s_u", name.c_str());	// Up texture.
-					TextureNames[3] = FString::Format("%s_d", name.c_str());	// Down texture.
-					TextureNames[4] = FString::Format("%s_f", name.c_str());	// Front texture.
-					TextureNames[5] = FString::Format("%s_b", name.c_str());	// Back texture.
+					TextureNames[0] = FString::Format("%s_r", name.CStr());	// Right texture.
+					TextureNames[1] = FString::Format("%s_l", name.CStr());	// Left texture.
+					TextureNames[2] = FString::Format("%s_u", name.CStr());	// Up texture.
+					TextureNames[3] = FString::Format("%s_d", name.CStr());	// Down texture.
+					TextureNames[4] = FString::Format("%s_f", name.CStr());	// Front texture.
+					TextureNames[5] = FString::Format("%s_b", name.CStr());	// Back texture.
 
 					if (!LoadCubeTexture(name, TextureNames, Tex)) {
-						GLOG(Log::eError, "Failed to load cube texture '%s'.", name.c_str());
+						GLOG(Log::eError, "Failed to load cube texture '%s'.", name.CStr());
 						return false;
 					}
 				}
 			}
-			GLOG(Log::eDebug, "Texture '%s' does not yet exist. Created, and ref_count is now %i.", name.c_str(), Tex->GetReferenceCount());
+			GLOG(Log::eDebug, "Texture '%s' does not yet exist. Created, and ref_count is now %i.", name.CStr(), Tex->GetReferenceCount());
 		}
 	}
 
@@ -680,7 +682,7 @@ bool TextureSystem::ProcessTextureReference(const std::string& name, TextureType
 		}
 		else {
 			if (Tex->IsAutoRelease()) {
-				GLOG(Log::eWarn, "Tried to release non-existent texture: '%s'.", name.c_str());
+				GLOG(Log::eWarn, "Tried to release non-existent texture: '%s'.", name.CStr());
 				return false;
 			}
 			else {
@@ -695,7 +697,7 @@ bool TextureSystem::ProcessTextureReference(const std::string& name, TextureType
 
 	// Take a copy of the name since it would be wiped out if destroyed,
 	// (as passed in name is generally a pointer to the actual texture's name).
-	FString NameCopy = name.c_str();
+	FString NameCopy = name;
 
 	// If decrementing, this means a release.
 	if (reference_diff < 0) {
@@ -713,7 +715,7 @@ bool TextureSystem::ProcessTextureReference(const std::string& name, TextureType
 	}
 	else {
 		// Incrementing. Check if the handle is now or not.
-		GLOG(Log::eDebug, "Texture '%s' already exists, ref_count increased to %i.", name.c_str(), Tex->GetReferenceCount());
+		GLOG(Log::eDebug, "Texture '%s' already exists, ref_count increased to %i.", name.CStr(), Tex->GetReferenceCount());
 	}
 
 	return true;

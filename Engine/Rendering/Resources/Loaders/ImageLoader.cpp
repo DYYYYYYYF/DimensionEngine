@@ -20,8 +20,8 @@ ImageLoader::ImageLoader() {
 	TypePath = "Textures";
 }
 
-bool ImageLoader::Load(const std::string& name, void* params, UAsset* resource) {
-	if (name.size() == 0 || resource == nullptr) {
+bool ImageLoader::Load(const FString& name, void* params, UAsset* resource) {
+	if (name.Length() == 0 || resource == nullptr) {
 		return false;
 	}
 
@@ -41,7 +41,7 @@ bool ImageLoader::Load(const std::string& name, void* params, UAsset* resource) 
 	bool Found = false;
 	const char* Extensions[IMAGE_EXTENSION_COUNT] = { ".tga", ".png", ".jpg", ".bmp" };
 	for (uint32_t i = 0; i < IMAGE_EXTENSION_COUNT; ++i) {
-		StringFormat(FullFilePath, FormatStr, ResourceSystem::GetRootPath(), TypePath.c_str(), name.c_str(), Extensions[i]);
+		StringFormat(FullFilePath, FormatStr, ResourceSystem::GetRootPath(), TypePath.c_str(), name.CStr(), Extensions[i]);
 		if (FileSystemExists(FullFilePath)) {
 			Found = true;
 			break;
@@ -49,12 +49,12 @@ bool ImageLoader::Load(const std::string& name, void* params, UAsset* resource) 
 	}
 
 	if (!Found) {
-		GLOG(Log::eError, "Image resource loader failed find file '%s'or with any supported extensions.", name.c_str());
+		GLOG(Log::eError, "Image resource loader failed find file '%s'or with any supported extensions.", name.CStr());
 		return false;
 	}
 
 	// Take a copy of the resource full path and name first.
-	resource->Name = name.c_str();
+	resource->Name = name;
 	resource->FullPath = FullFilePath;
 
 	FileHandle f;

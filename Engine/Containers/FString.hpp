@@ -116,6 +116,7 @@ public:
 	bool Equali(const FString& other)           const;   // 大小写不敏感
 	bool Nequal(const FString& other, size_t len) const;
 	bool Nequali(const FString& other, size_t len) const; // 大小写不敏感
+	int  Compare(const FString& other)         const;
 
 	// =========================================================
 	//  查找
@@ -179,6 +180,8 @@ public:
 
 	static FString FromBool(bool   value);
 	static FString FromInt(int    value);
+	static FString FromInt32(uint32_t    v);
+	static FString FromInt64(uint64_t    v);
 	static FString FromFloat(float  value);
 	static FString FromDouble(double value);
 

@@ -7,7 +7,7 @@ class IRenderer;
 
 class DAPI Skybox : public UAsset {
 public:
-	bool Create(const std::string& cubeName);
+	bool Create(const FString& cubeName);
 	void Destroy();
 
 public:

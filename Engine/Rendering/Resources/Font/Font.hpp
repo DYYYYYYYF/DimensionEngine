@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include "Rendering/Resources/Asset.hpp"
 #include "Rendering/Resources/Texture/Texture.hpp"
 #include <vector>
 #include <string>
@@ -51,7 +52,7 @@ struct SystemFontResourceData {
 };
 
 // -------------------------  CLASS  ------------------------- //
-class IFontDataBase {
+class IFontDataBase : public UAsset{
 public:
 	FontType type;
 	FString face;
@@ -76,7 +77,6 @@ public:
 	}
 
 public:
-	UAsset loadedResource;
 	// Casted pointer to resource data for convenience.
 	BitmapFontResourceData* resourceData = nullptr;
 };

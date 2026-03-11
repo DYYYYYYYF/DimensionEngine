@@ -1,7 +1,7 @@
 ﻿#pragma once
 
+#include "Containers/FString.hpp"
 #include "Rendering/Resources/Asset.hpp"
-#include <string>
 
 class IResourceLoader {
 public:
@@ -12,7 +12,7 @@ public:
 	}
 
 public:
-	virtual bool Load(const std::string& name, void* params, UAsset* resource) = 0;
+	virtual bool Load(const FString& name, void* params, UAsset* resource) = 0;
 	virtual void Unload(UAsset* resouce) = 0;
 
 public:

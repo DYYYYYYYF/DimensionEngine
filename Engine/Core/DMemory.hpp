@@ -78,6 +78,10 @@ private:
 	};
 
 public:
+	Memory() {}
+	virtual ~Memory() { Shutdown(); }
+
+public:
 	static DAPI bool Initialize(size_t size);
 	static DAPI void Shutdown();
 
@@ -103,7 +107,6 @@ private:
 public:
 	static struct SMemoryStats stats;
 	static size_t TotalAllocateSize;
-	static DynamicAllocator DynamicAlloc;
 	static size_t AllocateCount;
 	
 	static Mutex AllocationMutex;
@@ -124,8 +127,10 @@ T* NewObject(Args&&... args) {
 	try {
 		return new(memory) T(std::forward<Args>(args)...);
 	}
-	catch (...) {
+	catch (const std::exception& e)
+	{
 		Memory::Free(memory, MemoryType::eMemory_Type_Entity);
+		GLOG(Log::eFatal, "Constructor exception: %s", e.what());
 		throw;
 	}
 }

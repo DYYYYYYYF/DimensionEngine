@@ -28,7 +28,7 @@ private:
 public:
 	uint32_t Generation;
 	uint32_t InternalID;
-	std::string Name;
+	FString Name;
 	Vector4 DiffuseColor;
 	TextureMap DiffuseMap;
 	TextureMap NormalMap;

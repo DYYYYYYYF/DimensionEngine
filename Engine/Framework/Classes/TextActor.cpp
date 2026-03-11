@@ -62,7 +62,7 @@ void ATextActor::Draw() {
 }
 
 bool ATextActor::Load(UITextType type, const FString& fontName, int fontSize, const FString& textContent) {
-	if (fontName.Length() == 0 || textContent == nullptr || textContent[0] == '\0') {
+	if (fontName.IsEmpty()) {
 		GLOG(Log::eError, " UIText::Create() Requires a valid pointer to fontName and textContent.");
 		return false;
 	}

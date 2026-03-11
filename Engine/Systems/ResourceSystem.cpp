@@ -84,7 +84,7 @@ bool ResourceSystem::RegisterLoader(IResourceLoader* loader) {
 	return true;
 }
 
-bool ResourceSystem::Load(const std::string& name, EAssetType type, void* params, UAsset* resource) {
+bool ResourceSystem::Load(const FString& name, EAssetType type, void* params, UAsset* resource) {
 	if (type != EAssetType::Custom) {
 		// Select loader.
 		uint32_t Count = Config.max_loader_count;
@@ -101,7 +101,7 @@ bool ResourceSystem::Load(const std::string& name, EAssetType type, void* params
 	return false;
 }
 
-bool ResourceSystem::LoadCustom(const std::string& name, const char* custom_type, void* params, UAsset* resource) {
+bool ResourceSystem::LoadCustom(const FString& name, const char* custom_type, void* params, UAsset* resource) {
 	if (custom_type == nullptr || strlen(custom_type) == 0) {
 		GLOG(Log::eError, "Resouce system load custom failed. custom type is invalid.");
 		return false;

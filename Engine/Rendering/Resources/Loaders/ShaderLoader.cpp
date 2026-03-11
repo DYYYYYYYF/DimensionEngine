@@ -13,16 +13,16 @@ ShaderLoader::ShaderLoader() {
 	TypePath = "Shaders";
 }
 
-bool ShaderLoader::Load(const std::string& name, void* params, UAsset* resource) {
+bool ShaderLoader::Load(const FString& name, void* params, UAsset* resource) {
 	(void)params;
 
-	if (name.length() == 0 || resource == nullptr) {
+	if (name.Length() == 0 || resource == nullptr) {
 		return false;
 	}
 
 	const char* FormatStr = "%s/%s/%s%s";
 	char FullFilePath[512];
-	StringFormat(FullFilePath, FormatStr, ResourceSystem::GetRootPath(), TypePath.c_str(), name.c_str(), ".scfg");	// shader config
+	StringFormat(FullFilePath, FormatStr, ResourceSystem::GetRootPath(), TypePath.c_str(), name.CStr(), ".scfg");	// shader config
 
 
 	FileHandle File;
@@ -31,7 +31,7 @@ bool ShaderLoader::Load(const std::string& name, void* params, UAsset* resource)
 		return false;
 	}
 	resource->FullPath = FullFilePath;
-	resource->Name = name.c_str();
+	resource->Name = name;
 
 	// Set some defaults, create arrays.
 	ShaderConfig* ResourceData = (ShaderConfig*)Memory::Allocate(sizeof(ShaderConfig), MemoryType::eMemory_Type_Resource);

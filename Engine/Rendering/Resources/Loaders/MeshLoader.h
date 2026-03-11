@@ -1,7 +1,7 @@
 ﻿#pragma once
 
 #include "Rendering/Interface/IResourceLoader.hpp"
-#include "Rendering/Resources/Geometry.hpp"
+#include "Rendering/Resources/Geometry/Geometry.hpp"
 #include <vector>
 #include <unordered_map>
 
@@ -22,7 +22,7 @@ public:
 	MeshLoader();
 
 public:
-	virtual bool Load(const std::string& name, void* params, UAsset* resource) override;
+	virtual bool Load(const FString& name, void* params, UAsset* resource) override;
 	virtual void Unload(UAsset* resource) override;
 
 private:

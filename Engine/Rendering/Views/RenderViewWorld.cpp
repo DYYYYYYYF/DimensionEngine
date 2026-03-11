@@ -258,7 +258,7 @@ bool RenderViewWorld::OnRender(struct RenderViewPacket* packet, IRendererBackend
 			// updates the internal shader bindings and binds them, or only binds them.
 			bool IsNeedUpdate = Mat->RenderFrameNumer != frame_number;
 			if (!MaterialSystem::ApplyInstance(Mat, IsNeedUpdate)) {
-				GLOG(Log::eWarn, "Failed to apply material '%s'. Skipping draw.", Mat->Name.c_str());
+				GLOG(Log::eWarn, "Failed to apply material '%s'. Skipping draw.", Mat->Name.CStr());
 				continue;
 			}
 			else {

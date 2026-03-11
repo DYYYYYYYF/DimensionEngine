@@ -12,7 +12,7 @@
 #include "Math/MathTypes.hpp"
 
 #include "Rendering/Resources/Texture/Texture.hpp"
-#include "Rendering/Resources/Geometry.hpp"
+#include "Rendering/Resources/Geometry/Geometry.hpp"
 
 #include "Systems/MaterialSystem.h"
 #include "Systems/GeometrySystem.h"

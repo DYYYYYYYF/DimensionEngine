@@ -328,7 +328,7 @@ bool RenderViewWorldDeferred::OnRender(struct RenderViewPacket* packet, IRendere
 		// 应用材质
 		bool IsNeedUpdate = Mat->RenderFrameNumer != frame_number;
 		if (!MaterialSystem::ApplyInstance(Mat, IsNeedUpdate)) {
-			GLOG(Log::eWarn, "Failed to apply G-Buffer material '%s'. Skipping draw.", Mat->Name.c_str());
+			GLOG(Log::eWarn, "Failed to apply G-Buffer material '%s'. Skipping draw.", Mat->Name.CStr());
 			continue;
 		}
 		Mat->RenderFrameNumer = (uint32_t)frame_number;

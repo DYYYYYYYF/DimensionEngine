@@ -187,6 +187,10 @@ bool FString::Nequali(const FString& other, size_t len) const {
 	return FString::Nequali(*this, other, len);
 }
 
+int FString::Compare(const FString& other) const {
+	return strcmp(CStr(), other.CStr());
+}
+
 // ============================================================
 //  查找
 // ============================================================
@@ -384,6 +388,8 @@ FCodepointResult FString::BytesToCodepoint(const char* bytes, size_t bytes_len, 
 
 FString FString::FromBool(bool   v) { return FString(v ? "true" : "false"); }
 FString FString::FromInt(int    v) { char b[32];  snprintf(b, sizeof(b), "%d", v); return FString(b); }
+FString FString::FromInt32(uint32_t    v) { char b[32];  snprintf(b, sizeof(b), "%u", v); return FString(b); }
+FString FString::FromInt64(uint64_t    v) { char b[64];  snprintf(b, sizeof(b), "%llu", v); return FString(b); }
 FString FString::FromFloat(float  v) { char b[64];  snprintf(b, sizeof(b), "%g", v); return FString(b); }
 FString FString::FromDouble(double v) { char b[128]; snprintf(b, sizeof(b), "%lg", v); return FString(b); }
 

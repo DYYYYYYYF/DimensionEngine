@@ -23,8 +23,8 @@ MeshLoader::MeshLoader() {
 	TypePath = "Models";
 }
 
-bool MeshLoader::Load(const std::string& name, void* params, UAsset* resource) {
-	if (name.length() == 0 || resource == nullptr) {
+bool MeshLoader::Load(const FString& name, void* params, UAsset* resource) {
+	if (name.Length() == 0 || resource == nullptr) {
 		return false;
 	}
 
@@ -45,7 +45,7 @@ bool MeshLoader::Load(const std::string& name, void* params, UAsset* resource) {
 	MeshFileType MeshFileType = MeshFileType::eMesh_File_Type_Not_Found;
 	// 尝试每种支持的扩展名
 	for (uint32_t i = 0; i < SUPPORTED_FILETYPE_COUNT; ++i) {
-		StringFormat(FullFilePath, FormatStr, ResourceSystem::GetRootPath(), TypePath.c_str(), name.c_str(), SupportedFileTypes[i].extension.c_str());
+		StringFormat(FullFilePath, FormatStr, ResourceSystem::GetRootPath(), TypePath.c_str(), name.CStr(), SupportedFileTypes[i].extension.c_str());
 
 		// 如果文件存在
 		if (FileSystemExists(FullFilePath)) {
@@ -65,12 +65,12 @@ bool MeshLoader::Load(const std::string& name, void* params, UAsset* resource) {
 	}
 
 	if (MeshFileType == MeshFileType::eMesh_File_Type_Not_Found) {
-		GLOG(Log::eError, "Unable to find mesh of supported type called '%s'.", name.c_str());
+		GLOG(Log::eError, "Unable to find mesh of supported type called '%s'.", name.CStr());
 		return false;
 	}
 
 	resource->FullPath = FullFilePath;
-	resource->Name = name.c_str();
+	resource->Name = name.CStr();
 
 	// 资源数据是几何体配置的数组
 	std::vector<SGeometryConfig> ResourceDatas;
@@ -82,7 +82,7 @@ bool MeshLoader::Load(const std::string& name, void* params, UAsset* resource) {
 	{
 		// 生成DSM文件名
 		char DsmFileName[512];
-		StringFormat(DsmFileName, "%s/%s/%s%s", ResourceSystem::GetRootPath(), TypePath.c_str(), name.c_str(), ".dsm");
+		StringFormat(DsmFileName, "%s/%s/%s%s", ResourceSystem::GetRootPath(), TypePath.c_str(), name.CStr(), ".dsm");
 
 		// 使用统一的Assimp加载器处理所有3D模型格式
 		Result = Import3DModelFile(FullFilePath, DsmFileName, ResourceDatas);
@@ -97,7 +97,7 @@ bool MeshLoader::Load(const std::string& name, void* params, UAsset* resource) {
 		break;
 
 	case MeshFileType::eMesh_File_Type_Not_Found:
-		GLOG(Log::eError, "Unable to find mesh of supported type called '%s'.", name.c_str());
+		GLOG(Log::eError, "Unable to find mesh of supported type called '%s'.", name.CStr());
 		Result = false;
 		break;
 	}
@@ -133,7 +133,7 @@ bool MeshLoader::Load(const std::string& name, void* params, UAsset* resource) {
 
 	std::vector<SGeometryConfig>().swap(ResourceDatas);
 
-	GLOG(Log::eInfo, "Successfully loaded mesh resource '%s' with %u geometries", name.c_str(), resource->DataCount);
+	GLOG(Log::eInfo, "Successfully loaded mesh resource '%s' with %u geometries", name.CStr(), resource->DataCount);
 	return true;
 }
 
@@ -215,12 +215,11 @@ bool MeshLoader::ProcessAssimpMaterials(const aiScene* scene, const char* out_ds
 		// 材质名称
 		aiString name;
 		if (mat->Get(AI_MATKEY_NAME, name) == AI_SUCCESS && strlen(name.C_Str()) > 0) {
-			config.name = std::string(name.C_Str());
+			config.name = name.C_Str();
 		}
 		else {
-			char file[512] = "";
-			StringFilenameNoExtensionFromPath(file, out_dsm_filename);
-			config.name = std::string(file) + "_auto_material_" + std::to_string(i);
+			FString file = FString::FilenameNoExtensionFromPath(out_dsm_filename);
+			config.name = file + "_auto_material_" + FString::FromInt(i);
 		}
 
 		// 基础颜色/漫反射颜色
@@ -293,7 +292,7 @@ bool MeshLoader::ProcessAssimpMaterials(const aiScene* scene, const char* out_ds
 
 		// 写入材质文件
 		if (!WriteDmtFile(out_dsm_filename, &config)) {
-			GLOG(Log::eWarn, "Failed to write material file for: %s", config.name.c_str());
+			GLOG(Log::eWarn, "Failed to write material file for: %s", config.name.CStr());
 		}
 	}
 
@@ -514,10 +513,10 @@ void MeshLoader::ProcessAssimpMesh(aiMesh* mesh, const aiScene* scene, const std
 
 	// 设置名称
 	if (strlen(mesh->mName.C_Str()) > 0) {
-		newData.name = std::string(mesh->mName.C_Str());
+		newData.name = mesh->mName.C_Str();
 	}
 	else {
-		newData.name = "UnnamedMesh_" + std::to_string(out_geometries.size());
+		newData.name = "UnnamedMesh_" + FString::FromInt64(out_geometries.size());
 	}
 
 	// 设置材质
@@ -533,7 +532,7 @@ void MeshLoader::ProcessAssimpMesh(aiMesh* mesh, const aiScene* scene, const std
 	out_geometries.push_back(newData);
 
 	GLOG(Log::eDebug, "Processed mesh: %s with %u vertices, %u faces",
-		newData.name.c_str(), newData.vertex_count, (uint32_t)faces.size());
+		newData.name.CStr(), newData.vertex_count, (uint32_t)faces.size());
 }
 
 void MeshLoader::ProcessSubobject(std::vector<Vector3>& positions, std::vector<Vector3>& normals, std::vector<Vector2f>& texcoords, std::vector<MeshFaceData>& faces, SGeometryConfig* out_data) {
@@ -663,7 +662,7 @@ bool MeshLoader::WriteDmtFile(const char* mtl_file_path, SMaterialConfig* config
 	StringDirectoryFromPath(Directory, mtl_file_path);
 
 	char FullFilePath[512];
-	StringFormat(FullFilePath, FormatStr, Directory, config->name.c_str(), ".dmt");
+	StringFormat(FullFilePath, FormatStr, Directory, config->name.CStr(), ".dmt");
 	if (!FileSystemOpen(FullFilePath, FileMode::eFile_Mode_Write, false, &f)) {
 		GLOG(Log::eError, "Error opening material file for writing: '%s'.", FullFilePath);
 		return false;
@@ -674,7 +673,7 @@ bool MeshLoader::WriteDmtFile(const char* mtl_file_path, SMaterialConfig* config
 	FileSystemWriteLine(&f, "#material file");
 	FileSystemWriteLine(&f, "");
 	FileSystemWriteLine(&f, "version=0.1");	// TODO: hardcoded version.
-	StringFormat(LineBuf, "name=%s", config->name.c_str());
+	StringFormat(LineBuf, "name=%s", config->name.CStr());
 	// BlinnPhong
 	FileSystemWriteLine(&f, LineBuf);
 	StringFormat(LineBuf, "diffuse_color=%.6f %.6f %.6f %.6f", config->diffuse_color.r, config->diffuse_color.g, config->diffuse_color.b, config->diffuse_color.a);
@@ -691,15 +690,15 @@ bool MeshLoader::WriteDmtFile(const char* mtl_file_path, SMaterialConfig* config
 	FileSystemWriteLine(&f, LineBuf);
 
 	// Textures
-	if (config->diffuse_map_name[0]) {
+	if (!config->diffuse_map_name.IsEmpty()) {
 		StringFormat(LineBuf, "diffuse_map_name=%s", config->diffuse_map_name.CStr());
 		FileSystemWriteLine(&f, LineBuf);
 	}
-	if (config->specular_map_name[0]) {
+	if (!config->specular_map_name.IsEmpty()) {
 		StringFormat(LineBuf, "specular_map_name=%s", config->specular_map_name.CStr());
 		FileSystemWriteLine(&f, LineBuf);
 	}
-	if (config->normal_map_name[0]) {
+	if (!config->normal_map_name.IsEmpty()) {
 		StringFormat(LineBuf, "normal_map_name=%s", config->normal_map_name.CStr());
 		FileSystemWriteLine(&f, LineBuf);
 	}
@@ -708,7 +707,7 @@ bool MeshLoader::WriteDmtFile(const char* mtl_file_path, SMaterialConfig* config
 		FileSystemWriteLine(&f, LineBuf);
 	}
 
-	StringFormat(LineBuf, "shader=%s", config->shader_name.c_str());
+	StringFormat(LineBuf, "shader=%s", config->shader_name.CStr());
 	FileSystemWriteLine(&f, LineBuf);
 
 	FileSystemClose(&f);
@@ -753,7 +752,7 @@ bool MeshLoader::LoadDsmFile(FileHandle* dsm_file, std::vector<SGeometryConfig>&
 		FileSystemRead(dsm_file, sizeof(uint32_t), &GNameLength, &BytesRead);
 		char* gn = (char*)Memory::Allocate(sizeof(char) * GNameLength, MemoryType::eMemory_Type_String);
 		FileSystemRead(dsm_file, sizeof(char) * GNameLength, gn, &BytesRead);
-		g.name = std::string(gn);
+		g.name = gn;
 		Memory::Free(gn, MemoryType::eMemory_Type_String);
 
 		// Material name.
@@ -761,7 +760,7 @@ bool MeshLoader::LoadDsmFile(FileHandle* dsm_file, std::vector<SGeometryConfig>&
 		FileSystemRead(dsm_file, sizeof(uint32_t), &MNameLength, &BytesRead);
 		char* mn = (char*)Memory::Allocate(sizeof(char) * MNameLength, MemoryType::eMemory_Type_String);
 		FileSystemRead(dsm_file, sizeof(char) * MNameLength, mn, &BytesRead);
-		g.material_name = std::string(mn);
+		g.material_name = mn;
 		Memory::Free(mn, MemoryType::eMemory_Type_String);
 
 		// Center
@@ -821,14 +820,14 @@ bool MeshLoader::WriteDsmFile(const char* path, const char* name, std::vector<SG
 		FileSystemWrite(&f, g->index_size * g->index_count, g->indices, &Written);
 
 		// Name
-		uint32_t GNameLength = (uint32_t)g->name.length() + 1;
+		uint32_t GNameLength = (uint32_t)g->name.Length() + 1;
 		FileSystemWrite(&f, sizeof(uint32_t), &GNameLength, &Written);
-		FileSystemWrite(&f, sizeof(char) * GNameLength, (void*)g->name.c_str(), &Written);
+		FileSystemWrite(&f, sizeof(char) * GNameLength, (void*)g->name.CStr(), &Written);
 
 		// Material Name
-		uint32_t MNameLength = (uint32_t)g->material_name.length() + 1;
+		uint32_t MNameLength = (uint32_t)g->material_name.Length() + 1;
 		FileSystemWrite(&f, sizeof(uint32_t), &MNameLength, &Written);
-		FileSystemWrite(&f, sizeof(char) * MNameLength, (void*)g->material_name.c_str(), &Written);
+		FileSystemWrite(&f, sizeof(char) * MNameLength, (void*)g->material_name.CStr(), &Written);
 
 		// Center
 		FileSystemWrite(&f, sizeof(Vector3), &g->center, &Written);
@@ -848,7 +847,7 @@ bool MeshLoader::DeduplicateGeometry(std::vector<SGeometryConfig>& outGeometries
 	Vertex* UniqueVerts = nullptr;
 	for (size_t i = 0; i < Count; ++i) {
 		SGeometryConfig* g = &outGeometries[i];
-		GLOG(Log::eDebug, "Geometry de-duplication process starting on geometry object named '%s'.", g->name.c_str());
+		GLOG(Log::eDebug, "Geometry de-duplication process starting on geometry object named '%s'.", g->name.CStr());
 		GeometryUtils::DeduplicateVertices(g->vertex_count, (Vertex*)g->vertices, g->index_count, (uint32_t*)g->indices, &NewVertCount, &UniqueVerts);
 
 		// Destroy the old, large array.

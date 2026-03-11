@@ -6,6 +6,7 @@
 #include "Containers/TString.hpp"
 #include "Rendering/Resources/ResourceTypes.hpp"
 #include "Platform/FileSystem.hpp"
+#include "Systems/ResourceSystem.h"
 #include "stdio.h"
 
 BitmapFontLoader::BitmapFontLoader() {
@@ -13,8 +14,8 @@ BitmapFontLoader::BitmapFontLoader() {
 	TypePath = "Fonts";
 }
 
-bool BitmapFontLoader::Load(const std::string& name, void* params, UAsset* resource) {
-	if (name.size() == 0 || resource == nullptr) {
+bool BitmapFontLoader::Load(const FString& name, void* params, UAsset* resource) {
+	if (name.Length() == 0 || resource == nullptr) {
 		return false;
 	}
 
@@ -30,7 +31,7 @@ bool BitmapFontLoader::Load(const std::string& name, void* params, UAsset* resou
 	BitmapFontFileType FontType = BitmapFontFileType::eBitmap_Font_File_Type_Not_Found;
 	// Try each supported extension.
 	for (uint32_t i = 0; i < SUPPORTED_FILETYPE_COUNT; ++i) {
-		StringFormat(FullFilePath, FormatStr, ResourceSystem::GetRootPath(), TypePath.c_str(), name.c_str(), SupportedFieTypes[i].extension);
+		StringFormat(FullFilePath, FormatStr, ResourceSystem::GetRootPath(), TypePath.c_str(), name.CStr(), SupportedFieTypes[i].extension);
 		// If the file exist, open it and stop looking.
 		if (FileSystemExists(FullFilePath)) {
 			if (FileSystemOpen(FullFilePath, FileMode::eFile_Mode_Read, SupportedFieTypes[i].isBinary, &f)) {
@@ -42,19 +43,26 @@ bool BitmapFontLoader::Load(const std::string& name, void* params, UAsset* resou
 	}
 
 	if (FontType == BitmapFontFileType::eBitmap_Font_File_Type_Not_Found) {
-		GLOG(Log::eError, "Unable to find bit map font of supported type called: '%s'.", name.c_str());
+		GLOG(Log::eError, "Unable to find bit map font of supported type called: '%s'.", name.CStr());
 		return false;
 	}
 
 	resource->FullPath = FullFilePath;
-	resource->Name = name.c_str();
+	resource->Name = name;
 
 	BitmapFontResourceData ResourceData;
+	IFontDataBase* FontData = (IFontDataBase*)resource;
+	if (!FontData) {
+		return false;
+	}
+
+	ResourceData.data = FontData;
+
 	bool Result = false;
 	switch (FontType)
 	{
 	case eBitmap_Font_File_Type_Not_Found:
-		GLOG(Log::eError, "Unable to find bitmap font of supported type called '%s'.", name.c_str());
+		GLOG(Log::eError, "Unable to find bitmap font of supported type called '%s'.", name.CStr());
 		Result = false;
 		break;
 	case eBitmap_Font_File_Type_DBF:
@@ -63,7 +71,7 @@ bool BitmapFontLoader::Load(const std::string& name, void* params, UAsset* resou
 	case eBitmap_Font_File_Type_FNT:
 		// Generate the DBF filename.
 		char DBFFileName[512];
-		StringFormat(DBFFileName, "%s/%s/%s%s", ResourceSystem::GetRootPath(), TypePath.c_str(), name.c_str(), ".dbf");
+		StringFormat(DBFFileName, "%s/%s/%s%s", ResourceSystem::GetRootPath(), TypePath.c_str(), name.CStr(), ".dbf");
 		Result = ImportFntFile(&f, DBFFileName, &ResourceData);
 		break;
 	}
@@ -123,7 +131,6 @@ void BitmapFontLoader::Unload(UAsset* resource) {
 	}	
 
 bool BitmapFontLoader::ImportFntFile(FileHandle* fntFile, const char* outDbfFilename, BitmapFontResourceData* out_data) {
-	Memory::Zero(out_data, sizeof(BitmapFontResourceData));
 	char LineBuf[512] = "";
 	char* p = &LineBuf[0];
 	size_t LineLength = 0;

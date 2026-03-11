@@ -38,7 +38,7 @@ public:
 		std::cout << "[TEST] 测试基础分配功能..." << std::endl;
 
 		// 初始化分配器
-		if (!allocator.Create(1024 * 1024)) { // 1MB
+		if (!allocator.Resize(1024 * 1024)) { // 1MB
 			std::cout << "[FAIL] 分配器初始化失败" << std::endl;
 			return false;
 		}
@@ -89,7 +89,7 @@ public:
 	bool TestAlignment() {
 		std::cout << "[TEST] 测试内存对齐..." << std::endl;
 
-		if (!allocator.Create(1024 * 1024)) {
+		if (!allocator.Resize(1024 * 1024)) {
 			return false;
 		}
 
@@ -132,7 +132,7 @@ public:
 	bool TestBoundaryConditions() {
 		std::cout << "[TEST] 测试边界条件..." << std::endl;
 
-		if (!allocator.Create(1024)) { // 小内存池
+		if (!allocator.Resize(1024)) { // 小内存池
 			return false;
 		}
 
@@ -173,7 +173,7 @@ public:
 	bool TestMemoryIntegrity() {
 		std::cout << "[TEST] 测试内存完整性..." << std::endl;
 
-		if (!allocator.Create(64 * 1024)) {
+		if (!allocator.Resize(64 * 1024)) {
 			return false;
 		}
 
@@ -234,7 +234,7 @@ public:
 	bool TestFragmentation() {
 		std::cout << "[TEST] 测试碎片化处理..." << std::endl;
 
-		if (!allocator.Create(64 * 1024)) {
+		if (!allocator.Resize(64 * 1024)) {
 			return false;
 		}
 
@@ -273,12 +273,12 @@ public:
 		std::cout << "[TEST] 测试错误处理..." << std::endl;
 
 		// 测试无效参数
-		if (allocator.Create(0)) {
+		if (allocator.Resize(0)) {
 			std::cout << "[FAIL] 零大小创建应该失败" << std::endl;
 			return false;
 		}
 
-		if (!allocator.Create(1024)) {
+		if (!allocator.Resize(1024)) {
 			return false;
 		}
 
@@ -316,7 +316,7 @@ public:
 	void TestAllocationSpeed() {
 		std::cout << "[PERF] 测试分配速度..." << std::endl;
 
-		if (!allocator.Create(64 * 1024 * 1024)) { // 64MB
+		if (!allocator.Resize(64 * 1024 * 1024)) { // 64MB
 			return;
 		}
 
@@ -373,7 +373,7 @@ public:
 			size_t allocator_size = 128 * 1024 * 1024; // 128MB
 
 			DynamicAllocator TempAllocator;
-			if (!TempAllocator.Create(allocator_size)) {
+			if (!TempAllocator.Resize(allocator_size)) {
 				std::cout << "   [FAIL] 创建分配器失败" << std::endl;
 				continue;
 			}
@@ -418,7 +418,7 @@ public:
 	void TestFragmentationPerformance() {
 		std::cout << "[PERF] 测试碎片化性能影响..." << std::endl;
 
-		if (!allocator.Create(32 * 1024 * 1024)) return;
+		if (!allocator.Resize(32 * 1024 * 1024)) return;
 
 		// 创建碎片化场景
 		std::vector<void*> ptrs;
@@ -465,7 +465,7 @@ public:
 		const size_t alloc_size = 256;
 
 		// 测试自定义分配器
-		if (!allocator.Create(64 * 1024 * 1024)) return;
+		if (!allocator.Resize(64 * 1024 * 1024)) return;
 
 		auto start = std::chrono::high_resolution_clock::now();
 		std::vector<void*> custom_ptrs;
@@ -508,7 +508,7 @@ public:
 	void TestMemoryLeaks() {
 		std::cout << "\n[TEST] 内存泄漏检测..." << std::endl;
 
-		if (!allocator.Create(1024 * 1024)) return;
+		if (!allocator.Resize(1024 * 1024)) return;
 
 		size_t initial_free = allocator.GetFreeSpace();
 
