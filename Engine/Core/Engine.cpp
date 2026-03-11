@@ -175,7 +175,7 @@ bool Engine::Initialize(){
 	}
 
 	// Init font system.
-	if (!FontSystem::Initialize(Renderer, GameInst->GetFontConfig())) {
+	if (!FontSystem::Get().Initialize(Renderer, GameInst->GetFontConfig())) {
 		GLOG(Log::eFatal, "Font system failed to initialize!");
 		return false;
 	}
@@ -334,7 +334,7 @@ bool Engine::Run() {
 
 	RenderViewSystem::Shutdown();
 	CameraSystem::Shutdown();
-	FontSystem::Shutdown();
+	FontSystem::Get().Shutdown();
 	GeometrySystem::Shutdown();
 	MaterialSystem::Shutdown();
 	TextureSystem::Shutdown();

@@ -4,7 +4,7 @@
 #include "Rendering/Resources/Font/Font.hpp"
 #include <vector>
 
-class IFontDataBase;
+class IFont;
 class IRenderbuffer;
 
 enum class UITextType {
@@ -17,8 +17,8 @@ public:
 	DECLARE_CLASS_TYPE(ATextActor)
 
 public:
-	ATextActor() : AActor(){}
-	ATextActor(const FString& Name) : AActor(Name){}
+	ATextActor() : AActor() {}
+	ATextActor(const FString& Name) : AActor(Name) {}
 	ATextActor(UITextType type, const FString& fontName, int fontSize, const FString& textContent);
 	virtual ~ATextActor() { Unload(); }
 
@@ -29,31 +29,28 @@ public:
 	void Unload();
 
 public:
-	Vector4 GetColor() const { return Color; }
-	void SetColor(Vector4 col) { Color = col; }
+	Vector4  GetColor()       const { return Color; }
+	void     SetColor(Vector4 col) { Color = col; }
 
-	size_t GetFrameNumber() const { return RenderFrameNumber; }
-	void SetFrameNumber(size_t num) { RenderFrameNumber = num; }
+	size_t   GetFrameNumber() const { return RenderFrameNumber; }
+	void     SetFrameNumber(size_t num) { RenderFrameNumber = num; }
 
-	void SetContent(const FString& content);
-	FString GetContent() const { return Content; }
+	void     SetContent(const FString& content);
+	FString  GetContent()     const { return Content; }
 	uint32_t GetContentLength() const { return (uint32_t)Content.Length(); }
-
 
 private:
 	void RegenerateGeometry();
 
 public:
-	UITextType Type = UITextType::eUI_Text_Type_Bitmap;
-	IFontDataBase* Data = nullptr;
+	UITextType     Type = UITextType::eUI_Text_Type_Bitmap;
+	IFont* Data = nullptr;        // 原 IFontDataBase*，改为 IFont*
 	IRenderbuffer* VertexBuffer = nullptr;
 	IRenderbuffer* IndexBuffer = nullptr;
-	FString Content = nullptr;
+	FString        Content = nullptr;
 
 	Vector4 Color = Vector4(1.0f);
-	size_t RenderFrameNumber = 0;
+	size_t  RenderFrameNumber = 0;
 
-	// 需要使用Material
 	uint32_t InstanceID = INVALID_ID;
-
 };

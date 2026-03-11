@@ -1,260 +1,304 @@
 ﻿#include "SystemFontLoader.hpp"
+#include "Rendering/Resources/Font/SystemFont.hpp"
+
 #include "Core/DMemory.hpp"
 #include "Core/EngineLogger.hpp"
-
 #include "Containers/TString.hpp"
 #include "Rendering/Resources/ResourceTypes.hpp"
 #include "Platform/FileSystem.hpp"
 #include "Systems/ResourceSystem.h"
-#include "stdio.h"
+
+#include <stdio.h>
 
 SystemFontLoader::SystemFontLoader() {
 	Type = EAssetType::SystemFont;
 	TypePath = "Fonts";
 }
 
+// ─────────────────────────────────────────────────────────────────
+//  Load / Unload
+// ─────────────────────────────────────────────────────────────────
+
 bool SystemFontLoader::Load(const FString& name, void* params, UAsset* resource) {
 	if (name.Length() == 0 || resource == nullptr) {
 		return false;
 	}
 
+	// SystemFont 的加载分两步：
+	//   1. Loader 负责读取 TTF 二进制和 face 元数据 → SystemFontResourceData
+	//   2. SystemFont::InitFromResourceData() 负责 stbtt 初始化和 GPU 资源
+	// 此处只完成第一步，resource->Data 指向 SystemFontResourceData
 	resource->Data = NewObject<SystemFontResourceData>();
-	SystemFontResourceData* ResourceData = (SystemFontResourceData*)resource->Data;
+	SystemFontResourceData* resourceData = static_cast<SystemFontResourceData*>(resource->Data);
 
-	const char* FormatStr = "%s/%s/%s%s";
+	const char* formatStr = "%s/%s/%s%s";
 	FileHandle f;
 
 #define SUPPORTED_FILETYPE_COUNT 2
-	SupportedSystemFontFiletype SupportedFieTypes[SUPPORTED_FILETYPE_COUNT];
-	SupportedFieTypes[0] = SupportedSystemFontFiletype{ ".dsf", SystemFontFileType::eSystem_Font_File_Type_DSF, true };
-	SupportedFieTypes[1] = SupportedSystemFontFiletype{ ".fontcfg", SystemFontFileType::eSystem_Font_File_Type_Font_Config, false };
+	SupportedSystemFontFiletype supportedTypes[SUPPORTED_FILETYPE_COUNT];
+	supportedTypes[0] = { ".dsf",      SystemFontFileType::eSystem_Font_File_Type_DSF,         true };
+	supportedTypes[1] = { ".fontcfg",  SystemFontFileType::eSystem_Font_File_Type_Font_Config,  false };
 
-	char FullFilePath[512];
-	SystemFontFileType FontType = SystemFontFileType::eSystem_Font_File_Type_Not_Found;
-	// Try each supported extension.
+	char fullFilePath[512];
+	SystemFontFileType fontType = SystemFontFileType::eSystem_Font_File_Type_Not_Found;
+
 	for (uint32_t i = 0; i < SUPPORTED_FILETYPE_COUNT; ++i) {
-		StringFormat(FullFilePath, FormatStr, ResourceSystem::GetRootPath(), TypePath.c_str(), name.CStr(), SupportedFieTypes[i].extension);
-		// If the file exist, open it and stop looking.
-		if (FileSystemExists(FullFilePath)) {
-			if (FileSystemOpen(FullFilePath, FileMode::eFile_Mode_Read, SupportedFieTypes[i].isBinary, &f)) {
-				FontType = SupportedFieTypes[i].type;
+		StringFormat(fullFilePath, formatStr,
+			ResourceSystem::GetRootPath(), TypePath.c_str(),
+			name.CStr(), supportedTypes[i].extension);
+
+		if (FileSystemExists(fullFilePath)) {
+			if (FileSystemOpen(fullFilePath, FileMode::eFile_Mode_Read, supportedTypes[i].isBinary, &f)) {
+				fontType = supportedTypes[i].type;
 				break;
 			}
 		}
-
 	}
 
-	if (FontType == SystemFontFileType::eSystem_Font_File_Type_Not_Found) {
-		GLOG(Log::eError, "Unable to find system font of supported type called: '%s'.", name.CStr());
+	if (fontType == SystemFontFileType::eSystem_Font_File_Type_Not_Found) {
+		GLOG(Log::eError, "SystemFontLoader: unable to find font of supported type: '%s'.", name.CStr());
 		return false;
 	}
 
-	resource->FullPath = FullFilePath;
+	resource->FullPath = fullFilePath;
 	resource->Name = name;
 
-	bool Result = false;
-	switch (FontType)
-	{
+	bool result = false;
+	switch (fontType) {
 	case eSystem_Font_File_Type_Not_Found:
-		GLOG(Log::eError, "Unable to find system font of supported type called '%s'.", name.CStr());
-		Result = false;
+		GLOG(Log::eError, "SystemFontLoader: font type not found for '%s'.", name.CStr());
 		break;
+
 	case eSystem_Font_File_Type_DSF:
-		Result = ReadDSFFile(&f, ResourceData);
+		result = ReadDSFFile(&f, resourceData);
 		break;
-	case eSystem_Font_File_Type_Font_Config:
-		// Generate the dsf file.
-		char DSFFilename[512];
-		StringFormat(DSFFilename, "%s/%s/%s%s", ResourceSystem::GetRootPath(), TypePath.c_str(), name.CStr(), ".dsf");
-		Result = ImportFontconfigFile(&f, TypePath.c_str(), DSFFilename, ResourceData);
+
+	case eSystem_Font_File_Type_Font_Config: {
+		char dsfFilename[512];
+		StringFormat(dsfFilename, "%s/%s/%s%s",
+			ResourceSystem::GetRootPath(), TypePath.c_str(), name.CStr(), ".dsf");
+		result = ImportFontconfigFile(&f, TypePath.c_str(), dsfFilename, resourceData);
 		break;
+	}
 	}
 
 	FileSystemClose(&f);
 
-	if (!Result) {
-		GLOG(Log::eError, "Failed to process system font file '%s'.", FullFilePath);
+	if (!result) {
+		GLOG(Log::eError, "SystemFontLoader: failed to process font file: '%s'.", fullFilePath);
 		resource->Data = nullptr;
 		resource->DataSize = 0;
 		return false;
 	}
 
 	resource->DataSize = sizeof(SystemFontResourceData);
-
 	return true;
 }
 
 void SystemFontLoader::Unload(UAsset* resource) {
-	if (resource == nullptr) {
-		return;
+	if (!resource || !resource->Data) { return; }
+
+	SystemFontResourceData* data = static_cast<SystemFontResourceData*>(resource->Data);
+
+	data->fonts.Clear();
+
+	// TTF 二进制块由 Loader 分配，在此释放
+	// SystemFont 持有的是借用指针，不重复释放
+	if (data->fontBinary) {
+		Memory::Free(data->fontBinary, MemoryType::eMemory_Type_Resource);
+		data->fontBinary = nullptr;
+		data->binarySize = 0;
 	}
 
-	if (resource->Data) {
-		SystemFontResourceData* Data = (SystemFontResourceData*)resource->Data;
-		if (Data->fonts.size() > 0) {
-			Data->fonts.clear();
-		}
-
-		if (Data->fontBinary) {
-			Memory::Free(Data->fontBinary, MemoryType::eMemory_Type_Resource);
-			Data->fontBinary = nullptr;
-			Data->binarySize = 0;
-		}
-
-		Memory::Free(resource->Data, MemoryType::eMemory_Type_System_Font);
-		resource->Data = nullptr;
-		resource->DataSize = 0;
-		resource->DataCount = 0;
-		resource->LoaderID = INVALID_ID;
-	}
-
-	resource = nullptr;
+	Memory::Free(resource->Data, MemoryType::eMemory_Type_System_Font);
+	resource->Data = nullptr;
+	resource->DataSize = 0;
+	resource->DataCount = 0;
+	resource->LoaderID = INVALID_ID;
 }
 
-bool SystemFontLoader::ImportFontconfigFile(FileHandle* f, const char* typePath, const char* outDSFFilename, SystemFontResourceData* outResource) {
+// ─────────────────────────────────────────────────────────────────
+//  ImportFontconfigFile — 解析 .fontcfg 文本配置
+// ─────────────────────────────────────────────────────────────────
+
+bool SystemFontLoader::ImportFontconfigFile(FileHandle* f, const char* typePath,
+	const char* outDSFFilename, SystemFontResourceData* outResource) {
+
 	outResource->binarySize = 0;
 	outResource->fontBinary = nullptr;
 
-	// Read each line of the file.
-	char LineBuf[512] = "";
-	char* p = &LineBuf[0];
-	size_t LineLength = 0;
-	uint32_t LineNumber = 1;
-	while (FileSystemReadLine(f, 511, &p, &LineLength)) {
-		// Trim the string.
-		char* Trimmed = Strtrim(LineBuf);
+	char    lineBuf[512] = "";
+	char* p = &lineBuf[0];
+	size_t  lineLength = 0;
+	uint32_t lineNumber = 1;
 
-		// Get the trimmed length.
-		LineLength = strlen(Trimmed);
+	while (FileSystemReadLine(f, 511, &p, &lineLength)) {
+		char* trimmed = Strtrim(lineBuf);
+		lineLength = strlen(trimmed);
 
-		// Skip blank lines and comments.
-		if (LineLength < 1 || Trimmed[0] == '\0') {
-			LineNumber++;
+		// 跳过空行
+		if (lineLength < 1 || trimmed[0] == '\0') {
+			++lineNumber;
 			continue;
 		}
 
-		// Split into var/value.
-		int EqualIndex = StringIndexOf(Trimmed, '=');
-		if (EqualIndex == -1) {
-			GLOG(Log::eWarn, "Potential formatting issue found in file: '=' token not found. Skipping line  %u.", LineNumber);
-			LineNumber++;
+		// 分割 key=value
+		int equalIndex = StringIndexOf(trimmed, '=');
+		if (equalIndex == -1) {
+			GLOG(Log::eWarn,
+				"SystemFontLoader: '=' not found on line %u, skipping.", lineNumber);
+			++lineNumber;
 			continue;
 		}
 
-		// Assume a max of 64 characters for the variable name.
-		char RawVarName[64];
-		Memory::Zero(RawVarName, sizeof(char) * 64);
-		StringMid(RawVarName, Trimmed, 0, EqualIndex);
-		char* TrimmedVarName = Strtrim(RawVarName);
+		char rawVarName[64];
+		Memory::Zero(rawVarName, sizeof(rawVarName));
+		StringMid(rawVarName, trimmed, 0, equalIndex);
+		char* varName = Strtrim(rawVarName);
 
-		// Assume a max of 511-64 (446) for the max length of the value to account for the variable name and '='.
-		char RawValue[446];
-		Memory::Zero(RawValue, sizeof(char) * 446);
-		StringMid(RawValue, Trimmed, EqualIndex + 1, -1);
-		char* TrimmedValue = Strtrim(RawValue);
+		char rawValue[446];
+		Memory::Zero(rawValue, sizeof(rawValue));
+		StringMid(rawValue, trimmed, equalIndex + 1, -1);
+		char* value = Strtrim(rawValue);
 
-		// Process the variable.
-		if (StringEquali(TrimmedVarName, "version")) {
-			// TODO: version
-            GLOG(Log::eInfo, "Test");
+		if (StringEquali(varName, "version")) {
+			// TODO: version 处理
 		}
-		else if (StringEquali(TrimmedVarName, "file")) {
-			const char* FormatStr = "%s/%s/%s";
-			char FullFilePath[512];
-			StringFormat(FullFilePath, FormatStr, ResourceSystem::GetRootPath(), typePath, TrimmedValue);
+		else if (StringEquali(varName, "file")) {
+			// 读取 TTF 二进制文件
+			char fullFontPath[512];
+			StringFormat(fullFontPath, "%s/%s/%s",
+				ResourceSystem::GetRootPath(), typePath, value);
 
-			// Open and read the font file as binary, and save into an allocated.
-			FileHandle FontBinaryHandle;
-			if (!FileSystemOpen(FullFilePath, FileMode::eFile_Mode_Read, true, &FontBinaryHandle)) {
-				GLOG(Log::eError, "Unable to open binary font file. Load process failed.");
+			FileHandle fontHandle;
+			if (!FileSystemOpen(fullFontPath, FileMode::eFile_Mode_Read, true, &fontHandle)) {
+				GLOG(Log::eError, "SystemFontLoader: unable to open binary font: %s.", fullFontPath);
 				return false;
 			}
 
-			size_t FileSize;
-			if (!FileSystemSize(&FontBinaryHandle, &FileSize)) {
-				GLOG(Log::eError, "Unable to get binary font file size. Load process failed.");
+			size_t fileSize = 0;
+			if (!FileSystemSize(&fontHandle, &fileSize)) {
+				GLOG(Log::eError, "SystemFontLoader: unable to get font file size.");
 				return false;
 			}
 
-			outResource->fontBinary = Memory::Allocate(FileSize, MemoryType::eMemory_Type_Resource);
-			if (!FileSystemReadAllBytes(&FontBinaryHandle, (unsigned char*)outResource->fontBinary, &outResource->binarySize)) {
-				GLOG(Log::eError, "Unable to perform binary read on font file. Load process failed.");
+			outResource->fontBinary = Memory::Allocate(fileSize, MemoryType::eMemory_Type_Resource);
+			if (!FileSystemReadAllBytes(&fontHandle,
+				static_cast<unsigned char*>(outResource->fontBinary),
+				&outResource->binarySize)) {
+				GLOG(Log::eError, "SystemFontLoader: failed to read binary font.");
 				return false;
 			}
 
-			// Might still work anyway. so continue.
-			if (outResource->binarySize != FileSize) {
-				GLOG(Log::eWarn, "Mismatch between filesize and bytes read in font file. File may be corrupt.");
+			if (outResource->binarySize != fileSize) {
+				GLOG(Log::eWarn, "SystemFontLoader: font file size mismatch, file may be corrupt.");
 			}
-			
-			FileSystemClose(&FontBinaryHandle);
+
+			FileSystemClose(&fontHandle);
 		}
-		else if (StringEquali(TrimmedVarName, "face")) {
-			// Read in the font face and store it for later.
-			SystemFontFace NewFace;
-			NewFace.name = std::move(TrimmedValue);
-			outResource->fonts.push_back(NewFace);
+		else if (StringEquali(varName, "face")) {
+			SystemFontFace newFace;
+			newFace.name = value;
+			outResource->fonts.Push(newFace);
 		}
 
-		// Clear the line buffer.
-		Memory::Zero(LineBuf, sizeof(char) * 512);
-		LineNumber++;
+		Memory::Zero(lineBuf, sizeof(lineBuf));
+		++lineNumber;
 	}
 
 	FileSystemClose(f);
 
-	// Check here to make sure a binary was loaded, and at least one font face was found.
-	if (!outResource->fontBinary || outResource->fonts.size() < 1) {
-		GLOG(Log::eError, "Font configuration did not provide a binary and at least one font face. Load process failed.");
+	if (!outResource->fontBinary || outResource->fonts.IsEmpty()) {
+		GLOG(Log::eError,
+			"SystemFontLoader: config must provide a binary and at least one face.");
 		return false;
 	}
 
 	return WriteDSFFile(outDSFFilename, outResource);
 }
 
+// ─────────────────────────────────────────────────────────────────
+//  ReadDSFFile — 读取引擎二进制格式
+// ─────────────────────────────────────────────────────────────────
+
 bool SystemFontLoader::ReadDSFFile(FileHandle* file, SystemFontResourceData* data) {
-	Memory::Zero(data, sizeof(SystemFontResourceData));
-	size_t BytesRead = 0;
+	size_t bytesRead = 0;
 
-	// Write the resource header first.
-	ResourceHeader Header;
-	CLOSE_IF_FAILED(FileSystemRead(file, sizeof(ResourceHeader), &Header, &BytesRead), file);
+	// 文件头校验
+	ResourceHeader header;
+	CLOSE_IF_FAILED(FileSystemRead(file, sizeof(ResourceHeader), &header, &bytesRead), file);
 
-	// Verify header contents.
-	if (Header.magicNumber != RESOURCES_MAGIC && Header.resourceType == (char)EAssetType::SystemFont) {
-		GLOG(Log::eError, "DSF file header is invalid and can not be read.");
+	if (header.magicNumber != RESOURCES_MAGIC ||
+		header.resourceType != static_cast<char>(EAssetType::SystemFont)) {
+		GLOG(Log::eError, "SystemFontLoader: DSF file header is invalid.");
 		FileSystemClose(file);
 		return false;
 	}
 
-	// TODO: read in/process file version.
+	// TTF 二进制大小
+	CLOSE_IF_FAILED(FileSystemRead(file, sizeof(size_t), &data->binarySize, &bytesRead), file);
 
-	// Size of font binary.
-	CLOSE_IF_FAILED(FileSystemRead(file, sizeof(size_t), &data->binarySize, &BytesRead), file);
+	// TTF 二进制数据
+	data->fontBinary = Memory::Allocate(data->binarySize, MemoryType::eMemory_Type_Resource);
+	CLOSE_IF_FAILED(FileSystemRead(file, data->binarySize, data->fontBinary, &bytesRead), file);
 
-	// The font binary
-	CLOSE_IF_FAILED(FileSystemRead(file, data->binarySize, &data->fontBinary, &BytesRead), file);
+	// Face 数量
+	uint32_t faceCount = 0;
+	CLOSE_IF_FAILED(FileSystemRead(file, sizeof(uint32_t), &faceCount, &bytesRead), file);
+	data->fonts.Resize(faceCount);
 
-	// The number of fonts
-	uint32_t FontCount = (uint32_t)data->fonts.size();
-	CLOSE_IF_FAILED(FileSystemRead(file, sizeof(uint32_t), &FontCount, &BytesRead), file);
+	// 每个 face 的名称
+	for (uint32_t i = 0; i < faceCount; ++i) {
+		uint32_t faceLength = 0;
+		CLOSE_IF_FAILED(FileSystemRead(file, sizeof(uint32_t), &faceLength, &bytesRead), file);
 
-	// Iterate faces metedata and output as well.
-	for (uint32_t i = 0; i < FontCount; ++i) {
-		// Length of face name string.
-		uint32_t FaceLength = (uint32_t)data->fonts[i].name.Length();
-		CLOSE_IF_FAILED(FileSystemRead(file, sizeof(uint32_t), &FaceLength, &BytesRead), file);
-
-		// Face string.
-		char* f = (char*)Memory::Allocate(sizeof(char) * FaceLength, MemoryType::eMemory_Type_String);
-		CLOSE_IF_FAILED(FileSystemRead(file, sizeof(char) * FaceLength, f, &BytesRead), file);
-		data->fonts[i].name = std::move(f);
-		Memory::Free(f, MemoryType::eMemory_Type_String);
+		char* faceBuf = static_cast<char*>(
+			Memory::Allocate(sizeof(char) * faceLength, MemoryType::eMemory_Type_String));
+		CLOSE_IF_FAILED(FileSystemRead(file, sizeof(char) * faceLength, faceBuf, &bytesRead), file);
+		data->fonts[i].name = faceBuf;
+		Memory::Free(faceBuf, MemoryType::eMemory_Type_String);
 	}
 
 	return true;
 }
 
+// ─────────────────────────────────────────────────────────────────
+//  WriteDSFFile — 写出引擎二进制格式
+// ─────────────────────────────────────────────────────────────────
+
 bool SystemFontLoader::WriteDSFFile(const char* outDSFFilename, SystemFontResourceData* resource) {
+	FileHandle file;
+	if (!FileSystemOpen(outDSFFilename, FileMode::eFile_Mode_Write, true, &file)) {
+		GLOG(Log::eError, "SystemFontLoader: failed to open DSF for writing: %s.", outDSFFilename);
+		return false;
+	}
+
+	size_t bytesWritten = 0;
+
+	// 文件头
+	ResourceHeader header;
+	header.magicNumber = RESOURCES_MAGIC;
+	header.resourceType = static_cast<char>(EAssetType::SystemFont);
+	header.version = 0x01U;
+	header.reserved = 0;
+	CLOSE_IF_FAILED(FileSystemWrite(&file, sizeof(ResourceHeader), &header, &bytesWritten), &file);
+
+	// TTF 二进制大小和数据
+	CLOSE_IF_FAILED(FileSystemWrite(&file, sizeof(size_t), &resource->binarySize, &bytesWritten), &file);
+	CLOSE_IF_FAILED(FileSystemWrite(&file, resource->binarySize, resource->fontBinary, &bytesWritten), &file);
+
+	// Face 数量
+	uint32_t faceCount = static_cast<uint32_t>(resource->fonts.Size());
+	CLOSE_IF_FAILED(FileSystemWrite(&file, sizeof(uint32_t), &faceCount, &bytesWritten), &file);
+
+	// 每个 face 的名称
+	for (uint32_t i = 0; i < faceCount; ++i) {
+		uint32_t faceLength = static_cast<uint32_t>(resource->fonts[i].name.Length()) + 1;
+		CLOSE_IF_FAILED(FileSystemWrite(&file, sizeof(uint32_t), &faceLength, &bytesWritten), &file);
+		CLOSE_IF_FAILED(FileSystemWrite(&file, sizeof(char) * faceLength,
+			const_cast<char*>(resource->fonts[i].name.CStr()), &bytesWritten), &file);
+	}
+
+	FileSystemClose(&file);
 	return true;
 }

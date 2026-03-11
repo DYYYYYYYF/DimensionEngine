@@ -213,7 +213,7 @@ bool RenderViewUI::OnRender(struct RenderViewPacket* packet, IRendererBackend* b
 			ATextActor* Text = PacketData->Textes[i];
 			ShaderSystem::BindInstance(Text->InstanceID);
 
-			if (!ShaderSystem::SetUniformByIndex(DiffuseMapLocation, &Text->Data->atlas)) {
+			if (!ShaderSystem::SetUniformByIndex(DiffuseMapLocation, &Text->Data->GetAtlas())) {
 				GLOG(Log::eError, "Failed to apply bitmap font diffuse map uniform.");
 				return false;
 			}

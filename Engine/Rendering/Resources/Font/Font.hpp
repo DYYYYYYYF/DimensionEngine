@@ -1,93 +1,46 @@
 ﻿#pragma once
 
+#include "FontType.hpp"
 #include "Rendering/Resources/Asset.hpp"
 #include "Rendering/Resources/Texture/Texture.hpp"
 #include <vector>
 #include <string>
+#include <memory>
+#include <unordered_map>
 
-// --------------------------  ENUM  ------------------------- //
-enum FontType {
-	eFont_Type_Bitmap,
-	eFont_Type_System
-};
+// Forward declarations
+class IRenderer;
+struct SystemFontContext;
 
-// -------------------------  STRUCT  ------------------------- //
-struct FontGlyph {
-	int codePoint;
-	unsigned short x;
-	unsigned short y;
-	unsigned short width;
-	unsigned short height;
-	short offsetX;
-	short offsetY;
-	short advanceX;
-	unsigned char pageID;
-};
+// ─────────────────────────────────────────────
+//  IFont —— 渲染层接口
+//  职责：提供渲染所需的 glyph / atlas / kerning 数据
+//  不负责磁盘加载，不继承 UAsset
+// ─────────────────────────────────────────────
 
-struct FontKerning {
-	int codePoint0;
-	int codePoint1;
-	short amount;
-};
-
-struct BitmapFontPage {
-	char id = INVALID_ID_U8;
-	std::string file;
-};
-
-struct BitmapFontResourceData {
-	class IFontDataBase* data = nullptr;
-	BitmapFontPage* Pages = nullptr;
-	unsigned int pageCount = 0;
-};
-
-struct SystemFontFace {
-	FString name;
-};
-
-struct SystemFontResourceData {
-	std::vector<SystemFontFace> fonts;
-	size_t binarySize = 0;
-	void* fontBinary = nullptr;
-};
-
-// -------------------------  CLASS  ------------------------- //
-class IFontDataBase : public UAsset{
+class IFont {
 public:
-	FontType type;
-	FString face;
-	unsigned int size = 0;
-	int lineHeight = -1;
-	int baseLine = -1;
-	int atlasSizeX = 1024;
-	int atlasSizeY = 1024;
-	struct TextureMap atlas;
-	unsigned int glyphCount = 0;
-	FontGlyph* glyphs = nullptr;
-	unsigned int kerningCount = 0;
-	FontKerning* kernings = nullptr;
-	float tabXAdvance = 0.0f;
-	unsigned int internalDataSize = 0;
-};
+	virtual ~IFont() = default;
 
-class BitmapFontInternalData : public IFontDataBase {
-public:
-	BitmapFontInternalData() : IFontDataBase() {
-		type = FontType::eFont_Type_Bitmap;
-	}
+	// Atlas 校验：SystemFontVariant 需要按需扩充，BitmapFont 直接返回 true
+	virtual bool VerifyAtlas(const FString& text) = 0;
+
+	// ── 数据访问 ──────────────────────────────
+	virtual const FontGlyph* GetGlyphs()       const = 0;
+	virtual uint32_t           GetGlyphCount()   const = 0;
+	virtual const FontKerning* GetKernings()     const = 0;
+	virtual uint32_t           GetKerningCount() const = 0;
+	virtual const TextureMap& GetAtlas()        const = 0;
+	virtual int                GetLineHeight()   const = 0;
+	virtual int                GetBaseLine()     const = 0;
+	virtual float              GetTabXAdvance()  const = 0;
+	virtual const FString& GetFace()         const = 0;
+	virtual unsigned int       GetSize()         const = 0;
 
 public:
-	// Casted pointer to resource data for convenience.
-	BitmapFontResourceData* resourceData = nullptr;
-};
+	void AddRef() { ++refCount_; }
+	bool Release() { return --refCount_ == 0; }
 
-class SystemFontVariantData : public IFontDataBase {
-public:
-	SystemFontVariantData() : IFontDataBase() {
-		type = FontType::eFont_Type_System;
-	}
-
-public:
-	std::vector<int> codepoints;
-	float scale;
+private:
+	int refCount_ = 0;
 };

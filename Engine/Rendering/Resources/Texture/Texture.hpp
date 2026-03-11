@@ -25,6 +25,9 @@ public:
 	const FString& GetName() const { return Name; }
 	void SetName(const FString& n) { Name = n; }
 
+	uint32_t GetWidth() const { return Width; }
+	uint32_t GetHeight() const { return Height; }
+
 private:
 	uint32_t ID;
 	FString Name;

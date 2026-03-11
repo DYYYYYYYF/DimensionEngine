@@ -19,6 +19,7 @@ Documents
 
 # Assets
 Assets/Fonts/*.dbf
+Assets/Fonts/*.dsf
 Assets/Models/*.dsm
 Assets/Materials/*.dmt
 !Assets/Materials/Material.UI.dmt
