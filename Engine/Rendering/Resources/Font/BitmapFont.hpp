@@ -20,8 +20,8 @@ public:
 
 	// ── UAsset 资源层（由 ResourceSystem 调用）──
 	// 从已加载的 BitmapFontResourceData 初始化自身数据
-	bool InitFromResourceData(BitmapFontResourceData* resourceData, IRenderer* renderer);
-	void ReleaseResource(IRenderer* renderer);
+	bool InitFromResourceData(BitmapFontResourceData* resourceData);
+	void ReleaseResource();
 
 	// ── IFont 接口 ────────────────────────────
 	// Bitmap 字体 atlas 已在加载时生成，无需运行时校验

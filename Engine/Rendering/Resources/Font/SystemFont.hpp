@@ -40,8 +40,8 @@ public:
 
 	// ── 初始化（由 SystemFont 调用）───────────
 	// 构建 atlas 纹理、采集 glyph 数据，完成后才可用于渲染
-	bool Setup(IRenderer* renderer);
-	void Cleanup(IRenderer* renderer);
+	bool Setup();
+	void Cleanup();
 
 private:
 	// 重建 atlas（首次 Setup 或新增 codepoint 时调用）
@@ -87,19 +87,19 @@ public:
 	// ── UAsset 资源层 ─────────────────────────
 	// 从已加载的 SystemFontResourceData 初始化，建立 stbtt 解析上下文
 	// index 对应 TTF 文件内的字体索引（一个 TTF 可含多个字型）
-	bool InitFromResourceData(SystemFontResourceData* resourceData, int index, IRenderer* renderer);
+	bool InitFromResourceData(SystemFontResourceData* resourceData, int index);
 	void ReleaseResource(IRenderer* renderer);
 
 	// ── Variant 工厂 ──────────────────────────
 	// 按尺寸获取 Variant；不存在则创建并初始化
 	// 返回 nullptr 表示创建失败
-	SystemFontVariant* AcquireVariant(int size, IRenderer* renderer);
-	bool ReleaseVariant(int size, IRenderer* renderer);
+	SystemFontVariant* AcquireVariant(int size);
+	bool ReleaseVariant(int size);
 
 	const FString& GetFace() const { return face_; }
 
 private:
-	SystemFontVariant* CreateVariant(int size, IRenderer* renderer);
+	SystemFontVariant* CreateVariant(int size);
 
 	// ── 数据成员 ──────────────────────────────
 	FString            face_;
@@ -107,6 +107,4 @@ private:
 
 	// size → Variant，替代原来的 vector + 线性搜索
 	TMap<int, SystemFontVariant*> variants_;
-
-	IRenderer* renderer_ = nullptr; // 用于 Variant cleanup
 };

@@ -14,10 +14,6 @@
 #include "Systems/CameraSystem.h"
 #include "Systems/RenderViewSystem.hpp"
 
-// TODO: temp
-#include "Core/Event.hpp"
-// TODO: temp
-
 IRenderer* IRenderer::Renderer = nullptr;
 
 IRenderer::IRenderer() {
