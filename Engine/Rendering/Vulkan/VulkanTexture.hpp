@@ -7,7 +7,7 @@ enum TextureType;
 class VulkanContext;
 class VulkanCommandBuffer;
 
-class VulkanImage {
+class VulkanTexture : public UTexture{
 public:
 	void CreateImage(VulkanContext* context, TextureType type, uint32_t width, uint32_t height, vk::Format format, vk::ImageTiling tiling, 
 		vk::ImageUsageFlags usage, vk::MemoryPropertyFlags memory_flags, bool create_view, vk::ImageAspectFlags view_aspect_flags);

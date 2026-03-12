@@ -159,8 +159,8 @@ bool RenderViewPick::OnCreate(const RenderViewConfig& config) {
 	WorldShaderInfo.ViewMatrix = Matrix4::Identity();
 
 	InstanceCount = 0;
-	Memory::Zero(&ColorTargetAttachment, sizeof(Texture));
-	Memory::Zero(&DepthTargetAttachment, sizeof(Texture));
+	Memory::Zero(&ColorTargetAttachment, sizeof(UTexture));
+	Memory::Zero(&DepthTargetAttachment, sizeof(UTexture));
 
 	if (!EngineEvent::Register(eEventCode::Mouse_Moved, this, OnMouseMoved)) {
 		GLOG(Log::eError, "Unable to listen for mouse moved event, creation failed.");
@@ -490,7 +490,7 @@ bool RenderViewPick::OnRender(struct RenderViewPacket* packet, IRendererBackend*
 	}
 
 	// Read pixel data.
-	Texture* t = &ColorTargetAttachment;
+	UTexture* t = &ColorTargetAttachment;
 	// Read the pixel at the mouse coordinate.
 	unsigned char PixelRGBA[4] = { 0 };
 	unsigned char* Pixel = &PixelRGBA[0];

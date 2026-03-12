@@ -3,12 +3,11 @@
 #include "TextureType.hpp"
 #include "Rendering/Resources/Asset.hpp"
 #include "Math/MathTypes.hpp"
-#include <string>
 
-class Texture {
+class UTexture : public UAsset {
 public:
-	Texture();
-	virtual ~Texture();
+	UTexture();
+	virtual ~UTexture();
 
 public:
 	uint32_t GetID() const { return ID; }

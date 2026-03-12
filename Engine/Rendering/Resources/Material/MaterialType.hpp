@@ -1,4 +1,4 @@
-ï»¿#pragma once
+#pragma once
 
 #include "Math/MathTypes.hpp"
 #include "Containers/FString.hpp"
@@ -19,12 +19,12 @@ struct SMaterialConfig {
 	FString normal_map_name;
 
 	// PBR
-	float Metallic = 0.1f;					// é‡‘å±åº¦
-	float Roughness = 0.5f;					// ç²—ç³™åº¦
-	float AmbientOcclusion = 1.0f;			// ç¯å¢ƒå…‰é®è”½
-	Vector4 EmissiveColor;						// è‡ªå‘å…‰
-	std::string MetallicRoughnessTexName;	// é‡‘å±åº¦/ç²—ç³™åº¦Texture
-	std::string EmissiveFactorTexName;		// è‡ªå‘å…‰Texture
+	float Metallic = 0.1f;					// ½ğÊô¶È
+	float Roughness = 0.5f;					// ´Ö²Ú¶È
+	float AmbientOcclusion = 1.0f;			// »·¾³¹âÕÚ±Î
+	Vector4 EmissiveColor;						// ×Ô·¢¹â
+	std::string MetallicRoughnessTexName;	// ½ğÊô¶È/´Ö²Ú¶ÈTexture
+	std::string EmissiveFactorTexName;		// ×Ô·¢¹âTexture
 
 	float NormalIntensity = 1.0f;
 };

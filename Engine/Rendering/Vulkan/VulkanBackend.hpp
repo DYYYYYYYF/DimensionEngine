@@ -22,13 +22,13 @@ public:
 	virtual void Resize(unsigned short width, unsigned short height) override;
 
 	// Textures
-	virtual void CreateTexture(const unsigned char* pixels, Texture* texture) override;
-	virtual void DestroyTexture(Texture* texture) override;
-	virtual void CreateWriteableTexture(Texture* tex) override;
-	virtual void ResizeTexture(Texture* tex, uint32_t new_width, uint32_t new_height) override;
-	virtual void WriteTextureData(Texture* tex, uint32_t offset, uint32_t size, const unsigned char* pixels) override;
-	virtual void ReadTextureData(Texture* tex, uint32_t offset, uint32_t size, void** outMemeory) override;
-	virtual void ReadTexturePixel(Texture* tex, uint32_t x, uint32_t y, unsigned char** outRGBA) override;
+	virtual void CreateTexture(const unsigned char* pixels, UTexture* texture) override;
+	virtual void DestroyTexture(UTexture* texture) override;
+	virtual void CreateWriteableTexture(UTexture* tex) override;
+	virtual void ResizeTexture(UTexture* tex, uint32_t new_width, uint32_t new_height) override;
+	virtual void WriteTextureData(UTexture* tex, uint32_t offset, uint32_t size, const unsigned char* pixels) override;
+	virtual void ReadTextureData(UTexture* tex, uint32_t offset, uint32_t size, void** outMemeory) override;
+	virtual void ReadTexturePixel(UTexture* tex, uint32_t x, uint32_t y, unsigned char** outRGBA) override;
 
 	virtual bool CreateGeometry(Geometry* geometry, uint32_t vertex_size, uint32_t vertex_count, 
 		const void* vertices, uint32_t index_size, uint32_t index_count, const void* indices) override;
@@ -39,9 +39,9 @@ public:
 	virtual bool EndRenderpass(IRenderpass* pass) override;
 	virtual bool CreateRenderTarget(unsigned char attachment_count, std::vector<RenderTargetAttachment> attachments, IRenderpass* pass, uint32_t width, uint32_t height, RenderTarget* out_target) override;
 	virtual void DestroyRenderTarget(RenderTarget* target, bool free_internal_memory) override;
-	virtual Texture* GetWindowAttachment(unsigned char index) override;
+	virtual UTexture* GetWindowAttachment(unsigned char index) override;
 	virtual unsigned char GetWindowAttachmentCount() const override;
-	virtual Texture* GetDepthAttachment(unsigned char index) override;
+	virtual UTexture* GetDepthAttachment(unsigned char index) override;
 	virtual unsigned char GetWindowAttachmentIndex() override;
 	virtual bool CreateRenderpass(IRenderpass* out_renderpass, const RenderpassConfig& config) override;
 	virtual void DestroyRenderpass(IRenderpass* pass) override;

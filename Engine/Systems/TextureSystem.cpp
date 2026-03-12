@@ -9,11 +9,11 @@
 #include "Rendering/Renderer.hpp"
 
 STextureSystemConfig TextureSystem::TextureSystemConfig;
-Texture* TextureSystem::DefaultDiffuseTexture = nullptr;
-Texture* TextureSystem::DefaultSpecularTexture = nullptr;
-Texture* TextureSystem::DefaultNormalTexture = nullptr;
-Texture* TextureSystem::DefaultRoughnessMetallicTexture = nullptr;
-std::unordered_map<FString, Texture*> TextureSystem::TextureMap;
+UTexture* TextureSystem::DefaultDiffuseTexture = nullptr;
+UTexture* TextureSystem::DefaultSpecularTexture = nullptr;
+UTexture* TextureSystem::DefaultNormalTexture = nullptr;
+UTexture* TextureSystem::DefaultRoughnessMetallicTexture = nullptr;
+std::unordered_map<FString, UTexture*> TextureSystem::TextureMap;
 bool TextureSystem::Initilized = false;
 IRenderer* TextureSystem::Renderer = nullptr;
 
@@ -48,7 +48,7 @@ bool TextureSystem::Initialize(IRenderer* renderer, STextureSystemConfig config)
 void TextureSystem::Shutdown() {
 	// Destroy all loaded textures.
 	for (auto& PairsTex : TextureMap) {
-		Texture* tex = PairsTex.second;
+		UTexture* tex = PairsTex.second;
 		if (tex != nullptr && tex->Generation != INVALID_ID) {
 			GLOG(Log::eDebug, "Destroying texture: '%s'.", tex->GetName().CStr());
 			Renderer->DestroyTexture(tex);
@@ -61,9 +61,9 @@ void TextureSystem::Shutdown() {
 	DestroyDefaultTexture();
 }
 
-Texture* TextureSystem::Acquire(const FString& name, bool auto_release) {
+UTexture* TextureSystem::Acquire(const FString& name, bool auto_release) {
 	// Return default texture, but warn about it since this should be returned via GetDefaultTexture()
-	Texture* OutTexture = CheckTextureName(name);
+	UTexture* OutTexture = CheckTextureName(name);
 	if (OutTexture) {
 		return OutTexture;
 	}
@@ -85,9 +85,9 @@ Texture* TextureSystem::Acquire(const FString& name, bool auto_release) {
 	return OutTexture;
 }
 
-Texture* TextureSystem::AcquireCube(const FString& name, bool auto_release) {
+UTexture* TextureSystem::AcquireCube(const FString& name, bool auto_release) {
 	// Return default texture, but warn about it since this should be returned via GetDefaultTexture()
-	Texture* OutTexture = CheckTextureName(name);
+	UTexture* OutTexture = CheckTextureName(name);
 	if (OutTexture) {
 		return OutTexture;
 	}
@@ -107,7 +107,7 @@ Texture* TextureSystem::AcquireCube(const FString& name, bool auto_release) {
 	return OutTexture;
 }
 
-Texture* TextureSystem::AcquireWriteable(const FString& name, uint32_t width, uint32_t height,
+UTexture* TextureSystem::AcquireWriteable(const FString& name, uint32_t width, uint32_t height,
 	unsigned char channel_count, bool has_transparency, bool has_depth){
 	uint32_t ID = INVALID_ID;
 	// NOTE: Wrapped textures are never auto-release because it means that their
@@ -117,7 +117,7 @@ Texture* TextureSystem::AcquireWriteable(const FString& name, uint32_t width, ui
 		return nullptr;
 	}
 	
-	Texture* t = TextureMap[name];
+	UTexture* t = TextureMap[name];
 	t->SetID(ID);
 	t->Type = TextureType::eTexture_Type_2D;
 	t->SetName(name);
@@ -150,15 +150,15 @@ void TextureSystem::Release(const FString& name) {
 	}
 }
 
-void TextureSystem::DestroyTexture(Texture* t) {
+void TextureSystem::DestroyTexture(UTexture* t) {
 	// Release texture.
 	Renderer->DestroyTexture(t);
 }
 
 void TextureSystem::WrapInternal(const char* name, uint32_t width, uint32_t height, 
-	unsigned char channel_count, bool has_transparency, bool is_writeable, bool register_texture, void* internal_data, Texture* tex) {
+	unsigned char channel_count, bool has_transparency, bool is_writeable, bool register_texture, void* internal_data, UTexture* tex) {
 	uint32_t ID = INVALID_ID;
-	Texture* t = nullptr;
+	UTexture* t = nullptr;
 	if (register_texture) {
 		// NOTE: Wrapped textures are never auto-release because it means that their
 		// resource are created and managed somewhere within the renderer internals.
@@ -174,7 +174,7 @@ void TextureSystem::WrapInternal(const char* name, uint32_t width, uint32_t heig
 			t = tex;
 		}
 		else {
-			t = (Texture*)Memory::Allocate(sizeof(Texture), MemoryType::eMemory_Type_Texture);
+			t = (UTexture*)Memory::Allocate(sizeof(UTexture), MemoryType::eMemory_Type_Texture);
 		}
 		// GLOG(Log::eInfo, "TextureSystem::WrapInternal() created texture '%s', but not registering, resulting in an allocation. It is up to the caller for free this memory.", name);
 	}
@@ -193,7 +193,7 @@ void TextureSystem::WrapInternal(const char* name, uint32_t width, uint32_t heig
 
 }
 
-bool TextureSystem::SetInternal(Texture* t, void* internal_data) {
+bool TextureSystem::SetInternal(UTexture* t, void* internal_data) {
 	if (t == nullptr) {
 		return false;
 	}
@@ -203,7 +203,7 @@ bool TextureSystem::SetInternal(Texture* t, void* internal_data) {
 	return true;
 }
 
-bool TextureSystem::Resize(Texture* t, uint32_t width, uint32_t height, bool regenerate_internal_data) {
+bool TextureSystem::Resize(UTexture* t, uint32_t width, uint32_t height, bool regenerate_internal_data) {
 	if (t == nullptr) {
 		return false;
 	}
@@ -228,7 +228,7 @@ bool TextureSystem::Resize(Texture* t, uint32_t width, uint32_t height, bool reg
 	return true;
 }
 
-bool TextureSystem::WriteData(Texture* t, uint32_t offset, uint32_t size, void* data) {
+bool TextureSystem::WriteData(UTexture* t, uint32_t offset, uint32_t size, void* data) {
 	if (t == nullptr) {
 		return false;
 	}
@@ -237,7 +237,7 @@ bool TextureSystem::WriteData(Texture* t, uint32_t offset, uint32_t size, void* 
 	return true;
 }
 
-Texture* TextureSystem::GetDefaultDiffuseTexture() {
+UTexture* TextureSystem::GetDefaultDiffuseTexture() {
 	if (Initilized) {
 		return DefaultDiffuseTexture;
 	}
@@ -245,7 +245,7 @@ Texture* TextureSystem::GetDefaultDiffuseTexture() {
 	return nullptr;
 }
 
-Texture* TextureSystem::GetDefaultSpecularTexture() {
+UTexture* TextureSystem::GetDefaultSpecularTexture() {
 	if (Initilized) {
 		return DefaultSpecularTexture;
 	}
@@ -253,7 +253,7 @@ Texture* TextureSystem::GetDefaultSpecularTexture() {
 	return nullptr;
 }
 
-Texture* TextureSystem::GetDefaultNormalTexture() {
+UTexture* TextureSystem::GetDefaultNormalTexture() {
 	if (Initilized) {
 		return DefaultNormalTexture;
 	}
@@ -261,7 +261,7 @@ Texture* TextureSystem::GetDefaultNormalTexture() {
 	return nullptr;
 }
 
-Texture* TextureSystem::GetDefaultRoughnessMetallicTexture() {
+UTexture* TextureSystem::GetDefaultRoughnessMetallicTexture() {
 	if (Initilized) {
 		return DefaultRoughnessMetallicTexture;
 	}
@@ -302,7 +302,7 @@ bool TextureSystem::CreateDefaultTexture() {
 
 	// Diffuse texture.
 	if (DefaultDiffuseTexture == nullptr) {
-		DefaultDiffuseTexture = NewObject<Texture>();
+		DefaultDiffuseTexture = NewObject<UTexture>();
 		DefaultDiffuseTexture->SetName(DEFAULT_DIFFUSE_TEXTURE_NAME);
 		DefaultDiffuseTexture->Width = TexDimension;
 		DefaultDiffuseTexture->Height = TexDimension;
@@ -322,7 +322,7 @@ bool TextureSystem::CreateDefaultTexture() {
 		unsigned char SpecularPixels[16 * 16 * 4];
 		// Default spec map is black (no specular).
 		Memory::Set(SpecularPixels, 0, sizeof(unsigned char) * 16 * 16 * 4);
-		DefaultSpecularTexture = NewObject<Texture>();
+		DefaultSpecularTexture = NewObject<UTexture>();
 		DefaultSpecularTexture->SetName(DEFAULT_SPECULAR_TEXTURE_NAME);
 		DefaultSpecularTexture->Width = 16;
 		DefaultSpecularTexture->Height = 16;
@@ -356,7 +356,7 @@ bool TextureSystem::CreateDefaultTexture() {
 			}
 		}
 
-		DefaultNormalTexture = NewObject<Texture>();
+		DefaultNormalTexture = NewObject<UTexture>();
 		DefaultNormalTexture->SetName(DEFAULT_NORMAL_TEXTURE_NAME);
 		DefaultNormalTexture->Width = 16;
 		DefaultNormalTexture->Height = 16;
@@ -391,7 +391,7 @@ bool TextureSystem::CreateDefaultTexture() {
 			}
 		}
 
-		DefaultRoughnessMetallicTexture = NewObject<Texture>();
+		DefaultRoughnessMetallicTexture = NewObject<UTexture>();
 		DefaultRoughnessMetallicTexture->SetName(DEFAULT_ROUGHNESS_METALLIC_TEXTURE_NAME);
 		DefaultRoughnessMetallicTexture->Width = 16;
 		DefaultRoughnessMetallicTexture->Height = 16;
@@ -432,7 +432,7 @@ void TextureSystem::DestroyDefaultTexture() {
 	}
 }
 
-bool TextureSystem::LoadCubeTexture(const FString& name, FString texture_names[6], Texture* t) {
+bool TextureSystem::LoadCubeTexture(const FString& name, FString texture_names[6], UTexture* t) {
 	unsigned char* piexels = nullptr;
 	size_t ImageSize = 0;
 	for (unsigned char i = 0; i < 6; ++i) {
@@ -440,7 +440,7 @@ bool TextureSystem::LoadCubeTexture(const FString& name, FString texture_names[6
 		Params.flip_y = false;
 
 		UAsset ImageResource;
-		if (!ResourceSystem::Load(texture_names[i].CStr(), EAssetType::Image, &Params, &ImageResource)) {
+		if (!ResourceSystem::Load(texture_names[i].CStr(), EAssetType::Texture, &Params, &ImageResource)) {
 			GLOG(Log::eError, "TextureSystem::LoadCubeTexture() Failed to load image resource for texture '%s'.", texture_names[i].CStr());
 			return false;
 		}
@@ -491,7 +491,7 @@ void TextureSystem::LoadJobSuccess(void* params) {
 	Renderer->CreateTexture(ResourceData->pixels, &TextureParams->temp_texture);
 
 	// Take a copy of the old texture.
-	Texture* Old = TextureParams->out_texture;
+	UTexture* Old = TextureParams->out_texture;
 	// Destroy the old texture.
 	Renderer->DestroyTexture(Old);
 
@@ -525,7 +525,7 @@ bool TextureSystem::LoadJobStart(void* params, void* result_data) {
 	ImageResourceParams ResourceParams;
 	ResourceParams.flip_y = true;
 
-	bool Result = ResourceSystem::Load(LoadParams->resource_name, EAssetType::Image, &ResourceParams, &LoadParams->ImageResource);
+	bool Result = ResourceSystem::Load(LoadParams->resource_name, EAssetType::Texture, &ResourceParams, &LoadParams->ImageResource);
 	if (!Result) {
 		return false;
 	}
@@ -563,7 +563,7 @@ bool TextureSystem::LoadJobStart(void* params, void* result_data) {
 	return Result;
 }
 
-Texture* TextureSystem::CheckTextureName(const FString& name) {
+UTexture* TextureSystem::CheckTextureName(const FString& name) {
 	if (name.Equali(DEFAULT_DIFFUSE_TEXTURE_NAME)) {
 		GLOG(Log::eWarn, "Texture acquire return default texture. Use GetDefaultTexture() for texture 'DEFAULT_DIFFUSE_TEXTURE_NAME'");
 		return DefaultDiffuseTexture;
@@ -587,7 +587,7 @@ Texture* TextureSystem::CheckTextureName(const FString& name) {
 	return nullptr;
 }
 
-bool TextureSystem::LoadTexture(const FString& name, Texture* texture) {
+bool TextureSystem::LoadTexture(const FString& name, UTexture* texture) {
 	// Kick off a texture loading job. Only handles loading from disk to CPU.
 	// GPU upload is handled after completion of this job.
 	TextureLoadParams Params;
@@ -612,7 +612,7 @@ bool TextureSystem::ProcessTextureReference(const FString& name, TextureType typ
 		return false;
 	}
 
-	Texture* Tex = TextureMap[name];
+	UTexture* Tex = TextureMap[name];
 	// 创建新贴图资源
 	if (Tex == nullptr) {
 		// This means no texture exists here. Find a free index first.
@@ -620,7 +620,7 @@ bool TextureSystem::ProcessTextureReference(const FString& name, TextureType typ
 		for (uint32_t i = 0; i < Count; ++i) {
 			if (Tex == nullptr) {
 				// A free slot has been found. Use its index as the handle.
-				Tex = NewObject<Texture>();
+				Tex = NewObject<UTexture>();
 				Tex->SetID(i);
 				// Either way, update the entry.
 				TextureMap[name] = Tex;

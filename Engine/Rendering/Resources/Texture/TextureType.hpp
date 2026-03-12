@@ -37,7 +37,7 @@ enum TextureType {
 };
 
 struct TextureMap {
-	class Texture* texture = nullptr;
+	class UTexture* texture = nullptr;
 	TextureUsage usage = TextureUsage::eTexture_Usage_Unknown;
 	TextureFilter filter_minify = TextureFilter::eTexture_Filter_Mode_Linear;
 	TextureFilter filter_magnify = TextureFilter::eTexture_Filter_Mode_Linear;

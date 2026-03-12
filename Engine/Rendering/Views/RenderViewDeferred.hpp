@@ -9,10 +9,10 @@ class ACameraActor;
 
 // G-Buffer纹理
 struct GBufferSet {
-	Texture* AlbedoTexture = nullptr;
-	Texture* NormalTexture = nullptr;
-	Texture* PositionTexture = nullptr;
-	Texture* DepthTexture = nullptr;
+	UTexture* AlbedoTexture = nullptr;
+	UTexture* NormalTexture = nullptr;
+	UTexture* PositionTexture = nullptr;
+	UTexture* DepthTexture = nullptr;
 
 	TextureMap AlbedoTextureMap;
 	TextureMap NormalTextureMap;

@@ -316,7 +316,7 @@ bool ShaderSystem::SetUniform(const char* uniform_name, const void* value) {
 	return SetUniformByIndex(Index, value);
 }
 
-bool ShaderSystem::SetSampler(const char* sampler_name, const Texture* tex) {
+bool ShaderSystem::SetSampler(const char* sampler_name, const UTexture* tex) {
 	return SetUniform(sampler_name, tex);
 }
 
@@ -343,7 +343,7 @@ bool ShaderSystem::SetUniformByIndex(uint32_t index, const void* value) {
 	return Renderer->SetUniform(Shader, uniform, value);
 }
 
-bool ShaderSystem::SetSamplerByIndex(unsigned short index, const Texture* tex) {
+bool ShaderSystem::SetSamplerByIndex(unsigned short index, const UTexture* tex) {
 	return SetUniformByIndex(index, tex);
 }
 

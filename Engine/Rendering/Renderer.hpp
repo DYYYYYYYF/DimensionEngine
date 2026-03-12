@@ -27,12 +27,12 @@ public:
 	virtual void OnResize(unsigned short width, unsigned short height);
 	virtual bool DrawFrame(SRenderPacket* packet);
 
-	virtual void CreateTexture(const unsigned char* pixels, Texture* texture);
-	virtual void DestroyTexture(Texture* texture);
+	virtual void CreateTexture(const unsigned char* pixels, UTexture* texture);
+	virtual void DestroyTexture(UTexture* texture);
 
-	virtual void CreateWriteableTexture(Texture* tex);
-	virtual void ResizeTexture(Texture* tex, uint32_t new_width, uint32_t new_height);
-	virtual void WriteTextureData(Texture* tex, uint32_t offset, uint32_t size, const unsigned char* pixels);
+	virtual void CreateWriteableTexture(UTexture* tex);
+	virtual void ResizeTexture(UTexture* tex, uint32_t new_width, uint32_t new_height);
+	virtual void WriteTextureData(UTexture* tex, uint32_t offset, uint32_t size, const unsigned char* pixels);
 
 	virtual bool CreateGeometry(Geometry* geometry, uint32_t vertex_size, uint32_t vertex_count, 
 		const void* vertices, uint32_t index_size, uint32_t index_count, const void* indices);
@@ -177,8 +177,8 @@ public:
 	 */
 	virtual void ReleaseTextureMap(TextureMap* map);
 
-	virtual void ReadTextureData(Texture* tex, uint32_t offset, uint32_t size, void** outMemeory);
-	virtual void ReadTexturePixel(Texture* tex, uint32_t x, uint32_t y, unsigned char** outRGBA);
+	virtual void ReadTextureData(UTexture* tex, uint32_t offset, uint32_t size, void** outMemeory);
+	virtual void ReadTexturePixel(UTexture* tex, uint32_t x, uint32_t y, unsigned char** outRGBA);
 
 	// Renderbuffer
 	virtual bool CreateRenderbuffer(enum RenderbufferType type, size_t total_size, bool use_freelist, IRenderbuffer* buffer);
@@ -209,9 +209,9 @@ public:
 	virtual void DestroyRenderpass(IRenderpass* pass) ;
 	virtual IRendererBackend* GetRenderBackend() { return Backend; }
 
-	virtual Texture* GetWindowAttachment(unsigned char index);
+	virtual UTexture* GetWindowAttachment(unsigned char index);
 	virtual unsigned char GetWindowAttachmentCount() const;
-	virtual Texture* GetDepthAttachment(unsigned char index);
+	virtual UTexture* GetDepthAttachment(unsigned char index);
 	virtual unsigned char GetWindowAttachmentIndex();
 
 public:

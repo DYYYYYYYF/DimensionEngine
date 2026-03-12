@@ -11,7 +11,7 @@
 enum class EAssetType {
 	Text = 0,
 	Binary,
-	Image,
+	Texture,
 	Material,
 	Geometry,
 	StaticMesh,

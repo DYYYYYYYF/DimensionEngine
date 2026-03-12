@@ -1,7 +1,7 @@
 ﻿#include "VulkanBackend.hpp"
 #include "VulkanPlatform.hpp"
 #include "VulkanDevice.hpp"
-#include "VulkanImage.hpp"
+#include "VulkanTexture.hpp"
 #include "VulkanAllocator.hpp"
 
 #include "Core/Event.hpp"
@@ -601,10 +601,10 @@ bool VulkanBackend::RecreateSwapchain() {
 	return true;
 }
 
-void VulkanBackend::CreateTexture(const unsigned char* pixels, Texture* texture) {
+void VulkanBackend::CreateTexture(const unsigned char* pixels, UTexture* texture) {
 	// Internal data creation.
-	texture->InternalData = (VulkanImage*)Memory::Allocate(sizeof(VulkanImage), MemoryType::eMemory_Type_Texture);
-	VulkanImage* Image = (VulkanImage*)texture->InternalData;
+	texture->InternalData = (VulkanTexture*)Memory::Allocate(sizeof(VulkanTexture), MemoryType::eMemory_Type_Texture);
+	VulkanTexture* Image = (VulkanTexture*)texture->InternalData;
 	vk::DeviceSize ImageSize = texture->Width * texture->Height * texture->ChannelCount * (texture->Type == TextureType::eTexture_Type_Cube ? 6 : 1);
 
 	// NOTE: Assumes 8 bits per channel.
@@ -625,10 +625,10 @@ void VulkanBackend::CreateTexture(const unsigned char* pixels, Texture* texture)
 	texture->Generation++;
 }
 
-void VulkanBackend::DestroyTexture(Texture* texture) {
+void VulkanBackend::DestroyTexture(UTexture* texture) {
 	Context.Device.GetLogicalDevice().waitIdle();
 
-	VulkanImage* Image = (VulkanImage*)texture->InternalData;
+	VulkanTexture* Image = (VulkanTexture*)texture->InternalData;
 
 	if (Image != nullptr) {
 		Image->Destroy(&Context);
@@ -653,10 +653,10 @@ vk::Format VulkanBackend::ChannelCountToFormat(unsigned char channel_count, vk::
 	}
 }
 
-void VulkanBackend::CreateWriteableTexture(Texture* tex) {
+void VulkanBackend::CreateWriteableTexture(UTexture* tex) {
 	// Internal data creation.
-	tex->InternalData = (VulkanImage*)Memory::Allocate(sizeof(VulkanImage), MemoryType::eMemory_Type_Texture);
-	VulkanImage* Image = (VulkanImage*)tex->InternalData;
+	tex->InternalData = (VulkanTexture*)Memory::Allocate(sizeof(VulkanTexture), MemoryType::eMemory_Type_Texture);
+	VulkanTexture* Image = (VulkanTexture*)tex->InternalData;
 
 	vk::ImageUsageFlags Usage;
 	vk::ImageAspectFlags Aspect;
@@ -679,7 +679,7 @@ void VulkanBackend::CreateWriteableTexture(Texture* tex) {
 	tex->Generation++;
 }
 
-void VulkanBackend::ResizeTexture(Texture* tex, uint32_t new_width, uint32_t new_height) {
+void VulkanBackend::ResizeTexture(UTexture* tex, uint32_t new_width, uint32_t new_height) {
 	if (tex == nullptr) {
 		return;
 	}
@@ -691,7 +691,7 @@ void VulkanBackend::ResizeTexture(Texture* tex, uint32_t new_width, uint32_t new
 	// Resizing is really just destroying the old image and creating a new one.
 	// Data is not preserved because there's no reliable way to map the old data to 
 	// the new since the amount of data differs.
-	VulkanImage* Image = (VulkanImage*)tex->InternalData;
+	VulkanTexture* Image = (VulkanTexture*)tex->InternalData;
 	Image->Destroy(&Context);
 
 	vk::Format ImageFormat = ChannelCountToFormat((unsigned char)tex->ChannelCount, vk::Format::eR8G8B8A8Unorm);
@@ -704,8 +704,8 @@ void VulkanBackend::ResizeTexture(Texture* tex, uint32_t new_width, uint32_t new
 	tex->Generation++;
 }
 
-void VulkanBackend::WriteTextureData(Texture* tex, uint32_t offset, uint32_t size, const unsigned char* pixels) {
-	VulkanImage* Image = (VulkanImage*)tex->InternalData;
+void VulkanBackend::WriteTextureData(UTexture* tex, uint32_t offset, uint32_t size, const unsigned char* pixels) {
+	VulkanTexture* Image = (VulkanTexture*)tex->InternalData;
 
 	// Create a staging buffer and load data into it.
 	VulkanBuffer Staging;
@@ -739,8 +739,8 @@ void VulkanBackend::WriteTextureData(Texture* tex, uint32_t offset, uint32_t siz
 	tex->Generation++;
 }
 
-void VulkanBackend::ReadTextureData(Texture* tex, uint32_t offset, uint32_t size, void** outMemeory) {
-	VulkanImage* Image = (VulkanImage*)tex->InternalData;
+void VulkanBackend::ReadTextureData(UTexture* tex, uint32_t offset, uint32_t size, void** outMemeory) {
+	VulkanTexture* Image = (VulkanTexture*)tex->InternalData;
 
 	// Create a staging buffer and load data into it.
 	VulkanBuffer Staging;
@@ -774,8 +774,8 @@ void VulkanBackend::ReadTextureData(Texture* tex, uint32_t offset, uint32_t size
 	Staging.Destroy(&Context);
 }
 
-void VulkanBackend::ReadTexturePixel(Texture* tex, uint32_t x, uint32_t y, unsigned char** outRGBA) {
-	VulkanImage* Image = (VulkanImage*)tex->InternalData;
+void VulkanBackend::ReadTexturePixel(UTexture* tex, uint32_t x, uint32_t y, unsigned char** outRGBA) {
+	VulkanTexture* Image = (VulkanTexture*)tex->InternalData;
 
 	// TODO: creating a buffer every time isn't great. Could optimize this by creating a buffer once
 	// and just reusing it.
@@ -1315,7 +1315,7 @@ bool VulkanBackend::ApplyInstanceShader(Shader* shader, bool need_update) {
 					continue;
 				}
 
-				Texture* t = map->texture;
+				UTexture* t = map->texture;
 				if (t == nullptr) {
 					continue;
 				}
@@ -1343,7 +1343,7 @@ bool VulkanBackend::ApplyInstanceShader(Shader* shader, bool need_update) {
 					}
 				}
 
-				VulkanImage* Image = (VulkanImage*)t->InternalData;
+				VulkanTexture* Image = (VulkanTexture*)t->InternalData;
 				if (Image == nullptr) {
 					continue;
 				}
@@ -1473,7 +1473,7 @@ uint32_t VulkanBackend::AcquireInstanceResource(Shader* shader, std::vector<Text
 	// Only setup if the shader actually requires it.
 	if (shader->InstanceTextureCount > 0) {
 		// Wipe out the memory for the entire array, even if it isn't all used.
-		Texture* DefaultTexture = TextureSystem::GetDefaultDiffuseTexture();
+		UTexture* DefaultTexture = TextureSystem::GetDefaultDiffuseTexture();
 		InstanceState->instance_texture_maps = maps;
 		// Set unassigned texture pointers to default until assigned.
 		for (uint32_t i = 0; i < InstanceTextureCount; ++i) {
@@ -1595,7 +1595,7 @@ bool VulkanBackend::CreateRenderTarget(unsigned char attachment_count, std::vect
 	// Max number of attachments.
 	vk::ImageView AttachmentViews[32];
 	for (uint32_t i = 0; i < attachment_count; ++i) {
-		AttachmentViews[i] = ((VulkanImage*)attachments[i].texture->InternalData)->ImageView;
+		AttachmentViews[i] = ((VulkanTexture*)attachments[i].texture->InternalData)->ImageView;
 	}
 
 	out_target->attachments.clear();
@@ -1631,7 +1631,7 @@ void  VulkanBackend::DestroyRenderTarget(RenderTarget* target, bool free_interna
 	}
 }
 
-Texture* VulkanBackend::GetWindowAttachment(unsigned char index) {
+UTexture* VulkanBackend::GetWindowAttachment(unsigned char index) {
 	if (index >= Context.Swapchain.ImageCount) {
 		GLOG(Log::eFatal, "Attempting to get color attachment index out of range: %d. Attachment count: %d.", index, Context.Swapchain.ImageCount);
 		return nullptr;
@@ -1640,7 +1640,7 @@ Texture* VulkanBackend::GetWindowAttachment(unsigned char index) {
 	return &Context.Swapchain.RenderTextures[index];
 }
 
-Texture* VulkanBackend::GetDepthAttachment(unsigned char index) {
+UTexture* VulkanBackend::GetDepthAttachment(unsigned char index) {
 	if (index >= Context.Swapchain.ImageCount) {
 		GLOG(Log::eFatal, "Attempting to get depth attachment index out of range: %d. Attachment count: %d.", index, Context.Swapchain.ImageCount);
 		return nullptr;

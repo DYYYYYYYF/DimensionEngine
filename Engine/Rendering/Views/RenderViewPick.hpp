@@ -49,8 +49,8 @@ private:
 	RenderviewPickShaderInfo WorldShaderInfo;
 
 	// Used as the color attachment for both renderpass.
-	Texture ColorTargetAttachment;
-	Texture DepthTargetAttachment;
+	UTexture ColorTargetAttachment;
+	UTexture DepthTargetAttachment;
 
 	int InstanceCount = 0;
 	std::vector<bool> InstanceUpdated;

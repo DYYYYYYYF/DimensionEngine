@@ -108,7 +108,7 @@ public:
 	 * @param t A pointer to the texture to be set.
 	 * @return True on success; otherwise false.
 	 */
-	static bool SetSampler(const char* sampler_name, const Texture* tex);
+	static bool SetSampler(const char* sampler_name, const UTexture* tex);
 
 	/**
 	 * @brief Sets a uniform value by index.
@@ -128,7 +128,7 @@ public:
 	 * @param value A pointer to the texture to be set.
 	 * @return True on success; otherwise false.
 	 */
-	static bool SetSamplerByIndex(unsigned short index, const Texture* tex);
+	static bool SetSamplerByIndex(unsigned short index, const UTexture* tex);
 
 	/**
 	 * @brief Applies global-scoped uniforms.

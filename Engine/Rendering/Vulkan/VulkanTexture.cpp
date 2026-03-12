@@ -1,11 +1,11 @@
-﻿#include "VulkanImage.hpp"
+﻿#include "VulkanTexture.hpp"
 
 #include "VulkanContext.hpp"
 
 #include "Core/DMemory.hpp"
 #include "Core/EngineLogger.hpp"
 
-void VulkanImage::CreateImage(VulkanContext* context, TextureType type, uint32_t width, uint32_t height, vk::Format format, vk::ImageTiling tiling,
+void VulkanTexture::CreateImage(VulkanContext* context, TextureType type, uint32_t width, uint32_t height, vk::Format format, vk::ImageTiling tiling,
 	vk::ImageUsageFlags usage, vk::MemoryPropertyFlags memory_flags, bool create_view, vk::ImageAspectFlags view_aspect_flags) {
 	Width = width;
 	Height = height;
@@ -73,7 +73,7 @@ void VulkanImage::CreateImage(VulkanContext* context, TextureType type, uint32_t
 
 }
 
-void VulkanImage::CreateImageView(VulkanContext* context, TextureType type, vk::Format format, vk::ImageAspectFlags view_aspect_flags) {
+void VulkanTexture::CreateImageView(VulkanContext* context, TextureType type, vk::Format format, vk::ImageAspectFlags view_aspect_flags) {
 	vk::ImageSubresourceRange Range;
 	Range.setAspectMask(view_aspect_flags)
 		// TODO: Make configurable
@@ -102,7 +102,7 @@ void VulkanImage::CreateImageView(VulkanContext* context, TextureType type, vk::
 	ASSERT(ImageView);
 }
 
-void VulkanImage::Destroy(VulkanContext* context) {
+void VulkanTexture::Destroy(VulkanContext* context) {
 	vk::Device LogicalDevice = context->Device.GetLogicalDevice();
 
 	if (ImageView) {
@@ -126,7 +126,7 @@ void VulkanImage::Destroy(VulkanContext* context) {
 	Memory::Zero(&MemoryRequirements, sizeof(vk::MemoryRequirements));
 }
 
-void VulkanImage::TransitionLayout(VulkanContext* context, TextureType type, VulkanCommandBuffer* command_buffer, vk::ImageLayout old_layout, vk::ImageLayout new_layout) {
+void VulkanTexture::TransitionLayout(VulkanContext* context, TextureType type, VulkanCommandBuffer* command_buffer, vk::ImageLayout old_layout, vk::ImageLayout new_layout) {
 	vk::ImageMemoryBarrier Barrier;
 	Barrier.setOldLayout(old_layout)
 		.setNewLayout(new_layout)
@@ -189,7 +189,7 @@ void VulkanImage::TransitionLayout(VulkanContext* context, TextureType type, Vul
 	command_buffer->CommandBuffer.pipelineBarrier(SrcStage, DstStage, vk::DependencyFlagBits::eByRegion, 0, nullptr, 0, nullptr, 1, &Barrier);
 }
 
-void VulkanImage::CopyFromBuffer(VulkanContext* context, TextureType type, vk::Buffer buffer, VulkanCommandBuffer* command_buffer) {
+void VulkanTexture::CopyFromBuffer(VulkanContext* context, TextureType type, vk::Buffer buffer, VulkanCommandBuffer* command_buffer) {
 	// Region to copy
 	vk::BufferImageCopy Region;
 	Memory::Zero(&Region, sizeof(vk::BufferImageCopy));
@@ -215,7 +215,7 @@ void VulkanImage::CopyFromBuffer(VulkanContext* context, TextureType type, vk::B
 	command_buffer->CommandBuffer.copyBufferToImage(buffer, Image, vk::ImageLayout::eTransferDstOptimal, 1, &Region);
 }
 
-void VulkanImage::CopyToBuffer(VulkanContext* context, TextureType type, vk::Buffer buffer, VulkanCommandBuffer* commandBuffer) {
+void VulkanTexture::CopyToBuffer(VulkanContext* context, TextureType type, vk::Buffer buffer, VulkanCommandBuffer* commandBuffer) {
 	vk::BufferImageCopy Region;
 	Region.setBufferOffset(0)
 		.setBufferRowLength(0)
@@ -239,7 +239,7 @@ void VulkanImage::CopyToBuffer(VulkanContext* context, TextureType type, vk::Buf
 	commandBuffer->CommandBuffer.copyImageToBuffer(Image, vk::ImageLayout::eTransferSrcOptimal, buffer, 1, &Region);
 }
 
-void VulkanImage::CopyPixelToBuffer(VulkanContext* context, TextureType type, vk::Buffer buffer, uint32_t x, uint32_t y, VulkanCommandBuffer* commandBuffer) {
+void VulkanTexture::CopyPixelToBuffer(VulkanContext* context, TextureType type, vk::Buffer buffer, uint32_t x, uint32_t y, VulkanCommandBuffer* commandBuffer) {
 	vk::BufferImageCopy Region;
 	Region.setBufferOffset(0)
 		.setBufferRowLength(0)

@@ -176,23 +176,23 @@ void IRenderer::ResetScissor() {
 	Backend->ResetScissor();
 }
 
-void IRenderer::CreateTexture(const unsigned char* pixels, Texture* texture) {
+void IRenderer::CreateTexture(const unsigned char* pixels, UTexture* texture) {
 	Backend->CreateTexture(pixels, texture);
 }
 
-void IRenderer::DestroyTexture(Texture* texture) {
+void IRenderer::DestroyTexture(UTexture* texture) {
 	Backend->DestroyTexture(texture);
 }
 
-void IRenderer::CreateWriteableTexture(Texture* tex) {
+void IRenderer::CreateWriteableTexture(UTexture* tex) {
 	Backend->CreateWriteableTexture(tex);
 }
 
-void IRenderer::ResizeTexture(Texture* tex, uint32_t new_width, uint32_t new_height) {
+void IRenderer::ResizeTexture(UTexture* tex, uint32_t new_width, uint32_t new_height) {
 	Backend->ResizeTexture(tex, new_width, new_height);
 }
 
-void IRenderer::WriteTextureData(Texture* tex, uint32_t offset, uint32_t size, const unsigned char* pixels) {
+void IRenderer::WriteTextureData(UTexture* tex, uint32_t offset, uint32_t size, const unsigned char* pixels) {
 	Backend->WriteTextureData(tex, offset, size, pixels);
 }
 
@@ -269,11 +269,11 @@ void IRenderer::ReleaseTextureMap(TextureMap* map) {
 	Backend->ReleaseTextureMap(map);
 }
 
-void IRenderer::ReadTextureData(Texture* tex, uint32_t offset, uint32_t size, void** outMemeory) {
+void IRenderer::ReadTextureData(UTexture* tex, uint32_t offset, uint32_t size, void** outMemeory) {
 	Backend->ReadTextureData(tex, offset, size, outMemeory);
 }
 
-void IRenderer::ReadTexturePixel(Texture* tex, uint32_t x, uint32_t y, unsigned char** outRGBA) {
+void IRenderer::ReadTexturePixel(UTexture* tex, uint32_t x, uint32_t y, unsigned char** outRGBA) {
 	Backend->ReadTexturePixel(tex, x, y, outRGBA);
 }
 
@@ -285,7 +285,7 @@ void IRenderer::DestroyRenderTarget(RenderTarget* target, bool free_internal_mem
 	Backend->DestroyRenderTarget(target, free_internal_memory);
 }
 
-Texture* IRenderer::GetWindowAttachment(unsigned char index) {
+UTexture* IRenderer::GetWindowAttachment(unsigned char index) {
 	return Backend->GetWindowAttachment(index);
 }
 
@@ -293,7 +293,7 @@ unsigned char IRenderer::GetWindowAttachmentCount() const {
 	return Backend->GetWindowAttachmentCount();
 }
 
-Texture* IRenderer::GetDepthAttachment(unsigned char index) {
+UTexture* IRenderer::GetDepthAttachment(unsigned char index) {
 	return Backend->GetDepthAttachment(index);
 }
 

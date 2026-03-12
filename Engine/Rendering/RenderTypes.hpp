@@ -65,7 +65,7 @@ struct RenderTargetAttachment {
 	RenderTargetAttachmentLoadOperation loadOperation = RenderTargetAttachmentLoadOperation::eRender_Target_Attachment_Load_Operation_Load;
 	RenderTargetAttachmentStoreOperation storeOperation = RenderTargetAttachmentStoreOperation::eRender_Target_Attachment_Store_Operation_Store;
 	bool presentAfter = true;
-	class Texture* texture = nullptr;
+	class UTexture* texture = nullptr;
 };
 
 struct GeometryRenderData {

@@ -16,7 +16,7 @@
 #include "stb_image.h"
 
 ImageLoader::ImageLoader() {
-	Type = EAssetType::Image;
+	Type = EAssetType::Texture;
 	TypePath = "Textures";
 }
 

@@ -35,13 +35,13 @@ public:
 	virtual void DrawGeometry(GeometryRenderData* geometry) = 0;
 
 	// Texture
-	virtual void CreateTexture(const unsigned char* pixels, Texture* texture) = 0;
-	virtual void DestroyTexture(Texture* txture) = 0;
-	virtual void CreateWriteableTexture(Texture* tex) = 0;
-	virtual void ResizeTexture(Texture* tex, uint32_t new_width, uint32_t new_height) = 0;
-	virtual void WriteTextureData(Texture* tex, uint32_t offset, uint32_t size, const unsigned char* pixels) = 0;
-	virtual void ReadTextureData(Texture* tex, uint32_t offset, uint32_t size, void** outMemeory) = 0;
-	virtual void ReadTexturePixel(Texture* tex, uint32_t x, uint32_t y, unsigned char** outRGBA) = 0;
+	virtual void CreateTexture(const unsigned char* pixels, UTexture* texture) = 0;
+	virtual void DestroyTexture(UTexture* txture) = 0;
+	virtual void CreateWriteableTexture(UTexture* tex) = 0;
+	virtual void ResizeTexture(UTexture* tex, uint32_t new_width, uint32_t new_height) = 0;
+	virtual void WriteTextureData(UTexture* tex, uint32_t offset, uint32_t size, const unsigned char* pixels) = 0;
+	virtual void ReadTextureData(UTexture* tex, uint32_t offset, uint32_t size, void** outMemeory) = 0;
+	virtual void ReadTexturePixel(UTexture* tex, uint32_t x, uint32_t y, unsigned char** outRGBA) = 0;
 
 	// Geometry
 	virtual bool CreateGeometry(Geometry* geometry, uint32_t vertex_size, uint32_t vertex_count, const void* vertices, uint32_t index_size, uint32_t index_count, const void* indices) = 0;
@@ -54,9 +54,9 @@ public:
 	virtual void DestroyRenderTarget(RenderTarget* target, bool free_internal_memory) = 0;
 	virtual bool CreateRenderpass(IRenderpass* out_renderpass,const RenderpassConfig& config) = 0;
 	virtual void DestroyRenderpass(IRenderpass* pass) = 0;
-	virtual Texture* GetWindowAttachment(unsigned char index) = 0;
+	virtual UTexture* GetWindowAttachment(unsigned char index) = 0;
 	virtual unsigned char GetWindowAttachmentCount() const = 0;
-	virtual Texture* GetDepthAttachment(unsigned char index) = 0;
+	virtual UTexture* GetDepthAttachment(unsigned char index) = 0;
 	virtual unsigned char GetWindowAttachmentIndex() = 0;
 
 	// Renderbuffer
