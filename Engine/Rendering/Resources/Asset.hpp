@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 #include "Framework/Iobject.h"
 #include "Containers/FString.hpp"
@@ -74,7 +74,7 @@ public:
 
 };
 
-// TODO: ÒÆµ½ImageÄÚ²¿
+// TODO: ç§»åˆ°Imageå†…éƒ¨
 struct ImageResourceData {
 	unsigned char channel_count = 4;
 	uint32_t width = 1920;

@@ -1,4 +1,4 @@
-#include "Texture.hpp"
+﻿#include "Texture.hpp"
 
 Texture::Texture() {
 	ID = INVALID_ID;

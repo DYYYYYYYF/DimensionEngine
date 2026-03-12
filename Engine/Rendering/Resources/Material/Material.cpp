@@ -1,4 +1,4 @@
-#include "Material.hpp"
+﻿#include "Material.hpp"
 
 Material::Material() {
 	ReferenceCount = 0;

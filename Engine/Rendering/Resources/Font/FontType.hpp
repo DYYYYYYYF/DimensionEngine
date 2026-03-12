@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 #include "Containers/FString.hpp"
 #include "Containers/TArray.hpp"
@@ -27,7 +27,7 @@ struct BitmapFontPage {
 };
 
 struct BitmapFontResourceData {
-	class BitmapFont* data = nullptr;   // ¸ÄÎªÖ¸Ïò BitmapFont ×ÔÉí
+	class BitmapFont* data = nullptr;   // æ”¹ä¸ºæŒ‡å‘ BitmapFont è‡ªèº«
 	BitmapFontPage* Pages = nullptr;
 	unsigned int      pageCount = 0;
 };

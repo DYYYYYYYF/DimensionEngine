@@ -1,4 +1,4 @@
-#include "CubeActor.h"
+﻿#include "CubeActor.h"
 #include <Systems/GeometrySystem.h>
 
 ACubeActor::ACubeActor() : ACubeActor("CubeActor") {}

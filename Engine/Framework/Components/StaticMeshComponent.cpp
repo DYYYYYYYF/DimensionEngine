@@ -1,4 +1,4 @@
-#include "StaticMeshComponent.h"
+﻿#include "StaticMeshComponent.h"
 
 UStaticMeshComponent::UStaticMeshComponent() {
 	Name_ = "StaticMeshComponent";

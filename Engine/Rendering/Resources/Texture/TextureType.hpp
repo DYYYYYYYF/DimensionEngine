@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #define TEXTURE_NAME_MAX_LENGTH 512
 

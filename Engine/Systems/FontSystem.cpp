@@ -61,8 +61,6 @@ void FontSystem::Shutdown() {
 	Initialized = false;
 }
 
-// ─────────────────────────────────────────────
-
 bool FontSystem::RegisterBitmapFont(const BitmapFontConfig& config) {
 	if (BitmapFonts.Contains(config.name)) {
 		GLOG(Log::eWarn, "Bitmap font '%s' already registered.", config.name.CStr());
@@ -137,8 +135,6 @@ bool FontSystem::RegisterSystemFont(const SystemFontConfig& config) {
 
 	return true;
 }
-
-// ─────────────────────────────────────────────
 
 IFont* FontSystem::Acquire(const FString& fontName, UITextType type, int fontSize) {
 	if (type == UITextType::eUI_Text_Type_Bitmap) {
