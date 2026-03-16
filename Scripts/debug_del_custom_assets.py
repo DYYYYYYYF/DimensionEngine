@@ -11,7 +11,7 @@ def delete_files(folder_path, exclude_files=None, recursive=False):
     if exclude_files is None:
         exclude_files = ['Material.dmt', 'Material.UI.dmt', 'Material.World.dmt', 'Material.Builtin.GBuffer.dmt', 'Material.Builtin.DeferredLighting.dmt']
 
-    extensions = ('.dsm', '.dmt', '.spv')
+    extensions = ('.dsm', '.dmt', '.spv', '.dbf', '.dsf')
     walker = os.walk(folder_path) if recursive else [(folder_path, [], os.listdir(folder_path))]
     for dirpath, _, filenames in walker:
         for filename in filenames:
