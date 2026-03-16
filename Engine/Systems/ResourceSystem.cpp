@@ -4,7 +4,6 @@
 
 // Known resource loaders.
 #include "Rendering/Resources/Loaders/BinaryLoader.h"
-#include "Rendering/Resources/Loaders/ImageLoader.hpp"
 #include "Rendering/Resources/Loaders/MaterialLoader.h"
 #include "Rendering/Resources/Loaders/ShaderLoader.h"
 #include "Rendering/Resources/Loaders/MeshLoader.h"
@@ -26,8 +25,6 @@ bool ResourceSystem::Initialize(SResourceSystemConfig config) {
 	// NOTE: Auto-register known loader types here.
 	IResourceLoader* BinLoader = NewObject<BinaryLoader>();
 	RegisterLoader(BinLoader);
-	IResourceLoader* ImgLoader = NewObject<ImageLoader>();
-	RegisterLoader(ImgLoader);
 	IResourceLoader* MatLoader = NewObject<MaterialLoader>();
 	RegisterLoader(MatLoader);
 	IResourceLoader* ShaLoader = NewObject<ShaderLoader>();

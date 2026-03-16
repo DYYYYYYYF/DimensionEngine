@@ -4,9 +4,9 @@
 
 #include "Containers/TString.hpp"
 
-#include "Systems/ResourceSystem.h"
 #include "Systems/JobSystem.hpp"
 #include "Rendering/Renderer.hpp"
+#include "Rendering/Resources/Texture/Loader/TextureHelper.hpp"
 
 STextureSystemConfig TextureSystem::TextureSystemConfig;
 UTexture* TextureSystem::DefaultDiffuseTexture = nullptr;
@@ -435,7 +435,7 @@ bool TextureSystem::LoadCubeTexture(const FString& name, const TArray<FString>& 
 		Params.flip_y = false;
 
 		UTexture ImageResource;
-		if (!ResourceSystem::Load(texture_names[i], EAssetType::Texture, &Params, &ImageResource)) {
+		if (!TextureHelper::Load(texture_names[i], &Params, &ImageResource)) {
 			GLOG(Log::eError, "TextureSystem::LoadCubeTexture() Failed to load image resource for texture '%s'.", texture_names[i].CStr());
 			return false;
 		}
@@ -455,7 +455,7 @@ bool TextureSystem::LoadCubeTexture(const FString& name, const TArray<FString>& 
 		Memory::Copy(piexels + sizeof(unsigned char) * ImageSize * i, ImageResource.GetPixels(), ImageSize);
 
 		// Clean up data.
-		ResourceSystem::Unload(&ImageResource);
+		TextureHelper::Unload(&ImageResource);
 	}
 
 	// Acquire internal texture resources and upload to GPU.
@@ -480,15 +480,12 @@ void TextureSystem::LoadJobSuccess(void* params) {
 	}
 
 	GLOG(Log::eInfo, "Successfully loaded texture '%s.", TextureParams->resource_name.CStr());
-
-	// Clean up data.
-	//ResourceSystem::Unload(TextureParams->temp_texture);
 }
 
 void TextureSystem::LoadJobFail(void* params) {
 	TextureLoadParams* TextureParams = (TextureLoadParams*)params;
 	GLOG(Log::eError, "Failed to load texture '%s'.", TextureParams->resource_name.CStr());
-	ResourceSystem::Unload(TextureParams->out_texture);
+	TextureHelper::Unload(TextureParams->out_texture);
 
 	// Destroy the old texture.
 	Renderer->DestroyTexture(TextureParams->out_texture);
@@ -502,7 +499,7 @@ bool TextureSystem::LoadJobStart(void* params, void* result_data) {
 	ResourceParams.flip_y = true;
 	
 	ASSERT(LoadParams->out_texture);
-	bool Result = ResourceSystem::Load(LoadParams->resource_name, EAssetType::Texture, &ResourceParams, LoadParams->out_texture);
+	bool Result = TextureHelper::Load(LoadParams->resource_name, &ResourceParams, LoadParams->out_texture);
 	if (!Result) {
 		return false;
 	}

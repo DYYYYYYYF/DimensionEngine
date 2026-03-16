@@ -1,4 +1,4 @@
-﻿#include "ImageLoader.hpp"
+﻿#include "TextureHelper.hpp"
 #include "Systems/ResourceSystem.h"
 
 #include "Platform/FileSystem.hpp"
@@ -16,14 +16,9 @@
 #endif STBI_NO_STDIO
 
 #include "stb_image.h"
-#include "../Texture/Texture.hpp"
+#include "../Texture.hpp"
 
-ImageLoader::ImageLoader() {
-	Type = EAssetType::Texture;
-	TypePath = "Textures";
-}
-
-bool ImageLoader::Load(const FString& name, void* params, UAsset* resource) {
+bool TextureHelper::Load(const FString& name, void* params, UTexture* resource) {
 	if (name.Length() == 0 || resource == nullptr) {
 		return false;
 	}
@@ -49,7 +44,7 @@ bool ImageLoader::Load(const FString& name, void* params, UAsset* resource) {
 	bool Found = false;
 	const char* Extensions[IMAGE_EXTENSION_COUNT] = { ".tga", ".png", ".jpg", ".bmp" };
 	for (uint32_t i = 0; i < IMAGE_EXTENSION_COUNT; ++i) {
-		StringFormat(FullFilePath, FormatStr, ResourceSystem::GetRootPath(), TypePath.c_str(), name.CStr(), Extensions[i]);
+		StringFormat(FullFilePath, FormatStr, ResourceSystem::GetRootPath(), "Textures", name.CStr(), Extensions[i]);
 		if (FileSystemExists(FullFilePath)) {
 			Found = true;
 			break;
@@ -118,11 +113,10 @@ bool ImageLoader::Load(const FString& name, void* params, UAsset* resource) {
 	return true;
 }
 
-void ImageLoader::Unload(UAsset* resource) {
-	UTexture* TexAsset = (UTexture*)resource;
-	if (!TexAsset) {
+void TextureHelper::Unload(UTexture* resource) {
+	if (!resource) {
 		return;
 	}
 
-	stbi_image_free(TexAsset->GetPixels());
+	stbi_image_free(resource->GetPixels());
 }
