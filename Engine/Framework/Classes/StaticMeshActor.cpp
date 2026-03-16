@@ -26,7 +26,7 @@ void AStaticMeshActor::LoadJobSuccess(void* params) {
 	MeshParams->out_mesh->geometries = (Geometry**)Memory::Allocate(sizeof(Geometry*) * MeshParams->out_mesh->geometry_count, MemoryType::eMemory_Type_Array);
 	for (uint32_t i = 0; i < MeshParams->out_mesh->geometry_count; ++i) {
 		SGeometryConfig& Config = Configs[i];
-		MeshParams->out_mesh->geometries[i] = GeometrySystem::AcquireFromConfig(Config, true);
+		MeshParams->out_mesh->geometries[i] = GeometrySystem::Get().AcquireFromConfig(Config, true);
 	}
 	MeshParams->out_mesh->Generation++;
 
@@ -72,7 +72,7 @@ bool AStaticMeshActor::LoadFromResource(const FString& resource_name) {
 
 void AStaticMeshActor::Unload() {
 	for (uint32_t i = 0; i < geometry_count; ++i) {
-		GeometrySystem::Release(geometries[i]);
+		GeometrySystem::Get().Release(geometries[i]);
 	}
 
 	Memory::Free(geometries, MemoryType::eMemory_Type_Array);

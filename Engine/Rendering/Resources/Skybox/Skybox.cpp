@@ -21,10 +21,10 @@ bool Skybox::Create(const FString& cubeName) {
 	}
 
 	CubeMap.texture = TextureSystem::AcquireCube("skybox", true);
-	SGeometryConfig SkyboxCubeConfig = GeometrySystem::GenerateCubeConfig(10.0f, 10.0f, 10.0f, 1.0f, 1.0f, cubeName, FString());
+	SGeometryConfig SkyboxCubeConfig = GeometrySystem::Get().GenerateCubeConfig(10.0f, 10.0f, 10.0f, 1.0f, 1.0f, cubeName, FString());
 
 	// Clear out the material name.
-	g = GeometrySystem::AcquireFromConfig(SkyboxCubeConfig, true);
+	g = GeometrySystem::Get().AcquireFromConfig(SkyboxCubeConfig, true);
 	RenderFrameNumber = INVALID_ID_U64;
 	Shader* SkyboxShader = ShaderSystem::Get("Shader.Builtin.Skybox");
 	if (SkyboxShader == nullptr) {

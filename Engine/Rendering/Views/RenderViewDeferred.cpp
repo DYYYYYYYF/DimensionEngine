@@ -433,12 +433,12 @@ void RenderViewWorldDeferred::DestroyGBufferTextures() {
 
 bool RenderViewWorldDeferred::CreateFullscreenQuad() {
 	// 创建全屏四边形几何体
-	FullscreenQuad = GeometrySystem::GenerateQuad("DFFullScreenQuad", "Material.Builtin.DeferredLighting");
+	FullscreenQuad = GeometrySystem::Get().GenerateQuad("DFFullScreenQuad", "Material.Builtin.DeferredLighting");
 	return FullscreenQuad != nullptr;
 }
 
 void RenderViewWorldDeferred::DestroyFullscreenQuad() {
 	if (FullscreenQuad) {
-		GeometrySystem::Release(FullscreenQuad);
+		GeometrySystem::Get().Release(FullscreenQuad);
 	}
 }

@@ -208,9 +208,7 @@ bool Engine::Initialize(){
 	}
 
 	// Init geometry system
-	SGeometrySystemConfig GeometrySystemConfig;
-	GeometrySystemConfig.max_geometry_count = 4096;
-	if (!GeometrySystem::Initialize(Renderer, GeometrySystemConfig)) {
+	if (!GeometrySystem::Get().Initialize(Renderer)) {
 		GLOG(Log::eFatal, "Geometry system failed to initialize!");
 		return false;
 	}
@@ -335,7 +333,7 @@ bool Engine::Run() {
 	RenderViewSystem::Shutdown();
 	CameraSystem::Shutdown();
 	FontSystem::Get().Shutdown();
-	GeometrySystem::Shutdown();
+	GeometrySystem::Get().Shutdown();
 	MaterialSystem::Shutdown();
 	TextureSystem::Shutdown();
 	JobSystem::Shutdown();

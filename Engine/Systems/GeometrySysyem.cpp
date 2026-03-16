@@ -5,35 +5,21 @@
 #include "Core/DMemory.hpp"
 #include "Math/GeometryUtils.hpp"
 
-SGeometrySystemConfig GeometrySystem::GeometrySystemConfig;
-Geometry* GeometrySystem::DefaultGeometry = nullptr;
-Geometry* GeometrySystem::Default2DGeometry = nullptr;
-SGeometryReference* GeometrySystem::RegisteredGeometries = nullptr;
-bool GeometrySystem::Initilized = false;
-IRenderer* GeometrySystem::Renderer = nullptr;
+GeometrySystem& GeometrySystem::Get() {
+	static GeometrySystem UniqueGeometrySystem;
+	return UniqueGeometrySystem;
+}
 
-bool GeometrySystem::Initialize(IRenderer* renderer, SGeometrySystemConfig config) {
-	if (config.max_geometry_count == 0) {
-		GLOG(Log::eFatal, "Geometry system initialize failed. config.max_geometry_count must be > 0.");
-		return false;
-	}
-
+bool GeometrySystem::Initialize(IRenderer* renderer) {
 	if (renderer == nullptr) {
 		GLOG(Log::eFatal, "Material system init failed. Renderer is nullptr.");
 		return false;
 	}
 
-	GeometrySystemConfig = config;
 	Renderer = renderer;
 
 	// Invalidate all geometries in the array.
-	RegisteredGeometries = (SGeometryReference*)Memory::Allocate(sizeof(SGeometryReference) * config.max_geometry_count, MemoryType::eMemory_Type_Array);
-	for (uint32_t i = 0; i < config.max_geometry_count; ++i) {
-		RegisteredGeometries[i].geometry.ID = INVALID_ID;
-		RegisteredGeometries[i].geometry.InternalID= INVALID_ID;
-		RegisteredGeometries[i].geometry.Generation = INVALID_ID;
-	}
-
+	RegisteredGeometries.Clear();
 	if (!CreateDefaultGeometries()) {
 		GLOG(Log::eFatal, "Failed to create default geometries. Application quit now!");
 		return false;
@@ -56,9 +42,9 @@ void GeometrySystem::Shutdown() {
 }
 
 Geometry* GeometrySystem::AcquireByID(uint32_t id) {
-	if (id != INVALID_ID && RegisteredGeometries[id].geometry.ID != INVALID_ID) {
-		RegisteredGeometries[id].reference_count++;
-		return &RegisteredGeometries[id].geometry;
+	if (id < RegisteredGeometries.Size() && RegisteredGeometries[id]->ID != INVALID_ID) {
+		RegisteredGeometries[id]->reference_count++;
+		return RegisteredGeometries[id];
 	}
 
 	// NOTE: Should return default geometry instead.
@@ -67,55 +53,34 @@ Geometry* GeometrySystem::AcquireByID(uint32_t id) {
 }
 
 Geometry* GeometrySystem::AcquireFromConfig(SGeometryConfig config, bool auto_release) {
-	Geometry* geometry = nullptr;
-	for (uint32_t i = 0; i < GeometrySystemConfig.max_geometry_count; ++i) {
-		if (RegisteredGeometries[i].geometry.ID == INVALID_ID) {
-			// Found empty slot.
-			RegisteredGeometries[i].auto_release = auto_release;
-			RegisteredGeometries[i].reference_count = 1;
-			geometry = &RegisteredGeometries[i].geometry;
-			geometry->ID = i;
-			break;
-		}
-	}
-
-	if (geometry == nullptr) {
-		GLOG(Log::eError, "Unable to obtain free slot for geometry. Adjust configuration to allow more space. Returning nullptr.");
-		return nullptr;
-	}
-
-	if (!CreateGeometry(config, geometry)) {
+	Geometry* geometry = CreateGeometry(config);
+	if (!geometry) {
 		GLOG(Log::eError, "Failed to create geometry '%s'. Returning nullptr.", config.name.CStr());
 		return nullptr;
 	}
+
+	RegisteredGeometries.Push(geometry);
+	geometry->ID = (uint32_t)RegisteredGeometries.Size() - 1;
 
 	return geometry;
 }
 
 void GeometrySystem::Release(Geometry* geometry) {
-	if (geometry == nullptr) {
+	if (!geometry) {
 		return;
 	}
 
 	if (geometry->ID != INVALID_ID) {
-		SGeometryReference* Ref = &RegisteredGeometries[geometry->ID];
-
 		// Take a copy of id.
-		if (Ref->geometry.ID == geometry->ID) {
-
-			if (Ref->reference_count > 0) {
-				Ref->reference_count--;
-			}
-
-			// Also blanks out the geometry id.
-			if (Ref->reference_count < 1 && Ref->auto_release) {
-				DestroyGeometry(geometry);
-				Ref->reference_count = 0;
-				Ref->auto_release = false;
-			}
+		if (geometry->reference_count > 0) {
+			geometry->reference_count--;
 		}
-		else {
-			GLOG(Log::eFatal, "Geometry id mismatch. Check registration logic. as this should never occur.");
+
+		// Also blanks out the geometry id.
+		if (geometry->reference_count < 1 && geometry->auto_release) {
+			DestroyGeometry(geometry);
+			geometry->reference_count = 0;
+			geometry->auto_release = false;
 		}
 
 		return;
@@ -210,6 +175,7 @@ bool GeometrySystem::CreateDefaultGeometries() {
 
 	// Indices NOTO: counter-clockwise.
 	uint32_t Indices2D[6] = { 2, 1, 0, 3, 0, 1 };
+	RegisteredGeometries.Push(DefaultGeometry);
 
 	Default2DGeometry = NewObject<Geometry>("Default2DGeometry");
 	if (!Default2DGeometry) {
@@ -225,22 +191,22 @@ bool GeometrySystem::CreateDefaultGeometries() {
 
 	// Acquire the default material.
 	Default2DGeometry->Material = MaterialSystem::GetDefaultMaterial();
+	RegisteredGeometries.Push(Default2DGeometry);
 
 	return true;
 }
 
-bool GeometrySystem::CreateGeometry(SGeometryConfig config, Geometry* geometry) {
+Geometry* GeometrySystem::CreateGeometry(SGeometryConfig config) {
+	Geometry* geometry = NewObject<Geometry>(config.name);
+	if (!geometry) {
+		return nullptr;
+	}
+
 	// Send the geometry off to the renderer to be uploaded to the GPU.
 	if (!Renderer->CreateGeometry(geometry, config.vertex_size, config.vertex_count, config.vertices, config.index_size, config.index_count, config.indices)) {
 		// Invalidate the entry.
-		RegisteredGeometries[geometry->ID].reference_count = 0;
-		RegisteredGeometries[geometry->ID].auto_release = false;
-
-		geometry->ID = INVALID_ID;
-		geometry->Generation = INVALID_ID;
-		geometry->InternalID = INVALID_ID;
-
-		return false;
+		DeleteObject(geometry);
+		return nullptr;
 	}
 
 	// Copy over extents, center. etc.
@@ -259,7 +225,10 @@ bool GeometrySystem::CreateGeometry(SGeometryConfig config, Geometry* geometry) 
 		geometry->Material = MaterialSystem::GetDefaultMaterial();
 	}
 
-	return true;
+	RegisteredGeometries.Push(geometry);
+	geometry->ID = (uint32_t)RegisteredGeometries.Size() - 1;
+
+	return geometry;
 }
 
 void GeometrySystem::ConfigDispose(SGeometryConfig* config) {

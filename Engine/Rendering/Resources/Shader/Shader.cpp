@@ -1,7 +1,6 @@
 ﻿#include "Shader.hpp"
-#include "Systems/ResourceSystem.h"
 #include "Platform/File.hpp"
-#include "Rendering/Vulkan/VulkanShader.hpp"
+#include "Systems/ResourceSystem.h"
 
 std::vector<uint32_t> Shader::CompileShaderToSPV(const std::string& filename, enum ShaderStage shaderStage, bool writeToDisk) {
 	size_t PrePathIndex = filename.find_first_of('/');

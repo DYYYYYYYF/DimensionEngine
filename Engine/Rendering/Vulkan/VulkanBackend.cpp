@@ -1737,12 +1737,12 @@ bool VulkanBackend::AllocateRenderbuffer(IRenderbuffer* buffer, size_t size, siz
 
 bool VulkanBackend::FreeRenderbuffer(IRenderbuffer* buffer, size_t size, size_t offset) {
 	if (buffer == nullptr || size == 0) {
-		GLOG(Log::eError, "IRenderer::AllocateRenderbuffer() Requires valid pointer, a non-zero size.");
+		GLOG(Log::eError, "IRenderer::FreeRenderbuffer() Requires valid pointer, a non-zero size.");
 		return false;
 	}
 
 	if (!buffer->UseFreelist) {
-		GLOG(Log::eWarn, "IRenderer::AllocateRenderbuffer() Called on a buffer not using freelist. Nothing was down.");
+		GLOG(Log::eWarn, "IRenderer::FreeRenderbuffer() Called on a buffer not using freelist. Nothing was down.");
 		return true;
 	}
 

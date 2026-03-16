@@ -140,7 +140,7 @@ bool MeshLoader::Load(const FString& name, void* params, UAsset* resource) {
 void MeshLoader::Unload(UAsset* resource) {
 	for (uint32_t i = 0; i < resource->DataCount; ++i) {
 		SGeometryConfig* Config = &((SGeometryConfig*)resource->Data)[i];
-		GeometrySystem::ConfigDispose(Config);
+		GeometrySystem::Get().ConfigDispose(Config);
 		//static_cast<SGeometryConfig*>(resource->Data)[i].~SGeometryConfig();
 	}
 
