@@ -107,7 +107,6 @@ bool ImageLoader::Load(const FString& name, void* params, UAsset* resource) {
 		return false;
 	}
 
-	ImageResourceData* ResourceData = (ImageResourceData*)Memory::Allocate(sizeof(ImageResourceData), MemoryType::eMemory_Type_Texture);
 	TexAsset->SetPixels(Data);
 	TexAsset->SetWidth(Width);
 	TexAsset->SetHeight(Height);

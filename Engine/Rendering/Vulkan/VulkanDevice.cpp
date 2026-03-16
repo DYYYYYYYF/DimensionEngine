@@ -51,19 +51,30 @@ bool VulkanDevice::Create(VulkanContext* context, vk::SurfaceKHR surface) {
 	// Request device features
 	// TODO: should be config driven
 	vk::PhysicalDeviceFeatures DeviceFeatures;
-	DeviceFeatures.setSamplerAnisotropy(true)	// It will not append on modern device, but not sure.
+	DeviceFeatures.setSamplerAnisotropy(true)
 #ifdef DPLATFORM_MACOS
-		.setGeometryShader(false)   // Geometry shader is not supported on MacOS.
+		.setGeometryShader(false)
 #else
-        .setGeometryShader(true)
+		.setGeometryShader(true)
 #endif
-		.setFillModeNonSolid(true);	// It should be true when Pipeline's PolygonMode set on eLine or ePoint.
+		.setFillModeNonSolid(true);
 
+	// 这里启用shader demote to helper invocation特性，
+	// 允许在shader中使用demote指令将当前invocation标记为helper invocation，
+	// 这样在一些情况下可以避免不必要的计算，提高性能。
+	vk::PhysicalDeviceVulkan13Features Features13;
+	Features13.setShaderDemoteToHelperInvocation(true);
+
+	vk::PhysicalDeviceFeatures2 DeviceFeatures2;
+	DeviceFeatures2.setFeatures(DeviceFeatures)
+		.setPNext(&Features13);
+
+	// Extensions
 	const char* ExtensionName = VK_KHR_SWAPCHAIN_EXTENSION_NAME;
 	vk::DeviceCreateInfo DeviceCreateInfo;
 	DeviceCreateInfo.setQueueCreateInfoCount(IndexCount)
 		.setPQueueCreateInfos(QueueCreateInfos.data())
-		.setPEnabledFeatures(&DeviceFeatures)
+		.setPNext(&DeviceFeatures2)
 		.setEnabledExtensionCount(1)
 		.setPEnabledExtensionNames(ExtensionName);
 
