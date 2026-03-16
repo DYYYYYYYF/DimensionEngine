@@ -61,7 +61,10 @@ public:
 
 public:
 	void SetName(const FString& n) { Name = n; }
-	const FString& GetName() { return Name; }
+	const FString& GetName() const { return Name; }
+
+	void SetFullPath(const FString& p) { FullPath = p; }
+	const FString& GetFullPath() const { return FullPath; }
 
 public:
 	EAssetType AssetType;

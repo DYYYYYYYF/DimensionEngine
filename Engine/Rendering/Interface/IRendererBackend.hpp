@@ -35,6 +35,7 @@ public:
 	virtual void DrawGeometry(GeometryRenderData* geometry) = 0;
 
 	// Texture
+	virtual UTexture* AcquireTexture(const FString& name, bool auto_release) = 0;
 	virtual void CreateTexture(const unsigned char* pixels, UTexture* texture) = 0;
 	virtual void DestroyTexture(UTexture* txture) = 0;
 	virtual void CreateWriteableTexture(UTexture* tex) = 0;

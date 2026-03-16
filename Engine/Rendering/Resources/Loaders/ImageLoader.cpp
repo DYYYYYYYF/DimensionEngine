@@ -11,9 +11,12 @@
 #endif
 
 // Use our own filesystem
+#ifndef STBI_NO_STDIO
 #define STBI_NO_STDIO
+#endif STBI_NO_STDIO
 
 #include "stb_image.h"
+#include "../Texture/Texture.hpp"
 
 ImageLoader::ImageLoader() {
 	Type = EAssetType::Texture;
@@ -22,6 +25,11 @@ ImageLoader::ImageLoader() {
 
 bool ImageLoader::Load(const FString& name, void* params, UAsset* resource) {
 	if (name.Length() == 0 || resource == nullptr) {
+		return false;
+	}
+
+	UTexture* TexAsset = (UTexture*)resource;
+	if (!TexAsset) {
 		return false;
 	}
 
@@ -54,8 +62,8 @@ bool ImageLoader::Load(const FString& name, void* params, UAsset* resource) {
 	}
 
 	// Take a copy of the resource full path and name first.
-	resource->Name = name;
-	resource->FullPath = FullFilePath;
+	TexAsset->SetName(name);
+	TexAsset->SetFullPath(FullFilePath);
 
 	FileHandle f;
 	if (!FileSystemOpen(FullFilePath, FileMode::eFile_Mode_Read, true, &f)) {
@@ -100,14 +108,10 @@ bool ImageLoader::Load(const FString& name, void* params, UAsset* resource) {
 	}
 
 	ImageResourceData* ResourceData = (ImageResourceData*)Memory::Allocate(sizeof(ImageResourceData), MemoryType::eMemory_Type_Texture);
-	ResourceData->pixels = Data;
-	ResourceData->width = Width;
-	ResourceData->height = Height;
-	ResourceData->channel_count = RequiredChannelCount;
-
-	resource->Data = ResourceData;
-	resource->DataSize = sizeof(ImageResourceData);
-	resource->DataCount = 1;
+	TexAsset->SetPixels(Data);
+	TexAsset->SetWidth(Width);
+	TexAsset->SetHeight(Height);
+	TexAsset->SetChannelCount(RequiredChannelCount);
 
 	Memory::Free(RawData, MemoryType::eMemory_Type_Texture);
 	RawData = nullptr;
@@ -116,17 +120,10 @@ bool ImageLoader::Load(const FString& name, void* params, UAsset* resource) {
 }
 
 void ImageLoader::Unload(UAsset* resource) {
-	if (resource == nullptr) {
+	UTexture* TexAsset = (UTexture*)resource;
+	if (!TexAsset) {
 		return;
 	}
 
-	stbi_image_free(((ImageResourceData*)resource->Data)->pixels);
-
-	if (resource->Data) {
-		Memory::Free(resource->Data, MemoryType::eMemory_Type_Texture);
-		resource->Data = nullptr;
-		resource->DataSize = 0;
-		resource->DataCount = 0;
-		resource->LoaderID = INVALID_ID;
-	}
+	stbi_image_free(TexAsset->GetPixels());
 }

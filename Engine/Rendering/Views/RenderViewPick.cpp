@@ -159,8 +159,8 @@ bool RenderViewPick::OnCreate(const RenderViewConfig& config) {
 	WorldShaderInfo.ViewMatrix = Matrix4::Identity();
 
 	InstanceCount = 0;
-	Memory::Zero(&ColorTargetAttachment, sizeof(UTexture));
-	Memory::Zero(&DepthTargetAttachment, sizeof(UTexture));
+	ColorTargetAttachment = Renderer->AcquireTexture("RenderviewPick_ColorTargetAttachment");
+	DepthTargetAttachment = Renderer->AcquireTexture("RenderviewPick_DepthTargetAttachment");
 
 	if (!EngineEvent::Register(eEventCode::Mouse_Moved, this, OnMouseMoved)) {
 		GLOG(Log::eError, "Unable to listen for mouse moved event, creation failed.");
@@ -181,8 +181,8 @@ void RenderViewPick::OnDestroy() {
 	EngineEvent::Unregister(eEventCode::Mouse_Moved, this, RenderViewPickOnEvent);
 
 	ReleaseShaderInstance();
-	Renderer->DestroyTexture(&ColorTargetAttachment);
-	Renderer->DestroyTexture(&DepthTargetAttachment);
+	Renderer->DestroyTexture(ColorTargetAttachment);
+	Renderer->DestroyTexture(DepthTargetAttachment);
 }
 
 void RenderViewPick::OnResize(uint32_t width, uint32_t height) {
@@ -299,10 +299,10 @@ void RenderViewPick::OnDestroyPacket(struct RenderViewPacket* packet) {
 
 bool RenderViewPick::RegenerateAttachmentTarget(uint32_t passIndex, RenderTargetAttachment* attachment) {
 	if (attachment->type == eRender_Target_Attachment_Type_Color) {
-		attachment->texture = &ColorTargetAttachment;
+		attachment->texture = ColorTargetAttachment;
 	}
 	else if (attachment->type == eRender_Target_Attachment_Type_Depth) {
-		attachment->texture = &DepthTargetAttachment;
+		attachment->texture = DepthTargetAttachment;
 	}
 	else {
 		GLOG(Log::eError, "Unsupported attachment type 0x%x.", attachment->type);
@@ -337,7 +337,6 @@ bool RenderViewPick::RegenerateAttachmentTarget(uint32_t passIndex, RenderTarget
 	if (attachment->type == RenderTargetAttachmentType::eRender_Target_Attachment_Type_Depth) {
 		attachment->texture->Flags |= TextureFlagBits::eTexture_Flag_Depth;
 	}
-	attachment->texture->InternalData = nullptr;
 
 	Renderer->CreateWriteableTexture(attachment->texture);
 
@@ -490,7 +489,7 @@ bool RenderViewPick::OnRender(struct RenderViewPacket* packet, IRendererBackend*
 	}
 
 	// Read pixel data.
-	UTexture* t = &ColorTargetAttachment;
+	UTexture* t = ColorTargetAttachment;
 	// Read the pixel at the mouse coordinate.
 	unsigned char PixelRGBA[4] = { 0 };
 	unsigned char* Pixel = &PixelRGBA[0];

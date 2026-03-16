@@ -273,7 +273,7 @@ bool MaterialSystem::LoadMaterial(SMaterialConfig config, Material* mat) {
 
 	if (!config.diffuse_map_name.IsEmpty()) {
 		mat->DiffuseMap.usage = TextureUsage::eTexture_Usage_Map_Diffuse;
-		mat->DiffuseMap.texture = TextureSystem::Acquire(config.diffuse_map_name.CStr(), true);
+		mat->DiffuseMap.texture = TextureSystem::Acquire(config.diffuse_map_name, true);
 		if (mat->DiffuseMap.texture == nullptr) {
 			GLOG(Log::eWarn, "Unable to load texture '%s' for material '%s', using default.", config.diffuse_map_name.CStr(), mat->Name.CStr());
 			mat->DiffuseMap.texture = TextureSystem::GetDefaultDiffuseTexture();
@@ -298,7 +298,7 @@ bool MaterialSystem::LoadMaterial(SMaterialConfig config, Material* mat) {
 
 	if (!config.normal_map_name.IsEmpty()) {
 		mat->NormalMap.usage = TextureUsage::eTexture_Usage_Map_Normal;
-		mat->NormalMap.texture = TextureSystem::Acquire(config.normal_map_name.CStr(), true);
+		mat->NormalMap.texture = TextureSystem::Acquire(config.normal_map_name, true);
 		if (mat->NormalMap.texture == nullptr) {
 			GLOG(Log::eWarn, "Unable to load texture '%s' for material '%s', using default.", config.normal_map_name.CStr(), mat->Name.CStr());
 			mat->NormalMap.texture = TextureSystem::GetDefaultNormalTexture();

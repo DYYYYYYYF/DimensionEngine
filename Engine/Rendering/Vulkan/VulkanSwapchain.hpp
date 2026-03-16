@@ -25,9 +25,9 @@ public:
 
 	vk::SurfaceFormatKHR ImageFormat;
 	vk::SwapchainKHR Handle;
-	std::vector<UTexture> RenderTextures;
+	std::vector<UTexture*> RenderTextures;
 
-	std::vector<UTexture> DepthTexture;
+	std::vector<UTexture*> DepthTexture;
 	
 	// Framebuffers used for on-screen rendering
 	RenderTarget RenderTargets[3];

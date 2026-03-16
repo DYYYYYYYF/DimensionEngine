@@ -31,7 +31,12 @@ bool BitmapFont::InitFromResourceData(BitmapFontResourceData* resourceData) {
 
 	// 获取 atlas 纹理（目前只处理单 page）
 	if (resourceData->pageCount > 0) {
-		atlas_.texture = TextureSystem::Acquire(resourceData->Pages[0].filename, true);
+		if (!atlas_.texture) {
+			FString atlasName = resourceData->Pages[0].filename;
+ 			atlas_.texture = TextureSystem::Acquire(atlasName, true);
+
+			//Renderer->CreateTexture(Pixels, atlas_.texture);
+		}
 	}
 
 	// 建立 GPU 侧 texture map

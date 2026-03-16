@@ -22,6 +22,7 @@ public:
 	virtual void Resize(unsigned short width, unsigned short height) override;
 
 	// Textures
+	virtual UTexture* AcquireTexture(const FString& name, bool auto_release) override;
 	virtual void CreateTexture(const unsigned char* pixels, UTexture* texture) override;
 	virtual void DestroyTexture(UTexture* texture) override;
 	virtual void CreateWriteableTexture(UTexture* tex) override;

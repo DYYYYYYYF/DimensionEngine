@@ -3,11 +3,13 @@
 #include "vulkan/vulkan.hpp"
 #include "Rendering/Resources/Texture/Texture.hpp"
 
-enum TextureType;
 class VulkanContext;
 class VulkanCommandBuffer;
 
 class VulkanTexture : public UTexture{
+public:
+	VulkanTexture(const FString& name) : UTexture(name) {}
+
 public:
 	void CreateImage(VulkanContext* context, TextureType type, uint32_t width, uint32_t height, vk::Format format, vk::ImageTiling tiling, 
 		vk::ImageUsageFlags usage, vk::MemoryPropertyFlags memory_flags, bool create_view, vk::ImageAspectFlags view_aspect_flags);
@@ -56,7 +58,5 @@ public:
 	vk::ImageView ImageView;
 	vk::MemoryRequirements MemoryRequirements;
 	vk::MemoryPropertyFlags MemoryFlags;
-	uint32_t Width;
-	uint32_t Height;
 };
 

@@ -17,9 +17,7 @@ struct STextureSystemConfig {
 struct TextureLoadParams {
 	FString resource_name;
 	UTexture* out_texture = nullptr;
-	UTexture temp_texture;
 	uint32_t current_generation;
-	UAsset ImageResource;
 };
 
 class TextureSystem {
@@ -33,9 +31,9 @@ public:
 		unsigned char channel_count, bool has_transparency, bool has_depth = false);
 	static void Release(const FString& name);
 
-	static void WrapInternal(const char* name, uint32_t width, uint32_t height, unsigned char channel_count,
-		bool has_transparency, bool is_writeable, bool register_texture, void* internal_data, UTexture* tex);
-	static bool SetInternal(UTexture* t, void* internal_data);
+	static void WrapInternal(const FString& name, uint32_t width, uint32_t height, unsigned char channel_count,
+		bool has_transparency, bool is_writeable, bool register_texture, UTexture* tex);
+	static bool SetInternal(UTexture* t);
 	static bool Resize(UTexture* t, uint32_t width, uint32_t height, bool regenerate_internal_data);
 	static bool WriteData(UTexture* t, uint32_t offset, uint32_t size, void* data);
 
@@ -47,7 +45,7 @@ public:
 private:
 	static UTexture* CheckTextureName(const FString& name);
 	static bool LoadTexture(const FString& name, UTexture* texture);
-	static bool LoadCubeTexture(const FString& name, FString texture_names[6], UTexture* t);
+	static bool LoadCubeTexture(const FString& name, const TArray<FString>& texture_names, UTexture* t);
 	static void DestroyTexture(UTexture* t);
 
 	static bool CreateDefaultTexture();

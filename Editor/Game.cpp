@@ -156,7 +156,7 @@ bool GameInstance::Initialize() {
 		\nF3: Material view.\
 		\nF4: Depth view.");
 
-	if (TestText) {
+	if (TestSysText) {
 		TestSysText->SetLocation(Vector3(100, 200, 0));
 		TestSysText->SetName("Keyboard map texts.");
 	}
@@ -277,7 +277,7 @@ void GameInstance::Shutdown() {
 		}
 	}
 
-	if (TestSysText) {
+	if (TestText) {
 		TestText->Destroy();
 		DeleteObject(TestText);
 		TestText = nullptr;

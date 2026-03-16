@@ -176,6 +176,10 @@ void IRenderer::ResetScissor() {
 	Backend->ResetScissor();
 }
 
+UTexture* IRenderer::AcquireTexture(const FString& name, bool auto_release) {
+	return Backend->AcquireTexture(name, auto_release);
+}
+
 void IRenderer::CreateTexture(const unsigned char* pixels, UTexture* texture) {
 	Backend->CreateTexture(pixels, texture);
 }

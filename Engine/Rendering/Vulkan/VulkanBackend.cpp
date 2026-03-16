@@ -601,10 +601,19 @@ bool VulkanBackend::RecreateSwapchain() {
 	return true;
 }
 
+UTexture* VulkanBackend::AcquireTexture(const FString& name, bool auto_release) {
+	UTexture* tex = NewObject<VulkanTexture>(name);
+	if (!tex) {
+		return nullptr;
+	}
+
+	tex->SetIsAutoRelease(auto_release);
+	return tex;
+}
+
 void VulkanBackend::CreateTexture(const unsigned char* pixels, UTexture* texture) {
 	// Internal data creation.
-	texture->InternalData = (VulkanTexture*)Memory::Allocate(sizeof(VulkanTexture), MemoryType::eMemory_Type_Texture);
-	VulkanTexture* Image = (VulkanTexture*)texture->InternalData;
+	VulkanTexture* Image = (VulkanTexture*)texture;
 	vk::DeviceSize ImageSize = texture->Width * texture->Height * texture->ChannelCount * (texture->Type == TextureType::eTexture_Type_Cube ? 6 : 1);
 
 	// NOTE: Assumes 8 bits per channel.
@@ -627,14 +636,8 @@ void VulkanBackend::CreateTexture(const unsigned char* pixels, UTexture* texture
 
 void VulkanBackend::DestroyTexture(UTexture* texture) {
 	Context.Device.GetLogicalDevice().waitIdle();
-
-	VulkanTexture* Image = (VulkanTexture*)texture->InternalData;
-
-	if (Image != nullptr) {
-		Image->Destroy(&Context);
-		Memory::Free(texture->InternalData, MemoryType::eMemory_Type_Texture);
-		texture->InternalData = nullptr;
-	}
+	VulkanTexture* Image = (VulkanTexture*)texture;
+	if (Image) Image->Destroy(&Context);
 }
 
 vk::Format VulkanBackend::ChannelCountToFormat(unsigned char channel_count, vk::Format default_format /*= vk::Format::eR8G8B8A8Unorm*/) {
@@ -655,8 +658,7 @@ vk::Format VulkanBackend::ChannelCountToFormat(unsigned char channel_count, vk::
 
 void VulkanBackend::CreateWriteableTexture(UTexture* tex) {
 	// Internal data creation.
-	tex->InternalData = (VulkanTexture*)Memory::Allocate(sizeof(VulkanTexture), MemoryType::eMemory_Type_Texture);
-	VulkanTexture* Image = (VulkanTexture*)tex->InternalData;
+	VulkanTexture* Image = (VulkanTexture*)tex;
 
 	vk::ImageUsageFlags Usage;
 	vk::ImageAspectFlags Aspect;
@@ -684,14 +686,10 @@ void VulkanBackend::ResizeTexture(UTexture* tex, uint32_t new_width, uint32_t ne
 		return;
 	}
 
-	if (tex->InternalData == nullptr) {
-		return;
-	}
-
 	// Resizing is really just destroying the old image and creating a new one.
 	// Data is not preserved because there's no reliable way to map the old data to 
 	// the new since the amount of data differs.
-	VulkanTexture* Image = (VulkanTexture*)tex->InternalData;
+	VulkanTexture* Image = (VulkanTexture*)tex;
 	Image->Destroy(&Context);
 
 	vk::Format ImageFormat = ChannelCountToFormat((unsigned char)tex->ChannelCount, vk::Format::eR8G8B8A8Unorm);
@@ -705,7 +703,7 @@ void VulkanBackend::ResizeTexture(UTexture* tex, uint32_t new_width, uint32_t ne
 }
 
 void VulkanBackend::WriteTextureData(UTexture* tex, uint32_t offset, uint32_t size, const unsigned char* pixels) {
-	VulkanTexture* Image = (VulkanTexture*)tex->InternalData;
+	VulkanTexture* Image = (VulkanTexture*)tex;
 
 	// Create a staging buffer and load data into it.
 	VulkanBuffer Staging;
@@ -740,7 +738,7 @@ void VulkanBackend::WriteTextureData(UTexture* tex, uint32_t offset, uint32_t si
 }
 
 void VulkanBackend::ReadTextureData(UTexture* tex, uint32_t offset, uint32_t size, void** outMemeory) {
-	VulkanTexture* Image = (VulkanTexture*)tex->InternalData;
+	VulkanTexture* Image = (VulkanTexture*)tex;
 
 	// Create a staging buffer and load data into it.
 	VulkanBuffer Staging;
@@ -775,7 +773,7 @@ void VulkanBackend::ReadTextureData(UTexture* tex, uint32_t offset, uint32_t siz
 }
 
 void VulkanBackend::ReadTexturePixel(UTexture* tex, uint32_t x, uint32_t y, unsigned char** outRGBA) {
-	VulkanTexture* Image = (VulkanTexture*)tex->InternalData;
+	VulkanTexture* Image = (VulkanTexture*)tex;
 
 	// TODO: creating a buffer every time isn't great. Could optimize this by creating a buffer once
 	// and just reusing it.
@@ -1343,7 +1341,7 @@ bool VulkanBackend::ApplyInstanceShader(Shader* shader, bool need_update) {
 					}
 				}
 
-				VulkanTexture* Image = (VulkanTexture*)t->InternalData;
+				VulkanTexture* Image = (VulkanTexture*)t;
 				if (Image == nullptr) {
 					continue;
 				}
@@ -1595,7 +1593,7 @@ bool VulkanBackend::CreateRenderTarget(unsigned char attachment_count, std::vect
 	// Max number of attachments.
 	vk::ImageView AttachmentViews[32];
 	for (uint32_t i = 0; i < attachment_count; ++i) {
-		AttachmentViews[i] = ((VulkanTexture*)attachments[i].texture->InternalData)->ImageView;
+		AttachmentViews[i] = ((VulkanTexture*)attachments[i].texture)->ImageView;
 	}
 
 	out_target->attachments.clear();
@@ -1637,7 +1635,7 @@ UTexture* VulkanBackend::GetWindowAttachment(unsigned char index) {
 		return nullptr;
 	}
 
-	return &Context.Swapchain.RenderTextures[index];
+	return Context.Swapchain.RenderTextures[index];
 }
 
 UTexture* VulkanBackend::GetDepthAttachment(unsigned char index) {
@@ -1647,7 +1645,7 @@ UTexture* VulkanBackend::GetDepthAttachment(unsigned char index) {
 	}
 
 
-	return &Context.Swapchain.DepthTexture[index];
+	return Context.Swapchain.DepthTexture[index];
 }
 
 unsigned char VulkanBackend::GetWindowAttachmentIndex() {

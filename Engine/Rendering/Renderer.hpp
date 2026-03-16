@@ -27,6 +27,7 @@ public:
 	virtual void OnResize(unsigned short width, unsigned short height);
 	virtual bool DrawFrame(SRenderPacket* packet);
 
+	virtual UTexture* AcquireTexture(const FString& name, bool auto_release = true);
 	virtual void CreateTexture(const unsigned char* pixels, UTexture* texture);
 	virtual void DestroyTexture(UTexture* texture);
 
