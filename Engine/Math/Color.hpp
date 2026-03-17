@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 #include "Containers/TArray.hpp"
 
@@ -26,7 +26,7 @@ struct FColor {
 		return { R, G, B, A };
 	}
 
-	// ºÍ FLinearColor »¥×ª
+	// å’Œ FLinearColor äº’è½¬
 	struct FLinearColor ToLinear() const;
 };
 
