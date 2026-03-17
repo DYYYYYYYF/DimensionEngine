@@ -109,6 +109,43 @@ public:
 		}
 	}
 
+	TArray(std::initializer_list<ElementType> list)
+		: ArrayMemory(nullptr), Capacity(0), Stride(sizeof(ElementType)), Length(0)
+	{
+		if (list.size() == 0) {
+			*this = TArray();
+			return;
+		}
+
+		size_t ArrayMemSize = list.size() * sizeof(ElementType);
+		ArrayMemory = (ElementType*)Memory::Allocate(ArrayMemSize, MemoryType::eMemory_Type_Array);
+		if (!ArrayMemory) {
+			GLOG(Log::eError, "Failed to allocate memory for TArray initializer_list");
+			return;
+		}
+
+		Capacity = list.size();
+		Length = list.size();
+
+		size_t i = 0;
+		for (const ElementType& elem : list) {
+			try {
+				new(ArrayMemory + i) ElementType(elem);
+				++i;
+			}
+			catch (...) {
+				for (size_t j = 0; j < i; ++j) {
+					ArrayMemory[j].~ElementType();
+				}
+				Memory::Free(ArrayMemory, MemoryType::eMemory_Type_Array);
+				ArrayMemory = nullptr;
+				Capacity = 0;
+				Length = 0;
+				throw;
+			}
+		}
+	}
+
 	virtual ~TArray() {
 		Destroy();
 	}
