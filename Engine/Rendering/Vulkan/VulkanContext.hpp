@@ -88,14 +88,12 @@ public:
 	VulkanSwapchain Swapchain;
 
 	// Shaders
-	VulkanShader MaterialShader;
-	VulkanShader UIShader;
 	Shader* Shaders;
 	uint32_t MaxShaderCount;
 
 	// Geometry
-	VulkanBuffer ObjectVertexBuffer;
-	VulkanBuffer ObjectIndexBuffer;
+	VulkanBuffer* ObjectVertexBuffer = nullptr;
+	VulkanBuffer* ObjectIndexBuffer = nullptr;
 
 	// Framebuffers used for world rendering, one per frame.
 	//RenderTarget WorldRenderTargets[3];

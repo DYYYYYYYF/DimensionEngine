@@ -2,13 +2,14 @@
 
 #include "RenderTypes.hpp"
 #include "Resources/ResourceTypes.hpp"
+#include "Math/Color.hpp"
 
 struct SStaticMeshData;
 struct SPlatformState;
 struct ShaderUniform;
 
 class IRendererBackend;
-class IRenderbuffer;
+class IGPUBuffer;
 class IRenderpass;
 class Geometry;
 class Shader;
@@ -178,24 +179,11 @@ public:
 	 */
 	virtual void ReleaseTextureMap(TextureMap* map);
 
-	virtual void ReadTextureData(UTexture* tex, uint32_t offset, uint32_t size, void** outMemeory);
-	virtual void ReadTexturePixel(UTexture* tex, uint32_t x, uint32_t y, unsigned char** outRGBA);
+	virtual TArray<uint8_t> ReadTextureData(UTexture* tex, uint32_t offset, uint32_t size);
+	virtual FColor ReadTexturePixel(UTexture* tex, uint32_t x, uint32_t y);
 
 	// Renderbuffer
-	virtual bool CreateRenderbuffer(enum RenderbufferType type, size_t total_size, bool use_freelist, IRenderbuffer* buffer);
-	virtual void DestroyRenderbuffer(IRenderbuffer* buffer);
-	virtual bool BindRenderbuffer(IRenderbuffer* buffer, size_t offset);
-	virtual bool UnBindRenderbuffer(IRenderbuffer* buffer);
-	virtual void* MapMemory(IRenderbuffer* buffer, size_t offset, size_t size);
-	virtual void UnmapMemory(IRenderbuffer* buffer, size_t offset, size_t size);
-	virtual bool FlushRenderbuffer(IRenderbuffer* buffer, size_t offset, size_t size);
-	virtual bool ReadRenderbuffer(IRenderbuffer* buffer, size_t offset, size_t size, void** out_memory);
-	virtual bool ResizeRenderbuffer(IRenderbuffer* buffer, size_t new_size);
-	virtual bool LoadRange(IRenderbuffer* buffer, size_t offset, size_t size, const void* data);
-	virtual bool CopyRange(IRenderbuffer* src, size_t src_offset, IRenderbuffer* dst, size_t dst_offset, size_t size);
-	virtual bool DrawRenderbuffer(IRenderbuffer* buffer, size_t offset, uint32_t element_count, bool bind_only);
-	virtual bool AllocateRenderbuffer(IRenderbuffer* buffer, size_t size, size_t* out_offset);
-	virtual bool FreeRenderbuffer(IRenderbuffer* buffer, size_t size, size_t offset);
+	virtual bool DrawRenderbuffer(IGPUBuffer* buffer, size_t offset, uint32_t element_count, bool bind_only);
 	
 	// Render target
 	virtual void SetViewport(Vector4 rect);

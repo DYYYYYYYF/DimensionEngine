@@ -5,7 +5,7 @@
 #include <vector>
 
 class IFont;
-class IRenderbuffer;
+class IGPUBuffer;
 
 enum class UITextType {
 	eUI_Text_Type_Bitmap,
@@ -45,8 +45,8 @@ private:
 public:
 	UITextType     Type = UITextType::eUI_Text_Type_Bitmap;
 	IFont* Data = nullptr;        // 原 IFontDataBase*，改为 IFont*
-	IRenderbuffer* VertexBuffer = nullptr;
-	IRenderbuffer* IndexBuffer = nullptr;
+	IGPUBuffer* VertexBuffer = nullptr;
+	IGPUBuffer* IndexBuffer = nullptr;
 	FString        Content = nullptr;
 
 	Vector4 Color = Vector4(1.0f);

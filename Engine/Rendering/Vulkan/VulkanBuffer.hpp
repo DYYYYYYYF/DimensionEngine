@@ -5,18 +5,28 @@
 #include "Rendering/Interface/IRenderbuffer.hpp"
 
 class VulkanContext;
+enum class EGPUBufferType;
 
-class VulkanBuffer : public IRenderbuffer {
+class VulkanBuffer : public IGPUBuffer {
 public:
-	virtual bool Create(VulkanContext* context) override;
-	virtual void Destroy(VulkanContext* context) override;
-	virtual bool Resize(VulkanContext* context, size_t size) override;
-	virtual bool Bind(VulkanContext* context, size_t offset) override;
-	virtual bool UnBind(VulkanContext* context) override;
-	virtual void* MapMemory(VulkanContext* context, size_t offset, size_t size) override;
-	virtual void UnmapMemory(VulkanContext* context) override;
-	virtual bool Flush(VulkanContext* context, size_t offset, size_t size) override;
-	virtual bool CopyRange(VulkanContext* context, vk::Buffer src, size_t src_offset, vk::Buffer dst, size_t dst_offset, size_t size) override;
+	VulkanBuffer();
+	VulkanBuffer(EGPUBufferType type, size_t total_size, bool use_freelist);
+	virtual ~VulkanBuffer() { Destroy(); }
+
+public:
+	virtual bool Create() override;
+	virtual void Destroy() override;
+	virtual bool Resize(size_t new_size) override;
+	virtual bool Bind(size_t offset) override;
+	virtual bool UnBind() override;
+	virtual void* MapMemory(size_t offset, size_t size) override;
+	virtual void UnmapMemory() override;
+	virtual bool Flush(size_t offset, size_t size) override;
+	virtual bool CopyRange(IGPUBuffer* src, size_t src_offset, size_t dst_offset, size_t size) override;
+	virtual bool AllocateMemory(size_t size, size_t* out_offset) override;
+	virtual bool FreeMemory(size_t size, size_t offset) override;
+	virtual bool Load(size_t offset, size_t size, const void* data) override;
+	virtual TArray<uint8_t> Read(size_t offset, size_t size) override;
 
 public:
 	virtual bool IsDeviceLocal() override {
@@ -32,6 +42,7 @@ public:
 	}
 
 public:
+	VulkanContext* Context;
 	vk::Buffer Buffer;
 	vk::BufferUsageFlags Usage;
 	bool IsLocked = false;

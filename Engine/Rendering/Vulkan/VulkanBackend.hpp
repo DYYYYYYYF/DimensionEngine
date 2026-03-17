@@ -7,6 +7,7 @@ class VulkanBuffer;
 
 class VulkanBackend : public IRendererBackend {
 	friend VulkanShader;
+	friend VulkanBuffer;
 
 public:
 	VulkanBackend();
@@ -28,8 +29,8 @@ public:
 	virtual void CreateWriteableTexture(UTexture* tex) override;
 	virtual void ResizeTexture(UTexture* tex, uint32_t new_width, uint32_t new_height) override;
 	virtual void WriteTextureData(UTexture* tex, uint32_t offset, uint32_t size, const unsigned char* pixels) override;
-	virtual void ReadTextureData(UTexture* tex, uint32_t offset, uint32_t size, void** outMemeory) override;
-	virtual void ReadTexturePixel(UTexture* tex, uint32_t x, uint32_t y, unsigned char** outRGBA) override;
+	virtual TArray<uint8_t> ReadTextureData(UTexture* tex, uint32_t offset, uint32_t size) override;
+	virtual FColor ReadTexturePixel(UTexture* tex, uint32_t x, uint32_t y) override;
 
 	virtual bool CreateGeometry(Geometry* geometry, uint32_t vertex_size, uint32_t vertex_count, 
 		const void* vertices, uint32_t index_size, uint32_t index_count, const void* indices) override;
@@ -48,21 +49,7 @@ public:
 	virtual void DestroyRenderpass(IRenderpass* pass) override;
 
 	// Renderbuffer
-	virtual bool CreateRenderbuffer(enum RenderbufferType type, size_t total_size, bool use_freelist, IRenderbuffer* buffer) override;
-	virtual bool CreateRenderbuffer(IRenderbuffer* buffer) override;
-	virtual void DestroyRenderbuffer(IRenderbuffer* buffer) override;
-	virtual bool BindRenderbuffer(IRenderbuffer* buffer, size_t offset) override;
-	virtual bool UnBindRenderbuffer(IRenderbuffer* buffer) override;
-	virtual void* MapMemory(IRenderbuffer* buffer, size_t offset, size_t size) override;
-	virtual void UnmapMemory(IRenderbuffer* buffer, size_t offset, size_t size) override;
-	virtual bool FlushRenderbuffer(IRenderbuffer* buffer, size_t offset, size_t size) override;
-	virtual bool ReadRenderbuffer(IRenderbuffer* buffer, size_t offset, size_t size, void** out_memory) override;
-	virtual bool ResizeRenderbuffer(IRenderbuffer* buffer, size_t new_size) override;
-	virtual bool LoadRange(IRenderbuffer* buffer, size_t offset, size_t size, const void* data) override;
-	virtual bool CopyRange(IRenderbuffer* src, size_t src_offset, IRenderbuffer* dst, size_t dst_offset, size_t size) override;
-	virtual bool DrawRenderbuffer(IRenderbuffer* buffer, size_t offset, uint32_t element_count, bool bind_only) override;
-	virtual bool AllocateRenderbuffer(IRenderbuffer* buffer, size_t size, size_t* out_offset);
-	virtual bool FreeRenderbuffer(IRenderbuffer* buffer, size_t size, size_t offset);
+	virtual bool DrawRenderbuffer(IGPUBuffer* buffer, size_t offset, uint32_t element_count, bool bind_only) override;
 
 	// Render target
 	virtual void SetViewport(const Vector4& rect) override;

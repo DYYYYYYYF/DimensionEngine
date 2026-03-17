@@ -66,6 +66,8 @@ bool IRenderer::Initialize(const std::string& application_name, Vector2 window_s
 		return false;
 	}
 
+	Renderer = this;
+
 	// Default framebuffer size. Overriden when window is created.
 	FramebufferWidth = (uint32_t)window_size.x;
 	FramebufferHeight = (uint32_t)window_size.y;
@@ -79,8 +81,6 @@ bool IRenderer::Initialize(const std::string& application_name, Vector2 window_s
 		GLOG(Log::eFatal, "Renderer backend init failed.");
 		return false;
 	}
-
-	Renderer = this;
 
 	return true;
 }
@@ -273,12 +273,12 @@ void IRenderer::ReleaseTextureMap(TextureMap* map) {
 	Backend->ReleaseTextureMap(map);
 }
 
-void IRenderer::ReadTextureData(UTexture* tex, uint32_t offset, uint32_t size, void** outMemeory) {
-	Backend->ReadTextureData(tex, offset, size, outMemeory);
+TArray<uint8_t> IRenderer::ReadTextureData(UTexture* tex, uint32_t offset, uint32_t size) {
+	return Backend->ReadTextureData(tex, offset, size);
 }
 
-void IRenderer::ReadTexturePixel(UTexture* tex, uint32_t x, uint32_t y, unsigned char** outRGBA) {
-	Backend->ReadTexturePixel(tex, x, y, outRGBA);
+FColor IRenderer::ReadTexturePixel(UTexture* tex, uint32_t x, uint32_t y) {
+	return Backend->ReadTexturePixel(tex, x, y);
 }
 
 bool IRenderer::CreateRenderTarget(unsigned char attachment_count, std::vector<RenderTargetAttachment> attachments, IRenderpass* pass, uint32_t width, uint32_t height, RenderTarget* out_target) {
@@ -325,63 +325,6 @@ bool IRenderer::GetEnabledMutiThread() const {
 /**
  * Renderbuffer
  */
-bool IRenderer::CreateRenderbuffer(enum RenderbufferType type, size_t total_size, bool use_freelist, IRenderbuffer * buffer) {
-	return Backend->CreateRenderbuffer(type, total_size, use_freelist, buffer);
-}
-
-void IRenderer::DestroyRenderbuffer(IRenderbuffer* buffer) {
-	Backend->DestroyRenderbuffer(buffer);
-}
-
-bool IRenderer::BindRenderbuffer(IRenderbuffer* buffer, size_t offset) {
-	if (buffer == nullptr) {
-		GLOG(Log::eError, "IRenderer::BindRenderbuffer() requires a valid pointer to a buffer.");
-		return false;
-	}
-
-	return Backend->BindRenderbuffer(buffer, offset);
-}
-
-bool IRenderer::UnBindRenderbuffer(IRenderbuffer* buffer) {
-	return Backend->UnBindRenderbuffer(buffer);
-}
-
-void* IRenderer::MapMemory(IRenderbuffer* buffer, size_t offset, size_t size) {
-	return Backend->MapMemory(buffer, offset, size);
-}
-
-void IRenderer::UnmapMemory(IRenderbuffer* buffer, size_t offset, size_t size) {
-	Backend->UnmapMemory(buffer, offset, size);
-}
-
-bool IRenderer::FlushRenderbuffer(IRenderbuffer* buffer, size_t offset, size_t size) {
-	return Backend->FlushRenderbuffer(buffer, offset, size);
-}
-
-bool IRenderer::ReadRenderbuffer(IRenderbuffer* buffer, size_t offset, size_t size, void** out_memory) {
-	return Backend->ReadRenderbuffer(buffer, offset, size, out_memory);
-}
-
-bool IRenderer::ResizeRenderbuffer(IRenderbuffer* buffer, size_t new_size) {
-	return Backend->ResizeRenderbuffer(buffer, new_size);
-}
-
-bool IRenderer::AllocateRenderbuffer(IRenderbuffer* buffer, size_t size, size_t* out_offset) {
-	return AllocateRenderbuffer(buffer, size, out_offset);
-}
-
-bool IRenderer::FreeRenderbuffer(IRenderbuffer* buffer, size_t size, size_t offset) {
-	return Backend->FlushRenderbuffer(buffer, offset, size);
-}
-
-bool IRenderer::LoadRange(IRenderbuffer* buffer, size_t offset, size_t size, const void* data) {
-	return Backend->LoadRange(buffer, offset, size, data);
-}
-
-bool IRenderer::CopyRange(IRenderbuffer* src, size_t src_offset, IRenderbuffer* dst, size_t dst_offset, size_t size) {
-	return Backend->CopyRange(src, src_offset, dst, dst_offset, size);
-}
-
-bool IRenderer::DrawRenderbuffer(IRenderbuffer* buffer, size_t offset, uint32_t element_count, bool bind_only) {
+bool IRenderer::DrawRenderbuffer(IGPUBuffer* buffer, size_t offset, uint32_t element_count, bool bind_only) {
 	return Backend->DrawRenderbuffer(buffer, offset, element_count, bind_only);
 }

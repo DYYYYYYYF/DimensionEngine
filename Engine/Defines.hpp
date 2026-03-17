@@ -172,6 +172,8 @@ inline bool is_avx2_supported() {
 // Deprecated macros
 #define DEPRECATED(msg) [[deprecated(msg)]]
 
+#define Cast static_cast
+
 #ifndef CLAMP
 #define CLAMP(value, min, max) (value <= min) ? min : (value >= max) ? max : value;
 #endif

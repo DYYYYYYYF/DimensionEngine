@@ -490,18 +490,15 @@ bool RenderViewPick::OnRender(struct RenderViewPacket* packet, IRendererBackend*
 
 	// Read pixel data.
 	UTexture* t = ColorTargetAttachment;
-	// Read the pixel at the mouse coordinate.
-	unsigned char PixelRGBA[4] = { 0 };
-	unsigned char* Pixel = &PixelRGBA[0];
 
 	// Clamp to image size.
 	unsigned short CoordX = CLAMP(MouseX, 0, Width - 1);
 	unsigned short CoordY = CLAMP(MouseY, 0, Height - 1);
-	Renderer->ReadTexturePixel(t, CoordX, CoordY, &Pixel);
+	FColor Pixel = Renderer->ReadTexturePixel(t, CoordX, CoordY);
 
 	// Extract the id from the sampled color.
 	uint32_t ObjID = INVALID_ID;
-	RGB2Uint(Pixel[0], Pixel[1], Pixel[2], &ObjID);
+	RGB2Uint(Pixel.R, Pixel.G, Pixel.B, &ObjID);
 	if (ObjID == 0x00FFFFFF) {
 		// This is pure white.
 		ObjID = INVALID_ID;

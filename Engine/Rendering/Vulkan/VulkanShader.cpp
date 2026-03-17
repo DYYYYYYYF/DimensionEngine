@@ -105,13 +105,10 @@ bool VulkanShader::Reload() {
 
 	// Uniform buffer.
 	vk::MemoryPropertyFlags DeviceLocalBits = Context.Device.GetIsSupportDeviceLocalHostVisible() ? vk::MemoryPropertyFlagBits::eDeviceLocal : vk::MemoryPropertyFlags();
-	// TODO: max count should be configurable, or perhaps long term support of buffer resizing.
-	size_t TotalBufferSize = GlobalUboStride + (UboStride * VULKAN_MAX_MATERIAL_COUNT);
 
 	// Uniform buffer.
-	Renderer->UnmapMemory(&UniformBuffer, 0, TotalBufferSize);
+	UniformBuffer.UnmapMemory();
 	MappedUniformBufferBlock = nullptr;
-	Renderer->DestroyRenderbuffer(&UniformBuffer);
 
 	// Pipeline
 	Pipeline.Destroy(&vkRenderer->Context);
@@ -163,9 +160,8 @@ void VulkanShader::Destroy(){
 	}
 
 	// Uniform buffer.
-	Renderer->UnmapMemory(&UniformBuffer, 0, VK_WHOLE_SIZE);
+	UniformBuffer.UnmapMemory();
 	MappedUniformBufferBlock = nullptr;
-	Renderer->DestroyRenderbuffer(&UniformBuffer);
 
 	// Pipeline
 	Pipeline.Destroy(&Context);
@@ -348,20 +344,23 @@ bool VulkanShader::CreatePipeline() {
 	vk::MemoryPropertyFlags DeviceLocalBits = Context.Device.GetIsSupportDeviceLocalHostVisible() ? vk::MemoryPropertyFlagBits::eDeviceLocal : vk::MemoryPropertyFlags();
 	// TODO: max count should be configurable, or perhaps long term support of buffer resizing.
 	size_t TotalBufferSize = GlobalUboStride + (UboStride * VULKAN_MAX_MATERIAL_COUNT);
-	if (!vkRenderer->CreateRenderbuffer(RenderbufferType::eRenderbuffer_Type_Uniform, TotalBufferSize, true, &UniformBuffer)) {
+	UniformBuffer.Type = EGPUBufferType::eRenderbuffer_Type_Uniform;
+	UniformBuffer.TotalSize = TotalBufferSize;
+	UniformBuffer.UseFreelist = true;
+	if (!UniformBuffer.Create()) {
 		GLOG(Log::eError, "Vulkan buffer creation failed for object shader.");
 		return false;
 	}
-	vkRenderer->BindRenderbuffer(&UniformBuffer, 0);
+	UniformBuffer.Bind(0);
 
 	// Allocate space for the global UBO, which should occupy the _stride_ space, _not_ the actual size used.
-	if (!vkRenderer->AllocateRenderbuffer(&UniformBuffer, GlobalUboStride, &GlobalUboOffset)) {
+	if (!UniformBuffer.AllocateMemory(GlobalUboStride, &GlobalUboOffset)) {
 		GLOG(Log::eError, "Failed to allocate space for the uniform buffer!");
 		return false;
 	}
 
 	// Map the entire buffer's memory.
-	MappedUniformBufferBlock = vkRenderer->MapMemory(&UniformBuffer, 0, TotalBufferSize/*TotalBufferSize*/);
+	MappedUniformBufferBlock = UniformBuffer.MapMemory(0, TotalBufferSize);
 
 	// The index of the global descriptor set.
 	const uint32_t DESC_SET_INDEX_GLOBAL = 0;

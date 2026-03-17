@@ -69,12 +69,14 @@ bool ATextActor::Load(UITextType type, const FString& fontName, int fontSize, co
 	// 顶点缓冲
 	VertexBuffer = (VulkanBuffer*)Memory::Allocate(sizeof(VulkanBuffer), MemoryType::eMemory_Type_Vulkan);
 	VertexBuffer = new (VertexBuffer)VulkanBuffer();
-	if (!Renderer->CreateRenderbuffer(RenderbufferType::eRenderbuffer_Type_Vertex,
-		TextLength * QuadSize, false, VertexBuffer)) {
+	VertexBuffer->Type = EGPUBufferType::eRenderbuffer_Type_Vertex;
+	VertexBuffer->TotalSize = TextLength * QuadSize;
+	VertexBuffer->UseFreelist = false;
+	if (!VertexBuffer->Create()) {
 		GLOG(Log::eError, "UIText::Load() Failed to create vertex renderbuffer.");
 		return false;
 	}
-	if (!Renderer->BindRenderbuffer(VertexBuffer, 0)) {
+	if (!VertexBuffer->Bind(0)) {
 		GLOG(Log::eError, "UIText::Load() Failed to bind vertex renderbuffer.");
 		return false;
 	}
@@ -83,12 +85,14 @@ bool ATextActor::Load(UITextType type, const FString& fontName, int fontSize, co
 	IndexBuffer = (VulkanBuffer*)Memory::Allocate(sizeof(VulkanBuffer), MemoryType::eMemory_Type_Vulkan);
 	IndexBuffer = new (IndexBuffer)VulkanBuffer();
 	static const unsigned char QuadIndexSize = sizeof(uint32_t) * 6;
-	if (!Renderer->CreateRenderbuffer(RenderbufferType::eRenderbuffer_Type_Index,
-		TextLength * QuadIndexSize, false, IndexBuffer)) {
+	IndexBuffer->Type = EGPUBufferType::eRenderbuffer_Type_Index;
+	IndexBuffer->TotalSize = TextLength * QuadIndexSize;
+	IndexBuffer->UseFreelist = false;
+	if (!IndexBuffer->Create()) {
 		GLOG(Log::eError, "UIText::Load() Failed to create index renderbuffer.");
 		return false;
 	}
-	if (!Renderer->BindRenderbuffer(IndexBuffer, 0)) {
+	if (!IndexBuffer->Bind(0)) {
 		GLOG(Log::eError, "UIText::Load() Failed to bind index renderbuffer.");
 		return false;
 	}
@@ -126,16 +130,14 @@ void ATextActor::RegenerateGeometry() {
 	size_t tVertexBufferSize = sizeof(Vertex2D) * VertsPerQuad * TextLengthUTF8;
 	size_t tIndexBufferSize = sizeof(uint32_t) * IndicesPerQuad * TextLengthUTF8;
 
-	IRenderer* Renderer = IRenderer::GetRenderer();
-
 	if (tVertexBufferSize > VertexBuffer->TotalSize) {
-		if (!Renderer->ResizeRenderbuffer(VertexBuffer, tVertexBufferSize)) {
+		if (!VertexBuffer->Resize(tVertexBufferSize)) {
 			GLOG(Log::eError, "UIText::RegenerateGeometry() failed to resize vertex renderbuffer.");
 			return;
 		}
 	}
 	if (tIndexBufferSize > IndexBuffer->TotalSize) {
-		if (!Renderer->ResizeRenderbuffer(IndexBuffer, tIndexBufferSize)) {
+		if (!IndexBuffer->Resize(tIndexBufferSize)) {
 			GLOG(Log::eError, "UIText::RegenerateGeometry() failed to resize index renderbuffer.");
 			return;
 		}
@@ -268,8 +270,8 @@ void ATextActor::RegenerateGeometry() {
 		uc++;
 	}
 
-	bool VertexLoadResult = Renderer->LoadRange(VertexBuffer, 0, tVertexBufferSize, VertexBufferData);
-	bool IndexLoadResult = Renderer->LoadRange(IndexBuffer, 0, tIndexBufferSize, IndexBufferData);
+	bool VertexLoadResult = VertexBuffer->Load(0, tVertexBufferSize, VertexBufferData);
+	bool IndexLoadResult = IndexBuffer->Load(0, tIndexBufferSize, IndexBufferData);
 
 	Memory::Free(VertexBufferData, MemoryType::eMemory_Type_Array);
 	Memory::Free(IndexBufferData, MemoryType::eMemory_Type_Array);
@@ -284,8 +286,13 @@ void ATextActor::RegenerateGeometry() {
 
 void ATextActor::Unload() {
 	IRenderer* Renderer = IRenderer::GetRenderer();
-	Renderer->DestroyRenderbuffer(VertexBuffer);
-	Renderer->DestroyRenderbuffer(IndexBuffer);
+	VertexBuffer->Destroy();
+	DeleteObject(VertexBuffer);
+	VertexBuffer = nullptr;
+
+	IndexBuffer->Destroy();
+	DeleteObject(IndexBuffer);
+	IndexBuffer = nullptr;
 
 	Shader* UIShader = ShaderSystem::Get("Shader.Builtin.UI");
 	if (!Renderer->ReleaseInstanceResource(UIShader, InstanceID)) {

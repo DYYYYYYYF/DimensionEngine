@@ -1,7 +1,7 @@
 ﻿#pragma once
 
 #include "Rendering/RenderTypes.hpp"
-#include <vector>
+#include "Math/Color.hpp"
 
 enum ShaderStage;
 struct SPlatformState;
@@ -17,7 +17,7 @@ class Material;
 class Geometry;
 class Shader;
 class IRenderpass;
-class IRenderbuffer;
+class IGPUBuffer;
 
 enum BuiltinRenderpass : unsigned char{
 	eButilin_Renderpass_World = 0x01,
@@ -41,8 +41,8 @@ public:
 	virtual void CreateWriteableTexture(UTexture* tex) = 0;
 	virtual void ResizeTexture(UTexture* tex, uint32_t new_width, uint32_t new_height) = 0;
 	virtual void WriteTextureData(UTexture* tex, uint32_t offset, uint32_t size, const unsigned char* pixels) = 0;
-	virtual void ReadTextureData(UTexture* tex, uint32_t offset, uint32_t size, void** outMemeory) = 0;
-	virtual void ReadTexturePixel(UTexture* tex, uint32_t x, uint32_t y, unsigned char** outRGBA) = 0;
+	virtual TArray<uint8_t> ReadTextureData(UTexture* tex, uint32_t offset, uint32_t size) = 0;
+	virtual FColor ReadTexturePixel(UTexture* tex, uint32_t x, uint32_t y) = 0;
 
 	// Geometry
 	virtual bool CreateGeometry(Geometry* geometry, uint32_t vertex_size, uint32_t vertex_count, const void* vertices, uint32_t index_size, uint32_t index_count, const void* indices) = 0;
@@ -61,19 +61,7 @@ public:
 	virtual unsigned char GetWindowAttachmentIndex() = 0;
 
 	// Renderbuffer
-	virtual bool CreateRenderbuffer(enum RenderbufferType type, size_t total_size, bool use_freelist, IRenderbuffer* buffer) = 0;
-	virtual bool CreateRenderbuffer(IRenderbuffer* buffer) = 0;
-	virtual void DestroyRenderbuffer(IRenderbuffer* buffer) = 0;
-	virtual bool BindRenderbuffer(IRenderbuffer* buffer, size_t offset) = 0;
-	virtual bool UnBindRenderbuffer(IRenderbuffer* buffer) = 0;
-	virtual void* MapMemory(IRenderbuffer* buffer, size_t offset, size_t size) = 0;
-	virtual void UnmapMemory(IRenderbuffer* buffer, size_t offset, size_t size) = 0;
-	virtual bool FlushRenderbuffer(IRenderbuffer* buffer, size_t offset, size_t size) = 0;
-	virtual bool ReadRenderbuffer(IRenderbuffer* buffer, size_t offset, size_t size, void** out_memory) = 0;
-	virtual bool ResizeRenderbuffer(IRenderbuffer* buffer, size_t new_size) = 0;
-	virtual bool LoadRange(IRenderbuffer* buffer, size_t offset, size_t size, const void* data) = 0;
-	virtual bool CopyRange(IRenderbuffer* src, size_t src_offset, IRenderbuffer* dst, size_t dst_offset, size_t size) = 0;
-	virtual bool DrawRenderbuffer(IRenderbuffer* buffer, size_t offset, uint32_t element_count, bool bind_only) = 0;
+	virtual bool DrawRenderbuffer(IGPUBuffer* buffer, size_t offset, uint32_t element_count, bool bind_only) = 0;
 
 	// Render target
 	virtual void SetViewport(const Vector4& rect) = 0;
