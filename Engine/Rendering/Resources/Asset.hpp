@@ -31,28 +31,10 @@ struct ResourceHeader {
 
 class DAPI UAsset : public IObject {
 public:
-	UAsset() {
-		LoaderID = INVALID_ID;
-		DataSize = 0;
-		DataCount = 0;
-		Data = nullptr;
-	}
+	UAsset() {}
+	UAsset(const FString& name) : Name(name){}
 
-	UAsset(const FString& name) {
-		LoaderID = INVALID_ID;
-		DataSize = 0;
-		DataCount = 0;
-		Name = name;
-		Data = nullptr;
-	}
-
-	virtual ~UAsset() {
-		LoaderID = INVALID_ID;
-		DataSize = 0;
-		DataCount = 0;
-		Data = nullptr;
-	}
-
+	virtual ~UAsset() = default;
 
 public:
 	virtual void PreInitialize() override {}
@@ -66,8 +48,12 @@ public:
 	void SetFullPath(const FString& p) { FullPath = p; }
 	const FString& GetFullPath() const { return FullPath; }
 
+	void SetLoaded(bool b = true) { bIsLoaded = b; }
+	bool IsLoaded() const { return bIsLoaded; }
+
+
 public:
-	EAssetType AssetType;
+	EAssetType AssetType = EAssetType::Unkonw;
 	uint32_t LoaderID = INVALID_ID;
 	FString Name;
 	FString FullPath;
@@ -75,6 +61,7 @@ public:
 	size_t DataCount = 0;
 	void* Data = nullptr;
 
+	bool bIsLoaded = false;
 };
 
 // TODO: 移到Image内部

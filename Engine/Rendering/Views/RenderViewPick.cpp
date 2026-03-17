@@ -329,7 +329,6 @@ bool RenderViewPick::RegenerateAttachmentTarget(uint32_t passIndex, RenderTarget
 	attachment->texture->SetWidth(RenderAreaWidth);
 	attachment->texture->SetHeight(RenderAreaHeight);
 	attachment->texture->SetChannelCount(4);
-	attachment->texture->SetGeneration(INVALID_ID);
 	attachment->texture->AddFlag(HasTransparency ? TextureFlagBits::eTexture_Flag_Has_Transparency : 0);
 	attachment->texture->AddFlag(TextureFlagBits::eTexture_Flag_Is_Writeable);
 	if (attachment->type == RenderTargetAttachmentType::eRender_Target_Attachment_Type_Depth) {

@@ -1137,7 +1137,7 @@ bool VulkanBackend::ApplyInstanceShader(Shader* shader, bool need_update) {
 				}
 
 				// Ensure the texture is valid.
-				if (t->GetGeneration() == INVALID_ID) {
+				if (!t->IsLoaded()) {
 					switch (map->usage)
 					{
 					case TextureUsage::eTexture_Usage_Map_Diffuse:

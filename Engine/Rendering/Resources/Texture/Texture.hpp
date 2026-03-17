@@ -54,9 +54,6 @@ public:
 	TextureFlag GetFlags() const { return Flags; }
 	void RemoveFlag(TextureFlag f) { Flags &= ~f; }
 
-	void SetGeneration(uint32_t g) { Generation = g; }
-	uint32_t GetGeneration() const { return Generation; }
-
 protected:
 	// TODO: Remove to UAsset
 	size_t ReferenceCount;
@@ -70,8 +67,6 @@ protected:
 
 	/** TextureFlag */
 	TextureFlag Flags = 0;
-
-	uint32_t Generation = INVALID_ID;
 
 	unsigned char* Pixels = nullptr;
 };

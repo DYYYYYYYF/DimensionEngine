@@ -42,10 +42,13 @@ bool VulkanTexture::Load(const unsigned char* pixels) {
 		vk::MemoryPropertyFlagBits::eDeviceLocal,
 		true, vk::ImageAspectFlagBits::eColor);
 
-	Generation++;
-
 	// Load the data.
-	return WriteTextureData(ImageSize, pixels);
+	if (!WriteTextureData(ImageSize, pixels)) {
+		return false;
+	}
+
+	SetLoaded();
+	return true;
 }
 bool VulkanTexture::LoadWriteable(){
 	vk::ImageUsageFlags Usage;
@@ -66,7 +69,9 @@ bool VulkanTexture::LoadWriteable(){
 	CreateImage(ImageFormat, vk::ImageTiling::eOptimal,
 		Usage, vk::MemoryPropertyFlagBits::eDeviceLocal, true, Aspect);
 
-	Generation++;
+	// 标志位加载完成
+	SetLoaded();
+
 	return true;
 }
 
@@ -75,6 +80,7 @@ bool VulkanTexture::Resize(uint32_t new_width, uint32_t new_height) {
 	// Data is not preserved because there's no reliable way to map the old data to 
 	// the new since the amount of data differs.
 	Destroy();
+	SetLoaded(false);
 
 	vk::Format ImageFormat = ChannelCountToFormat((unsigned char)ChannelCount, vk::Format::eR8G8B8A8Unorm);
 
@@ -83,7 +89,9 @@ bool VulkanTexture::Resize(uint32_t new_width, uint32_t new_height) {
 		vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eColorAttachment,
 		vk::MemoryPropertyFlagBits::eDeviceLocal, true, vk::ImageAspectFlagBits::eColor);
 
-	Generation++;
+	// 标志位加载完成
+	SetLoaded();
+
 	return true;
 }
 
@@ -119,8 +127,6 @@ bool VulkanTexture::WriteTextureData(uint64_t size, const unsigned char* pixels)
 
 	Staging.UnBind();
 	Staging.Destroy();
-
-	Generation++;
 
 	return true;
 }

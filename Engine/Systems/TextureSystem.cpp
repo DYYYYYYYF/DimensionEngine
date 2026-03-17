@@ -45,7 +45,7 @@ void TextureSystem::Shutdown() {
 	// Destroy all loaded textures.
 	for (auto& PairsTex : TextureMap) {
 		UTexture* tex = PairsTex.second;
-		if (tex && tex->GetGeneration() != INVALID_ID) {
+		if (tex) {
 			GLOG(Log::eDebug, "Destroying texture: '%s'.", tex->GetName().CStr());
 			tex->Destroy();
 			DeleteObject(tex);
