@@ -4,7 +4,7 @@
 #include "Math/MathTypes.hpp"
 #include "Containers/TArray.hpp"
 #include "Resources/Shader/Shader.hpp"
-#include "Rendering/Interface/IRenderbuffer.hpp"
+#include "Rendering/Interface/IGPUBuffer.hpp"
 #include "Framework/Classes/Actor.h"
 
 #include <vector>

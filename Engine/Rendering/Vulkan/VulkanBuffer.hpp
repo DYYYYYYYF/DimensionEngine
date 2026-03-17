@@ -2,7 +2,7 @@
 
 #include <vulkan/vulkan.hpp>
 #include "Memory/Freelist.hpp"
-#include "Rendering/Interface/IRenderbuffer.hpp"
+#include "Rendering/Interface/IGPUBuffer.hpp"
 
 class VulkanContext;
 enum class EGPUBufferType;

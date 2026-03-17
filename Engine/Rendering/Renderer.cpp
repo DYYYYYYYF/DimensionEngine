@@ -1,6 +1,6 @@
 ﻿#include "Renderer.hpp"
 #include "Vulkan/VulkanBackend.hpp"
-#include "Interface/IRenderbuffer.hpp"
+#include "Interface/IGPUBuffer.hpp"
 
 #include "Core/EngineLogger.hpp"
 #include "Core/DMemory.hpp"
