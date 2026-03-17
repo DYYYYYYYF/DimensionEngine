@@ -297,6 +297,17 @@ void VulkanTexture::CreateImage(vk::Format format, vk::ImageTiling tiling,
 		CreateImageView(format, view_aspect_flags);
 	}
 
+
+#ifdef LEVEL_DEBUG
+	FString TypeName = "VulkanTexture_Image_" + Name;
+	vk::DebugUtilsObjectNameInfoEXT NameInfo;
+	NameInfo.setObjectType(vk::ObjectType::eImage)
+		.setObjectHandle(reinterpret_cast<uint64_t>(static_cast<VkImage>(Image)))
+		.setPObjectName(TypeName.CStr());
+
+	Context->Device.GetLogicalDevice().setDebugUtilsObjectNameEXT(
+		NameInfo, Context->DynamicLoader);
+#endif
 }
 
 void VulkanTexture::CreateImageView(vk::Format format, vk::ImageAspectFlags view_aspect_flags) {

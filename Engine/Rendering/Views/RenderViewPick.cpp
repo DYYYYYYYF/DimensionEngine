@@ -326,16 +326,14 @@ bool RenderViewPick::RegenerateAttachmentTarget(uint32_t passIndex, RenderTarget
 	uint32_t RenderAreaHeight = (uint32_t)Passes[passIndex].GetRenderArea().w;
 	bool HasTransparency = false;
 
-	attachment->texture->SetID(INVALID_ID);
-	attachment->texture->Type = TextureType::eTexture_Type_2D;
-	attachment->texture->Width = RenderAreaWidth;
-	attachment->texture->Height = RenderAreaHeight;
-	attachment->texture->ChannelCount = 4;
-	attachment->texture->Generation = INVALID_ID;
-	attachment->texture->Flags |= HasTransparency ? TextureFlagBits::eTexture_Flag_Has_Transparency : 0;
-	attachment->texture->Flags |= TextureFlagBits::eTexture_Flag_Is_Writeable;
+	attachment->texture->SetWidth(RenderAreaWidth);
+	attachment->texture->SetHeight(RenderAreaHeight);
+	attachment->texture->SetChannelCount(4);
+	attachment->texture->SetGeneration(INVALID_ID);
+	attachment->texture->AddFlag(HasTransparency ? TextureFlagBits::eTexture_Flag_Has_Transparency : 0);
+	attachment->texture->AddFlag(TextureFlagBits::eTexture_Flag_Is_Writeable);
 	if (attachment->type == RenderTargetAttachmentType::eRender_Target_Attachment_Type_Depth) {
-		attachment->texture->Flags |= TextureFlagBits::eTexture_Flag_Depth;
+		attachment->texture->AddFlag(TextureFlagBits::eTexture_Flag_Depth);
 	}
 
 	attachment->texture->LoadWriteable();

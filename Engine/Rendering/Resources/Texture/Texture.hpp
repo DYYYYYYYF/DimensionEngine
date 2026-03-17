@@ -22,9 +22,6 @@ public:
 	virtual FColor ReadTexturePixel(uint32_t x, uint32_t y) =0;
 
 public:
-	uint32_t GetID() const { return ID; }
-	void SetID(uint32_t id) { ID = id; }
-
 	size_t GetReferenceCount() const { return ReferenceCount; }
 	void SetReferenceCount(uint32_t count) { ReferenceCount = count; }
 	void IncreaseReferenceCount(uint32_t count = 1) { ReferenceCount += count; }
@@ -52,15 +49,20 @@ public:
 	void SetPixels(unsigned char* raw) { Pixels = raw; }
 	unsigned char* GetPixels() const { return Pixels; }
 
-	void SetFlags(TextureFlag f) { Flags = f; }
+	void SetFlag(TextureFlag f) { Flags = f; }
+	void AddFlag(TextureFlag f) { Flags |= f; }
 	TextureFlag GetFlags() const { return Flags; }
+	void RemoveFlag(TextureFlag f) { Flags &= ~f; }
 
-private:
-	uint32_t ID;
+	void SetGeneration(uint32_t g) { Generation = g; }
+	uint32_t GetGeneration() const { return Generation; }
+
+protected:
+	// TODO: Remove to UAsset
 	size_t ReferenceCount;
 	bool AutoRelease;
+	// ------------------------
 
-public:
 	TextureType Type = TextureType::eTexture_Type_2D;
 	uint32_t Width = 100;
 	uint32_t Height = 100;

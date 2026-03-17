@@ -171,7 +171,8 @@ void RenderViewSystem::RegenerateRendertargets(IRenderView* view) {
 
 			// Create the render target.
 			Renderer->CreateRenderTarget(AttachCount, Target->attachments,
-				Pass, Target->attachments[0].texture->Width, Target->attachments[0].texture->Height,
+				Pass, Target->attachments[0].texture->GetWidth(), 
+				Target->attachments[0].texture->GetHeight(),
 				&Pass->Targets[i]);
 		}
 	}

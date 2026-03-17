@@ -138,8 +138,8 @@ void VulkanSwapchain::Create(VulkanContext* context, unsigned int width, unsigne
 		// Update the internal image for each.
 		VulkanTexture* Texture = (VulkanTexture*)RenderTextures[i];
 		Texture->Image = SwapchainImages[i];
-		Texture->Width = SwapchainExtent.width;
-		Texture->Height = SwapchainExtent.height;
+		Texture->SetWidth(SwapchainExtent.width);
+		Texture->SetHeight(SwapchainExtent.height);
 	}
 
 	// Image views
