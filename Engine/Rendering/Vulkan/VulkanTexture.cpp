@@ -1,17 +1,243 @@
 ﻿#include "VulkanTexture.hpp"
-
 #include "VulkanContext.hpp"
 
 #include "Core/DMemory.hpp"
 #include "Core/EngineLogger.hpp"
 
-void VulkanTexture::CreateImage(VulkanContext* context, TextureType type, uint32_t width, uint32_t height, vk::Format format, vk::ImageTiling tiling,
+#include "VulkanBackend.hpp"
+#include "Rendering/Renderer.hpp"
+
+VulkanTexture::VulkanTexture(const FString& name) : UTexture(name) {
+	IRenderer* Renderer = IRenderer::GetRenderer();
+	if (!Renderer) {
+		return;
+	}
+
+	VulkanBackend* Backend = Cast<VulkanBackend*>(Renderer->GetRenderBackend());
+	if (!Backend) {
+		return;
+	}
+
+	Context = &Backend->Context;
+}
+
+bool VulkanTexture::Load(const unsigned char* pixels) {
+	if (!Context) {
+		GLOG(Log::eError, "VulkanTexture::Load() Context is null.");
+		return false;
+	}
+
+	// Internal data creation.
+	vk::DeviceSize ImageSize = Width * Height * ChannelCount * (Type == TextureType::eTexture_Type_Cube ? 6 : 1);
+
+	// NOTE: Assumes 8 bits per channel.
+	vk::Format ImageFormat = vk::Format::eR8G8B8A8Unorm;
+
+	// NOTE: Lots of assumptions here, different texture types will require.
+	// different options here.
+	CreateImage(ImageFormat,
+		vk::ImageTiling::eOptimal,
+		vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst |
+		vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eColorAttachment,
+		vk::MemoryPropertyFlagBits::eDeviceLocal,
+		true, vk::ImageAspectFlagBits::eColor);
+
+	Generation++;
+
+	// Load the data.
+	return WriteTextureData(ImageSize, pixels);
+}
+bool VulkanTexture::LoadWriteable(){
+	vk::ImageUsageFlags Usage;
+	vk::ImageAspectFlags Aspect;
+	vk::Format ImageFormat;
+	if (Flags & TextureFlagBits::eTexture_Flag_Depth) {
+		Usage = vk::ImageUsageFlagBits::eDepthStencilAttachment;
+		Aspect = vk::ImageAspectFlagBits::eDepth;
+		ImageFormat = Context->Device.GetDepthFormat();
+	}
+	else {
+		Usage = vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst
+			| vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eColorAttachment;
+		Aspect = vk::ImageAspectFlagBits::eColor;
+		ImageFormat = ChannelCountToFormat((unsigned char)ChannelCount, vk::Format::eR8G8B8A8Unorm);
+	}
+
+	CreateImage(ImageFormat, vk::ImageTiling::eOptimal,
+		Usage, vk::MemoryPropertyFlagBits::eDeviceLocal, true, Aspect);
+
+	Generation++;
+	return true;
+}
+
+bool VulkanTexture::Resize(uint32_t new_width, uint32_t new_height) {
+	// Resizing is really just destroying the old image and creating a new one.
+	// Data is not preserved because there's no reliable way to map the old data to 
+	// the new since the amount of data differs.
+	Destroy();
+
+	vk::Format ImageFormat = ChannelCountToFormat((unsigned char)ChannelCount, vk::Format::eR8G8B8A8Unorm);
+
+	// TODO: Lots of assumptions here, different texture types will require different options here.
+	CreateImage(ImageFormat, vk::ImageTiling::eOptimal,
+		vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eColorAttachment,
+		vk::MemoryPropertyFlagBits::eDeviceLocal, true, vk::ImageAspectFlagBits::eColor);
+
+	Generation++;
+	return true;
+}
+
+bool VulkanTexture::WriteTextureData(uint64_t size, const unsigned char* pixels){
+	// Create a staging buffer and load data into it.
+	VulkanBuffer Staging;
+	Staging.Type = EGPUBufferType::eRenderbuffer_Type_Staging;
+	Staging.TotalSize = size;
+	Staging.UseFreelist = false;
+	if (!Staging.Create()) {
+		GLOG(Log::eError, "Failed to create staging buffer for texture write.");
+		return false;
+	}
+
+	Staging.Bind(0);
+	Staging.Load(0, size, pixels);
+
+	VulkanCommandBuffer TempBuffer;
+	vk::CommandPool Pool = Context->Device.GetGraphicsCommandPool();
+	vk::Queue Queue = Context->Device.GetGraphicsQueue();
+	TempBuffer.AllocateAndBeginSingleUse(Context, Pool);
+
+	// Transition the layout from whatever it is currently to optimal for reciving data.
+	TransitionLayout(&TempBuffer, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal);
+
+	// Copy the data from the buffer.
+	CopyFromBuffer(Staging.Buffer, &TempBuffer);
+
+	// Transition from optimal for data reciept to shader-read-only optimal layout.
+	TransitionLayout(&TempBuffer, vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal);
+
+	TempBuffer.EndSingleUse(Context, Pool, Queue);
+
+	Staging.UnBind();
+	Staging.Destroy();
+
+	Generation++;
+
+	return true;
+}
+
+TArray<uint8_t> VulkanTexture::ReadTextureData(uint32_t offset, uint32_t size) {
+	// Create a staging buffer and load data into it.
+	VulkanBuffer Staging;
+	Staging.Type = EGPUBufferType::eRenderbuffer_Type_Read;
+	Staging.TotalSize = size;
+	Staging.UseFreelist = false;
+	if (!Staging.Create()) {
+		GLOG(Log::eError, "Failed to create staging buffer for texture read.");
+		return TArray<uint8_t>();
+	}
+	Staging.Bind(0);
+
+	VulkanCommandBuffer TempBuffer;
+	vk::CommandPool Pool = Context->Device.GetGraphicsCommandPool();
+	vk::Queue Queue = Context->Device.GetGraphicsQueue();
+	TempBuffer.AllocateAndBeginSingleUse(Context, Pool);
+
+	// NOTE: transition to VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
+	// Transition the layout from whatever it is currently to optimal for handing out data.
+	TransitionLayout(&TempBuffer, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferSrcOptimal);
+
+	// Copy the data to the buffer.
+	CopyToBuffer(Staging.Buffer, &TempBuffer);
+
+	TransitionLayout(&TempBuffer, vk::ImageLayout::eTransferSrcOptimal, vk::ImageLayout::eShaderReadOnlyOptimal);
+
+	TempBuffer.EndSingleUse(Context, Pool, Queue);
+
+	TArray<uint8_t> TextureData = Staging.Read(offset, size);
+	Staging.UnBind();
+	Staging.Destroy();
+
+	return TextureData;
+}
+
+FColor VulkanTexture::ReadTexturePixel(uint32_t x, uint32_t y) {
+	// TODO: creating a buffer every time isn't great. Could optimize this by creating a buffer once
+	// and just reusing it.
+	// 
+	// Create a staging buffer and load data into it.
+	VulkanBuffer Staging;
+	Staging.Type = EGPUBufferType::eRenderbuffer_Type_Read;
+	Staging.TotalSize = sizeof(unsigned char) * 4;
+	Staging.UseFreelist = false;
+	if (!Staging.Create()) {
+		GLOG(Log::eError, "Failed to create staging buffer for pixel read. Return Vector4()");
+		return FColor();
+	}
+	Staging.Bind(0);
+
+	VulkanCommandBuffer TempBuffer;
+	vk::CommandPool Pool = Context->Device.GetGraphicsCommandPool();
+	vk::Queue Queue = Context->Device.GetGraphicsQueue();
+	TempBuffer.AllocateAndBeginSingleUse(Context, Pool);
+
+	// NOTE: transition to VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
+	// Transition the layout from whatever it is currently to optimal for handing out data.
+	TransitionLayout(&TempBuffer, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferSrcOptimal);
+
+	// Copy the data to the buffer.
+	CopyPixelToBuffer(Staging.Buffer, x, y, &TempBuffer);
+
+	TransitionLayout(&TempBuffer, vk::ImageLayout::eTransferSrcOptimal, vk::ImageLayout::eShaderReadOnlyOptimal);
+
+	TempBuffer.EndSingleUse(Context, Pool, Queue);
+
+	TArray<uint8_t> PixelData = Staging.Read(0, sizeof(unsigned char) * 4);
+
+	Staging.UnBind();
+	Staging.Destroy();
+
+	return FColor(PixelData);
+}
+
+bool VulkanTexture::Unload() {
+	return true;
+}
+
+void VulkanTexture::Destroy() {
+	if (!Context) {
+		GLOG(Log::eError, "VulkanTexture::Destroy() Context is null.");
+		return;
+	}
+
+	vk::Device LogicalDevice = Context->Device.GetLogicalDevice();
+	LogicalDevice.waitIdle();
+
+	if (ImageView) {
+		LogicalDevice.destroyImageView(ImageView, Context->Allocator);
+		ImageView = nullptr;
+	}
+
+	if (DeviceMemory) {
+		LogicalDevice.freeMemory(DeviceMemory, Context->Allocator);
+		DeviceMemory = nullptr;
+	}
+
+	if (Image) {
+		LogicalDevice.destroyImage(Image, Context->Allocator);
+		Image = nullptr;
+	}
+
+	// Report the memory as no longer in-use.
+	bool IsDeviceMemory = (MemoryFlags & vk::MemoryPropertyFlagBits::eDeviceLocal) == vk::MemoryPropertyFlagBits::eDeviceLocal;
+	Memory::FreeReport(MemoryRequirements.size, IsDeviceMemory ? MemoryType::eMemory_Type_GPU_Local : MemoryType::eMemory_Type_Vulkan);
+	Memory::Zero(&MemoryRequirements, sizeof(vk::MemoryRequirements));
+}
+
+void VulkanTexture::CreateImage(vk::Format format, vk::ImageTiling tiling,
 	vk::ImageUsageFlags usage, vk::MemoryPropertyFlags memory_flags, bool create_view, vk::ImageAspectFlags view_aspect_flags) {
-	Width = width;
-	Height = height;
 	MemoryFlags = memory_flags;
 
-	vk::Device LogicalDevice = context->Device.GetLogicalDevice();
+	vk::Device LogicalDevice = Context->Device.GetLogicalDevice();
 
 	vk::Extent3D Extent;
 	Extent.setWidth(Width)
@@ -19,7 +245,7 @@ void VulkanTexture::CreateImage(VulkanContext* context, TextureType type, uint32
 		.setDepth(1);			// TODO: Support configurable depth
 
 	vk::ImageCreateInfo ImageCreateInfo;
-	switch (type)
+	switch (Type)
 	{
 	default:
 	case eTexture_Type_2D:
@@ -37,17 +263,17 @@ void VulkanTexture::CreateImage(VulkanContext* context, TextureType type, uint32
 		.setUsage(usage)
 		.setSamples(vk::SampleCountFlagBits::e1)		// TODO: Configurable sample count
 		.setSharingMode(vk::SharingMode::eExclusive);	// TODO: Configurable sharing mode
-	if (type == TextureType::eTexture_Type_Cube) {
+	if (Type == TextureType::eTexture_Type_Cube) {
 		ImageCreateInfo.setFlags(vk::ImageCreateFlagBits::eCubeCompatible)
 			.setArrayLayers(6);
 	}
 
-	Image = LogicalDevice.createImage(ImageCreateInfo, context->Allocator);
+	Image = LogicalDevice.createImage(ImageCreateInfo, Context->Allocator);
 	ASSERT(Image);
 
 	// Query memory requirements
 	MemoryRequirements = LogicalDevice.getImageMemoryRequirements(Image);
-	uint32_t MemoryType = context->FindMemoryIndex(MemoryRequirements.memoryTypeBits, MemoryFlags);
+	uint32_t MemoryType = Context->FindMemoryIndex(MemoryRequirements.memoryTypeBits, MemoryFlags);
 	if (MemoryType == INVALID_ID) {
 		GLOG(Log::eError, "Required memory type not found. Image not vaild.");
 	}
@@ -56,7 +282,7 @@ void VulkanTexture::CreateImage(VulkanContext* context, TextureType type, uint32
 	vk::MemoryAllocateInfo MemoryAllocateInfo;
 	MemoryAllocateInfo.setAllocationSize(MemoryRequirements.size)
 		.setMemoryTypeIndex(MemoryType);
-	DeviceMemory = LogicalDevice.allocateMemory(MemoryAllocateInfo, context->Allocator);
+	DeviceMemory = LogicalDevice.allocateMemory(MemoryAllocateInfo, Context->Allocator);
 	ASSERT(DeviceMemory);
 
 	// Bind memory
@@ -68,26 +294,26 @@ void VulkanTexture::CreateImage(VulkanContext* context, TextureType type, uint32
 
 	// Create image view
 	if (create_view) {
-		CreateImageView(context, type, format, view_aspect_flags);
+		CreateImageView(format, view_aspect_flags);
 	}
 
 }
 
-void VulkanTexture::CreateImageView(VulkanContext* context, TextureType type, vk::Format format, vk::ImageAspectFlags view_aspect_flags) {
+void VulkanTexture::CreateImageView(vk::Format format, vk::ImageAspectFlags view_aspect_flags) {
 	vk::ImageSubresourceRange Range;
 	Range.setAspectMask(view_aspect_flags)
 		// TODO: Make configurable
 		.setBaseMipLevel(0)
 		.setLevelCount(1)
 		.setBaseArrayLayer(0)
-		.setLayerCount(type == TextureType::eTexture_Type_Cube ? 6 : 1);
+		.setLayerCount(Type == TextureType::eTexture_Type_Cube ? 6 : 1);
 
 	vk::ImageViewCreateInfo ImageViewCreateInfo;
 	ImageViewCreateInfo.setImage(Image)
 		.setFormat(format)
 		.setSubresourceRange(Range);
 
-	switch (type)
+	switch (Type)
 	{
 	default:
 	case eTexture_Type_2D:
@@ -98,40 +324,16 @@ void VulkanTexture::CreateImageView(VulkanContext* context, TextureType type, vk
 		break;
 	}
 
-	ImageView = context->Device.GetLogicalDevice().createImageView(ImageViewCreateInfo, context->Allocator);
+	ImageView = Context->Device.GetLogicalDevice().createImageView(ImageViewCreateInfo, Context->Allocator);
 	ASSERT(ImageView);
 }
 
-void VulkanTexture::Destroy(VulkanContext* context) {
-	vk::Device LogicalDevice = context->Device.GetLogicalDevice();
-
-	if (ImageView) {
-		LogicalDevice.destroyImageView(ImageView, context->Allocator);
-		ImageView = nullptr;
-	}
-
-	if (DeviceMemory) {
-		LogicalDevice.freeMemory(DeviceMemory, context->Allocator);
-		DeviceMemory = nullptr;
-	}
-
-	if (Image) {
-		LogicalDevice.destroyImage(Image, context->Allocator);
-		Image = nullptr;
-	}
-
-	// Report the memory as no longer in-use.
-	bool IsDeviceMemory = (MemoryFlags & vk::MemoryPropertyFlagBits::eDeviceLocal) == vk::MemoryPropertyFlagBits::eDeviceLocal;
-	Memory::FreeReport(MemoryRequirements.size, IsDeviceMemory ? MemoryType::eMemory_Type_GPU_Local : MemoryType::eMemory_Type_Vulkan);
-	Memory::Zero(&MemoryRequirements, sizeof(vk::MemoryRequirements));
-}
-
-void VulkanTexture::TransitionLayout(VulkanContext* context, TextureType type, VulkanCommandBuffer* command_buffer, vk::ImageLayout old_layout, vk::ImageLayout new_layout) {
+void VulkanTexture::TransitionLayout(VulkanCommandBuffer* command_buffer, vk::ImageLayout old_layout, vk::ImageLayout new_layout) {
 	vk::ImageMemoryBarrier Barrier;
 	Barrier.setOldLayout(old_layout)
 		.setNewLayout(new_layout)
-		.setSrcQueueFamilyIndex(context->Device.GetQueueFamilyInfo()->graphics_index)
-		.setDstQueueFamilyIndex(context->Device.GetQueueFamilyInfo()->graphics_index)
+		.setSrcQueueFamilyIndex(Context->Device.GetQueueFamilyInfo()->graphics_index)
+		.setDstQueueFamilyIndex(Context->Device.GetQueueFamilyInfo()->graphics_index)
 		.setImage(Image);
 
 	vk::ImageSubresourceRange Range;
@@ -139,7 +341,7 @@ void VulkanTexture::TransitionLayout(VulkanContext* context, TextureType type, V
 		.setBaseMipLevel(0)
 		.setLevelCount(1)
 		.setBaseArrayLayer(0)
-		.setLayerCount(type == TextureType::eTexture_Type_Cube ? 6 : 1);
+		.setLayerCount(Type == TextureType::eTexture_Type_Cube ? 6 : 1);
 	Barrier.setSubresourceRange(Range);
 
 	vk::PipelineStageFlags SrcStage;
@@ -189,7 +391,7 @@ void VulkanTexture::TransitionLayout(VulkanContext* context, TextureType type, V
 	command_buffer->CommandBuffer.pipelineBarrier(SrcStage, DstStage, vk::DependencyFlagBits::eByRegion, 0, nullptr, 0, nullptr, 1, &Barrier);
 }
 
-void VulkanTexture::CopyFromBuffer(VulkanContext* context, TextureType type, vk::Buffer buffer, VulkanCommandBuffer* command_buffer) {
+void VulkanTexture::CopyFromBuffer(vk::Buffer buffer, VulkanCommandBuffer* command_buffer) {
 	// Region to copy
 	vk::BufferImageCopy Region;
 	Memory::Zero(&Region, sizeof(vk::BufferImageCopy));
@@ -202,7 +404,7 @@ void VulkanTexture::CopyFromBuffer(VulkanContext* context, TextureType type, vk:
 	Subresource.setAspectMask(vk::ImageAspectFlagBits::eColor)
 		.setMipLevel(0)
 		.setBaseArrayLayer(0)
-		.setLayerCount(type == TextureType::eTexture_Type_Cube ? 6 : 1);
+		.setLayerCount(Type == TextureType::eTexture_Type_Cube ? 6 : 1);
 	Region.setImageSubresource(Subresource);
 
 	// Extent
@@ -215,7 +417,7 @@ void VulkanTexture::CopyFromBuffer(VulkanContext* context, TextureType type, vk:
 	command_buffer->CommandBuffer.copyBufferToImage(buffer, Image, vk::ImageLayout::eTransferDstOptimal, 1, &Region);
 }
 
-void VulkanTexture::CopyToBuffer(VulkanContext* context, TextureType type, vk::Buffer buffer, VulkanCommandBuffer* commandBuffer) {
+void VulkanTexture::CopyToBuffer(vk::Buffer buffer, VulkanCommandBuffer* commandBuffer) {
 	vk::BufferImageCopy Region;
 	Region.setBufferOffset(0)
 		.setBufferRowLength(0)
@@ -226,7 +428,7 @@ void VulkanTexture::CopyToBuffer(VulkanContext* context, TextureType type, vk::B
 	Subresource.setAspectMask(vk::ImageAspectFlagBits::eColor)
 		.setMipLevel(0)
 		.setBaseArrayLayer(0)
-		.setLayerCount(type == TextureType::eTexture_Type_Cube ? 6 : 1);
+		.setLayerCount(Type == TextureType::eTexture_Type_Cube ? 6 : 1);
 	Region.setImageSubresource(Subresource);
 
 	// Extent
@@ -239,7 +441,7 @@ void VulkanTexture::CopyToBuffer(VulkanContext* context, TextureType type, vk::B
 	commandBuffer->CommandBuffer.copyImageToBuffer(Image, vk::ImageLayout::eTransferSrcOptimal, buffer, 1, &Region);
 }
 
-void VulkanTexture::CopyPixelToBuffer(VulkanContext* context, TextureType type, vk::Buffer buffer, uint32_t x, uint32_t y, VulkanCommandBuffer* commandBuffer) {
+void VulkanTexture::CopyPixelToBuffer(vk::Buffer buffer, uint32_t x, uint32_t y, VulkanCommandBuffer* commandBuffer) {
 	vk::BufferImageCopy Region;
 	Region.setBufferOffset(0)
 		.setBufferRowLength(0)
@@ -250,7 +452,7 @@ void VulkanTexture::CopyPixelToBuffer(VulkanContext* context, TextureType type, 
 	Subresource.setAspectMask(vk::ImageAspectFlagBits::eColor)
 		.setMipLevel(0)
 		.setBaseArrayLayer(0)
-		.setLayerCount(type == TextureType::eTexture_Type_Cube ? 6 : 1);
+		.setLayerCount(Type == TextureType::eTexture_Type_Cube ? 6 : 1);
 	Region.setImageSubresource(Subresource);
 
 	// Extent
@@ -262,4 +464,21 @@ void VulkanTexture::CopyPixelToBuffer(VulkanContext* context, TextureType type, 
 		.setImageOffset({ (int)x, (int)y });
 
 	commandBuffer->CommandBuffer.copyImageToBuffer(Image, vk::ImageLayout::eTransferSrcOptimal, buffer, 1, &Region);
+}
+
+
+vk::Format VulkanTexture::ChannelCountToFormat(unsigned char channel_count, vk::Format default_format /*= vk::Format::eR8G8B8A8Unorm*/) {
+	switch (channel_count)
+	{
+	case 1:
+		return vk::Format::eR8Unorm;
+	case 2:
+		return vk::Format::eR8G8Unorm;
+	case 3:
+		return vk::Format::eR8G8B8Unorm;
+	case 4:
+		return vk::Format::eR8G8B8A8Unorm;
+	default:
+		return default_format;
+	}
 }

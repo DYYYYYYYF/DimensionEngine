@@ -450,7 +450,7 @@ bool ShaderSystem::AddSampler(Shader* shader, ShaderUniformConfig& config) {
 		// NOTE: This allocation is only done for global texture maps.
 		TextureMap* Map = (TextureMap*)Memory::Allocate(sizeof(TextureMap), MemoryType::eMemory_Type_Renderer);
 		*Map = DefaultMap;
-		Map->texture = TextureSystem::GetDefaultDiffuseTexture();
+		Map->texture = TextureSystem::Get().GetDefaultDiffuseTexture();
 		shader->GlobalTextureMaps.push_back(Map);
 	}
 	else {

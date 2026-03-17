@@ -22,52 +22,54 @@ struct TextureLoadParams {
 
 class TextureSystem {
 public:
-	static bool Initialize(IRenderer* renderer, STextureSystemConfig config);
-	static void Shutdown();
+	static TextureSystem& Get();
 
-	static UTexture* Acquire(const FString& name, bool auto_release);
-	static UTexture* AcquireCube(const FString& name, bool auto_release);
-	static UTexture* AcquireWriteable(const FString& name, uint32_t width, uint32_t height,
+public:
+	bool Initialize(IRenderer* renderer, STextureSystemConfig config);
+	void Shutdown();
+
+	UTexture* Acquire(const FString& name, bool auto_release = true);
+	UTexture* AcquireCube(const FString& name, bool auto_release = true);
+	UTexture* AcquireWriteable(const FString& name, uint32_t width, uint32_t height,
 		unsigned char channel_count, bool has_transparency, bool has_depth = false);
-	static void Release(const FString& name);
+	void Release(const FString& name);
 
-	static void WrapInternal(const FString& name, uint32_t width, uint32_t height, unsigned char channel_count,
+	void WrapInternal(const FString& name, uint32_t width, uint32_t height, unsigned char channel_count,
 		bool has_transparency, bool is_writeable, bool register_texture, UTexture* tex);
-	static bool SetInternal(UTexture* t);
-	static bool Resize(UTexture* t, uint32_t width, uint32_t height, bool regenerate_internal_data);
-	static bool WriteData(UTexture* t, uint32_t offset, uint32_t size, void* data);
+	bool SetInternal(UTexture* t);
+	bool Resize(UTexture* t, uint32_t width, uint32_t height, bool regenerate_internal_data);
 
-	static UTexture* GetDefaultDiffuseTexture();
-	static UTexture* GetDefaultSpecularTexture();
-	static UTexture* GetDefaultNormalTexture();
-	static UTexture* GetDefaultRoughnessMetallicTexture();
+	UTexture* GetDefaultDiffuseTexture();
+	UTexture* GetDefaultSpecularTexture();
+	UTexture* GetDefaultNormalTexture();
+	UTexture* GetDefaultRoughnessMetallicTexture();
 
 private:
-	static UTexture* CheckTextureName(const FString& name);
-	static bool LoadTexture(const FString& name, UTexture* texture);
-	static bool LoadCubeTexture(const FString& name, const TArray<FString>& texture_names, UTexture* t);
-	static void DestroyTexture(UTexture* t);
+	UTexture* CheckTextureName(const FString& name);
+	bool LoadTexture(const FString& name, UTexture* texture);
+	bool LoadCubeTexture(const FString& name, const TArray<FString>& texture_names, UTexture* t);
+	void DestroyTexture(UTexture* t);
 
-	static bool CreateDefaultTexture();
-	static void DestroyDefaultTexture();
-	static bool ProcessTextureReference(const FString& name, TextureType type,
+	bool CreateDefaultTexture();
+	void DestroyDefaultTexture();
+	bool ProcessTextureReference(const FString& name, TextureType type,
 		short reference_diff, bool auto_release, bool skip_load);
 
-	static void LoadJobSuccess(void* params);
-	static void LoadJobFail(void* params);
-	static bool LoadJobStart(void* params, void* result_data);
+	void LoadJobSuccess(void* params);
+	void LoadJobFail(void* params);
+	bool LoadJobStart(void* params, void* result_data);
 
 private:
-	static STextureSystemConfig TextureSystemConfig;
-	static UTexture* DefaultDiffuseTexture;
-	static UTexture* DefaultSpecularTexture;
-	static UTexture* DefaultNormalTexture;
-	static UTexture* DefaultRoughnessMetallicTexture;
+	STextureSystemConfig TextureSystemConfig;
+	UTexture* DefaultDiffuseTexture;
+	UTexture* DefaultSpecularTexture;
+	UTexture* DefaultNormalTexture;
+	UTexture* DefaultRoughnessMetallicTexture;
 
 	// Hashtable for texture lookups.
-	static std::unordered_map<FString, UTexture*> TextureMap;
+	std::unordered_map<FString, UTexture*> TextureMap;
 
-	static bool Initilized;
+	bool Initilized;
 
-	static IRenderer* Renderer;
+	IRenderer* Renderer;
 };

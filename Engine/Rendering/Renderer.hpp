@@ -29,12 +29,6 @@ public:
 	virtual bool DrawFrame(SRenderPacket* packet);
 
 	virtual UTexture* AcquireTexture(const FString& name, bool auto_release = true);
-	virtual void CreateTexture(const unsigned char* pixels, UTexture* texture);
-	virtual void DestroyTexture(UTexture* texture);
-
-	virtual void CreateWriteableTexture(UTexture* tex);
-	virtual void ResizeTexture(UTexture* tex, uint32_t new_width, uint32_t new_height);
-	virtual void WriteTextureData(UTexture* tex, uint32_t offset, uint32_t size, const unsigned char* pixels);
 
 	virtual bool CreateGeometry(Geometry* geometry, uint32_t vertex_size, uint32_t vertex_count, 
 		const void* vertices, uint32_t index_size, uint32_t index_count, const void* indices);
@@ -178,9 +172,6 @@ public:
 	 * @param map A pointer to texture map to obtain resources for.
 	 */
 	virtual void ReleaseTextureMap(TextureMap* map);
-
-	virtual TArray<uint8_t> ReadTextureData(UTexture* tex, uint32_t offset, uint32_t size);
-	virtual FColor ReadTexturePixel(UTexture* tex, uint32_t x, uint32_t y);
 
 	// Renderbuffer
 	virtual bool DrawRenderbuffer(IGPUBuffer* buffer, size_t offset, uint32_t element_count, bool bind_only);

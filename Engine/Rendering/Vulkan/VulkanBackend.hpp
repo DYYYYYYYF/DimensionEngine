@@ -6,8 +6,9 @@
 class VulkanBuffer;
 
 class VulkanBackend : public IRendererBackend {
-	friend VulkanShader;
-	friend VulkanBuffer;
+	friend class VulkanShader;
+	friend class VulkanBuffer;
+	friend class VulkanTexture;
 
 public:
 	VulkanBackend();
@@ -24,13 +25,6 @@ public:
 
 	// Textures
 	virtual UTexture* AcquireTexture(const FString& name, bool auto_release) override;
-	virtual void CreateTexture(const unsigned char* pixels, UTexture* texture) override;
-	virtual void DestroyTexture(UTexture* texture) override;
-	virtual void CreateWriteableTexture(UTexture* tex) override;
-	virtual void ResizeTexture(UTexture* tex, uint32_t new_width, uint32_t new_height) override;
-	virtual void WriteTextureData(UTexture* tex, uint32_t offset, uint32_t size, const unsigned char* pixels) override;
-	virtual TArray<uint8_t> ReadTextureData(UTexture* tex, uint32_t offset, uint32_t size) override;
-	virtual FColor ReadTexturePixel(UTexture* tex, uint32_t x, uint32_t y) override;
 
 	virtual bool CreateGeometry(Geometry* geometry, uint32_t vertex_size, uint32_t vertex_count, 
 		const void* vertices, uint32_t index_size, uint32_t index_count, const void* indices) override;
@@ -79,10 +73,8 @@ public:
 	virtual bool VerifyShaderID(uint32_t shader_id);
 
 private:
-	bool CreateModule(VulkanShader* shader);
 	vk::SamplerAddressMode ConvertRepeatType(const char* axis, TextureRepeat repeat);
 	vk::Filter ConvertFilterType(const char* op, TextureFilter filter);
-	vk::Format ChannelCountToFormat(unsigned char channel_count, vk::Format default_format = vk::Format::eR8G8B8A8Unorm);
 
 protected:
 	VulkanContext Context;

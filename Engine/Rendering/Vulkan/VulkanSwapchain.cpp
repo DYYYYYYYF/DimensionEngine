@@ -102,6 +102,7 @@ void VulkanSwapchain::Create(VulkanContext* context, unsigned int width, unsigne
 		return;
 	}
 
+	TextureSystem& TextureSystemInst = TextureSystem::Get();
 	if (RenderTextures.size() == 0) {
 		RenderTextures.resize(ImageCount, nullptr);
 		// If creating the array, then the internal texture objects aren't created yet either.
@@ -109,7 +110,7 @@ void VulkanSwapchain::Create(VulkanContext* context, unsigned int width, unsigne
 			FString TexName = "__internal_vulkan_swapchain_image_0__" + FString::FromInt('0' + (char)i);
 			RenderTextures[i] = NewObject<VulkanTexture>(TexName);
 
-			TextureSystem::WrapInternal(
+			TextureSystemInst.WrapInternal(
 				TexName,
 				SwapchainExtent.width,
 				SwapchainExtent.height,
@@ -123,7 +124,7 @@ void VulkanSwapchain::Create(VulkanContext* context, unsigned int width, unsigne
 	}
 	else {
 		for (uint32_t i = 0; i < ImageCount; ++i) {
-			TextureSystem::Resize(RenderTextures[i], SwapchainExtent.width, SwapchainExtent.height, false);
+			TextureSystemInst.Resize(RenderTextures[i], SwapchainExtent.width, SwapchainExtent.height, false);
 		}
 	}
 
@@ -170,7 +171,6 @@ void VulkanSwapchain::Create(VulkanContext* context, unsigned int width, unsigne
 
 	if (DepthTexture.size() == 0) {
 		DepthTexture.resize(ImageCount);
-
 	}
 
 	for (uint32_t i = 0; i < ImageCount; ++i) {
@@ -178,11 +178,17 @@ void VulkanSwapchain::Create(VulkanContext* context, unsigned int width, unsigne
 		context->Swapchain.DepthTexture[i] = NewObject<VulkanTexture>("__default_depth_texture__");
 
 		VulkanTexture* DepthImage = (VulkanTexture*)context->Swapchain.DepthTexture[i];
-		DepthImage->CreateImage(context, TextureType::eTexture_Type_2D, SwapchainExtent.width, SwapchainExtent.height, context->Device.GetDepthFormat(),
-			vk::ImageTiling::eOptimal, vk::ImageUsageFlagBits::eDepthStencilAttachment, vk::MemoryPropertyFlagBits::eDeviceLocal, true, vk::ImageAspectFlagBits::eDepth);
+		ASSERT(DepthImage);
+
+		DepthImage->SetWidth(SwapchainExtent.width);
+		DepthImage->SetHeight(SwapchainExtent.height);
+		DepthImage->SetTextureType(TextureType::eTexture_Type_2D);
+		DepthImage->CreateImage(context->Device.GetDepthFormat(),
+			vk::ImageTiling::eOptimal, vk::ImageUsageFlagBits::eDepthStencilAttachment,
+			vk::MemoryPropertyFlagBits::eDeviceLocal, true, vk::ImageAspectFlagBits::eDepth);
 
 		// Wrap it in a texture.
-		TextureSystem::WrapInternal(
+		TextureSystem::Get().WrapInternal(
 			"__default_depth_texture__",
 			SwapchainExtent.width,
 			SwapchainExtent.height,
@@ -204,7 +210,7 @@ bool VulkanSwapchain::Destroy(VulkanContext* context) {
 	context->Device.GetLogicalDevice().waitIdle();
 	for (uint32_t i = 0; i < ImageCount; ++i) {
 		VulkanTexture* Image = (VulkanTexture*)DepthTexture[i];
-		Image->Destroy(context);
+		Image->Destroy();
 		Image = nullptr;
 	}
 	DepthTexture.clear();

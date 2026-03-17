@@ -67,7 +67,7 @@ RenderViewWorldDeferred::RenderViewWorldDeferred() {
 
 RenderViewWorldDeferred::RenderViewWorldDeferred(const RenderViewConfig& config) {
 	Type = config.type;
-	Name = StringCopy(config.name);
+	Name = config.name;
 	CustomShaderName = config.custom_shader_name;
 	RenderpassCount = config.pass_count; // 应该是2个通道：G-Buffer和光照
 	Passes.resize(RenderpassCount);
@@ -387,28 +387,29 @@ bool RenderViewWorldDeferred::OnRender(struct RenderViewPacket* packet, IRendere
 }
 
 bool RenderViewWorldDeferred::CreateGBufferTextures(uint32_t width, uint32_t height) {
+	TextureSystem& TextureSystemInst = TextureSystem::Get();
 	for (uint32_t bufferIndex = 0; bufferIndex < MAX_RENDER_TARGETS; ++bufferIndex) {
 		// 创建反照率+金属度纹理 (RGBA8)
 		FString ALbedoTextureName("GBuffer_Albedo_%d", bufferIndex);
-		GBuffers[bufferIndex].AlbedoTexture = TextureSystem::AcquireWriteable(ALbedoTextureName.CStr(), width, height, 4, false);
+		GBuffers[bufferIndex].AlbedoTexture = TextureSystemInst.AcquireWriteable(ALbedoTextureName.CStr(), width, height, 4, false);
 		GBuffers[bufferIndex].AlbedoTextureMap.texture = GBuffers[bufferIndex].AlbedoTexture;
 		Renderer->AcquireTextureMap(&GBuffers[bufferIndex].AlbedoTextureMap);
 
 		// 创建法线+粗糙度纹理 (RGBA8)
 		FString NormalTextureName("GBuffer_Normal_%d", bufferIndex);
-		GBuffers[bufferIndex].NormalTexture = TextureSystem::AcquireWriteable(NormalTextureName.CStr(), width, height, 4, false);
+		GBuffers[bufferIndex].NormalTexture = TextureSystemInst.AcquireWriteable(NormalTextureName.CStr(), width, height, 4, false);
 		GBuffers[bufferIndex].NormalTextureMap.texture = GBuffers[bufferIndex].NormalTexture;
 		Renderer->AcquireTextureMap(&GBuffers[bufferIndex].NormalTextureMap);
 
 		// 创建位置纹理 (RGBA8)
 		FString PositionTextureName("GBuffer_Position_%d", bufferIndex);
-		GBuffers[bufferIndex].PositionTexture = TextureSystem::AcquireWriteable(PositionTextureName.CStr(), width, height, 4, false);
+		GBuffers[bufferIndex].PositionTexture = TextureSystemInst.AcquireWriteable(PositionTextureName.CStr(), width, height, 4, false);
 		GBuffers[bufferIndex].PositionTextureMap.texture = GBuffers[bufferIndex].PositionTexture;
 		Renderer->AcquireTextureMap(&GBuffers[bufferIndex].PositionTextureMap);
 
 		// 创建深度纹理
 		FString DepthTextureName("GBuffer_Depth_%d", bufferIndex);
-		GBuffers[bufferIndex].DepthTexture = TextureSystem::AcquireWriteable(DepthTextureName.CStr(), width, height, 1, false);
+		GBuffers[bufferIndex].DepthTexture = TextureSystemInst.AcquireWriteable(DepthTextureName.CStr(), width, height, 1, false);
 		GBuffers[bufferIndex].DepthTextureMap.texture = GBuffers[bufferIndex].DepthTexture;
 		Renderer->AcquireTextureMap(&GBuffers[bufferIndex].DepthTextureMap);
 	}
@@ -419,10 +420,10 @@ bool RenderViewWorldDeferred::CreateGBufferTextures(uint32_t width, uint32_t hei
 void RenderViewWorldDeferred::DestroyGBufferTextures() {
 	// 销毁G-Buffer纹理
 	for (uint32_t bufferIndex = 0; bufferIndex < MAX_RENDER_TARGETS; ++bufferIndex) {
-		Renderer->DestroyTexture(GBuffers[bufferIndex].AlbedoTexture);
-		Renderer->DestroyTexture(GBuffers[bufferIndex].NormalTexture);
-		Renderer->DestroyTexture(GBuffers[bufferIndex].PositionTexture);
-		Renderer->DestroyTexture(GBuffers[bufferIndex].DepthTexture);
+		if (GBuffers[bufferIndex].AlbedoTexture) GBuffers[bufferIndex].AlbedoTexture->Destroy();
+		if (GBuffers[bufferIndex].NormalTexture) GBuffers[bufferIndex].NormalTexture->Destroy();
+		if (GBuffers[bufferIndex].PositionTexture) GBuffers[bufferIndex].PositionTexture->Destroy();
+		if (GBuffers[bufferIndex].DepthTexture) GBuffers[bufferIndex].DepthTexture->Destroy();
 
 		Renderer->ReleaseTextureMap(&GBuffers[bufferIndex].AlbedoTextureMap);
 		Renderer->ReleaseTextureMap(&GBuffers[bufferIndex].NormalTextureMap);

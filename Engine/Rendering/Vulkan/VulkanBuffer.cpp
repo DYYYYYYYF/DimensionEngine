@@ -104,6 +104,25 @@ bool VulkanBuffer::Create() {
 	// Report memory as in-use
 	Memory::AllocateReport(MemoryRequirements.size, IsDeviceMemory ? MemoryType::eMemory_Type_GPU_Local : MemoryType::eMemory_Type_Vulkan);
 
+#ifdef LEVEL_DEBUG
+	const char* TypeName = "UnknownBuffer";
+	switch (Type) {
+	case EGPUBufferType::eRenderbuffer_Type_Vertex:   TypeName = "VertexBuffer";   break;
+	case EGPUBufferType::eRenderbuffer_Type_Index:    TypeName = "IndexBuffer";    break;
+	case EGPUBufferType::eRenderbuffer_Type_Uniform:  TypeName = "UniformBuffer";  break;
+	case EGPUBufferType::eRenderbuffer_Type_Staging:  TypeName = "StagingBuffer";  break;
+	case EGPUBufferType::eRenderbuffer_Type_Read:     TypeName = "ReadBuffer";     break;
+	}
+
+	vk::DebugUtilsObjectNameInfoEXT NameInfo;
+	NameInfo.setObjectType(vk::ObjectType::eBuffer)
+		.setObjectHandle(reinterpret_cast<uint64_t>(static_cast<VkBuffer>(Buffer)))
+		.setPObjectName(TypeName);
+
+	Context->Device.GetLogicalDevice().setDebugUtilsObjectNameEXT(
+		NameInfo, Context->DynamicLoader);
+#endif
+
 	return true;
 }
 

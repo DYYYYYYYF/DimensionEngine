@@ -161,7 +161,7 @@ bool Engine::Initialize(){
 	// Init texture system
 	STextureSystemConfig TextureSystemConfig;
 	TextureSystemConfig.max_texture_count = 65536;
-	if (!TextureSystem::Initialize(Renderer, TextureSystemConfig)) {
+	if (!TextureSystem::Get().Initialize(Renderer, TextureSystemConfig)) {
 		GLOG(Log::eFatal, "Texture system failed to initialize!");
 		return false;
 	}
@@ -335,7 +335,7 @@ bool Engine::Run() {
 	FontSystem::Get().Shutdown();
 	GeometrySystem::Get().Shutdown();
 	MaterialSystem::Shutdown();
-	TextureSystem::Shutdown();
+	TextureSystem::Get().Shutdown();
 	JobSystem::Shutdown();
 	ShaderSystem::Shutdown();
 

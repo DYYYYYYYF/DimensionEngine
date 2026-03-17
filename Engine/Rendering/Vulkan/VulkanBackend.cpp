@@ -232,6 +232,14 @@ bool VulkanBackend::Initialize(const RenderBackendConfig* config, unsigned char*
 	GLOG(Log::eInfo, "Vulkan debugger created.");
 #endif
 
+	Context.DynamicLoader = vk::DispatchLoaderDynamic(
+		Context.Instance,
+		vkGetInstanceProcAddr,
+		Context.Device.GetLogicalDevice(),
+		vkGetDeviceProcAddr
+	);
+	GLOG(Log::eInfo, "Vulkan DynamicLoader created.");
+
 	// Surface
 	GLOG(Log::eInfo, "Creating vulkan surface...");
 	if (!PlatformCreateVulkanSurface(plat_state, &Context)) {
@@ -617,204 +625,6 @@ UTexture* VulkanBackend::AcquireTexture(const FString& name, bool auto_release) 
 
 	tex->SetIsAutoRelease(auto_release);
 	return tex;
-}
-
-void VulkanBackend::CreateTexture(const unsigned char* pixels, UTexture* texture) {
-	// Internal data creation.
-	VulkanTexture* Image = (VulkanTexture*)texture;
-	vk::DeviceSize ImageSize = texture->Width * texture->Height * texture->ChannelCount * (texture->Type == TextureType::eTexture_Type_Cube ? 6 : 1);
-
-	// NOTE: Assumes 8 bits per channel.
-	vk::Format ImageFormat = vk::Format::eR8G8B8A8Unorm;
-
-	// NOTE: Lots of assumptions here, different texture types will require.
-	// different options here.
-	Image->CreateImage(&Context, texture->Type, texture->Width, texture->Height, ImageFormat,
-		vk::ImageTiling::eOptimal,
-		vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst |
-		vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eColorAttachment,
-		vk::MemoryPropertyFlagBits::eDeviceLocal,
-		true, vk::ImageAspectFlagBits::eColor);
-
-	// Load the data.
-	WriteTextureData(texture, 0, (uint32_t)ImageSize, pixels);
-
-	texture->Generation++;
-}
-
-void VulkanBackend::DestroyTexture(UTexture* texture) {
-	Context.Device.GetLogicalDevice().waitIdle();
-	VulkanTexture* Image = (VulkanTexture*)texture;
-	if (Image) Image->Destroy(&Context);
-}
-
-vk::Format VulkanBackend::ChannelCountToFormat(unsigned char channel_count, vk::Format default_format /*= vk::Format::eR8G8B8A8Unorm*/) {
-	switch (channel_count)
-	{
-	case 1:
-		return vk::Format::eR8Unorm;
-	case 2:
-		return vk::Format::eR8G8Unorm;
-	case 3:
-		return vk::Format::eR8G8B8Unorm;
-	case 4:
-		return vk::Format::eR8G8B8A8Unorm;
-	default:
-		return default_format;
-	}
-}
-
-void VulkanBackend::CreateWriteableTexture(UTexture* tex) {
-	// Internal data creation.
-	VulkanTexture* Image = (VulkanTexture*)tex;
-
-	vk::ImageUsageFlags Usage;
-	vk::ImageAspectFlags Aspect;
-	vk::Format ImageFormat;
-	if (tex->Flags & TextureFlagBits::eTexture_Flag_Depth) {
-		Usage = vk::ImageUsageFlagBits::eDepthStencilAttachment;
-		Aspect = vk::ImageAspectFlagBits::eDepth;
-		ImageFormat = Context.Device.GetDepthFormat();
-	}
-	else {
-		Usage = vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst
-			| vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eColorAttachment;
-		Aspect = vk::ImageAspectFlagBits::eColor;
-		ImageFormat = ChannelCountToFormat((unsigned char)tex->ChannelCount, vk::Format::eR8G8B8A8Unorm);
-	}
-
-	Image->CreateImage(&Context, tex->Type, tex->Width,  tex->Height, ImageFormat, vk::ImageTiling::eOptimal,
-		Usage, vk::MemoryPropertyFlagBits::eDeviceLocal, true, Aspect);
-
-	tex->Generation++;
-}
-
-void VulkanBackend::ResizeTexture(UTexture* tex, uint32_t new_width, uint32_t new_height) {
-	if (tex == nullptr) {
-		return;
-	}
-
-	// Resizing is really just destroying the old image and creating a new one.
-	// Data is not preserved because there's no reliable way to map the old data to 
-	// the new since the amount of data differs.
-	VulkanTexture* Image = (VulkanTexture*)tex;
-	Image->Destroy(&Context);
-
-	vk::Format ImageFormat = ChannelCountToFormat((unsigned char)tex->ChannelCount, vk::Format::eR8G8B8A8Unorm);
-
-	// TODO: Lots of assumptions here, different texture types will require different options here.
-	Image->CreateImage(&Context, tex->Type, new_width, new_height, ImageFormat, vk::ImageTiling::eOptimal,
-		vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eColorAttachment,
-		vk::MemoryPropertyFlagBits::eDeviceLocal, true, vk::ImageAspectFlagBits::eColor);
-
-	tex->Generation++;
-}
-
-void VulkanBackend::WriteTextureData(UTexture* tex, uint32_t offset, uint32_t size, const unsigned char* pixels) {
-	VulkanTexture* Image = (VulkanTexture*)tex;
-
-	// Create a staging buffer and load data into it.
-	VulkanBuffer Staging;
-	Staging.Type = EGPUBufferType::eRenderbuffer_Type_Staging;
-	Staging.TotalSize = size;
-	Staging.UseFreelist = false;
-	if (!Staging.Create()) {
-		GLOG(Log::eError, "Failed to create staging buffer for texture write.");
-		return;
-	}
-	Staging.Bind(0);
-
-	Staging.Load(0, size, pixels);
-
-	VulkanCommandBuffer TempBuffer;
-	vk::CommandPool Pool = Context.Device.GetGraphicsCommandPool();
-	vk::Queue Queue = Context.Device.GetGraphicsQueue();
-	TempBuffer.AllocateAndBeginSingleUse(&Context, Pool);
-
-	// Transition the layout from whatever it is currently to optimal for reciving data.
-	Image->TransitionLayout(&Context, tex->Type, &TempBuffer, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal);
-
-	// Copy the data from the buffer.
-	Image->CopyFromBuffer(&Context, tex->Type, Staging.Buffer, &TempBuffer);
-
-	// Transition from optimal for data reciept to shader-read-only optimal layout.
-	Image->TransitionLayout(&Context, tex->Type, &TempBuffer, vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal);
-
-	TempBuffer.EndSingleUse(&Context, Pool, Queue);
-
-	Staging.UnBind();
-
-	tex->Generation++;
-}
-
-TArray<uint8_t> VulkanBackend::ReadTextureData(UTexture* tex, uint32_t offset, uint32_t size) {
-	VulkanTexture* Image = (VulkanTexture*)tex;
-
-	// Create a staging buffer and load data into it.
-	VulkanBuffer Staging;
-	Staging.Type = EGPUBufferType::eRenderbuffer_Type_Read;
-	Staging.TotalSize = size;
-	Staging.UseFreelist = false;
-	if (!Staging.Create()) {
-		GLOG(Log::eError, "Failed to create staging buffer for texture read.");
-		return TArray<uint8_t>();
-	}
-	Staging.Bind(0);
-
-	VulkanCommandBuffer TempBuffer;
-	vk::CommandPool Pool = Context.Device.GetGraphicsCommandPool();
-	vk::Queue Queue = Context.Device.GetGraphicsQueue();
-	TempBuffer.AllocateAndBeginSingleUse(&Context, Pool);
-
-	// NOTE: transition to VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
-	// Transition the layout from whatever it is currently to optimal for handing out data.
-	Image->TransitionLayout(&Context, tex->Type, &TempBuffer, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferSrcOptimal);
-
-	// Copy the data to the buffer.
-	Image->CopyToBuffer(&Context, tex->Type, Staging.Buffer, &TempBuffer);
-
-	Image->TransitionLayout(&Context, tex->Type, &TempBuffer, vk::ImageLayout::eTransferSrcOptimal, vk::ImageLayout::eShaderReadOnlyOptimal);
-
-	TempBuffer.EndSingleUse(&Context, Pool, Queue);
-	
-	return Staging.Read(offset, size);
-}
-
-FColor VulkanBackend::ReadTexturePixel(UTexture* tex, uint32_t x, uint32_t y) {
-	VulkanTexture* Image = (VulkanTexture*)tex;
-
-	// TODO: creating a buffer every time isn't great. Could optimize this by creating a buffer once
-	// and just reusing it.
-	// 
-	// Create a staging buffer and load data into it.
-	VulkanBuffer Staging;
-	Staging.Type = EGPUBufferType::eRenderbuffer_Type_Read;
-	Staging.TotalSize = sizeof(unsigned char) * 4;
-	Staging.UseFreelist = false;
-	if (!Staging.Create()) {
-		GLOG(Log::eError, "Failed to create staging buffer for pixel read. Return Vector4()");
-		return FColor();
-	}
-	Staging.Bind(0);
-
-	VulkanCommandBuffer TempBuffer;
-	vk::CommandPool Pool = Context.Device.GetGraphicsCommandPool();
-	vk::Queue Queue = Context.Device.GetGraphicsQueue();
-	TempBuffer.AllocateAndBeginSingleUse(&Context, Pool);
-
-	// NOTE: transition to VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
-	// Transition the layout from whatever it is currently to optimal for handing out data.
-	Image->TransitionLayout(&Context, tex->Type, &TempBuffer, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferSrcOptimal);
-
-	// Copy the data to the buffer.
-	Image->CopyPixelToBuffer(&Context, tex->Type, Staging.Buffer, x, y,  &TempBuffer);
-
-	Image->TransitionLayout(&Context, tex->Type, &TempBuffer, vk::ImageLayout::eTransferSrcOptimal, vk::ImageLayout::eShaderReadOnlyOptimal);
-
-	TempBuffer.EndSingleUse(&Context, Pool, Queue);
-
-	TArray<uint8_t> Data = Staging.Read(0, sizeof(unsigned char) * 4);
-	return FColor(Data);
 }
 
 bool VulkanBackend::CreateGeometry(Geometry* geometry, uint32_t vertex_size, uint32_t vertex_count, 
@@ -1264,6 +1074,8 @@ bool VulkanBackend::ApplyInstanceShader(Shader* shader, bool need_update) {
 		return false;
 	}
 
+	TextureSystem& TextureSystemInst = TextureSystem::Get();
+
 	uint32_t ImageIndex = Context.ImageIndex;
 	vk::CommandBuffer CmdBuffer = Context.GraphicsCommandBuffers[ImageIndex].CommandBuffer;
 
@@ -1329,20 +1141,20 @@ bool VulkanBackend::ApplyInstanceShader(Shader* shader, bool need_update) {
 					switch (map->usage)
 					{
 					case TextureUsage::eTexture_Usage_Map_Diffuse:
-						t = TextureSystem::GetDefaultDiffuseTexture();
+						t = TextureSystemInst.GetDefaultDiffuseTexture();
 						break;
 					case TextureUsage::eTexture_Usage_Map_Normal:
-						t = TextureSystem::GetDefaultNormalTexture();
+						t = TextureSystemInst.GetDefaultNormalTexture();
 						break;
 					case TextureUsage::eTexture_Usage_Map_Specular:
-						t = TextureSystem::GetDefaultSpecularTexture();
+						t = TextureSystemInst.GetDefaultSpecularTexture();
 						break;
 					case TextureUsage::eTexture_Usage_Map_RoughnessMetallic:
-						t = TextureSystem::GetDefaultRoughnessMetallicTexture();
+						t = TextureSystemInst.GetDefaultRoughnessMetallicTexture();
 						break;
 					default:
 						GLOG(Log::eWarn, "Undefined texture use %d.", map->usage);
-						t = TextureSystem::GetDefaultDiffuseTexture();
+						t = TextureSystemInst.GetDefaultDiffuseTexture();
 						break;
 					}
 				}
@@ -1477,7 +1289,7 @@ uint32_t VulkanBackend::AcquireInstanceResource(Shader* shader, std::vector<Text
 	// Only setup if the shader actually requires it.
 	if (shader->InstanceTextureCount > 0) {
 		// Wipe out the memory for the entire array, even if it isn't all used.
-		UTexture* DefaultTexture = TextureSystem::GetDefaultDiffuseTexture();
+		UTexture* DefaultTexture = TextureSystem::Get().GetDefaultDiffuseTexture();
 		InstanceState->instance_texture_maps = maps;
 		// Set unassigned texture pointers to default until assigned.
 		for (uint32_t i = 0; i < InstanceTextureCount; ++i) {

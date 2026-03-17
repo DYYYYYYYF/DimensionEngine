@@ -271,18 +271,19 @@ bool MaterialSystem::LoadMaterial(SMaterialConfig config, Material* mat) {
 		return false;
 	}
 
+	TextureSystem& TextureSystemInst = TextureSystem::Get();
 	if (!config.diffuse_map_name.IsEmpty()) {
 		mat->DiffuseMap.usage = TextureUsage::eTexture_Usage_Map_Diffuse;
-		mat->DiffuseMap.texture = TextureSystem::Acquire(config.diffuse_map_name, true);
+		mat->DiffuseMap.texture = TextureSystemInst.Acquire(config.diffuse_map_name, true);
 		if (mat->DiffuseMap.texture == nullptr) {
 			GLOG(Log::eWarn, "Unable to load texture '%s' for material '%s', using default.", config.diffuse_map_name.CStr(), mat->Name.CStr());
-			mat->DiffuseMap.texture = TextureSystem::GetDefaultDiffuseTexture();
+			mat->DiffuseMap.texture = TextureSystemInst.GetDefaultDiffuseTexture();
 		}
 	}
 	else {
 		// NOTE: Only set for clarity, as call to Memory::Zero above does this already.
 		mat->DiffuseMap.usage = TextureUsage::eTexture_Usage_Map_Diffuse;
-		mat->DiffuseMap.texture = TextureSystem::GetDefaultDiffuseTexture();
+		mat->DiffuseMap.texture = TextureSystemInst.GetDefaultDiffuseTexture();
 	}
 
 	// Normal map
@@ -298,16 +299,16 @@ bool MaterialSystem::LoadMaterial(SMaterialConfig config, Material* mat) {
 
 	if (!config.normal_map_name.IsEmpty()) {
 		mat->NormalMap.usage = TextureUsage::eTexture_Usage_Map_Normal;
-		mat->NormalMap.texture = TextureSystem::Acquire(config.normal_map_name, true);
+		mat->NormalMap.texture = TextureSystemInst.Acquire(config.normal_map_name, true);
 		if (mat->NormalMap.texture == nullptr) {
 			GLOG(Log::eWarn, "Unable to load texture '%s' for material '%s', using default.", config.normal_map_name.CStr(), mat->Name.CStr());
-			mat->NormalMap.texture = TextureSystem::GetDefaultNormalTexture();
+			mat->NormalMap.texture = TextureSystemInst.GetDefaultNormalTexture();
 		}
 	}
 	else {
 		// NOTE: Only set for clarity, as call to Memory::Zero above does this already.
 		mat->NormalMap.usage = TextureUsage::eTexture_Usage_Map_Normal;
-		mat->NormalMap.texture = TextureSystem::GetDefaultNormalTexture();
+		mat->NormalMap.texture = TextureSystemInst.GetDefaultNormalTexture();
 	}
 
 	// Roughness metallic map
@@ -323,18 +324,18 @@ bool MaterialSystem::LoadMaterial(SMaterialConfig config, Material* mat) {
 
 	if (!config.MetallicRoughnessTexName.empty()) {
 		mat->RoughnessMetallicMap.usage = TextureUsage::eTexture_Usage_Map_RoughnessMetallic;
-		mat->RoughnessMetallicMap.texture = TextureSystem::Acquire(config.MetallicRoughnessTexName.c_str(), true);
+		mat->RoughnessMetallicMap.texture = TextureSystemInst.Acquire(config.MetallicRoughnessTexName.c_str(), true);
 		if (mat->RoughnessMetallicMap.texture == nullptr) {
 			GLOG(Log::eWarn, "Unable to load texture '%s' for material '%s', using default.", config.MetallicRoughnessTexName.c_str(), mat->Name.CStr());
 
 			// TODO: 如果没有RM贴图，可以根据具体的 Roughness/Metallic 参数创建新的贴图。
-			mat->RoughnessMetallicMap.texture = TextureSystem::GetDefaultRoughnessMetallicTexture();
+			mat->RoughnessMetallicMap.texture = TextureSystemInst.GetDefaultRoughnessMetallicTexture();
 		}
 	}
 	else {
 		// NOTE: Only set for clarity, as call to Memory::Zero above does this already.
 		mat->RoughnessMetallicMap.usage = TextureUsage::eTexture_Usage_Map_RoughnessMetallic;
-		mat->RoughnessMetallicMap.texture = TextureSystem::GetDefaultRoughnessMetallicTexture();
+		mat->RoughnessMetallicMap.texture = TextureSystemInst.GetDefaultRoughnessMetallicTexture();
 	}
 	// TODO: other maps.
 
@@ -360,14 +361,15 @@ void MaterialSystem::DestroyMaterial(Material* mat) {
 	GLOG(Log::eInfo, "Destroying material '%s'...", mat->Name.CStr());
 
 	// Release texture references.
+	TextureSystem& TextureSystemInst = TextureSystem::Get();
 	if (mat->DiffuseMap.texture != nullptr) {
-		TextureSystem::Release(mat->DiffuseMap.texture->GetName());
+		TextureSystemInst.Release(mat->DiffuseMap.texture->GetName());
 	}
 	if (mat->NormalMap.texture != nullptr) {
-		TextureSystem::Release(mat->NormalMap.texture->GetName());
+		TextureSystemInst.Release(mat->NormalMap.texture->GetName());
 	}
 	if (mat->RoughnessMetallicMap.texture != nullptr) {
-		TextureSystem::Release(mat->RoughnessMetallicMap.texture->GetName());
+		TextureSystemInst.Release(mat->RoughnessMetallicMap.texture->GetName());
 	}
 
 	// Release texture map resources.
@@ -395,6 +397,8 @@ bool MaterialSystem::CreateDefaultMaterial() {
 		return true;
 	}
 
+	TextureSystem& TextureSystemInst = TextureSystem::Get();
+
 	DefaultMaterial = NewObject<Material>();
 	DefaultMaterial->SetID(INVALID_ID);
 	DefaultMaterial->Generation = INVALID_ID;
@@ -406,7 +410,7 @@ bool MaterialSystem::CreateDefaultMaterial() {
 	DefaultMaterial->DiffuseMap.repeat_u = eTexture_Repeat_Repeat;
 	DefaultMaterial->DiffuseMap.repeat_v = eTexture_Repeat_Repeat;
 	DefaultMaterial->DiffuseMap.repeat_w = eTexture_Repeat_Repeat;
-	DefaultMaterial->DiffuseMap.texture = TextureSystem::GetDefaultDiffuseTexture();
+	DefaultMaterial->DiffuseMap.texture = TextureSystemInst.GetDefaultDiffuseTexture();
 	if (!Renderer->AcquireTextureMap(&DefaultMaterial->DiffuseMap)) {
 		GLOG(Log::eError, "Unable to acquire resources for diffuse texture map.");
 		return false;
@@ -418,7 +422,7 @@ bool MaterialSystem::CreateDefaultMaterial() {
 	DefaultMaterial->NormalMap.repeat_u = eTexture_Repeat_Repeat;
 	DefaultMaterial->NormalMap.repeat_v = eTexture_Repeat_Repeat;
 	DefaultMaterial->NormalMap.repeat_w = eTexture_Repeat_Repeat;
-	DefaultMaterial->NormalMap.texture = TextureSystem::GetDefaultNormalTexture();
+	DefaultMaterial->NormalMap.texture = TextureSystemInst.GetDefaultNormalTexture();
 	if (!Renderer->AcquireTextureMap(&DefaultMaterial->NormalMap)) {
 		GLOG(Log::eError, "Unable to acquire resources for diffuse texture map.");
 		return false;
@@ -430,7 +434,7 @@ bool MaterialSystem::CreateDefaultMaterial() {
 	DefaultMaterial->RoughnessMetallicMap.repeat_u = eTexture_Repeat_Repeat;
 	DefaultMaterial->RoughnessMetallicMap.repeat_v = eTexture_Repeat_Repeat;
 	DefaultMaterial->RoughnessMetallicMap.repeat_w = eTexture_Repeat_Repeat;
-	DefaultMaterial->RoughnessMetallicMap.texture = TextureSystem::GetDefaultNormalTexture();
+	DefaultMaterial->RoughnessMetallicMap.texture = TextureSystemInst.GetDefaultNormalTexture();
 	if (!Renderer->AcquireTextureMap(&DefaultMaterial->RoughnessMetallicMap)) {
 		GLOG(Log::eError, "Unable to acquire resources for diffuse texture map.");
 		return false;

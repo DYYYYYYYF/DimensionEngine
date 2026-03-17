@@ -119,4 +119,5 @@ void TextureHelper::Unload(UTexture* resource) {
 	}
 
 	stbi_image_free(resource->GetPixels());
+	resource->SetPixels(nullptr);
 }

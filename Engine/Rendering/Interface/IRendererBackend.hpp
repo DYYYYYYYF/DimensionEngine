@@ -1,7 +1,6 @@
 ﻿#pragma once
 
 #include "Rendering/RenderTypes.hpp"
-#include "Math/Color.hpp"
 
 enum ShaderStage;
 struct SPlatformState;
@@ -36,13 +35,6 @@ public:
 
 	// Texture
 	virtual UTexture* AcquireTexture(const FString& name, bool auto_release) = 0;
-	virtual void CreateTexture(const unsigned char* pixels, UTexture* texture) = 0;
-	virtual void DestroyTexture(UTexture* txture) = 0;
-	virtual void CreateWriteableTexture(UTexture* tex) = 0;
-	virtual void ResizeTexture(UTexture* tex, uint32_t new_width, uint32_t new_height) = 0;
-	virtual void WriteTextureData(UTexture* tex, uint32_t offset, uint32_t size, const unsigned char* pixels) = 0;
-	virtual TArray<uint8_t> ReadTextureData(UTexture* tex, uint32_t offset, uint32_t size) = 0;
-	virtual FColor ReadTexturePixel(UTexture* tex, uint32_t x, uint32_t y) = 0;
 
 	// Geometry
 	virtual bool CreateGeometry(Geometry* geometry, uint32_t vertex_size, uint32_t vertex_count, const void* vertices, uint32_t index_size, uint32_t index_count, const void* indices) = 0;

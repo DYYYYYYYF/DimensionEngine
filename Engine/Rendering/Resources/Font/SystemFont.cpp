@@ -119,7 +119,7 @@ bool SystemFontVariant::Setup() {
 		"__system_text_atlas_%s_i%i_sz%i__", face_.CStr(), ctx_->index, size_
 	);
 
-	atlas_.texture = TextureSystem::AcquireWriteable(
+	atlas_.texture = TextureSystem::Get().AcquireWriteable(
 		texName, atlasSizeX_, atlasSizeY_, 4, true);
 
 	// 从 stbtt 获取行高等度量
@@ -182,7 +182,7 @@ void SystemFontVariant::Cleanup() {
 
 	Renderer->ReleaseTextureMap(&atlas_);
 	if (atlas_.texture) {
-		TextureSystem::Release(atlas_.texture->GetName());
+		TextureSystem::Get().Release(atlas_.texture->GetName());
 		atlas_.texture = nullptr;
 	}
 }
@@ -273,7 +273,7 @@ bool SystemFontVariant::RebuildAtlas() {
 		rgbaPixels[(j * 4) + 3] = pixels[j];
 	}
 
-	TextureSystem::WriteData(atlas_.texture, 0, packImageSize * 4, rgbaPixels);
+	atlas_.texture->WriteTextureData(packImageSize * 4, rgbaPixels);
 
 	Memory::Free(pixels, MemoryType::eMemory_Type_Array);
 	Memory::Free(rgbaPixels, MemoryType::eMemory_Type_Array);

@@ -20,7 +20,7 @@ bool Skybox::Create(const FString& cubeName) {
 		return false;
 	}
 
-	CubeMap.texture = TextureSystem::AcquireCube("skybox", true);
+	CubeMap.texture = TextureSystem::Get().AcquireCube("skybox", true);
 	SGeometryConfig SkyboxCubeConfig = GeometrySystem::Get().GenerateCubeConfig(10.0f, 10.0f, 10.0f, 1.0f, 1.0f, cubeName, FString());
 
 	// Clear out the material name.

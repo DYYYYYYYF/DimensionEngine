@@ -3,12 +3,23 @@
 #include "TextureType.hpp"
 #include "Rendering/Resources/Asset.hpp"
 #include "Math/MathTypes.hpp"
+#include "Math/Color.hpp"
 
 class UTexture : public UAsset {
 public:
 	UTexture();
 	UTexture(const FString& name);
 	virtual ~UTexture();
+
+	virtual bool Load(const unsigned char* pixels) = 0;
+	virtual bool LoadWriteable() = 0;
+	virtual bool Unload() = 0;
+	virtual void Destroy() = 0;
+
+	virtual bool Resize(uint32_t new_width, uint32_t new_height) = 0;
+	virtual bool WriteTextureData(uint64_t size, const unsigned char* pixels) = 0;
+	virtual TArray<uint8_t> ReadTextureData(uint32_t offset, uint32_t size) =0;
+	virtual FColor ReadTexturePixel(uint32_t x, uint32_t y) =0;
 
 public:
 	uint32_t GetID() const { return ID; }

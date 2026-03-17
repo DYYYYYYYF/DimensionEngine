@@ -181,8 +181,8 @@ void RenderViewPick::OnDestroy() {
 	EngineEvent::Unregister(eEventCode::Mouse_Moved, this, RenderViewPickOnEvent);
 
 	ReleaseShaderInstance();
-	Renderer->DestroyTexture(ColorTargetAttachment);
-	Renderer->DestroyTexture(DepthTargetAttachment);
+	ColorTargetAttachment->Destroy();
+	DepthTargetAttachment->Destroy();
 }
 
 void RenderViewPick::OnResize(uint32_t width, uint32_t height) {
@@ -317,7 +317,7 @@ bool RenderViewPick::RegenerateAttachmentTarget(uint32_t passIndex, RenderTarget
 
 	// Destroy current attachment if it exists.
 	if (attachment->texture){
-		Renderer->DestroyTexture(attachment->texture);
+		attachment->texture->Destroy();
 	}
 
 	// Setup a new texture.
@@ -338,7 +338,7 @@ bool RenderViewPick::RegenerateAttachmentTarget(uint32_t passIndex, RenderTarget
 		attachment->texture->Flags |= TextureFlagBits::eTexture_Flag_Depth;
 	}
 
-	Renderer->CreateWriteableTexture(attachment->texture);
+	attachment->texture->LoadWriteable();
 
 	return true;
 }
@@ -494,7 +494,7 @@ bool RenderViewPick::OnRender(struct RenderViewPacket* packet, IRendererBackend*
 	// Clamp to image size.
 	unsigned short CoordX = CLAMP(MouseX, 0, Width - 1);
 	unsigned short CoordY = CLAMP(MouseY, 0, Height - 1);
-	FColor Pixel = Renderer->ReadTexturePixel(t, CoordX, CoordY);
+	FColor Pixel = t->ReadTexturePixel(CoordX, CoordY);
 
 	// Extract the id from the sampled color.
 	uint32_t ObjID = INVALID_ID;

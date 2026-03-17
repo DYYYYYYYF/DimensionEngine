@@ -73,6 +73,8 @@ public:
 	vk::DebugUtilsMessengerEXT DebugMessenger;
 #endif
 
+	vk::DispatchLoaderDynamic DynamicLoader;
+
 	VulkanCommandBuffer* GraphicsCommandBuffers;
 
 	std::vector<vk::Semaphore> ImageAvailableSemaphores;

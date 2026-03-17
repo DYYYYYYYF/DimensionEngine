@@ -180,26 +180,6 @@ UTexture* IRenderer::AcquireTexture(const FString& name, bool auto_release) {
 	return Backend->AcquireTexture(name, auto_release);
 }
 
-void IRenderer::CreateTexture(const unsigned char* pixels, UTexture* texture) {
-	Backend->CreateTexture(pixels, texture);
-}
-
-void IRenderer::DestroyTexture(UTexture* texture) {
-	Backend->DestroyTexture(texture);
-}
-
-void IRenderer::CreateWriteableTexture(UTexture* tex) {
-	Backend->CreateWriteableTexture(tex);
-}
-
-void IRenderer::ResizeTexture(UTexture* tex, uint32_t new_width, uint32_t new_height) {
-	Backend->ResizeTexture(tex, new_width, new_height);
-}
-
-void IRenderer::WriteTextureData(UTexture* tex, uint32_t offset, uint32_t size, const unsigned char* pixels) {
-	Backend->WriteTextureData(tex, offset, size, pixels);
-}
-
 bool IRenderer::CreateGeometry(Geometry* geometry, uint32_t vertex_size, uint32_t vertex_count,
 	const void* vertices, uint32_t index_size, uint32_t index_count, const void* indices) {
 	return Backend->CreateGeometry(geometry, vertex_size, vertex_count, vertices, index_size, index_count, indices);
@@ -271,14 +251,6 @@ bool IRenderer::AcquireTextureMap(TextureMap* map) {
 
 void IRenderer::ReleaseTextureMap(TextureMap* map) {
 	Backend->ReleaseTextureMap(map);
-}
-
-TArray<uint8_t> IRenderer::ReadTextureData(UTexture* tex, uint32_t offset, uint32_t size) {
-	return Backend->ReadTextureData(tex, offset, size);
-}
-
-FColor IRenderer::ReadTexturePixel(UTexture* tex, uint32_t x, uint32_t y) {
-	return Backend->ReadTexturePixel(tex, x, y);
 }
 
 bool IRenderer::CreateRenderTarget(unsigned char attachment_count, std::vector<RenderTargetAttachment> attachments, IRenderpass* pass, uint32_t width, uint32_t height, RenderTarget* out_target) {

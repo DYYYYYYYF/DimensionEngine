@@ -33,7 +33,7 @@ bool BitmapFont::InitFromResourceData(BitmapFontResourceData* resourceData) {
 	if (resourceData->pageCount > 0) {
 		if (!atlas_.texture) {
 			FString atlasName = resourceData->Pages[0].filename;
- 			atlas_.texture = TextureSystem::Acquire(atlasName, true);
+ 			atlas_.texture = TextureSystem::Get().Acquire(atlasName, true);
 
 			//Renderer->CreateTexture(Pixels, atlas_.texture);
 		}
@@ -59,7 +59,7 @@ void BitmapFont::ReleaseResource() {
 	}
 	
 	if (atlas_.texture) {
-		TextureSystem::Release(atlas_.texture->GetName());
+		TextureSystem::Get().Release(atlas_.texture->GetName());
 		atlas_.texture = nullptr;
 	}
 }
