@@ -42,6 +42,16 @@ public:
 		}
 	}
 
+	void Release() {
+		if (_locked) { _mutex.UnLock(); _locked = false; }
+	}
+
+	void Reacquire() {
+		if (!_locked) { _locked = _mutex.Lock(); }
+	}
+
+	Mutex& GetMutex() { return _mutex; }
+
 	// 禁止拷贝构造和赋值，防止资源重复释放
 	MutexGuard(const MutexGuard&) = delete;
 	MutexGuard& operator=(const MutexGuard&) = delete;

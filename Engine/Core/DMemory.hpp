@@ -2,7 +2,7 @@
 
 #include "Defines.hpp"
 #include "EngineLogger.hpp"
-#include "DMutex.hpp"
+#include "Platform/Thread/DMutex.hpp"
 #include "Memory/DynamicAllocator.h"
 
 #ifndef DEFAULT_ALIGNMENT_SIZE

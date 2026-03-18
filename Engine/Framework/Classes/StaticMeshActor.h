@@ -5,6 +5,12 @@
 
 #include <vector>
 
+struct FMeshLoadParams {
+	FString resource_name;
+	class AStaticMeshActor* out_mesh = nullptr;
+	class UAsset mesh_resource;
+};
+
 class AStaticMeshActor : public AActor{
 public:
 	DECLARE_CLASS_TYPE(AStaticMeshActor)
@@ -21,18 +27,14 @@ public:
 	DAPI void Unload();
 
 private:
-	void LoadJobSuccess(void* params);
-	void LoadJobFail(void* params);
-	bool LoadJobStart(void* params, void* result_data);
+	void LoadJobSuccess();
+	void LoadJobFail();
+	bool LoadJobStart();
 
 public:
 	unsigned char Generation;
 	unsigned short geometry_count;
 	Geometry** geometries;
-};
 
-struct FMeshLoadParams {
-	FString resource_name;
-	AStaticMeshActor* out_mesh = nullptr;
-	class UAsset mesh_resource;
+	struct FMeshLoadParams LoadParams;
 };

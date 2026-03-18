@@ -120,28 +120,13 @@ bool Engine::Initialize(){
 
 	// Initialize the job system.
 	// Requires knowledge of renderer multithread support, so should be initialized here.
-	uint32_t JobThreadTypes[15];
-	for (uint32_t i = 0; i < 15; ++i) {
-		JobThreadTypes[i] = (uint32_t)JobType::eGeneral;
-	}
-
-	if (ThreadCount == 1 || !RenderWithMultithread) {
-		// Everything on one job thread.
-		JobThreadTypes[0] |= ((uint32_t)JobType::eGPU_Resource | (uint32_t)JobType::eResource_Load);
-	}
-	else if (ThreadCount == 2) {
-		// Split things between 2 threads.
-		JobThreadTypes[0] |= (uint32_t)JobType::eGPU_Resource;
-		JobThreadTypes[1] |= (uint32_t)JobType::eResource_Load;
-	}
-	else {
-		// Dedicate the first 2 threads to these thing, pass of general tasks to other threads.
-		JobThreadTypes[0] = (uint32_t)JobType::eGPU_Resource;
-		JobThreadTypes[1] = (uint32_t)JobType::eResource_Load;
-	}
+	uint32_t JobThreadTypes[3];
+	JobThreadTypes[0] = RenderWithMultithread ? ThreadCount / 2 : ThreadCount;	// General
+	JobThreadTypes[1] = RenderWithMultithread ? ThreadCount / 4 : 0;	// Render
+	JobThreadTypes[2] = RenderWithMultithread ? ThreadCount - JobThreadTypes[0] - JobThreadTypes[1] : 0;	// Resource
 
 	// Job system
-	if (!JobSystem::Initialize(ThreadCount, JobThreadTypes)) {
+	if (!JobSystem::Initialize(JobThreadTypes)) {
 		GLOG(Log::eFatal, "Job system failed to initialize!");
 		return false;
 	}

@@ -407,7 +407,7 @@ void TextureSystem::LoadJobFail(void* params) {
 	TextureHelper::Unload(TextureParams->out_texture);
 }
 
-bool TextureSystem::LoadJobStart(void* params, void* result_data) {
+bool TextureSystem::LoadJobStart(TextureLoadParams* params, TextureLoadParams* result_data) {
 	TextureLoadParams* LoadParams = (TextureLoadParams*)params;
 
 	ImageResourceParams ResourceParams;
@@ -433,10 +433,6 @@ bool TextureSystem::LoadJobStart(void* params, void* result_data) {
 
 	// Take a copy of the name
 	LoadParams->out_texture->AddFlag(HasTransparency ? TextureFlagBits::eTexture_Flag_Has_Transparency : 0);
-
-	// NOTE: The load params are also used as the result data here, only the image_resource field is populated now.
-	Memory::Copy(result_data, LoadParams, sizeof(TextureLoadParams));
-	((TextureLoadParams*)result_data)->resource_name = LoadParams->resource_name;
 
 	return Result;
 }
@@ -468,18 +464,19 @@ UTexture* TextureSystem::CheckTextureName(const FString& name) {
 bool TextureSystem::LoadTexture(const FString& name, UTexture* texture) {
 	// Kick off a texture loading job. Only handles loading from disk to CPU.
 	// GPU upload is handled after completion of this job.
-	TextureLoadParams Params;
-	Params.resource_name = name;
-	Params.out_texture = texture;
+	auto Params = std::make_shared<TextureLoadParams>();
+	Params->resource_name = name;
+	Params->out_texture = texture;
 
-	JobInfo Job = JobSystem::CreateJob(
-		std::bind(&TextureSystem::LoadJobStart, this, std::placeholders::_1, std::placeholders::_2),
-		std::bind(&TextureSystem::LoadJobSuccess, this, std::placeholders::_1),
-		std::bind(&TextureSystem::LoadJobFail, this, std::placeholders::_1),
-		std::make_shared<TextureLoadParams>(Params),
-		sizeof(TextureLoadParams),
-		sizeof(TextureLoadParams));
+	//LoadJobStart(Params.get(), Params.get());
+
+	JobInfo Job;
+	Job.entry = [this, Params]() { return LoadJobStart(Params.get(), Params.get()); };
+	Job.on_success = [this, Params]() { return LoadJobSuccess(Params.get()); };
+	Job.on_failed = [this, Params]() { return LoadJobFail(Params.get()); };
+	Job.type = JobType::eResource_Load;
 	JobSystem::Submit(Job);
+
 	return true;
 }
 

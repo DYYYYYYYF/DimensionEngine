@@ -54,7 +54,7 @@ private:
 
 	void LoadJobSuccess(void* params);
 	void LoadJobFail(void* params);
-	bool LoadJobStart(void* params, void* result_data);
+	bool LoadJobStart(TextureLoadParams* params, TextureLoadParams* result_data);
 
 private:
 	STextureSystemConfig TextureSystemConfig;

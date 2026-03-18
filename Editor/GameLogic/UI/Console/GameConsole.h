@@ -1,5 +1,5 @@
 ﻿#include <Core/Event.hpp>
-#include <Core/DMutex.hpp>
+#include <Platform/Thread/DMutex.hpp>
 #include <Framework/Classes/Actor.h>
 
 class ATextActor;

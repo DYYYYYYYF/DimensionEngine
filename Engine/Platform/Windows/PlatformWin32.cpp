@@ -1,13 +1,13 @@
-﻿#include "Platform.hpp"
+﻿#include "Platform/Platform.hpp"
 
 #if defined(DPLATFORM_WINDOWS)
 
 #include "Core/Controller.hpp"
 #include "Core/Event.hpp"
-#include "Core/DThread.hpp"
-#include "Core/DMutex.hpp"
 #include "Rendering/Vulkan/VulkanPlatform.hpp"
 #include "Rendering/Vulkan/VulkanContext.hpp"
+#include "Platform/Thread/DMutex.hpp"
+#include "Platform/Thread/DThread.hpp"
 
 #include <windows.h>
 #include <windowsx.h>
@@ -194,130 +194,6 @@ void Platform::SetLogo(void* WindowHandle, const std::string& IconPath) {
 		SendMessage(hwnd, WM_SETICON, ICON_BIG, (LPARAM)hIcon);
 	}
 }
-
-// NOTE: Begin Threads
-bool Thread::Create(PFN_thread_start start_func, void* params, bool auto_detach) {
-	if (!start_func) {
-		return false;
-	}
-
-	InternalData = CreateThread(
-		0,
-		0,													// Default stack size
-		(LPTHREAD_START_ROUTINE)start_func, params,			// Function ptr
-		0,													// Params to pass to thread
-		(DWORD*)&ThreadID);
-
-	GLOG(Log::eDebug, "Starting process on thread id: %#x.", ThreadID);
-	if (!InternalData) {
-		return false;
-	}
-
-	if (auto_detach) {
-		CloseHandle((HANDLE)InternalData);
-	}
-
-	return true;
-}
-
-void Thread::Destroy() {
-	if (InternalData != nullptr) {
-		DWORD ExitCode;
-		GetExitCodeThread(InternalData, &ExitCode);
-		//if (ExitCode == STILL_ACTIVE) {
-		//	TerminateThread(InternalData, 0);	// 0 = failure
-		//}
-		CloseHandle((HANDLE)InternalData);
-		InternalData = nullptr;
-		ThreadID = 0;
-	}
-}
-
-void Thread::Detach() {
-	if (InternalData == nullptr) {
-		return;
-	}
-
-	CloseHandle((HANDLE)InternalData);
-	InternalData = nullptr;
-}
-
-void Thread::Cancel() {
-	if (InternalData == nullptr) {
-		return;
-	}
-
-	TerminateThread((HANDLE)InternalData, 0);
-	InternalData = nullptr;
-}
-
-bool Thread::IsActive() const {
-	if (InternalData == nullptr) {
-		return false;
-	}
-
-	DWORD ExitCode = WaitForSingleObject((HANDLE)InternalData, 0);
-	if (ExitCode == WAIT_TIMEOUT) {
-		return true;
-	}
-	return false;
-}
-
-void Thread::Sleep(size_t ms) {
-	Platform::PlatformSleep(ms); 
-}
-
-size_t Thread::GetThreadID() {
-	return (size_t)GetCurrentThreadId();
-}
-// NOTE: End Threads
-
-// NOTE: Begin mutexs
-Mutex::Mutex() {
-	InternalData = CreateMutex(0, 0, 0);
-	if (InternalData == nullptr) {
-		GLOG(Log::eFatal, "Unable to create mutex.");
-	}
-}
-
-Mutex::~Mutex() {
-	if (InternalData == nullptr) {
-		return;
-	}
-
-	CloseHandle((HANDLE)InternalData);
-	InternalData = nullptr;
-}
-
-bool Mutex::Lock() {
-	if (InternalData == nullptr) {
-		return false;
-	}
-
-	DWORD Result = WaitForSingleObject((HANDLE)InternalData, INFINITE);
-	switch (Result)
-	{
-	// The thread got ownership of mutex
-	case WAIT_OBJECT_0:
-		return true;
-	// The thread got ownership of an obandoned mutex
-	case WAIT_ABANDONED:
-		GLOG(Log::eFatal, "Mutex lock faield.");
-		return false;
-	}
-	return true;
-}
-
-bool Mutex::UnLock() {
-	if (InternalData == nullptr) {
-		return false;
-	}
-
-	int Result = ReleaseMutex((HANDLE)InternalData);
-	return Result != 0;	// 0 is failed.
-}
-
-// NOTE: End mutexs.
 
 LRESULT CALLBACK win32_process_message(HWND hwnd, UINT32 msg, WPARAM w_param, LPARAM l_param) {
 	switch (msg) {

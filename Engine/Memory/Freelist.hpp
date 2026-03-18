@@ -1,7 +1,7 @@
 ﻿#pragma once
 
 #include "Defines.hpp"
-#include "Core/DMutex.hpp"
+#include "Platform/Thread/DMutex.hpp"
 
 #define FREELIST_MAX_LIMITED_NODE 65536		// 最大可分配节点数量
 #define FREELIST_AVG_ALLOCCATE_SIZE 256		// 平均分配大小(字节)
