@@ -5,7 +5,7 @@
 
 class VulkanContext;
 class VulkanFrameBuffer;
-class Texture;
+class VulkanTexture;
 
 class VulkanSwapchain {
 public:
@@ -25,9 +25,9 @@ public:
 
 	vk::SurfaceFormatKHR ImageFormat;
 	vk::SwapchainKHR Handle;
-	std::vector<UTexture*> RenderTextures;
+	std::vector<VulkanTexture*> RenderTextures;
 
-	std::vector<UTexture*> DepthTexture;
+	std::vector<VulkanTexture*> DepthTexture;
 	
 	// Framebuffers used for on-screen rendering
 	RenderTarget RenderTargets[3];

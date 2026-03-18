@@ -109,16 +109,12 @@ void VulkanSwapchain::Create(VulkanContext* context, unsigned int width, unsigne
 		for (uint32_t i = 0; i < ImageCount; ++i) {
 			FString TexName = "__internal_vulkan_swapchain_image_0__" + FString::FromInt('0' + (char)i);
 			RenderTextures[i] = NewObject<VulkanTexture>(TexName);
-
-			TextureSystemInst.WrapInternal(
-				TexName,
+			RenderTextures[i]->SetupAsWrapped(
 				SwapchainExtent.width,
 				SwapchainExtent.height,
 				4,
 				false,
-				true,
-				false,
-				RenderTextures[i]
+				true
 			);
 		}
 	}
@@ -188,14 +184,12 @@ void VulkanSwapchain::Create(VulkanContext* context, unsigned int width, unsigne
 			vk::MemoryPropertyFlagBits::eDeviceLocal, true, vk::ImageAspectFlagBits::eDepth);
 
 		// Wrap it in a texture.
-		TextureSystem::Get().WrapInternal(
-			"__default_depth_texture__",
+		DepthImage->SetupAsWrapped(
 			SwapchainExtent.width,
 			SwapchainExtent.height,
 			context->Device.GetDepthChannelCount(),
-			false, true, false, DepthImage
+			false, true
 		);
-
 	}
 	
 	GLOG(Log::eInfo, "Create swapchain successful.");

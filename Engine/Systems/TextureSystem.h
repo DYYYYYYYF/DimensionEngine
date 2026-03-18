@@ -32,10 +32,8 @@ public:
 	UTexture* AcquireCube(const FString& name, bool auto_release = true);
 	UTexture* AcquireWriteable(const FString& name, uint32_t width, uint32_t height,
 		unsigned char channel_count, bool has_transparency, bool has_depth = false);
-	void Release(const FString& name);
 
-	void WrapInternal(const FString& name, uint32_t width, uint32_t height, unsigned char channel_count,
-		bool has_transparency, bool is_writeable, bool register_texture, UTexture* tex);
+	void Release(const FString& name);
 	bool Resize(UTexture* t, uint32_t width, uint32_t height, bool regenerate_internal_data);
 
 	UTexture* GetDefaultDiffuseTexture();

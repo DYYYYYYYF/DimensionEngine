@@ -22,6 +22,9 @@ public:
 	virtual TArray<uint8_t> ReadTextureData(uint32_t offset, uint32_t size) override;
 	virtual FColor ReadTexturePixel(uint32_t x, uint32_t y) override;
 
+	void SetupAsWrapped(uint32_t width, uint32_t height,
+		unsigned char channel_count, bool has_transparency, bool is_writeable);
+
 private:
 	vk::Format ChannelCountToFormat(unsigned char channel_count, vk::Format default_format = vk::Format::eR8G8B8A8Unorm);
 

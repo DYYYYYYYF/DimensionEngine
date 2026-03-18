@@ -205,6 +205,17 @@ FColor VulkanTexture::ReadTexturePixel(uint32_t x, uint32_t y) {
 	return FColor(PixelData);
 }
 
+void VulkanTexture::SetupAsWrapped(uint32_t width, uint32_t height, 
+	unsigned char channel_count, bool has_transparency, bool is_writeable) {
+	SetTextureType(TextureType::eTexture_Type_2D);
+	SetWidth(width);
+	SetHeight(height);
+	SetChannelCount(channel_count);
+	AddFlag(has_transparency ? TextureFlagBits::eTexture_Flag_Has_Transparency : 0);
+	AddFlag(is_writeable ? TextureFlagBits::eTexture_Flag_Is_Writeable : 0);
+	AddFlag(TextureFlagBits::eTexture_Flag_Is_Wrapped);
+}
+
 bool VulkanTexture::Unload() {
 	return true;
 }

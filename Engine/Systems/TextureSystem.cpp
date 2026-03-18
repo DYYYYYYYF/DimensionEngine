@@ -128,10 +128,10 @@ UTexture* TextureSystem::AcquireWriteable(const FString& name, uint32_t width, u
 
 void TextureSystem::Release(const FString& name) {
 	// Ignore release requests for the default texture.
-	if (strcmp(name.CStr(), DEFAULT_DIFFUSE_TEXTURE_NAME) == 0 ||
-		strcmp(name.CStr(), DEFAULT_SPECULAR_TEXTURE_NAME) == 0 ||
-		strcmp(name.CStr(), DEFAULT_NORMAL_TEXTURE_NAME) == 0 ||
-		strcmp(name.CStr(), DEFAULT_ROUGHNESS_METALLIC_TEXTURE_NAME) == 0
+	if (name.Compare(DEFAULT_DIFFUSE_TEXTURE_NAME) == 0 ||
+		name.Compare(DEFAULT_SPECULAR_TEXTURE_NAME) == 0 ||
+		name.Compare(DEFAULT_NORMAL_TEXTURE_NAME) == 0 ||
+		name.Compare(DEFAULT_ROUGHNESS_METALLIC_TEXTURE_NAME) == 0
 	){
 		return;
 	}
@@ -145,38 +145,6 @@ void TextureSystem::Release(const FString& name) {
 void TextureSystem::DestroyTexture(UTexture* t) {
 	// Release texture.
 	t->Destroy();
-}
-
-void TextureSystem::WrapInternal(const FString& name, uint32_t width, uint32_t height, 
-	unsigned char channel_count, bool has_transparency, bool is_writeable, bool register_texture, UTexture* tex) {
-	UTexture* t = nullptr;
-	if (register_texture) {
-		// NOTE: Wrapped textures are never auto-release because it means that their
-		// resource are created and managed somewhere within the renderer internals.
-		if (!ProcessTextureReference(name, TextureType::eTexture_Type_2D, 1, false, true)) {
-			GLOG(Log::eError, "TextureSystem::WrapInternal() fialed to obtain a new texture id.");
-			return;
-		}
-
-		t = TextureMap[name];
-	}
-	else {
-		if (tex) {
-			t = tex;
-		}
-		else {
-			t = (UTexture*)Memory::Allocate(sizeof(UTexture), MemoryType::eMemory_Type_Texture);
-		}
-	}
-
-	t->SetTextureType(TextureType::eTexture_Type_2D);
-	t->SetWidth(width);
-	t->SetHeight(height);
-	t->SetChannelCount(channel_count);
-	t->AddFlag(has_transparency ? TextureFlagBits::eTexture_Flag_Has_Transparency : 0);
-	t->AddFlag(is_writeable ? TextureFlagBits::eTexture_Flag_Is_Writeable : 0);
-	t->AddFlag(TextureFlagBits::eTexture_Flag_Is_Wrapped);
-
 }
 
 bool TextureSystem::Resize(UTexture* t, uint32_t width, uint32_t height, bool regenerate_internal_data) {
