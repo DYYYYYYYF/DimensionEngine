@@ -6,7 +6,6 @@
 #include "Rendering/Resources/Shader/Shader.hpp"
 #include "Systems/ResourceSystem.h"
 #include "Platform/File/File.hpp"
-#include "Containers/TString.hpp"
 
 ShaderLoader::ShaderLoader() {
 	Type = EAssetType::Shader;
@@ -21,12 +20,11 @@ bool ShaderLoader::Load(const FString& name, void* params, UAsset* resource) {
 	}
 
 	const char* FormatStr = "%s/%s/%s%s";
-	char FullFilePath[512];
-	StringFormat(FullFilePath, FormatStr, ResourceSystem::GetRootPath(), TypePath.c_str(), name.CStr(), ".scfg");	// shader config
+	FString FullFilePath = FString::Format(FormatStr, ResourceSystem::GetRootPath(), TypePath.c_str(), name.CStr(), ".scfg");	// shader config
 
-	File AssetFile(FullFilePath);
+	File AssetFile(FullFilePath.CStr());
 	if (!AssetFile.IsExist()) {
-		GLOG(Log::eError, "Shader loader load. Unable to open file for binary reading: '%s'.", FullFilePath);
+		GLOG(Log::eError, "Shader loader load. Unable to open file for binary reading: '%s'.", FullFilePath.CStr());
 		return false;
 	}
 	resource->FullPath = FullFilePath;

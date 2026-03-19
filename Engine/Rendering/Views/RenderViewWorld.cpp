@@ -6,7 +6,6 @@
 #include "Math/DMath.hpp"
 
 #include "Containers/TArray.hpp"
-#include "Containers/TString.hpp"
 
 #include "Systems/MaterialSystem.h"
 #include "Systems/ShaderSystem.h"
@@ -35,7 +34,7 @@ static bool RenderViewWorldOnEvent(eEventCode code, void* sender, void* listener
 	{
 	case eEventCode::Default_Rendertarget_Refresh_Required: 
 	{
-		RenderViewSystem::RegenerateRendertargets(self);
+		RenderViewSystem::Get().RegenerateRendertargets(self);
 		return true;
 	}
 
@@ -79,7 +78,7 @@ RenderViewWorld::RenderViewWorld() {
 
 RenderViewWorld::RenderViewWorld(const RenderViewConfig& config) {
 	Type = config.type;
-	Name = StringCopy(config.name);
+	Name = config.name;
 	CustomShaderName = config.custom_shader_name;
 	RenderpassCount = config.pass_count;
 	Passes.resize(RenderpassCount);
@@ -102,7 +101,7 @@ bool RenderViewWorld::OnCreate(const RenderViewConfig& config) {
 	}
 	ResourceSystem::Unload(&ConfigResource);
 
-	UsedShader = ShaderSystem::Get(CustomShaderName ? CustomShaderName : ShaderName);
+	UsedShader = ShaderSystem::Get(CustomShaderName.IsEmpty() ? ShaderName : CustomShaderName);
 
 	// TODO: Set from configurable.
 	NearClip = 0.1f;
@@ -111,7 +110,7 @@ bool RenderViewWorld::OnCreate(const RenderViewConfig& config) {
 
 	// Default
 	ProjectionMatrix = Matrix4::Perspective(Fov, (float)config.width / config.height, NearClip, FarClip);
-	WorldCamera = CameraSystem::GetDefault();
+	WorldCamera = CameraSystem::Get().GetDefault();
 
 	// TODO: Obtain from scene.
 	AmbientColor = Vector4(0.7f, 0.7f, 0.7f, 1.0f);

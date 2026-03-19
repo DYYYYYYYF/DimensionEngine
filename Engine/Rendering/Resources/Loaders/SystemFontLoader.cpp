@@ -3,7 +3,6 @@
 
 #include "Core/DMemory.hpp"
 #include "Core/EngineLogger.hpp"
-#include "Containers/TString.hpp"
 #include "Rendering/Resources/ResourceTypes.hpp"
 #include "Platform/File/File.hpp"
 #include "Systems/ResourceSystem.h"
@@ -34,15 +33,15 @@ bool SystemFontLoader::Load(const FString& name, void* params, UAsset* resource)
 	supportedTypes[0] = { ".dsf",      SystemFontFileType::eSystem_Font_File_Type_DSF,         true };
 	supportedTypes[1] = { ".fontcfg",  SystemFontFileType::eSystem_Font_File_Type_Font_Config,  false };
 
-	char fullFilePath[512];
+	FString fullFilePath;
 	SystemFontFileType fontType = SystemFontFileType::eSystem_Font_File_Type_Not_Found;
 
 	for (uint32_t i = 0; i < SUPPORTED_FILETYPE_COUNT; ++i) {
-		StringFormat(fullFilePath, formatStr,
+		fullFilePath = FString::Format(formatStr,
 			ResourceSystem::GetRootPath(), TypePath.c_str(),
 			name.CStr(), supportedTypes[i].extension);
 
-		File AssetFile(fullFilePath);
+		File AssetFile(fullFilePath.CStr());
 		if (AssetFile.IsExist()) {
 			fontType = supportedTypes[i].type;
 			break;
@@ -68,8 +67,7 @@ bool SystemFontLoader::Load(const FString& name, void* params, UAsset* resource)
 		break;
 
 	case eSystem_Font_File_Type_Font_Config: {
-		char dsfFilename[512];
-		StringFormat(dsfFilename, "%s/%s/%s%s",
+		FString dsfFilename = FString::Format("%s/%s/%s%s",
 			ResourceSystem::GetRootPath(), TypePath.c_str(), name.CStr(), ".dsf");
 		result = ImportFontconfigFile(fullFilePath, TypePath.c_str(), dsfFilename, resourceData);
 		break;
@@ -77,7 +75,7 @@ bool SystemFontLoader::Load(const FString& name, void* params, UAsset* resource)
 	}
 
 	if (!result) {
-		GLOG(Log::eError, "SystemFontLoader: failed to process font file: '%s'.", fullFilePath);
+		GLOG(Log::eError, "SystemFontLoader: failed to process font file: '%s'.", fullFilePath.CStr());
 		resource->Data = nullptr;
 		resource->DataSize = 0;
 		return false;
@@ -156,24 +154,23 @@ bool SystemFontLoader::ImportFontconfigFile(const FString& configPath, const FSt
 			trim(varName);
 			trim(value);
 
-			if (StringEquali(varName.c_str(), "version")) {
+			if (varName.compare("version") == 0) {
 				// TODO: version 处理
 			}
-			else if (StringEquali(varName.c_str(), "file")) {
+			else if (varName.compare("file") == 0) {
 				// 读取 TTF 二进制文件
-				char fullFontPath[512];
-				StringFormat(fullFontPath, "%s/%s/%s",
+				FString fullFontPath = FString::Format("%s/%s/%s",
 					ResourceSystem::GetRootPath(), typePath.CStr(), value.c_str());
 
-				File fontFile(fullFontPath);
+				File fontFile(fullFontPath.CStr());
 				if (!fontFile.IsExist()) {
-					GLOG(Log::eError, "SystemFontLoader: binary font not found: %s.", fullFontPath);
+					GLOG(Log::eError, "SystemFontLoader: binary font not found: %s.", fullFontPath.CStr());
 					return false;
 				}
 
 				auto bytes = fontFile.ReadBytes();
 				if (bytes.empty()) {
-					GLOG(Log::eError, "SystemFontLoader: failed to read binary font: %s.", fullFontPath);
+					GLOG(Log::eError, "SystemFontLoader: failed to read binary font: %s.", fullFontPath.CStr());
 					return false;
 				}
 
@@ -182,7 +179,7 @@ bool SystemFontLoader::ImportFontconfigFile(const FString& configPath, const FSt
 					MemoryType::eMemory_Type_Resource);
 				Memory::Copy(outResource->fontBinary, bytes.data(), outResource->binarySize);
 			}
-			else if (StringEquali(varName.c_str(), "face")) {
+			else if (varName.compare("face") == 0) {
 				SystemFontFace newFace;
 				newFace.name = value.c_str();
 				outResource->fonts.Push(newFace);

@@ -6,7 +6,6 @@
 #include "Math/DMath.hpp"
 
 #include "Containers/TArray.hpp"
-#include "Containers/TString.hpp"
 #include "Rendering/Resources/Skybox/Skybox.hpp"
 
 #include "Systems/MaterialSystem.h"
@@ -28,7 +27,7 @@ static bool RenderViewSkyboxOnEvent(eEventCode code, void* sender, void* listene
 	switch (code)
 	{
 	case eEventCode::Default_Rendertarget_Refresh_Required:
-		RenderViewSystem::RegenerateRendertargets(self);
+		RenderViewSystem::Get().RegenerateRendertargets(self);
 		return false;
     default: break;
 	}
@@ -42,14 +41,14 @@ RenderViewSkybox::RenderViewSkybox() {
 
 RenderViewSkybox::RenderViewSkybox(const RenderViewConfig& config) {
 	Type = config.type;
-	Name = StringCopy(config.name);
+	Name = config.name;
 	CustomShaderName = config.custom_shader_name;
 	RenderpassCount = config.pass_count;
 	Passes.resize(RenderpassCount);
 }
 
 bool RenderViewSkybox::OnCreate(const RenderViewConfig& config) {
-	const char* ShaderName = "Shader.Builtin.Skybox";
+	FString ShaderName = "Shader.Builtin.Skybox";
 	UAsset ConfigResource;
 	if (!ResourceSystem::Load(ShaderName, EAssetType::Shader, nullptr, &ConfigResource)) {
 		GLOG(Log::eError, "Failed to load builtin skybox shader.");
@@ -65,7 +64,7 @@ bool RenderViewSkybox::OnCreate(const RenderViewConfig& config) {
 	ResourceSystem::Unload(&ConfigResource);
 
 	// Get either the custom shader override or the defined default.
-	UsedShader = ShaderSystem::Get(CustomShaderName ? CustomShaderName : ShaderName);
+	UsedShader = ShaderSystem::Get(CustomShaderName.IsEmpty() ? ShaderName : CustomShaderName);
 	ProjectionLocation = ShaderSystem::GetUniformIndex(UsedShader, "projection");
 	ViewLocation = ShaderSystem::GetUniformIndex(UsedShader, "view");
 	CubeMapLocation = ShaderSystem::GetUniformIndex(UsedShader, "cube_texture");
@@ -77,7 +76,7 @@ bool RenderViewSkybox::OnCreate(const RenderViewConfig& config) {
 
 	// Default
 	ProjectionMatrix = Matrix4::Perspective(Fov, (float)config.width / config.height, NearClip, FarClip);
-	WorldCamera = CameraSystem::GetDefault();
+	WorldCamera = CameraSystem::Get().GetDefault();
 
 	if (!EngineEvent::Register(eEventCode::Default_Rendertarget_Refresh_Required, this, RenderViewSkyboxOnEvent)) {
 		GLOG(Log::eError, "Unable to listen for refresh required event, creation failed.");

@@ -6,7 +6,6 @@
 #include "Math/DMath.hpp"
 
 #include "Containers/TArray.hpp"
-#include "Containers/TString.hpp"
 #include "Containers/FString.hpp"
 
 #include "Systems/MaterialSystem.h"
@@ -29,7 +28,7 @@ static bool RenderViewWorldDeferredOnEvent(eEventCode code, void* sender, void* 
 
 	switch ((eEventCode)code) {
 	case eEventCode::Default_Rendertarget_Refresh_Required: {
-		RenderViewSystem::RegenerateRendertargets(self);
+		RenderViewSystem::Get().RegenerateRendertargets(self);
 		return true;
 	}
 
@@ -117,7 +116,7 @@ bool RenderViewWorldDeferred::OnCreate(const RenderViewConfig& config) {
 	Fov = Deg2Rad(45.0f);
 
 	ProjectionMatrix = Matrix4::Perspective(Fov, (float)config.width / config.height, NearClip, FarClip);
-	WorldCamera = CameraSystem::GetDefault();
+	WorldCamera = CameraSystem::Get().GetDefault();
 
 	// 环境光设置 (与原World渲染保持一致)
 	AmbientColor = Vector4(0.7f, 0.7f, 0.7f, 1.0f);

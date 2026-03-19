@@ -5,8 +5,8 @@
 #include <Core/Event.hpp>
 #include <Core/Metrics.hpp>
 #include <Systems/CameraSystem.h>
-#include <Containers/TString.hpp>
 #include <Platform/File/JsonObject.h>
+#include <Containers/FString.hpp>
 
 // TODO: Temp
 #include <Systems/GeometrySystem.h>
@@ -134,7 +134,7 @@ bool GameInstance::Initialize() {
 	Vector3 Position = Content.ReadVector3("Camera.Position");
 	Vector3 Rotation = Content.ReadVector3("Camera.Rotation");
 
-	WorldCamera = CameraSystem::GetDefault();
+	WorldCamera = CameraSystem::Get().GetDefault();
 	WorldCamera->SetPosition(Position);
 	WorldCamera->SetEulerAngles(Rotation);
 
@@ -343,7 +343,7 @@ bool GameInstance::Update(float delta_time) {
 	}
 
 	// Text
-	WorldCamera = CameraSystem::GetDefault();
+	WorldCamera = CameraSystem::Get().GetDefault();
 	Vector3 Pos = WorldCamera->GetPosition();
 	Vector3 Rot = WorldCamera->GetEulerAngles();
 
@@ -476,9 +476,7 @@ bool GameInstance::Update(float delta_time) {
 		}
 	}
 
-	char FPSText[512];
-	StringFormat(FPSText,
-		"\
+	FString FPSText = FString::Format("\
 	Camera Pos: [%.3f %.3f %.3f]\tCamera Rot: [%.3f %.3f %.3f]\n\
 	L=%s R=%s\tNDC: x=%.2f, y=%.2f\tHovered Object: %s\n\
 	FPS: %d\tDelta time: %.2f\n\
@@ -509,24 +507,26 @@ bool GameInstance::Render(SRenderPacket* packet, float delta_time) {
 	packet->views.resize(packet->view_count);
 	uint32_t ViewCounter = 0;
 
+	RenderViewSystem& RenderviewSys = RenderViewSystem::Get();
+
 	// Skybox
 	SkyboxPacketData SkyboxData;
 	SkyboxData.sb = SB;
-	IRenderView* SkyboxView = RenderViewSystem::Get("Skybox");
+	IRenderView* SkyboxView = RenderviewSys.Get("Skybox");
 	if (SkyboxView) {
-		if (!RenderViewSystem::BuildPacket(SkyboxView, &SkyboxData, &packet->views[ViewCounter++])) {
+		if (!RenderviewSys.BuildPacket(SkyboxView, &SkyboxData, &packet->views[ViewCounter++])) {
 			GLOG(Log::eError, "Failed to build packet for view 'World_Opaque'.");
 			return false;
 		}
 	}
 
 	// World
-	IRenderView* WorldView = RenderViewSystem::Get("WorldDeferred");
+	IRenderView* WorldView = RenderviewSys.Get("WorldDeferred");
 	if(WorldView) {
 		WorldPacketData WorldData;
 		WorldData.Meshes = FrameData.WorldGeometries;
 		WorldData.GlobalTime = GameTime;
-		if (!RenderViewSystem::BuildPacket(WorldView, &WorldData, &packet->views[ViewCounter++])) {
+		if (!RenderviewSys.BuildPacket(WorldView, &WorldData, &packet->views[ViewCounter++])) {
 			GLOG(Log::eError, "Failed to build packet for view 'World'.");
 			return false;
 		}
@@ -555,15 +555,15 @@ bool GameInstance::Render(SRenderPacket* packet, float delta_time) {
 	UIPacket.textCount = 4;
 	UIPacket.Textes = Texts;
 
-	IRenderView* UIView = RenderViewSystem::Get("UI");
+	IRenderView* UIView = RenderviewSys.Get("UI");
 	if (UIView) {
-		if (!RenderViewSystem::BuildPacket(RenderViewSystem::Get("UI"), &UIPacket, &packet->views[ViewCounter++])) {
+		if (!RenderviewSys.BuildPacket(RenderviewSys.Get("UI"), &UIPacket, &packet->views[ViewCounter++])) {
 			GLOG(Log::eError, "Failed to build packet for view 'UI'.");
 			return false;
 		}
 	}
 	
-	IRenderView* PickView = RenderViewSystem::Get("Pick");
+	IRenderView* PickView = RenderviewSys.Get("Pick");
 	if (PickView) {
 		// Pick uses both world and ui packet data.
 		PickPacketData PickPacket;
@@ -572,7 +572,7 @@ bool GameInstance::Render(SRenderPacket* packet, float delta_time) {
 		PickPacket.Texts = UIPacket.Textes;
 		PickPacket.TextCount = UIPacket.textCount;
 
-		if (!RenderViewSystem::BuildPacket(PickView, &PickPacket, &packet->views[ViewCounter++])) {
+		if (!RenderviewSys.BuildPacket(PickView, &PickPacket, &packet->views[ViewCounter++])) {
 			GLOG(Log::eError, "Failed to build packet for view 'Pick'.");
 			return false;
 		}

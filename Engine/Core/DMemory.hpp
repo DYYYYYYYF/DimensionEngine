@@ -5,6 +5,8 @@
 #include "Platform/Thread/DMutex.hpp"
 #include "Memory/DynamicAllocator.h"
 
+class FString;
+
 #ifndef DEFAULT_ALIGNMENT_SIZE
 #define DEFAULT_ALIGNMENT_SIZE 8
 #endif
@@ -92,7 +94,7 @@ public:
 	static DAPI void* Zero(void* block, size_t size);
 	static DAPI void* Copy(void* dst, const void* src, size_t size);
 	static DAPI void* Set(void* dst, int val, size_t size);
-	static DAPI char* GetMemoryUsageStr();
+	static DAPI FString GetMemoryUsageStr();
 	static DAPI void ShowMemoryUsage();
 
 	static DAPI void AllocateReport(size_t size, MemoryType type);

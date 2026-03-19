@@ -7,7 +7,6 @@
 #include "Core/DMemory.hpp"
 #include "Core/EngineLogger.hpp"
 #include "Platform/File/JsonObject.h"
-#include "Containers/TString.hpp"
 #include "Rendering/Vulkan/VulkanShader.hpp"
 
 IRenderer* ShaderSystem::Renderer = nullptr;

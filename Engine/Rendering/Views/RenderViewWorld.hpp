@@ -19,12 +19,12 @@ public:
 	virtual bool RegenerateAttachmentTarget(uint32_t passIndex, RenderTargetAttachment* attachment) override;
 
 public:
-	const char* GetShaderName() const {
+	const FString& GetShaderName() const {
 		if (UsedShader->Name.IsEmpty()) {
 			return nullptr;
 		}
 
-		return CustomShaderName ? CustomShaderName : UsedShader->Name.CStr();
+		return CustomShaderName.IsEmpty() ? UsedShader->Name : CustomShaderName;
 	}
 
 	void SetShader(Shader* shader) { UsedShader = shader; }

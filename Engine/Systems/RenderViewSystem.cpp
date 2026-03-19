@@ -1,6 +1,5 @@
 ﻿#include "RenderViewSystem.hpp"
 
-#include "Containers/TString.hpp"
 #include "Core/EngineLogger.hpp"
 #include "Core/DMemory.hpp"
 #include "Rendering/Renderer.hpp"
@@ -13,11 +12,10 @@
 #include "Rendering/Views/RenderViewSkybox.hpp"
 #include "Rendering/Views/RenderViewPick.hpp"
 
-bool RenderViewSystem::Initialized = false;
-uint16_t RenderViewSystem::MaxViewCount = 0;
-IRenderer* RenderViewSystem::Renderer = nullptr;
-std::vector<IRenderView*> RenderViewSystem::RegisteredViews;
-std::unordered_map<std::string, uint16_t> RenderViewSystem::RegisteredViewMap;
+RenderViewSystem& RenderViewSystem::Get() {
+	static RenderViewSystem RenderviewSystemInstance;
+	return RenderviewSystemInstance;
+}
 
 bool RenderViewSystem::Initialize(IRenderer* renderer, SRenderViewSystemConfig config) {
 	if (renderer == nullptr) {
@@ -72,14 +70,14 @@ bool RenderViewSystem::Create(const RenderViewConfig& config) {
 		return false;
 	}
 
-	if (!config.name || strlen(config.name) < 1) {
+	if (config.name.IsEmpty()) {
 		GLOG(Log::eError, "RenderViewSystem::Create() name is required.");
 		return false;
 	}
 
 	uint16_t ID = INVALID_ID_U16;
 	if (RegisteredViewMap.find(config.name) != RegisteredViewMap.end()){
-		GLOG(Log::eError, "RenderViewSystem::Create() A view named '%s' already exists. A new one will not be created.", config.name);
+		GLOG(Log::eError, "RenderViewSystem::Create() A view named '%s' already exists. A new one will not be created.", config.name.CStr());
 		return false;
 	}
 
@@ -187,10 +185,10 @@ void RenderViewSystem::OnWindowResize(uint32_t width, uint32_t height) {
 	}
 }
 
-IRenderView* RenderViewSystem::Get(const std::string& name) {
+IRenderView* RenderViewSystem::Get(const FString& name) {
 	if (Initialized) {
 		if (RegisteredViewMap.find(name) == RegisteredViewMap.end()){
-			GLOG(Log::eDebug, "Can not find render view '%s', return nullptr.", name.c_str());
+			GLOG(Log::eDebug, "Can not find render view '%s', return nullptr.", name.CStr());
 			return nullptr;
 		}
 

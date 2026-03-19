@@ -124,7 +124,7 @@ bool IRenderer::DrawFrame(SRenderPacket* packet) {
 				static_cast<unsigned short>(Height)
 			);
 
-			RenderViewSystem::OnWindowResize(FramebufferWidth, FramebufferHeight);
+			RenderViewSystem::Get().OnWindowResize(FramebufferWidth, FramebufferHeight);
 
 			FrameSinceResize = 0;
 			Resizing = false;
@@ -141,7 +141,7 @@ bool IRenderer::DrawFrame(SRenderPacket* packet) {
 
 		// Render each view.
 		for (uint32_t i = 0; (uint32_t)i < packet->views.size(); ++i) {
-			if (!RenderViewSystem::OnRender(packet->views[i].view, &packet->views[i], Backend->GetFrameNum(), AttachmentIndex)) {
+			if (!RenderViewSystem::Get().OnRender(packet->views[i].view, &packet->views[i], Backend->GetFrameNum(), AttachmentIndex)) {
 				GLOG(Log::eError, "Error rendering view index '%i'.", i);
 				return false;
 			}

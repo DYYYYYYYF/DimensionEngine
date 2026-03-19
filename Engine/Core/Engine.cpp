@@ -13,7 +13,6 @@
 #include "Rendering/Renderer.hpp"
 #include "Rendering/Interface/IRenderpass.hpp"
 #include "Math/MathTypes.hpp"
-#include "Containers/TString.hpp"
 
 // Systems
 #include "Systems/TextureSystem.h"
@@ -154,7 +153,7 @@ bool Engine::Initialize(){
 	// Init camera system
 	SCameraSystemConfig CameraSystemConfig;
 	CameraSystemConfig.max_camera_count = 61;
-	if (!CameraSystem::Initialize(Renderer, CameraSystemConfig)) {
+	if (!CameraSystem::Get().Initialize(Renderer, CameraSystemConfig)) {
 		GLOG(Log::eFatal, "Camera system failed to initialize!");
 		return false;
 	}
@@ -168,7 +167,7 @@ bool Engine::Initialize(){
 	// Init render view system.
 	SRenderViewSystemConfig RenderViewSysConfig;
 	RenderViewSysConfig.max_view_count = 255;
-	if (!RenderViewSystem::Initialize(Renderer, RenderViewSysConfig)) {
+	if (!RenderViewSystem::Get().Initialize(Renderer, RenderViewSysConfig)) {
 		GLOG(Log::eFatal, "Render view system failed to intialize!");
 		return false;
 	}
@@ -178,8 +177,8 @@ bool Engine::Initialize(){
 	uint32_t ViewCount = (uint32_t)Renderviews.size();
 	for (uint32_t v = 0; v < ViewCount; ++v) {
 		const RenderViewConfig& View = Renderviews[v];
-		if (!RenderViewSystem::Create(View)) {
-			GLOG(Log::eFatal, "Failed to create view '%s'.", View.name);
+		if (!RenderViewSystem::Get().Create(View)) {
+			GLOG(Log::eFatal, "Failed to create view '%s'.", View.name.CStr());
 			return false;
 		}
 	}
@@ -222,7 +221,7 @@ bool Engine::Run() {
 	double FrameElapsedTime = 0.0;
 	double TargetFrameSeconds = 1.0 / 120.0;
 
-	GLOG(Log::eDebug, Memory::GetMemoryUsageStr());
+	GLOG(Log::eDebug, Memory::GetMemoryUsageStr().CStr());
 
 	GlobalFileWatcher = NewObject<FileWatcher>();
 
@@ -315,8 +314,8 @@ bool Engine::Run() {
 	EngineEvent::Unregister(eEventCode::Resize, nullptr,
 		std::bind(&Engine::OnResized, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
 
-	RenderViewSystem::Shutdown();
-	CameraSystem::Shutdown();
+	RenderViewSystem::Get().Shutdown();
+	CameraSystem::Get().Shutdown();
 	FontSystem::Get().Shutdown();
 	GeometrySystem::Get().Shutdown();
 	MaterialSystem::Shutdown();

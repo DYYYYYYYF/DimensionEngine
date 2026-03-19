@@ -3,7 +3,6 @@
 #include "Core/DMemory.hpp"
 #include "Core/EngineLogger.hpp"
 
-#include "Containers/TString.hpp"
 #include "Rendering/Resources/ResourceTypes.hpp"
 #include "Platform/File/File.hpp"
 
@@ -18,12 +17,12 @@ bool MaterialLoader::Load(const FString& name, void* params, UAsset* resource) {
 	}
 
 	const char* FormatStr = "%s/%s/%s%s";
-	char FullFilePath[512];
-	StringFormat(FullFilePath, FormatStr, ResourceSystem::GetRootPath(), TypePath.c_str(), name.CStr(), ".dmt");
+	FString FullFilePath;
+	FullFilePath = FString::Format(FormatStr, ResourceSystem::GetRootPath(), TypePath.c_str(), name.CStr(), ".dmt");
 
-	File AssetFile(FullFilePath);
+	File AssetFile(FullFilePath.CStr());
 	if (!AssetFile.IsExist()){
-		GLOG(Log::eError, "Material loader load. Unable to open material file for reading: '%s'.", FullFilePath);
+		GLOG(Log::eError, "Material loader load. Unable to open material file for reading: '%s'.", FullFilePath.CStr());
 		return false;
 	}
 

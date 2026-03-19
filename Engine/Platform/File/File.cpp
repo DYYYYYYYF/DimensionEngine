@@ -349,7 +349,7 @@ bool File::WriteBuffer(const void* data, size_t data_size, size_t* out_bytes_wri
 	return true;
 }
 
-bool File::WriteLine(const std::string& line) {
+bool File::WriteLine(const FString& line) {
 	if (!m_stream.is_open()) {
 		GLOG(Log::eError, "File::WriteLine: file not open.");
 		return false;

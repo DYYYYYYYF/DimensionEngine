@@ -29,8 +29,8 @@ enum RenderViewProjectionMatrixSource {
 };
 
 struct RenderViewConfig {
-	const char* name = nullptr;
-	const char* custom_shader_name = nullptr;
+	FString name;
+	FString custom_shader_name;
 	unsigned short width = 1920;
 	unsigned short height = 1080;
 	RenderViewKnownType type = RenderViewKnownType::eRender_View_Known_Type_World;
@@ -59,13 +59,13 @@ public:
 
 public:
 	uint16_t ID = INVALID_ID_U16;
-	const char* Name = nullptr;
+	FString Name;
 	uint16_t Width = 1920;
 	uint16_t Height = 1080;
 	RenderViewKnownType Type = RenderViewKnownType::eRender_View_Known_Type_World;
 	unsigned char RenderpassCount = 0;
 	std::vector<class VulkanRenderPass> Passes;
-	const char* CustomShaderName = nullptr;
+	FString CustomShaderName;
 	EShaderRenderMode render_mode = EShaderRenderMode::eShader_Render_Mode_Default;
 
 };

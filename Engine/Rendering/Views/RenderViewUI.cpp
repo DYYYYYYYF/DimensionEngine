@@ -6,7 +6,6 @@
 #include "Math/DMath.hpp"
 #include "Framework/Components/TransformComponent.h"
 #include "Containers/TArray.hpp"
-#include "Containers/TString.hpp"
 #include "Systems/MaterialSystem.h"
 #include "Systems/ShaderSystem.h"
 #include "Systems/ResourceSystem.h"
@@ -26,7 +25,7 @@ static bool RenderViewUIOnEvent(eEventCode code, void* sender, void* listenerIns
 	switch (code)
 	{
 	case eEventCode::Default_Rendertarget_Refresh_Required:
-		RenderViewSystem::RegenerateRendertargets(self);
+		RenderViewSystem::Get().RegenerateRendertargets(self);
 		return false;
     default: break;
 	}
@@ -38,7 +37,7 @@ RenderViewUI::RenderViewUI() {}
 
 RenderViewUI::RenderViewUI(const RenderViewConfig& config) {
 	Type = config.type;
-	Name = StringCopy(config.name);
+	Name = config.name;
 	CustomShaderName = config.custom_shader_name;
 	RenderpassCount = config.pass_count;
 	Passes.resize(RenderpassCount);
@@ -61,7 +60,7 @@ bool RenderViewUI::OnCreate(const RenderViewConfig& config) {
 	}
 	ResourceSystem::Unload(&ConfigResource);
 
-	UsedShader = ShaderSystem::Get(CustomShaderName ? CustomShaderName : ShaderName);
+	UsedShader = ShaderSystem::Get(CustomShaderName.IsEmpty() ? ShaderName : CustomShaderName);
 	DiffuseMapLocation = ShaderSystem::GetUniformIndex(UsedShader, "diffuse_texture");
 	DiffuseColorLocation = ShaderSystem::GetUniformIndex(UsedShader, "diffuse_color");
 	ModelLocation = ShaderSystem::GetUniformIndex(UsedShader, "model");

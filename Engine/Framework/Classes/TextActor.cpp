@@ -4,7 +4,6 @@
 #include "Systems/FontSystem.hpp"
 #include "Rendering/Renderer.hpp"
 #include "Rendering/Vulkan/VulkanBuffer.hpp"
-#include "Containers/TString.hpp"
 
 ATextActor::ATextActor(UITextType type, const FString& fontName,
 	int fontSize, const FString& textContent) {

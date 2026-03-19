@@ -2,8 +2,6 @@
 
 #include "Core/Engine.hpp"
 
-#include "Containers/TString.hpp"
-
 #include "Systems/JobSystem.hpp"
 #include "Rendering/Renderer.hpp"
 #include "Rendering/Resources/Texture/Loader/TextureHelper.hpp"

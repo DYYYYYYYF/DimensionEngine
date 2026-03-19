@@ -7,7 +7,6 @@
 #include "Math/DMath.hpp"
 
 #include "Containers/TArray.hpp"
-#include "Containers/TString.hpp"
 #include "Systems/MaterialSystem.h"
 #include "Systems/ShaderSystem.h"
 #include "Systems/ResourceSystem.h"
@@ -28,7 +27,7 @@ static bool RenderViewPickOnEvent(eEventCode code, void* sender, void* listenerI
 	switch (code)
 	{
 	case eEventCode::Default_Rendertarget_Refresh_Required:
-		RenderViewSystem::RegenerateRendertargets(self);
+		RenderViewSystem::Get().RegenerateRendertargets(self);
 		return false;
     default: break;
 	}
@@ -89,7 +88,7 @@ void RenderViewPick::ReleaseShaderInstance() {
 
 RenderViewPick::RenderViewPick(const RenderViewConfig& config, IRenderer* renderer) {
 	Type = config.type;
-	Name = StringCopy(config.name);
+	Name = config.name;
 	CustomShaderName = config.custom_shader_name;
 	RenderpassCount = config.pass_count;
 	Passes.resize(RenderpassCount);
@@ -216,7 +215,7 @@ bool RenderViewPick::OnBuildPacket(IRenderviewPacketData* data, struct RenderVie
 	out_packet->view = this;
 
 	// TODO: Get active camera.
-	ACameraActor* WorldCamera = CameraSystem::GetDefault();
+	ACameraActor* WorldCamera = CameraSystem::Get().GetDefault();
 	WorldShaderInfo.ViewMatrix = WorldCamera->GetViewMatrix();
 
 	// Set the pick packet data to extended data.

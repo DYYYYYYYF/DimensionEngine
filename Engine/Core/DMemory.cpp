@@ -2,7 +2,7 @@
 
 #include "EngineLogger.hpp"
 #include "Platform/Platform.hpp"
-#include "Containers/TString.hpp"
+#include "Containers/FString.hpp"
 
 struct Memory::SMemoryStats Memory::stats;
 size_t Memory::TotalAllocateSize;
@@ -156,7 +156,7 @@ const char* Memory::GetUnitForSize(size_t size_bytes, float* out_amount) {
 	}
 }
 
-char* Memory::GetMemoryUsageStr() {
+FString Memory::GetMemoryUsageStr() {
 	char buffer[8000] = "\nSystem memory use (Type): \n";
 	size_t offset = strlen(buffer);
 	for (size_t i = 0; i < eMemory_Type_Max; i++) {
@@ -184,13 +184,12 @@ char* Memory::GetMemoryUsageStr() {
 		snprintf(buffer + offset, 8000, "Total memory usage: %.2f%s of %.2f%s (%d%%%%)\n", UsedAmount, UsedUnit, TotalAmount, TotalUnit, (int)(PercentUsed * 100));
 	}
 
-	char* outString = StringCopy(buffer);
-	return outString;
+	return buffer;
 }
 
 void Memory::ShowMemoryUsage() {
-	std::string Msg = GetMemoryUsageStr();
-	GLOG(Log::eDebug, Msg.c_str());
+	FString Msg = GetMemoryUsageStr();
+	GLOG(Log::eDebug, Msg.CStr());
 }
 
 size_t Memory::GetAllocateCount() { 

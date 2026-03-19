@@ -2,7 +2,6 @@
 
 #include "Core/DMemory.hpp"
 #include "Core/EngineLogger.hpp"
-#include "Containers/TString.hpp"
 
 #include "Systems/ResourceSystem.h"
 #include "Platform/File/File.hpp"
@@ -20,18 +19,18 @@ bool BinaryLoader::Load(const FString& name, void* params, UAsset* resource) {
 	}
 
 	const char* FormatStr = "%s/%s/%s%s";
-	char FullFilePath[512];
-	StringFormat(FullFilePath, FormatStr, ResourceSystem::GetRootPath(), TypePath.c_str(), name.CStr(), "");
+	FString FullFilePath;
+	FullFilePath = FString::Format(FormatStr, ResourceSystem::GetRootPath(), TypePath.c_str(), name.CStr(), "");
 
-	File AssetFile(FullFilePath);
+	File AssetFile(FullFilePath.CStr());
 	if (!AssetFile.IsExist()) {
-		GLOG(Log::eError, "Binary loader load. Unable to find file for binary reading: '%s'.", FullFilePath);
+		GLOG(Log::eError, "Binary loader load. Unable to find file for binary reading: '%s'.", FullFilePath.CStr());
 		return false;
 	}
 
 	std::vector<unsigned char> FileData = AssetFile.ReadBytes();
 	if (FileData.empty()) {
-		GLOG(Log::eError, "Unable to binary read file: '%s'.", FullFilePath);
+		GLOG(Log::eError, "Unable to binary read file: '%s'.", FullFilePath.CStr());
 		return false;
 	}
 

@@ -29,22 +29,22 @@ private:
 	// 通用文件处理
 	virtual void ProcessSubobject(std::vector<Vector3>& positions, std::vector<Vector3>& normals, std::vector<Vector2f>& texcoords, std::vector<MeshFaceData>& faces, SGeometryConfig* out_data);
 	virtual bool LoadDsmFile(const FString& path, std::vector<SGeometryConfig>& out_geometries);
-	virtual bool WriteDsmFile(const char* path, const char* name, std::vector<SGeometryConfig>& geometries);
-	virtual bool WriteDmtFile(const char* mtl_file_path, SMaterialConfig* config);
+	virtual bool WriteDsmFile(const FString& path, const FString& name, std::vector<SGeometryConfig>& geometries);
+	virtual bool WriteDmtFile(const FString& mtl_file_path, SMaterialConfig* config);
 
 	// 统一的3D模型文件处理 (使用Assimp) - 支持OBJ, GLTF, FBX, DAE等
-	virtual bool Import3DModelFile(const std::string& model_file, const char* out_dsm_filename, std::vector<SGeometryConfig>& out_geometries);
+	virtual bool Import3DModelFile(const FString& model_file, const FString& out_dsm_filename, std::vector<SGeometryConfig>& out_geometries);
 
 	// Assimp相关处理函数
-	virtual bool ProcessAssimpMaterials(const aiScene* scene, const char* out_dsm_filename, std::vector<SMaterialConfig>& materialConfigs);
+	virtual bool ProcessAssimpMaterials(const aiScene* scene, const FString& out_dsm_filename, std::vector<SMaterialConfig>& materialConfigs);
 	virtual void ProcessAssimpTextures(const aiMaterial* mat, SMaterialConfig& config);
 	virtual void ProcessAssimpNode(aiNode* node, const aiScene* scene, const std::vector<SMaterialConfig>& materialConfigs, const Matrix4& parentTransform, std::vector<SGeometryConfig>& out_geometries);
 	virtual void ProcessAssimpMesh(aiMesh* mesh, const aiScene* scene, const std::vector<SMaterialConfig>& materialConfigs, const Matrix4& transform, std::vector<SGeometryConfig>& out_geometries);
 
-	virtual bool ImportObjFile(const std::string& obj_file, const char* out_dsm_filename, std::vector<SGeometryConfig>& out_geometries) {
+	virtual bool ImportObjFile(const FString& obj_file, const FString& out_dsm_filename, std::vector<SGeometryConfig>& out_geometries) {
 		return Import3DModelFile(obj_file, out_dsm_filename, out_geometries);
 	}
-	virtual bool ImportGltfFile(const std::string& gltf_file, const char* out_dsm_filename, std::vector<SGeometryConfig>& out_geometries) {
+	virtual bool ImportGltfFile(const FString& gltf_file, const FString& out_dsm_filename, std::vector<SGeometryConfig>& out_geometries) {
 		return Import3DModelFile(gltf_file, out_dsm_filename, out_geometries);
 	}
 

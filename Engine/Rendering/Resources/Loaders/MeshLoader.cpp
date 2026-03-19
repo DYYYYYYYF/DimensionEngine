@@ -3,7 +3,6 @@
 #include "Core/DMemory.hpp"
 #include "Core/EngineLogger.hpp"
 
-#include "Containers/TString.hpp"
 #include "Platform/File/File.hpp"
 #include "Systems/ResourceSystem.h"
 #include "Systems/GeometrySystem.h"
@@ -40,12 +39,12 @@ bool MeshLoader::Load(const FString& name, void* params, UAsset* resource) {
 	SupportedFileTypes[5] = SupportedMeshFileType{ ".dae", MeshFileType::eMesh_File_Type_3D_Model, false }; // Collada
 	SupportedFileTypes[6] = SupportedMeshFileType{ ".3ds", MeshFileType::eMesh_File_Type_3D_Model, true };  // 3DS Max
 
-	char FullFilePath[512];
+	FString FullFilePath;
 	MeshFileType MeshFileType = MeshFileType::eMesh_File_Type_Not_Found;
 	// 尝试每种支持的扩展名
 	for (uint32_t i = 0; i < SUPPORTED_FILETYPE_COUNT; ++i) {
-		StringFormat(FullFilePath, FormatStr, ResourceSystem::GetRootPath(), TypePath.c_str(), name.CStr(), SupportedFileTypes[i].extension.c_str());
-		File TestExist(FullFilePath);
+		FullFilePath = FString::Format(FormatStr, ResourceSystem::GetRootPath(), TypePath.c_str(), name.CStr(), SupportedFileTypes[i].extension.c_str());
+		File TestExist(FullFilePath.CStr());
 		// 如果文件存在
 		if (TestExist.IsExist()) {
 			MeshFileType = SupportedFileTypes[i].type;
@@ -70,19 +69,19 @@ bool MeshLoader::Load(const FString& name, void* params, UAsset* resource) {
 	case MeshFileType::eMesh_File_Type_3D_Model:
 	{
 		// 生成DSM文件名
-		char DsmFileName[512];
-		StringFormat(DsmFileName, "%s/%s/%s%s", ResourceSystem::GetRootPath(), TypePath.c_str(), name.CStr(), ".dsm");
+		FString DsmFileName;
+		DsmFileName = FString::Format("%s/%s/%s%s", ResourceSystem::GetRootPath(), TypePath.c_str(), name.CStr(), ".dsm");
 
 		// 使用统一的Assimp加载器处理所有3D模型格式
 		Result = Import3DModelFile(FullFilePath, DsmFileName, ResourceDatas);
 
 		GLOG(Log::eInfo, "Loaded 3D model '%s' with %zu geometries using Assimp",
-			FullFilePath, ResourceDatas.size());
+			FullFilePath.CStr(), ResourceDatas.size());
 	}break;
 
 	case MeshFileType::eMesh_File_Type_DSM:
 		Result = LoadDsmFile(FullFilePath, ResourceDatas);
-		GLOG(Log::eDebug, "Loaded DSM file '%s' with %zu geometries", FullFilePath, ResourceDatas.size());
+		GLOG(Log::eDebug, "Loaded DSM file '%s' with %zu geometries", FullFilePath.CStr(), ResourceDatas.size());
 		break;
 
 	case MeshFileType::eMesh_File_Type_Not_Found:
@@ -92,7 +91,7 @@ bool MeshLoader::Load(const FString& name, void* params, UAsset* resource) {
 	}
 
 	if (!Result) {
-		GLOG(Log::eError, "Failed to process mesh file '%s'.", FullFilePath);
+		GLOG(Log::eError, "Failed to process mesh file '%s'.", FullFilePath.CStr());
 		ResourceDatas.clear();
 		resource->Data = nullptr;
 		resource->DataSize = 0;
@@ -100,7 +99,7 @@ bool MeshLoader::Load(const FString& name, void* params, UAsset* resource) {
 	}
 
 	if (ResourceDatas.empty()) {
-		GLOG(Log::eWarn, "No geometries found in mesh file '%s'.", FullFilePath);
+		GLOG(Log::eWarn, "No geometries found in mesh file '%s'.", FullFilePath.CStr());
 		resource->Data = nullptr;
 		resource->DataSize = 0;
 		resource->DataCount = 0;
@@ -139,7 +138,7 @@ void MeshLoader::Unload(UAsset* resource) {
 	resource = nullptr;
 }
 
-bool MeshLoader::Import3DModelFile(const std::string& model_file, const char* out_dsm_filename, std::vector<SGeometryConfig>& out_geometries) {
+bool MeshLoader::Import3DModelFile(const FString& model_file, const FString& out_dsm_filename, std::vector<SGeometryConfig>& out_geometries) {
 	Assimp::Importer importer;
 
 	// 设置后处理标志 - 适用于所有3D格式
@@ -160,14 +159,14 @@ bool MeshLoader::Import3DModelFile(const std::string& model_file, const char* ou
 		aiProcess_OptimizeGraph;         // 优化场景图
 
 	// 加载3D模型文件
-	const aiScene* scene = importer.ReadFile(model_file, postProcessFlags);
+	const aiScene* scene = importer.ReadFile(model_file.CStr(), postProcessFlags);
 
 	if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
 		GLOG(Log::eError, "Failed to load 3D model with Assimp: %s", importer.GetErrorString());
 		return false;
 	}
 
-	GLOG(Log::eInfo, "Successfully loaded 3D model: %s", model_file.c_str());
+	GLOG(Log::eInfo, "Successfully loaded 3D model: %s", model_file.CStr());
 	GLOG(Log::eDebug, "Model contains %u meshes, %u materials", scene->mNumMeshes, scene->mNumMaterials);
 
 	// 材质配置
@@ -187,11 +186,10 @@ bool MeshLoader::Import3DModelFile(const std::string& model_file, const char* ou
 	DeduplicateGeometry(out_geometries);
 
 	// 输出DSM文件
-	std::string name = model_file;
-	return WriteDsmFile(out_dsm_filename, name.c_str(), out_geometries);
+	return WriteDsmFile(out_dsm_filename, model_file, out_geometries);
 }
 
-bool MeshLoader::ProcessAssimpMaterials(const aiScene* scene, const char* out_dsm_filename, std::vector<SMaterialConfig>& materialConfigs) {
+bool MeshLoader::ProcessAssimpMaterials(const aiScene* scene, const FString& out_dsm_filename, std::vector<SMaterialConfig>& materialConfigs) {
 	for (unsigned int i = 0; i < scene->mNumMaterials; ++i) {
 		const aiMaterial* mat = scene->mMaterials[i];
 		SMaterialConfig config;
@@ -343,17 +341,13 @@ void MeshLoader::ProcessAssimpTextures(const aiMaterial* mat, SMaterialConfig& c
 
 	// 环境光遮蔽贴图 - 使用正确的aiTextureType
 	if (mat->GetTexture(aiTextureType_AMBIENT_OCCLUSION, 0, &texPath) == AI_SUCCESS) {
-		// 如果SMaterialConfig支持AO贴图，可以添加相应字段
-		char texName[512] = "";
-		StringFilenameNoExtensionFromPath(texName, texPath.C_Str());
-		// config.AmbientOcclusionTexName = std::string(texName); // 如果需要的话
+		FString texName = FString::FilenameNoExtensionFromPath(texPath.C_Str());
 	}
 
 	// 不透明度贴图
 	if (mat->GetTexture(aiTextureType_OPACITY, 0, &texPath) == AI_SUCCESS) {
 		// 可以处理透明度贴图
-		char texName[512] = "";
-		StringFilenameNoExtensionFromPath(texName, texPath.C_Str());
+		FString texName = FString::FilenameNoExtensionFromPath(texPath.C_Str());
 		// config.OpacityTexName = std::string(texName); // 如果需要的话
 	}
 }
@@ -632,69 +626,66 @@ void MeshLoader::ProcessSubobject(std::vector<Vector3>& positions, std::vector<V
 	std::vector<uint32_t>().swap(Indices);
 	std::vector<Vertex>().swap(Vertices);
 }	
-bool MeshLoader::WriteDmtFile(const char* mtl_file_path, SMaterialConfig* config) {
+bool MeshLoader::WriteDmtFile(const FString& mtl_file_path, SMaterialConfig* config) {
 	// 从 mtl 文件路径提取目录，拼接目标路径
-	char Directory[320];
-	StringDirectoryFromPath(Directory, mtl_file_path);
+	FString Directory = FString::DirectoryFromPath(mtl_file_path);
+	FString FullFilePath = FString::Format("%s../Materials/%s%s", Directory.CStr(), config->name.CStr(), ".dmt");
 
-	char FullFilePath[512];
-	StringFormat(FullFilePath, "%s../Materials/%s%s", Directory, config->name.CStr(), ".dmt");
-
-	File f(FullFilePath);
+	File f(FullFilePath.CStr());
 	if (!f.Open(eFileMode::Write)) {
-		GLOG(Log::eError, "Error opening material file for writing: '%s'.", FullFilePath);
+		GLOG(Log::eError, "Error opening material file for writing: '%s'.", FullFilePath.CStr());
 		return false;
 	}
 
-	GLOG(Log::eDebug, "Writing .dmt file '%s'.", FullFilePath);
+	GLOG(Log::eDebug, "Writing .dmt file '%s'.", FullFilePath.CStr());
 
-	char LineBuf[512];
+	FString LineBuf;
 
 	f.WriteLine("#material file");
 	f.WriteLine("");
 	f.WriteLine("version=0.1");
 
-	StringFormat(LineBuf, "name=%s", config->name.CStr());
+	LineBuf = FString::Format("name=%s", config->name.CStr());
 	f.WriteLine(LineBuf);
 
 	// BlinnPhong
-	StringFormat(LineBuf, "diffuse_color=%.6f %.6f %.6f %.6f",
+	LineBuf = FString::Format("diffuse_color=%.6f %.6f %.6f %.6f",
 		config->diffuse_color.r, config->diffuse_color.g,
 		config->diffuse_color.b, config->diffuse_color.a);
 	f.WriteLine(LineBuf);
 
-	StringFormat(LineBuf, "shininess=%.6f", config->shininess);
+	LineBuf = FString::Format("shininess=%.6f", config->shininess);
 	f.WriteLine(LineBuf);
 
 	// PBR
-	StringFormat(LineBuf, "metallic=%.6f", config->Metallic);
+	LineBuf = FString::Format("metallic=%.6f", config->Metallic);
 	f.WriteLine(LineBuf);
 
-	StringFormat(LineBuf, "roughness=%.6f", config->Roughness);
+	LineBuf = FString::Format("roughness=%.6f", config->Roughness);
 	f.WriteLine(LineBuf);
 
-	StringFormat(LineBuf, "ambient_occlusion=%.6f", config->AmbientOcclusion);
+	LineBuf = FString::Format("ambient_occlusion=%.6f", config->AmbientOcclusion);
 	f.WriteLine(LineBuf);
 
 	// Textures
 	if (!config->diffuse_map_name.IsEmpty()) {
-		StringFormat(LineBuf, "diffuse_map_name=%s", config->diffuse_map_name.CStr());
+		LineBuf = FString::Format("diffuse_map_name=%s", config->diffuse_map_name.CStr());
 		f.WriteLine(LineBuf);
 	}
 	if (!config->specular_map_name.IsEmpty()) {
-		StringFormat(LineBuf, "specular_map_name=%s", config->specular_map_name.CStr());
+		LineBuf = FString::Format("specular_map_name=%s", config->specular_map_name.CStr());
 		f.WriteLine(LineBuf);
 	}
 	if (!config->normal_map_name.IsEmpty()) {
-		StringFormat(LineBuf, "normal_map_name=%s", config->normal_map_name.CStr());
+		LineBuf = FString::Format("normal_map_name=%s", config->normal_map_name.CStr());
 		f.WriteLine(LineBuf);
 	}
 	if (!config->MetallicRoughnessTexName.IsEmpty()) {
-		StringFormat(LineBuf, "roughness_metallic_map_name=%s", config->MetallicRoughnessTexName.CStr());
+		LineBuf = FString::Format("roughness_metallic_map_name=%s", config->MetallicRoughnessTexName.CStr());
 		f.WriteLine(LineBuf);
 	}
 
-	StringFormat(LineBuf, "shader=%s", config->shader_name.CStr());
+	LineBuf = FString::Format("shader=%s", config->shader_name.CStr());
 	f.WriteLine(LineBuf);
 
 	// File::~File 会自动 Close，这里显式调用让意图更清晰
@@ -779,15 +770,15 @@ bool MeshLoader::LoadDsmFile(const FString& path, std::vector<SGeometryConfig>& 
 	return true;
 }
 
-bool MeshLoader::WriteDsmFile(const char* path, const char* name, std::vector<SGeometryConfig>& geometries) {
-	File f(path);
+bool MeshLoader::WriteDsmFile(const FString& path, const FString& name, std::vector<SGeometryConfig>& geometries) {
+	File f(path.CStr());
 
 	if (f.IsExist()) {
-		GLOG(Log::eInfo, "File '%s' already exists and will be overwritten.", path);
+		GLOG(Log::eInfo, "File '%s' already exists and will be overwritten.", path.CStr());
 	}
 
 	if (!f.Open(eFileMode::Write, true)) {  // true = 二进制模式
-		GLOG(Log::eError, "Unable to open file '%s'. Dsm file write failed.", path);
+		GLOG(Log::eError, "Unable to open file '%s'. Dsm file write failed.", path.CStr());
 		return false;
 	}
 
@@ -798,9 +789,9 @@ bool MeshLoader::WriteDsmFile(const char* path, const char* name, std::vector<SG
 	if (!f.Write(&Version)) return false;
 
 	// Name length + name
-	uint32_t NameLength = (uint32_t)strlen(name) + 1;
+	uint32_t NameLength = (uint32_t)name.Length() + 1;
 	if (!f.Write(&NameLength)) return false;
-	if (!f.WriteBuffer(name, sizeof(char) * NameLength)) return false;
+	if (!f.WriteBuffer(name.CStr(), sizeof(char) * NameLength)) return false;
 
 	// Geometry count
 	if (!f.Write(&geometry_count)) return false;

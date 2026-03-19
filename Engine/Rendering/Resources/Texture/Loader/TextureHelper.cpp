@@ -3,7 +3,6 @@
 
 #include "Core/DMemory.hpp"
 #include "Core/EngineLogger.hpp"
-#include "Containers/TString.hpp"
 #include "Platform/File/File.hpp"
 
 #ifndef STB_IMAGE_IMPLEMENTATION
@@ -37,15 +36,15 @@ bool TextureHelper::Load(const FString& name, void* params, UTexture* resource) 
 	const char* FormatStr = "%s/%s/%s%s";
 	const int RequiredChannelCount = 4;
 	stbi_set_flip_vertically_on_load_thread(TypedParams->flip_y);
-	char FullFilePath[512];
+	FString FullFilePath;
 
 	// Try different extensions.
 #define IMAGE_EXTENSION_COUNT 4
 	bool Found = false;
 	const char* Extensions[IMAGE_EXTENSION_COUNT] = { ".tga", ".png", ".jpg", ".bmp" };
 	for (uint32_t i = 0; i < IMAGE_EXTENSION_COUNT; ++i) {
-		StringFormat(FullFilePath, FormatStr, ResourceSystem::GetRootPath(), "Textures", name.CStr(), Extensions[i]);
-		File AssetFile(FullFilePath);
+		FullFilePath = FString::Format(FormatStr, ResourceSystem::GetRootPath(), "Textures", name.CStr(), Extensions[i]);
+		File AssetFile(FullFilePath.CStr());
 		if (AssetFile.IsExist()) {
 			Found = true;
 			break;
@@ -62,11 +61,11 @@ bool TextureHelper::Load(const FString& name, void* params, UTexture* resource) 
 	TexAsset->SetFullPath(FullFilePath);
 
 	int Width, Height, ChannelCount;
-	File AssetFile(FullFilePath);
+	File AssetFile(FullFilePath.CStr());
 	size_t FileSize = AssetFile.GetFileSize();
 	std::vector<unsigned char> fileData = AssetFile.ReadBytes();
 	if (fileData.empty()) {
-		GLOG(Log::eError, "Unable to read file: '%s'.", FullFilePath);
+		GLOG(Log::eError, "Unable to read file: '%s'.", FullFilePath.CStr());
 		return false;
 	}
 
@@ -83,7 +82,7 @@ bool TextureHelper::Load(const FString& name, void* params, UTexture* resource) 
 	);
 
 	if (Data == nullptr) {
-		GLOG(Log::eError, "Image resource loader failed to load file: '%s'.", FullFilePath);
+		GLOG(Log::eError, "Image resource loader failed to load file: '%s'.", FullFilePath.CStr());
 		return false;
 	}
 

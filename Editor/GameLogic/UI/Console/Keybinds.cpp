@@ -234,13 +234,8 @@ void Keybind::GameOnPrintMemory(eKeys key, KeymapEntryBindType type, KeymapModif
 	size_t PrevAllocCount = AllocCount;
 	AllocCount = Memory::GetAllocateCount();
 	size_t UsedMemory = AllocCount - PrevAllocCount;
-	char* Usage = Memory::GetMemoryUsageStr();
-	GLOG(Log::eInfo, Usage);
-
-	size_t Size = 0;
-	if (Memory::GetAlignmentSize(Usage, &Size, nullptr)) {
-		Memory::FreeAligned(Usage, Size, MemoryType::eMemory_Type_String);
-	}
+	FString Usage = Memory::GetMemoryUsageStr();
+	GLOG(Log::eInfo, Usage.CStr());
 	GLOG(Log::eDebug, "Allocations: %llu (%llu this frame)", AllocCount, UsedMemory);
 }
 

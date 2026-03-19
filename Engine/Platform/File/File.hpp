@@ -207,7 +207,7 @@ public:
      * @param line 要写入的文本。
      * @return 成功返回 true。
      */
-    DAPI bool WriteLine(const std::string& line);
+    DAPI bool WriteLine(const FString& line);
 
     /**
      * @brief 获取当前读写位置（字节偏移）。

@@ -1,7 +1,6 @@
 ﻿#include "MaterialSystem.h"
 
 #include "Core/EngineLogger.hpp"
-#include "Containers/TString.hpp"
 #include "Math/MathTypes.hpp"
 #include "Rendering/Renderer.hpp"
 
@@ -106,7 +105,7 @@ Material* MaterialSystem::Acquire(const FString& name) {
 
 Material* MaterialSystem::AcquireFromConfig(SMaterialConfig config) {
 	// Return default material.
-	if (StringEquali(config.name.CStr(), DEFAULT_MATERIAL_NAME)) {
+	if (config.name.Compare(DEFAULT_MATERIAL_NAME) == 0) {
 		return DefaultMaterial;
 	}
 
