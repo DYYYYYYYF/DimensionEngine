@@ -10,7 +10,7 @@
 #include "Framework/Classes/StaticMeshActor.h"
 #include "Framework/Classes/TextActor.h"
 
-#define EDITOR_CONFIG_PATH std::string(ROOT_PATH) + "/Editor/Config.json"
+#define EDITOR_CONFIG_PATH FString::Format("%s%s", ROOT_PATH, "/Editor/Config.json")
 
 class Skybox;
 class ACameraActor;

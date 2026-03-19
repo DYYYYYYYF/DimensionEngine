@@ -50,24 +50,24 @@ RenderViewSkybox::RenderViewSkybox(const RenderViewConfig& config) {
 bool RenderViewSkybox::OnCreate(const RenderViewConfig& config) {
 	FString ShaderName = "Shader.Builtin.Skybox";
 	UAsset ConfigResource;
-	if (!ResourceSystem::Load(ShaderName, EAssetType::Shader, nullptr, &ConfigResource)) {
+	if (!ResourceSystem::Get().Load(ShaderName, EAssetType::Shader, nullptr, &ConfigResource)) {
 		GLOG(Log::eError, "Failed to load builtin skybox shader.");
 		return false;
 	}
 
 	ShaderConfig* Config = (ShaderConfig*)ConfigResource.Data;
 	// NOTE: Assuming the first pass since that's all this view has.
-	if (!ShaderSystem::Create(&Passes[0], Config)) {
+	if (!ShaderSystem::Get().Create(&Passes[0], Config)) {
 		GLOG(Log::eError, "Failed to load builtin ksybox shader.");
 		return false;
 	}
-	ResourceSystem::Unload(&ConfigResource);
+	ResourceSystem::Get().Unload(&ConfigResource);
 
 	// Get either the custom shader override or the defined default.
-	UsedShader = ShaderSystem::Get(CustomShaderName.IsEmpty() ? ShaderName : CustomShaderName);
-	ProjectionLocation = ShaderSystem::GetUniformIndex(UsedShader, "projection");
-	ViewLocation = ShaderSystem::GetUniformIndex(UsedShader, "view");
-	CubeMapLocation = ShaderSystem::GetUniformIndex(UsedShader, "cube_texture");
+	UsedShader = ShaderSystem::Get().Get(CustomShaderName.IsEmpty() ? ShaderName : CustomShaderName);
+	ProjectionLocation = ShaderSystem::Get().GetUniformIndex(UsedShader, "projection");
+	ViewLocation = ShaderSystem::Get().GetUniformIndex(UsedShader, "view");
+	CubeMapLocation = ShaderSystem::Get().GetUniformIndex(UsedShader, "cube_texture");
 	
 	// TODO: Set from configurable.
 	NearClip = 0.1f;
@@ -147,7 +147,7 @@ bool RenderViewSkybox::OnRender(struct RenderViewPacket* packet, IRendererBacken
 		IRenderpass* Pass = (IRenderpass*)&Passes[p];
 		Pass->Begin(&Pass->Targets[render_target_index]);
 
-		if (!ShaderSystem::UseByID(SID)) {
+		if (!ShaderSystem::Get().UseByID(SID)) {
 			GLOG(Log::eError, "RenderViewSkybox::OnRender() Failed to use material shader. Render frame failed.");
 			return false;
 		}
@@ -160,28 +160,28 @@ bool RenderViewSkybox::OnRender(struct RenderViewPacket* packet, IRendererBacken
 
 		// Apply globals
 		// TODO: This is terrible
-		back_renderer->BindGlobalsShader(ShaderSystem::GetByID(SID));
-		if (!ShaderSystem::SetUniformByIndex(ProjectionLocation, &packet->projection_matrix)) {
+		back_renderer->BindGlobalsShader(ShaderSystem::Get().GetByID(SID));
+		if (!ShaderSystem::Get().SetUniformByIndex(ProjectionLocation, &packet->projection_matrix)) {
 			GLOG(Log::eError, "RenderViewSkybox::OnRender() Failed to apply skybox projection uniform.");
 			return false;
 		}
 
-		if (!ShaderSystem::SetUniformByIndex(ViewLocation, &ViewMatrix)) {
+		if (!ShaderSystem::Get().SetUniformByIndex(ViewLocation, &ViewMatrix)) {
 			GLOG(Log::eError, "RenderViewSkybox::OnRender() Failed to apply skybox view uniform.");
 			return false;
 		}
 
-		ShaderSystem::ApplyGlobal();
+		ShaderSystem::Get().ApplyGlobal();
 
 		// Instance.
-		ShaderSystem::BindInstance(SkyboxData->sb->InstanceID);
-		if (!ShaderSystem::SetUniformByIndex(CubeMapLocation, &SkyboxData->sb->CubeMap)) {
+		ShaderSystem::Get().BindInstance(SkyboxData->sb->InstanceID);
+		if (!ShaderSystem::Get().SetUniformByIndex(CubeMapLocation, &SkyboxData->sb->CubeMap)) {
 			GLOG(Log::eError, "RenderViewSkybox::OnRender() Failed to apply cube map uniform.");
 			return false;
 		}
 
 		bool NeedsUpdate = SkyboxData->sb->RenderFrameNumber != frame_number;
-		ShaderSystem::ApplyInstance(NeedsUpdate);
+		ShaderSystem::Get().ApplyInstance(NeedsUpdate);
 
 		// Sync the frame num.
 		SkyboxData->sb->RenderFrameNumber = frame_number;

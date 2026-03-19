@@ -18,7 +18,7 @@ public:
 public:
 	uint32_t Id;
 	EAssetType Type;
-	std::string CustomType;
-	std::string TypePath;
+	FString CustomType;
+	FString TypePath;
 
 };

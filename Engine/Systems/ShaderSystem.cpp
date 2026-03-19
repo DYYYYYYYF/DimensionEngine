@@ -3,29 +3,14 @@
 #include "Rendering/Renderer.hpp"
 #include "Systems/TextureSystem.h"
 
-#include "Core/Event.hpp"
 #include "Core/DMemory.hpp"
 #include "Core/EngineLogger.hpp"
 #include "Platform/File/JsonObject.h"
 #include "Rendering/Vulkan/VulkanShader.hpp"
 
-IRenderer* ShaderSystem::Renderer = nullptr;
-ShaderSystem::Config ShaderSystem::ShaderSystemConfig;
-std::unordered_map<FString, uint32_t> ShaderSystem::ShaderMap;
-
-uint32_t ShaderSystem::CurrentShaderID;
-std::vector<Shader*> ShaderSystem::Shaders;
-bool ShaderSystem::Initilized = false;
-EShaderLanguage ShaderSystem::GLOBAL_SHADER_TYPE = EShaderLanguage::eGLSL;
-
-bool OnReloadShader(eEventCode code, void* sender, void* listenerInst, SEventContext context) {
-	FString ShaderName = context.data.c;
-	if (!ShaderSystem::ReloadShader(ShaderName)) {
-		GLOG(Log::eError, "Failed to reload shader %s.", ShaderName.CStr());
-		return false;
-	}
-
-	return true;
+ShaderSystem& ShaderSystem::Get() {
+	static ShaderSystem ShaderSystemInstance;
+	return ShaderSystemInstance;
 }
 
 bool ShaderSystem::Initialize(IRenderer* renderer, ShaderSystem::Config config) {
@@ -61,7 +46,9 @@ bool ShaderSystem::Initialize(IRenderer* renderer, ShaderSystem::Config config) 
 	ShaderSystemConfig = config;
 	CurrentShaderID = INVALID_ID;
 
-	if (!EngineEvent::Register(eEventCode::Reload_Shader_Module, nullptr, OnReloadShader)) {
+	if (!EngineEvent::Register(eEventCode::Reload_Shader_Module, nullptr, 
+		std::bind(&ShaderSystem::OnReloadShader, this, std::placeholders::_1, std::placeholders::_2,
+			std::placeholders::_3, std::placeholders::_4))) {
 		GLOG(Log::eError, "Unable to listen for refresh required event, creation failed.");
 		return false;
 	}
@@ -84,7 +71,9 @@ void ShaderSystem::Shutdown() {
 			}
 		}
 
-		EngineEvent::Unregister(eEventCode::Reload_Shader_Module, nullptr, OnReloadShader);
+		EngineEvent::Unregister(eEventCode::Reload_Shader_Module, nullptr, 
+			std::bind(&ShaderSystem::OnReloadShader, this, std::placeholders::_1, std::placeholders::_2,
+				std::placeholders::_3, std::placeholders::_4));
 
 		ShaderMap.clear();
 		std::vector<Shader*>().swap(Shaders);
@@ -125,6 +114,16 @@ bool ShaderSystem::ReloadShader(Shader* shader, EShaderLanguage language) {
 
 
 	shader->Status = EShaderStatus::eShader_State_Initialized;
+	return true;
+}
+
+bool ShaderSystem::OnReloadShader(eEventCode code, void* sender, void* listenerInst, SEventContext context) {
+	FString ShaderName = context.data.c;
+	if (!ReloadShader(ShaderName)) {
+		GLOG(Log::eError, "Failed to reload shader %s.", ShaderName.CStr());
+		return false;
+	}
+
 	return true;
 }
 

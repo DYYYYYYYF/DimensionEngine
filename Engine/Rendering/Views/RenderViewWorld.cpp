@@ -88,20 +88,20 @@ bool RenderViewWorld::OnCreate(const RenderViewConfig& config) {
 	// Builtin world shader.
 	const char* ShaderName = "Shader.Builtin.World";
 	UAsset ConfigResource;
-	if (!ResourceSystem::Load(ShaderName, EAssetType::Shader, nullptr, &ConfigResource)) {
+	if (!ResourceSystem::Get().Load(ShaderName, EAssetType::Shader, nullptr, &ConfigResource)) {
 		GLOG(Log::eError, "Failed to load builtin skybox shader.");
 		return false;
 	}
 
 	ShaderConfig* Config = (ShaderConfig*)ConfigResource.Data;
 	// NOTE: Assuming the first pass since that's all this view has.
-	if (!ShaderSystem::Create(&Passes[0], Config)) {
+	if (!ShaderSystem::Get().Create(&Passes[0], Config)) {
 		GLOG(Log::eError, "Failed to load builtin world shader.");
 		return false;
 	}
-	ResourceSystem::Unload(&ConfigResource);
+	ResourceSystem::Get().Unload(&ConfigResource);
 
-	UsedShader = ShaderSystem::Get(CustomShaderName.IsEmpty() ? ShaderName : CustomShaderName);
+	UsedShader = ShaderSystem::Get().Get(CustomShaderName.IsEmpty() ? ShaderName : CustomShaderName);
 
 	// TODO: Set from configurable.
 	NearClip = 0.1f;
@@ -229,13 +229,13 @@ bool RenderViewWorld::OnRender(struct RenderViewPacket* packet, IRendererBackend
 		IRenderpass* Pass = (IRenderpass*)&Passes[p];
 		Pass->Begin(&Pass->Targets[render_target_index]);
 
-		if (!ShaderSystem::UseByID(SID)) {
+		if (!ShaderSystem::Get().UseByID(SID)) {
 			GLOG(Log::eError, "RenderViewUI::OnRender() Failed to use material shader. Render frame failed.");
 			return false;
 		}
 
 		// Apply globals.
-		if (!MaterialSystem::ApplyGlobal(SID, frame_number, packet->projection_matrix, packet->view_matrix, packet->ambient_color, packet->view_position, (int)render_mode, packet->global_time)) {
+		if (!MaterialSystem::Get().ApplyGlobal(SID, frame_number, packet->projection_matrix, packet->view_matrix, packet->ambient_color, packet->view_position, (int)render_mode, packet->global_time)) {
 			GLOG(Log::eError, "RenderViewUI::OnRender() Failed to use global shader. Render frame failed.");
 			return false;
 		}
@@ -248,7 +248,7 @@ bool RenderViewWorld::OnRender(struct RenderViewPacket* packet, IRendererBackend
 				Mat = packet->geometries[i].geometry->Material;
 			}
 			else {
-				Mat = MaterialSystem::GetDefaultMaterial();
+				Mat = MaterialSystem::Get().GetDefaultMaterial();
 			}
 
 			// Update the material if it hasn't already been this frame. This keeps the
@@ -256,7 +256,7 @@ bool RenderViewWorld::OnRender(struct RenderViewPacket* packet, IRendererBackend
 			// either way, so this check result gets passed to the backend which either
 			// updates the internal shader bindings and binds them, or only binds them.
 			bool IsNeedUpdate = Mat->RenderFrameNumer != frame_number;
-			if (!MaterialSystem::ApplyInstance(Mat, IsNeedUpdate)) {
+			if (!MaterialSystem::Get().ApplyInstance(Mat, IsNeedUpdate)) {
 				GLOG(Log::eWarn, "Failed to apply material '%s'. Skipping draw.", Mat->Name.CStr());
 				continue;
 			}
@@ -266,7 +266,7 @@ bool RenderViewWorld::OnRender(struct RenderViewPacket* packet, IRendererBackend
 			}
 
 			// Apply local
-			MaterialSystem::ApplyLocal(Mat, packet->geometries[i].model_mat);
+			MaterialSystem::Get().ApplyLocal(Mat, packet->geometries[i].model_mat);
 
 			// Draw
 			back_renderer->DrawGeometry(&packet->geometries[i]);

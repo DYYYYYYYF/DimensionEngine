@@ -8,7 +8,6 @@
 
 BinaryLoader::BinaryLoader() {
 	Type = EAssetType::Binary;
-	TypePath = "";
 }
 
 bool BinaryLoader::Load(const FString& name, void* params, UAsset* resource) {
@@ -20,7 +19,7 @@ bool BinaryLoader::Load(const FString& name, void* params, UAsset* resource) {
 
 	const char* FormatStr = "%s/%s/%s%s";
 	FString FullFilePath;
-	FullFilePath = FString::Format(FormatStr, ResourceSystem::GetRootPath(), TypePath.c_str(), name.CStr(), "");
+	FullFilePath = FString::Format(FormatStr, ResourceSystem::Get().GetRootPath(), TypePath.CStr(), name.CStr(), "");
 
 	File AssetFile(FullFilePath.CStr());
 	if (!AssetFile.IsExist()) {

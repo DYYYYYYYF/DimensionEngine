@@ -26,7 +26,7 @@ bool Skybox::Create(const FString& cubeName) {
 	// Clear out the material name.
 	g = GeometrySystem::Get().AcquireFromConfig(SkyboxCubeConfig, true);
 	RenderFrameNumber = INVALID_ID_U64;
-	Shader* SkyboxShader = ShaderSystem::Get("Shader.Builtin.Skybox");
+	Shader* SkyboxShader = ShaderSystem::Get().Get("Shader.Builtin.Skybox");
 	if (SkyboxShader == nullptr) {
 		GLOG(Log::eWarn, "Skybox shader is not loaded. Maybe there is no skybox render pass be created.");
 		return true;

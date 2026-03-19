@@ -20,7 +20,7 @@ bool ShaderLoader::Load(const FString& name, void* params, UAsset* resource) {
 	}
 
 	const char* FormatStr = "%s/%s/%s%s";
-	FString FullFilePath = FString::Format(FormatStr, ResourceSystem::GetRootPath(), TypePath.c_str(), name.CStr(), ".scfg");	// shader config
+	FString FullFilePath = FString::Format(FormatStr, ResourceSystem::Get().Get().GetRootPath(), TypePath.CStr(), name.CStr(), ".scfg");	// shader config
 
 	File AssetFile(FullFilePath.CStr());
 	if (!AssetFile.IsExist()) {
@@ -35,8 +35,8 @@ bool ShaderLoader::Load(const FString& name, void* params, UAsset* resource) {
 	ResourceData = new(ResourceData)ShaderConfig();
 	ASSERT(ResourceData);
 
-	AssetFile.ReadLineByLine([this, ResourceData](size_t index, const std::string& line) {
-		return ParseLineData(index, line.c_str(), ResourceData);
+	AssetFile.ReadLineByLine([this, ResourceData](size_t index, const FString& line) {
+		return ParseLineData(index, line, ResourceData);
 	});
 
 	resource->Data = ResourceData;

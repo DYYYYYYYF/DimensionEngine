@@ -199,7 +199,7 @@ bool VulkanShader::CreateModule() {
 		VulkanShaderStage* vkShaderStage = &Stages[i];
 
 		UAsset BinaryResource;
-		if (!ResourceSystem::Load(vkShaderStageConfig.filename, EAssetType::Binary, nullptr, &BinaryResource)) {
+		if (!ResourceSystem::Get().Load(vkShaderStageConfig.filename, EAssetType::Binary, nullptr, &BinaryResource)) {
 			GLOG(Log::eError, "Unable to create %s shader module for '%s'. Shader will be destroyed.", vkShaderStageConfig.filename, Name.CStr());
 			return false;
 		}
@@ -214,7 +214,7 @@ bool VulkanShader::CreateModule() {
 		ASSERT(vkShaderStage->shader_module);
 
 		// Release the resource.
-		ResourceSystem::Unload(&BinaryResource);
+		ResourceSystem::Get().Unload(&BinaryResource);
 
 		// Shader stage info.
 		Memory::Zero(&vkShaderStage->shader_stage_create_info, sizeof(vk::ShaderModuleCreateInfo));
@@ -241,8 +241,8 @@ bool VulkanShader::CompileShaderFile(bool writeToDisk/* = true*/){
 
 		// Read the resource.
 		UAsset BinaryResource;
-		std::string ShaderFile = ResourceSystem::GetRootPath() + std::string("/")
-			+ std::string(vkShaderStageConfig.filename);
+		FString ShaderFile = ResourceSystem::Get().GetRootPath() + FString("/")
+			+ FString(vkShaderStageConfig.filename);
 
 		File SPVFile(ShaderFile);
 		if (!SPVFile.IsExist() || Status == EShaderStatus::eShader_State_Reloading){

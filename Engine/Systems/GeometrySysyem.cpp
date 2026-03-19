@@ -147,7 +147,7 @@ bool GeometrySystem::CreateDefaultGeometries() {
 	}
 
 	// Acquire the default material.
-	DefaultGeometry->Material = MaterialSystem::GetDefaultMaterial();
+	DefaultGeometry->Material = MaterialSystem::Get().GetDefaultMaterial();
 
 	// Create default 2d geometry.
 	const float uf = 100.0f;
@@ -190,7 +190,7 @@ bool GeometrySystem::CreateDefaultGeometries() {
 	}
 
 	// Acquire the default material.
-	Default2DGeometry->Material = MaterialSystem::GetDefaultMaterial();
+	Default2DGeometry->Material = MaterialSystem::Get().GetDefaultMaterial();
 	RegisteredGeometries.Push(Default2DGeometry);
 
 	return true;
@@ -217,12 +217,12 @@ Geometry* GeometrySystem::CreateGeometry(SGeometryConfig config) {
 
 	// Acquire the material.
 	if (config.material_name.Length() > 0) {
-		geometry->Material = MaterialSystem::Acquire(config.material_name.CStr());
+		geometry->Material = MaterialSystem::Get().Acquire(config.material_name.CStr());
 	}
 
 	if (geometry->Material == nullptr) {
 		GLOG(Log::eWarn, "Default use default material.");
-		geometry->Material = MaterialSystem::GetDefaultMaterial();
+		geometry->Material = MaterialSystem::Get().GetDefaultMaterial();
 	}
 
 	RegisteredGeometries.Push(geometry);
@@ -253,7 +253,7 @@ void GeometrySystem::DestroyGeometry(Geometry* geometry) {
 
 	// Release the material.
 	if (geometry->Material) {
-		MaterialSystem::Release(geometry->Material->Name);
+		MaterialSystem::Get().Release(geometry->Material->Name);
 		geometry->Material = nullptr;
 	}
 }

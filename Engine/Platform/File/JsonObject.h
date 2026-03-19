@@ -13,11 +13,10 @@ public:
 	DAPI JsonObject();
 	DAPI JsonObject(const File& file);
 	DAPI JsonObject(JsonObject::Type type);
-	DAPI JsonObject(const std::string& content);
+	DAPI JsonObject(const FString& content);
 	DAPI virtual ~JsonObject();
 
 public:
-	// ---------------------- 引擎API（与任何库无关）--------------------------
 	template<typename T>
 	DAPI void SetArray(const std::string& key, const std::vector<T>& values);
 

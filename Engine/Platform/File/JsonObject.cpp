@@ -24,9 +24,9 @@ JsonObject::JsonObject(JsonObject::Type type) : Handle(std::make_shared<JsonHand
 	}
 }
 
-JsonObject::JsonObject(const std::string& content) : Handle(std::make_shared<JsonHandle>()), IsDirty_(false) {
+JsonObject::JsonObject(const FString& content) : Handle(std::make_shared<JsonHandle>()), IsDirty_(false) {
 	try {
-		Handle->value = nlohmann::json::parse(content);
+		Handle->value = nlohmann::json::parse(content.CStr());
 	}
 	catch (...) {
 		Handle->value = nlohmann::json(); 
@@ -368,8 +368,8 @@ bool JsonObject::SaveToFile(File& file) const {
 bool JsonObject::LoadFromFile(const File& file) {
 	try {
 		if (!file.IsExist()) return false;
-		std::string content = file.ReadText();
-		Handle->value = nlohmann::json::parse(content);
+		FString content = file.ReadText();
+		Handle->value = nlohmann::json::parse(content.CStr());
 		return true;
 	}
 	catch (...) {

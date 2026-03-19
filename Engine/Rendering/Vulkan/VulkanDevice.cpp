@@ -277,7 +277,7 @@ bool VulkanDevice::MeetsRequirements(vk::PhysicalDevice device, vk::SurfaceKHR s
 	QueueFamilyInfo.transfer_index = INVALID_ID;
 
 	// If not MacOS, discrete GPU is not allowed.
-#if !defined(DPLATFORM_MACOS)
+#if defined(DPLATFORM_MACOS)
 	if (DeviceRequirements.discrete_gpu) {
 		GLOG(Log::eWarn, "MacOS device may be a Discrete Gpu. Allow selected.");
 		if (properties->deviceType != vk::PhysicalDeviceType::eDiscreteGpu) {
@@ -321,14 +321,15 @@ bool VulkanDevice::MeetsRequirements(vk::PhysicalDevice device, vk::SurfaceKHR s
 		}
 
 		// Present queue
-vk::Bool32 SupportedPresent = VK_FALSE;
-if (device.getSurfaceSupportKHR(i, surface, &SupportedPresent) != vk::Result::eSuccess) {
-	GLOG(Log::eError, "Get surface support failed.");
-	return false;
-}
-if (SupportedPresent) {
-	QueueFamilyInfo.present_index = i;
-}
+		vk::Bool32 SupportedPresent = VK_FALSE;
+		if (device.getSurfaceSupportKHR(i, surface, &SupportedPresent) != vk::Result::eSuccess) {
+			GLOG(Log::eError, "Get surface support failed.");
+			return false;
+		}
+
+		if (SupportedPresent) {
+			QueueFamilyInfo.present_index = i;
+		}
 	}
 
 	GLOG(Log::eInfo, "    %d    |    %d    |    %d    |    %d     | %s",

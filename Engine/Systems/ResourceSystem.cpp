@@ -10,9 +10,10 @@
 #include "Rendering/Resources/Loaders/BitmapFontLoader.hpp"
 #include "Rendering/Resources/Loaders/SystemFontLoader.hpp"
 
-SResourceSystemConfig ResourceSystem::Config;
-std::vector<IResourceLoader*> ResourceSystem::RegisteredLoaders;
-bool ResourceSystem::Initilized = false;
+ResourceSystem& ResourceSystem::Get() {
+	static ResourceSystem ResouceSystemInstance;
+	return ResouceSystemInstance;
+}
 
 bool ResourceSystem::Initialize(SResourceSystemConfig config) {
 	if (config.max_loader_count == 0) {
@@ -37,7 +38,7 @@ bool ResourceSystem::Initialize(SResourceSystemConfig config) {
 	RegisterLoader(SysFontLoader);
 
 	Initilized = true;
-	GLOG(Log::eInfo, "Resource system initialize with base path: '%s'.", config.asset_base_path.c_str());
+	GLOG(Log::eInfo, "Resource system initialize with base path: '%s'.", config.asset_base_path.CStr());
 	return true;
 
 }
@@ -68,8 +69,8 @@ bool ResourceSystem::RegisterLoader(IResourceLoader* loader) {
 				GLOG(Log::eError, "Resource system register loader error. Loader of type %d already exists and will ot be registered.", loader->Type);
 				return false;
 			}
-			else if (RegisteredLoaders[i]->CustomType.length() > 0 && RegisteredLoaders[i]->CustomType.compare(loader->CustomType) == 0) {
-				GLOG(Log::eError, "Resource system register loader error. Loader of custom type %d already exists and will ot be registered.", loader->CustomType.c_str());
+			else if (RegisteredLoaders[i]->CustomType.Length() > 0 && RegisteredLoaders[i]->CustomType.Compare(loader->CustomType) == 0) {
+				GLOG(Log::eError, "Resource system register loader error. Loader of custom type %d already exists and will ot be registered.", loader->CustomType.CStr());
 				return false;
 			}
 		}
@@ -106,7 +107,7 @@ bool ResourceSystem::LoadCustom(const FString& name, const char* custom_type, vo
 
 	uint32_t Count = Config.max_loader_count;
 	for (uint32_t i = 0; i < Count; ++i) {
-		if (RegisteredLoaders[i]->Id != INVALID_ID && RegisteredLoaders[i]->Type == EAssetType::Custom && RegisteredLoaders[i]->CustomType.compare(custom_type)== 0) {
+		if (RegisteredLoaders[i]->Id != INVALID_ID && RegisteredLoaders[i]->Type == EAssetType::Custom && RegisteredLoaders[i]->CustomType.Compare(custom_type)== 0) {
 			resource->LoaderID = RegisteredLoaders[i]->Id;
 			return RegisteredLoaders[i]->Load(name, params, resource);
 		}
@@ -132,7 +133,7 @@ void ResourceSystem::Unload(UAsset* resource) {
 
 const char* ResourceSystem::GetRootPath() {
 	if (Initilized) {
-		return Config.asset_base_path.c_str();
+		return Config.asset_base_path.CStr();
 	}
 
 	GLOG(Log::eError, "Resource system GetRootPaht() called beform initialization, returning empty string.");

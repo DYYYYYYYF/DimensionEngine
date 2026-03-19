@@ -56,7 +56,7 @@ bool ATextActor::Load(UITextType type, const FString& fontName, int fontSize, co
 	}
 
 	// AcquireInstanceResource 需要 TextureMap*，通过 GetAtlas() 取得
-	Shader* UIShader = ShaderSystem::Get("Shader.Builtin.UI");
+	Shader* UIShader = ShaderSystem::Get().Get("Shader.Builtin.UI");
 	const TextureMap& Atlas = Data->GetAtlas();
 	std::vector<TextureMap*> FontMaps = { const_cast<TextureMap*>(&Atlas) };
 	InstanceID = Renderer->AcquireInstanceResource(UIShader, FontMaps);
@@ -293,7 +293,7 @@ void ATextActor::Unload() {
 	DeleteObject(IndexBuffer);
 	IndexBuffer = nullptr;
 
-	Shader* UIShader = ShaderSystem::Get("Shader.Builtin.UI");
+	Shader* UIShader = ShaderSystem::Get().Get("Shader.Builtin.UI");
 	if (!Renderer->ReleaseInstanceResource(UIShader, InstanceID)) {
 		GLOG(Log::eFatal, "Unable to release shader resources for font texture map.");
 	}

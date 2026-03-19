@@ -38,7 +38,7 @@ bool SystemFontLoader::Load(const FString& name, void* params, UAsset* resource)
 
 	for (uint32_t i = 0; i < SUPPORTED_FILETYPE_COUNT; ++i) {
 		fullFilePath = FString::Format(formatStr,
-			ResourceSystem::GetRootPath(), TypePath.c_str(),
+			ResourceSystem::Get().GetRootPath(), TypePath.CStr(),
 			name.CStr(), supportedTypes[i].extension);
 
 		File AssetFile(fullFilePath.CStr());
@@ -68,8 +68,8 @@ bool SystemFontLoader::Load(const FString& name, void* params, UAsset* resource)
 
 	case eSystem_Font_File_Type_Font_Config: {
 		FString dsfFilename = FString::Format("%s/%s/%s%s",
-			ResourceSystem::GetRootPath(), TypePath.c_str(), name.CStr(), ".dsf");
-		result = ImportFontconfigFile(fullFilePath, TypePath.c_str(), dsfFilename, resourceData);
+			ResourceSystem::Get().GetRootPath(), TypePath.CStr(), name.CStr(), ".dsf");
+		result = ImportFontconfigFile(fullFilePath, TypePath, dsfFilename, resourceData);
 		break;
 	}
 	}
@@ -121,48 +121,33 @@ bool SystemFontLoader::ImportFontconfigFile(const FString& configPath, const FSt
 
 	uint32_t lineNumber = 1;
 	bool parseSuccess = configFile.ReadLineByLine(
-		[this, typePath, outResource, &lineNumber](size_t index, const std::string& line) -> bool {
-
+		[this, typePath, outResource, &lineNumber](size_t index, const FString& line) -> bool {
 			// 跳过空行
-			std::string trimmed = line;
-			// 去掉首尾空白
-			size_t start = trimmed.find_first_not_of(" \t\r\n");
-			size_t end = trimmed.find_last_not_of(" \t\r\n");
-			if (start == std::string::npos) {
+			FString trimmed = line.Trimmed();
+			if (trimmed.IsEmpty()) {
 				++lineNumber;
 				return true;
 			}
-			trimmed = trimmed.substr(start, end - start + 1);
 
 			// 分割 key=value
-			size_t equalPos = trimmed.find('=');
-			if (equalPos == std::string::npos) {
+			int equalPos = trimmed.IndexOf('=');
+			if (equalPos == -1) {
 				GLOG(Log::eWarn, "SystemFontLoader: '=' not found on line %u, skipping.", lineNumber);
 				++lineNumber;
 				return true;
 			}
 
-			std::string varName = trimmed.substr(0, equalPos);
-			std::string value = trimmed.substr(equalPos + 1);
+			FString varName = trimmed.SubStr(0, static_cast<size_t>(equalPos)).Trimmed();
+			FString value = trimmed.SubStr(static_cast<size_t>(equalPos + 1)).Trimmed();
 
-			// 去掉 varName/value 首尾空白
-			auto trim = [](std::string& s) {
-				size_t s1 = s.find_first_not_of(" \t");
-				size_t e1 = s.find_last_not_of(" \t");
-				s = (s1 == std::string::npos) ? "" : s.substr(s1, e1 - s1 + 1);
-				};
-			trim(varName);
-			trim(value);
-
-			if (varName.compare("version") == 0) {
+			if (varName.Equali("version")) {
 				// TODO: version 处理
 			}
-			else if (varName.compare("file") == 0) {
-				// 读取 TTF 二进制文件
+			else if (varName.Equali("file")) {
 				FString fullFontPath = FString::Format("%s/%s/%s",
-					ResourceSystem::GetRootPath(), typePath.CStr(), value.c_str());
+					ResourceSystem::Get().GetRootPath(), typePath.CStr(), value.CStr());
 
-				File fontFile(fullFontPath.CStr());
+				File fontFile(fullFontPath);
 				if (!fontFile.IsExist()) {
 					GLOG(Log::eError, "SystemFontLoader: binary font not found: %s.", fullFontPath.CStr());
 					return false;
@@ -179,9 +164,9 @@ bool SystemFontLoader::ImportFontconfigFile(const FString& configPath, const FSt
 					MemoryType::eMemory_Type_Resource);
 				Memory::Copy(outResource->fontBinary, bytes.data(), outResource->binarySize);
 			}
-			else if (varName.compare("face") == 0) {
+			else if (varName.Equali("face")) {
 				SystemFontFace newFace;
-				newFace.name = value.c_str();
+				newFace.name = value;
 				outResource->fonts.Push(newFace);
 			}
 

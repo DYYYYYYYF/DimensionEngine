@@ -75,9 +75,9 @@ bool Engine::Initialize(){
 	// Init texture system
 	SResourceSystemConfig ResourceSystemConfig;
 	ResourceSystemConfig.max_loader_count = 32;
-    ResourceSystemConfig.asset_base_path = std::string(ROOT_PATH) + "/Assets";
+    ResourceSystemConfig.asset_base_path = FString(ROOT_PATH) + "/Assets";
 
-	if (!ResourceSystem::Initialize(ResourceSystemConfig)) {
+	if (!ResourceSystem::Get().Initialize(ResourceSystemConfig)) {
 		GLOG(Log::eFatal, "Resource system failed to initialize!");
 		return false;
 	}
@@ -95,7 +95,7 @@ bool Engine::Initialize(){
 	ShaderSystemConfig.max_uniform_count = 128;
 	ShaderSystemConfig.max_global_textures = 31;
 	ShaderSystemConfig.max_instance_textures = 31;
-	if (!ShaderSystem::Initialize(Renderer, ShaderSystemConfig)) {
+	if (!ShaderSystem::Get().Initialize(Renderer, ShaderSystemConfig)) {
 		GLOG(Log::eFatal, "Shader system failed to initialize!");
 		return false;
 	}
@@ -131,7 +131,7 @@ bool Engine::Initialize(){
 	}
 
 	// Render system.
-	if (!Renderer->Initialize(GameInst->GetApplicationName(),Vector2(width, height), & platform)) {
+	if (!Renderer->Initialize(GameInst->GetApplicationName(),Vector2(width, height), &platform)) {
 		GLOG(Log::eFatal, "Renderer failed to initialize!");
 		return false;
 	}
@@ -186,7 +186,7 @@ bool Engine::Initialize(){
 	// Init material system
 	SMaterialSystemConfig MaterialSystemConfig;
 	MaterialSystemConfig.max_material_count = 4096;
-	if (!MaterialSystem::Initialize(Renderer, MaterialSystemConfig)) {
+	if (!MaterialSystem::Get().Initialize(Renderer, MaterialSystemConfig)) {
 		GLOG(Log::eFatal, "Material system failed to initialize!");
 		return false;
 	}
@@ -225,7 +225,7 @@ bool Engine::Run() {
 
 	GlobalFileWatcher = NewObject<FileWatcher>();
 
-	if (ShaderSystem::GLOBAL_SHADER_TYPE == EShaderLanguage::eGLSL) {
+	if (ShaderSystem::Get().GetShaderLanguage() == EShaderLanguage::eGLSL) {
 		GlobalFileWatcher->AddWatchFolder("../Shaders/glsl/");
 	}
 	else {
@@ -318,17 +318,17 @@ bool Engine::Run() {
 	CameraSystem::Get().Shutdown();
 	FontSystem::Get().Shutdown();
 	GeometrySystem::Get().Shutdown();
-	MaterialSystem::Shutdown();
+	MaterialSystem::Get().Shutdown();
 	TextureSystem::Get().Shutdown();
 	JobSystem::Shutdown();
-	ShaderSystem::Shutdown();
+	ShaderSystem::Get().Shutdown();
 
 	Renderer->Shutdown();
 	Memory::Free(Renderer, MemoryType::eMemory_Type_Renderer);
 
 	EngineEvent::Shutdown();
 	Controller::Shutdown();
-	ResourceSystem::Shutdown();
+	ResourceSystem::Get().Shutdown();
 	Platform::PlatformShutdown(&platform);
 
 	return true;

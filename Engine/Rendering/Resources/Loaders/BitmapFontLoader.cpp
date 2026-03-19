@@ -39,7 +39,7 @@ bool BitmapFontLoader::Load(const FString& name, void* params, UAsset* resource)
 
 	for (uint32_t i = 0; i < SUPPORTED_FILETYPE_COUNT; ++i) {
 		fullFilePath = FString::Format(formatStr,
-			ResourceSystem::GetRootPath(), TypePath.c_str(),
+			ResourceSystem::Get().GetRootPath(), TypePath.CStr(),
 			name.CStr(), supportedTypes[i].extension);
 
 		File AssetFile(fullFilePath.CStr());
@@ -74,7 +74,7 @@ bool BitmapFontLoader::Load(const FString& name, void* params, UAsset* resource)
 
 	case eBitmap_Font_File_Type_FNT: {
 		FString dbfFilename = FString::Format("%s/%s/%s%s",
-			ResourceSystem::GetRootPath(), TypePath.c_str(), name.CStr(), ".dbf");
+			ResourceSystem::Get().GetRootPath(), TypePath.CStr(), name.CStr(), ".dbf");
 		result = ImportFntFile(fullFilePath, dbfFilename, &resourceData);
 		break;
 	}
@@ -140,11 +140,9 @@ bool BitmapFontLoader::ImportFntFile(const FString& asset_path, const FString& o
 	// 同时在 lambda 内部维护行号
 	bool success = AssetFile.ReadLineByLine(
 		[this, &glyphsRead, &kerningsRead, outData]
-		(size_t lineIndex, const std::string& line) -> bool {
-			if (line.empty()) {
-				return true;
-			}
-			return ParseFntLine(line.c_str(), (uint32_t)lineIndex, &glyphsRead, &kerningsRead, outData);
+		(size_t lineIndex, const FString& line) -> bool {
+			if (line.IsEmpty()) { return true; }
+			return ParseFntLine(line, (uint32_t)lineIndex, &glyphsRead, &kerningsRead, outData);
 		});
 
 	if (!success) {

@@ -18,7 +18,7 @@ bool MaterialLoader::Load(const FString& name, void* params, UAsset* resource) {
 
 	const char* FormatStr = "%s/%s/%s%s";
 	FString FullFilePath;
-	FullFilePath = FString::Format(FormatStr, ResourceSystem::GetRootPath(), TypePath.c_str(), name.CStr(), ".dmt");
+	FullFilePath = FString::Format(FormatStr, ResourceSystem::Get().GetRootPath(), TypePath.CStr(), name.CStr(), ".dmt");
 
 	File AssetFile(FullFilePath.CStr());
 	if (!AssetFile.IsExist()){
@@ -39,8 +39,8 @@ bool MaterialLoader::Load(const FString& name, void* params, UAsset* resource) {
 	ResourceData->AmbientOcclusion = 0.7f;
 	ResourceData->name = name;
 
-	AssetFile.ReadLineByLine([this, ResourceData](size_t index, const std::string& line) {
-		return ParseLineData(index, line.c_str(), ResourceData);
+	AssetFile.ReadLineByLine([this, ResourceData](size_t index, const FString& line) {
+		return ParseLineData(index, line, ResourceData);
 	});
 
 	resource->Data = ResourceData;

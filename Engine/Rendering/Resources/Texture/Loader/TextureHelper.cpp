@@ -43,7 +43,7 @@ bool TextureHelper::Load(const FString& name, void* params, UTexture* resource) 
 	bool Found = false;
 	const char* Extensions[IMAGE_EXTENSION_COUNT] = { ".tga", ".png", ".jpg", ".bmp" };
 	for (uint32_t i = 0; i < IMAGE_EXTENSION_COUNT; ++i) {
-		FullFilePath = FString::Format(FormatStr, ResourceSystem::GetRootPath(), "Textures", name.CStr(), Extensions[i]);
+		FullFilePath = FString::Format(FormatStr, ResourceSystem::Get().GetRootPath(), "Textures", name.CStr(), Extensions[i]);
 		File AssetFile(FullFilePath.CStr());
 		if (AssetFile.IsExist()) {
 			Found = true;

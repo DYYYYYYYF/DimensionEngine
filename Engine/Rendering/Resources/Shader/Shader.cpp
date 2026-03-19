@@ -2,22 +2,22 @@
 #include "Platform/File/File.hpp"
 #include "Systems/ResourceSystem.h"
 
-std::vector<uint32_t> Shader::CompileShaderToSPV(const std::string& filename, enum ShaderStage shaderStage, bool writeToDisk) {
-	size_t PrePathIndex = filename.find_first_of('/');
-	size_t SufPathIndex = filename.find_last_of(".");
-	std::string PrePath = filename.substr(0, PrePathIndex);
-	std::string SufPath = filename.substr(PrePathIndex, SufPathIndex - PrePathIndex);
+std::vector<uint32_t> Shader::CompileShaderToSPV(const FString& filename, enum ShaderStage shaderStage, bool writeToDisk) {
+	size_t PrePathIndex = filename.IndexOf('/');
+	size_t SufPathIndex = filename.LastIndexOf('.');
+	FString PrePath = filename.SubStr(0, PrePathIndex);
+	FString SufPath = filename.SubStr(PrePathIndex, SufPathIndex - PrePathIndex);
 
-	std::string ShaderSourceFilename;
+	FString ShaderSourceFilename;
 	shaderc_source_language SourceLanguage;
 	switch (Language)
 	{
 	case EShaderLanguage::eGLSL:
-		ShaderSourceFilename = ResourceSystem::GetRootPath() + std::string("/../Shaders/glsl") + SufPath;
+		ShaderSourceFilename = ResourceSystem::Get().GetRootPath() + FString("/../Shaders/glsl") + SufPath;
 		SourceLanguage = shaderc_source_language_glsl;
 		break;
 	case EShaderLanguage::eHLSL:
-		ShaderSourceFilename = ResourceSystem::GetRootPath() + std::string("/../Shaders/hlsl") + SufPath + ".hlsl";
+		ShaderSourceFilename = ResourceSystem::Get().GetRootPath() + FString("/../Shaders/hlsl") + SufPath + ".hlsl";
 		SourceLanguage = shaderc_source_language_hlsl;
 		break;
 	default:
@@ -45,10 +45,10 @@ std::vector<uint32_t> Shader::CompileShaderToSPV(const std::string& filename, en
 		return std::vector<uint32_t>();
 	}
 
-	GLOG(Log::eInfo, "Compile shader file %s...", ShaderSourceFilename.c_str());
+	GLOG(Log::eInfo, "Compile shader file %s...", ShaderSourceFilename.CStr());
 
 	File ShaderSource(ShaderSourceFilename);
-	std::string Content = ShaderSource.ReadText();
+	FString Content = ShaderSource.ReadText();
 	shaderc::Compiler compiler;
 	shaderc::CompileOptions options;
 	options.SetTargetEnvironment(shaderc_target_env_vulkan, shaderc_env_version_vulkan_1_3);
@@ -59,7 +59,7 @@ std::vector<uint32_t> Shader::CompileShaderToSPV(const std::string& filename, en
 	// Like -DMY_DEFINE=1
 	//options.AddMacroDefinition("MY_DEFINE", "1");
 
-	shaderc::SpvCompilationResult module = compiler.CompileGlslToSpv(Content, scShadercStage, Name.CStr(), options);
+	shaderc::SpvCompilationResult module = compiler.CompileGlslToSpv(Content.CStr(), scShadercStage, Name.CStr(), options);
 
 	if (module.GetCompilationStatus() !=
 		shaderc_compilation_status_success) {
@@ -75,10 +75,10 @@ std::vector<uint32_t> Shader::CompileShaderToSPV(const std::string& filename, en
 
 	// 写入文件
 	if (writeToDisk && SPRIV.data()) {
-		std::string SPRIVFilePath = ResourceSystem::GetRootPath() + std::string("/Shaders") + SufPath + ".spv";
+		FString SPRIVFilePath = ResourceSystem::Get().GetRootPath() + FString("/Shaders") + SufPath + ".spv";
 		File OutFile(SPRIVFilePath);
 		OutFile.WriteBytes(reinterpret_cast<const char*>(SPRIV.data()), SPRIV.size() * sizeof(uint32_t), std::ios::trunc | std::ios::binary);
-		GLOG(Log::eInfo, "Write shader file into %s...", SPRIVFilePath.c_str());
+		GLOG(Log::eInfo, "Write shader file into %s...", SPRIVFilePath.CStr());
 	}
 
 	return SPRIV;

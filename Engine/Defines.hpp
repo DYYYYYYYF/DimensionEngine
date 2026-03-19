@@ -196,13 +196,13 @@ inline bool is_avx2_supported() {
 #include <filesystem>
 #ifndef ROOT_PATH
 #if defined(DPLATFORM_MACOS)
-#define ROOT_PATH std::filesystem::current_path().generic_string() + "/../.."
+#define ROOT_PATH (std::filesystem::current_path().generic_string() + "/../..").c_str()
 #else
-#define ROOT_PATH std::filesystem::current_path().generic_string() + "/.."
+#define ROOT_PATH (std::filesystem::current_path().generic_string() + "/..").c_str()
 #endif
 #endif
 
-#define ENGINE_CONFIG_PATH std::string(ROOT_PATH) + "/Engine/Config.json"
+#define ENGINE_CONFIG_PATH FString(ROOT_PATH) + "/Engine/Config.json"
 
 struct Range {
 	size_t offset = 0;

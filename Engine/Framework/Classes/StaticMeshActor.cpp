@@ -29,16 +29,16 @@ void AStaticMeshActor::LoadJobSuccess() {
 	LoadParams.out_mesh->Generation++;
 
 	GLOG(Log::eInfo, "Successfully loaded mesh: '%s'.", LoadParams.resource_name.CStr());
-	ResourceSystem::Unload(&LoadParams.mesh_resource);
+	ResourceSystem::Get().Unload(&LoadParams.mesh_resource);
 }
 
 void AStaticMeshActor::LoadJobFail() {
 	GLOG(Log::eError, "Failed to load mesh: '%s'.", LoadParams.resource_name.CStr());
-	ResourceSystem::Unload(&LoadParams.mesh_resource);
+	ResourceSystem::Get().Unload(&LoadParams.mesh_resource);
 }
 
 bool AStaticMeshActor::LoadJobStart() {
-	bool Result = ResourceSystem::Load(Name_, EAssetType::StaticMesh, nullptr, &LoadParams.mesh_resource);
+	bool Result = ResourceSystem::Get().Load(Name_, EAssetType::StaticMesh, nullptr, &LoadParams.mesh_resource);
 	return Result;
 }
 

@@ -43,7 +43,7 @@ bool MeshLoader::Load(const FString& name, void* params, UAsset* resource) {
 	MeshFileType MeshFileType = MeshFileType::eMesh_File_Type_Not_Found;
 	// 尝试每种支持的扩展名
 	for (uint32_t i = 0; i < SUPPORTED_FILETYPE_COUNT; ++i) {
-		FullFilePath = FString::Format(FormatStr, ResourceSystem::GetRootPath(), TypePath.c_str(), name.CStr(), SupportedFileTypes[i].extension.c_str());
+		FullFilePath = FString::Format(FormatStr, ResourceSystem::Get().GetRootPath(), TypePath.CStr(), name.CStr(), SupportedFileTypes[i].extension.c_str());
 		File TestExist(FullFilePath.CStr());
 		// 如果文件存在
 		if (TestExist.IsExist()) {
@@ -70,7 +70,7 @@ bool MeshLoader::Load(const FString& name, void* params, UAsset* resource) {
 	{
 		// 生成DSM文件名
 		FString DsmFileName;
-		DsmFileName = FString::Format("%s/%s/%s%s", ResourceSystem::GetRootPath(), TypePath.c_str(), name.CStr(), ".dsm");
+		DsmFileName = FString::Format("%s/%s/%s%s", ResourceSystem::Get().GetRootPath(), TypePath.CStr(), name.CStr(), ".dsm");
 
 		// 使用统一的Assimp加载器处理所有3D模型格式
 		Result = Import3DModelFile(FullFilePath, DsmFileName, ResourceDatas);

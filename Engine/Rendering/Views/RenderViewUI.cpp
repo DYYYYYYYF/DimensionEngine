@@ -47,23 +47,23 @@ bool RenderViewUI::OnCreate(const RenderViewConfig& config) {
 	// Builtin ui shader.
 	const char* ShaderName = "Shader.Builtin.UI";
 	UAsset ConfigResource;
-	if (!ResourceSystem::Load(ShaderName, EAssetType::Shader, nullptr, &ConfigResource)) {
+	if (!ResourceSystem::Get().Load(ShaderName, EAssetType::Shader, nullptr, &ConfigResource)) {
 		GLOG(Log::eError, "Failed to load builtin UI shader.");
 		return false;
 	}
 
 	ShaderConfig* Config = (ShaderConfig*)ConfigResource.Data;
 	// NOTE: Assuming the first pass since that's all this view has.
-	if (!ShaderSystem::Create(&Passes[0], Config)) {
+	if (!ShaderSystem::Get().Create(&Passes[0], Config)) {
 		GLOG(Log::eError, "Failed to load builtin UI shader.");
 		return false;
 	}
-	ResourceSystem::Unload(&ConfigResource);
+	ResourceSystem::Get().Unload(&ConfigResource);
 
-	UsedShader = ShaderSystem::Get(CustomShaderName.IsEmpty() ? ShaderName : CustomShaderName);
-	DiffuseMapLocation = ShaderSystem::GetUniformIndex(UsedShader, "diffuse_texture");
-	DiffuseColorLocation = ShaderSystem::GetUniformIndex(UsedShader, "diffuse_color");
-	ModelLocation = ShaderSystem::GetUniformIndex(UsedShader, "model");
+	UsedShader = ShaderSystem::Get().Get(CustomShaderName.IsEmpty() ? ShaderName : CustomShaderName);
+	DiffuseMapLocation = ShaderSystem::Get().GetUniformIndex(UsedShader, "diffuse_texture");
+	DiffuseColorLocation = ShaderSystem::Get().GetUniformIndex(UsedShader, "diffuse_color");
+	ModelLocation = ShaderSystem::Get().GetUniformIndex(UsedShader, "model");
 
 	// TODO: Set from configurable.
 	NearClip = -100.0f;
@@ -167,13 +167,13 @@ bool RenderViewUI::OnRender(struct RenderViewPacket* packet, IRendererBackend* b
 		IRenderpass* Pass = (IRenderpass*)&Passes[p];
 		Pass->Begin(&Pass->Targets[render_target_index]);
 
-		if (!ShaderSystem::UseByID(SID)) {
+		if (!ShaderSystem::Get().UseByID(SID)) {
 			GLOG(Log::eError, "RenderViewUI::OnRender() Failed to use material shader. Render frame failed.");
 			return false;
 		}
 
 		// Apply globals.
-		if (!MaterialSystem::ApplyGlobal(SID, frame_number, packet->projection_matrix, packet->view_matrix, Vector4(0), Vector3(0), (int)render_mode, 0.0f)) {
+		if (!MaterialSystem::Get().ApplyGlobal(SID, frame_number, packet->projection_matrix, packet->view_matrix, Vector4(0), Vector3(0), (int)render_mode, 0.0f)) {
 			GLOG(Log::eError, "RenderViewUI::OnRender() Failed to use global shader. Render frame failed.");
 			return false;
 		}
@@ -186,11 +186,11 @@ bool RenderViewUI::OnRender(struct RenderViewPacket* packet, IRendererBackend* b
 				Mat = packet->geometries[i].geometry->Material;
 			}
 			else {
-				Mat = MaterialSystem::GetDefaultMaterial();
+				Mat = MaterialSystem::Get().GetDefaultMaterial();
 			}
 
 			bool IsNeedUpdate = Mat->RenderFrameNumer != frame_number;
-			if (!MaterialSystem::ApplyInstance(Mat, IsNeedUpdate)) {
+			if (!MaterialSystem::Get().ApplyInstance(Mat, IsNeedUpdate)) {
 				GLOG(Log::eWarn, "Failed to apply material '%s'. Skipping draw.", Mat->Name.CStr());
 				continue;
 			}
@@ -200,7 +200,7 @@ bool RenderViewUI::OnRender(struct RenderViewPacket* packet, IRendererBackend* b
 			}
 
 			// Apply local
-			MaterialSystem::ApplyLocal(Mat, packet->geometries[i].model_mat);
+			MaterialSystem::Get().ApplyLocal(Mat, packet->geometries[i].model_mat);
 
 			// Draw
 			back_renderer->DrawGeometry(&packet->geometries[i]);
@@ -210,29 +210,29 @@ bool RenderViewUI::OnRender(struct RenderViewPacket* packet, IRendererBackend* b
 		UIPacketData* PacketData = (UIPacketData*)packet->extended_data;
 		for (uint32_t i = 0; i < PacketData->textCount; ++i) {
 			ATextActor* Text = PacketData->Textes[i];
-			ShaderSystem::BindInstance(Text->InstanceID);
+			ShaderSystem::Get().BindInstance(Text->InstanceID);
 
-			if (!ShaderSystem::SetUniformByIndex(DiffuseMapLocation, &Text->Data->GetAtlas())) {
+			if (!ShaderSystem::Get().SetUniformByIndex(DiffuseMapLocation, &Text->Data->GetAtlas())) {
 				GLOG(Log::eError, "Failed to apply bitmap font diffuse map uniform.");
 				return false;
 			}
 
 			// TODO: font color
 			Vector4 FontColor = Text->GetColor();
-			if (!ShaderSystem::SetUniformByIndex(DiffuseColorLocation, &FontColor)) {
+			if (!ShaderSystem::Get().SetUniformByIndex(DiffuseColorLocation, &FontColor)) {
 				GLOG(Log::eError, "Failed to apply bitmap font diffuse color uniform.");
 				return false;
 			}
 
 			bool NeedUpdate = Text->GetFrameNumber() != frame_number;
-			ShaderSystem::ApplyInstance(NeedUpdate);
+			ShaderSystem::Get().ApplyInstance(NeedUpdate);
 
 			// Sync frame number.
 			Text->SetFrameNumber(frame_number);
 
 			// Apply the locals.
 			Matrix4 Model = Text->GetLocalTransform();
-			if (!ShaderSystem::SetUniformByIndex(ModelLocation, &Model)) {
+			if (!ShaderSystem::Get().SetUniformByIndex(ModelLocation, &Model)) {
 				GLOG(Log::eError, "Failde to apply model matrix for text.");
 			}
 

@@ -68,7 +68,7 @@ public:
 	virtual void Destroy() = 0;
 
 	// Shader utils
-	virtual std::vector<uint32_t> CompileShaderToSPV(const std::string& filename, enum ShaderStage shaderStage, bool writeToDisk = true);
+	virtual std::vector<uint32_t> CompileShaderToSPV(const FString& filename, enum ShaderStage shaderStage, bool writeToDisk = true);
 
 
 public:

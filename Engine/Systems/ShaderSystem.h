@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "Defines.hpp"
+#include "Core/Event.hpp"
 #include "Containers/FString.hpp"
 #include "Rendering/Resources/ResourceTypes.hpp"
 #include <functional>
@@ -19,6 +20,9 @@ public:
 	};
 
 public:
+	static ShaderSystem& Get();
+
+public:
 	/**
 	 * @brief Initializes the shader system using the supplied configuration.
 	 * NOTE: Call this twice, once to obtain memory requirement (memory = 0) and a second time
@@ -28,19 +32,19 @@ public:
 	 * @param config The configuration to be used when initializing the system.
 	 * @return b8 True on success; otherwise false.
 	 */
-	static bool Initialize(IRenderer* renderer, ShaderSystem::Config config);
+	bool Initialize(IRenderer* renderer, ShaderSystem::Config config);
 
 	/**
 	 * @brief Shuts down the shader system.
 	 */
-	static void Shutdown();
+	void Shutdown();
 
 	/**
 	 * @brief Creates a new shader with the given config.
 	 *
 	 * @return True on success; otherwise false.
 	 */
-	static bool Create(IRenderpass* pass, ShaderConfig* config);
+	bool Create(IRenderpass* pass, ShaderConfig* config);
 
 	/**
 	 * @brief Gets the identifier of a shader by name.
@@ -48,7 +52,7 @@ public:
 	 * @param shader_name The name of the shader.
 	 * @return The shader id, if found; otherwise INVALID_ID.
 	 */
-	static unsigned GetID(const char* shader_name);
+	unsigned GetID(const char* shader_name);
 
 	/**
 	 * @brief Returns a pointer to a shader with the given identifier.
@@ -56,7 +60,7 @@ public:
 	 * @param shader_id The shader identifier.
 	 * @return A pointer to a shader, if found; otherwise 0.
 	 */
-	static Shader* GetByID(uint32_t shader_id);
+	Shader* GetByID(uint32_t shader_id);
 
 	/**
 	 * @brief Returns a pointer to a shader with the given name.
@@ -64,7 +68,7 @@ public:
 	 * @param shader_name The name to search for. Case sensitive.
 	 * @return A pointer to a shader, if found; otherwise 0.
 	 */
-	static Shader* Get(const FString& shader_name);
+	Shader* Get(const FString& shader_name);
 
 	/**
 	 * @brief Uses the shader with the given name.
@@ -72,7 +76,7 @@ public:
 	 * @param shader_name The name of the shader to use. Case sensitive.
 	 * @return True on success; otherwise false.
 	 */
-	static bool Use(const char* shader_name);
+	bool Use(const char* shader_name);
 
 	/**
 	 * @brief Uses the shader with the given identifier.
@@ -80,7 +84,7 @@ public:
 	 * @param shader_id The identifier of the shader to be used.
 	 * @return True on success; otherwise false.
 	 */
-	static bool UseByID(uint32_t shader_id);
+	bool UseByID(uint32_t shader_id);
 
 	/**
 	 * @brief Returns the uniform index for a uniform with the given name, if found.
@@ -89,7 +93,7 @@ public:
 	 * @param uniform_name The name of the uniform to search for.
 	 * @return The uniform index, if found; otherwise INVALID_ID_U16.
 	 */
-	static uint32_t GetUniformIndex(Shader* shader, const char* uniform_name);
+	uint32_t GetUniformIndex(Shader* shader, const char* uniform_name);
 
 	/**
 	 * @brief Sets the value of a uniform with the given name to the supplied value.
@@ -99,7 +103,7 @@ public:
 	 * @param value The value to be set.
 	 * @return True on success; otherwise false.
 	 */
-	static bool SetUniform(const char* uniform_name, const void* value);
+	bool SetUniform(const char* uniform_name, const void* value);
 
 	/**
 	 * @brief Sets the texture of a sampler with the given name to the supplied texture.
@@ -109,7 +113,7 @@ public:
 	 * @param t A pointer to the texture to be set.
 	 * @return True on success; otherwise false.
 	 */
-	static bool SetSampler(const char* sampler_name, const UTexture* tex);
+	bool SetSampler(const char* sampler_name, const UTexture* tex);
 
 	/**
 	 * @brief Sets a uniform value by index.
@@ -119,7 +123,7 @@ public:
 	 * @param value The value of the uniform.
 	 * @return True on success; otherwise false.
 	 */
-	static bool SetUniformByIndex(uint32_t index, const void* value);
+	bool SetUniformByIndex(uint32_t index, const void* value);
 
 	/**
 	 * @brief Sets a sampler value by index.
@@ -129,7 +133,7 @@ public:
 	 * @param value A pointer to the texture to be set.
 	 * @return True on success; otherwise false.
 	 */
-	static bool SetSamplerByIndex(unsigned short index, const UTexture* tex);
+	bool SetSamplerByIndex(unsigned short index, const UTexture* tex);
 
 	/**
 	 * @brief Applies global-scoped uniforms.
@@ -137,7 +141,7 @@ public:
 	 *
 	 * @return True on success; otherwise false.
 	 */
-	static bool ApplyGlobal();
+	bool ApplyGlobal();
 
 	/**
 	 * @brief Applies instance-scoped uniforms.
@@ -146,7 +150,7 @@ public:
 	 * @param need_update Indicates if the shader need uniform updated or just need to be bound.
 	 * @return True on success; otherwise false.
 	 */
-	static bool ApplyInstance(bool need_update);
+	bool ApplyInstance(bool need_update);
 
 	/**
 	 * @brief Binds the instance with the given id for use. Must be done before setting
@@ -156,7 +160,7 @@ public:
 	 * @param instance_id The identifier of the instance to bind.
 	 * @return True on success; otherwise false.
 	 */
-	static bool BindGlobal(uint64_t instance_id);
+	bool BindGlobal(uint64_t instance_id);
 
 	/**
 	 * @brief Binds the instance with the given id for use. Must be done before setting
@@ -166,35 +170,41 @@ public:
 	 * @param instance_id The identifier of the instance to bind.
 	 * @return True on success; otherwise false.
 	 */
-	static bool BindInstance(uint64_t instance_id);
+	bool BindInstance(uint64_t instance_id);
 
-	static void Destroy(const char* shader_name);
+	void Destroy(const char* shader_name);
 
-	static bool ReloadShader(const FString& shader_name, EShaderLanguage language = EShaderLanguage::eGLSL);
-	static bool ReloadShader(Shader* shader, EShaderLanguage language = EShaderLanguage::eGLSL);
+	bool ReloadShader(const FString& shader_name, EShaderLanguage language = EShaderLanguage::eGLSL);
+	bool ReloadShader(Shader* shader, EShaderLanguage language = EShaderLanguage::eGLSL);
 	
+public:
+	EShaderLanguage GetShaderLanguage() const { return GLOBAL_SHADER_TYPE; }
+
 private:
-	static bool AddAttribute(Shader* shader, const ShaderAttributeConfig& config);
-	static bool AddSampler(Shader* shader, ShaderUniformConfig& config);
-	static bool AddUniform(Shader* shader, ShaderUniformConfig& config);
-	static uint32_t GetShaderID(const FString& shader_name);
-	static uint32_t NewShaderID();
-	static bool AddUniform(Shader* shader, const FString& uniform_name, uint32_t size,
+	bool OnReloadShader(eEventCode code, void* sender, void* listenerInst, SEventContext context);
+
+private:
+	bool AddAttribute(Shader* shader, const ShaderAttributeConfig& config);
+	bool AddSampler(Shader* shader, ShaderUniformConfig& config);
+	bool AddUniform(Shader* shader, ShaderUniformConfig& config);
+	uint32_t GetShaderID(const FString& shader_name);
+	uint32_t NewShaderID();
+	bool AddUniform(Shader* shader, const FString& uniform_name, uint32_t size,
 		ShaderUniformType type, ShaderScope scope, uint32_t set_location, bool is_sampler);
-	static bool IsUniformNameValid(Shader* shader, const FString& uniform_name);
-	static bool IsUniformAddStateValid(Shader* shader);
-	static void DestroyShader(Shader* s);
+	bool IsUniformNameValid(Shader* shader, const FString& uniform_name);
+	bool IsUniformAddStateValid(Shader* shader);
+	void DestroyShader(Shader* s);
 
 public:
-	static IRenderer* Renderer;
-	static ShaderSystem::Config ShaderSystemConfig;
-	static std::unordered_map<FString, uint32_t> ShaderMap;
+	IRenderer* Renderer = nullptr;
+	ShaderSystem::Config ShaderSystemConfig;
+	std::unordered_map<FString, uint32_t> ShaderMap;
 	
-	static uint32_t CurrentShaderID;
-	static std::vector<Shader*> Shaders;
+	uint32_t CurrentShaderID = INVALID_ID;
+	std::vector<Shader*> Shaders;
 	
-	static bool Initilized;
-	static EShaderLanguage GLOBAL_SHADER_TYPE;
+	bool Initilized = false;
+	EShaderLanguage GLOBAL_SHADER_TYPE = EShaderLanguage::eGLSL;
 
 };
 
