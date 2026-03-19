@@ -201,7 +201,7 @@ bool IRenderer::EndRenderpass(IRenderpass* pass) {
 	return Backend->EndRenderpass(pass);
 }
 
-bool IRenderer::CreateRenderShader(Shader* shader, const ShaderConfig* config, IRenderpass* pass, std::vector<char*> stage_filenames, std::vector<ShaderStage> stages) {
+bool IRenderer::CreateRenderShader(Shader* shader, const ShaderConfig* config, IRenderpass* pass, const TArray<FString>& stage_filenames, std::vector<ShaderStage> stages) {
 	return Backend->CreateShader(shader, config, pass, stage_filenames, stages);
 }
 

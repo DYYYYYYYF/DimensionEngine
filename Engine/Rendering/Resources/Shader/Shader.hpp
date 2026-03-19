@@ -75,7 +75,7 @@ public:
 	IRenderer* Renderer;
 	ShaderFlagBits Flags;
 	uint32_t ID;
-	std::string Name;
+	FString Name;
 	EShaderLanguage Language;
 
 	size_t RenderFrameNumber;
@@ -91,7 +91,7 @@ public:
 	ShaderScope BoundScope;
 	uint64_t BoundInstanceId;
 	uint32_t BoundUboOffset;
-	std::unordered_map<std::string, uint32_t> HashMap;
+	std::unordered_map<FString, uint32_t> HashMap;
 	EShaderStatus Status;
 	uint16_t PushConstantsRangeCount;
 	Range PushConstantsRanges[32];

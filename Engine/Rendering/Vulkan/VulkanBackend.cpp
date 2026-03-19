@@ -7,7 +7,7 @@
 #include "Core/Event.hpp"
 #include "Core/EngineLogger.hpp"
 #include "Containers/TArray.hpp"
-#include "Platform/File.hpp"
+#include "Platform/File/File.hpp"
 #include "Platform/Platform.hpp"
 #include "Math/MathTypes.hpp"
 
@@ -796,7 +796,7 @@ const uint32_t DESC_SET_INDEX_GLOBAL = 0;
 const uint32_t DESC_SET_INDEX_INSTANCE = 1;
 
 bool VulkanBackend::CreateShader(Shader* shader, const ShaderConfig* config, IRenderpass* pass,
-	const std::vector<char*>& stage_filenames, std::vector<ShaderStage>& stages) {
+	const TArray<FString>& stage_filenames, std::vector<ShaderStage>& stages) {
 	// Translate stages.
 	vk::ShaderStageFlags VkStages[VULKAN_SHADER_MAX_STAGES];
 	for (unsigned short i = 0; i < stages.size(); ++i) {
@@ -862,7 +862,7 @@ bool VulkanBackend::CreateShader(Shader* shader, const ShaderConfig* config, IRe
 
 		// Set the stage and bump the counter.
 		OutShader->Config.stages[OutShader->Config.stage_count].stage = StageFlag;
-		strncpy(OutShader->Config.stages[OutShader->Config.stage_count].filename, stage_filenames[i], 255);
+		strncpy(OutShader->Config.stages[OutShader->Config.stage_count].filename, stage_filenames[i].CStr(), 255);
 		OutShader->Config.stage_count++;
 	}
 

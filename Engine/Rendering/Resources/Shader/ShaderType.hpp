@@ -2,6 +2,9 @@
 
 #include "Math/MathTypes.hpp"
 
+#include "Containers/FString.hpp"
+#include "Containers/TArray.hpp"
+
 enum class EShaderLanguage {
 	eHLSL,
 	eGLSL
@@ -149,14 +152,14 @@ struct ShaderUniform {
 };
 
 struct ShaderAttribute {
-	char* name = nullptr;
+	FString name = nullptr;
 	uint32_t size;
 	ShaderAttributeType type;
 };
 
 struct ShaderAttributeConfig {
 	unsigned short name_length;
-	char* name = nullptr;
+	FString name = nullptr;
 	unsigned short size;
 	uint32_t location;
 	ShaderAttributeType type;
@@ -164,7 +167,7 @@ struct ShaderAttributeConfig {
 
 struct ShaderUniformConfig {
 	unsigned short name_length;
-	char* name = nullptr;
+	FString name = nullptr;
 	unsigned short size;
 	uint32_t location;
 	ShaderUniformType type;
@@ -190,7 +193,6 @@ struct MaterialShaderInstanceUbo {
 struct ShaderConfig {
 public:
 	ShaderConfig() {
-		name = nullptr;
 		cull_mode = FaceCullMode::eFace_Cull_Mode_Back;
 		polygon_mode = PolygonMode::ePology_Mode_Fill;
 		PrimTopo = PrimitiveTopology::eTriangleList;
@@ -198,7 +200,7 @@ public:
 		depthWrite = true;
 	}
 
-	char* name = nullptr;
+	FString name;
 	float time = 0.0f;
 	FaceCullMode cull_mode;
 	PolygonMode polygon_mode;
@@ -207,8 +209,8 @@ public:
 	std::vector<ShaderAttributeConfig> attributes;
 	std::vector<ShaderUniformConfig> uniforms;
 	std::vector<ShaderStage> stages;
-	std::vector<char*> stage_names;
-	std::vector<char*> stage_filenames;
+	TArray<FString> stage_names;
+	TArray<FString> stage_filenames;
 
 	bool depthTest;
 	bool depthWrite;

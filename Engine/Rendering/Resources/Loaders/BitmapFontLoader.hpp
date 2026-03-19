@@ -40,9 +40,11 @@ public:
 
 private:
 	// 从 .fnt 文本文件导入，并输出 .dbf 二进制缓存
-	bool ImportFntFile(FileHandle* fntFile, const char* outDbfFilename, BitmapFontResourceData* outData);
+	bool ImportFntFile(const FString& asset_path, const FString& outDbfFilename, BitmapFontResourceData* outData);
+	bool ParseFntLine(const FString& line, uint32_t lineNum, 
+		uint32_t* glyphsRead, uint32_t* kerningsRead, BitmapFontResourceData* outData);
 
 	// 读 / 写引擎二进制格式 .dbf
-	bool ReadDbfFile(FileHandle* file, BitmapFontResourceData* data);
-	bool WriteDbfFile(const char* path, BitmapFontResourceData* data);
+	bool ReadDbfFile(const FString& asset_path, BitmapFontResourceData* data);
+	bool WriteDbfFile(const FString& asset_path, BitmapFontResourceData* data);
 };

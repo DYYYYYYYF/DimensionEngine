@@ -11,7 +11,7 @@ public:
 
 public:
 	DAPI JsonObject();
-	DAPI JsonObject(File file);
+	DAPI JsonObject(const File& file);
 	DAPI JsonObject(JsonObject::Type type);
 	DAPI JsonObject(const std::string& content);
 	DAPI virtual ~JsonObject();
@@ -72,7 +72,7 @@ public:
 	DAPI std::vector<std::string> GetKeys() const;
 
 	// 文件操作
-	DAPI bool SaveToFile(File file) const;
+	DAPI bool SaveToFile(File& file) const;
 	DAPI bool LoadFromFile(const File& file);
 
 	// 实用方法

@@ -322,11 +322,11 @@ bool MaterialSystem::LoadMaterial(SMaterialConfig config, Material* mat) {
 		return false;
 	}
 
-	if (!config.MetallicRoughnessTexName.empty()) {
+	if (!config.MetallicRoughnessTexName.IsEmpty()) {
 		mat->RoughnessMetallicMap.usage = TextureUsage::eTexture_Usage_Map_RoughnessMetallic;
-		mat->RoughnessMetallicMap.texture = TextureSystemInst.Acquire(config.MetallicRoughnessTexName.c_str(), true);
+		mat->RoughnessMetallicMap.texture = TextureSystemInst.Acquire(config.MetallicRoughnessTexName, true);
 		if (mat->RoughnessMetallicMap.texture == nullptr) {
-			GLOG(Log::eWarn, "Unable to load texture '%s' for material '%s', using default.", config.MetallicRoughnessTexName.c_str(), mat->Name.CStr());
+			GLOG(Log::eWarn, "Unable to load texture '%s' for material '%s', using default.", config.MetallicRoughnessTexName.CStr(), mat->Name.CStr());
 
 			// TODO: 如果没有RM贴图，可以根据具体的 Roughness/Metallic 参数创建新的贴图。
 			mat->RoughnessMetallicMap.texture = TextureSystemInst.GetDefaultRoughnessMetallicTexture();

@@ -5,7 +5,7 @@
 #include "Containers/TString.hpp"
 
 #include "Systems/ResourceSystem.h"
-#include "Platform/FileSystem.hpp"
+#include "Platform/File/File.hpp"
 
 BinaryLoader::BinaryLoader() {
 	Type = EAssetType::Binary;
@@ -23,32 +23,22 @@ bool BinaryLoader::Load(const FString& name, void* params, UAsset* resource) {
 	char FullFilePath[512];
 	StringFormat(FullFilePath, FormatStr, ResourceSystem::GetRootPath(), TypePath.c_str(), name.CStr(), "");
 
-	FileHandle File;
-	if (!FileSystemOpen(FullFilePath, eFile_Mode_Read, true, &File)) {
-		GLOG(Log::eError, "Binary loader load. Unable to open file for binary reading: '%s'.", FullFilePath);
+	File AssetFile(FullFilePath);
+	if (!AssetFile.IsExist()) {
+		GLOG(Log::eError, "Binary loader load. Unable to find file for binary reading: '%s'.", FullFilePath);
 		return false;
 	}
 
-	size_t FileSize = 0;
-	if (!FileSystemSize(&File, &FileSize)) {
+	std::vector<unsigned char> FileData = AssetFile.ReadBytes();
+	if (FileData.empty()) {
 		GLOG(Log::eError, "Unable to binary read file: '%s'.", FullFilePath);
-		FileSystemClose(&File);
 		return false;
 	}
 
-	// TODO: Should be using an allocator here.
-	unsigned char* ResourceData = (unsigned char*)Memory::Allocate(sizeof(unsigned char) * FileSize, MemoryType::eMemory_Type_Array);
-	size_t ReadSize = 0;
-	if (!FileSystemReadAllBytes(&File, ResourceData, &ReadSize)) {
-		GLOG(Log::eError, "Unable to binary read file: '%s'.", FullFilePath);
-		FileSystemClose(&File);
-		return false;
-	}
+	resource->Data = Memory::Allocate(sizeof(unsigned char) * FileData.size(), MemoryType::eMemory_Type_Array);
+	Memory::Copy(resource->Data, FileData.data(), sizeof(unsigned char) * FileData.size());
 
-	FileSystemClose(&File);
-
-	resource->Data = ResourceData;
-	resource->DataSize = ReadSize;
+	resource->DataSize = FileData.size();
 	resource->FullPath = FullFilePath;
 	resource->Name = name;
 

@@ -7,9 +7,9 @@ struct JsonObject::JsonHandle {
 
 JsonObject::JsonObject() : Handle(std::make_shared<JsonHandle>()), IsDirty_(false) {}
 
-JsonObject::JsonObject(File file) : Handle(std::make_shared<JsonHandle>()), IsDirty_(false) {
+JsonObject::JsonObject(const File& file) : Handle(std::make_shared<JsonHandle>()), IsDirty_(false) {
 	if (file.IsExist()) {
-		Handle->value = JsonObject(file.ReadBytes()).Handle->value;
+		Handle->value = JsonObject(file.ReadText()).Handle->value;
 	}
 	else {
 		Handle->value = nlohmann::json();
@@ -35,7 +35,7 @@ JsonObject::JsonObject(const std::string& content) : Handle(std::make_shared<Jso
 
 JsonObject::~JsonObject() {
 	if (IsDirty_) {
-		SaveToFile(File());
+		GLOG(Log::Level::eWarn, "JsonObject is being destroyed but has unsaved changes.");
 	}
 }
 
@@ -353,7 +353,7 @@ std::vector<std::string> JsonObject::GetKeys() const {
 	return keys;
 }
 
-bool JsonObject::SaveToFile(File file) const {
+bool JsonObject::SaveToFile(File& file) const {
 	try {
 		std::string content = Dump(2);
 		file.WriteBytes(content.c_str(), content.size());
@@ -368,7 +368,7 @@ bool JsonObject::SaveToFile(File file) const {
 bool JsonObject::LoadFromFile(const File& file) {
 	try {
 		if (!file.IsExist()) return false;
-		std::string content = file.ReadBytes();
+		std::string content = file.ReadText();
 		Handle->value = nlohmann::json::parse(content);
 		return true;
 	}

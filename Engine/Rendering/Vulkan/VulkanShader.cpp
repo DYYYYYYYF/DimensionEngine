@@ -1,7 +1,7 @@
 ﻿#include "VulkanShader.hpp"
 #include "Systems/ResourceSystem.h"
 #include "Core/EngineLogger.hpp"
-#include "Platform/File.hpp"
+#include "Platform/File/File.hpp"
 #include "Rendering/Renderer.hpp"
 #include "VulkanBackend.hpp"
 #include "Core/Utils.hpp"
@@ -65,17 +65,17 @@ bool VulkanShader::Initialize() {
 	}
 
 	if (!CompileShaderFile()) {
-		GLOG(Log::eError, "VulkanShader::Reload: compile shader failed for shader '%s'.", Name.c_str());
+		GLOG(Log::eError, "VulkanShader::Reload: compile shader failed for shader '%s'.", Name.CStr());
 		return false;
 	}
 
 	if (!CreateModule()) {
-		GLOG(Log::eError, "VulkanShader::Initialize: create shader module failed for shader '%s'.", Name.c_str());
+		GLOG(Log::eError, "VulkanShader::Initialize: create shader module failed for shader '%s'.", Name.CStr());
 		return false;
 	}
 
 	if (!CreatePipeline()) {
-		GLOG(Log::eError, "VulkanShader::Initialize: create pipeline failed for shader '%s'.", Name.c_str());
+		GLOG(Log::eError, "VulkanShader::Initialize: create pipeline failed for shader '%s'.", Name.CStr());
 		return false;
 	}
 
@@ -119,17 +119,17 @@ bool VulkanShader::Reload() {
 	}
 
 	if (!CompileShaderFile()) {
-		GLOG(Log::eError, "VulkanShader::Reload: compile shader failed for shader '%s'.", Name.c_str());
+		GLOG(Log::eError, "VulkanShader::Reload: compile shader failed for shader '%s'.", Name.CStr());
 		return false;
 	}
 
 	if (!CreateModule()) {
-		GLOG(Log::eError, "VulkanShader::Reload: create shader module failed for shader '%s'.", Name.c_str());
+		GLOG(Log::eError, "VulkanShader::Reload: create shader module failed for shader '%s'.", Name.CStr());
 		return false;
 	}
 
 	if (!CreatePipeline()) {
-		GLOG(Log::eError, "VulkanShader::Reload: create pipeline failed for shader '%s'.", Name.c_str());
+		GLOG(Log::eError, "VulkanShader::Reload: create pipeline failed for shader '%s'.", Name.CStr());
 		return false;
 	}
 
@@ -200,7 +200,7 @@ bool VulkanShader::CreateModule() {
 
 		UAsset BinaryResource;
 		if (!ResourceSystem::Load(vkShaderStageConfig.filename, EAssetType::Binary, nullptr, &BinaryResource)) {
-			GLOG(Log::eError, "Unable to create %s shader module for '%s'. Shader will be destroyed.", vkShaderStageConfig.filename, Name.c_str());
+			GLOG(Log::eError, "Unable to create %s shader module for '%s'. Shader will be destroyed.", vkShaderStageConfig.filename, Name.CStr());
 			return false;
 		}
 

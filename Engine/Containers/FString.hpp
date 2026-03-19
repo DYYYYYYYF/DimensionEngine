@@ -118,11 +118,15 @@ public:
 	bool Nequali(const FString& other, size_t len) const; // 大小写不敏感
 	int  Compare(const FString& other)         const;
 
-	// =========================================================
-	//  查找
-	// =========================================================
-	int IndexOf(char c, size_t start_pos = 0) const;
-	int LastIndexOf(char c)                        const;
+	/**
+	 * 查找字符 c 在字符串中的位置，返回索引（0-based），未找到返回 -1。
+	 */
+	int IndexOf(char c, size_t start_pos = 0)		const;
+
+	/**
+	 * 查找字符 c 在字符串中最后一次出现的位置，返回索引（0-based），未找到返回 -1。
+	 */
+	int LastIndexOf(char c)							const;
 
 	// =========================================================
 	//  子串 / 修改

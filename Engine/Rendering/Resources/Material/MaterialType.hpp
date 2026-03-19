@@ -23,8 +23,8 @@ struct SMaterialConfig {
 	float Roughness = 0.5f;					// 粗糙度
 	float AmbientOcclusion = 1.0f;			// 环境光遮蔽
 	Vector4 EmissiveColor;						// 自发光
-	std::string MetallicRoughnessTexName;	// 金属度/粗糙度Texture
-	std::string EmissiveFactorTexName;		// 自发光Texture
+	FString MetallicRoughnessTexName;	// 金属度/粗糙度Texture
+	FString EmissiveFactorTexName;		// 自发光Texture
 
 	float NormalIntensity = 1.0f;
 };

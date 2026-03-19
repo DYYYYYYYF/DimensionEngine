@@ -1,5 +1,5 @@
 ﻿#include "Shader.hpp"
-#include "Platform/File.hpp"
+#include "Platform/File/File.hpp"
 #include "Systems/ResourceSystem.h"
 
 std::vector<uint32_t> Shader::CompileShaderToSPV(const std::string& filename, enum ShaderStage shaderStage, bool writeToDisk) {
@@ -48,7 +48,7 @@ std::vector<uint32_t> Shader::CompileShaderToSPV(const std::string& filename, en
 	GLOG(Log::eInfo, "Compile shader file %s...", ShaderSourceFilename.c_str());
 
 	File ShaderSource(ShaderSourceFilename);
-	std::string Content = ShaderSource.ReadBytes();
+	std::string Content = ShaderSource.ReadText();
 	shaderc::Compiler compiler;
 	shaderc::CompileOptions options;
 	options.SetTargetEnvironment(shaderc_target_env_vulkan, shaderc_env_version_vulkan_1_3);
@@ -59,13 +59,13 @@ std::vector<uint32_t> Shader::CompileShaderToSPV(const std::string& filename, en
 	// Like -DMY_DEFINE=1
 	//options.AddMacroDefinition("MY_DEFINE", "1");
 
-	shaderc::SpvCompilationResult module = compiler.CompileGlslToSpv(Content, scShadercStage, Name.c_str(), options);
+	shaderc::SpvCompilationResult module = compiler.CompileGlslToSpv(Content, scShadercStage, Name.CStr(), options);
 
 	if (module.GetCompilationStatus() !=
 		shaderc_compilation_status_success) {
 		GLOG(Log::eError, "Compile shader %s failed.\n\
 			Error msg: %s",
-			Name.c_str(),
+			Name.CStr(),
 			module.GetErrorMessage().c_str()
 		);
 		return std::vector<uint32_t>();

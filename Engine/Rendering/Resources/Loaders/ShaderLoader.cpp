@@ -5,7 +5,7 @@
 
 #include "Rendering/Resources/Shader/Shader.hpp"
 #include "Systems/ResourceSystem.h"
-#include "Platform/FileSystem.hpp"
+#include "Platform/File/File.hpp"
 #include "Containers/TString.hpp"
 
 ShaderLoader::ShaderLoader() {
@@ -24,9 +24,8 @@ bool ShaderLoader::Load(const FString& name, void* params, UAsset* resource) {
 	char FullFilePath[512];
 	StringFormat(FullFilePath, FormatStr, ResourceSystem::GetRootPath(), TypePath.c_str(), name.CStr(), ".scfg");	// shader config
 
-
-	FileHandle File;
-	if (!FileSystemOpen(FullFilePath, eFile_Mode_Read, false, &File)) {
+	File AssetFile(FullFilePath);
+	if (!AssetFile.IsExist()) {
 		GLOG(Log::eError, "Shader loader load. Unable to open file for binary reading: '%s'.", FullFilePath);
 		return false;
 	}
@@ -38,291 +37,9 @@ bool ShaderLoader::Load(const FString& name, void* params, UAsset* resource) {
 	ResourceData = new(ResourceData)ShaderConfig();
 	ASSERT(ResourceData);
 
-	// Read each line of the file.
-	char LineBuf[512] = "";
-	char* p = &LineBuf[0];
-	size_t LineLength = 0;
-	uint32_t LineNumber = 1;
-	while (FileSystemReadLine(&File, 511, &p, &LineLength)) {
-		// Trim the string.
-		char* Trimmed = Strtrim(LineBuf);
-
-		// Get the trimmed length.
-		LineLength = strlen(Trimmed);
-
-		// Skip blank lines and comments.
-		if (LineLength < 1 || Trimmed[0] == '#') {
-			LineNumber++;
-			continue;
-		}
-
-		// Split into var/ value
-		int EqualIndex = StringIndexOf(Trimmed, '=');
-		if (EqualIndex == -1) {
-			GLOG(Log::eWarn, "Potential formatting issue found in file '%s': '=' token not found. Skipping line %ui.", FullFilePath, LineNumber);
-			LineNumber++;
-			continue;
-		}
-
-		// Assume a max of 64 characters for the variable name.
-		char RawVarName[64];
-		Memory::Zero(RawVarName, sizeof(char) * 64);
-		StringMid(RawVarName, Trimmed, 0, EqualIndex);
-		char* TrimmedVarName = Strtrim(RawVarName);
-
-		// Assume a max of 511-64 (446) for the max length of the value to account for the variable name and the '='.
-		char RawValue[446];
-		Memory::Zero(RawValue, sizeof(char) * 446);
-		StringMid(RawValue, Trimmed, EqualIndex + 1, -1);
-		char* TrimmedValue = Strtrim(RawValue);
-
-		// Process the variable.
-		if (strcmp(RawVarName, "version") == 0) {
-			// TODO: version.
-		}
-		else if (strcmp(RawVarName, "name") == 0) {
-			ResourceData->name = StringCopy(TrimmedValue);
-		}
-		else if (strcmp(RawVarName, "renderpass") == 0) {
-			// ResourceData->renderpass_name = StringCopy(TrimmedValue);
-		}
-		else if (strcmp(RawVarName, "stages") == 0) {
-			// Parse the stages.
-			std::vector<char*> StageNames = StringSplit(TrimmedValue, ',', true, true);
-			ResourceData->stage_names = StageNames;
-
-			// Ensue stage name and stage filename count are the same.
-			ResourceData->stages.resize(StageNames.size());
-
-			// Parse each stage and add the right type to the array.
-			for (unsigned short i = 0; i < ResourceData->stages.size(); ++i) {
-				if (strcmp(StageNames[i], "frag") == 0 || strcmp(StageNames[i], "fragment") == 0) {
-					ResourceData->stages[i] = ShaderStage::eShader_Stage_Fragment;
-				}
-				else if (strcmp(StageNames[i], "vert") == 0 || strcmp(StageNames[i], "vertex") == 0) {
-					ResourceData->stages[i] = ShaderStage::eShader_Stage_Vertex;
-				}
-				else if (strcmp(StageNames[i], "geom") == 0 || strcmp(StageNames[i], "geometry") == 0) {
-					ResourceData->stages[i] = ShaderStage::eShader_Stage_Geometry;
-				}
-				else if (strcmp(StageNames[i], "comp") == 0 || strcmp(StageNames[i], "compute") == 0) {
-					ResourceData->stages[i] = ShaderStage::eShader_Stage_Compute;
-				}
-				else {
-					GLOG(Log::eError, "shader_loader_load: Invalid file layout. Unrecognized stage '%s'", StageNames[i]);
-				}
-			}
-		}
-		else if (strcmp(TrimmedVarName, "stagefiles") == 0) {
-			ResourceData->stage_filenames = StringSplit(TrimmedValue, ',', true, true);
-			if (ResourceData->stages.size() != ResourceData->stage_filenames.size()) {
-				GLOG(Log::eError, "shader_loader_load: Invalid file layout. Attribute fields must be 'type,name'. Skipping.");
-			}
-		}
-		else if (strcmp(TrimmedVarName, "cull_mode") == 0) {
-			if (strcmp(TrimmedValue, "front") == 0) {
-				ResourceData->cull_mode = FaceCullMode::eFace_Cull_Mode_Front;
-			}
-			else if (strcmp(TrimmedValue, "front_and_back") == 0) {
-				ResourceData->cull_mode = FaceCullMode::eFace_Cull_Mode_Front_And_Back;
-			}
-			else if (strcmp(TrimmedValue, "none") == 0) {
-				ResourceData->cull_mode = FaceCullMode::eFace_Cull_Mode_None;
-			}
-		}
-		else if (strcmp(TrimmedVarName, "polygon_mode") == 0) {
-			if (strcmp(TrimmedValue, "line") == 0) {
-				ResourceData->polygon_mode = PolygonMode::ePology_Mode_Line;
-			}
-			else if (strcmp(TrimmedValue, "fill") == 0) {
-				ResourceData->polygon_mode = PolygonMode::ePology_Mode_Fill;
-			}
-		}
-		else if (strcmp(TrimmedVarName, "primitive_topology") == 0) {
-			if (strcmp(TrimmedValue, "triangle_list") == 0) {
-				ResourceData->PrimTopo = PrimitiveTopology::eTriangleList;
-			}
-			else if (strcmp(TrimmedValue, "triangle_strip") == 0) {
-				ResourceData->PrimTopo = PrimitiveTopology::eTriangleStrip;
-			}
-		}
-		else if (strcmp(TrimmedVarName, "depth_test") == 0) {
-			ResourceData->depthTest = FString::ToBool(TrimmedValue);
-		}
-		else if (strcmp(TrimmedVarName, "depth_write") == 0) {
-			ResourceData->depthWrite = FString::ToBool(TrimmedValue);
-		}
-		else if (strcmp(TrimmedVarName, "attribute") == 0) {
-			// Parse attribute.
-			std::vector<char*> Fields = StringSplit(TrimmedValue, ',', true, true);
-			if (Fields.size() != 2) {
-				GLOG(Log::eError, "shader_loader_load: Invalid file layout. Attribute fields must be 'type,name'. Skipping.");
-			}
-			else {
-				ShaderAttributeConfig Attribute;
-				// Parse field type.
-				if (strcmp(Fields[0], "float") == 0) {
-					Attribute.type = ShaderAttributeType::eShader_Attribute_Type_Float;
-					Attribute.size = 4;
-				}
-				else if (strcmp(Fields[0], "vec2") == 0) {
-					Attribute.type = ShaderAttributeType::eShader_Attribute_Type_Float_2;
-					Attribute.size = 8;
-				}
-				else if (strcmp(Fields[0], "vec3") == 0) {
-					Attribute.type = ShaderAttributeType::eShader_Attribute_Type_Float_3;
-					Attribute.size = 12;
-				}
-				else if (strcmp(Fields[0], "vec4") == 0) {
-					Attribute.type = ShaderAttributeType::eShader_Attribute_Type_Float_4;
-					Attribute.size = 16;
-				}
-				else if (strcmp(Fields[0], "u8") == 0) {
-					Attribute.type = ShaderAttributeType::eShader_Attribute_Type_UInt8;
-					Attribute.size = 1;
-				}
-				else if (strcmp(Fields[0], "u16") == 0) {
-					Attribute.type = ShaderAttributeType::eShader_Attribute_Type_UInt16;
-					Attribute.size = 2;
-				}
-				else if (strcmp(Fields[0], "u32") == 0) {
-					Attribute.type = ShaderAttributeType::eShader_Attribute_Type_UInt32;
-					Attribute.size = 4;
-				}
-				else if (strcmp(Fields[0], "i8") == 0) {
-					Attribute.type = ShaderAttributeType::eShader_Attribute_Type_Int8;
-					Attribute.size = 1;
-				}
-				else if (strcmp(Fields[0], "i16") == 0) {
-					Attribute.type = ShaderAttributeType::eShader_Attribute_Type_Int16;
-					Attribute.size = 2;
-				}
-				else if (strcmp(Fields[0], "i32") == 0) {
-					Attribute.type = ShaderAttributeType::eShader_Attribute_Type_Int32;
-					Attribute.size = 4;
-				}
-				else {
-					GLOG(Log::eError, "shader_loader_load: Invalid file layout. Attribute type must be float, vec2, vec3, vec4, i8, i16, i32, u8, u16, or u32.");
-					GLOG(Log::eWarn, "Defaulting to float.");
-					Attribute.type = ShaderAttributeType::eShader_Attribute_Type_Float;
-					Attribute.size = 4;
-				}
-
-				// Take a copy of the attribute name.
-				Attribute.name_length = (unsigned short)strlen(Fields[1]);
-				Attribute.name = StringCopy(Fields[1]);
-
-				// Add the attribute.
-				ResourceData->attributes.push_back(Attribute);
-			}
-
-			for (uint32_t i = 0; i < Fields.size(); ++i) {
-				StringFree(Fields[i]);
-			}
-			Fields.clear();
-			// TODO: Free Memory in fields.
-		}
-		else if (strcmp(TrimmedVarName, "uniform") == 0) {
-			// Parse field type.
-			std::vector<char*> Fields = StringSplit(TrimmedValue, ',', true, true);
-			if (Fields.size() != 3) {
-				GLOG(Log::eError, "shader_loader_load: Invalid file layout. Uniform fields must be 'type,scope,name'. Skipping.");
-			}
-			else {
-				ShaderUniformConfig Uniform;
-				if (strcmp(Fields[0], "float") == 0) {
-					Uniform.type = ShaderUniformType::eShader_Uniform_Type_Float;
-					Uniform.size = 4;
-				}
-				else if (strcmp(Fields[0], "vec2") == 0) {
-					Uniform.type = ShaderUniformType::eShader_Uniform_Type_Float_2;
-					Uniform.size = 8;
-				}
-				else if (strcmp(Fields[0], "vec3") == 0) {
-					Uniform.type = ShaderUniformType::eShader_Uniform_Type_Float_3;
-					Uniform.size = 12;
-				}
-				else if (strcmp(Fields[0], "vec4") == 0) {
-					Uniform.type = ShaderUniformType::eShader_Uniform_Type_Float_4;
-					Uniform.size = 16;
-				}
-				else if (strcmp(Fields[0], "u8") == 0) {
-					Uniform.type = ShaderUniformType::eShader_Uniform_Type_UInt8;
-					Uniform.size = 1;
-				}
-				else if (strcmp(Fields[0], "u16") == 0) {
-					Uniform.type = ShaderUniformType::eShader_Uniform_Type_UInt16;
-					Uniform.size = 2;
-				}
-				else if (strcmp(Fields[0], "u32") == 0) {
-					Uniform.type = ShaderUniformType::eShader_Uniform_Type_UInt32;
-					Uniform.size = 4;
-				}
-				else if (strcmp(Fields[0], "i8") == 0) {
-					Uniform.type = ShaderUniformType::eShader_Uniform_Type_Int8;
-					Uniform.size = 1;
-				}
-				else if (strcmp(Fields[0], "i16") == 0) {
-					Uniform.type = ShaderUniformType::eShader_Uniform_Type_Int16;
-					Uniform.size = 2;
-				}
-				else if (strcmp(Fields[0], "i32") == 0) {
-					Uniform.type = ShaderUniformType::eShader_Uniform_Type_Int32;
-					Uniform.size = 4;
-				}
-				else if (strcmp(Fields[0], "mat4") == 0 || strcmp(Fields[0], "matrix") == 0) {
-					Uniform.type = ShaderUniformType::eShader_Uniform_Type_Matrix;
-					Uniform.size = 64;
-				}
-				else if (strcmp(Fields[0], "samp") == 0 || strcmp(Fields[0], "sampler") == 0) {
-					Uniform.type = ShaderUniformType::eShader_Uniform_Type_Sampler;
-					Uniform.size = 0;
-				}
-				else {
-					GLOG(Log::eError, "shader_loader_load: Invalid file layout. Uniform type must be f32, vec2, vec3, vec4, i8, i16, i32, u8, u16, u32 or mat4.");
-					GLOG(Log::eWarn, "Defaulting to f32.");
-					Uniform.type = ShaderUniformType::eShader_Uniform_Type_Float;
-					Uniform.size = 4;
-				}
-
-				// Parse the scope.
-				if (strcmp(Fields[1], "0") == 0) {
-					Uniform.scope = ShaderScope::eShader_Scope_Global;
-				}
-				else if (strcmp(Fields[1], "1") == 0) {
-					Uniform.scope = ShaderScope::eShader_Scope_Instance;
-				}
-				else if (strcmp(Fields[1], "2") == 0) {
-					Uniform.scope = ShaderScope::eShader_Scope_Local;
-				}
-				else {
-					GLOG(Log::eError, "shader_loader_load: Invalid file layout: Uniform scope must be 0 for global, 1 for instance or 2 for local.");
-					GLOG(Log::eWarn, "Defaulting to global.");
-					Uniform.scope = ShaderScope::eShader_Scope_Global;
-				}
-
-				// Take a copy of the uniform name.
-				Uniform.name_length = (unsigned short)strlen(Fields[2]);
-				Uniform.name = StringCopy(Fields[2]);
-
-				// Add the uniform.
-				ResourceData->uniforms.push_back(Uniform);
-			}
-
-			for (uint32_t i = 0; i < Fields.size(); ++i) {
-				Memory::Free(Fields[i], MemoryType::eMemory_Type_String);
-			}
-			Fields.clear();
-		}
-
-		// TODO: more fields.
-
-		// Clear the line buffer.
-		Memory::Zero(LineBuf, sizeof(char) * 512);
-		LineNumber++;
-	}
-
-	FileSystemClose(&File);
+	AssetFile.ReadLineByLine([this, ResourceData](size_t index, const std::string& line) {
+		return ParseLineData(index, line.c_str(), ResourceData);
+	});
 
 	resource->Data = ResourceData;
 	resource->DataCount = 1;
@@ -331,37 +48,281 @@ bool ShaderLoader::Load(const FString& name, void* params, UAsset* resource) {
 	return true;
 }
 
+bool ShaderLoader::ParseLineData(size_t index, const FString& line, ShaderConfig* resource) {
+	// Trim the string.
+	FString TrimmedLine = line.Trimmed();
+
+	// Skip blank lines and comments.
+	if (TrimmedLine.IsEmpty() || TrimmedLine[0] == '#') {
+		// Continue to read next line.
+		return true;
+	}
+
+	// Split into var-value
+	int EqualIndex = TrimmedLine.IndexOf('=');
+	if (EqualIndex == -1) {
+		// Continue to read next line.
+		GLOG(Log::eWarn, "Potential formatting issue found in file '%s': '=' token not found. Skiping line %ui.", resource->name.CStr(), index);
+		return true;
+	}
+
+	// Value name.
+	FString RawVarName = TrimmedLine.SubStr(0, EqualIndex);
+	FString TrimmedVarName = RawVarName.Trim();
+
+	// Value.
+	FString RawValue = TrimmedLine.SubStr(EqualIndex + 1);
+	FString TrimmedValue = RawValue.Trim();
+
+	// Process the variable.
+	if (RawVarName.Compare("version") == 0) {
+		// TODO: version.
+	}
+	else if (RawVarName.Compare("name") == 0) {
+		resource->name = TrimmedValue;
+	}
+	else if (RawVarName.Compare("renderpass") == 0) {
+		// ResourceData->renderpass_name = StringCopy(TrimmedValue);
+	}
+	else if (RawVarName.Compare("stages") == 0) {
+		// Parse the stages.
+		TArray<FString> StageNames = TrimmedValue.Split(',', true, true);
+		resource->stage_names = StageNames;
+
+		// Ensue stage name and stage filename count are the same.
+		resource->stages.resize(StageNames.Size());
+
+		// Parse each stage and add the right type to the array.
+		for (unsigned short i = 0; i < resource->stages.size(); ++i) {
+			if (StageNames[i].Compare("frag") == 0 || StageNames[i].Compare("fragment") == 0) {
+				resource->stages[i] = ShaderStage::eShader_Stage_Fragment;
+			}
+			else if (StageNames[i].Compare("vert") == 0 || StageNames[i].Compare("vertex") == 0) {
+				resource->stages[i] = ShaderStage::eShader_Stage_Vertex;
+			}
+			else if (StageNames[i].Compare("geom") == 0 || StageNames[i].Compare("geometry") == 0) {
+				resource->stages[i] = ShaderStage::eShader_Stage_Geometry;
+			}
+			else if (StageNames[i].Compare("comp") == 0 || StageNames[i].Compare("compute") == 0) {
+				resource->stages[i] = ShaderStage::eShader_Stage_Compute;
+			}
+			else {
+				GLOG(Log::eError, "shader_loader_load: Invalid file layout. Unrecognized stage '%s'", StageNames[i].CStr());
+			}
+		}
+	}
+	else if (TrimmedVarName.Compare("stagefiles") == 0) {
+		resource->stage_filenames = TrimmedValue.Split(',', true, true);
+		if (resource->stages.size() != resource->stage_filenames.Size()) {
+			GLOG(Log::eError, "shader_loader_load: Invalid file layout. Attribute fields must be 'type,name'. Skipping.");
+		}
+	}
+	else if (TrimmedVarName.Compare("cull_mode") == 0) {
+		if (TrimmedValue.Compare("front") == 0) {
+			resource->cull_mode = FaceCullMode::eFace_Cull_Mode_Front;
+		}
+		else if (TrimmedValue.Compare("front_and_back") == 0) {
+			resource->cull_mode = FaceCullMode::eFace_Cull_Mode_Front_And_Back;
+		}
+		else if (TrimmedValue.Compare("none") == 0) {
+			resource->cull_mode = FaceCullMode::eFace_Cull_Mode_None;
+		}
+	}
+	else if (TrimmedVarName.Compare("polygon_mode") == 0) {
+		if (TrimmedValue.Compare("line") == 0) {
+			resource->polygon_mode = PolygonMode::ePology_Mode_Line;
+		}
+		else if (TrimmedValue.Compare("fill") == 0) {
+			resource->polygon_mode = PolygonMode::ePology_Mode_Fill;
+		}
+	}
+	else if (TrimmedVarName.Compare("primitive_topology") == 0) {
+		if (TrimmedValue.Compare("triangle_list") == 0) {
+			resource->PrimTopo = PrimitiveTopology::eTriangleList;
+		}
+		else if (TrimmedValue.Compare("triangle_strip") == 0) {
+			resource->PrimTopo = PrimitiveTopology::eTriangleStrip;
+		}
+	}
+	else if (TrimmedVarName.Compare("depth_test") == 0) {
+		resource->depthTest = FString::ToBool(TrimmedValue);
+	}
+	else if (TrimmedVarName.Compare("depth_write") == 0) {
+		resource->depthWrite = FString::ToBool(TrimmedValue);
+	}
+	else if (TrimmedVarName.Compare("attribute") == 0) {
+		// Parse attribute.
+		TArray<FString> Fields = TrimmedValue.Split(',', true, true);
+		if (Fields.Size() != 2) {
+			GLOG(Log::eError, "shader_loader_load: Invalid file layout. Attribute fields must be 'type,name'. Skipping.");
+		}
+		else {
+			ShaderAttributeConfig Attribute;
+			// Parse field type.
+			if (Fields[0].Compare("float") == 0) {
+				Attribute.type = ShaderAttributeType::eShader_Attribute_Type_Float;
+				Attribute.size = 4;
+			}
+			else if (Fields[0].Compare("vec2") == 0) {
+				Attribute.type = ShaderAttributeType::eShader_Attribute_Type_Float_2;
+				Attribute.size = 8;
+			}
+			else if (Fields[0].Compare("vec3") == 0) {
+				Attribute.type = ShaderAttributeType::eShader_Attribute_Type_Float_3;
+				Attribute.size = 12;
+			}
+			else if (Fields[0].Compare("vec4") == 0) {
+				Attribute.type = ShaderAttributeType::eShader_Attribute_Type_Float_4;
+				Attribute.size = 16;
+			}
+			else if (Fields[0].Compare("u8") == 0) {
+				Attribute.type = ShaderAttributeType::eShader_Attribute_Type_UInt8;
+				Attribute.size = 1;
+			}
+			else if (Fields[0].Compare("u16") == 0) {
+				Attribute.type = ShaderAttributeType::eShader_Attribute_Type_UInt16;
+				Attribute.size = 2;
+			}
+			else if (Fields[0].Compare("u32") == 0) {
+				Attribute.type = ShaderAttributeType::eShader_Attribute_Type_UInt32;
+				Attribute.size = 4;
+			}
+			else if (Fields[0].Compare("i8") == 0) {
+				Attribute.type = ShaderAttributeType::eShader_Attribute_Type_Int8;
+				Attribute.size = 1;
+			}
+			else if (Fields[0].Compare("i16") == 0) {
+				Attribute.type = ShaderAttributeType::eShader_Attribute_Type_Int16;
+				Attribute.size = 2;
+			}
+			else if (Fields[0].Compare("i32") == 0) {
+				Attribute.type = ShaderAttributeType::eShader_Attribute_Type_Int32;
+				Attribute.size = 4;
+			}
+			else {
+				GLOG(Log::eError, "shader_loader_load: Invalid file layout. Attribute type must be float, vec2, vec3, vec4, i8, i16, i32, u8, u16, or u32.");
+				GLOG(Log::eWarn, "Defaulting to float.");
+				Attribute.type = ShaderAttributeType::eShader_Attribute_Type_Float;
+				Attribute.size = 4;
+			}
+
+			// Take a copy of the attribute name.
+			Attribute.name_length = (unsigned short)Fields[1].Length();
+			Attribute.name = Fields[1];
+
+			// Add the attribute.
+			resource->attributes.push_back(Attribute);
+		}
+
+		Fields.Clear();
+		// TODO: Free Memory in fields.
+	}
+	else if (TrimmedVarName.Compare("uniform") == 0) {
+		// Parse field type.
+		TArray<FString> Fields = TrimmedValue.Split(',', true, true);
+		if (Fields.Size() != 3) {
+			GLOG(Log::eError, "shader_loader_load: Invalid file layout. Uniform fields must be 'type,scope,name'. Skipping.");
+		}
+		else {
+			ShaderUniformConfig Uniform;
+			if (Fields[0].Compare("float") == 0) {
+				Uniform.type = ShaderUniformType::eShader_Uniform_Type_Float;
+				Uniform.size = 4;
+			}
+			else if (Fields[0].Compare("vec2") == 0) {
+				Uniform.type = ShaderUniformType::eShader_Uniform_Type_Float_2;
+				Uniform.size = 8;
+			}
+			else if (Fields[0].Compare("vec3") == 0) {
+				Uniform.type = ShaderUniformType::eShader_Uniform_Type_Float_3;
+				Uniform.size = 12;
+			}
+			else if (Fields[0].Compare("vec4") == 0) {
+				Uniform.type = ShaderUniformType::eShader_Uniform_Type_Float_4;
+				Uniform.size = 16;
+			}
+			else if (Fields[0].Compare("u8") == 0) {
+				Uniform.type = ShaderUniformType::eShader_Uniform_Type_UInt8;
+				Uniform.size = 1;
+			}
+			else if (Fields[0].Compare("u16") == 0) {
+				Uniform.type = ShaderUniformType::eShader_Uniform_Type_UInt16;
+				Uniform.size = 2;
+			}
+			else if (Fields[0].Compare("u32") == 0) {
+				Uniform.type = ShaderUniformType::eShader_Uniform_Type_UInt32;
+				Uniform.size = 4;
+			}
+			else if (Fields[0].Compare("i8") == 0) {
+				Uniform.type = ShaderUniformType::eShader_Uniform_Type_Int8;
+				Uniform.size = 1;
+			}
+			else if (Fields[0].Compare("i16") == 0) {
+				Uniform.type = ShaderUniformType::eShader_Uniform_Type_Int16;
+				Uniform.size = 2;
+			}
+			else if (Fields[0].Compare("i32") == 0) {
+				Uniform.type = ShaderUniformType::eShader_Uniform_Type_Int32;
+				Uniform.size = 4;
+			}
+			else if (Fields[0].Compare("mat4") == 0 || Fields[0].Compare("matrix") == 0) {
+				Uniform.type = ShaderUniformType::eShader_Uniform_Type_Matrix;
+				Uniform.size = 64;
+			}
+			else if (Fields[0].Compare("samp") == 0 || Fields[0].Compare("sampler") == 0) {
+				Uniform.type = ShaderUniformType::eShader_Uniform_Type_Sampler;
+				Uniform.size = 0;
+			}
+			else {
+				GLOG(Log::eError, "shader_loader_load: Invalid file layout. Uniform type must be f32, vec2, vec3, vec4, i8, i16, i32, u8, u16, u32 or mat4.");
+				GLOG(Log::eWarn, "Defaulting to f32.");
+				Uniform.type = ShaderUniformType::eShader_Uniform_Type_Float;
+				Uniform.size = 4;
+			}
+
+			// Parse the scope.
+			if (Fields[1].Compare("0") == 0) {
+				Uniform.scope = ShaderScope::eShader_Scope_Global;
+			}
+			else if (Fields[1].Compare("1") == 0) {
+				Uniform.scope = ShaderScope::eShader_Scope_Instance;
+			}
+			else if (Fields[1].Compare("2") == 0) {
+				Uniform.scope = ShaderScope::eShader_Scope_Local;
+			}
+			else {
+				GLOG(Log::eError, "shader_loader_load: Invalid file layout: Uniform scope must be 0 for global, 1 for instance or 2 for local.");
+				GLOG(Log::eWarn, "Defaulting to global.");
+				Uniform.scope = ShaderScope::eShader_Scope_Global;
+			}
+
+			// Take a copy of the uniform name.
+			Uniform.name_length = (unsigned short)Fields[2].Length();
+			Uniform.name = Fields[2];
+
+			// Add the uniform.
+			resource->uniforms.push_back(Uniform);
+		}
+
+		Fields.Clear();
+	}
+
+	// TODO: more fields.
+
+	return true;
+}
+
 void ShaderLoader::Unload(UAsset* resource) {
 	ShaderConfig* Data = (ShaderConfig*)resource->Data;
 
-	for (uint32_t i = 0; i < Data->stage_filenames.size(); ++i) {
-		Memory::Free(Data->stage_filenames[i], MemoryType::eMemory_Type_String);
-	}
-	Data->stage_filenames.clear();
-
-	for (uint32_t i = 0; i < Data->stage_names.size(); ++i) {
-		Memory::Free(Data->stage_names[i], MemoryType::eMemory_Type_String);
-	}
-	Data->stage_names.clear();
+	Data->stage_filenames.Clear();
+	Data->stage_names.Clear();
 
 	// Clean up attributes.
-	uint32_t Count = (uint32_t)Data->attributes.size();
-	for (uint32_t i = 0; i < Count; ++i) {
-		Memory::Free(Data->attributes[i].name, eMemory_Type_String);
-	}
 	Data->attributes.clear();
 
 	// Clean up uniforms.
-	Count = (uint32_t)Data->uniforms.size();
-	for (uint32_t i = 0; i < Count; ++i) {
-		Memory::Free(Data->uniforms[i].name, eMemory_Type_String);
-	}
 	Data->uniforms.clear();
-
-	if (Data->name) {
-		Memory::Free(Data->name, MemoryType::eMemory_Type_String);
-		Data->name = nullptr;
-	}
 
 	if (resource->Data) {
 		Memory::Free(resource->Data, MemoryType::eMemory_Type_Texture);

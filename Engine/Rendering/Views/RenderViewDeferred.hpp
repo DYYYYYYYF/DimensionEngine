@@ -34,10 +34,10 @@ public:
 
 public:
 	const char* GetShaderName() const {
-		if (GBufferShader->Name.empty()) {
+		if (GBufferShader->Name.IsEmpty()) {
 			return nullptr;
 		}
-		return GBufferShader->Name.c_str();
+		return GBufferShader->Name.CStr();
 	}
 
 	void SetGBufferShader(Shader* shader) { GBufferShader = shader; }

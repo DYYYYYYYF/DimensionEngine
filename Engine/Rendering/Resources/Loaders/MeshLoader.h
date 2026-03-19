@@ -28,7 +28,7 @@ public:
 private:
 	// 通用文件处理
 	virtual void ProcessSubobject(std::vector<Vector3>& positions, std::vector<Vector3>& normals, std::vector<Vector2f>& texcoords, std::vector<MeshFaceData>& faces, SGeometryConfig* out_data);
-	virtual bool LoadDsmFile(FileHandle* dsm_file, std::vector<SGeometryConfig>& out_geometries);
+	virtual bool LoadDsmFile(const FString& path, std::vector<SGeometryConfig>& out_geometries);
 	virtual bool WriteDsmFile(const char* path, const char* name, std::vector<SGeometryConfig>& geometries);
 	virtual bool WriteDmtFile(const char* mtl_file_path, SMaterialConfig* config);
 

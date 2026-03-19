@@ -6,13 +6,13 @@
 #include "Core/Event.hpp"
 #include "Core/DMemory.hpp"
 #include "Core/EngineLogger.hpp"
-#include "Platform/JsonObject.h"
+#include "Platform/File/JsonObject.h"
 #include "Containers/TString.hpp"
 #include "Rendering/Vulkan/VulkanShader.hpp"
 
 IRenderer* ShaderSystem::Renderer = nullptr;
 ShaderSystem::Config ShaderSystem::ShaderSystemConfig;
-std::unordered_map<std::string, uint32_t> ShaderSystem::ShaderMap;
+std::unordered_map<FString, uint32_t> ShaderSystem::ShaderMap;
 
 uint32_t ShaderSystem::CurrentShaderID;
 std::vector<Shader*> ShaderSystem::Shaders;
@@ -20,9 +20,9 @@ bool ShaderSystem::Initilized = false;
 EShaderLanguage ShaderSystem::GLOBAL_SHADER_TYPE = EShaderLanguage::eGLSL;
 
 bool OnReloadShader(eEventCode code, void* sender, void* listenerInst, SEventContext context) {
-	std::string ShaderName = context.data.c;
+	FString ShaderName = context.data.c;
 	if (!ShaderSystem::ReloadShader(ShaderName)) {
-		GLOG(Log::eError, "Failed to reload shader %s.", ShaderName.c_str());
+		GLOG(Log::eError, "Failed to reload shader %s.", ShaderName.CStr());
 		return false;
 	}
 
@@ -40,7 +40,7 @@ bool ShaderSystem::Initialize(IRenderer* renderer, ShaderSystem::Config config) 
 		return false;
 	}
 
-	JsonObject Content = JsonObject(MaterialAsset.ReadBytes());
+	JsonObject Content = JsonObject(MaterialAsset);
 	GLOBAL_SHADER_TYPE = Content.ReadString("renderer.shader_language")
 		.compare("glsl") == 0 ? EShaderLanguage::eGLSL : EShaderLanguage::eHLSL;
 
@@ -96,14 +96,14 @@ void ShaderSystem::Shutdown() {
 			return;
 		}
 
-		JsonObject Content = JsonObject(MaterialAsset.ReadBytes());
+		JsonObject Content = JsonObject(MaterialAsset);
 		std::string Lan = GLOBAL_SHADER_TYPE == EShaderLanguage::eGLSL ? "glsl" : "hlsl";
 		Content.WriteString("renderer.shader_language", Lan);
 		Content.SaveToFile(MaterialAsset);
 	}
 }
 
-bool ShaderSystem::ReloadShader(const std::string& shader_name, EShaderLanguage language) {
+bool ShaderSystem::ReloadShader(const FString& shader_name, EShaderLanguage language) {
 	Shader* s = Get(shader_name);
 	if (s == nullptr) {
 		return false;
@@ -118,7 +118,7 @@ bool ShaderSystem::ReloadShader(Shader* shader, EShaderLanguage language) {
 	GLOBAL_SHADER_TYPE = language;
 
 	if (!shader->Reload()) {
-		GLOG(Log::eError, "shader_system_create: reload shader failed for shader '%s'.", shader->Name.c_str());
+		GLOG(Log::eError, "shader_system_create: reload shader failed for shader '%s'.", shader->Name.CStr());
 		// NOTE: initialize automatically destroys the shader if it fails.
 		shader->Destroy();
 		return false;
@@ -136,7 +136,7 @@ bool ShaderSystem::Create(IRenderpass* pass, ShaderConfig* config) {
 		ShaderMap[config->name] = ID;
 	}
 	else {
-		GLOG(Log::eWarn, "Shader named '%s' already create. It will be covered.", config->name);
+		GLOG(Log::eWarn, "Shader named '%s' already create. It will be covered.", config->name.CStr());
 	}
 
 	RendererBackendType BackendAPI = Renderer->GetBackendType();
@@ -162,7 +162,7 @@ bool ShaderSystem::Create(IRenderpass* pass, ShaderConfig* config) {
 		return false;
 	}
 	
-	OutShader->Name = StringCopy(config->name);
+	OutShader->Name = config->name;
 	OutShader->Language = GLOBAL_SHADER_TYPE;
 	Memory::Zero(OutShader->PushConstantsRanges, sizeof(Range) * 32);
 
@@ -210,7 +210,7 @@ bool ShaderSystem::Create(IRenderpass* pass, ShaderConfig* config) {
 
 	// Initialize the shader.
 	if (!OutShader->Initialize()) {
-		GLOG(Log::eError, "shader_system_create: initialization failed for shader '%s'.", config->name);
+		GLOG(Log::eError, "shader_system_create: initialization failed for shader '%s'.", config->name.CStr());
 		// NOTE: initialize automatically destroys the shader if it fails.
 		return false;
 	}
@@ -231,7 +231,7 @@ Shader* ShaderSystem::GetByID(uint32_t shader_id) {
 	return Shaders[shader_id];
 }
 
-Shader* ShaderSystem::Get(const std::string& shader_name) {
+Shader* ShaderSystem::Get(const FString& shader_name) {
 	uint32_t ShaderID = GetShaderID(shader_name);
 	if (ShaderID != INVALID_ID) {
 		return GetByID(ShaderID);
@@ -269,11 +269,11 @@ bool ShaderSystem::UseByID(uint32_t shader_id) {
 		Shader* NextShader = GetByID(shader_id);
 		CurrentShaderID = shader_id;
 		if (!Renderer->UseRenderShader(NextShader)) {
-			GLOG(Log::eError, "Failed to use shader '%s'.", NextShader->Name.c_str());
+			GLOG(Log::eError, "Failed to use shader '%s'.", NextShader->Name.CStr());
 			return false;
 		}
 		if (!Renderer->BindGlobalsRenderShader(NextShader)) {
-			GLOG(Log::eError, "Failed to bind globals for shader '%s'.", NextShader->Name.c_str());
+			GLOG(Log::eError, "Failed to bind globals for shader '%s'.", NextShader->Name.CStr());
 			return false;
 		}
 	}
@@ -288,13 +288,13 @@ uint32_t ShaderSystem::GetUniformIndex(Shader* shader, const char* uniform_name)
 
 	auto it = shader->HashMap.find(uniform_name);
 	if (it == shader->HashMap.end()){
-		GLOG(Log::eError, "Shader '%s' does not have a registered uniform named '%s'", shader->Name.c_str(), uniform_name);
+		GLOG(Log::eError, "Shader '%s' does not have a registered uniform named '%s'", shader->Name.CStr(), uniform_name);
 		return INVALID_ID_U16;
 	}
 
 	uint32_t Index = it->second;
 	if ( Index == INVALID_ID_U16) {
-		GLOG(Log::eError, "Shader '%s' does not have a registered uniform named '%s'", shader->Name.c_str(), uniform_name);
+		GLOG(Log::eError, "Shader '%s' does not have a registered uniform named '%s'", shader->Name.CStr(), uniform_name);
 		return INVALID_ID_U16;
 	}
 
@@ -402,7 +402,7 @@ bool ShaderSystem::AddAttribute(Shader* shader, const ShaderAttributeConfig& con
 
 	// Create/push the attribute.
 	ShaderAttribute Attrib = {};
-	Attrib.name = StringCopy(config.name);
+	Attrib.name = config.name;
 	Attrib.size = Size;
 	Attrib.type = config.type;
 
@@ -483,7 +483,7 @@ bool ShaderSystem::AddUniform(Shader* shader, ShaderUniformConfig& config) {
 	return AddUniform(shader, config.name, config.size, config.type, config.scope, 0, false);
 }
 
-uint32_t ShaderSystem::GetShaderID(const std::string& shader_name) {
+uint32_t ShaderSystem::GetShaderID(const FString& shader_name) {
 	auto it = ShaderMap.find(shader_name);
 	if (it == ShaderMap.end()){
 		return INVALID_ID;
@@ -502,7 +502,7 @@ uint32_t ShaderSystem::NewShaderID() {
 	return INVALID_ID;
 }
 
-bool ShaderSystem::AddUniform(Shader* shader, const char* uniform_name, uint32_t size,
+bool ShaderSystem::AddUniform(Shader* shader, const FString& uniform_name, uint32_t size,
 	ShaderUniformType type, ShaderScope scope, uint32_t set_location, bool is_sampler) {
 	uint16_t UniformCount = (uint16_t)shader->Uniforms.size();
 	if (UniformCount + 1 > ShaderSystemConfig.max_uniform_count) {
@@ -558,15 +558,15 @@ bool ShaderSystem::AddUniform(Shader* shader, const char* uniform_name, uint32_t
 	return true;
 }
 
-bool ShaderSystem::IsUniformNameValid(Shader* shader, const char* uniform_name) {
-	if (!uniform_name || strlen(uniform_name) == 0) {
+bool ShaderSystem::IsUniformNameValid(Shader* shader, const FString& uniform_name) {
+	if (uniform_name.IsEmpty()) {
 		GLOG(Log::eError, "Uniform name must exist.");
 		return false;
 	}
 
 	auto it = shader->HashMap.find(uniform_name);
 	if (it != shader->HashMap.end()){
-		GLOG(Log::eError, "A uniform by the name '%s' already exists on shader '%s'.", uniform_name, shader->Name.c_str());
+		GLOG(Log::eError, "A uniform by the name '%s' already exists on shader '%s'.", uniform_name.CStr(), shader->Name.CStr());
 		return false;
 	}
 

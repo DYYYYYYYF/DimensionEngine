@@ -41,10 +41,10 @@ public:
 
 private:
 	// 从 .fontcfg 文本文件导入，并输出 .dsf 二进制缓存
-	bool ImportFontconfigFile(FileHandle* f, const char* typePath,
-		const char* outDSFFilename, SystemFontResourceData* outResource);
+	bool ImportFontconfigFile(const FString& f, const FString& typePath,
+		const FString& outDSFFilename, SystemFontResourceData* outResource);
 
 	// 读 / 写引擎二进制格式 .dsf
-	bool ReadDSFFile(FileHandle* file, SystemFontResourceData* data);
-	bool WriteDSFFile(const char* outDSFFilename, SystemFontResourceData* resource);
+	bool ReadDSFFile(const FString& file, SystemFontResourceData* data);
+	bool WriteDSFFile(const FString& outDSFFilename, SystemFontResourceData* resource);
 };

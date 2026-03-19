@@ -1,6 +1,6 @@
 ﻿#include "FileWatcher.h"
 #include "iostream"
-#include "Platform/File.hpp"
+#include "Platform/File/File.hpp"
 #include "Core/Event.hpp"
 #include "Core/DMemory.hpp"
 #include <filesystem>
@@ -35,18 +35,31 @@ void FileWatcher::AddWatchFolder(const std::string& path, bool recursion) {
 }
 
 void FileWatcher::AddWatchFile(const std::string& file) {
-	WatchedFiles.Push(WatchableFile(file));
+	WatchableFile* Instance = NewObject<WatchableFile>(file);
+	if (!Instance) {
+		GLOG(Log::eError, "Failed to create WatchableFile instance for file: %s", file.c_str());
+		return;
+	}
+
+	if (!Instance->IsExist()) {
+		GLOG(Log::eError, "File does not exist: %s", file.c_str());
+		return;
+	}
+
+	WatchedFiles.Push(Instance);
 }
 
 void FileWatcher::Update()
 {
-	for (auto& ModifiedFile : WatchedFiles) {
-		bool modified = ModifiedFile.CheckFileModification();
+	for (WatchableFile* ModifiedFile : WatchedFiles) {
+		if (!ModifiedFile) continue;
+
+		bool modified = ModifiedFile->CheckFileModification();
 		if (modified)
 		{
-			ModifiedFile.UpdateLastModInfo();
-			std::string Filename = ModifiedFile.GetFilename();
-			if (ModifiedFile.GetFileType().compare(".hlsl") == 0) {
+			ModifiedFile->UpdateLastModInfo();
+			std::string Filename = ModifiedFile->GetFilename();
+			if (ModifiedFile->GetFileType().compare(".hlsl") == 0) {
 				Filename = File(Filename).GetFilename();
 			}
 

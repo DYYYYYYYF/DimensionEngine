@@ -3,9 +3,8 @@
 
 #include "Core/DMemory.hpp"
 #include "Core/EngineLogger.hpp"
-#include "Containers/TString.hpp"
 #include "Rendering/Resources/ResourceTypes.hpp"
-#include "Platform/FileSystem.hpp"
+#include "Platform/File/File.hpp"
 #include "Systems/ResourceSystem.h"
 
 #include <stdio.h>
@@ -29,26 +28,24 @@ bool BitmapFontLoader::Load(const FString& name, void* params, UAsset* resource)
 	BitmapFont* fontAsset = static_cast<BitmapFont*>(resource);
 
 	const char* formatStr = "%s/%s/%s%s";
-	FileHandle f;
 
 #define SUPPORTED_FILETYPE_COUNT 2
 	SupportedBitmapFontFileType supportedTypes[SUPPORTED_FILETYPE_COUNT];
 	supportedTypes[0] = { ".dbf", BitmapFontFileType::eBitmap_Font_File_Type_DBF, true };
 	supportedTypes[1] = { ".fnt", BitmapFontFileType::eBitmap_Font_File_Type_FNT, false };
 
-	char fullFilePath[512];
+	FString fullFilePath;
 	BitmapFontFileType fontType = BitmapFontFileType::eBitmap_Font_File_Type_Not_Found;
 
 	for (uint32_t i = 0; i < SUPPORTED_FILETYPE_COUNT; ++i) {
-		StringFormat(fullFilePath, formatStr,
+		fullFilePath = FString::Format(formatStr,
 			ResourceSystem::GetRootPath(), TypePath.c_str(),
 			name.CStr(), supportedTypes[i].extension);
 
-		if (FileSystemExists(fullFilePath)) {
-			if (FileSystemOpen(fullFilePath, FileMode::eFile_Mode_Read, supportedTypes[i].isBinary, &f)) {
-				fontType = supportedTypes[i].type;
-				break;
-			}
+		File AssetFile(fullFilePath.CStr());
+		if (AssetFile.IsExist()) {
+			fontType = supportedTypes[i].type;
+			break;
 		}
 	}
 
@@ -72,22 +69,19 @@ bool BitmapFontLoader::Load(const FString& name, void* params, UAsset* resource)
 		break;
 
 	case eBitmap_Font_File_Type_DBF:
-		result = ReadDbfFile(&f, &resourceData);
+		result = ReadDbfFile(fullFilePath, &resourceData);
 		break;
 
 	case eBitmap_Font_File_Type_FNT: {
-		char dbfFilename[512];
-		StringFormat(dbfFilename, "%s/%s/%s%s",
+		FString dbfFilename = FString::Format("%s/%s/%s%s",
 			ResourceSystem::GetRootPath(), TypePath.c_str(), name.CStr(), ".dbf");
-		result = ImportFntFile(&f, dbfFilename, &resourceData);
+		result = ImportFntFile(fullFilePath, dbfFilename, &resourceData);
 		break;
 	}
 	}
 
-	FileSystemClose(&f);
-
 	if (!result) {
-		GLOG(Log::eError, "BitmapFontLoader: failed to process font file: '%s'.", fullFilePath);
+		GLOG(Log::eError, "BitmapFontLoader: failed to process font file: '%s'.", fullFilePath.CStr());
 		resource->FullPath = nullptr;
 		resource->Data = nullptr;
 		resource->DataSize = 0;
@@ -136,230 +130,242 @@ void BitmapFontLoader::Unload(UAsset* resource) {
 		return false;                                                               \
 	}
 
-bool BitmapFontLoader::ImportFntFile(FileHandle* fntFile, const char* outDbfFilename, BitmapFontResourceData* outData) {
-	char    lineBuf[512] = "";
-	char* p = &lineBuf[0];
-	size_t  lineLength = 0;
-	uint32_t lineNum = 0;
+bool BitmapFontLoader::ImportFntFile(const FString& asset_path, const FString& outDbfFilename, BitmapFontResourceData* outData) {
 	uint32_t glyphsRead = 0;
 	uint32_t kerningsRead = 0;
 
-	// outData->data は BitmapFont* であり、フィールドへのアクセスには
-	// BitmapFont の protected accessor が必要。ここでは friend 経由か
-	// LoaderInterface を通じてアクセスする想定。
-	// 簡便のため BitmapFont に LoaderData 構造体を公開する方式を採用。
-	BitmapFont* font = outData->data;
+	File AssetFile(asset_path.CStr());
 
-	while (true) {
-		++lineNum;
-		if (!FileSystemReadLine(fntFile, 511, &p, &lineLength)) { break; }
-		if (lineLength < 1) { continue; }
-
-		char firstChar = lineBuf[0];
-		switch (firstChar) {
-		case 'i': {
-			// info line — face と size のみ取得
-			char* tempFace = static_cast<char*>(
-				Memory::Allocate(sizeof(char) * 512, MemoryType::eMemory_Type_String));
-			int read = sscanf(lineBuf, "info face=\"%[^\"]\" size=%u",
-				tempFace, &font->size_);
-			font->face_ = tempFace;
-			Memory::Free(tempFace, MemoryType::eMemory_Type_String);
-			VERIFY_LINE("info", lineNum, 2, read);
-			break;
-		}
-
-		case 'c': {
-			if (lineBuf[1] == 'o') {
-				// common line
-				int read = sscanf(lineBuf,
-					"common lineHeight=%d base=%u scaleW=%d scaleH=%d pages=%d",
-					&font->lineHeight_, &font->baseLine_,
-					&font->atlasSizeX_, &font->atlasSizeY_,
-					&outData->pageCount);
-				VERIFY_LINE("common", lineNum, 5, read);
-
-				if (outData->pageCount == 0) {
-					GLOG(Log::eError, "BitmapFontLoader: page count is 0, aborting.");
-					return false;
-				}
-				if (!outData->Pages) {
-					outData->Pages = static_cast<BitmapFontPage*>(
-						Memory::Allocate(sizeof(BitmapFontPage) * outData->pageCount,
-							MemoryType::eMemory_Type_Array));
-				}
+	// ReadLineByLine 内部自己开关文件，不需要手动 Open/Close
+	// 同时在 lambda 内部维护行号
+	bool success = AssetFile.ReadLineByLine(
+		[this, &glyphsRead, &kerningsRead, outData]
+		(size_t lineIndex, const std::string& line) -> bool {
+			if (line.empty()) {
+				return true;
 			}
-			else if (lineBuf[1] == 'h') {
-				if (lineBuf[4] == 's') {
-					// chars count
-					int read = sscanf(lineBuf, "chars count=%u", &font->glyphCount_);
-					VERIFY_LINE("chars", lineNum, 1, read);
+			return ParseFntLine(line.c_str(), (uint32_t)lineIndex, &glyphsRead, &kerningsRead, outData);
+		});
 
-					if (font->glyphCount_ == 0) {
-						GLOG(Log::eError, "BitmapFontLoader: glyph count is 0, aborting.");
-						return false;
-					}
-					font->glyphs_ = static_cast<FontGlyph*>(
-						Memory::Allocate(sizeof(FontGlyph) * font->glyphCount_,
-							MemoryType::eMemory_Type_Array));
-				}
-				else {
-					// char record
-					FontGlyph* g = &font->glyphs_[glyphsRead];
-					int read = sscanf(lineBuf,
-						"char id=%d x=%hu y=%hu width=%hu height=%hu "
-						"xoffset=%hd yoffset=%hd xadvance=%hd page=%hhu chnl=%*u",
-						&g->codePoint, &g->x, &g->y, &g->width, &g->height,
-						&g->offsetX, &g->offsetY, &g->advanceX, &g->pageID);
-					VERIFY_LINE("char", lineNum, 9, read);
-					++glyphsRead;
-				}
-			}
-			break;
-		}
-
-		case 'p': {
-			// page record
-			BitmapFontPage* page = &outData->Pages[0]; // 暂只支持单 page
-			char* tempFile = static_cast<char*>(
-				Memory::Allocate(sizeof(char) * 512, MemoryType::eMemory_Type_String));
-			int read = sscanf(lineBuf, "page id=%hhi file=\"%[^\"]\"",
-				&page->id, tempFile);
-			page->filename = tempFile;
-			Memory::Free(tempFile, MemoryType::eMemory_Type_String);
-
-			// 去掉扩展名
-			char* nameNoExt = static_cast<char*>(
-				Memory::Allocate(sizeof(char) * (page->filename.Length() + 1),
-					MemoryType::eMemory_Type_String));
-			StringFilenameNoExtensionFromPath(nameNoExt, page->filename.CStr());
-			page->filename = nameNoExt;
-			Memory::Free(nameNoExt, MemoryType::eMemory_Type_String);
-
-			VERIFY_LINE("page", lineNum, 2, read);
-			break;
-		}
-
-		case 'k': {
-			if (lineBuf[7] == 's') {
-				// kernings count
-				int read = sscanf(lineBuf, "kernings count=%u", &font->kerningCount_);
-				VERIFY_LINE("kernings", lineNum, 1, read);
-
-				if (font->kerningCount_ > 0 && !font->kernings_) {
-					font->kernings_ = static_cast<FontKerning*>(
-						Memory::Allocate(sizeof(FontKerning) * font->kerningCount_,
-							MemoryType::eMemory_Type_Array));
-				}
-			}
-			else if (lineBuf[7] == ' ') {
-				// kerning record
-				FontKerning* k = &font->kernings_[kerningsRead];
-				int read = sscanf(lineBuf,
-					"kerning first=%i second=%i amount=%hi",
-					&k->codePoint0, &k->codePoint1, &k->amount);
-				VERIFY_LINE("kerning", lineNum, 3, read);
-				++kerningsRead;
-			}
-			break;
-		}
-
-		default:
-			break;
-		}
+	if (!success) {
+		GLOG(Log::eError, "BitmapFontLoader: failed to read fnt file '%s'.", asset_path.CStr());
+		return false;
 	}
 
 	return WriteDbfFile(outDbfFilename, outData);
 }
 
-// ─────────────────────────────────────────────────────────────────
-//  ReadDbfFile — 读取引擎二进制格式
-// ─────────────────────────────────────────────────────────────────
+bool BitmapFontLoader::ParseFntLine(const FString& LineBuffer, uint32_t lineNum, 
+	uint32_t* glyphsRead, uint32_t* kerningsRead, BitmapFontResourceData* outData) {
 
-bool BitmapFontLoader::ReadDbfFile(FileHandle* file, BitmapFontResourceData* data) {
-	size_t   bytesRead = 0;
-	uint32_t readSize = 0;
+	BitmapFont* font = outData->data;
+	char firstChar = LineBuffer[0];
 
-	// 文件头
-	ResourceHeader header;
-	CLOSE_IF_FAILED(FileSystemRead(file, sizeof(ResourceHeader), &header, &bytesRead), file);
-
-	if (header.magicNumber != RESOURCES_MAGIC ||
-		header.resourceType != static_cast<char>(EAssetType::BitmapFont)) {
-		GLOG(Log::eError, "BitmapFontLoader: DBF file header is invalid.");
-		FileSystemClose(file);
-		return false;
+	switch (firstChar) {
+	case 'i': {
+		// info line
+		char* tempFace = static_cast<char*>(
+			Memory::Allocate(sizeof(char) * 512, MemoryType::eMemory_Type_String));
+		int read = sscanf(LineBuffer.CStr(), "info face=\"%[^\"]\" size=%u",
+			tempFace, &font->size_);
+		font->face_ = tempFace;
+		Memory::Free(tempFace, MemoryType::eMemory_Type_String);
+		VERIFY_LINE("info", lineNum, 2, read);
+		break;
 	}
 
-	// data->data 已由 Load() 指向 BitmapFont 自身，直接写入其成员
-	BitmapFont* font = data->data;
+	case 'c': {
+		if (LineBuffer[1] == 'o') {
+			// common line
+			int read = sscanf(LineBuffer.CStr(),
+				"common lineHeight=%d base=%u scaleW=%d scaleH=%d pages=%d",
+				&font->lineHeight_, &font->baseLine_,
+				&font->atlasSizeX_, &font->atlasSizeY_,
+				&outData->pageCount);
+			VERIFY_LINE("common", lineNum, 5, read);
 
-	// Face 字符串
-	uint32_t faceLength = 0;
-	CLOSE_IF_FAILED(FileSystemRead(file, sizeof(uint32_t), &faceLength, &bytesRead), file);
-	char* faceBuf = static_cast<char*>(
-		Memory::Allocate(sizeof(char) * faceLength, MemoryType::eMemory_Type_String));
-	CLOSE_IF_FAILED(FileSystemRead(file, sizeof(char) * faceLength, faceBuf, &bytesRead), file);
-	font->face_ = faceBuf;
-	Memory::Free(faceBuf, MemoryType::eMemory_Type_String);
+			if (outData->pageCount == 0) {
+				GLOG(Log::eError, "BitmapFontLoader: page count is 0, aborting.");
+				return true;
+			}
+			if (!outData->Pages) {
+				outData->Pages = static_cast<BitmapFontPage*>(
+					Memory::Allocate(sizeof(BitmapFontPage) * outData->pageCount,
+						MemoryType::eMemory_Type_Array));
+			}
+		}
+		else if (LineBuffer[1] == 'h') {
+			if (LineBuffer[4] == 's') {
+				// chars count
+				int read = sscanf(LineBuffer.CStr(), "chars count=%u", &font->glyphCount_);
+				VERIFY_LINE("chars", lineNum, 1, read);
 
-	// 基础度量
-	CLOSE_IF_FAILED(FileSystemRead(file, sizeof(uint32_t), &font->size_, &bytesRead), file);
-	CLOSE_IF_FAILED(FileSystemRead(file, sizeof(int), &font->lineHeight_, &bytesRead), file);
-	CLOSE_IF_FAILED(FileSystemRead(file, sizeof(int), &font->baseLine_, &bytesRead), file);
-	CLOSE_IF_FAILED(FileSystemRead(file, sizeof(int), &font->atlasSizeX_, &bytesRead), file);
-	CLOSE_IF_FAILED(FileSystemRead(file, sizeof(int), &font->atlasSizeY_, &bytesRead), file);
-
-	// Pages
-	CLOSE_IF_FAILED(FileSystemRead(file, sizeof(uint32_t), &data->pageCount, &bytesRead), file);
-	data->Pages = static_cast<BitmapFontPage*>(
-		Memory::Allocate(sizeof(BitmapFontPage) * data->pageCount, MemoryType::eMemory_Type_Array));
-
-	for (uint32_t i = 0; i < data->pageCount; ++i) {
-		CLOSE_IF_FAILED(FileSystemRead(file, sizeof(char), &data->Pages[i].id, &bytesRead), file);
-
-		uint32_t filenameLen = 0;
-		CLOSE_IF_FAILED(FileSystemRead(file, sizeof(uint32_t), &filenameLen, &bytesRead), file);
-
-		char* filenameBuf = static_cast<char*>(
-			Memory::Allocate(sizeof(char) * filenameLen, MemoryType::eMemory_Type_String));
-		CLOSE_IF_FAILED(FileSystemRead(file, sizeof(char) * filenameLen, filenameBuf, &bytesRead), file);
-		data->Pages[i].filename = filenameBuf;
-		Memory::Free(filenameBuf, MemoryType::eMemory_Type_String);
+				if (font->glyphCount_ == 0) {
+					GLOG(Log::eError, "BitmapFontLoader: glyph count is 0, aborting.");
+					return true;
+				}
+				font->glyphs_ = static_cast<FontGlyph*>(
+					Memory::Allocate(sizeof(FontGlyph) * font->glyphCount_,
+						MemoryType::eMemory_Type_Array));
+			}
+			else {
+				// char record
+				FontGlyph* g = &font->glyphs_[*glyphsRead];
+				int read = sscanf(LineBuffer.CStr(),
+					"char id=%d x=%hu y=%hu width=%hu height=%hu "
+					"xoffset=%hd yoffset=%hd xadvance=%hd page=%hhu chnl=%*u",
+					&g->codePoint, &g->x, &g->y, &g->width, &g->height,
+					&g->offsetX, &g->offsetY, &g->advanceX, &g->pageID);
+				VERIFY_LINE("char", lineNum, 9, read);
+				++(*glyphsRead);
+			}
+		}
+		break;
 	}
 
-	// Glyphs
-	CLOSE_IF_FAILED(FileSystemRead(file, sizeof(uint32_t), &font->glyphCount_, &bytesRead), file);
-	font->glyphs_ = static_cast<FontGlyph*>(
-		Memory::Allocate(sizeof(FontGlyph) * font->glyphCount_, MemoryType::eMemory_Type_Array));
-	readSize = sizeof(FontGlyph) * font->glyphCount_;
-	CLOSE_IF_FAILED(FileSystemRead(file, readSize, font->glyphs_, &bytesRead), file);
+	case 'p': {
+		// page record
+		char pageId = 0;
+		char* tempFile = static_cast<char*>(
+			Memory::Allocate(sizeof(char) * 512, MemoryType::eMemory_Type_String));
+		int read = sscanf(LineBuffer.CStr(), "page id=%hhi file=\"%[^\"]\"",
+			&pageId, tempFile);
+		VERIFY_LINE("page", lineNum, 2, read);
 
-	// Kernings
-	CLOSE_IF_FAILED(FileSystemRead(file, sizeof(uint32_t), &font->kerningCount_, &bytesRead), file);
-	if (font->kerningCount_ > 0) {
-		font->kernings_ = static_cast<FontKerning*>(
-			Memory::Allocate(sizeof(FontKerning) * font->kerningCount_, MemoryType::eMemory_Type_Array));
-		readSize = sizeof(FontKerning) * font->kerningCount_;
-		CLOSE_IF_FAILED(FileSystemRead(file, readSize, font->kernings_, &bytesRead), file);
+		if (pageId < (int)outData->pageCount) {
+			BitmapFontPage* page = &outData->Pages[pageId];
+			page->id = static_cast<char>(pageId);
+			// 去掉扩展名
+			FString nameNoExt = FString::FilenameNoExtensionFromPath(tempFile);
+			page->filename = nameNoExt;
+		}
+
+		break;
+	}
+
+	case 'k': {
+		if (LineBuffer[7] == 's') {
+			// kernings count
+			int read = sscanf(LineBuffer.CStr(), "kernings count=%u", &font->kerningCount_);
+			VERIFY_LINE("kernings", lineNum, 1, read);
+
+			if (font->kerningCount_ > 0 && !font->kernings_) {
+				font->kernings_ = static_cast<FontKerning*>(
+					Memory::Allocate(sizeof(FontKerning) * font->kerningCount_,
+						MemoryType::eMemory_Type_Array));
+			}
+		}
+		else if (LineBuffer[7] == ' ') {
+			// kerning record
+			FontKerning* k = &font->kernings_[*kerningsRead];
+			int read = sscanf(LineBuffer.CStr(),
+				"kerning first=%i second=%i amount=%hi",
+				&k->codePoint0, &k->codePoint1, &k->amount);
+			VERIFY_LINE("kerning", lineNum, 3, read);
+			++(*kerningsRead);
+		}
+		break;
+	}
+
+	default:
+		break;
 	}
 
 	return true;
 }
 
 // ─────────────────────────────────────────────────────────────────
-//  WriteDbfFile — 写出引擎二进制格式
+//  ReadDbfFile — 读取引擎二进制格式
 // ─────────────────────────────────────────────────────────────────
 
-bool BitmapFontLoader::WriteDbfFile(const char* path, BitmapFontResourceData* data) {
-	FileHandle file;
-	if (!FileSystemOpen(path, FileMode::eFile_Mode_Write, true, &file)) {
-		GLOG(Log::eError, "BitmapFontLoader: failed to open file for writing: %s.", path);
+bool BitmapFontLoader::ReadDbfFile(const FString& asset_path, BitmapFontResourceData* data) {
+	File f(asset_path.CStr());
+	if (!f.IsExist()) {
+		GLOG(Log::eError, "BitmapFontLoader: DBF file '%s' does not exist.", asset_path.CStr());
 		return false;
 	}
 
-	size_t   bytesWritten = 0;
-	uint32_t writeSize = 0;
+	if (!f.Open(eFileMode::Read, true)) {
+		GLOG(Log::eError, "BitmapFontLoader: failed to open DBF file '%s'.", asset_path.CStr());
+		return false;
+	}
+
+	// 文件头
+	ResourceHeader header;
+	if (!f.Read(&header)) return false;
+
+	if (header.magicNumber != RESOURCES_MAGIC ||
+		header.resourceType != static_cast<char>(EAssetType::BitmapFont)) {
+		GLOG(Log::eError, "BitmapFontLoader: DBF file header is invalid.");
+		return false;
+	}
+
+	BitmapFont* font = data->data;
+
+	// Face 字符串
+	uint32_t faceLength = 0;
+	if (!f.Read(&faceLength)) return false;
+	char* faceBuf = static_cast<char*>(
+		Memory::Allocate(sizeof(char) * faceLength, MemoryType::eMemory_Type_String));
+	if (!f.ReadBuffer(faceBuf, sizeof(char) * faceLength)) {
+		Memory::Free(faceBuf, MemoryType::eMemory_Type_String);
+		return false;
+	}
+	font->face_ = faceBuf;
+	Memory::Free(faceBuf, MemoryType::eMemory_Type_String);
+
+	// 基础度量
+	if (!f.Read(&font->size_))      return false;
+	if (!f.Read(&font->lineHeight_)) return false;
+	if (!f.Read(&font->baseLine_))  return false;
+	if (!f.Read(&font->atlasSizeX_)) return false;
+	if (!f.Read(&font->atlasSizeY_)) return false;
+
+	// Pages
+	if (!f.Read(&data->pageCount)) return false;
+	data->Pages = static_cast<BitmapFontPage*>(
+		Memory::Allocate(sizeof(BitmapFontPage) * data->pageCount, MemoryType::eMemory_Type_Array));
+
+	for (uint32_t i = 0; i < data->pageCount; ++i) {
+		if (!f.Read(&data->Pages[i].id)) return false;
+
+		uint32_t filenameLen = 0;
+		if (!f.Read(&filenameLen)) return false;
+
+		char* filenameBuf = static_cast<char*>(
+			Memory::Allocate(sizeof(char) * filenameLen, MemoryType::eMemory_Type_String));
+		if (!f.ReadBuffer(filenameBuf, sizeof(char) * filenameLen)) {
+			Memory::Free(filenameBuf, MemoryType::eMemory_Type_String);
+			return false;
+		}
+		data->Pages[i].filename = filenameBuf;
+		Memory::Free(filenameBuf, MemoryType::eMemory_Type_String);
+	}
+
+	// Glyphs
+	if (!f.Read(&font->glyphCount_)) return false;
+	font->glyphs_ = static_cast<FontGlyph*>(
+		Memory::Allocate(sizeof(FontGlyph) * font->glyphCount_, MemoryType::eMemory_Type_Array));
+	if (!f.ReadBuffer(font->glyphs_, sizeof(FontGlyph) * font->glyphCount_)) return false;
+
+	// Kernings
+	if (!f.Read(&font->kerningCount_)) return false;
+	if (font->kerningCount_ > 0) {
+		font->kernings_ = static_cast<FontKerning*>(
+			Memory::Allocate(sizeof(FontKerning) * font->kerningCount_, MemoryType::eMemory_Type_Array));
+		if (!f.ReadBuffer(font->kernings_, sizeof(FontKerning) * font->kerningCount_)) return false;
+	}
+
+	f.Close();
+	return true;
+}
+
+bool BitmapFontLoader::WriteDbfFile(const FString& asset_path, BitmapFontResourceData* data) {
+	File f(asset_path.CStr());
+	if (!f.Open(eFileMode::Write, true)) {
+		GLOG(Log::eError, "BitmapFontLoader: failed to open file for writing: %s.", asset_path.CStr());
+		return false;
+	}
 
 	BitmapFont* font = data->data;
 
@@ -369,46 +375,40 @@ bool BitmapFontLoader::WriteDbfFile(const char* path, BitmapFontResourceData* da
 	header.resourceType = static_cast<char>(EAssetType::BitmapFont);
 	header.version = 0x01U;
 	header.reserved = 0;
-	writeSize = sizeof(ResourceHeader);
-	CLOSE_IF_FAILED(FileSystemWrite(&file, writeSize, &header, &bytesWritten), &file);
+	if (!f.Write(&header)) return false;
 
 	// Face 字符串
 	uint32_t faceLength = static_cast<uint32_t>(font->GetFace().Length()) + 1;
-	writeSize = sizeof(uint32_t);
-	CLOSE_IF_FAILED(FileSystemWrite(&file, writeSize, &faceLength, &bytesWritten), &file);
-	writeSize = sizeof(char) * faceLength;
-	CLOSE_IF_FAILED(FileSystemWrite(&file, writeSize, const_cast<char*>(font->GetFace().CStr()), &bytesWritten), &file);
+	if (!f.Write(&faceLength)) return false;
+	if (!f.WriteBuffer(font->GetFace().CStr(), sizeof(char) * faceLength)) return false;
 
 	// 基础度量
-	CLOSE_IF_FAILED(FileSystemWrite(&file, sizeof(uint32_t), &font->size_, &bytesWritten), &file);
-	CLOSE_IF_FAILED(FileSystemWrite(&file, sizeof(int), &font->lineHeight_, &bytesWritten), &file);
-	CLOSE_IF_FAILED(FileSystemWrite(&file, sizeof(int), &font->baseLine_, &bytesWritten), &file);
-	CLOSE_IF_FAILED(FileSystemWrite(&file, sizeof(int), &font->atlasSizeX_, &bytesWritten), &file);
-	CLOSE_IF_FAILED(FileSystemWrite(&file, sizeof(int), &font->atlasSizeY_, &bytesWritten), &file);
+	if (!f.Write(&font->size_))       return false;
+	if (!f.Write(&font->lineHeight_)) return false;
+	if (!f.Write(&font->baseLine_))   return false;
+	if (!f.Write(&font->atlasSizeX_)) return false;
+	if (!f.Write(&font->atlasSizeY_)) return false;
 
 	// Pages
-	CLOSE_IF_FAILED(FileSystemWrite(&file, sizeof(uint32_t), &data->pageCount, &bytesWritten), &file);
+	if (!f.Write(&data->pageCount)) return false;
 	for (uint32_t i = 0; i < data->pageCount; ++i) {
-		CLOSE_IF_FAILED(FileSystemWrite(&file, sizeof(char), &data->Pages[i].id, &bytesWritten), &file);
+		if (!f.Write(&data->Pages[i].id)) return false;
 
 		uint32_t filenameLen = static_cast<uint32_t>(data->Pages[i].filename.Length()) + 1;
-		CLOSE_IF_FAILED(FileSystemWrite(&file, sizeof(uint32_t), &filenameLen, &bytesWritten), &file);
-		CLOSE_IF_FAILED(FileSystemWrite(&file, sizeof(char) * filenameLen,
-			const_cast<char*>(data->Pages[i].filename.CStr()), &bytesWritten), &file);
+		if (!f.Write(&filenameLen)) return false;
+		if (!f.WriteBuffer(data->Pages[i].filename.CStr(), sizeof(char) * filenameLen)) return false;
 	}
 
 	// Glyphs
-	CLOSE_IF_FAILED(FileSystemWrite(&file, sizeof(uint32_t), &font->glyphCount_, &bytesWritten), &file);
-	writeSize = sizeof(FontGlyph) * font->glyphCount_;
-	CLOSE_IF_FAILED(FileSystemWrite(&file, writeSize, font->glyphs_, &bytesWritten), &file);
+	if (!f.Write(&font->glyphCount_)) return false;
+	if (!f.WriteBuffer(font->glyphs_, sizeof(FontGlyph) * font->glyphCount_)) return false;
 
 	// Kernings
-	CLOSE_IF_FAILED(FileSystemWrite(&file, sizeof(uint32_t), &font->kerningCount_, &bytesWritten), &file);
+	if (!f.Write(&font->kerningCount_)) return false;
 	if (font->kerningCount_ > 0) {
-		writeSize = sizeof(FontKerning) * font->kerningCount_;
-		CLOSE_IF_FAILED(FileSystemWrite(&file, writeSize, font->kernings_, &bytesWritten), &file);
+		if (!f.WriteBuffer(font->kernings_, sizeof(FontKerning) * font->kerningCount_)) return false;
 	}
 
-	FileSystemClose(&file);
+	f.Close();
 	return true;
 }

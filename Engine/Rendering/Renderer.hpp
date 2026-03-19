@@ -70,7 +70,7 @@ public:
 	 * @param stages A array of shader_stages indicating what render stages (vertex, fragment, etc.) used in this shader.
 	 * @return True on success; otherwise false.
 	 */
-	virtual bool CreateRenderShader(Shader* shader, const ShaderConfig* config, IRenderpass* pass, std::vector<char*> stage_filenames, std::vector<ShaderStage> stages);
+	virtual bool CreateRenderShader(Shader* shader, const ShaderConfig* config, IRenderpass* pass, const TArray<FString>& stage_filenames, std::vector<ShaderStage> stages);
 
 	/**
 	 * @brief Destroys the given shader and releases any resources held by it.

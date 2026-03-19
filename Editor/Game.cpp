@@ -6,7 +6,7 @@
 #include <Core/Metrics.hpp>
 #include <Systems/CameraSystem.h>
 #include <Containers/TString.hpp>
-#include <Platform/JsonObject.h>
+#include <Platform/File/JsonObject.h>
 
 // TODO: Temp
 #include <Systems/GeometrySystem.h>
@@ -76,7 +76,7 @@ bool GameInstance::Boot(IRenderer* renderer) {
 		return false;
 	}
 
-	JsonObject Content = JsonObject(MaterialAsset.ReadBytes());
+	JsonObject Content = JsonObject(MaterialAsset.ReadText());
 	WindowSize.Width = (uint16_t)Content.ReadInt("Window.Width");
 	WindowSize.Height = (uint16_t)Content.ReadInt("Window.Height");
 
@@ -125,7 +125,7 @@ bool GameInstance::Initialize() {
 	}
 
 	// Get transform
-	JsonObject Content = JsonObject(MaterialAsset.ReadBytes());
+	JsonObject Content = JsonObject(MaterialAsset);
 	Matrix4 Mat = Content.ReadMatrix4("Camera.Transform");
 	
 	// Load python script
@@ -294,7 +294,7 @@ void GameInstance::Shutdown() {
 		return;
 	}
 
-	JsonObject Content = JsonObject(MaterialAsset.ReadBytes());
+	JsonObject Content = JsonObject(MaterialAsset);
 	Content.WriteInt("Window.Width", (int)WindowSize.Width);
 	Content.WriteInt("Window.Height", (int)WindowSize.Height);
 	Content.WriteVector3("Camera.Position", WorldCamera->GetPosition());

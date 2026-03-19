@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "Defines.hpp"
+#include "Containers/FString.hpp"
 #include "Rendering/Resources/ResourceTypes.hpp"
 #include <functional>
 #include <map>
@@ -63,7 +64,7 @@ public:
 	 * @param shader_name The name to search for. Case sensitive.
 	 * @return A pointer to a shader, if found; otherwise 0.
 	 */
-	static Shader* Get(const std::string& shader_name);
+	static Shader* Get(const FString& shader_name);
 
 	/**
 	 * @brief Uses the shader with the given name.
@@ -169,25 +170,25 @@ public:
 
 	static void Destroy(const char* shader_name);
 
-	static bool ReloadShader(const std::string& shader_name, EShaderLanguage language = EShaderLanguage::eGLSL);
+	static bool ReloadShader(const FString& shader_name, EShaderLanguage language = EShaderLanguage::eGLSL);
 	static bool ReloadShader(Shader* shader, EShaderLanguage language = EShaderLanguage::eGLSL);
 	
 private:
 	static bool AddAttribute(Shader* shader, const ShaderAttributeConfig& config);
 	static bool AddSampler(Shader* shader, ShaderUniformConfig& config);
 	static bool AddUniform(Shader* shader, ShaderUniformConfig& config);
-	static uint32_t GetShaderID(const std::string& shader_name);
+	static uint32_t GetShaderID(const FString& shader_name);
 	static uint32_t NewShaderID();
-	static bool AddUniform(Shader* shader, const char* uniform_name, uint32_t size,
+	static bool AddUniform(Shader* shader, const FString& uniform_name, uint32_t size,
 		ShaderUniformType type, ShaderScope scope, uint32_t set_location, bool is_sampler);
-	static bool IsUniformNameValid(Shader* shader, const char* uniform_name);
+	static bool IsUniformNameValid(Shader* shader, const FString& uniform_name);
 	static bool IsUniformAddStateValid(Shader* shader);
 	static void DestroyShader(Shader* s);
 
 public:
 	static IRenderer* Renderer;
 	static ShaderSystem::Config ShaderSystemConfig;
-	static std::unordered_map<std::string, uint32_t> ShaderMap;
+	static std::unordered_map<FString, uint32_t> ShaderMap;
 	
 	static uint32_t CurrentShaderID;
 	static std::vector<Shader*> Shaders;
