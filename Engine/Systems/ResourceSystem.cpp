@@ -3,7 +3,6 @@
 #include "Rendering/Vulkan/VulkanContext.hpp"
 
 // Known resource loaders.
-#include "Rendering/Resources/Loaders/BinaryLoader.h"
 #include "Rendering/Resources/Loaders/MaterialLoader.h"
 #include "Rendering/Resources/Loaders/ShaderLoader.h"
 #include "Rendering/Resources/Loaders/MeshLoader.h"
@@ -24,8 +23,6 @@ bool ResourceSystem::Initialize(SResourceSystemConfig config) {
 	Config = config;
 
 	// NOTE: Auto-register known loader types here.
-	IResourceLoader* BinLoader = NewObject<BinaryLoader>();
-	RegisterLoader(BinLoader);
 	IResourceLoader* MatLoader = NewObject<MaterialLoader>();
 	RegisterLoader(MatLoader);
 	IResourceLoader* ShaLoader = NewObject<ShaderLoader>();

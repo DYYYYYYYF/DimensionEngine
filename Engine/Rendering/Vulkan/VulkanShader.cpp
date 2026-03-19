@@ -198,23 +198,23 @@ bool VulkanShader::CreateModule() {
 		VulkanShaderStageConfig vkShaderStageConfig = Config.stages[i];
 		VulkanShaderStage* vkShaderStage = &Stages[i];
 
-		UAsset BinaryResource;
-		if (!ResourceSystem::Get().Load(vkShaderStageConfig.filename, EAssetType::Binary, nullptr, &BinaryResource)) {
+		FString FullFilePath = FString::Format("%s/%s", ResourceSystem::Get().GetRootPath(), vkShaderStageConfig.filename);
+		File AssetFile(FullFilePath.CStr());
+		if (!AssetFile.IsExist()) {
 			GLOG(Log::eError, "Unable to create %s shader module for '%s'. Shader will be destroyed.", vkShaderStageConfig.filename, Name.CStr());
 			return false;
 		}
 
+		std::vector<unsigned char> FileData = AssetFile.ReadBytes();
+
 		Memory::Zero(&vkShaderStage->create_info, sizeof(vk::ShaderModuleCreateInfo));
 		vkShaderStage->create_info.sType = vk::StructureType::eShaderModuleCreateInfo;
 		// Use the resource's size and data directly.
-		vkShaderStage->create_info.codeSize = BinaryResource.DataSize;
-		vkShaderStage->create_info.pCode = (uint32_t*)BinaryResource.Data;
+		vkShaderStage->create_info.codeSize = FileData.size();
+		vkShaderStage->create_info.pCode = (uint32_t*)FileData.data();
 
 		vkShaderStage->shader_module = vkRenderer->Context.Device.GetLogicalDevice().createShaderModule(vkShaderStage->create_info, vkRenderer->Context.Allocator);
 		ASSERT(vkShaderStage->shader_module);
-
-		// Release the resource.
-		ResourceSystem::Get().Unload(&BinaryResource);
 
 		// Shader stage info.
 		Memory::Zero(&vkShaderStage->shader_stage_create_info, sizeof(vk::ShaderModuleCreateInfo));
