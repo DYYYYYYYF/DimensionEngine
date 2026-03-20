@@ -5,6 +5,21 @@
 
 class VulkanContext;
 
+struct FDeviceCapabilities {
+	// Vulkan 版本
+	uint32_t ApiVersion = 0;
+	bool     bSupport_1_1 = false;
+	bool     bSupport_1_2 = false;
+	bool     bSupport_1_3 = false;
+
+	// 具体特性
+	bool bDemoteToHelperInvocation = false;   // 1.3
+	bool bDynamicRendering = false;   // 1.3
+	bool bDescriptorIndexing = false;   // 1.2
+	bool bTimelineSemaphore = false;   // 1.2
+	bool bBufferDeviceAddress = false;   // 1.2
+};
+
 struct  SVulkanPhysicalDeviceRequirements {
 	bool graphics = false;
 	bool present = false;
@@ -76,6 +91,7 @@ private:
 	bool MeetsRequirements(vk::PhysicalDevice device, vk::SurfaceKHR surface, const vk::PhysicalDeviceProperties* properties,
 		const vk::PhysicalDeviceFeatures* features);
 
+	bool QueryCapabilities(vk::PhysicalDevice physDevice);
 
 private:
 	bool IsSupportDeviceLocalHostVisible = false;
@@ -92,6 +108,7 @@ private:
 	SVulkanPhysicalDeviceRequirements DeviceRequirements;
 	SVulkanPhysicalDeviceQueueFamilyInfo QueueFamilyInfo;
 	SSwapchainSupportInfo SwapchainSupport;
+	FDeviceCapabilities Capabilities;
 
 	vk::Format DepthFormat;
 	unsigned char DepthChannelCount = 0;

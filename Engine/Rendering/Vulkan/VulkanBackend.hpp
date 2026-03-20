@@ -73,6 +73,10 @@ public:
 	virtual bool VerifyShaderID(uint32_t shader_id);
 
 private:
+	uint32_t QueryInstanceVersion();
+	uint32_t SelectTargetApiVersion(uint32_t instanceVersion);
+
+private:
 	vk::SamplerAddressMode ConvertRepeatType(const char* axis, TextureRepeat repeat);
 	vk::Filter ConvertFilterType(const char* op, TextureFilter filter);
 

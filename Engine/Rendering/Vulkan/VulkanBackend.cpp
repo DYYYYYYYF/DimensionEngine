@@ -78,10 +78,16 @@ bool VulkanBackend::Initialize(const RenderBackendConfig* config, unsigned char*
 	}
 #endif
 
-	vk::ApplicationInfo ApplicationInfo;
 	vk::InstanceCreateInfo InstanceInfo;
 
-	ApplicationInfo.setApiVersion(VK_API_VERSION_1_3)
+	// Check version
+	uint32_t InstanceVersion = QueryInstanceVersion();
+	uint32_t TargetVersion = SelectTargetApiVersion(InstanceVersion);
+	Context.ApiVersion = TargetVersion;
+
+	// Application
+	vk::ApplicationInfo ApplicationInfo;
+	ApplicationInfo.setApiVersion(TargetVersion)
 		.setApplicationVersion(1)
 		.setPApplicationName(config->application_name.c_str())
 		.setEngineVersion(1)
@@ -1545,4 +1551,37 @@ bool VulkanBackend::DrawRenderbuffer(IGPUBuffer* buffer, size_t offset, uint32_t
 	}
 
 	return false;
+}
+
+uint32_t VulkanBackend::QueryInstanceVersion() {
+	uint32_t ApiVersion = VK_API_VERSION_1_0;
+
+	// vkEnumerateInstanceVersion 在 1.1+ 才存在
+	auto pfnEnumerateInstanceVersion = reinterpret_cast<PFN_vkEnumerateInstanceVersion>(
+		vkGetInstanceProcAddr(nullptr, "vkEnumerateInstanceVersion"));
+
+	if (pfnEnumerateInstanceVersion) {
+		pfnEnumerateInstanceVersion(&ApiVersion);
+	}
+
+	GLOG(Log::eInfo, "Instance 支持的最高 Vulkan 版本: %d.%d.%d",
+		VK_API_VERSION_MAJOR(ApiVersion),
+		VK_API_VERSION_MINOR(ApiVersion),
+		VK_API_VERSION_PATCH(ApiVersion));
+
+	return ApiVersion;
+}
+
+uint32_t VulkanBackend::SelectTargetApiVersion(uint32_t instanceVersion) {
+	// 按优先级从高到低，选设备能支持的最高版本
+	if (instanceVersion >= VK_API_VERSION_1_3) {
+		return VK_API_VERSION_1_3;
+	}
+	else if (instanceVersion >= VK_API_VERSION_1_2) {
+		return VK_API_VERSION_1_2;
+	}
+	else if (instanceVersion >= VK_API_VERSION_1_1) {
+		return VK_API_VERSION_1_1;
+	}
+	return VK_API_VERSION_1_0;
 }
