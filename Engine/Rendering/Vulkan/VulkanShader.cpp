@@ -1,10 +1,25 @@
 ﻿#include "VulkanShader.hpp"
+#include "Systems/TextureSystem.h"
 #include "Systems/ResourceSystem.h"
 #include "Core/EngineLogger.hpp"
 #include "Platform/File/File.hpp"
 #include "Rendering/Renderer.hpp"
 #include "VulkanBackend.hpp"
 #include "Core/Utils.hpp"
+#include "VulkanTexture.hpp"
+
+VulkanShader::VulkanShader() : Shader() {
+	ID = INVALID_ID;
+	MappedUniformBufferBlock = nullptr;
+	Renderpass = nullptr;
+	InstanceCount = 0;
+	GlobalUniformCount = 0;
+	GlobalUniformSamplerCount = 0;
+	InstanceUniformCount = 0;
+	InstanceUniformSamplerCount = 0;
+	LocalUniformCount = 0;
+	Renderer = IRenderer::GetRenderer();
+}
 
 bool VulkanShader::Initialize() {
 	if (Renderer == nullptr) {
@@ -74,8 +89,23 @@ bool VulkanShader::Initialize() {
 		return false;
 	}
 
+	if (!CreateDescriptorSetLayouts()) {
+		GLOG(Log::eError, "VulkanShader::Initialize: create descriptor set layouts failed for shader '%s'.", Name.CStr());
+		return false;
+	}
+
 	if (!CreatePipeline()) {
 		GLOG(Log::eError, "VulkanShader::Initialize: create pipeline failed for shader '%s'.", Name.CStr());
+		return false;
+	}
+
+	if (!CreateUniformBuffer()) {
+		GLOG(Log::eError, "VulkanShader::Initialize: create uniform buffer failed for shader '%s'.", Name.CStr());
+		return false;
+	}
+
+	if (!AllocateGlobalDescriptorSets()) {
+		GLOG(Log::eError, "VulkanShader::Initialize: allocate descriptor sets failed for shader '%s'.", Name.CStr());
 		return false;
 	}
 
@@ -188,6 +218,298 @@ void VulkanShader::Destroy(){
 	std::vector<TextureMap*>().swap(GlobalTextureMaps);
 }
 
+bool VulkanShader::Use() {
+	Pipeline.Bind(GetCurrentCommandBuffer(), vk::PipelineBindPoint::eGraphics);
+	return true;
+}
+
+bool VulkanShader::BindGlobal() {
+	BoundScope = eShader_Scope_Global;
+	BoundUboOffset = (uint32_t)GlobalUboOffset;
+	return true;
+}
+
+bool VulkanShader::BindInstance(uint64_t instance_id) {
+	BoundInstanceId = instance_id;
+	BoundScope = eShader_Scope_Instance;
+
+	VulkanShaderInstanceState& State = InstanceStates[instance_id];
+	BoundUboOffset = (uint32_t)State.offset;
+
+	return true;
+}
+
+bool VulkanShader::ApplyGlobal() {
+	VulkanBackend* Backend = (VulkanBackend*)Renderer->GetRenderBackend();
+	VulkanContext& Context = Backend->Context;
+	uint32_t       ImageIndex = Context.ImageIndex;
+
+	vk::DescriptorSet GlobalDescSet = GlobalDescriptorSets[ImageIndex];
+
+	// UBO
+	vk::DescriptorBufferInfo BufferInfo;
+	BufferInfo.setBuffer(UniformBuffer.Buffer)
+		.setOffset(GlobalUboOffset)
+		.setRange(GlobalUboStride);
+
+	vk::WriteDescriptorSet UboWrite;
+	UboWrite.setDstSet(GlobalDescSet)
+		.setDstBinding(0)
+		.setDescriptorType(vk::DescriptorType::eUniformBuffer)
+		.setDescriptorCount(1)
+		.setPBufferInfo(&BufferInfo);
+
+	// Global Samplers
+	uint32_t SamplerCount = (uint32_t)GlobalTextureMaps.size();
+	std::vector<vk::DescriptorImageInfo> ImageInfos(SamplerCount);
+	uint32_t ValidCount = 0;
+
+	for (uint32_t i = 0; i < SamplerCount; ++i) {
+		TextureMap* Map = GlobalTextureMaps[i];
+		VulkanTexture* VkTex = Map && Map->texture
+			? static_cast<VulkanTexture*>(Map->texture)
+			: nullptr;
+		if (!VkTex) continue;
+
+		ImageInfos[ValidCount]
+			.setImageLayout(vk::ImageLayout::eShaderReadOnlyOptimal)
+			.setImageView(VkTex->ImageView)
+			.setSampler(*reinterpret_cast<vk::Sampler*>(&Map->internal_data));
+		ValidCount++;
+	}
+
+	std::vector<vk::WriteDescriptorSet> Writes;
+	Writes.push_back(UboWrite);
+
+	uint32_t GlobalSetBindingCount = Config.descriptor_sets[DESC_SET_INDEX_GLOBAL].binding_count;
+	if (ValidCount > 0 && GlobalSetBindingCount > 1) {
+		vk::WriteDescriptorSet SamplerWrite;
+		SamplerWrite.setDstSet(GlobalDescSet)
+			.setDstBinding(1)
+			.setDescriptorType(vk::DescriptorType::eCombinedImageSampler)
+			.setDescriptorCount(ValidCount)
+			.setPImageInfo(ImageInfos.data());
+
+		GLOG(Log::eError, "Global image samplers are not yet supported.");
+		//Writes.push_back(SamplerWrite);
+	}
+	
+	Context.Device.GetLogicalDevice().updateDescriptorSets(
+		(uint32_t)Writes.size(), Writes.data(), 0, nullptr);
+
+	// 绑定到命令缓冲区
+	GetCurrentCommandBuffer()->CommandBuffer.bindDescriptorSets(
+		vk::PipelineBindPoint::eGraphics,
+		Pipeline.PipelineLayout,
+		0, 1, &GlobalDescSet,
+		0, nullptr);
+
+	return true;
+}
+
+bool VulkanShader::ApplyInstance(bool need_update) {
+	VulkanBackend* Backend = (VulkanBackend*)Renderer->GetRenderBackend();
+	VulkanContext& Context = Backend->Context;
+	uint32_t       ImageIndex = Context.ImageIndex;
+
+	VulkanShaderInstanceState& State = InstanceStates[BoundInstanceId];
+	vk::DescriptorSet          DescSet = State.descriptor_set_state.descriptorSets[ImageIndex];
+
+	if (!need_update) {
+		GetCurrentCommandBuffer()->CommandBuffer.bindDescriptorSets(
+			vk::PipelineBindPoint::eGraphics,
+			Pipeline.PipelineLayout,
+			1, 1, &DescSet, 0, nullptr);
+		return true;
+	}
+
+	std::vector<vk::WriteDescriptorSet> DescriptorWrites;
+	uint32_t DescriptorIndex = 0;
+
+	// ── UBO ──────────────────────────────────────────────────────────────
+	if (InstanceUniformCount > 0) {
+		uint32_t* UboGeneration =
+			&State.descriptor_set_state.descriptor_states[DescriptorIndex].generations[ImageIndex];
+
+		if (*UboGeneration == INVALID_ID) {
+			vk::DescriptorBufferInfo BufferInfo;
+			BufferInfo.setBuffer(UniformBuffer.Buffer)
+				.setOffset(State.offset)
+				.setRange(UboStride);
+
+			vk::WriteDescriptorSet UboWrite;
+			UboWrite.setDstSet(DescSet)
+				.setDstBinding(DescriptorIndex)
+				.setDescriptorType(vk::DescriptorType::eUniformBuffer)
+				.setDescriptorCount(1)
+				.setPBufferInfo(&BufferInfo);
+
+			DescriptorWrites.push_back(UboWrite);
+			*UboGeneration = 1;
+		}
+		DescriptorIndex++;
+	}
+
+	// ── Samplers ──────────────────────────────────────────────────────────
+	if (InstanceUniformSamplerCount > 0) {
+		const VulkanDescriptorSetConfig& InstSetConfig =
+			Config.descriptor_sets[DESC_SET_INDEX_INSTANCE];
+		unsigned char SamplerBindingIndex = InstSetConfig.sampler_binding_index;
+		uint32_t TotalSamplerCount =
+			InstSetConfig.bindings[SamplerBindingIndex].descriptorCount;
+
+		vk::DescriptorImageInfo ImageInfos[VULKAN_SHADER_MAX_INSTANCE_TEXTURES];
+		uint32_t UpdateSamplerCount = 0;
+
+		for (uint32_t i = 0; i < TotalSamplerCount; ++i) {
+			TextureMap* Map = State.instance_texture_maps[i];
+			if (!Map) continue;
+
+			UTexture* Tex = Map->texture;
+			if (!Tex || !Tex->IsLoaded()) {
+				TextureSystem& TextureSys = TextureSystem::Get();
+				// fallback 到默认贴图
+				switch (Map->usage) {
+				case eTexture_Usage_Map_Diffuse:
+					Tex = TextureSys.GetDefaultDiffuseTexture(); break;
+				case eTexture_Usage_Map_Normal:
+					Tex = TextureSys.GetDefaultNormalTexture(); break;
+				case eTexture_Usage_Map_Specular:
+					Tex = TextureSys.GetDefaultSpecularTexture(); break;
+				case eTexture_Usage_Map_RoughnessMetallic:
+					Tex = TextureSys.GetDefaultRoughnessMetallicTexture(); break;
+				default:
+					Tex = TextureSys.GetDefaultDiffuseTexture(); break;
+				}
+			}
+
+			VulkanTexture* VkTex = static_cast<VulkanTexture*>(Tex);
+			if (!VkTex) continue;
+
+			ImageInfos[UpdateSamplerCount]
+				.setImageLayout(vk::ImageLayout::eShaderReadOnlyOptimal)
+				.setImageView(VkTex->ImageView)
+				.setSampler(*reinterpret_cast<vk::Sampler*>(&Map->internal_data));
+			UpdateSamplerCount++;
+		}
+
+		if (UpdateSamplerCount > 0) {
+			vk::WriteDescriptorSet SamplerWrite;
+			SamplerWrite.setDstSet(DescSet)
+				.setDstBinding(SamplerBindingIndex)   // ← 从配置读
+				.setDescriptorType(vk::DescriptorType::eCombinedImageSampler)
+				.setDescriptorCount(UpdateSamplerCount)
+				.setPImageInfo(ImageInfos);
+			DescriptorWrites.push_back(SamplerWrite);
+		}
+	}
+
+	if (!DescriptorWrites.empty()) {
+		Context.Device.GetLogicalDevice().updateDescriptorSets(
+			(uint32_t)DescriptorWrites.size(), DescriptorWrites.data(), 0, nullptr);
+	}
+
+	GetCurrentCommandBuffer()->CommandBuffer.bindDescriptorSets(
+		vk::PipelineBindPoint::eGraphics,
+		Pipeline.PipelineLayout,
+		1, 1, &DescSet, 0, nullptr);
+
+	return true;
+}
+
+bool VulkanShader::SetUniform(const FString& name, const void* value) {
+	uint32_t Index = GetUniformIndex(name);
+	if (Index == INVALID_ID) return false;
+	return SetUniformByIndex(Index, value);
+}
+
+bool VulkanShader::SetUniformByIndex(uint32_t index, const void* value) {
+	if (index == INVALID_ID || !value) {
+		GLOG(Log::eWarn, "VulkanShader::SetUniformByIndex — 无效 index 或 value 为空。");
+		return false;
+	}
+
+	ShaderUniform* Uniform = &Uniforms[index];
+
+	// Sampler 走单独路径
+	if (Uniform->type == eShader_Uniform_Type_Sampler) {
+		return SetSamplerByIndex(index, static_cast<const TextureMap*>(value));
+	}
+
+	switch (Uniform->scope) {
+	case eShader_Scope_Global: {
+		size_t Addr = (size_t)MappedUniformBufferBlock + GlobalUboOffset + Uniform->offset;
+		Memory::Copy(reinterpret_cast<void*>(Addr), value, Uniform->size);
+		break;
+	}
+	case eShader_Scope_Instance: {
+		size_t Addr = (size_t)MappedUniformBufferBlock + BoundUboOffset + Uniform->offset;
+		Memory::Copy(reinterpret_cast<void*>(Addr), value, Uniform->size);
+		break;
+	}
+	case eShader_Scope_Local: {
+		GetCurrentCommandBuffer()->CommandBuffer.pushConstants(
+			Pipeline.PipelineLayout,
+			vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment,
+			(uint32_t)Uniform->offset,
+			Uniform->size,
+			value);
+		break;
+	}
+	}
+
+	return true;
+}
+
+void VulkanShader::SetupCompileOptions(shaderc::CompileOptions& options) {
+	VulkanBackend* Backend = (VulkanBackend*)Renderer->GetRenderBackend();
+	uint32_t Api = Backend->Context.ApiVersion;
+
+	if (Api >= VK_API_VERSION_1_3) {
+		options.SetTargetEnvironment(shaderc_target_env_vulkan, shaderc_env_version_vulkan_1_3);
+		options.SetTargetSpirv(shaderc_spirv_version_1_6);
+	}
+	else if (Api >= VK_API_VERSION_1_2) {
+		options.SetTargetEnvironment(shaderc_target_env_vulkan, shaderc_env_version_vulkan_1_2);
+		options.SetTargetSpirv(shaderc_spirv_version_1_5);
+	}
+	else if (Api >= VK_API_VERSION_1_1) {
+		options.SetTargetEnvironment(shaderc_target_env_vulkan, shaderc_env_version_vulkan_1_1);
+		options.SetTargetSpirv(shaderc_spirv_version_1_3);
+	}
+	else {
+		options.SetTargetEnvironment(shaderc_target_env_vulkan, shaderc_env_version_vulkan_1_0);
+		options.SetTargetSpirv(shaderc_spirv_version_1_0);
+	}
+}
+
+VulkanCommandBuffer* VulkanShader::GetCurrentCommandBuffer() {
+	VulkanBackend* Backend = (VulkanBackend*)Renderer->GetRenderBackend();
+	return &Backend->Context.GraphicsCommandBuffers[Backend->Context.ImageIndex];
+}
+
+bool VulkanShader::SetSamplerByIndex(uint32_t index, const TextureMap* map) {
+	ShaderUniform* Uniform = &Uniforms[index];
+
+	if (Uniform->scope == eShader_Scope_Global) {
+		if (Uniform->location >= (uint32_t)GlobalTextureMaps.size()) {
+			GLOG(Log::eError, "SetSamplerByIndex — Global sampler location 越界。");
+			return false;
+		}
+		GlobalTextureMaps[Uniform->location] = const_cast<TextureMap*>(map);
+	}
+	else {
+		VulkanShaderInstanceState& State = InstanceStates[BoundInstanceId];
+		if (Uniform->location >= (uint32_t)State.instance_texture_maps.size()) {
+			GLOG(Log::eError, "SetSamplerByIndex — Instance sampler location 越界。");
+			return false;
+		}
+		State.instance_texture_maps[Uniform->location] = const_cast<TextureMap*>(map);
+	}
+
+	return true;
+}
+
 bool VulkanShader::CreateModule() {
 	if (Renderer == nullptr) return false;
 	Memory::Zero(Stages, sizeof(VulkanShaderStage) * VULKAN_SHADER_MAX_STAGES);
@@ -270,10 +592,10 @@ bool VulkanShader::CompileShaderFile(bool writeToDisk/* = true*/){
 	return true;
 }
 
-bool VulkanShader::CreatePipeline() {
+bool VulkanShader::CreateDescriptorSetLayouts(){
 	VulkanBackend* vkRenderer = static_cast<VulkanBackend*>(Renderer->GetRenderBackend());
 	VulkanContext& Context = vkRenderer->Context;
-	vk::Device LogicalDevice = vkRenderer->Context.Device.GetLogicalDevice();
+	vk::Device LogicalDevice = Context.Device.GetLogicalDevice();
 	vk::AllocationCallbacks* VkAllocator = vkRenderer->Context.Allocator;
 	ASSERT(VkAllocator);
 
@@ -288,8 +610,70 @@ bool VulkanShader::CreatePipeline() {
 		ASSERT(DescriptorSetLayouts[i]);
 	}
 
-	// TODO: This feels wrong to have these here, at least in this fashion. Should probably
-	// Be configured to pull from someplace instead.
+	return true;
+}
+
+bool VulkanShader::AllocateGlobalDescriptorSets(){
+	VulkanBackend* vkRenderer = static_cast<VulkanBackend*>(Renderer->GetRenderBackend());
+	vk::Device LogicalDevice = vkRenderer->Context.Device.GetLogicalDevice();
+
+	// Allocate global descriptor sets, one per frame. Global is always the first set.
+	vk::DescriptorSetLayout GlobalLayouts[3] = {
+		DescriptorSetLayouts[DESC_SET_INDEX_GLOBAL],
+		DescriptorSetLayouts[DESC_SET_INDEX_GLOBAL],
+		DescriptorSetLayouts[DESC_SET_INDEX_GLOBAL]
+	};
+
+	vk::DescriptorSetAllocateInfo AllocInfo;
+	AllocInfo.setDescriptorPool(DescriptorPool)
+		.setDescriptorSetCount(3)
+		.setPSetLayouts(GlobalLayouts);
+	if (LogicalDevice.allocateDescriptorSets(&AllocInfo, GlobalDescriptorSets)
+		!= vk::Result::eSuccess) {
+		GLOG(Log::eError, "Allocate descriptor sets failed.");
+		return false;
+	}
+
+	return true;
+}
+
+bool VulkanShader::CreateUniformBuffer() {
+	VulkanBackend* vkRenderer = static_cast<VulkanBackend*>(Renderer->GetRenderBackend());
+	VulkanContext& Context = vkRenderer->Context;
+
+	// Uniform buffer.
+	vk::MemoryPropertyFlags DeviceLocalBits = Context.Device.GetIsSupportDeviceLocalHostVisible() ? vk::MemoryPropertyFlagBits::eDeviceLocal : vk::MemoryPropertyFlags();
+	// TODO: max count should be configurable, or perhaps long term support of buffer resizing.
+	size_t TotalBufferSize = GlobalUboStride + (UboStride * VULKAN_MAX_MATERIAL_COUNT);
+	UniformBuffer.Type = EGPUBufferType::eRenderbuffer_Type_Uniform;
+	UniformBuffer.TotalSize = TotalBufferSize;
+	UniformBuffer.UseFreelist = true;
+	if (!UniformBuffer.Create()) {
+		GLOG(Log::eError, "Vulkan buffer creation failed for object shader.");
+		return false;
+	}
+	UniformBuffer.Bind(0);
+
+	// Allocate space for the global UBO, which should occupy the _stride_ space, _not_ the actual size used.
+	if (!UniformBuffer.AllocateMemory(GlobalUboStride, &GlobalUboOffset)) {
+		GLOG(Log::eError, "Failed to allocate space for the uniform buffer!");
+		return false;
+	}
+
+	// Map the entire buffer's memory.
+	MappedUniformBufferBlock = UniformBuffer.MapMemory(0, TotalBufferSize);
+
+	return true;
+}
+
+bool VulkanShader::CreatePipeline() {
+	VulkanBackend* vkRenderer = static_cast<VulkanBackend*>(Renderer->GetRenderBackend());
+	VulkanContext& Context = vkRenderer->Context;
+
+	RequiredUboAlignment = Context.Device.GetDeviceProperties().limits.minUniformBufferOffsetAlignment;
+	GlobalUboStride = PaddingAligned(GlobalUboSize, RequiredUboAlignment);
+	UboStride = PaddingAligned(UboSize, RequiredUboAlignment);
+
 	// Viewport.
 	vk::Viewport Viewport;
 	Viewport.setX(0.0f)
@@ -328,61 +712,5 @@ bool VulkanShader::CreatePipeline() {
 	PipelineConfig.push_constant_range_count = PushConstantsRangeCount;
 	PipelineConfig.push_constant_ranges = PushConstantsRanges;
 
-	if (!Pipeline.Create(&Context, PipelineConfig)) {
-		GLOG(Log::eError, "Failed to load graphics pipeline for object shader.");
-		return false;
-	}
-
-	// Grab the UBO alignment requirement from the device.
-	RequiredUboAlignment = Context.Device.GetDeviceProperties().limits.minUniformBufferOffsetAlignment;
-
-	// Make sure the UBO is aligned according to device requirements.
-	GlobalUboStride = PaddingAligned(GlobalUboSize, RequiredUboAlignment);
-	UboStride = PaddingAligned(UboSize, RequiredUboAlignment);
-
-	// Uniform buffer.
-	vk::MemoryPropertyFlags DeviceLocalBits = Context.Device.GetIsSupportDeviceLocalHostVisible() ? vk::MemoryPropertyFlagBits::eDeviceLocal : vk::MemoryPropertyFlags();
-	// TODO: max count should be configurable, or perhaps long term support of buffer resizing.
-	size_t TotalBufferSize = GlobalUboStride + (UboStride * VULKAN_MAX_MATERIAL_COUNT);
-	UniformBuffer.Type = EGPUBufferType::eRenderbuffer_Type_Uniform;
-	UniformBuffer.TotalSize = TotalBufferSize;
-	UniformBuffer.UseFreelist = true;
-	if (!UniformBuffer.Create()) {
-		GLOG(Log::eError, "Vulkan buffer creation failed for object shader.");
-		return false;
-	}
-	UniformBuffer.Bind(0);
-
-	// Allocate space for the global UBO, which should occupy the _stride_ space, _not_ the actual size used.
-	if (!UniformBuffer.AllocateMemory(GlobalUboStride, &GlobalUboOffset)) {
-		GLOG(Log::eError, "Failed to allocate space for the uniform buffer!");
-		return false;
-	}
-
-	// Map the entire buffer's memory.
-	MappedUniformBufferBlock = UniformBuffer.MapMemory(0, TotalBufferSize);
-
-	// The index of the global descriptor set.
-	const uint32_t DESC_SET_INDEX_GLOBAL = 0;
-	// The index of the instance descriptor set.
-	//const uint32_t DESC_SET_INDEX_INSTANCE = 1;
-
-	// Allocate global descriptor sets, one per frame. Global is always the first set.
-	vk::DescriptorSetLayout GlobalLayouts[3] = {
-		DescriptorSetLayouts[DESC_SET_INDEX_GLOBAL],
-		DescriptorSetLayouts[DESC_SET_INDEX_GLOBAL],
-		DescriptorSetLayouts[DESC_SET_INDEX_GLOBAL]
-	};
-
-	vk::DescriptorSetAllocateInfo AllocInfo;
-	AllocInfo.setDescriptorPool(DescriptorPool)
-		.setDescriptorSetCount(3)
-		.setPSetLayouts(GlobalLayouts);
-	if (LogicalDevice.allocateDescriptorSets(&AllocInfo, GlobalDescriptorSets)
-		!= vk::Result::eSuccess) {
-		GLOG(Log::eError, "Allocate descriptor sets failed.");
-		return false;
-	}
-
-	return true;
+	return Pipeline.Create(&Context, PipelineConfig);
 }

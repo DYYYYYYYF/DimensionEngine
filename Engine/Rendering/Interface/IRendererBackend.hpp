@@ -63,14 +63,8 @@ public:
 
 	// Shader
 	virtual bool CreateShader(Shader* shader, const ShaderConfig* config, IRenderpass* pass, const TArray<FString>& stage_filenames, std::vector<ShaderStage>& stages) = 0;
-	virtual bool UseShader(Shader* shader) = 0;
-	virtual bool BindGlobalsShader(Shader* shader) = 0;
-	virtual bool BindInstanceShader(Shader* shader, uint64_t instance_id) = 0;
-	virtual bool ApplyGlobalShader(Shader* shader) = 0;
-	virtual bool ApplyInstanceShader(Shader* shader, bool need_update) = 0;
 	virtual uint32_t AcquireInstanceResource(Shader* shader, std::vector<TextureMap*>& maps) = 0;
 	virtual bool ReleaseInstanceResource(Shader* shader, uint64_t instance_id) = 0;
-	virtual bool SetUniform(Shader* shader, ShaderUniform* uniform, const void* value) = 0;
 
 	virtual bool AcquireTextureMap(TextureMap* map) = 0;
 	virtual void ReleaseTextureMap(TextureMap* map) = 0;

@@ -39,5 +39,6 @@ public:
 public:
 	vk::Pipeline Handle = nullptr;
 	vk::PipelineLayout PipelineLayout = nullptr;
+	vk::ShaderStageFlags PushConstantStageFlags;
 
 };

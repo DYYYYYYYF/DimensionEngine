@@ -213,36 +213,12 @@ bool IRenderer::InitializeRenderShader(Shader* shader) {
 	return shader->Initialize();
 }
 
-bool IRenderer::UseRenderShader(Shader* shader) {
-	return Backend->UseShader(shader);
-}
-
-bool IRenderer::BindGlobalsRenderShader(Shader* shader) {
-	return Backend->BindGlobalsShader(shader);
-}
-
-bool IRenderer::BindInstanceRenderShader(Shader* shader, uint64_t instance_id) {
-	return Backend->BindInstanceShader(shader, instance_id);
-}
-
-bool IRenderer::ApplyGlobalRenderShader(Shader* shader) {
-	return Backend->ApplyGlobalShader(shader);
-}
-
-bool IRenderer::ApplyInstanceRenderShader(Shader* shader, bool need_update) {
-	return Backend->ApplyInstanceShader(shader, need_update);
-}
-
 uint32_t IRenderer::AcquireInstanceResource(Shader* shader, std::vector<TextureMap*> maps) {
 	return Backend->AcquireInstanceResource(shader, maps);
 }
 
 bool IRenderer::ReleaseInstanceResource(Shader* shader, uint32_t instance_id) {
 	return Backend->ReleaseInstanceResource(shader, instance_id);
-}
-
-bool IRenderer::SetUniform(Shader* shader, ShaderUniform* uniform, const void* value) {
-	return Backend->SetUniform(shader, uniform, value);
 }
 
 bool IRenderer::AcquireTextureMap(TextureMap* map) {

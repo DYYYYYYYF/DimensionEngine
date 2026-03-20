@@ -229,7 +229,7 @@ bool RenderViewWorld::OnRender(struct RenderViewPacket* packet, IRendererBackend
 		IRenderpass* Pass = (IRenderpass*)&Passes[p];
 		Pass->Begin(&Pass->Targets[render_target_index]);
 
-		if (!ShaderSystem::Get().UseByID(SID)) {
+		if (!UsedShader->Use()) {
 			GLOG(Log::eError, "RenderViewUI::OnRender() Failed to use material shader. Render frame failed.");
 			return false;
 		}

@@ -61,9 +61,9 @@ bool RenderViewUI::OnCreate(const RenderViewConfig& config) {
 	ResourceSystem::Get().Unload(&ConfigResource);
 
 	UsedShader = ShaderSystem::Get().Get(CustomShaderName.IsEmpty() ? ShaderName : CustomShaderName);
-	DiffuseMapLocation = ShaderSystem::Get().GetUniformIndex(UsedShader, "diffuse_texture");
-	DiffuseColorLocation = ShaderSystem::Get().GetUniformIndex(UsedShader, "diffuse_color");
-	ModelLocation = ShaderSystem::Get().GetUniformIndex(UsedShader, "model");
+	DiffuseMapLocation = UsedShader->GetUniformIndex("diffuse_texture");
+	DiffuseColorLocation = UsedShader->GetUniformIndex("diffuse_color");
+	ModelLocation = UsedShader->GetUniformIndex("model");
 
 	// TODO: Set from configurable.
 	NearClip = -100.0f;
@@ -167,7 +167,7 @@ bool RenderViewUI::OnRender(struct RenderViewPacket* packet, IRendererBackend* b
 		IRenderpass* Pass = (IRenderpass*)&Passes[p];
 		Pass->Begin(&Pass->Targets[render_target_index]);
 
-		if (!ShaderSystem::Get().UseByID(SID)) {
+		if (!UsedShader->Use()) {
 			GLOG(Log::eError, "RenderViewUI::OnRender() Failed to use material shader. Render frame failed.");
 			return false;
 		}
@@ -210,29 +210,29 @@ bool RenderViewUI::OnRender(struct RenderViewPacket* packet, IRendererBackend* b
 		UIPacketData* PacketData = (UIPacketData*)packet->extended_data;
 		for (uint32_t i = 0; i < PacketData->textCount; ++i) {
 			ATextActor* Text = PacketData->Textes[i];
-			ShaderSystem::Get().BindInstance(Text->InstanceID);
+			UsedShader->BindInstance(Text->InstanceID);
 
-			if (!ShaderSystem::Get().SetUniformByIndex(DiffuseMapLocation, &Text->Data->GetAtlas())) {
+			if (!UsedShader->SetUniformByIndex(DiffuseMapLocation, &Text->Data->GetAtlas())) {
 				GLOG(Log::eError, "Failed to apply bitmap font diffuse map uniform.");
 				return false;
 			}
 
 			// TODO: font color
 			Vector4 FontColor = Text->GetColor();
-			if (!ShaderSystem::Get().SetUniformByIndex(DiffuseColorLocation, &FontColor)) {
+			if (!UsedShader->SetUniformByIndex(DiffuseColorLocation, &FontColor)) {
 				GLOG(Log::eError, "Failed to apply bitmap font diffuse color uniform.");
 				return false;
 			}
 
 			bool NeedUpdate = Text->GetFrameNumber() != frame_number;
-			ShaderSystem::Get().ApplyInstance(NeedUpdate);
+			UsedShader->ApplyInstance(NeedUpdate);
 
 			// Sync frame number.
 			Text->SetFrameNumber(frame_number);
 
 			// Apply the locals.
 			Matrix4 Model = Text->GetLocalTransform();
-			if (!ShaderSystem::Get().SetUniformByIndex(ModelLocation, &Model)) {
+			if (!UsedShader->SetUniformByIndex(ModelLocation, &Model)) {
 				GLOG(Log::eError, "Failde to apply model matrix for text.");
 			}
 

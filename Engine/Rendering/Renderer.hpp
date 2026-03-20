@@ -87,49 +87,7 @@ public:
 	 */
 	virtual bool InitializeRenderShader(Shader* shader);
 
-	/**
-	 * @brief Uses the given shader, activating it for updates to attributes, uniforms and such,
-	 * and for use in draw calls.
-	 *
-	 * @param shader A pointer to the shader to be used.
-	 * @return True on success; otherwise false.
-	 */
-	virtual bool UseRenderShader(Shader* shader);
-
-	/**
-	 * @brief Binds global resources for use and updating.
-	 *
-	 * @param shader A pointer to the shader whose globals are to be bound.
-	 * @return True on success; otherwise false.
-	 */
-	virtual bool BindGlobalsRenderShader(Shader* shader);
-
-	/**
-	 * @brief Binds instance resources for use and updating.
-	 *
-	 * @param shader A pointer to the shader whose instance resources are to be bound.
-	 * @param instance_id The identifier of the instance to be bound.
-	 * @return True on success; otherwise false.
-	 */
-	virtual bool BindInstanceRenderShader(Shader* shader, uint64_t instance_id);
-
-	/**
-	 * @brief Applies global data to the uniform buffer.
-	 *
-	 * @param shader A pointer to the shader to apply the global data for.
-	 * @return True on success; otherwise false.
-	 */
-	virtual bool ApplyGlobalRenderShader(Shader* shader);
-
-	/**
-	 * @brief Applies data for the currently bound instance.
-	 *
-	 * @param shader A pointer to the shader to apply the instance data for.
-	 * @param need_update
-	 * @return True on success; otherwise false.
-	 */
-	virtual bool ApplyInstanceRenderShader(Shader* shader, bool need_update);
-
+	
 	/**
 	 * @brief Acquires internal instance-level resources and provides an instance id.
 	 *
@@ -148,16 +106,7 @@ public:
 	 */
 	virtual bool ReleaseInstanceResource(Shader* shader, uint32_t instance_id);
 
-	/**
-	 * @brief Sets the uniform of the given shader to the provided value.
-	 *
-	 * @param shader A pointer to the shader.
-	 * @param uniform A constant pointer to the uniform.
-	 * @param value A pointer to the value to be set.
-	 * @return b8 True on success; otherwise false.
-	 */
-	virtual bool SetUniform(Shader* shader, ShaderUniform* uniform, const void* value);
-
+	
 	/**
 	 * @brief Acquires internal resource for the given texture map.
 	 * 

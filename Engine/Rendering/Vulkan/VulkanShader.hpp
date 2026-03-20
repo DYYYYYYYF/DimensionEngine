@@ -6,6 +6,7 @@
 #include "Rendering/Resources/ResourceTypes.hpp"
 
 class VulkanRenderPass;
+class VulkanCommandBuffer;
 
 #define VULKAN_SHADER_MAX_STAGES 8
 #define VULKAN_SHADER_MAX_GLOBAL_TEXTURES 31
@@ -67,32 +68,15 @@ struct VulkanShaderInstanceState {
 	std::vector<TextureMap*> instance_texture_maps;
 };
 
+// The index of the global descriptor set.
+constexpr uint32_t DESC_SET_INDEX_GLOBAL = 0;
+// The index of the instance descriptor set.
+constexpr uint32_t DESC_SET_INDEX_INSTANCE = 1;
+
 class VulkanShader : public Shader {
 public:
-	VulkanShader() : Shader() {
-		ID = INVALID_ID;
-		MappedUniformBufferBlock = nullptr;
-		Renderpass = nullptr;
-		InstanceCount = 0;
-		GlobalUniformCount = 0;
-		GlobalUniformSamplerCount = 0;
-		InstanceUniformCount = 0;
-		InstanceUniformSamplerCount = 0;
-		LocalUniformCount = 0;
-	}
+	VulkanShader();
 	
-	VulkanShader(IRenderer* Renderer) : Shader(Renderer) {
-		ID = INVALID_ID;
-		MappedUniformBufferBlock = nullptr;
-		Renderpass = nullptr;
-		InstanceCount = 0;
-		GlobalUniformCount = 0;
-		GlobalUniformSamplerCount = 0;
-		InstanceUniformCount = 0;
-		InstanceUniformSamplerCount = 0;
-		LocalUniformCount = 0;
-	}
-
 	virtual ~VulkanShader() {
 		if (Status != EShaderStatus::eShader_State_Not_Created) {
 			Destroy();
@@ -104,33 +88,87 @@ public:
 	virtual bool Reload() override;
 	virtual void Destroy() override;
 
-protected:
-	virtual bool CreateModule();
-	virtual bool CompileShaderFile(bool writeToDisk = true);
+	// GPU 操作 
+	/**
+	 * @brief Uses the given shader, activating it for updates to attributes, uniforms and such,
+	 * and for use in draw calls.
+	 *
+	 * @return True on success; otherwise false.
+	 */
+	virtual bool Use() override;
+
+	/**
+	 * @brief Binds global resources for use and updating.
+	 *
+	 * @return True on success; otherwise false.
+	 */
+	virtual bool BindGlobal() override;
+
+	/**
+	 * @brief Binds instance resources for use and updating.
+	 *
+	 * @param instance_id The identifier of the instance to be bound.
+	 * @return True on success; otherwise false.
+	 */
+	virtual bool BindInstance(uint64_t instance_id) override;
+
+	/**
+	 * @brief Applies global data to the uniform buffer.
+	 *
+	 * @return True on success; otherwise false.
+	 */
+	virtual bool ApplyGlobal() override;
+
+	/**
+	 * @brief Applies data for the currently bound instance.
+	 *
+	 * @param need_update
+	 * @return True on success; otherwise false.
+	 */
+	virtual bool ApplyInstance(bool need_update) override;
+
+	/**
+	 * @brief Sets the uniform of the given shader to the provided value.
+	 *
+	 * @param uniform A constant pointer to the uniform.
+	 * @param value A pointer to the value to be set.
+	 * @return b8 True on success; otherwise false.
+	 */
+	virtual bool SetUniform(const FString& name, const void* value) override;
+
+	virtual bool SetUniformByIndex(uint32_t index, const void* value) override;
+
+	// 设置编译特性
+	virtual void SetupCompileOptions(shaderc::CompileOptions& options) override;
 
 private:
+	bool CreateModule();
+	bool CompileShaderFile(bool writeToDisk = true);
+
+	bool CreateDescriptorSetLayouts();
+	bool AllocateGlobalDescriptorSets();
+	bool CreateUniformBuffer();
 	bool CreatePipeline();
 
+	VulkanCommandBuffer* GetCurrentCommandBuffer();
+	bool SetSamplerByIndex(uint32_t index, const TextureMap* map);
+
 public:
-	void* MappedUniformBufferBlock;
-	uint32_t ID;
-	VulkanShaderConfig Config;
-	VulkanRenderPass* Renderpass;
-	VulkanShaderStage Stages[VULKAN_SHADER_MAX_STAGES];
-
-	vk::DescriptorPool DescriptorPool;
-	vk::DescriptorSetLayout DescriptorSetLayouts[2];
-	vk::DescriptorSet GlobalDescriptorSets[3];
-	VulkanBuffer UniformBuffer;
-
-	VulkanPipeline Pipeline;
-
-	uint32_t InstanceCount;
+	void*					  MappedUniformBufferBlock = nullptr;
+	VulkanShaderConfig        Config;
+	VulkanRenderPass*		  Renderpass = nullptr;
+	VulkanShaderStage         Stages[VULKAN_SHADER_MAX_STAGES];
+	vk::DescriptorPool        DescriptorPool;
+	vk::DescriptorSetLayout   DescriptorSetLayouts[2];
+	vk::DescriptorSet         GlobalDescriptorSets[3];
+	VulkanBuffer              UniformBuffer;
+	VulkanPipeline            Pipeline;
+	uint32_t                  InstanceCount = 0;
 	VulkanShaderInstanceState InstanceStates[VULKAN_MAX_MATERIAL_COUNT];
 
-	unsigned char GlobalUniformCount;
-	unsigned char GlobalUniformSamplerCount;
-	unsigned char InstanceUniformCount;
-	unsigned char InstanceUniformSamplerCount;
-	unsigned char LocalUniformCount;
+	unsigned char GlobalUniformCount = 0;
+	unsigned char GlobalUniformSamplerCount = 0;
+	unsigned char InstanceUniformCount = 0;
+	unsigned char InstanceUniformSamplerCount = 0;
+	unsigned char LocalUniformCount = 0;
 };

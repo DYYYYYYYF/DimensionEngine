@@ -117,10 +117,10 @@ bool RenderViewPick::OnCreate(const RenderViewConfig& config) {
 	UIShaderInfo.UsedShader = ShaderSystem::Get().Get(UIShaderName);
 
 	// Extract uniform locations.
-	UIShaderInfo.IDColorLocation = ShaderSystem::Get().GetUniformIndex(UIShaderInfo.UsedShader, "id_color");
-	UIShaderInfo.ModelLocation = ShaderSystem::Get().GetUniformIndex(UIShaderInfo.UsedShader, "model");
-	UIShaderInfo.ProjectionLocation = ShaderSystem::Get().GetUniformIndex(UIShaderInfo.UsedShader, "projection");
-	UIShaderInfo.ViewLocation = ShaderSystem::Get().GetUniformIndex(UIShaderInfo.UsedShader, "view");
+	UIShaderInfo.IDColorLocation = UIShaderInfo.UsedShader->GetUniformIndex("id_color");
+	UIShaderInfo.ModelLocation = UIShaderInfo.UsedShader->GetUniformIndex("model");
+	UIShaderInfo.ProjectionLocation = UIShaderInfo.UsedShader->GetUniformIndex("projection");
+	UIShaderInfo.ViewLocation = UIShaderInfo.UsedShader->GetUniformIndex("view");
 
 	// Default UI properties.
 	UIShaderInfo.NearClip = -100.0f;
@@ -144,10 +144,10 @@ bool RenderViewPick::OnCreate(const RenderViewConfig& config) {
 	WorldShaderInfo.UsedShader = ShaderSystem::Get().Get(WorldShaderName);
 
 	// Extract uniform locations.
-	WorldShaderInfo.IDColorLocation = ShaderSystem::Get().GetUniformIndex(UIShaderInfo.UsedShader, "id_color");
-	WorldShaderInfo.ModelLocation = ShaderSystem::Get().GetUniformIndex(UIShaderInfo.UsedShader, "model");
-	WorldShaderInfo.ProjectionLocation = ShaderSystem::Get().GetUniformIndex(UIShaderInfo.UsedShader, "projection");
-	WorldShaderInfo.ViewLocation = ShaderSystem::Get().GetUniformIndex(UIShaderInfo.UsedShader, "view");
+	WorldShaderInfo.IDColorLocation = UIShaderInfo.UsedShader->GetUniformIndex("id_color");
+	WorldShaderInfo.ModelLocation = UIShaderInfo.UsedShader->GetUniformIndex("model");
+	WorldShaderInfo.ProjectionLocation = UIShaderInfo.UsedShader->GetUniformIndex("projection");
+	WorldShaderInfo.ViewLocation = UIShaderInfo.UsedShader->GetUniformIndex("view");
 
 	// Default World properties.
 	WorldShaderInfo.NearClip = 0.1f;
@@ -354,23 +354,26 @@ bool RenderViewPick::OnRender(struct RenderViewPacket* packet, IRendererBackend*
 		PickPacketData* PacketData = (PickPacketData*)packet->extended_data;
 
 		uint64_t CurrentInstanceID = 0;
-
-		ShaderSystem& ShaderSys = ShaderSystem::Get();
+		Shader* WorldShader = WorldShaderInfo.UsedShader;
+		if (!WorldShader) {
+			GLOG(Log::eError, "Failed to use world pick shader. WorldShader is nullptr.");
+			return false;
+		}
 
 		// World
-		if (!ShaderSys.UseByID(WorldShaderInfo.UsedShader->ID)) {
+		if (!WorldShader->Use()) {
 			GLOG(Log::eError, "Failed to use world pick shader. Render frame failed.");
 			return false;
 		}
 
 		// Apply globals
-		if (!ShaderSys.SetUniformByIndex(WorldShaderInfo.ProjectionLocation, &WorldShaderInfo.ProjectionMatrix)) {
+		if (!WorldShader->SetUniformByIndex(WorldShaderInfo.ProjectionLocation, &WorldShaderInfo.ProjectionMatrix)) {
 			GLOG(Log::eError, "Failed to apply projection matrix");
 		}
-		if (!ShaderSys.SetUniformByIndex(WorldShaderInfo.ViewLocation, &WorldShaderInfo.ViewMatrix)) {
+		if (!WorldShader->SetUniformByIndex(WorldShaderInfo.ViewLocation, &WorldShaderInfo.ViewMatrix)) {
 			GLOG(Log::eError, "Failed to apply view matrix");
 		}
-		ShaderSys.ApplyGlobal();
+		WorldShader->ApplyGlobal();
 
 		// Draw geometries. Start from 0 since world geometries are added first, and stop at the world geometry count.
 		uint32_t WorldGeometryCount = (uint32_t)PacketData->WorldMeshData.size();
@@ -378,24 +381,24 @@ bool RenderViewPick::OnRender(struct RenderViewPacket* packet, IRendererBackend*
 			GeometryRenderData* Geo = &packet->geometries[i];
 			CurrentInstanceID = Geo->uniqueID;
 
-			ShaderSys.BindInstance(CurrentInstanceID);
+			WorldShader->BindInstance(CurrentInstanceID);
 
 			// Get color based on id
 			Vector3 IDColor;
 			uint32_t R, G, B;
 			UInt2RGB(Geo->uniqueID, &R, &G, &B);
 			RGB2Vec(R, G, B, &IDColor);
-			if (!ShaderSys.SetUniformByIndex(WorldShaderInfo.IDColorLocation, &IDColor)) {
+			if (!WorldShader->SetUniformByIndex(WorldShaderInfo.IDColorLocation, &IDColor)) {
 				GLOG(Log::eError, "Failed to apply id colour uniform.");
 				return false;
 			}
 
 			bool NeedsUpdate = !InstanceUpdated[CurrentInstanceID];
-			ShaderSys.ApplyInstance(NeedsUpdate);
+			WorldShader->ApplyInstance(NeedsUpdate);
 			InstanceUpdated[CurrentInstanceID] = true;
 
 			// Apply the locals.
-			if (!ShaderSys.SetUniformByIndex(WorldShaderInfo.ModelLocation, &Geo->model_mat)) {
+			if (!WorldShader->SetUniformByIndex(WorldShaderInfo.ModelLocation, &Geo->model_mat)) {
 				GLOG(Log::eError, "Failed to apply model matrix for world geometry.");
 			}
 
@@ -412,43 +415,48 @@ bool RenderViewPick::OnRender(struct RenderViewPacket* packet, IRendererBackend*
 		Pass->Begin(&Pass->Targets[render_target_index]);
 
 		// UI
-		if (!ShaderSys.UseByID(UIShaderInfo.UsedShader->ID)) {
+		Shader* UIShader = UIShaderInfo.UsedShader;
+		if (!UIShader) {
+			return false;
+		}
+
+		if (!UIShader->Use()) {
 			GLOG(Log::eError, "Failed to use material shader. Render frame failed.");
 			return false;
 		}
 
 		// Apply globals.
-		if (!ShaderSys.SetUniformByIndex(UIShaderInfo.ProjectionLocation, &UIShaderInfo.ProjectionMatrix)) {
+		if (!UIShader->SetUniformByIndex(UIShaderInfo.ProjectionLocation, &UIShaderInfo.ProjectionMatrix)) {
 			GLOG(Log::eError, "Failed to apply projection matrix");
 		}
-		if (!ShaderSys.SetUniformByIndex(UIShaderInfo.ViewLocation, &UIShaderInfo.ViewMatrix)) {
+		if (!UIShader->SetUniformByIndex(UIShaderInfo.ViewLocation, &UIShaderInfo.ViewMatrix)) {
 			GLOG(Log::eError, "Failed to apply view matrix");
 		}
-		ShaderSys.ApplyGlobal();
+		UIShader->ApplyGlobal();
 
 		// Draw geometries. Start off where world geometries left off.
 		for (uint32_t i = WorldGeometryCount; i < packet->geometries.size(); ++i) {
 			GeometryRenderData* Geo = &packet->geometries[i];
 			CurrentInstanceID = Geo->uniqueID;
 
-			ShaderSys.BindInstance(CurrentInstanceID);
+			UIShader->BindInstance(CurrentInstanceID);
 
 			// Get color based on id
 			Vector3 IDColor;
 			uint32_t R, G, B;
 			UInt2RGB(Geo->uniqueID, &R, &G, &B);
 			RGB2Vec(R, G, B, &IDColor);
-			if (!ShaderSys.SetUniformByIndex(WorldShaderInfo.IDColorLocation, &IDColor)) {
+			if (!UIShader->SetUniformByIndex(WorldShaderInfo.IDColorLocation, &IDColor)) {
 				GLOG(Log::eError, "Failed to apply id colour uniform.");
 				return false;
 			}
 
 			bool NeedsUpdate = !InstanceUpdated[CurrentInstanceID];
-			ShaderSys.ApplyInstance(NeedsUpdate);
+			UIShader->ApplyInstance(NeedsUpdate);
 			InstanceUpdated[CurrentInstanceID] = true;
 
 			// Apply the locals.
-			if (!ShaderSys.SetUniformByIndex(WorldShaderInfo.ModelLocation, &Geo->model_mat)) {
+			if (!UIShader->SetUniformByIndex(WorldShaderInfo.ModelLocation, &Geo->model_mat)) {
 				GLOG(Log::eError, "Failed to apply model matrix for world geometry.");
 			}
 
@@ -460,23 +468,23 @@ bool RenderViewPick::OnRender(struct RenderViewPacket* packet, IRendererBackend*
  		for (uint32_t i = 0; i < PacketData->TextCount; ++i) {
 			ATextActor* Text = PacketData->Texts[i];
 			CurrentInstanceID = Text->GetUniqueID();
-			ShaderSys.BindInstance(CurrentInstanceID);
+			UIShader->BindInstance(CurrentInstanceID);
 
 			// Get color based on id
 			Vector3 IDColor;
 			uint32_t R, G, B;
 			UInt2RGB(Text->GetUniqueID(), &R, &G, &B);
 			RGB2Vec(R, G, B, &IDColor);
-			if (!ShaderSys.SetUniformByIndex(UIShaderInfo.IDColorLocation, &IDColor)) {
+			if (!UIShader->SetUniformByIndex(UIShaderInfo.IDColorLocation, &IDColor)) {
 				GLOG(Log::eError, "Failed to apply id colour uniform.");
 				return false;
 			}
 
-			ShaderSys.ApplyInstance(true);
+			UIShader->ApplyInstance(true);
 
 			// Apply the locals.
 			Matrix4 Model = Text->GetLocalTransform();
-			if (!ShaderSys.SetUniformByIndex(UIShaderInfo.ModelLocation, &Model)) {
+			if (!UIShader->SetUniformByIndex(UIShaderInfo.ModelLocation, &Model)) {
 				GLOG(Log::eError, "Failde to apply model matrix for text.");
 			}
 

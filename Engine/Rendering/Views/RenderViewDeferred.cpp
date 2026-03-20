@@ -303,19 +303,19 @@ bool RenderViewWorldDeferred::OnRender(struct RenderViewPacket* packet, IRendere
 	IRenderpass* GBufferPass = (IRenderpass*)&Passes[0];
 	GBufferPass->Begin(&GBufferPass->Targets[render_target_index]);
 
-	if (!ShaderSystem::Get().UseByID(GBufferShader->ID)) {
+	if (!GBufferShader->Use()) {
 		GLOG(Log::eError, "Failed to use G-Buffer shader.");
 		GBufferPass->End();
 		return false;
 	}
 
 	// 应用全局uniform 
-	ShaderSystem::Get().SetUniform("projection", &packet->projection_matrix);
-	ShaderSystem::Get().SetUniform("view", &packet->view_matrix);
-	ShaderSystem::Get().SetUniform("view_position", &packet->view_position);
-	ShaderSystem::Get().SetUniform("mode", &render_mode);
-	ShaderSystem::Get().SetUniform("time", &packet->global_time);
-	ShaderSystem::Get().ApplyGlobal();
+	GBufferShader->SetUniform("projection", &packet->projection_matrix);
+	GBufferShader->SetUniform("view", &packet->view_matrix);
+	GBufferShader->SetUniform("view_position", &packet->view_position);
+	GBufferShader->SetUniform("mode", &render_mode);
+	GBufferShader->SetUniform("time", &packet->global_time);
+	GBufferShader->ApplyGlobal();
 
 	// 渲染所有几何体到G-Buffer
 	uint32_t Count = packet->geometry_count;
@@ -344,15 +344,15 @@ bool RenderViewWorldDeferred::OnRender(struct RenderViewPacket* packet, IRendere
 	IRenderpass* LightingPass = (IRenderpass*)&Passes[1];
 	LightingPass->Begin(&LightingPass->Targets[render_target_index]);
 
-	if (!ShaderSystem::Get().UseByID(LightingShader->ID)) {
+	if (!LightingShader->Use()) {
 		GLOG(Log::eError, "Failed to use deferred lighting shader.");
 		LightingPass->End();
 		return false;
 	}
 
 	// 应用全局uniform (环境光、视角位置等) - 延迟光照专用接口
-	ShaderSystem::Get().SetUniform("time", &packet->global_time);
-	ShaderSystem::Get().ApplyGlobal();
+	LightingShader->SetUniform("time", &packet->global_time);
+	LightingShader->ApplyGlobal();
 
 	// 创建延迟光照材质并应用
 	Material* DeferredLightingMat = FullscreenQuad->Material;
@@ -360,15 +360,15 @@ bool RenderViewWorldDeferred::OnRender(struct RenderViewPacket* packet, IRendere
 	// 应用延迟光照材质
 	bool LightingNeedsUpdate = DeferredLightingMat->RenderFrameNumer != frame_number;
 	if (LightingNeedsUpdate) {
-		ShaderSystem::Get().BindInstance(DeferredLightingMat->InternalID);
+		LightingShader->BindInstance(DeferredLightingMat->InternalID);
 		Vector4 LightIntensity = { 1.0f };
-		ShaderSystem::Get().SetUniform("light_intensity", &LightIntensity);
-		ShaderSystem::Get().SetUniform("debug_mode", &render_mode);
+		LightingShader->SetUniform("light_intensity", &LightIntensity);
+		LightingShader->SetUniform("debug_mode", &render_mode);
 
-		ShaderSystem::Get().SetUniform("albedo_texture", &CurrentGBuffer->AlbedoTextureMap);		 // 复用DiffuseMap绑定点
-		ShaderSystem::Get().SetUniform("normal_texture", &CurrentGBuffer->NormalTextureMap);		 // 复用NormalMap绑定点  
-		ShaderSystem::Get().SetUniform("position_texture", &CurrentGBuffer->PositionTextureMap);	 // 复用SpecularMap绑定点
-		ShaderSystem::Get().ApplyInstance(LightingNeedsUpdate);
+		LightingShader->SetUniform("albedo_texture", &CurrentGBuffer->AlbedoTextureMap);		 // 复用DiffuseMap绑定点
+		LightingShader->SetUniform("normal_texture", &CurrentGBuffer->NormalTextureMap);		 // 复用NormalMap绑定点  
+		LightingShader->SetUniform("position_texture", &CurrentGBuffer->PositionTextureMap);	 // 复用SpecularMap绑定点
+		LightingShader->ApplyInstance(LightingNeedsUpdate);
 	}
 	else {
 		DeferredLightingMat->RenderFrameNumer = (uint32_t)frame_number;

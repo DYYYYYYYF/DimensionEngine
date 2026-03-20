@@ -134,41 +134,41 @@ Material* MaterialSystem::AcquireFromConfig(SMaterialConfig config) {
 		// Save off the locations for known types for quick lookups.
 		if (MaterialShaderID == INVALID_ID && config.shader_name.Compare("Shader.Builtin.GBuffer") == 0) {
 			MaterialShaderID = s->ID;
-			MaterialLocations.projection = ShaderSys.GetUniformIndex(s, "projection");
-			MaterialLocations.view = ShaderSys.GetUniformIndex(s, "view");
-			MaterialLocations.ambient_color = ShaderSys.GetUniformIndex(s, "ambient_color");
-			MaterialLocations.view_position = ShaderSys.GetUniformIndex(s, "view_position");
-			MaterialLocations.model = ShaderSys.GetUniformIndex(s, "model");
-			MaterialLocations.time = ShaderSys.GetUniformIndex(s, "time");
-			MaterialLocations.diffuse_color = ShaderSys.GetUniformIndex(s, "diffuse_color");
-			MaterialLocations.shininess = ShaderSys.GetUniformIndex(s, "shininess");
-			MaterialLocations.metallic = ShaderSys.GetUniformIndex(s, "metallic");
-			MaterialLocations.roughness = ShaderSys.GetUniformIndex(s, "roughness");
-			MaterialLocations.ambient_occlusion = ShaderSys.GetUniformIndex(s, "ambient_occlusion");
-			MaterialLocations.normal_intensity = ShaderSys.GetUniformIndex(s, "normal_intensity");
+			MaterialLocations.projection = s->GetUniformIndex("projection");
+			MaterialLocations.view = s->GetUniformIndex("view");
+			MaterialLocations.ambient_color = s->GetUniformIndex("ambient_color");
+			MaterialLocations.view_position = s->GetUniformIndex("view_position");
+			MaterialLocations.model = s->GetUniformIndex("model");
+			MaterialLocations.time = s->GetUniformIndex("time");
+			MaterialLocations.diffuse_color = s->GetUniformIndex("diffuse_color");
+			MaterialLocations.shininess = s->GetUniformIndex("shininess");
+			MaterialLocations.metallic = s->GetUniformIndex("metallic");
+			MaterialLocations.roughness = s->GetUniformIndex("roughness");
+			MaterialLocations.ambient_occlusion = s->GetUniformIndex("ambient_occlusion");
+			MaterialLocations.normal_intensity = s->GetUniformIndex("normal_intensity");
 
-			MaterialLocations.diffuse_texture = ShaderSys.GetUniformIndex(s, "diffuse_texture");
-			MaterialLocations.normal_texture = ShaderSys.GetUniformIndex(s, "normal_texture");
-			MaterialLocations.roughness_metallic_texture = ShaderSys.GetUniformIndex(s, "roughness_metallic_texture");
+			MaterialLocations.diffuse_texture = s->GetUniformIndex("diffuse_texture");
+			MaterialLocations.normal_texture = s->GetUniformIndex("normal_texture");
+			MaterialLocations.roughness_metallic_texture = s->GetUniformIndex("roughness_metallic_texture");
 
-			MaterialLocations.render_mode = ShaderSys.GetUniformIndex(s, "mode");
+			MaterialLocations.render_mode = s->GetUniformIndex("mode");
 		}
 		else if (DeferredLightMaterialShaderID == INVALID_ID && config.shader_name.Compare("Shader.Builtin.DeferredLighting") == 0) {
 			DeferredLightMaterialShaderID = s->ID;
-			DeferredLightMaterialLocations.time = ShaderSys.GetUniformIndex(s, "time");
-			DeferredLightMaterialLocations.albedo_texture = ShaderSys.GetUniformIndex(s, "albedo_texture");
-			DeferredLightMaterialLocations.normal_texture = ShaderSys.GetUniformIndex(s, "normal_texture");
-			DeferredLightMaterialLocations.position_texture = ShaderSys.GetUniformIndex(s, "position_texture");
-			DeferredLightMaterialLocations.light_intensity = ShaderSys.GetUniformIndex(s, "light_intensity");
-			DeferredLightMaterialLocations.debug_mode = ShaderSys.GetUniformIndex(s, "debug_mode");
+			DeferredLightMaterialLocations.time = s->GetUniformIndex("time");
+			DeferredLightMaterialLocations.albedo_texture = s->GetUniformIndex("albedo_texture");
+			DeferredLightMaterialLocations.normal_texture = s->GetUniformIndex("normal_texture");
+			DeferredLightMaterialLocations.position_texture = s->GetUniformIndex("position_texture");
+			DeferredLightMaterialLocations.light_intensity = s->GetUniformIndex("light_intensity");
+			DeferredLightMaterialLocations.debug_mode = s->GetUniformIndex("debug_mode");
 		}
 		else if (UIShaderID == INVALID_ID && config.shader_name.Compare("Shader.Builtin.UI") == 0) {
 			UIShaderID = s->ID;
-			UILocations.projection = ShaderSys.GetUniformIndex(s, "projection");
-			UILocations.view = ShaderSys.GetUniformIndex(s, "view");
-			UILocations.diffuse_color = ShaderSys.GetUniformIndex(s, "diffuse_color");
-			UILocations.diffuse_texture = ShaderSys.GetUniformIndex(s, "diffuse_texture");
-			UILocations.model = ShaderSys.GetUniformIndex(s, "model");
+			UILocations.projection = s->GetUniformIndex("projection");
+			UILocations.view = s->GetUniformIndex("view");
+			UILocations.diffuse_color = s->GetUniformIndex("diffuse_color");
+			UILocations.diffuse_texture = s->GetUniformIndex("diffuse_texture");
+			UILocations.model = s->GetUniformIndex("model");
 		}
 
 
@@ -241,7 +241,7 @@ Material* MaterialSystem::GetDefaultMaterial() {
 bool MaterialSystem::LoadMaterial(SMaterialConfig config, Material* mat) {
 	// name
 	mat->Name = config.name;
-	mat->ShaderID = ShaderSystem::Get().GetID(config.shader_name.CStr());
+	mat->ShaderID = ShaderSystem::Get().GetID(config.shader_name);
 
 	// Diffuse color
 	mat->DiffuseColor = config.diffuse_color;
@@ -467,37 +467,36 @@ bool MaterialSystem::ApplyGlobal(uint32_t shader_id, size_t renderer_frame_numbe
 	const Matrix4& projection, const Matrix4& view, const Vector4& ambient_color, 
 	const Vector3& view_position, uint32_t render_mode, float global_time) {
 
-	ShaderSystem& ShaderSys = ShaderSystem::Get();
-	Shader* s = ShaderSys.GetByID(shader_id);
-	if (s == nullptr) {
+	Shader* UsedShader = ShaderSystem::Get().GetByID(shader_id);
+	if (UsedShader == nullptr) {
 		return false;
 	}
 
-	if (s->RenderFrameNumber == renderer_frame_number) {
+	if (UsedShader->RenderFrameNumber == renderer_frame_number) {
 		return true;
 	}
 
 	if (shader_id == MaterialShaderID) {
-		MATERIAL_APPLY_OR_FAIL(ShaderSys.SetUniformByIndex(MaterialLocations.projection, &projection));
-		MATERIAL_APPLY_OR_FAIL(ShaderSys.SetUniformByIndex(MaterialLocations.view, &view));
-		MATERIAL_APPLY_OR_FAIL(ShaderSys.SetUniformByIndex(MaterialLocations.ambient_color, &ambient_color));
-		MATERIAL_APPLY_OR_FAIL(ShaderSys.SetUniformByIndex(MaterialLocations.view_position, &view_position));
-		MATERIAL_APPLY_OR_FAIL(ShaderSys.SetUniformByIndex(MaterialLocations.render_mode, &render_mode));
-		MATERIAL_APPLY_OR_FAIL(ShaderSys.SetUniformByIndex(MaterialLocations.time, &global_time));
+		MATERIAL_APPLY_OR_FAIL(UsedShader->SetUniformByIndex(MaterialLocations.projection, &projection));
+		MATERIAL_APPLY_OR_FAIL(UsedShader->SetUniformByIndex(MaterialLocations.view, &view));
+		MATERIAL_APPLY_OR_FAIL(UsedShader->SetUniformByIndex(MaterialLocations.ambient_color, &ambient_color));
+		MATERIAL_APPLY_OR_FAIL(UsedShader->SetUniformByIndex(MaterialLocations.view_position, &view_position));
+		MATERIAL_APPLY_OR_FAIL(UsedShader->SetUniformByIndex(MaterialLocations.render_mode, &render_mode));
+		MATERIAL_APPLY_OR_FAIL(UsedShader->SetUniformByIndex(MaterialLocations.time, &global_time));
 	}
 	else if (shader_id == UIShaderID) {
-		MATERIAL_APPLY_OR_FAIL(ShaderSys.SetUniformByIndex(UILocations.projection, &projection));
-		MATERIAL_APPLY_OR_FAIL(ShaderSys.SetUniformByIndex(UILocations.view, &view));
+		MATERIAL_APPLY_OR_FAIL(UsedShader->SetUniformByIndex(UILocations.projection, &projection));
+		MATERIAL_APPLY_OR_FAIL(UsedShader->SetUniformByIndex(UILocations.view, &view));
 	}
 	else {
 		GLOG(Log::eError, "material_system_apply_global(): Unrecognized shader id '%d' ", shader_id);
 		return false;
 	}
 
-	MATERIAL_APPLY_OR_FAIL(ShaderSys.ApplyGlobal());
+	MATERIAL_APPLY_OR_FAIL(UsedShader->ApplyGlobal());
 
 	// Sync
-	s->RenderFrameNumber = renderer_frame_number;
+	UsedShader->RenderFrameNumber = renderer_frame_number;
 
 	return true;
 }
@@ -507,25 +506,26 @@ bool MaterialSystem::ApplyInstance(Material* mat, bool need_update) {
 		return false;
 	}
 
-	ShaderSystem& ShaderSys = ShaderSystem::Get();
+	Shader* UsedShader = ShaderSystem::Get().GetByID(mat->ShaderID);
+
 	// Apply instance-level uniforms.
-	MATERIAL_APPLY_OR_FAIL(ShaderSys.BindInstance(mat->InternalID));
+	MATERIAL_APPLY_OR_FAIL(UsedShader->BindInstance(mat->InternalID));
 	if (need_update) {
 		if (mat->ShaderID == MaterialShaderID) {
-			MATERIAL_APPLY_OR_FAIL(ShaderSys.SetUniformByIndex(MaterialLocations.diffuse_color, &mat->DiffuseColor));
-			MATERIAL_APPLY_OR_FAIL(ShaderSys.SetUniformByIndex(MaterialLocations.shininess, &mat->Shininess));
-			MATERIAL_APPLY_OR_FAIL(ShaderSys.SetUniformByIndex(MaterialLocations.metallic, &mat->Metallic));
-			MATERIAL_APPLY_OR_FAIL(ShaderSys.SetUniformByIndex(MaterialLocations.roughness, &mat->Roughness));
-			MATERIAL_APPLY_OR_FAIL(ShaderSys.SetUniformByIndex(MaterialLocations.ambient_occlusion, &mat->AmbientOcclusion));
-			MATERIAL_APPLY_OR_FAIL(ShaderSys.SetUniformByIndex(MaterialLocations.normal_intensity, &mat->NormalIntensity));
+			MATERIAL_APPLY_OR_FAIL(UsedShader->SetUniformByIndex(MaterialLocations.diffuse_color, &mat->DiffuseColor));
+			MATERIAL_APPLY_OR_FAIL(UsedShader->SetUniformByIndex(MaterialLocations.shininess, &mat->Shininess));
+			MATERIAL_APPLY_OR_FAIL(UsedShader->SetUniformByIndex(MaterialLocations.metallic, &mat->Metallic));
+			MATERIAL_APPLY_OR_FAIL(UsedShader->SetUniformByIndex(MaterialLocations.roughness, &mat->Roughness));
+			MATERIAL_APPLY_OR_FAIL(UsedShader->SetUniformByIndex(MaterialLocations.ambient_occlusion, &mat->AmbientOcclusion));
+			MATERIAL_APPLY_OR_FAIL(UsedShader->SetUniformByIndex(MaterialLocations.normal_intensity, &mat->NormalIntensity));
 
-			MATERIAL_APPLY_OR_FAIL(ShaderSys.SetUniformByIndex(MaterialLocations.diffuse_texture, &mat->DiffuseMap));
-			MATERIAL_APPLY_OR_FAIL(ShaderSys.SetUniformByIndex(MaterialLocations.normal_texture, &mat->NormalMap));
-			MATERIAL_APPLY_OR_FAIL(ShaderSys.SetUniformByIndex(MaterialLocations.roughness_metallic_texture, &mat->RoughnessMetallicMap));
+			MATERIAL_APPLY_OR_FAIL(UsedShader->SetUniformByIndex(MaterialLocations.diffuse_texture, &mat->DiffuseMap));
+			MATERIAL_APPLY_OR_FAIL(UsedShader->SetUniformByIndex(MaterialLocations.normal_texture, &mat->NormalMap));
+			MATERIAL_APPLY_OR_FAIL(UsedShader->SetUniformByIndex(MaterialLocations.roughness_metallic_texture, &mat->RoughnessMetallicMap));
 		}
 		else if (mat->ShaderID == UIShaderID) {
-			MATERIAL_APPLY_OR_FAIL(ShaderSys.SetUniformByIndex(UILocations.diffuse_color, &mat->DiffuseColor));
-			MATERIAL_APPLY_OR_FAIL(ShaderSys.SetUniformByIndex(UILocations.diffuse_texture, &mat->DiffuseMap));
+			MATERIAL_APPLY_OR_FAIL(UsedShader->SetUniformByIndex(UILocations.diffuse_color, &mat->DiffuseColor));
+			MATERIAL_APPLY_OR_FAIL(UsedShader->SetUniformByIndex(UILocations.diffuse_texture, &mat->DiffuseMap));
 		}
 		else {
 			GLOG(Log::eError, "material_system_apply_instance(): Unrecognized shader id '%d' on shader '%s'.", mat->ShaderID, mat->Name.CStr());
@@ -533,16 +533,17 @@ bool MaterialSystem::ApplyInstance(Material* mat, bool need_update) {
 		}
 	}
 
-	MATERIAL_APPLY_OR_FAIL(ShaderSys.ApplyInstance(need_update));
+	MATERIAL_APPLY_OR_FAIL(UsedShader->ApplyInstance(need_update));
 	return true;
 }
 
 bool MaterialSystem::ApplyLocal(Material* mat, const Matrix4& model) {
+	Shader* UsedShader = ShaderSystem::Get().GetByID(mat->ShaderID);
 	if (mat->ShaderID == MaterialShaderID) {
-		return ShaderSystem::Get().SetUniformByIndex(MaterialLocations.model, &model);
+		return UsedShader->SetUniformByIndex(MaterialLocations.model, &model);
 	}
 	else if (mat->ShaderID == UIShaderID) {
-		return ShaderSystem::Get().SetUniformByIndex(UILocations.model, &model);
+		return UsedShader->SetUniformByIndex(UILocations.model, &model);
 	}
 
 	GLOG(Log::eError, "Unrecognized shader id '%d'", mat->ShaderID);
