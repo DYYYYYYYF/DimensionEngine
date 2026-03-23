@@ -42,6 +42,11 @@ public:
 	DAPI bool ReadBool(const std::string& path, bool defaultValue = false) const;
 	DAPI double ReadDouble(const std::string& path, double defaultValue = 0.0) const;
 
+	DAPI std::string ReadString() const;
+	DAPI int         ReadInt()    const;
+	DAPI float       ReadFloat()  const;
+	DAPI bool        ReadBool()   const;
+
 	// 设置
 	DAPI void Write(const std::string& path, const JsonObject& value);
 	DAPI void WriteString(const std::string& path, const std::string& value);

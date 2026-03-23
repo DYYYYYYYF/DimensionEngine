@@ -28,9 +28,6 @@ public:
 	virtual bool Render(struct SRenderPacket* packet, float delta_time) override;
 	virtual void OnResize(unsigned int width, unsigned int height) override;
 
-private:
-	bool ConfigureRenderviews();
-
 public:
 	ACameraActor* WorldCamera;
 	Frustum CameraFrustum;

@@ -9,6 +9,7 @@ class IRenderer;
 
 struct SRenderViewSystemConfig {
 	unsigned short max_view_count;
+	FString config_path;
 };
 
 class RenderViewSystem {
@@ -28,6 +29,9 @@ public:
 	bool OnRender(IRenderView* view, RenderViewPacket* packet, size_t frame_number, size_t render_target_index);
 
 	void RegenerateRendertargets(IRenderView* view);
+
+private:
+	bool LoadRenderviewConfig(const FString& path);
 
 private:
 	bool Initialized;

@@ -223,6 +223,19 @@ double JsonObject::ReadDouble(const std::string& path, double defaultValue) cons
 	return obj.IsNumber() ? obj.GetDouble() : defaultValue;
 }
 
+std::string JsonObject::ReadString() const {
+	return IsString() ? GetString() : "";
+}
+int JsonObject::ReadInt() const {
+	return IsNumber() ? GetInt() : 0;
+}
+float JsonObject::ReadFloat() const {
+	return IsNumber() ? GetFloat() : 0.0f;
+}
+bool JsonObject::ReadBool() const {
+	return IsBool() ? GetBool() : false;
+}
+
 // Write - 支持路径写入，自动创建中间对象
 void JsonObject::Write(const std::string& path, const JsonObject& value) {
 	if (path.empty()) return;

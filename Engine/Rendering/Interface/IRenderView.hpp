@@ -9,12 +9,13 @@ struct RenderViewPacket;
 struct RenderTargetAttachment;
 
 enum RenderViewKnownType {
-	eRender_View_Known_Type_World = 0x01,
-	eRender_View_Known_Type_UI = 0x02,
-	eRender_View_Known_Type_Skybox = 0x03,
+	eRender_View_Known_Type_Unknown = 0x01,
+	eRender_View_Known_Type_World = 0x02,
+	eRender_View_Known_Type_UI = 0x03,
+	eRender_View_Known_Type_Skybox = 0x04,
 	/** @brief A view which only renders ui and world objects to be picked. */
-	eRender_View_Known_Type_Pick = 0x04,
-	eRender_View_Known_Type_Deferred = 0x05,
+	eRender_View_Known_Type_Pick = 0x05,
+	eRender_View_Known_Type_Deferred = 0x06,
 };
 
 enum RenderViewViewMatrixtSource {

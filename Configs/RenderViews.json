@@ -1,0 +1,161 @@
+{
+    "renderviews": [
+      {
+        "name": "Skybox",
+        "type": "Skybox",
+        "passes": [
+          {
+            "name": "Renderpass.Builtin.Skybox",
+            "clear_color": [0.0, 0.0, 0.2, 1.0],
+            "clear_flags": ["Color"],
+            "depth": 1.0,
+            "stencil": 0,
+            "attachments": [
+              {
+                "type": "Color",
+                "source": "Default",
+                "load_op": "DontCare",
+                "store_op": "Store",
+                "present_after": false,
+                "index": 0
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "WorldDeferred",
+        "type": "Deferred",
+        "passes": [
+          {
+            "name": "Renderpass.Builtin.GBuffer",
+            "clear_color": [0.0, 0.0, 0.0, 0.0],
+            "clear_flags": ["Depth", "Stencil"],
+            "depth": 1.0,
+            "stencil": 0,
+            "attachments": [
+              {
+                "type": "Color",
+                "source": "View",
+                "load_op": "Clear",
+                "store_op": "Store",
+                "present_after": false,
+                "index": 0
+              },
+              {
+                "type": "Color",
+                "source": "View",
+                "load_op": "Clear",
+                "store_op": "Store",
+                "present_after": false,
+                "index": 1
+              },
+              {
+                "type": "Color",
+                "source": "View",
+                "load_op": "Clear",
+                "store_op": "Store",
+                "present_after": false,
+                "index": 2
+              },
+              {
+                "type": "Depth",
+                "source": "Default",
+                "load_op": "Clear",
+                "store_op": "Store",
+                "present_after": false,
+                "index": 0
+              }
+            ]
+          },
+          {
+            "name": "Renderpass.Builtin.DeferredLighting",
+            "clear_color": [0.0, 0.2, 0.0, 1.0],
+            "clear_flags": [],
+            "depth": 1.0,
+            "stencil": 0,
+            "attachments": [
+              {
+                "type": "Color",
+                "source": "Default",
+                "load_op": "Load",
+                "store_op": "Store",
+                "present_after": false,
+                "index": 0
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "UI",
+        "type": "UI",
+        "passes": [
+          {
+            "name": "Renderpass.Builtin.UI",
+            "clear_color": [0.0, 0.0, 0.2, 1.0],
+            "clear_flags": [],
+            "depth": 1.0,
+            "stencil": 0,
+            "attachments": [
+              {
+                "type": "Color",
+                "source": "Default",
+                "load_op": "Load",
+                "store_op": "Store",
+                "present_after": true,
+                "index": 0
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "Pick",
+        "type": "Pick",
+        "passes": [
+          {
+            "name": "Renderpass.Builtin.WorldPick",
+            "clear_color": [1.0, 1.0, 1.0, 1.0],
+            "clear_flags": ["Color", "Depth"],
+            "depth": 1.0,
+            "stencil": 0,
+            "render_target_count": 1,
+            "attachments": [
+              {
+                "type": "Color",
+                "source": "View",
+                "load_op": "DontCare",
+                "store_op": "Store",
+                "present_after": false
+              },
+              {
+                "type": "Depth",
+                "source": "View",
+                "load_op": "DontCare",
+                "store_op": "Store",
+                "present_after": false
+              }
+            ]
+          },
+          {
+            "name": "Renderpass.Builtin.UIPick",
+            "clear_color": [1.0, 1.0, 1.0, 1.0],
+            "clear_flags": [],
+            "depth": 1.0,
+            "stencil": 0,
+            "render_target_count": 1,
+            "attachments": [
+              {
+                "type": "Color",
+                "source": "View",
+                "load_op": "Load",
+                "store_op": "Store",
+                "present_after": false
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }

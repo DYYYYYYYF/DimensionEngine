@@ -167,20 +167,10 @@ bool Engine::Initialize(){
 	// Init render view system.
 	SRenderViewSystemConfig RenderViewSysConfig;
 	RenderViewSysConfig.max_view_count = 255;
+	RenderViewSysConfig.config_path = GameInst->GetRenderviewConfigPath();
 	if (!RenderViewSystem::Get().Initialize(Renderer, RenderViewSysConfig)) {
 		GLOG(Log::eFatal, "Render view system failed to intialize!");
 		return false;
-	}
-
-	// Load render views from app config.
-	const std::vector<RenderViewConfig>& Renderviews = GameInst->GetRenderviews();
-	uint32_t ViewCount = (uint32_t)Renderviews.size();
-	for (uint32_t v = 0; v < ViewCount; ++v) {
-		const RenderViewConfig& View = Renderviews[v];
-		if (!RenderViewSystem::Get().Create(View)) {
-			GLOG(Log::eFatal, "Failed to create view '%s'.", View.name.CStr());
-			return false;
-		}
 	}
 
 	// Init material system
