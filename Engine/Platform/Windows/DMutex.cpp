@@ -1,4 +1,4 @@
-#include "Platform/Thread/DMutex.hpp"
+﻿#include "Platform/Thread/DMutex.hpp"
 
 #if defined(DPLATFORM_WINDOWS)
 #include <windows.h>

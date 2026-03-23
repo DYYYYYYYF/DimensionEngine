@@ -1,4 +1,4 @@
-#include "Platform/Thread/DThread.hpp"
+﻿#include "Platform/Thread/DThread.hpp"
 
 #if defined(DPLATFORM_WINDOWS)
 
