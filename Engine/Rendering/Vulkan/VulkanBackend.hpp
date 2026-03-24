@@ -5,14 +5,14 @@
 
 class VulkanBuffer;
 
-class VulkanBackend : public IRendererBackend {
+class VulkanRHI : public RHI {
 	friend class VulkanShader;
 	friend class VulkanBuffer;
 	friend class VulkanTexture;
 
 public:
-	VulkanBackend();
-	virtual ~VulkanBackend();
+	VulkanRHI();
+	virtual ~VulkanRHI();
 
 public:
 	virtual bool Initialize(const RenderBackendConfig* config, unsigned char* out_window_render_target_count, struct SPlatformState* plat_state) override;

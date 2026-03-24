@@ -286,7 +286,7 @@ bool RenderViewWorldDeferred::RegenerateAttachmentTarget(uint32_t passIndex, Ren
 	return true;
 }
 
-bool RenderViewWorldDeferred::OnRender(struct RenderViewPacket* packet, IRendererBackend* back_renderer, size_t frame_number, size_t render_target_index) {
+bool RenderViewWorldDeferred::OnRender(struct RenderViewPacket* packet, RHI* back_renderer, size_t frame_number, size_t render_target_index) {
 	// 创建全屏四边形
 	if (!FullscreenQuad) {
 		if (!CreateFullscreenQuad()) {

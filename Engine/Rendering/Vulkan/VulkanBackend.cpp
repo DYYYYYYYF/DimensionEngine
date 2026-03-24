@@ -51,7 +51,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL VulkanDebugCallback(
 #endif
 
 
-VulkanBackend::VulkanBackend() {
+VulkanRHI::VulkanRHI() {
 
 	Context.Allocator = nullptr;
 
@@ -61,11 +61,11 @@ VulkanBackend::VulkanBackend() {
 	Context.FrameBufferHeight = 600;
 }
 
-VulkanBackend::~VulkanBackend() {
+VulkanRHI::~VulkanRHI() {
 
 }
 
-bool VulkanBackend::Initialize(const RenderBackendConfig* config, unsigned char* out_window_render_target_count, struct SPlatformState* plat_state) {
+bool VulkanRHI::Initialize(const RenderBackendConfig* config, unsigned char* out_window_render_target_count, struct SPlatformState* plat_state) {
 	// NOTE: Custom allocator;
 #if DVULKAN_USE_CUSTOM_ALLOCATOR == 1
 	Context.Allocator = (vk::AllocationCallbacks*)Memory::Allocate(sizeof(vk::AllocationCallbacks), MemoryType::eMemory_Type_Renderer);
@@ -330,7 +330,7 @@ bool VulkanBackend::Initialize(const RenderBackendConfig* config, unsigned char*
 	return true;
 }
 
-void VulkanBackend::Shutdown() {
+void VulkanRHI::Shutdown() {
 	vk::Device LogicalDevice = Context.Device.GetLogicalDevice();
 	LogicalDevice.waitIdle();
 
@@ -393,7 +393,7 @@ void VulkanBackend::Shutdown() {
 	}
 }
 
-bool VulkanBackend::BeginFrame(double delta_time){
+bool VulkanRHI::BeginFrame(double delta_time){
 	Context.FrameDeltaTime = delta_time;
 	VulkanDevice* Device = &Context.Device;
 
@@ -447,7 +447,7 @@ bool VulkanBackend::BeginFrame(double delta_time){
 	return true;
 }
 
-bool VulkanBackend::EndFrame(double delta_time) {
+bool VulkanRHI::EndFrame(double delta_time) {
 
 	VulkanCommandBuffer* CommandBuffer = &Context.GraphicsCommandBuffers[Context.ImageIndex];
 	
@@ -508,7 +508,7 @@ bool VulkanBackend::EndFrame(double delta_time) {
 	return true;
 }
 
-void VulkanBackend::SetViewport(const Vector4& rect) {
+void VulkanRHI::SetViewport(const Vector4& rect) {
 	// Dynamic state
 	vk::Viewport Viewport;
 	Viewport.x = rect.x;
@@ -522,12 +522,12 @@ void VulkanBackend::SetViewport(const Vector4& rect) {
 	CmdBuffer->CommandBuffer.setViewport(0, 1, &Viewport);
 }
 
-void VulkanBackend::ResetViewport() {
+void VulkanRHI::ResetViewport() {
 	// Just set the current viewport rect.
 	SetViewport(Context.ViewportRect);
 }
 
-void VulkanBackend::SetScissor(const Vector4& rect) {
+void VulkanRHI::SetScissor(const Vector4& rect) {
 	vk::Rect2D Scissor;
 	Scissor.offset.x = (uint32_t)rect.x;
 	Scissor.offset.y = (uint32_t)rect.y;
@@ -538,12 +538,12 @@ void VulkanBackend::SetScissor(const Vector4& rect) {
 	CmdBuffer->CommandBuffer.setScissor(0, 1, &Scissor);
 }
 
-void VulkanBackend::ResetScissor() {
+void VulkanRHI::ResetScissor() {
 	// Just set the current scissor rect.
 	SetScissor(Context.ScissorRect);
 }
 
-void VulkanBackend::Resize(unsigned short width, unsigned short height) {
+void VulkanRHI::Resize(unsigned short width, unsigned short height) {
 	// Update the "Framebuffer size generate", a counter which indicates when the
 	// framebuffer size has been updated
 	Context.FrameBufferWidth = width;
@@ -553,7 +553,7 @@ void VulkanBackend::Resize(unsigned short width, unsigned short height) {
 	GLOG(Log::eInfo, "Vulkan renderer backend resize: width/height/generation: %i/%i/%llu", width, height, Context.FramebufferSizeGenerate);
 }
 
-void VulkanBackend::CreateCommandBuffer() {
+void VulkanRHI::CreateCommandBuffer() {
 	if (Context.GraphicsCommandBuffers == nullptr) {
 		Context.GraphicsCommandBuffers = (VulkanCommandBuffer*)Memory::Allocate(sizeof(VulkanCommandBuffer) * Context.Swapchain.ImageCount, MemoryType::eMemory_Type_Renderer);
 		for (uint32_t i = 0; i < Context.Swapchain.ImageCount; ++i) {
@@ -573,7 +573,7 @@ void VulkanBackend::CreateCommandBuffer() {
 	GLOG(Log::eInfo, "Vulkan command buffers created.");
 }
 
-bool VulkanBackend::RecreateSwapchain() {
+bool VulkanRHI::RecreateSwapchain() {
 	// If already being recreated, do not try again.
 	if (Context.RecreatingSwapchain) {
 		GLOG(Log::eDebug, "Already called recreate swapchain. Booting.");
@@ -623,7 +623,7 @@ bool VulkanBackend::RecreateSwapchain() {
 	return true;
 }
 
-UTexture* VulkanBackend::AcquireTexture(const FString& name, bool auto_release) {
+UTexture* VulkanRHI::AcquireTexture(const FString& name, bool auto_release) {
 	UTexture* tex = NewObject<VulkanTexture>(name);
 	if (!tex) {
 		return nullptr;
@@ -633,7 +633,7 @@ UTexture* VulkanBackend::AcquireTexture(const FString& name, bool auto_release) 
 	return tex;
 }
 
-bool VulkanBackend::CreateGeometry(Geometry* geometry, uint32_t vertex_size, uint32_t vertex_count, 
+bool VulkanRHI::CreateGeometry(Geometry* geometry, uint32_t vertex_size, uint32_t vertex_count, 
 	const void* vertices, uint32_t index_size, uint32_t index_count, const void* indices) {
 	if (vertex_count == 0 || vertices == nullptr) {
 		GLOG(Log::eError, "Vulkan renderer create geometry requires vertex data, and none was supplied. vertex_count=%d, vertices=%p", vertex_count, vertices);
@@ -724,7 +724,7 @@ bool VulkanBackend::CreateGeometry(Geometry* geometry, uint32_t vertex_size, uin
 	return true;
 }
 
-void VulkanBackend::DestroyGeometry(Geometry* geometry) {
+void VulkanRHI::DestroyGeometry(Geometry* geometry) {
 	if (geometry != nullptr && geometry->InternalID != INVALID_ID) {
 		Context.Device.GetLogicalDevice().waitIdle();
 		GeometryData* InternalData = &Context.Geometries[geometry->InternalID];
@@ -744,7 +744,7 @@ void VulkanBackend::DestroyGeometry(Geometry* geometry) {
 	}
 }
 
-void VulkanBackend::DrawGeometry(GeometryRenderData* geometry) {
+void VulkanRHI::DrawGeometry(GeometryRenderData* geometry) {
 	// Ignore non-uploaded geometries.
 	if (geometry->geometry == nullptr) {
 		return;
@@ -769,12 +769,12 @@ void VulkanBackend::DrawGeometry(GeometryRenderData* geometry) {
 	}
 }
 
-bool VulkanBackend::BeginRenderpass(IRenderpass* pass, RenderTarget* target) {
+bool VulkanRHI::BeginRenderpass(IRenderpass* pass, RenderTarget* target) {
 	pass->Begin(target);
 	return true;
 }
 
-bool VulkanBackend::EndRenderpass(IRenderpass* pass) {
+bool VulkanRHI::EndRenderpass(IRenderpass* pass) {
 	pass->End();
 	return true;
 }
@@ -783,7 +783,7 @@ bool VulkanBackend::EndRenderpass(IRenderpass* pass) {
  * Shaders
  */
 #ifdef LEVEL_DEBUG
-bool VulkanBackend::VerifyShaderID(uint32_t shader_id) {
+bool VulkanRHI::VerifyShaderID(uint32_t shader_id) {
 		if (shader_id == INVALID_ID || Context.Shaders[shader_id].ID == INVALID_ID) {
 			return false;
 		}
@@ -791,12 +791,12 @@ bool VulkanBackend::VerifyShaderID(uint32_t shader_id) {
 		return true;
 }   
 #else
-bool VulkanBackend::VerifyShaderID(uint32_t shader_id) {
+bool VulkanRHI::VerifyShaderID(uint32_t shader_id) {
 	return true;
 }
 #endif	// LEVEL_DEBUG
 
-bool VulkanBackend::CreateShader(Shader* shader, const ShaderConfig* config, IRenderpass* pass,
+bool VulkanRHI::CreateShader(Shader* shader, const ShaderConfig* config, IRenderpass* pass,
 	const TArray<FString>& stage_filenames, std::vector<ShaderStage>& stages) {
 	// Translate stages.
 	vk::ShaderStageFlags VkStages[VULKAN_SHADER_MAX_STAGES];
@@ -985,7 +985,7 @@ bool VulkanBackend::CreateShader(Shader* shader, const ShaderConfig* config, IRe
 	return true;
 }
 
-vk::SamplerAddressMode VulkanBackend::ConvertRepeatType(const char* axis, TextureRepeat repeat) {
+vk::SamplerAddressMode VulkanRHI::ConvertRepeatType(const char* axis, TextureRepeat repeat) {
 	switch (repeat)
 	{
 	case eTexture_Repeat_Repeat:
@@ -1002,7 +1002,7 @@ vk::SamplerAddressMode VulkanBackend::ConvertRepeatType(const char* axis, Textur
 	}
 }
 
-vk::Filter VulkanBackend::ConvertFilterType(const char* op, TextureFilter filter) {
+vk::Filter VulkanRHI::ConvertFilterType(const char* op, TextureFilter filter) {
 	switch (filter)
 	{
 	case eTexture_Filter_Mode_Nearest:
@@ -1015,7 +1015,7 @@ vk::Filter VulkanBackend::ConvertFilterType(const char* op, TextureFilter filter
 	}
 }
 
-bool VulkanBackend::AcquireTextureMap(TextureMap* map) {
+bool VulkanRHI::AcquireTextureMap(TextureMap* map) {
 	// Create a sampler for the texture.
 	vk::SamplerCreateInfo SamplerInfo;
 	SamplerInfo.setMinFilter(ConvertFilterType("min", map->filter_minify))
@@ -1045,7 +1045,7 @@ bool VulkanBackend::AcquireTextureMap(TextureMap* map) {
 	return true;
 }
 
-void VulkanBackend::ReleaseTextureMap(TextureMap* map) {
+void VulkanRHI::ReleaseTextureMap(TextureMap* map) {
 	if (map) {
 		Context.Device.GetLogicalDevice().waitIdle();
 		Context.Device.GetLogicalDevice().destroySampler(*((vk::Sampler*)&map->internal_data), Context.Allocator);
@@ -1053,7 +1053,7 @@ void VulkanBackend::ReleaseTextureMap(TextureMap* map) {
 	}
 }
 
-uint32_t VulkanBackend::AcquireInstanceResource(Shader* shader, std::vector<TextureMap*>& maps) {
+uint32_t VulkanRHI::AcquireInstanceResource(Shader* shader, std::vector<TextureMap*>& maps) {
 	VulkanShader* VkShader = (VulkanShader*)shader;
 	// TODO: Dynamic
 	uint32_t OutInstanceID = INVALID_ID;
@@ -1129,7 +1129,7 @@ uint32_t VulkanBackend::AcquireInstanceResource(Shader* shader, std::vector<Text
 	return OutInstanceID;
 }
 
-bool VulkanBackend::ReleaseInstanceResource(Shader* shader, uint64_t instance_id) {
+bool VulkanRHI::ReleaseInstanceResource(Shader* shader, uint64_t instance_id) {
 	if (shader == nullptr) {
 		return false;
 	}
@@ -1160,7 +1160,7 @@ bool VulkanBackend::ReleaseInstanceResource(Shader* shader, uint64_t instance_id
 	return true;
 }
 
-bool VulkanBackend::CreateRenderTarget(unsigned char attachment_count, std::vector<RenderTargetAttachment> attachments, IRenderpass* pass, uint32_t width, uint32_t height, RenderTarget* out_target) {
+bool VulkanRHI::CreateRenderTarget(unsigned char attachment_count, std::vector<RenderTargetAttachment> attachments, IRenderpass* pass, uint32_t width, uint32_t height, RenderTarget* out_target) {
 	// Max number of attachments.
 	vk::ImageView AttachmentViews[32];
 	for (uint32_t i = 0; i < attachment_count; ++i) {
@@ -1189,7 +1189,7 @@ bool VulkanBackend::CreateRenderTarget(unsigned char attachment_count, std::vect
 	return true;
 }
 
-void  VulkanBackend::DestroyRenderTarget(RenderTarget* target, bool free_internal_memory) {
+void  VulkanRHI::DestroyRenderTarget(RenderTarget* target, bool free_internal_memory) {
 	if (target && target->internal_framebuffer) {
 		Context.Device.GetLogicalDevice().destroyFramebuffer(*(vk::Framebuffer*)&target->internal_framebuffer, Context.Allocator);
 		target->internal_framebuffer = nullptr;
@@ -1200,7 +1200,7 @@ void  VulkanBackend::DestroyRenderTarget(RenderTarget* target, bool free_interna
 	}
 }
 
-UTexture* VulkanBackend::GetWindowAttachment(unsigned char index) {
+UTexture* VulkanRHI::GetWindowAttachment(unsigned char index) {
 	if (index >= Context.Swapchain.ImageCount) {
 		GLOG(Log::eFatal, "Attempting to get color attachment index out of range: %d. Attachment count: %d.", index, Context.Swapchain.ImageCount);
 		return nullptr;
@@ -1209,7 +1209,7 @@ UTexture* VulkanBackend::GetWindowAttachment(unsigned char index) {
 	return Context.Swapchain.RenderTextures[index];
 }
 
-UTexture* VulkanBackend::GetDepthAttachment(unsigned char index) {
+UTexture* VulkanRHI::GetDepthAttachment(unsigned char index) {
 	if (index >= Context.Swapchain.ImageCount) {
 		GLOG(Log::eFatal, "Attempting to get depth attachment index out of range: %d. Attachment count: %d.", index, Context.Swapchain.ImageCount);
 		return nullptr;
@@ -1219,15 +1219,15 @@ UTexture* VulkanBackend::GetDepthAttachment(unsigned char index) {
 	return Context.Swapchain.DepthTexture[index];
 }
 
-unsigned char VulkanBackend::GetWindowAttachmentIndex() {
+unsigned char VulkanRHI::GetWindowAttachmentIndex() {
 	return (unsigned char)Context.ImageIndex;
 }
 
-unsigned char VulkanBackend::GetWindowAttachmentCount() const {
+unsigned char VulkanRHI::GetWindowAttachmentCount() const {
 	return (unsigned char)Context.Swapchain.ImageCount;
 }
 
-bool VulkanBackend::CreateRenderpass(IRenderpass* out_renderpass, const RenderpassConfig& config) {
+bool VulkanRHI::CreateRenderpass(IRenderpass* out_renderpass, const RenderpassConfig& config) {
 
 	out_renderpass->RenderTargetCount = config.renderTargetCount;
 	out_renderpass->Targets.resize(out_renderpass->RenderTargetCount);
@@ -1257,15 +1257,15 @@ bool VulkanBackend::CreateRenderpass(IRenderpass* out_renderpass, const Renderpa
 	return out_renderpass->Create(&Context, config);
 }
 
-void VulkanBackend::DestroyRenderpass(IRenderpass* pass) {
+void VulkanRHI::DestroyRenderpass(IRenderpass* pass) {
 	pass->Destroy();
 }
 
-bool VulkanBackend::GetEnabledMultiThread() const {
+bool VulkanRHI::GetEnabledMultiThread() const {
 	return Context.EnableMultithreading;
 }
 
-bool VulkanBackend::DrawRenderbuffer(IGPUBuffer* buffer, size_t offset, uint32_t element_count, bool bind_only) {
+bool VulkanRHI::DrawRenderbuffer(IGPUBuffer* buffer, size_t offset, uint32_t element_count, bool bind_only) {
 	if (!buffer) {
 		return false;
 	}
@@ -1300,7 +1300,7 @@ bool VulkanBackend::DrawRenderbuffer(IGPUBuffer* buffer, size_t offset, uint32_t
 	return false;
 }
 
-uint32_t VulkanBackend::QueryInstanceVersion() {
+uint32_t VulkanRHI::QueryInstanceVersion() {
 	uint32_t ApiVersion = VK_API_VERSION_1_0;
 
 	// vkEnumerateInstanceVersion 在 1.1+ 才存在
@@ -1319,7 +1319,7 @@ uint32_t VulkanBackend::QueryInstanceVersion() {
 	return ApiVersion;
 }
 
-uint32_t VulkanBackend::SelectTargetApiVersion(uint32_t instanceVersion) {
+uint32_t VulkanRHI::SelectTargetApiVersion(uint32_t instanceVersion) {
 	// 按优先级从高到低，选设备能支持的最高版本
 	if (instanceVersion >= VK_API_VERSION_1_3) {
 		return VK_API_VERSION_1_3;

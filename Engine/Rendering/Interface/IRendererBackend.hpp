@@ -23,7 +23,7 @@ enum BuiltinRenderpass : unsigned char{
 	eButilin_Renderpass_UI = 0x02
 };
 
-class IRendererBackend {
+class RHI {
 public:
 	// Generic
 	virtual bool Initialize(const RenderBackendConfig* config, unsigned char* out_window_render_target_count, SPlatformState* plat_state) = 0;

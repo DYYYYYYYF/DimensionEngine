@@ -8,7 +8,8 @@ struct SStaticMeshData;
 struct SPlatformState;
 struct ShaderUniform;
 
-class IRendererBackend;
+class RHI;
+class RHI;
 class IGPUBuffer;
 class IRenderpass;
 class Geometry;
@@ -20,6 +21,9 @@ public:
 	IRenderer();
 	IRenderer(RendererBackendType type, struct SPlatformState* plat_state);
 	virtual ~IRenderer();
+
+public:
+	DAPI static IRenderer* GetRenderer();
 
 public:
 	virtual bool Initialize(const std::string& application_name, Vector2 window_size, struct SPlatformState* plat_state);
@@ -136,7 +140,7 @@ public:
 	virtual void DestroyRenderTarget(RenderTarget* target, bool free_internal_memory) ;
 	virtual bool CreateRenderpass(IRenderpass* out_renderpass, const RenderpassConfig& config);
 	virtual void DestroyRenderpass(IRenderpass* pass) ;
-	virtual IRendererBackend* GetRenderBackend() { return Backend; }
+	virtual RHI* GetRenderBackend() { return RHI_; }
 
 	virtual UTexture* GetWindowAttachment(unsigned char index);
 	virtual unsigned char GetWindowAttachmentCount() const;
@@ -148,14 +152,11 @@ public:
 	uint32_t GetWidth() const { return FramebufferWidth; }
 	uint32_t GetHeight() const { return FramebufferHeight; }
 
-public:
-	DAPI static IRenderer* GetRenderer();
-
 protected:
 	static IRenderer* Renderer;
 
+	RHI* RHI_;
 	RendererBackendType BackendType;
-	class IRendererBackend* Backend;
 
 	unsigned char WindowRenderTargetCount;
 	uint32_t FramebufferWidth;

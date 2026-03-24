@@ -161,7 +161,7 @@ bool RenderViewUI::RegenerateAttachmentTarget(uint32_t passIndex, RenderTargetAt
 	return true;
 }
 
-bool RenderViewUI::OnRender(struct RenderViewPacket* packet, IRendererBackend* back_renderer, size_t frame_number, size_t render_target_index) {
+bool RenderViewUI::OnRender(struct RenderViewPacket* packet, RHI* back_renderer, size_t frame_number, size_t render_target_index) {
 	uint32_t SID = UsedShader->ID;
 	for (uint32_t p = 0; p < RenderpassCount; ++p) {
 		IRenderpass* Pass = (IRenderpass*)&Passes[p];

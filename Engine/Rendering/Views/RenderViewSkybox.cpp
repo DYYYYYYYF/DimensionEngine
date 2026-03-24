@@ -140,7 +140,7 @@ bool RenderViewSkybox::RegenerateAttachmentTarget(uint32_t passIndex, RenderTarg
 	return false;
 }
 
-bool RenderViewSkybox::OnRender(struct RenderViewPacket* packet, IRendererBackend* back_renderer, size_t frame_number, size_t render_target_index) {
+bool RenderViewSkybox::OnRender(struct RenderViewPacket* packet, RHI* back_renderer, size_t frame_number, size_t render_target_index) {
 	SkyboxPacketData* SkyboxData = (SkyboxPacketData*)packet->extended_data;
 
 	for (uint32_t p = 0; p < RenderpassCount; ++p) {

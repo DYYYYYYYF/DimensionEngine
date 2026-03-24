@@ -339,7 +339,7 @@ bool RenderViewPick::RegenerateAttachmentTarget(uint32_t passIndex, RenderTarget
 	return true;
 }
 
-bool RenderViewPick::OnRender(struct RenderViewPacket* packet, IRendererBackend* back_renderer, size_t frame_number, size_t render_target_index) {
+bool RenderViewPick::OnRender(struct RenderViewPacket* packet, RHI* back_renderer, size_t frame_number, size_t render_target_index) {
 	uint32_t p = 0;
 	IRenderpass* Pass = (IRenderpass*)&Passes[p];	// first
 

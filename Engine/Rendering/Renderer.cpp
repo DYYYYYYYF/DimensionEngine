@@ -17,7 +17,7 @@
 IRenderer* IRenderer::Renderer = nullptr;
 
 IRenderer::IRenderer() {
-	Backend = nullptr;
+	RHI_ = nullptr;
 	BackendType = RendererBackendType::eRenderer_Backend_Type_Vulkan;
 	WindowRenderTargetCount = 0;
 	FramebufferWidth = 1920;
@@ -26,7 +26,7 @@ IRenderer::IRenderer() {
 	FrameSinceResize = 0;
 }
 
-IRenderer::IRenderer(RendererBackendType type, struct SPlatformState* plat_state) : Backend(nullptr){
+IRenderer::IRenderer(RendererBackendType type, struct SPlatformState* plat_state) : RHI_(nullptr){
 	BackendType = RendererBackendType::eRenderer_Backend_Type_Vulkan;
 	WindowRenderTargetCount = 0;
 	FramebufferWidth = 1920;
@@ -41,11 +41,11 @@ IRenderer::IRenderer(RendererBackendType type, struct SPlatformState* plat_state
 	BackendType = type;
 	if (type == eRenderer_Backend_Type_Vulkan) {
 		// TODO: fill
-		void* TempBackend = (VulkanBackend*)Memory::Allocate(sizeof(VulkanBackend), MemoryType::eMemory_Type_Renderer);
-		Backend = new(TempBackend)VulkanBackend();
+		void* TempBackend = (VulkanRHI*)Memory::Allocate(sizeof(VulkanRHI), MemoryType::eMemory_Type_Renderer);
+		RHI_ = new(TempBackend)VulkanRHI();
 
 		// TODO: make this configurable
-		Backend->SetFrameNum(0);
+		RHI_->SetFrameNum(0);
 	}
 }
 
@@ -62,7 +62,7 @@ IRenderer* IRenderer::GetRenderer() {
 }
 
 bool IRenderer::Initialize(const std::string& application_name, Vector2 window_size, struct SPlatformState* plat_state) {
-	if (Backend == nullptr) {
+	if (RHI_ == nullptr) {
 		return false;
 	}
 
@@ -77,7 +77,7 @@ bool IRenderer::Initialize(const std::string& application_name, Vector2 window_s
 	RenderBackendConfig RendererConfig;
 	RendererConfig.application_name = application_name;
 
-	if (!Backend->Initialize(&RendererConfig, &WindowRenderTargetCount, plat_state)) {
+	if (!RHI_->Initialize(&RendererConfig, &WindowRenderTargetCount, plat_state)) {
 		GLOG(Log::eFatal, "Renderer backend init failed.");
 		return false;
 	}
@@ -86,16 +86,16 @@ bool IRenderer::Initialize(const std::string& application_name, Vector2 window_s
 }
 
 void IRenderer::Shutdown() {
-	if (Backend != nullptr) {
-		Backend->Shutdown();
-		Memory::Free(Backend, eMemory_Type_Renderer);
+	if (RHI_ != nullptr) {
+		RHI_->Shutdown();
+		Memory::Free(RHI_, eMemory_Type_Renderer);
 	}
 
-	Backend = nullptr;
+	RHI_ = nullptr;
 }
 
 void IRenderer::OnResize(unsigned short width, unsigned short height) {
-	if (Backend != nullptr) {
+	if (RHI_ != nullptr) {
 		Resizing = true;
 		FramebufferWidth = width;
 		FramebufferHeight = height;
@@ -107,7 +107,7 @@ void IRenderer::OnResize(unsigned short width, unsigned short height) {
 }
 
 bool IRenderer::DrawFrame(SRenderPacket* packet) {
-	Backend->IncreaseFrameNum();
+	RHI_->IncreaseFrameNum();
 
 	// Make sure the window is not currently being resized by waiting a designated
 	// number of frames after the last resize operation before performing the backend updates.
@@ -119,7 +119,7 @@ bool IRenderer::DrawFrame(SRenderPacket* packet) {
 			float Width = (float)FramebufferWidth;
 			float Height = (float)FramebufferHeight;
 
-			Backend->Resize(
+			RHI_->Resize(
 				static_cast<unsigned short>(Width), 
 				static_cast<unsigned short>(Height)
 			);
@@ -136,19 +136,19 @@ bool IRenderer::DrawFrame(SRenderPacket* packet) {
 		}
 	}
 
-	if (Backend->BeginFrame(packet->delta_time)) {
-		unsigned char AttachmentIndex = Backend->GetWindowAttachmentIndex();
+	if (RHI_->BeginFrame(packet->delta_time)) {
+		unsigned char AttachmentIndex = RHI_->GetWindowAttachmentIndex();
 
 		// Render each view.
 		for (uint32_t i = 0; (uint32_t)i < packet->views.size(); ++i) {
-			if (!RenderViewSystem::Get().OnRender(packet->views[i].view, &packet->views[i], Backend->GetFrameNum(), AttachmentIndex)) {
+			if (!RenderViewSystem::Get().OnRender(packet->views[i].view, &packet->views[i], RHI_->GetFrameNum(), AttachmentIndex)) {
 				GLOG(Log::eError, "Error rendering view index '%i'.", i);
 				return false;
 			}
 		}
 
 		// End frame
-		bool result = Backend->EndFrame(packet->delta_time);
+		bool result = RHI_->EndFrame(packet->delta_time);
 
 		if (!result) {
 			GLOG(Log::eError, "Renderer end frame failed.");
@@ -161,48 +161,48 @@ bool IRenderer::DrawFrame(SRenderPacket* packet) {
 }
 
 void IRenderer::SetViewport(Vector4 rect) {
-	Backend->SetViewport(rect);
+	RHI_->SetViewport(rect);
 }
 
 void IRenderer::ResetViewport() {
-	Backend->ResetViewport();
+	RHI_->ResetViewport();
 }
 
 void IRenderer::SetScissor(Vector4 rect) {
-	Backend->SetScissor(rect);
+	RHI_->SetScissor(rect);
 }
 
 void IRenderer::ResetScissor() {
-	Backend->ResetScissor();
+	RHI_->ResetScissor();
 }
 
 UTexture* IRenderer::AcquireTexture(const FString& name, bool auto_release) {
-	return Backend->AcquireTexture(name, auto_release);
+	return RHI_->AcquireTexture(name, auto_release);
 }
 
 bool IRenderer::CreateGeometry(Geometry* geometry, uint32_t vertex_size, uint32_t vertex_count,
 	const void* vertices, uint32_t index_size, uint32_t index_count, const void* indices) {
-	return Backend->CreateGeometry(geometry, vertex_size, vertex_count, vertices, index_size, index_count, indices);
+	return RHI_->CreateGeometry(geometry, vertex_size, vertex_count, vertices, index_size, index_count, indices);
 }
 
 void IRenderer::DestroyGeometry(Geometry* geometry) {
-	Backend->DestroyGeometry(geometry);
+	RHI_->DestroyGeometry(geometry);
 }
 
 void IRenderer::DrawGeometry(GeometryRenderData* data) {
-	Backend->DrawGeometry(data);
+	RHI_->DrawGeometry(data);
 }
 
 bool IRenderer::BeginRenderpass(IRenderpass* pass, RenderTarget* target) {
-	return Backend->BeginRenderpass(pass, target);
+	return RHI_->BeginRenderpass(pass, target);
 }
 
 bool IRenderer::EndRenderpass(IRenderpass* pass) {
-	return Backend->EndRenderpass(pass);
+	return RHI_->EndRenderpass(pass);
 }
 
 bool IRenderer::CreateRenderShader(Shader* shader, const ShaderConfig* config, IRenderpass* pass, const TArray<FString>& stage_filenames, std::vector<ShaderStage> stages) {
-	return Backend->CreateShader(shader, config, pass, stage_filenames, stages);
+	return RHI_->CreateShader(shader, config, pass, stage_filenames, stages);
 }
 
 void IRenderer::DestroyRenderShader(Shader* shader) {
@@ -214,43 +214,43 @@ bool IRenderer::InitializeRenderShader(Shader* shader) {
 }
 
 uint32_t IRenderer::AcquireInstanceResource(Shader* shader, std::vector<TextureMap*> maps) {
-	return Backend->AcquireInstanceResource(shader, maps);
+	return RHI_->AcquireInstanceResource(shader, maps);
 }
 
 bool IRenderer::ReleaseInstanceResource(Shader* shader, uint32_t instance_id) {
-	return Backend->ReleaseInstanceResource(shader, instance_id);
+	return RHI_->ReleaseInstanceResource(shader, instance_id);
 }
 
 bool IRenderer::AcquireTextureMap(TextureMap* map) {
-	return Backend->AcquireTextureMap(map);
+	return RHI_->AcquireTextureMap(map);
 }
 
 void IRenderer::ReleaseTextureMap(TextureMap* map) {
-	Backend->ReleaseTextureMap(map);
+	RHI_->ReleaseTextureMap(map);
 }
 
 bool IRenderer::CreateRenderTarget(unsigned char attachment_count, std::vector<RenderTargetAttachment> attachments, IRenderpass* pass, uint32_t width, uint32_t height, RenderTarget* out_target) {
-	return Backend->CreateRenderTarget(attachment_count, attachments, pass, width, height, out_target);
+	return RHI_->CreateRenderTarget(attachment_count, attachments, pass, width, height, out_target);
 }
 
 void IRenderer::DestroyRenderTarget(RenderTarget* target, bool free_internal_memory) {
-	Backend->DestroyRenderTarget(target, free_internal_memory);
+	RHI_->DestroyRenderTarget(target, free_internal_memory);
 }
 
 UTexture* IRenderer::GetWindowAttachment(unsigned char index) {
-	return Backend->GetWindowAttachment(index);
+	return RHI_->GetWindowAttachment(index);
 }
 
 unsigned char IRenderer::GetWindowAttachmentCount() const {
-	return Backend->GetWindowAttachmentCount();
+	return RHI_->GetWindowAttachmentCount();
 }
 
 UTexture* IRenderer::GetDepthAttachment(unsigned char index) {
-	return Backend->GetDepthAttachment(index);
+	return RHI_->GetDepthAttachment(index);
 }
 
 unsigned char IRenderer::GetWindowAttachmentIndex() {
-	return Backend->GetWindowAttachmentIndex();
+	return RHI_->GetWindowAttachmentIndex();
 }
 
 bool IRenderer::CreateRenderpass(IRenderpass* out_renderpass, const RenderpassConfig& config) {
@@ -259,20 +259,20 @@ bool IRenderer::CreateRenderpass(IRenderpass* out_renderpass, const RenderpassCo
 		return false;
 	}
 
-	return Backend->CreateRenderpass(out_renderpass, config);
+	return RHI_->CreateRenderpass(out_renderpass, config);
 }
 
 void IRenderer::DestroyRenderpass(IRenderpass* pass) {
-	Backend->DestroyRenderpass(pass);
+	RHI_->DestroyRenderpass(pass);
 }
 
 bool IRenderer::GetEnabledMutiThread() const {
-	return Backend->GetEnabledMultiThread();
+	return RHI_->GetEnabledMultiThread();
 }
 
 /**
  * Renderbuffer
  */
 bool IRenderer::DrawRenderbuffer(IGPUBuffer* buffer, size_t offset, uint32_t element_count, bool bind_only) {
-	return Backend->DrawRenderbuffer(buffer, offset, element_count, bind_only);
+	return RHI_->DrawRenderbuffer(buffer, offset, element_count, bind_only);
 }

@@ -27,7 +27,7 @@ bool VulkanShader::Initialize() {
 		return false;
 	}
 
-	VulkanBackend* vkRenderer = static_cast<VulkanBackend*>(Renderer->GetRenderBackend());
+	VulkanRHI* vkRenderer = static_cast<VulkanRHI*>(Renderer->GetRenderBackend());
 	VulkanContext& Context = vkRenderer->Context;
 	vk::Device LogicalDevice = vkRenderer->Context.Device.GetLogicalDevice();
 	vk::AllocationCallbacks* VkAllocator = Context.Allocator;
@@ -118,7 +118,7 @@ bool VulkanShader::Reload() {
 		return false;
 	}
 
-	VulkanBackend* vkRenderer = static_cast<VulkanBackend*>(Renderer->GetRenderBackend());
+	VulkanRHI* vkRenderer = static_cast<VulkanRHI*>(Renderer->GetRenderBackend());
 	VulkanContext& Context = vkRenderer->Context;
 	vk::Device LogicalDevice = Context.Device.GetLogicalDevice();
 	vk::AllocationCallbacks* VkAllocator = Context.Allocator;
@@ -167,7 +167,7 @@ bool VulkanShader::Reload() {
 }
 
 void VulkanShader::Destroy(){
-	VulkanBackend* vkRenderer = static_cast<VulkanBackend*>(Renderer->GetRenderBackend());
+	VulkanRHI* vkRenderer = static_cast<VulkanRHI*>(Renderer->GetRenderBackend());
 	VulkanContext& Context = vkRenderer->Context;
 
 	vk::Device LogicalDevice = Context.Device.GetLogicalDevice();
@@ -240,7 +240,7 @@ bool VulkanShader::BindInstance(uint64_t instance_id) {
 }
 
 bool VulkanShader::ApplyGlobal() {
-	VulkanBackend* Backend = (VulkanBackend*)Renderer->GetRenderBackend();
+	VulkanRHI* Backend = (VulkanRHI*)Renderer->GetRenderBackend();
 	VulkanContext& Context = Backend->Context;
 	uint32_t       ImageIndex = Context.ImageIndex;
 
@@ -308,7 +308,7 @@ bool VulkanShader::ApplyGlobal() {
 }
 
 bool VulkanShader::ApplyInstance(bool need_update) {
-	VulkanBackend* Backend = (VulkanBackend*)Renderer->GetRenderBackend();
+	VulkanRHI* Backend = (VulkanRHI*)Renderer->GetRenderBackend();
 	VulkanContext& Context = Backend->Context;
 	uint32_t       ImageIndex = Context.ImageIndex;
 
@@ -462,7 +462,7 @@ bool VulkanShader::SetUniformByIndex(uint32_t index, const void* value) {
 }
 
 void VulkanShader::SetupCompileOptions(shaderc::CompileOptions& options) {
-	VulkanBackend* Backend = (VulkanBackend*)Renderer->GetRenderBackend();
+	VulkanRHI* Backend = (VulkanRHI*)Renderer->GetRenderBackend();
 	uint32_t Api = Backend->Context.ApiVersion;
 
 	if (Api >= VK_API_VERSION_1_3) {
@@ -484,7 +484,7 @@ void VulkanShader::SetupCompileOptions(shaderc::CompileOptions& options) {
 }
 
 VulkanCommandBuffer* VulkanShader::GetCurrentCommandBuffer() {
-	VulkanBackend* Backend = (VulkanBackend*)Renderer->GetRenderBackend();
+	VulkanRHI* Backend = (VulkanRHI*)Renderer->GetRenderBackend();
 	return &Backend->Context.GraphicsCommandBuffers[Backend->Context.ImageIndex];
 }
 
@@ -514,7 +514,7 @@ bool VulkanShader::CreateModule() {
 	if (Renderer == nullptr) return false;
 	Memory::Zero(Stages, sizeof(VulkanShaderStage) * VULKAN_SHADER_MAX_STAGES);
 
-	VulkanBackend* vkRenderer = static_cast<VulkanBackend*>(Renderer->GetRenderBackend());
+	VulkanRHI* vkRenderer = static_cast<VulkanRHI*>(Renderer->GetRenderBackend());
 	for (uint32_t i = 0; i < Config.stage_count; ++i) {
 		VulkanShaderConfig vkShaderConfig = Config;
 		VulkanShaderStageConfig vkShaderStageConfig = Config.stages[i];
@@ -593,7 +593,7 @@ bool VulkanShader::CompileShaderFile(bool writeToDisk/* = true*/){
 }
 
 bool VulkanShader::CreateDescriptorSetLayouts(){
-	VulkanBackend* vkRenderer = static_cast<VulkanBackend*>(Renderer->GetRenderBackend());
+	VulkanRHI* vkRenderer = static_cast<VulkanRHI*>(Renderer->GetRenderBackend());
 	VulkanContext& Context = vkRenderer->Context;
 	vk::Device LogicalDevice = Context.Device.GetLogicalDevice();
 	vk::AllocationCallbacks* VkAllocator = vkRenderer->Context.Allocator;
@@ -614,7 +614,7 @@ bool VulkanShader::CreateDescriptorSetLayouts(){
 }
 
 bool VulkanShader::AllocateGlobalDescriptorSets(){
-	VulkanBackend* vkRenderer = static_cast<VulkanBackend*>(Renderer->GetRenderBackend());
+	VulkanRHI* vkRenderer = static_cast<VulkanRHI*>(Renderer->GetRenderBackend());
 	vk::Device LogicalDevice = vkRenderer->Context.Device.GetLogicalDevice();
 
 	// Allocate global descriptor sets, one per frame. Global is always the first set.
@@ -638,7 +638,7 @@ bool VulkanShader::AllocateGlobalDescriptorSets(){
 }
 
 bool VulkanShader::CreateUniformBuffer() {
-	VulkanBackend* vkRenderer = static_cast<VulkanBackend*>(Renderer->GetRenderBackend());
+	VulkanRHI* vkRenderer = static_cast<VulkanRHI*>(Renderer->GetRenderBackend());
 	VulkanContext& Context = vkRenderer->Context;
 
 	// Uniform buffer.
@@ -667,7 +667,7 @@ bool VulkanShader::CreateUniformBuffer() {
 }
 
 bool VulkanShader::CreatePipeline() {
-	VulkanBackend* vkRenderer = static_cast<VulkanBackend*>(Renderer->GetRenderBackend());
+	VulkanRHI* vkRenderer = static_cast<VulkanRHI*>(Renderer->GetRenderBackend());
 	VulkanContext& Context = vkRenderer->Context;
 
 	RequiredUboAlignment = Context.Device.GetDeviceProperties().limits.minUniformBufferOffsetAlignment;

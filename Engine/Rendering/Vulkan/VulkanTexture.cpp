@@ -13,7 +13,7 @@ VulkanTexture::VulkanTexture(const FString& name) : UTexture(name) {
 		return;
 	}
 
-	VulkanBackend* Backend = Cast<VulkanBackend*>(Renderer->GetRenderBackend());
+	VulkanRHI* Backend = Cast<VulkanRHI*>(Renderer->GetRenderBackend());
 	if (!Backend) {
 		return;
 	}
