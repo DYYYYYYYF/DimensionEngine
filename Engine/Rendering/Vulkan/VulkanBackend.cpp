@@ -1311,7 +1311,7 @@ uint32_t VulkanRHI::QueryInstanceVersion() {
 		pfnEnumerateInstanceVersion(&ApiVersion);
 	}
 
-	GLOG(Log::eInfo, "Instance 支持的最高 Vulkan 版本: %d.%d.%d",
+	GLOG(Log::eInfo, "Instance supported latest Vulkan version: %d.%d.%d",
 		VK_API_VERSION_MAJOR(ApiVersion),
 		VK_API_VERSION_MINOR(ApiVersion),
 		VK_API_VERSION_PATCH(ApiVersion));

@@ -363,7 +363,7 @@ bool VulkanDevice::MeetsRequirements(
 				}
 				if (!Found) {
 					GLOG(Log::eInfo, "Required extension not found: '%s', skipping device.", Required);
-					return false;
+					continue;
 				}
 			}
 		}
@@ -423,7 +423,7 @@ bool VulkanDevice::QueryCapabilities(vk::PhysicalDevice physDevice) {
 	Capabilities.bTimelineSemaphore = Features12.timelineSemaphore;
 	Capabilities.bBufferDeviceAddress = Features12.bufferDeviceAddress;
 
-	GLOG(Log::eInfo, "── Device Capabilities ──────────────────────");
+	GLOG(Log::eInfo, "-------------- Device Capabilities ---------------");
 	GLOG(Log::eInfo, "  Vulkan API:                  %d.%d.%d",
 		VK_API_VERSION_MAJOR(Props.apiVersion),
 		VK_API_VERSION_MINOR(Props.apiVersion),
@@ -433,7 +433,7 @@ bool VulkanDevice::QueryCapabilities(vk::PhysicalDevice physDevice) {
 	GLOG(Log::eInfo, "  DescriptorIndexing:          %s", Capabilities.bDescriptorIndexing ? "Yes" : "No");
 	GLOG(Log::eInfo, "  TimelineSemaphore:           %s", Capabilities.bTimelineSemaphore ? "Yes" : "No");
 	GLOG(Log::eInfo, "  BufferDeviceAddress:         %s", Capabilities.bBufferDeviceAddress ? "Yes" : "No");
-	GLOG(Log::eInfo, "─────────────────────────────────────────────");
+	GLOG(Log::eInfo, "--------------------------------------------------");
 
 	return true;
 }
