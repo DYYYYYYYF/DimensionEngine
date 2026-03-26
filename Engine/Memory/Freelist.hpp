@@ -1,7 +1,11 @@
 ﻿#pragma once
 
 #include "Defines.hpp"
-#include "Core/DMutex.hpp"
+#include "Platform/Thread/DMutex.hpp"
+
+#define FREELIST_MAX_LIMITED_NODE 65536		// 最大可分配节点数量
+#define FREELIST_AVG_ALLOCCATE_SIZE 256		// 平均分配大小(字节)
+#define FREELIST_MAX_FRAGMENT_RATE 3		// 最大碎片化
 
 struct DAPI FreelistNode {
 	size_t offset = 0;

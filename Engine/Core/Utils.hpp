@@ -1,11 +1,8 @@
 ﻿#pragma once
 
+#include "defines.hpp"
 #include <string>
 #include <vector>
-
-// Shader compiler
-#include <shaderc/shaderc.hpp>
-#include "Resources/Shader.hpp"
 
 class DAPI Utils {
 // String

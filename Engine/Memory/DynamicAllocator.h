@@ -16,8 +16,10 @@
 
 class DAPI DynamicAllocator {
 public:
-	DynamicAllocator() : TotalSize(0), MemoryBlock(nullptr) {}
+	DynamicAllocator();
+	DynamicAllocator(size_t total_size);
 	virtual ~DynamicAllocator() { Destroy(); }
+
 public:					 
 	  /**					
 	 * @brief Creates a new dynamic allocator.
@@ -25,7 +27,9 @@ public:
 	 * @param total_size The total size in bytes the allocator should hold. Note this size does not include the size of the internal state.
 	 * @return True on success.
 	 */
-	bool Create(size_t total_size);
+	static DynamicAllocator& Get();
+
+	bool Resize(size_t total_size);
 
 	/**
 	 * @brief Destroys the allocator.

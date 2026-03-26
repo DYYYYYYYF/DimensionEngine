@@ -1,56 +1,28 @@
-#pragma once
+ï»¿#pragma once
 
-#include "MeshActor.h"
-#include "Resources/Font.hpp"
-#include <vector>
+#include "Actor.h"
+#include "Framework/Components/TextComponent.h"
 
-class IFontDataBase;
-class IRenderbuffer;
+class IFont;
+class IGPUBuffer;
 
-enum class UITextType {
-	eUI_Text_Type_Bitmap,
-	eUI_Text_Type_system
-};
-
-class ENGINE_API ATextActor : public AMeshActor {
+class ENGINE_API ATextActor : public AActor {
 public:
-	ATextActor() : AMeshActor(){}
-	ATextActor(const FString& Name) : AMeshActor(Name){}
+	DECLARE_CLASS_TYPE(ATextActor)
+
+public:
+	ATextActor();
+	ATextActor(const FString& Name);
 	ATextActor(UITextType type, const FString& fontName, int fontSize, const FString& textContent);
-	virtual ~ATextActor() { Unload(); }
+	virtual ~ATextActor();
+
+	UTextComponent* GetTextComponent() { return TextComponent; }
 
 public:
-	virtual void Draw() override;
+	void SetText(const FString& content);
+	FString GetText() const;
 
-	bool Load(UITextType type, const FString& fontName, int fontSize, const FString& textContent);
-	void Unload();
-
-public:
-	Vector4 GetColor() const { return Color; }
-	void SetColor(Vector4 col) { Color = col; }
-
-	size_t GetFrameNumber() const { return RenderFrameNumber; }
-	void SetFrameNumber(size_t num) { RenderFrameNumber = num; }
-
-	void SetContent(const FString& content);
-	FString GetContent() const { return Content; }
-	uint32_t GetContentLength() const { return (uint32_t)Content.Length(); }
-
-
-private:
-	void RegenerateGeometry();
-
-public:
-	UITextType Type = UITextType::eUI_Text_Type_Bitmap;
-	IFontDataBase* Data = nullptr;
-	IRenderbuffer* VertexBuffer = nullptr;
-	IRenderbuffer* IndexBuffer = nullptr;
-	FString Content = nullptr;
-
-	Vector4 Color = Vector4(1.0f);
-	size_t RenderFrameNumber = 0;
-
-	// ÐèÒªÊ¹ÓÃMaterial
-	uint32_t InstanceID = INVALID_ID;
-
+protected:
+	FString Content;
+	UTextComponent* TextComponent;
 };

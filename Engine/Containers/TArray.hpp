@@ -109,6 +109,43 @@ public:
 		}
 	}
 
+	TArray(std::initializer_list<ElementType> list)
+		: ArrayMemory(nullptr), Capacity(0), Stride(sizeof(ElementType)), Length(0)
+	{
+		if (list.size() == 0) {
+			*this = TArray();
+			return;
+		}
+
+		size_t ArrayMemSize = list.size() * sizeof(ElementType);
+		ArrayMemory = (ElementType*)Memory::Allocate(ArrayMemSize, MemoryType::eMemory_Type_Array);
+		if (!ArrayMemory) {
+			GLOG(Log::eError, "Failed to allocate memory for TArray initializer_list");
+			return;
+		}
+
+		Capacity = list.size();
+		Length = list.size();
+
+		size_t i = 0;
+		for (const ElementType& elem : list) {
+			try {
+				new(ArrayMemory + i) ElementType(elem);
+				++i;
+			}
+			catch (...) {
+				for (size_t j = 0; j < i; ++j) {
+					ArrayMemory[j].~ElementType();
+				}
+				Memory::Free(ArrayMemory, MemoryType::eMemory_Type_Array);
+				ArrayMemory = nullptr;
+				Capacity = 0;
+				Length = 0;
+				throw;
+			}
+		}
+	}
+
 	virtual ~TArray() {
 		Destroy();
 	}
@@ -168,12 +205,15 @@ public:
 		if (ArrayMemory) {
 			for (size_t i = 0; i < copyLength; ++i) {
 				try {
-					if constexpr (std::is_move_constructible<ElementType>::value && !std::is_pointer<ElementType>::value) {
+					// 如果ElementType为unique_ptr会失败
+					/*if constexpr (std::is_move_constructible<ElementType>::value && !std::is_pointer<ElementType>::value) {
 						new(TempMemory + i) ElementType(std::move(ArrayMemory[i]));
 					}
 					else {
 						new(TempMemory + i) ElementType(ArrayMemory[i]);
-					}
+					}*/
+
+					new(TempMemory + i) ElementType(std::move(ArrayMemory[i]));
 				}
 				catch (...) {
 					// 异常安全：清理已构造的元素
@@ -219,6 +259,30 @@ public:
 			GLOG(Log::eError, "Failed to push element");
 			throw;
 		}
+	}
+
+	void Push(ElementType&& value)
+	{
+		if (Length >= Capacity)
+			Resize();
+
+		new(ArrayMemory + Length) ElementType(std::move(value));
+		Length++;
+	}
+
+	// 直接构造对象
+	/**
+	 * XXX.Emplace(std::make_unique<AActor>());
+	 * XXX.Emplace(std::move(child));
+	 */
+	template<typename... Args>
+	ElementType& Emplace(Args&&... args)
+	{
+		if (Length >= Capacity)
+			Resize();
+
+		new(ArrayMemory + Length) ElementType(std::forward<Args>(args)...);
+		return ArrayMemory[Length++];
 	}
 
 	// 修正了InsertAt函数的逻辑错误
@@ -363,7 +427,7 @@ public:
 				for (size_t j = 0; j < i; ++j) {
 					ArrayMemory[j].~ElementType();
 				}
-				Memory::Free(ArrayMemory, ArrayMemSize, MemoryType::eMemory_Type_Array);
+				Memory::Free(ArrayMemory, MemoryType::eMemory_Type_Array);
 				ArrayMemory = nullptr;
 				Capacity = 0;
 				Length = 0;

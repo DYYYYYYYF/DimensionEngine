@@ -32,6 +32,12 @@ inline void UInt2RGB(unsigned int rgb, unsigned int* r, unsigned int* g, unsigne
 	*b = (rgb) & 0x0FF;
 }
 
+inline void UInt2RGB(uint64_t rgb, uint32_t* r, uint32_t* g, uint32_t* b) {
+	*r = (rgb >> 16) & 0xFF;
+	*g = (rgb >> 8) & 0xFF;
+	*b = (rgb) & 0xFF;
+}
+
 inline void RGB2Vec(unsigned int r, unsigned int g, unsigned int b, TVector3<float>* rgb) {
 	rgb->r = r / 255.0f;
 	rgb->g = g / 255.0f;

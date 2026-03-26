@@ -1,287 +1,267 @@
 ﻿#include "JobSystem.hpp"
-
-#include "Core/DMemory.hpp"
 #include "Core/EngineLogger.hpp"
+#include "Platform/Platform.hpp"
 
-bool JobSystem::IsRunning = false;
-unsigned int JobSystem::ThreadCount;
-JobThread JobSystem::JobThreads[32];
-std::queue<JobInfo> JobSystem::LowPriorityQueue;
-std::queue<JobInfo> JobSystem::NormalPriorityQueue;
-std::queue<JobInfo> JobSystem::HighPriorityQueue;
-Mutex JobSystem::LowPriQueueMutex;
-Mutex JobSystem::NormalPriQueueMutex;
-Mutex JobSystem::HighPriQueueMutex;
-JobResultEntry JobSystem::PendingResults[MAX_JOB_RESULTS];
-Mutex JobSystem::ResultMutex;
+#include <atomic>
+#include <queue>
+#include <vector>
 
-uint32_t JobSystem::RunJobThread(void* param) {
-	uint32_t index = *(uint32_t*)param;
-	JobThread* Thr = &JobThreads[index];
-	size_t ThreadID = Thr->thread.ThreadID;
-	GLOG(Log::eInfo, "Starting job thread #%i (id=%#x, type=%#x).", Thr->index, ThreadID, Thr->type_mask);
+// ─── 内部实现 ─────────────────────────────────────────────────────────────────
 
-	// Run forever, waiting for jobs,
-	while (true) {
-		if (!IsRunning || !Thr) {
+struct JobSystemImpl {
+
+	// ── 单个类型的任务队列 ────────────────────────────────────────────────────
+
+	struct QueueEntry {
+		JobInfo job;
+		bool operator<(const QueueEntry& o) const {
+			return static_cast<int>(job.priority) < static_cast<int>(o.job.priority);
+		}
+	};
+
+	struct TypedQueue {
+		TypedQueue() = default;
+		~TypedQueue() = default;
+
+		TypedQueue(const TypedQueue&) = delete;
+		TypedQueue& operator=(const TypedQueue&) = delete;
+
+		std::priority_queue<QueueEntry> pq;
+		Mutex                           mtx;
+		ConditionVariable               cv;
+
+		void Push(JobInfo job) {
+			{
+				MutexGuard guard(mtx);
+				pq.push(QueueEntry{ std::move(job) });
+			}
+			// 只唤醒一个监听该队列的线程
+			cv.NotifyOne();
+		}
+
+		// 阻塞直到取到任务或 shutdown
+		// 返回 false = shutdown，线程应退出
+		bool WaitAndPop(JobInfo& out, std::atomic<bool>& running) {
+			mtx.Lock();
+
+			while (running.load() && pq.empty()) {
+				cv.Wait(mtx);
+			}
+
+			if (!running.load() && pq.empty()) {
+				mtx.UnLock();
+				return false;
+			}
+
+			out = std::move(const_cast<QueueEntry&>(pq.top()).job);
+			pq.pop();
+
+			mtx.UnLock();
+			return true;
+		}
+
+		void WakeAll() {
+			cv.NotifyAll();
+		}
+	};
+
+	// ── 工作线程 ──────────────────────────────────────────────────────────────
+
+	struct Worker {
+		Thread   thread;
+		JobType  type = JobType::eGeneral;
+		uint32_t index = 0;
+	};
+
+	// ── 完成回调条目（主线程执行）────────────────────────────────────────────
+
+	struct ResultEntry {
+		std::function<void()> callback;
+	};
+
+	// ── 成员 ──────────────────────────────────────────────────────────────────
+
+	std::atomic<bool> running{ false };
+
+	// 每种 JobType 独立队列，下标对应 JobType 的整数值
+	TypedQueue queues[static_cast<uint32_t>(JobType::eCount)];
+
+	std::vector<Worker> workers;
+	Mutex               result_mutex;
+	std::vector<ResultEntry> pending_results;
+
+	TypedQueue& GetQueue(JobType type) {
+		uint32_t idx = static_cast<uint32_t>(type);
+		if (idx >= static_cast<uint32_t>(JobType::eCount)) {
+			idx = static_cast<uint32_t>(JobType::eGeneral);
+		}
+		return queues[idx];
+	}
+};
+
+static JobSystemImpl g_impl;
+
+// ─── 工作线程函数 ─────────────────────────────────────────────────────────────
+
+static uint32_t WorkerThreadFunc(void* param) {
+	uint32_t worker_index = *reinterpret_cast<uint32_t*>(param);
+	JobType  type = g_impl.workers[worker_index].type;
+	uint32_t type_idx = static_cast<uint32_t>(type);
+
+	GLOG(Log::eInfo, "Job thread #%u started (type=%u).", worker_index, type_idx);
+
+	while (g_impl.running.load()) {
+		JobInfo job;
+
+		if (!g_impl.queues[type_idx].WaitAndPop(job, g_impl.running)) {
 			break;
 		}
 
-		// Lock and grab a copy of info.
- 		if (!Thr->info_mutex.Lock()) {
-			GLOG(Log::eError, "Failed to obtain lock on job thread mutex!");
-			break;
+		if (!job.entry) {
+			continue;
 		}
 
-		JobInfo info = Thr->info;
-		if (!Thr->info_mutex.UnLock()) {
-			GLOG(Log::eError, "Failed to release lock on job thread mutex!");
-			break;
+		bool succeeded = false;
+		try {
+			succeeded = job.entry();
+		}
+		catch (...) {
+			GLOG(Log::eError, "Job thread #%u: unhandled exception.", worker_index);
+			succeeded = false;
 		}
 
-		if (info.entry_point) {
-			bool Result = info.entry_point(info.param_data.get(), info.result_data.get());
-
-			// Store the result to be executed on the main thread later.
-			// Note that store_result takes a copy of the result_data so it does
-			// not have to be held onto by this thread any longer.
-			if (Result && info.on_success) {
-				StoreResult(info.on_success, info.result_data, info.result_data_size);
-			}
-			else if (!Result && info.on_failed) {
-				StoreResult(info.on_failed, info.result_data, info.result_data_size);
-			}
-
-			// Clear the param data and result data.
-			if (info.param_data) {
-				info.param_data.reset();
-			}
-			if (info.result_data) {
-				info.result_data.reset();
-			}
-
-			// Lock and reset the thread's info object.
-			if (!Thr->info_mutex.Lock()) {
-				GLOG(Log::eError, "Failed to obtain lock on job thread mutex!");
-				break;
-			}
-			Thr->info.Release();
-			Memory::Zero(&Thr->info, sizeof(JobInfo));
-			if (!Thr->info_mutex.UnLock()) {
-				GLOG(Log::eError, "Failed to release lock on job thread mutex!");
-				break;
-			}
-		}
-
-		if (IsRunning) {
-			// TODO: Should probably find a better way to do this. such as sleeping until
-			// a request comes through for a new job.
-			Thr->thread.Sleep(10);
-		}
-		else {
-			break;
+		auto& callback = succeeded ? job.on_success : job.on_failed;
+		if (callback) {
+			MutexGuard guard(g_impl.result_mutex);
+			g_impl.pending_results.push_back({ std::move(callback) });
 		}
 	}
 
-	// Destroy the mutex for this thread.
-	return 1;
+	GLOG(Log::eInfo, "Job thread #%u exiting.", worker_index);
+	return 0;
 }
 
-bool JobSystem::Initialize(unsigned int job_thread_count, unsigned int type_masks[]) {
-	IsRunning = true;
-	ThreadCount = job_thread_count;
+// ─── Initialize ───────────────────────────────────────────────────────────────
 
-	// Invalidate all result slots.
-	for (unsigned short i = 0; i < MAX_JOB_RESULTS; ++i) {
-		PendingResults[i].id = INVALID_ID_U16;
+bool JobSystem::Initialize(const uint32_t* thread_count_per_type) {
+	if (g_impl.running.load()) {
+		GLOG(Log::eWarn, "JobSystem::Initialize: already running.");
+		return false;
 	}
 
-	GLOG(Log::eInfo, "Main thread id is: %#x.", Thread::GetThreadID());
-	GLOG(Log::eDebug, "Spawning %i job threads.", ThreadCount);
+	// 每种类型的默认线程数
+	const uint32_t type_count = static_cast<uint32_t>(JobType::eCount);
 
-	for (unsigned char i = 0; i < ThreadCount; ++i) {
-		JobThreads[i].index = i;
-		JobThreads[i].type_mask = type_masks[i];
-		if (!JobThreads[i].thread.Create(RunJobThread, &JobThreads[i].index, false)) {
-			GLOG(Log::eFatal, "OS Error in creating job thread. Application cannot continue.");
+	uint32_t counts[static_cast<uint32_t>(JobType::eCount)];
+	if (thread_count_per_type) {
+		for (uint32_t i = 0; i < type_count; ++i) {
+			counts[i] = thread_count_per_type[i] > 0 ? thread_count_per_type[i] : 1;
+		}
+	}
+	else {
+		// 默认：eGeneral = 核心数-1（最少1），其余各1个
+		uint32_t hw = (uint32_t)Platform::GetProcessorCount();
+		uint32_t general = (hw > type_count) ? (hw - type_count) : 1;
+
+		for (uint32_t i = 0; i < type_count; ++i) {
+			counts[i] = (i == static_cast<uint32_t>(JobType::eGeneral)) ? general : 1;
+		}
+	}
+
+	// 计算总线程数并预分配，确保 resize 只做一次，之后内存不再移动
+	uint32_t total = 0;
+	for (uint32_t i = 0; i < type_count; ++i) total += counts[i];
+	g_impl.workers.resize(total);
+
+	// 配置所有 worker（不启动线程）
+	uint32_t worker_idx = 0;
+	for (uint32_t type_idx = 0; type_idx < type_count; ++type_idx) {
+		for (uint32_t j = 0; j < counts[type_idx]; ++j) {
+			g_impl.workers[worker_idx].index = worker_idx;
+			g_impl.workers[worker_idx].type = static_cast<JobType>(type_idx);
+			++worker_idx;
+		}
+	}
+
+	// 配置完成后再设置 running，确保线程启动时状态正确
+	g_impl.running.store(true);
+
+	// 统一启动所有线程
+	for (uint32_t i = 0; i < total; ++i) {
+		if (!g_impl.workers[i].thread.Create(WorkerThreadFunc, &g_impl.workers[i].index, false)) {
+			GLOG(Log::eFatal, "JobSystem: failed to create worker thread #%u.", i);
+			Shutdown();
 			return false;
 		}
+		GLOG(Log::eInfo, "Job thread #%u created (type=%u).",
+			i, static_cast<uint32_t>(g_impl.workers[i].type));
+	}
 
-		Memory::Zero(&JobThreads[i].info, sizeof(JobInfo));
+	GLOG(Log::eInfo, "JobSystem initialized: %u total threads.", total);
+	for (uint32_t i = 0; i < type_count; ++i) {
+		GLOG(Log::eInfo, "  Type %u: %u thread(s).", i, counts[i]);
 	}
 
 	return true;
 }
 
+// ─── Shutdown ─────────────────────────────────────────────────────────────────
+
 void JobSystem::Shutdown() {
-	if (!IsRunning) {
-		return;
+	if (!g_impl.running.load()) return;
+
+	g_impl.running.store(false);
+
+	// 唤醒所有队列的所有等待线程
+	for (uint32_t i = 0; i < static_cast<uint32_t>(JobType::eCount); ++i) {
+		g_impl.queues[i].WakeAll();
 	}
 
-	IsRunning = false;
-
-	// Check for a free thread first.
-	for (unsigned char i = 0; i < ThreadCount; ++i) {
-		JobThreads[i].thread.Destroy();
+	for (auto& w : g_impl.workers) {
+		w.thread.Destroy();
 	}
 
-	for (uint32_t i = 0; i < LowPriorityQueue.size(); ++i) {
-		JobInfo* Temp = nullptr;
-		LowPriorityQueue.pop();
-        if (Temp != nullptr){
-            Temp->Release();
-            Temp = nullptr;
-        }
+	g_impl.workers.clear();
 
-		NormalPriorityQueue.pop();
-        if (Temp != nullptr){
-            Temp->Release();
-            Temp = nullptr;
-        }
-        
-		HighPriorityQueue.pop();
-        if (Temp != nullptr){
-            Temp->Release();
-            Temp = nullptr;
-        }
+	{
+		MutexGuard guard(g_impl.result_mutex);
+		g_impl.pending_results.clear();
 	}
+
+	GLOG(Log::eInfo, "JobSystem shut down.");
 }
 
-void JobSystem::ProcessQueue(std::queue<JobInfo>& queue, Mutex* queue_mutex) {
-	// Check for a free thread first.
-	while (queue.size() > 0) {
-		JobInfo info = queue.front();
-		bool ThreadFound = false;
-		for (unsigned char i = 0; i < ThreadCount; ++i) {
-			JobThread* thread = &JobThreads[i];
-			if ((thread->type_mask & (uint32_t)info.type) == 0) {
-				continue;
-			}
-
-			// Check that the job thread can handle the job type.
-			if (!thread->info_mutex.Lock()) {
-				GLOG(Log::eError, "Failed to obtain lock on job thread mutex!");
-			}
-
-			if (!thread->info.entry_point) {
-				// Make sure to remove the entry from the queue.
-				if (!queue_mutex->Lock()) {
-					GLOG(Log::eError, "Failed to obtain lock on queue mutex!");
-				}
-				queue.pop();
-				if (!queue_mutex->UnLock()) {
-					GLOG(Log::eError, "Failed to release lock on queue mutex!");
-				}
-
-				thread->info = info;
-				ThreadFound = true;
-			}
-
-			if (!thread->info_mutex.UnLock()) {
-				GLOG(Log::eError, "Failed to release lock on thread mutex!");
-			}
-
-			// Break after unlocking if an available thread was found.
-			if (ThreadFound) {
-				break;
-			}
-		}
-
-		// This means all of the threads are currently handling a job.
-		// So wait until the next update and try again.
-		if (!ThreadFound) {
-			break;
-		}
-	}
-}
+// ─── Update ───────────────────────────────────────────────────────────────────
 
 void JobSystem::Update() {
-	if (!IsRunning) {
-		return;
+	if (!g_impl.running.load()) return;
+
+	std::vector<JobSystemImpl::ResultEntry> frame_results;
+	{
+		MutexGuard guard(g_impl.result_mutex);
+		frame_results.swap(g_impl.pending_results);
 	}
 
-	ProcessQueue(HighPriorityQueue, &HighPriQueueMutex);
-	ProcessQueue(NormalPriorityQueue, &NormalPriQueueMutex);
-	ProcessQueue(LowPriorityQueue, &LowPriQueueMutex);
-
-	// Process pending results.
-	for (unsigned short i = 0; i < MAX_JOB_RESULTS; ++i) {
-		// Lock and take a copy, unlock.
-		if (!ResultMutex.Lock()) {
-			GLOG(Log::eError, "Failed to obtain lock on result mutex!");
+	for (auto& entry : frame_results) {
+		try {
+			entry.callback();
 		}
-
-		JobResultEntry Entry = PendingResults[i];
-		if (!ResultMutex.UnLock()) {
-			GLOG(Log::eError, "Failed to release lock on result mutex!");
-		}
-
-		if (Entry.id != INVALID_ID_U16) {
-			// Execute the callback.
-			Entry.callback(Entry.params.get());
-
-			if (Entry.params) {
-				Entry.params.reset();
-			}
-
-			// Lock actual entry, invalidate and clear it
-			if (!ResultMutex.Lock()) {
-				GLOG(Log::eError, "Failed to obtain lock on result mutex!");
-			}
-			Memory::Zero(&PendingResults[i], sizeof(JobResultEntry));
-			PendingResults[i].id = INVALID_ID_U16;
-			if (!ResultMutex.UnLock()) {
-				GLOG(Log::eError, "Failed to release lock on result mutex!");
-			}
+		catch (...) {
+			GLOG(Log::eError, "JobSystem::Update: exception in result callback.");
 		}
 	}
 }
 
+// ─── Submit ───────────────────────────────────────────────────────────────────
+
 void JobSystem::Submit(JobInfo info) {
-	std::queue<JobInfo>* Queue = &NormalPriorityQueue;
-	Mutex* QueueMutex = &NormalPriQueueMutex;
-
-	// If the job is high priority, try to kick it off immediately.
-	if (info.priority == JobPriority::eHigh) {
-		Queue = &HighPriorityQueue;
-		QueueMutex = &HighPriQueueMutex;
-
-		// Check for a free thread that supports the job type first.
-		for (unsigned char i = 0; i < ThreadCount; ++i) {
-			JobThread* thread = &JobThreads[i];
-			if (thread->type_mask & (uint32_t)info.type) {
-				bool Found = false;
-				if (!thread->info_mutex.Lock()) {
-					GLOG(Log::eError, "Failed to obtain lock on job thread mutex!");
-				}
-				if (!thread->info.entry_point) {
-					GLOG(Log::eInfo, "Job immediately submitted on thread %i.", thread->index);
-					thread->info = info;
-					Found = true;
-				}
-				if (!thread->info_mutex.UnLock()) {
-					GLOG(Log::eError, "Failed to release lock on job thread mutex!");
-				}
-				if (Found) {
-					return;
-				}
-			}
-		}
+	if (!g_impl.running.load()) {
+		GLOG(Log::eWarn, "JobSystem::Submit: system not running.");
+		return;
 	}
 
-	// If this point is reached, all threads are busy.
-	// Add to the queue and try again next cycle.
-	if (info.priority == JobPriority::eLow) {
-		Queue = &LowPriorityQueue;
-		QueueMutex = &LowPriQueueMutex;
-	}
+	GLOG(Log::eInfo, "JobSystem::Submit: type=%u priority=%d",
+		static_cast<uint32_t>(info.type), static_cast<int>(info.priority));
 
-	// NOTO: Locking here in case the job is submitted from another thread.
-	if (!QueueMutex->Lock()) {
-		GLOG(Log::eError, "Failed to obtain lock on queue mutex!");
-	}
-	Queue->push(info);
-	if (!QueueMutex->UnLock()) {
-		GLOG(Log::eError, "Failed to release lock on queue mutex!");
-	}
+	g_impl.GetQueue(info.type).Push(std::move(info));
 }

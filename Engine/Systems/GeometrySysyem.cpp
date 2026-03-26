@@ -1,39 +1,25 @@
 ﻿#include "GeometrySystem.h"
 
-#include "Renderer/RendererFrontend.hpp"
+#include "Rendering/Renderer.hpp"
 #include "Core/EngineLogger.hpp"
 #include "Core/DMemory.hpp"
 #include "Math/GeometryUtils.hpp"
 
-SGeometrySystemConfig GeometrySystem::GeometrySystemConfig;
-Geometry GeometrySystem::DefaultGeometry;
-Geometry GeometrySystem::Default2DGeometry;
-SGeometryReference* GeometrySystem::RegisteredGeometries = nullptr;
-bool GeometrySystem::Initilized = false;
-IRenderer* GeometrySystem::Renderer = nullptr;
+GeometrySystem& GeometrySystem::Get() {
+	static GeometrySystem UniqueGeometrySystem;
+	return UniqueGeometrySystem;
+}
 
-bool GeometrySystem::Initialize(IRenderer* renderer, SGeometrySystemConfig config) {
-	if (config.max_geometry_count == 0) {
-		GLOG(Log::eFatal, "Geometry system initialize failed. config.max_geometry_count must be > 0.");
-		return false;
-	}
-
+bool GeometrySystem::Initialize(IRenderer* renderer) {
 	if (renderer == nullptr) {
 		GLOG(Log::eFatal, "Material system init failed. Renderer is nullptr.");
 		return false;
 	}
 
-	GeometrySystemConfig = config;
 	Renderer = renderer;
 
 	// Invalidate all geometries in the array.
-	RegisteredGeometries = (SGeometryReference*)Memory::Allocate(sizeof(SGeometryReference) * config.max_geometry_count, MemoryType::eMemory_Type_Array);
-	for (uint32_t i = 0; i < config.max_geometry_count; ++i) {
-		RegisteredGeometries[i].geometry.ID = INVALID_ID;
-		RegisteredGeometries[i].geometry.InternalID= INVALID_ID;
-		RegisteredGeometries[i].geometry.Generation = INVALID_ID;
-	}
-
+	RegisteredGeometries.Clear();
 	if (!CreateDefaultGeometries()) {
 		GLOG(Log::eFatal, "Failed to create default geometries. Application quit now!");
 		return false;
@@ -44,13 +30,21 @@ bool GeometrySystem::Initialize(IRenderer* renderer, SGeometrySystemConfig confi
 }
 
 void GeometrySystem::Shutdown() {
+	if (DefaultGeometry) {
+		DeleteObject(DefaultGeometry);
+	}
+
+	if (Default2DGeometry) {
+		DeleteObject(Default2DGeometry);
+	}
+
 	Initilized = false;
 }
 
 Geometry* GeometrySystem::AcquireByID(uint32_t id) {
-	if (id != INVALID_ID && RegisteredGeometries[id].geometry.ID != INVALID_ID) {
-		RegisteredGeometries[id].reference_count++;
-		return &RegisteredGeometries[id].geometry;
+	if (id < RegisteredGeometries.Size() && RegisteredGeometries[id]->ID != INVALID_ID) {
+		RegisteredGeometries[id]->reference_count++;
+		return RegisteredGeometries[id];
 	}
 
 	// NOTE: Should return default geometry instead.
@@ -59,55 +53,34 @@ Geometry* GeometrySystem::AcquireByID(uint32_t id) {
 }
 
 Geometry* GeometrySystem::AcquireFromConfig(SGeometryConfig config, bool auto_release) {
-	Geometry* geometry = nullptr;
-	for (uint32_t i = 0; i < GeometrySystemConfig.max_geometry_count; ++i) {
-		if (RegisteredGeometries[i].geometry.ID == INVALID_ID) {
-			// Found empty slot.
-			RegisteredGeometries[i].auto_release = auto_release;
-			RegisteredGeometries[i].reference_count = 1;
-			geometry = &RegisteredGeometries[i].geometry;
-			geometry->ID = i;
-			break;
-		}
-	}
-
-	if (geometry == nullptr) {
-		GLOG(Log::eError, "Unable to obtain free slot for geometry. Adjust configuration to allow more space. Returning nullptr.");
+	Geometry* geometry = CreateGeometry(config);
+	if (!geometry) {
+		GLOG(Log::eError, "Failed to create geometry '%s'. Returning nullptr.", config.name.CStr());
 		return nullptr;
 	}
 
-	if (!CreateGeometry(config, geometry)) {
-		GLOG(Log::eError, "Failed to create geometry '%s'. Returning nullptr.", config.name.c_str());
-		return nullptr;
-	}
+	RegisteredGeometries.Push(geometry);
+	geometry->ID = (uint32_t)RegisteredGeometries.Size() - 1;
 
 	return geometry;
 }
 
 void GeometrySystem::Release(Geometry* geometry) {
-	if (geometry == nullptr) {
+	if (!geometry) {
 		return;
 	}
 
 	if (geometry->ID != INVALID_ID) {
-		SGeometryReference* Ref = &RegisteredGeometries[geometry->ID];
-
 		// Take a copy of id.
-		if (Ref->geometry.ID == geometry->ID) {
-
-			if (Ref->reference_count > 0) {
-				Ref->reference_count--;
-			}
-
-			// Also blanks out the geometry id.
-			if (Ref->reference_count < 1 && Ref->auto_release) {
-				DestroyGeometry(geometry);
-				Ref->reference_count = 0;
-				Ref->auto_release = false;
-			}
+		if (geometry->reference_count > 0) {
+			geometry->reference_count--;
 		}
-		else {
-			GLOG(Log::eFatal, "Geometry id mismatch. Check registration logic. as this should never occur.");
+
+		// Also blanks out the geometry id.
+		if (geometry->reference_count < 1 && geometry->auto_release) {
+			DestroyGeometry(geometry);
+			geometry->reference_count = 0;
+			geometry->auto_release = false;
 		}
 
 		return;
@@ -117,8 +90,8 @@ void GeometrySystem::Release(Geometry* geometry) {
 }
 
 Geometry* GeometrySystem::GetDefaultGeometry() {
-	if (Initilized) {
-		return &DefaultGeometry;
+	if (Initilized && DefaultGeometry) {
+		return DefaultGeometry;
 	}
 
 	GLOG(Log::eFatal, "Get default Geometry called before system initialize. Returning nullptr");
@@ -126,8 +99,8 @@ Geometry* GeometrySystem::GetDefaultGeometry() {
 }
 
 Geometry* GeometrySystem::GetDefaultGeometry2D() {
-	if (Initilized) {
-		return &Default2DGeometry;
+	if (Initilized && Default2DGeometry) {
+		return Default2DGeometry;
 	}
 
 	GLOG(Log::eFatal, "Get default 2D Geometry called before system initialize. Returning nullptr");
@@ -161,15 +134,20 @@ bool GeometrySystem::CreateDefaultGeometries() {
 
 	uint32_t Indices[6] = { 0, 1, 2, 0, 3, 1 };
 
+	DefaultGeometry = NewObject<Geometry>("DefaultGeometry");
+	if (!DefaultGeometry) {
+		return false;
+	}
+
 	// Send the geometry off to the renderer to be uploaded to the GPU.
-	DefaultGeometry.InternalID = INVALID_ID;
-	if (!Renderer->CreateGeometry(&DefaultGeometry, sizeof(Vertex), 4, Verts, sizeof(uint32_t), 6, Indices)) {
+	DefaultGeometry->InternalID = INVALID_ID;
+	if (!Renderer->CreateGeometry(DefaultGeometry, sizeof(Vertex), 4, Verts, sizeof(uint32_t), 6, Indices)) {
 		GLOG(Log::eFatal, "Failed to create default geometry. Application quit now!");
 		return false;
 	}
 
 	// Acquire the default material.
-	DefaultGeometry.Material = MaterialSystem::GetDefaultMaterial();
+	DefaultGeometry->Material = MaterialSystem::Get().GetDefaultMaterial();
 
 	// Create default 2d geometry.
 	const float uf = 100.0f;
@@ -197,51 +175,60 @@ bool GeometrySystem::CreateDefaultGeometries() {
 
 	// Indices NOTO: counter-clockwise.
 	uint32_t Indices2D[6] = { 2, 1, 0, 3, 0, 1 };
+	RegisteredGeometries.Push(DefaultGeometry);
+
+	Default2DGeometry = NewObject<Geometry>("Default2DGeometry");
+	if (!Default2DGeometry) {
+		return false;
+	}
 
 	// Send the geometry off to the renderer to be uploaded to the GPU.
-	Default2DGeometry.InternalID = INVALID_ID;
-	if (!Renderer->CreateGeometry(&Default2DGeometry, sizeof(Vertex2D), 4, Verts2D, sizeof(uint32_t), 6, Indices2D)) {
+	Default2DGeometry->InternalID = INVALID_ID;
+	if (!Renderer->CreateGeometry(Default2DGeometry, sizeof(Vertex2D), 4, Verts2D, sizeof(uint32_t), 6, Indices2D)) {
 		GLOG(Log::eFatal, "Failed to create default 2d geometry. Application quit now!");
 		return false;
 	}
 
 	// Acquire the default material.
-	Default2DGeometry.Material = MaterialSystem::GetDefaultMaterial();
+	Default2DGeometry->Material = MaterialSystem::Get().GetDefaultMaterial();
+	RegisteredGeometries.Push(Default2DGeometry);
 
 	return true;
 }
 
-bool GeometrySystem::CreateGeometry(SGeometryConfig config, Geometry* geometry) {
+Geometry* GeometrySystem::CreateGeometry(SGeometryConfig config) {
+	Geometry* geometry = NewObject<Geometry>(config.name);
+	if (!geometry) {
+		return nullptr;
+	}
+
 	// Send the geometry off to the renderer to be uploaded to the GPU.
 	if (!Renderer->CreateGeometry(geometry, config.vertex_size, config.vertex_count, config.vertices, config.index_size, config.index_count, config.indices)) {
 		// Invalidate the entry.
-		RegisteredGeometries[geometry->ID].reference_count = 0;
-		RegisteredGeometries[geometry->ID].auto_release = false;
-
-		geometry->ID = INVALID_ID;
-		geometry->Generation = INVALID_ID;
-		geometry->InternalID = INVALID_ID;
-
-		return false;
+		DeleteObject(geometry);
+		return nullptr;
 	}
 
 	// Copy over extents, center. etc.
 	geometry->Center = config.center;
 	geometry->Extents.min = config.min_extents;
 	geometry->Extents.max = config.max_extents;
-	geometry->name = std::move(config.name);
+	geometry->name = config.name;
 
 	// Acquire the material.
-	if (config.material_name.length() > 0) {
-		geometry->Material = MaterialSystem::Acquire(config.material_name.c_str());
+	if (config.material_name.Length() > 0) {
+		geometry->Material = MaterialSystem::Get().Acquire(config.material_name.CStr());
 	}
 
 	if (geometry->Material == nullptr) {
 		GLOG(Log::eWarn, "Default use default material.");
-		geometry->Material = MaterialSystem::GetDefaultMaterial();
+		geometry->Material = MaterialSystem::Get().GetDefaultMaterial();
 	}
 
-	return true;
+	RegisteredGeometries.Push(geometry);
+	geometry->ID = (uint32_t)RegisteredGeometries.Size() - 1;
+
+	return geometry;
 }
 
 void GeometrySystem::ConfigDispose(SGeometryConfig* config) {
@@ -265,14 +252,14 @@ void GeometrySystem::DestroyGeometry(Geometry* geometry) {
 	geometry->name[0] = '0';
 
 	// Release the material.
-	if (geometry->Material && geometry->Material->Name.length() > 0) {
-		MaterialSystem::Release(geometry->Material->Name.c_str());
+	if (geometry->Material) {
+		MaterialSystem::Get().Release(geometry->Material->Name);
 		geometry->Material = nullptr;
 	}
 }
 
 SGeometryConfig GeometrySystem::GeneratePlaneConfig(float width, float height, uint32_t x_segment_count,
-	uint32_t y_segment_count, float tile_x, float tile_y, const std::string& name, const std::string& material_name) {
+	uint32_t y_segment_count, float tile_x, float tile_y, const FString& name, const FString& material_name) {
 	if (width == 0) {
 		GLOG(Log::eWarn, "width must be non-zero. Defauting to one.");
 		width = 1.0f;
@@ -377,14 +364,14 @@ SGeometryConfig GeometrySystem::GeneratePlaneConfig(float width, float height, u
 		}
 	}
 
-	Config.name = name.empty() ? DEFAULT_GEOMETRY_PLANE_NAME : name;
-	Config.material_name = material_name.empty() ? DEFAULT_MATERIAL_NAME : material_name;
+	Config.name = name.IsEmpty() ? DEFAULT_GEOMETRY_PLANE_NAME : name;
+	Config.material_name = material_name.IsEmpty() ? DEFAULT_MATERIAL_NAME : material_name;
 
 	return Config;
 }
 
 SGeometryConfig GeometrySystem::GenerateCubeConfig(float width, float height,
-	float depth, float tile_x, float tile_y, const std::string& name, const std::string& material_name) {
+	float depth, float tile_x, float tile_y, const FString& name, const FString& material_name) {
 	if (width == 0) {
 			GLOG(Log::eWarn, "width must be non-zero. Defauting to one.");
 			width = 1.0f;
@@ -536,15 +523,15 @@ SGeometryConfig GeometrySystem::GenerateCubeConfig(float width, float height,
 			((uint32_t*)Config.indices)[OffsetI + 5] = OffsetV + 1;
 		}
 
-		Config.name = name.empty() ? DEFAULT_GEOMETRY_PLANE_NAME : name;
-		Config.material_name = material_name.empty() ? DEFAULT_MATERIAL_NAME : material_name;
+		Config.name = name.IsEmpty() ? DEFAULT_GEOMETRY_PLANE_NAME : name;
+		Config.material_name = material_name.IsEmpty() ? DEFAULT_MATERIAL_NAME : material_name;
 
 		GeometryUtils::GenerateTangents(Config.vertex_count, (Vertex*)Config.vertices, Config.index_count, (uint32_t*)Config.indices);
 
 		return Config;
 }
 
-Geometry* GeometrySystem::GenerateQuad(const std::string& name, const std::string& material_name) {
+Geometry* GeometrySystem::GenerateQuad(const FString& name, const FString& material_name) {
 	SGeometryConfig Config = GeneratePlaneConfig(2, 2, 1, 1, 1, 1, name, material_name);
 	Geometry* NewGeom = AcquireFromConfig(Config, true);
 	if (!NewGeom) {

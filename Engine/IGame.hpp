@@ -52,7 +52,9 @@ public:
 	void SetApplicationName(const std::string& Name) { ApplicationName = Name; }
 
 	const FontSystemConfig& GetFontConfig() const { return FontConfig; }
-	const std::vector<RenderViewConfig>& GetRenderviews() const { return Renderviews; };
+
+	void SetRenderviewConfigPath(const FString& Path) { RenderviewConfigPath = Path; }
+	const FString& GetRenderviewConfigPath() const { return RenderviewConfigPath; }
 
 public:
 	float DeltaTime;
@@ -63,6 +65,6 @@ protected:
 	Vector2 WindowOffset;
 	WindowRect WindowSize;
 	FontSystemConfig FontConfig;
-	std::vector<RenderViewConfig> Renderviews;
+	FString RenderviewConfigPath;
 
 };

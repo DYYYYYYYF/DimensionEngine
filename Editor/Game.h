@@ -10,8 +10,9 @@
 #include "Framework/Classes/StaticMeshActor.h"
 #include "Framework/Classes/TextActor.h"
 
-#define EDITOR_CONFIG_PATH std::string(ROOT_PATH) + "/Editor/Config.json"
+#define EDITOR_CONFIG_PATH FString::Format("%s%s", ROOT_PATH, "/Editor/Config.json")
 
+class Skybox;
 class ACameraActor;
 
 class GameInstance : public IGame {
@@ -27,15 +28,12 @@ public:
 	virtual bool Render(struct SRenderPacket* packet, float delta_time) override;
 	virtual void OnResize(unsigned int width, unsigned int height) override;
 
-private:
-	bool ConfigureRenderviews();
-
 public:
 	ACameraActor* WorldCamera;
 	Frustum CameraFrustum;
 
 	// TODO: temp
-	Skybox SB;
+	Skybox* SB;
 	Keymap* ConsoleKeymap;
 	DebugConsoleActor* GameConsole = nullptr;
 

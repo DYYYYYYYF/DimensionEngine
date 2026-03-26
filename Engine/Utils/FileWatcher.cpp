@@ -1,6 +1,6 @@
 ﻿#include "FileWatcher.h"
 #include "iostream"
-#include "Platform/File.hpp"
+#include "Platform/File/File.hpp"
 #include "Core/Event.hpp"
 #include "Core/DMemory.hpp"
 #include <filesystem>
@@ -28,30 +28,43 @@ void FileWatcher::AddWatchFolder(const std::string& path, bool recursion) {
 	}
 
 	for (const auto& entry : std::filesystem::directory_iterator(FolderPath)) {
-		std::string FilePath = path + entry.path().filename().string();
+		FString FilePath = (path + entry.path().filename().string()).c_str();
 		AddWatchFile(FilePath);
-		GLOG(Log::eDebug, "Add file %s in watcher list.", FilePath.c_str());
+		GLOG(Log::eDebug, "Add file %s in watcher list.", FilePath.CStr());
 	}
 }
 
-void FileWatcher::AddWatchFile(const std::string& file) {
-	WatchedFiles.Push(WatchableFile(file));
+void FileWatcher::AddWatchFile(const FString& file) {
+	WatchableFile* Instance = NewObject<WatchableFile>(file);
+	if (!Instance) {
+		GLOG(Log::eError, "Failed to create WatchableFile instance for file: %s", file.CStr());
+		return;
+	}
+
+	if (!Instance->IsExist()) {
+		GLOG(Log::eError, "File does not exist: %s", file.CStr());
+		return;
+	}
+
+	WatchedFiles.Push(Instance);
 }
 
 void FileWatcher::Update()
 {
-	for (auto& ModifiedFile : WatchedFiles) {
-		bool modified = ModifiedFile.CheckFileModification();
+	for (WatchableFile* ModifiedFile : WatchedFiles) {
+		if (!ModifiedFile) continue;
+
+		bool modified = ModifiedFile->CheckFileModification();
 		if (modified)
 		{
-			ModifiedFile.UpdateLastModInfo();
-			std::string Filename = ModifiedFile.GetFilename();
-			if (ModifiedFile.GetFileType().compare(".hlsl") == 0) {
+			ModifiedFile->UpdateLastModInfo();
+			FString Filename = ModifiedFile->GetFilename();
+			if (ModifiedFile->GetFileType().Compare(".hlsl") == 0) {
 				Filename = File(Filename).GetFilename();
 			}
 
 			SEventContext Context = {};
-			const char* ShaderName = Filename.c_str();
+			const char* ShaderName = Filename.CStr();
 			Memory::Copy(Context.data.c, ShaderName, strlen(ShaderName) + 1);
 			EngineEvent::Fire(eEventCode::Reload_Shader_Module, nullptr, Context);
 		}
@@ -84,17 +97,17 @@ void WatchableFile::UpdateLastModInfo()
 	}
 }
 
-bool WatchableFile::GetFileInfo(WatchableFileInfo* fi, const std::string& name) const
+bool WatchableFile::GetFileInfo(WatchableFileInfo* fi, const FString& name) const
 {
 #ifdef _MSC_VER
 	struct _stat fileStatus;
-	if (_stat(name.c_str(), &fileStatus) == -1)
+	if (_stat(name.CStr(), &fileStatus) == -1)
 	{
 		return false;
 	}
 #else
 	struct stat fileStatus;
-	if (::stat(name.c_str(), &fileStatus) == -1)
+	if (::stat(name.CStr(), &fileStatus) == -1)
 	{
 		return false;
 	}

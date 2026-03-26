@@ -1,0 +1,24 @@
+﻿#pragma once
+
+#include "Containers/FString.hpp"
+#include "Rendering/Resources/Asset.hpp"
+
+class IResourceLoader {
+public:
+	IResourceLoader() : Id(INVALID_ID), Type(EAssetType::Unkonw){}
+	virtual ~IResourceLoader() {
+		Id = INVALID_ID;
+		Type = EAssetType::Unkonw;
+	}
+
+public:
+	virtual bool Load(const FString& name, void* params, UAsset* resource) = 0;
+	virtual void Unload(UAsset* resouce) = 0;
+
+public:
+	uint32_t Id;
+	EAssetType Type;
+	FString CustomType;
+	FString TypePath;
+
+};

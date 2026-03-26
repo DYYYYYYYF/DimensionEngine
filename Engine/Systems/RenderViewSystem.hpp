@@ -3,35 +3,41 @@
 #include "Defines.hpp"
 #include "Math/MathTypes.hpp"
 #include "Containers/TArray.hpp"
-#include "Containers/THashTable.hpp"
-#include "Renderer/Interface/IRenderView.hpp"
+#include "Rendering/Interface/IRenderView.hpp"
 
 class IRenderer;
 
 struct SRenderViewSystemConfig {
 	unsigned short max_view_count;
+	FString config_path;
 };
 
 class RenderViewSystem {
 public:
-	static bool Initialize(IRenderer* renderer, SRenderViewSystemConfig config);
-	static void Shutdown();
+	static DAPI RenderViewSystem& Get();
 
-	static bool Create(const RenderViewConfig& config);
-	static void OnWindowResize(uint32_t width, uint32_t height);
+public:
+	bool Initialize(IRenderer* renderer, SRenderViewSystemConfig config);
+	void Shutdown();
 
-	DAPI static IRenderView* Get(const std::string& name);
+	bool Create(const RenderViewConfig& config);
+	void OnWindowResize(uint32_t width, uint32_t height);
 
-	DAPI static bool BuildPacket(IRenderView* view, IRenderviewPacketData* data, struct RenderViewPacket* out_packet);
-	static bool OnRender(IRenderView* view, RenderViewPacket* packet, size_t frame_number, size_t render_target_index);
+	DAPI IRenderView* Get(const FString& name);
 
-	static void RegenerateRendertargets(IRenderView* view);
+	DAPI bool BuildPacket(IRenderView* view, IRenderviewPacketData* data, struct RenderViewPacket* out_packet);
+	bool OnRender(IRenderView* view, RenderViewPacket* packet, size_t frame_number, size_t render_target_index);
+
+	void RegenerateRendertargets(IRenderView* view);
 
 private:
-	static bool Initialized;
-	static IRenderer* Renderer;
-	static uint16_t MaxViewCount;
+	bool LoadRenderviewConfig(const FString& path);
 
-	static std::vector<IRenderView*> RegisteredViews;
-	static std::unordered_map<std::string, uint16_t> RegisteredViewMap;
+private:
+	bool Initialized;
+	IRenderer* Renderer;
+	uint16_t MaxViewCount;
+
+	std::vector<IRenderView*> RegisteredViews;
+	std::unordered_map<FString, uint16_t> RegisteredViewMap;
 };

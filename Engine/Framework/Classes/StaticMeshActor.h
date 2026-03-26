@@ -1,36 +1,40 @@
 ﻿#pragma once
 
-#include "MeshActor.h"
-#include "Resources/Resource.hpp"
-#include "Resources/Geometry.hpp"
+#include "Actor.h"
+#include "Rendering/Resources/Geometry/Geometry.hpp"
 
 #include <vector>
 
-class AStaticMeshActor : public AMeshActor{
+struct FMeshLoadParams {
+	FString resource_name;
+	class AStaticMeshActor* out_mesh = nullptr;
+	class UAsset mesh_resource;
+};
+
+class AStaticMeshActor : public AActor{
 public:
-	AStaticMeshActor() : AMeshActor(), geometries(nullptr), geometry_count(0), Generation(INVALID_ID_U8){}
-	AStaticMeshActor(const FString& Name) : AMeshActor(Name), geometries(nullptr), geometry_count(0), Generation(INVALID_ID_U8){}
+	DECLARE_CLASS_TYPE(AStaticMeshActor)
+
+public:
+	AStaticMeshActor() : AActor(), geometries(nullptr), geometry_count(0), Generation(INVALID_ID_U8){}
+	AStaticMeshActor(const FString& Name) : AActor(Name), geometries(nullptr), geometry_count(0), Generation(INVALID_ID_U8){}
 	virtual ~AStaticMeshActor() { Unload(); }
 
 public:
-	DAPI virtual void Draw() override;
+	DAPI virtual void Draw();
 
-	DAPI bool LoadFromResource(const std::string& resource_name);
+	DAPI bool LoadFromResource(const FString& resource_name);
 	DAPI void Unload();
 
 private:
-	void LoadJobSuccess(void* params);
-	void LoadJobFail(void* params);
-	bool LoadJobStart(void* params, void* result_data);
+	void LoadJobSuccess();
+	void LoadJobFail();
+	bool LoadJobStart();
 
 public:
 	unsigned char Generation;
 	unsigned short geometry_count;
 	Geometry** geometries;
-};
 
-struct FMeshLoadParams {
-	std::string resource_name;
-	AStaticMeshActor* out_mesh = nullptr;
-	class Resource mesh_resource;
+	struct FMeshLoadParams LoadParams;
 };

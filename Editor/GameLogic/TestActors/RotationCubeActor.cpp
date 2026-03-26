@@ -1,4 +1,4 @@
-#include "RotationCubeActor.h"
+﻿#include "RotationCubeActor.h"
 
 ARotationCubeActor::ARotationCubeActor() : ACubeActor() {}
 ARotationCubeActor::ARotationCubeActor(const FString& Name) : ACubeActor(Name) {}
@@ -10,6 +10,6 @@ void ARotationCubeActor::Tick(float DeltaTime) {
 	Rotate(RotationX);
 	Rotate(RotationY);
 
-	// ִ�и��෽��
+	// 执行父类方法
 	ACubeActor::Tick(DeltaTime);
 }

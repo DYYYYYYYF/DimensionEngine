@@ -1,15 +1,12 @@
 ﻿#include "CameraSystem.h"
-
 #include "Core/EngineLogger.hpp"
 #include "Core/DMemory.hpp"
-#include "Containers/TString.hpp"
+#include "Framework/Components/CameraComponent.h"
 
-IRenderer* CameraSystem::Renderer = nullptr;
-bool CameraSystem::Initialized = false;
-SCameraSystemConfig CameraSystem::Config;
-ACameraActor* CameraSystem::DefaultCamera = nullptr;
-std::vector<ACameraActor*> CameraSystem::Cameras;
-std::unordered_map<std::string, uint32_t> CameraSystem::CameraMap;
+CameraSystem& CameraSystem::Get() {
+	static CameraSystem CameraSystemInstance;
+	return CameraSystemInstance;
+}
 
 bool CameraSystem::Initialize(IRenderer* renderer, SCameraSystemConfig config) {
 	if (config.max_camera_count == 0) {
@@ -51,13 +48,13 @@ void CameraSystem::Shutdown() {
 	std::vector<ACameraActor*>().swap(Cameras);
 }
 
-ACameraActor* CameraSystem::Acquire(const std::string& name) {
+ACameraActor* CameraSystem::Acquire(const FString& name) {
 	if (Initialized) {
-		if (StringEquali(name.c_str(), DEFAULT_CAMERA_NAME)) {
+		if (name.Compare(DEFAULT_CAMERA_NAME) == 0) {
 			return DefaultCamera;
 		}
 
-		uint32_t ID = INVALID_ID;
+		uint64_t ID = INVALID_ID;
 		if (CameraMap.find(name) == CameraMap.end()) {
 			GLOG(Log::eError, "Camera system Acquire() failed lookup. returned nullptr.");
 			return nullptr;
@@ -70,11 +67,11 @@ ACameraActor* CameraSystem::Acquire(const std::string& name) {
 		}
 
 		// Create/register the new camera.
-		GLOG(Log::eInfo, "Creating new camera named '%s'.", name.c_str());
+		GLOG(Log::eInfo, "Creating new camera named '%s'.", name.CStr());
 		ACameraActor* NewCamera = NewObject<ACameraActor>();
 		ID = NewCamera->GetUniqueID();
 		if (NewCamera == nullptr || ID == INVALID_ID) {
-			GLOG(Log::eError, "Create camera %s failed.", name.c_str());
+			GLOG(Log::eError, "Create camera %s failed.", name.CStr());
 			return nullptr;
 		}
 
@@ -90,14 +87,14 @@ ACameraActor* CameraSystem::Acquire(const std::string& name) {
 	return nullptr;
 }
 
-void CameraSystem::Release(const std::string& name) {
+void CameraSystem::Release(const FString& name) {
 	if (Initialized) {
-		if (StringEquali(name.c_str(), DEFAULT_CAMERA_NAME)) {
+		if (name.Compare(DEFAULT_CAMERA_NAME) == 0) {
 			GLOG(Log::eWarn, "Cannot release default camera. Nothing was done.");
 			return;
 		}
 
-		uint32_t ID = INVALID_ID;
+		uint64_t ID = INVALID_ID;
 		if (CameraMap.find(name) == CameraMap.end()) {
 			GLOG(Log::eWarn, "Camera system release failed lookup. Nothing was done.");
 			return;
@@ -114,7 +111,8 @@ void CameraSystem::Release(const std::string& name) {
 
 			Cam->DecreaseReferenceCount();
 			if (Cam->GetReferenceCount() < 1) {
-				Cam->Reset();
+				UCameraComponent* CameraComp = Cam->GetComponent<UCameraComponent>();
+				if (CameraComp) CameraComp->Reset();
 				CameraMap[name] = INVALID_ID;
 			}
 		}

@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "Vector.hpp"
 
 template<typename T>

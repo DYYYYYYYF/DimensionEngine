@@ -12,21 +12,52 @@ struct AllocHeader {
 	size_t alignment;
 };
 
-bool DynamicAllocator::Create(size_t total_size) {
+DynamicAllocator::DynamicAllocator() : DynamicAllocator(MEBIBYTES(10)) {}
+
+DynamicAllocator::DynamicAllocator(size_t total_size) {
 	if (total_size < 1) {
 		GLOG(Log::eError, "Dynamic allocator create can not have a total_size of 0. Failed.");
-		return false;
+		return;
 	}
 
 	TotalSize = total_size;
 	if (!List.Create(TotalSize)) {
-		return false;
+		return;
 	}
 	
 	MemoryBlock = Platform::PlatformAllocate(total_size, false);
 	if (MemoryBlock == nullptr) {
 		GLOG(Log::eFatal, "DynamicAllocator::Create() Cannot allocate enough memory for dynamic allocator.");
+	}
+
+	Platform::PlatformSetMemory(MemoryBlock, 0, total_size);
+}
+
+DynamicAllocator& DynamicAllocator::Get() {
+	static DynamicAllocator AllocatorInstance;
+	return AllocatorInstance;
+}
+
+bool DynamicAllocator::Resize(size_t total_size) {
+	if (total_size < 1) {
+		GLOG(Log::eError, "Dynamic allocator create can not have a total_size of 0. Failed.");
 		return false;
+	}
+
+	if (TotalSize > 0)  GLOG(Log::eWarn, "Dynamic allocator resize will clear all memory!");
+	if (total_size < TotalSize) GLOG(Log::eWarn, "Dynamic allocator resize from %llu to %llu. Memory will be cut.", TotalSize, total_size);
+
+	// 先清空
+	Destroy();
+
+	TotalSize = total_size;
+	if (!List.Create(TotalSize)) {
+		return false;
+	}
+
+	MemoryBlock = Platform::PlatformAllocate(total_size, false);
+	if (MemoryBlock == nullptr) {
+		GLOG(Log::eFatal, "DynamicAllocator::Create() Cannot allocate enough memory for dynamic allocator.");
 	}
 
 	Platform::PlatformSetMemory(MemoryBlock, 0, total_size);

@@ -4,7 +4,7 @@
 
 #include "Game.h"
 #include "Entry.hpp"
-#include <Platform/JsonObject.h>
+#include <Platform/File/JsonObject.h>
 
 // TODO: Remove
 #include "Core/DMemory.hpp"
@@ -16,7 +16,7 @@ extern bool CreateGame(IGame* out_game) {
 		return false;
 	}
 
-	JsonObject Content = JsonObject(MaterialAsset.ReadBytes());
+	JsonObject Content = JsonObject(MaterialAsset.ReadText());
 
 	out_game->SetWindowWidth(Content.ReadInt("Window.Width"));
 	out_game->SetWindowHeight(Content.ReadInt("Window.Height"));

@@ -2,8 +2,7 @@
 #include <Core/Utils.hpp>
 #include <Core/Console.hpp>
 #include <Core/Controller.hpp>
-#include <Containers/TString.hpp>
-#include <Renderer/RendererFrontend.hpp>
+#include <Rendering/Renderer.hpp>
 #include <Framework/Classes/TextActor.h>
 
 bool DebugConsoleActor::Write(Log::Logger::Level level, const std::string& msg) {
@@ -20,10 +19,10 @@ bool DebugConsoleActor::Write(Log::Logger::Level level, const std::string& msg) 
 void DebugConsoleActor::SetVisible(bool visiblable) {
 	Visible = visiblable;
 	if (Visible) {
-		EntryControl->SetContent(" ");
+		EntryControl->SetText(" ");
 	}
 	else {
-		EntryControl->SetContent("Press ' ~ ' to record command.");
+		EntryControl->SetText("Press ' ~ ' to record command.");
 	}
 }
 
@@ -39,7 +38,7 @@ bool DebugConsoleActor::OnKey(eEventCode code, void* sender, void* listener_inst
 			Controller::IsKeyDown(eKeys::Shift);
 
 		if (KeyCode == eKeys::Enter) {
-			FString Content = EntryControl->GetContent();
+			FString Content = EntryControl->GetText();
 			uint32_t Length = (uint32_t)Content.Length();
 			if (Length > 0 && Content[0] != '\0') {
 				// Execute the command and clear the text.
@@ -48,15 +47,15 @@ bool DebugConsoleActor::OnKey(eEventCode code, void* sender, void* listener_inst
 				}
 
 				// Clear text.
-				EntryControl->SetContent(" ");
+				EntryControl->SetText(" ");
 			}
 		}
 		else if (KeyCode == eKeys::BackSpace) {
-			FString Content = EntryControl->GetContent();
+			FString Content = EntryControl->GetText();
 			uint32_t Length = (uint32_t)Content.Length();
 			if (Length > 0) {
 				Content = Content.SubStr(0, Content.Length() - 1);
-				EntryControl->SetContent(Content);
+				EntryControl->SetText(Content);
 			}
 		}
 		else {
@@ -104,9 +103,9 @@ bool DebugConsoleActor::OnKey(eEventCode code, void* sender, void* listener_inst
 			}
 
 			if (cKeyCode != 0) {
-				FString Content = EntryControl->GetContent();
+				FString Content = EntryControl->GetText();
 				FString NewContent = FString::Format("%s%c", Content.CStr(), cKeyCode);
-				EntryControl->SetContent(NewContent);
+				EntryControl->SetText(NewContent);
 			}
 		}
 	}
@@ -208,7 +207,7 @@ void DebugConsoleActor::Tick(float DeltaTime) {
 	}
 
 	// Once the string is built, set the text.
-	TextControl->SetContent(Buffer.c_str());
+	TextControl->SetText(Buffer.c_str());
 	Dirty = false;
 
 	TextControl->Tick(DeltaTime);

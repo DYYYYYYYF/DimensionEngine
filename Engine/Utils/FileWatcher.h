@@ -2,7 +2,7 @@
 #include <chrono>
 #include <string>
 #include "Containers/TArray.hpp"
-#include "Platform/File.hpp"
+#include "Platform/File/File.hpp"
 
 typedef std::chrono::time_point<std::chrono::system_clock, std::chrono::duration<long long, std::micro>> Time;
 
@@ -30,13 +30,10 @@ struct WatchableFileInfo {
 class WatchableFile : public File
 {
 public:
-	WatchableFile() : File(){
-		LastFileInfo.mtime = time_cast(std::chrono::system_clock::now());
-		LastFileInfo.size = 0;
-		UpdateLastModInfo();
-	}
+	WatchableFile() = default;
+	virtual ~WatchableFile() = default;
 
-	WatchableFile(const std::string& file) :File(file) {
+	WatchableFile(const FString& file) : File(file) {
 		LastFileInfo.mtime = time_cast(std::chrono::system_clock::now());
 		LastFileInfo.size = 0;
 		UpdateLastModInfo();
@@ -45,7 +42,7 @@ public:
 public:
 	bool CheckFileModification() const;
 	void UpdateLastModInfo();
-	bool GetFileInfo(WatchableFileInfo* fi, const std::string& name) const;
+	bool GetFileInfo(WatchableFileInfo* fi, const FString& name) const;
 
 public:
 	WatchableFileInfo LastFileInfo;
@@ -59,10 +56,10 @@ public:
 
 public:
 	void AddWatchFolder(const std::string& file, bool recursion = false);
-	void AddWatchFile(const std::string& file);
+	void AddWatchFile(const FString& file);
 	void Update();
 
 private:
-	TArray<WatchableFile> WatchedFiles;
+	TArray<WatchableFile*> WatchedFiles;
 };
 

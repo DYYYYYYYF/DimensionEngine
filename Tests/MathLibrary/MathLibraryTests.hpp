@@ -340,7 +340,7 @@ public:
 		Vector3 scale(2.0f, 2.0f, 2.0f);
 
 		Quaternion rot(euler);
-		UTransformComponent t2(pos, rot, scale);
+		FTransform t2(pos, euler, scale);
 
 		ASSERT_VECTOR3_EQUAL(pos, t2.GetLocation(), "Transform constructor - position");
 		ASSERT_VECTOR3_EQUAL(scale, t2.GetScale(), "Transform constructor - scale");
@@ -602,7 +602,7 @@ public:
 		ASSERT_TRUE(v1 == v2, "Vertex equality operator regression test");
 
 		// 测试Transform const正确性
-		const UTransformComponent t_const(Vector3(1.0f, 2.0f, 3.0f));
+		const FTransform t_const(Vector3(1.0f, 2.0f, 3.0f));
 		Vector3 world_pos = t_const.TransformPoint(Vector3(0.0f, 0.0f, 0.0f));
 		ASSERT_VECTOR3_EQUAL(Vector3(1.0f, 2.0f, 3.0f), world_pos, "Transform const member function regression test");
 

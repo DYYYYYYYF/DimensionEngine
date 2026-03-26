@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "TArray.hpp"
+#include "TMap.hpp"
 
 #include <cstdio>
 #include <cstring>
@@ -115,12 +116,17 @@ public:
 	bool Equali(const FString& other)           const;   // 大小写不敏感
 	bool Nequal(const FString& other, size_t len) const;
 	bool Nequali(const FString& other, size_t len) const; // 大小写不敏感
+	int  Compare(const FString& other)         const;
 
-	// =========================================================
-	//  查找
-	// =========================================================
-	int IndexOf(char c, size_t start_pos = 0) const;
-	int LastIndexOf(char c)                        const;
+	/**
+	 * 查找字符 c 在字符串中的位置，返回索引（0-based），未找到返回 -1。
+	 */
+	int IndexOf(char c, size_t start_pos = 0)		const;
+
+	/**
+	 * 查找字符 c 在字符串中最后一次出现的位置，返回索引（0-based），未找到返回 -1。
+	 */
+	int LastIndexOf(char c)							const;
 
 	// =========================================================
 	//  子串 / 修改
@@ -178,6 +184,8 @@ public:
 
 	static FString FromBool(bool   value);
 	static FString FromInt(int    value);
+	static FString FromInt32(uint32_t    v);
+	static FString FromInt64(uint64_t    v);
 	static FString FromFloat(float  value);
 	static FString FromDouble(double value);
 
@@ -269,6 +277,19 @@ inline FString FString::Format(const char* format, Args... args) {
 	return FString(format, args...);
 }
 
+// 自定义类型的Hash
+template<>
+struct TDefaultHasher<FString> {
+	size_t operator()(const FString& str) const noexcept {
+		size_t hash = 5381;
+		const char* s = str.CStr();
+		while (*s)
+			hash = ((hash << 5) + hash) ^ static_cast<unsigned char>(*s++);
+		return hash;
+	}
+};
+
+// std::string类型的Hash
 namespace std {
 	template<>
 	struct hash<FString> {
