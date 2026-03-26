@@ -4,7 +4,7 @@
 #include "Containers/TArray.hpp"
 
 class Material;
-class Texture;
+class UTexture;
 
 /**
  * 这是一个纯虚类，主要用于定义一些列接口
@@ -19,5 +19,5 @@ public:
 
 protected:
 	TArray<Material*> Materials;	// 材质
-	TArray<Texture*> Textures;		// 纹理
+	TArray<UTexture*> Textures;		// 纹理
 };

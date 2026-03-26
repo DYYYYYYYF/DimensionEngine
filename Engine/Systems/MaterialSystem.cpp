@@ -1,26 +1,17 @@
 ﻿#include "MaterialSystem.h"
 
 #include "Core/EngineLogger.hpp"
-#include "Containers/TString.hpp"
 #include "Math/MathTypes.hpp"
-#include "Renderer/RendererFrontend.hpp"
+#include "Rendering/Renderer.hpp"
 
 #include "Systems/TextureSystem.h"
 #include "Systems/ResourceSystem.h"
 #include "Systems/ShaderSystem.h"
 
-SMaterialSystemConfig MaterialSystem::MaterialSystemConfig;
-Material* MaterialSystem::DefaultMaterial = nullptr;
-bool MaterialSystem::Initilized = false;
-IRenderer* MaterialSystem::Renderer = nullptr;
-MaterialShaderUniformLocations MaterialSystem::MaterialLocations;
-uint32_t MaterialSystem::MaterialShaderID = INVALID_ID;
-DRShaderUniformLocations MaterialSystem::DeferredLightMaterialLocations;
-uint32_t MaterialSystem::DeferredLightMaterialShaderID = INVALID_ID;
-UIShaderUniformLocations MaterialSystem::UILocations;
-uint32_t MaterialSystem::UIShaderID = INVALID_ID;
-std::vector<Material*> MaterialSystem::RegisteredMaterials;
-std::unordered_map<std::string, uint32_t> MaterialSystem::MaterialMap;
+MaterialSystem& MaterialSystem::Get() {
+	static MaterialSystem MaterialSystemInstance;
+	return MaterialSystemInstance;
+}
 
 bool MaterialSystem::Initialize(IRenderer* renderer, SMaterialSystemConfig config) {
 	if (config.max_material_count == 0) {
@@ -71,16 +62,18 @@ void MaterialSystem::Shutdown() {
 		DeleteObject(DefaultMaterial);
 		DefaultMaterial = nullptr;
 	}
+
+	MaterialMap.clear();
 }
 
-Material* MaterialSystem::Acquire(const char* name) {
-	if (StringEquali(name, DEFAULT_MATERIAL_NAME)) {
+Material* MaterialSystem::Acquire(const FString& name) {
+	if (name.Compare(DEFAULT_MATERIAL_NAME) == 0) {
 		return DefaultMaterial;
 	}
 
 	// Load the given material configuration from disk.
-	Resource MatResource;
-	if (!ResourceSystem::Load(name, eResource_type_Material, nullptr, &MatResource)) {
+	UAsset MatResource;
+	if (!ResourceSystem::Get().Load(name, EAssetType::Material, nullptr, &MatResource)) {
 		GLOG(Log::eError, "Failed to load material resource, returning nullptr.");
 		return nullptr;
 	}
@@ -92,7 +85,7 @@ Material* MaterialSystem::Acquire(const char* name) {
 	}
 
 	// Clean up
-	ResourceSystem::Unload(&MatResource);
+	ResourceSystem::Get().Unload(&MatResource);
 
 	if (Mat == nullptr) {
 		GLOG(Log::eError, "Failed to load material resource, returning nullptr.");
@@ -104,7 +97,7 @@ Material* MaterialSystem::Acquire(const char* name) {
 
 Material* MaterialSystem::AcquireFromConfig(SMaterialConfig config) {
 	// Return default material.
-	if (StringEquali(config.name.c_str(), DEFAULT_MATERIAL_NAME)) {
+	if (config.name.Compare(DEFAULT_MATERIAL_NAME) == 0) {
 		return DefaultMaterial;
 	}
 
@@ -131,50 +124,51 @@ Material* MaterialSystem::AcquireFromConfig(SMaterialConfig config) {
 
 		// Create new material.
 		if (!LoadMaterial(config, m)) {
-			GLOG(Log::eError, "Load %s material failed.", config.name.c_str());
+			GLOG(Log::eError, "Load %s material failed.", config.name.CStr());
 			return nullptr;
 		}
 
 		// Get the uniform indices.
-		Shader* s = ShaderSystem::GetByID(m->ShaderID);
+		ShaderSystem& ShaderSys = ShaderSystem::Get();
+		Shader* s = ShaderSys.GetByID(m->ShaderID);
 		// Save off the locations for known types for quick lookups.
-		if (MaterialShaderID == INVALID_ID && config.shader_name.compare("Shader.Builtin.GBuffer") == 0) {
+		if (MaterialShaderID == INVALID_ID && config.shader_name.Compare("Shader.Builtin.GBuffer") == 0) {
 			MaterialShaderID = s->ID;
-			MaterialLocations.projection = ShaderSystem::GetUniformIndex(s, "projection");
-			MaterialLocations.view = ShaderSystem::GetUniformIndex(s, "view");
-			MaterialLocations.ambient_color = ShaderSystem::GetUniformIndex(s, "ambient_color");
-			MaterialLocations.view_position = ShaderSystem::GetUniformIndex(s, "view_position");
-			MaterialLocations.model = ShaderSystem::GetUniformIndex(s, "model");
-			MaterialLocations.time = ShaderSystem::GetUniformIndex(s, "time");
-			MaterialLocations.diffuse_color = ShaderSystem::GetUniformIndex(s, "diffuse_color");
-			MaterialLocations.shininess = ShaderSystem::GetUniformIndex(s, "shininess");
-			MaterialLocations.metallic = ShaderSystem::GetUniformIndex(s, "metallic");
-			MaterialLocations.roughness = ShaderSystem::GetUniformIndex(s, "roughness");
-			MaterialLocations.ambient_occlusion = ShaderSystem::GetUniformIndex(s, "ambient_occlusion");
-			MaterialLocations.normal_intensity = ShaderSystem::GetUniformIndex(s, "normal_intensity");
+			MaterialLocations.projection = s->GetUniformIndex("projection");
+			MaterialLocations.view = s->GetUniformIndex("view");
+			MaterialLocations.ambient_color = s->GetUniformIndex("ambient_color");
+			MaterialLocations.view_position = s->GetUniformIndex("view_position");
+			MaterialLocations.model = s->GetUniformIndex("model");
+			MaterialLocations.time = s->GetUniformIndex("time");
+			MaterialLocations.diffuse_color = s->GetUniformIndex("diffuse_color");
+			MaterialLocations.shininess = s->GetUniformIndex("shininess");
+			MaterialLocations.metallic = s->GetUniformIndex("metallic");
+			MaterialLocations.roughness = s->GetUniformIndex("roughness");
+			MaterialLocations.ambient_occlusion = s->GetUniformIndex("ambient_occlusion");
+			MaterialLocations.normal_intensity = s->GetUniformIndex("normal_intensity");
 
-			MaterialLocations.diffuse_texture = ShaderSystem::GetUniformIndex(s, "diffuse_texture");
-			MaterialLocations.normal_texture = ShaderSystem::GetUniformIndex(s, "normal_texture");
-			MaterialLocations.roughness_metallic_texture = ShaderSystem::GetUniformIndex(s, "roughness_metallic_texture");
+			MaterialLocations.diffuse_texture = s->GetUniformIndex("diffuse_texture");
+			MaterialLocations.normal_texture = s->GetUniformIndex("normal_texture");
+			MaterialLocations.roughness_metallic_texture = s->GetUniformIndex("roughness_metallic_texture");
 
-			MaterialLocations.render_mode = ShaderSystem::GetUniformIndex(s, "mode");
+			MaterialLocations.render_mode = s->GetUniformIndex("mode");
 		}
-		else if (DeferredLightMaterialShaderID == INVALID_ID && config.shader_name.compare("Shader.Builtin.DeferredLighting") == 0) {
+		else if (DeferredLightMaterialShaderID == INVALID_ID && config.shader_name.Compare("Shader.Builtin.DeferredLighting") == 0) {
 			DeferredLightMaterialShaderID = s->ID;
-			DeferredLightMaterialLocations.time = ShaderSystem::GetUniformIndex(s, "time");
-			DeferredLightMaterialLocations.albedo_texture = ShaderSystem::GetUniformIndex(s, "albedo_texture");
-			DeferredLightMaterialLocations.normal_texture = ShaderSystem::GetUniformIndex(s, "normal_texture");
-			DeferredLightMaterialLocations.position_texture = ShaderSystem::GetUniformIndex(s, "position_texture");
-			DeferredLightMaterialLocations.light_intensity = ShaderSystem::GetUniformIndex(s, "light_intensity");
-			DeferredLightMaterialLocations.debug_mode = ShaderSystem::GetUniformIndex(s, "debug_mode");
+			DeferredLightMaterialLocations.time = s->GetUniformIndex("time");
+			DeferredLightMaterialLocations.albedo_texture = s->GetUniformIndex("albedo_texture");
+			DeferredLightMaterialLocations.normal_texture = s->GetUniformIndex("normal_texture");
+			DeferredLightMaterialLocations.position_texture = s->GetUniformIndex("position_texture");
+			DeferredLightMaterialLocations.light_intensity = s->GetUniformIndex("light_intensity");
+			DeferredLightMaterialLocations.debug_mode = s->GetUniformIndex("debug_mode");
 		}
-		else if (UIShaderID == INVALID_ID && config.shader_name.compare("Shader.Builtin.UI") == 0) {
+		else if (UIShaderID == INVALID_ID && config.shader_name.Compare("Shader.Builtin.UI") == 0) {
 			UIShaderID = s->ID;
-			UILocations.projection = ShaderSystem::GetUniformIndex(s, "projection");
-			UILocations.view = ShaderSystem::GetUniformIndex(s, "view");
-			UILocations.diffuse_color = ShaderSystem::GetUniformIndex(s, "diffuse_color");
-			UILocations.diffuse_texture = ShaderSystem::GetUniformIndex(s, "diffuse_texture");
-			UILocations.model = ShaderSystem::GetUniformIndex(s, "model");
+			UILocations.projection = s->GetUniformIndex("projection");
+			UILocations.view = s->GetUniformIndex("view");
+			UILocations.diffuse_color = s->GetUniformIndex("diffuse_color");
+			UILocations.diffuse_texture = s->GetUniformIndex("diffuse_texture");
+			UILocations.model = s->GetUniformIndex("model");
 		}
 
 
@@ -199,26 +193,26 @@ Material* MaterialSystem::AcquireFromConfig(SMaterialConfig config) {
 	}
 
 	Mat->IncreaseReferenceCount();
-	GLOG(Log::eDebug, "Material '%s' Reference count increased to %i.", config.name.c_str(), Mat->GetReferenceCount());
+	GLOG(Log::eDebug, "Material '%s' Reference count increased to %i.", config.name.CStr(), Mat->GetReferenceCount());
 
 	// Update the entry.
 	return Mat;
 }
 
-void MaterialSystem::Release(const char* name) {
+void MaterialSystem::Release(const FString& name) {
 	// Ignore release requests for the default material.
-	if (strcmp(name, DEFAULT_MATERIAL_NAME) == 0) {
+	if (name.Compare(DEFAULT_MATERIAL_NAME) == 0) {
 		return;
 	}
 
 	// Take a copy of name, it will be zero-out in DestroyMaterial();
-	char* CopyMatName = StringCopy(name);
+	FString CopyMatName = name;
 
 	if (MaterialMap.find(CopyMatName) != MaterialMap.end()) {
 		uint32_t MaterialID = MaterialMap[CopyMatName];
 		Material* Mat = RegisteredMaterials[MaterialID];
 		if (Mat->GetReferenceCount() == 0) {
-			GLOG(Log::eWarn, "Tried to release non-existent material: %s", CopyMatName);
+			GLOG(Log::eWarn, "Tried to release non-existent material: %s", CopyMatName.CStr());
 			return;
 		}
 
@@ -228,15 +222,12 @@ void MaterialSystem::Release(const char* name) {
 			DestroyMaterial(Mat);
 			DeleteObject(Mat);
 			RegisteredMaterials[MaterialID] = nullptr;
-			GLOG(Log::eInfo, "Released material '%s'. Material unloaded.", CopyMatName);
+			GLOG(Log::eInfo, "Released material '%s'. Material unloaded.", CopyMatName.CStr());
 		}
 
 		// Update the entry.
 		MaterialMap.erase(CopyMatName);
 	}
-
-	Memory::Free(CopyMatName, MemoryType::eMemory_Type_String);
-	CopyMatName = nullptr;
 }
 
 Material* MaterialSystem::GetDefaultMaterial() {
@@ -249,8 +240,8 @@ Material* MaterialSystem::GetDefaultMaterial() {
 
 bool MaterialSystem::LoadMaterial(SMaterialConfig config, Material* mat) {
 	// name
-	mat->Name = std::move(config.name);
-	mat->ShaderID = ShaderSystem::GetID(config.shader_name.c_str());
+	mat->Name = config.name;
+	mat->ShaderID = ShaderSystem::Get().GetID(config.shader_name);
 
 	// Diffuse color
 	mat->DiffuseColor = config.diffuse_color;
@@ -272,18 +263,19 @@ bool MaterialSystem::LoadMaterial(SMaterialConfig config, Material* mat) {
 		return false;
 	}
 
-	if (strlen(config.diffuse_map_name) > 0) {
+	TextureSystem& TextureSystemInst = TextureSystem::Get();
+	if (!config.diffuse_map_name.IsEmpty()) {
 		mat->DiffuseMap.usage = TextureUsage::eTexture_Usage_Map_Diffuse;
-		mat->DiffuseMap.texture = TextureSystem::Acquire(config.diffuse_map_name, true);
+		mat->DiffuseMap.texture = TextureSystemInst.Acquire(config.diffuse_map_name, true);
 		if (mat->DiffuseMap.texture == nullptr) {
-			GLOG(Log::eWarn, "Unable to load texture '%s' for material '%s', using default.", config.diffuse_map_name, mat->Name.c_str());
-			mat->DiffuseMap.texture = TextureSystem::GetDefaultDiffuseTexture();
+			GLOG(Log::eWarn, "Unable to load texture '%s' for material '%s', using default.", config.diffuse_map_name.CStr(), mat->Name.CStr());
+			mat->DiffuseMap.texture = TextureSystemInst.GetDefaultDiffuseTexture();
 		}
 	}
 	else {
 		// NOTE: Only set for clarity, as call to Memory::Zero above does this already.
 		mat->DiffuseMap.usage = TextureUsage::eTexture_Usage_Map_Diffuse;
-		mat->DiffuseMap.texture = TextureSystem::GetDefaultDiffuseTexture();
+		mat->DiffuseMap.texture = TextureSystemInst.GetDefaultDiffuseTexture();
 	}
 
 	// Normal map
@@ -297,18 +289,18 @@ bool MaterialSystem::LoadMaterial(SMaterialConfig config, Material* mat) {
 		return false;
 	}
 
-	if (strlen(config.normal_map_name) > 0) {
+	if (!config.normal_map_name.IsEmpty()) {
 		mat->NormalMap.usage = TextureUsage::eTexture_Usage_Map_Normal;
-		mat->NormalMap.texture = TextureSystem::Acquire(config.normal_map_name, true);
+		mat->NormalMap.texture = TextureSystemInst.Acquire(config.normal_map_name, true);
 		if (mat->NormalMap.texture == nullptr) {
-			GLOG(Log::eWarn, "Unable to load texture '%s' for material '%s', using default.", config.normal_map_name, mat->Name.c_str());
-			mat->NormalMap.texture = TextureSystem::GetDefaultNormalTexture();
+			GLOG(Log::eWarn, "Unable to load texture '%s' for material '%s', using default.", config.normal_map_name.CStr(), mat->Name.CStr());
+			mat->NormalMap.texture = TextureSystemInst.GetDefaultNormalTexture();
 		}
 	}
 	else {
 		// NOTE: Only set for clarity, as call to Memory::Zero above does this already.
 		mat->NormalMap.usage = TextureUsage::eTexture_Usage_Map_Normal;
-		mat->NormalMap.texture = TextureSystem::GetDefaultNormalTexture();
+		mat->NormalMap.texture = TextureSystemInst.GetDefaultNormalTexture();
 	}
 
 	// Roughness metallic map
@@ -322,27 +314,27 @@ bool MaterialSystem::LoadMaterial(SMaterialConfig config, Material* mat) {
 		return false;
 	}
 
-	if (!config.MetallicRoughnessTexName.empty()) {
+	if (!config.MetallicRoughnessTexName.IsEmpty()) {
 		mat->RoughnessMetallicMap.usage = TextureUsage::eTexture_Usage_Map_RoughnessMetallic;
-		mat->RoughnessMetallicMap.texture = TextureSystem::Acquire(config.MetallicRoughnessTexName.c_str(), true);
+		mat->RoughnessMetallicMap.texture = TextureSystemInst.Acquire(config.MetallicRoughnessTexName, true);
 		if (mat->RoughnessMetallicMap.texture == nullptr) {
-			GLOG(Log::eWarn, "Unable to load texture '%s' for material '%s', using default.", config.MetallicRoughnessTexName.c_str(), mat->Name.c_str());
+			GLOG(Log::eWarn, "Unable to load texture '%s' for material '%s', using default.", config.MetallicRoughnessTexName.CStr(), mat->Name.CStr());
 
 			// TODO: 如果没有RM贴图，可以根据具体的 Roughness/Metallic 参数创建新的贴图。
-			mat->RoughnessMetallicMap.texture = TextureSystem::GetDefaultRoughnessMetallicTexture();
+			mat->RoughnessMetallicMap.texture = TextureSystemInst.GetDefaultRoughnessMetallicTexture();
 		}
 	}
 	else {
 		// NOTE: Only set for clarity, as call to Memory::Zero above does this already.
 		mat->RoughnessMetallicMap.usage = TextureUsage::eTexture_Usage_Map_RoughnessMetallic;
-		mat->RoughnessMetallicMap.texture = TextureSystem::GetDefaultRoughnessMetallicTexture();
+		mat->RoughnessMetallicMap.texture = TextureSystemInst.GetDefaultRoughnessMetallicTexture();
 	}
 	// TODO: other maps.
 
 	// Send it off to the renderer to acquire resources.
-	Shader* s = ShaderSystem::Get(config.shader_name.c_str());
+	Shader* s = ShaderSystem::Get().Get(config.shader_name);
 	if (s == nullptr) {
-		GLOG(Log::eError, "Unable to load material because its shader was not found: '%s'. This is likely a problem with the material asset.", config.shader_name.c_str());
+		GLOG(Log::eError, "Unable to load material because its shader was not found: '%s'. This is likely a problem with the material asset.", config.shader_name.CStr());
 		return false;
 	}
 
@@ -350,7 +342,7 @@ bool MaterialSystem::LoadMaterial(SMaterialConfig config, Material* mat) {
 	std::vector<TextureMap*> Maps = { &mat->DiffuseMap, &mat->NormalMap, &mat->RoughnessMetallicMap };
 	mat->InternalID = Renderer->AcquireInstanceResource(s, Maps);
 	if (mat->InternalID == INVALID_ID) {
-		GLOG(Log::eError, "Failed to acquire renderer resources for material '%s'.", mat->Name.c_str());
+		GLOG(Log::eError, "Failed to acquire renderer resources for material '%s'.", mat->Name.CStr());
 		return false;
 	}
 
@@ -358,17 +350,18 @@ bool MaterialSystem::LoadMaterial(SMaterialConfig config, Material* mat) {
 }
 
 void MaterialSystem::DestroyMaterial(Material* mat) {
-	GLOG(Log::eInfo, "Destroying material '%s'...", mat->Name.c_str());
+	GLOG(Log::eInfo, "Destroying material '%s'...", mat->Name.CStr());
 
 	// Release texture references.
+	TextureSystem& TextureSystemInst = TextureSystem::Get();
 	if (mat->DiffuseMap.texture != nullptr) {
-		TextureSystem::Release(mat->DiffuseMap.texture->GetName());
+		TextureSystemInst.Release(mat->DiffuseMap.texture->GetName());
 	}
 	if (mat->NormalMap.texture != nullptr) {
-		TextureSystem::Release(mat->NormalMap.texture->GetName());
+		TextureSystemInst.Release(mat->NormalMap.texture->GetName());
 	}
 	if (mat->RoughnessMetallicMap.texture != nullptr) {
-		TextureSystem::Release(mat->RoughnessMetallicMap.texture->GetName());
+		TextureSystemInst.Release(mat->RoughnessMetallicMap.texture->GetName());
 	}
 
 	// Release texture map resources.
@@ -378,7 +371,7 @@ void MaterialSystem::DestroyMaterial(Material* mat) {
 
 	//Release renderer resources.
 	if (mat->ShaderID != INVALID_ID && mat->InternalID != INVALID_ID) {
-		Shader* s = ShaderSystem::GetByID(mat->ShaderID);
+		Shader* s = ShaderSystem::Get().GetByID(mat->ShaderID);
 		Renderer->ReleaseInstanceResource(s, mat->InternalID);
 		mat->ShaderID = INVALID_ID;
 	}
@@ -396,6 +389,8 @@ bool MaterialSystem::CreateDefaultMaterial() {
 		return true;
 	}
 
+	TextureSystem& TextureSystemInst = TextureSystem::Get();
+
 	DefaultMaterial = NewObject<Material>();
 	DefaultMaterial->SetID(INVALID_ID);
 	DefaultMaterial->Generation = INVALID_ID;
@@ -407,7 +402,7 @@ bool MaterialSystem::CreateDefaultMaterial() {
 	DefaultMaterial->DiffuseMap.repeat_u = eTexture_Repeat_Repeat;
 	DefaultMaterial->DiffuseMap.repeat_v = eTexture_Repeat_Repeat;
 	DefaultMaterial->DiffuseMap.repeat_w = eTexture_Repeat_Repeat;
-	DefaultMaterial->DiffuseMap.texture = TextureSystem::GetDefaultDiffuseTexture();
+	DefaultMaterial->DiffuseMap.texture = TextureSystemInst.GetDefaultDiffuseTexture();
 	if (!Renderer->AcquireTextureMap(&DefaultMaterial->DiffuseMap)) {
 		GLOG(Log::eError, "Unable to acquire resources for diffuse texture map.");
 		return false;
@@ -419,7 +414,7 @@ bool MaterialSystem::CreateDefaultMaterial() {
 	DefaultMaterial->NormalMap.repeat_u = eTexture_Repeat_Repeat;
 	DefaultMaterial->NormalMap.repeat_v = eTexture_Repeat_Repeat;
 	DefaultMaterial->NormalMap.repeat_w = eTexture_Repeat_Repeat;
-	DefaultMaterial->NormalMap.texture = TextureSystem::GetDefaultNormalTexture();
+	DefaultMaterial->NormalMap.texture = TextureSystemInst.GetDefaultNormalTexture();
 	if (!Renderer->AcquireTextureMap(&DefaultMaterial->NormalMap)) {
 		GLOG(Log::eError, "Unable to acquire resources for diffuse texture map.");
 		return false;
@@ -431,7 +426,7 @@ bool MaterialSystem::CreateDefaultMaterial() {
 	DefaultMaterial->RoughnessMetallicMap.repeat_u = eTexture_Repeat_Repeat;
 	DefaultMaterial->RoughnessMetallicMap.repeat_v = eTexture_Repeat_Repeat;
 	DefaultMaterial->RoughnessMetallicMap.repeat_w = eTexture_Repeat_Repeat;
-	DefaultMaterial->RoughnessMetallicMap.texture = TextureSystem::GetDefaultNormalTexture();
+	DefaultMaterial->RoughnessMetallicMap.texture = TextureSystemInst.GetDefaultNormalTexture();
 	if (!Renderer->AcquireTextureMap(&DefaultMaterial->RoughnessMetallicMap)) {
 		GLOG(Log::eError, "Unable to acquire resources for diffuse texture map.");
 		return false;
@@ -439,7 +434,7 @@ bool MaterialSystem::CreateDefaultMaterial() {
 
 	std::vector<TextureMap*> Maps = { &DefaultMaterial->DiffuseMap, &DefaultMaterial->NormalMap, &DefaultMaterial->RoughnessMetallicMap };
 
-	Shader* s = ShaderSystem::Get("Shader.Builtin.GBuffer");
+	Shader* s = ShaderSystem::Get().Get("Shader.Builtin.GBuffer");
 	if (s == nullptr) {
 		GLOG(Log::eFatal, "Shader.Builtin.GBuffer shader is nullptr.");
 		ASSERT(s);
@@ -471,36 +466,37 @@ bool MaterialSystem::CreateDefaultMaterial() {
 bool MaterialSystem::ApplyGlobal(uint32_t shader_id, size_t renderer_frame_number, 
 	const Matrix4& projection, const Matrix4& view, const Vector4& ambient_color, 
 	const Vector3& view_position, uint32_t render_mode, float global_time) {
-	Shader* s = ShaderSystem::GetByID(shader_id);
-	if (s == nullptr) {
+
+	Shader* UsedShader = ShaderSystem::Get().GetByID(shader_id);
+	if (UsedShader == nullptr) {
 		return false;
 	}
 
-	if (s->RenderFrameNumber == renderer_frame_number) {
+	if (UsedShader->RenderFrameNumber == renderer_frame_number) {
 		return true;
 	}
 
 	if (shader_id == MaterialShaderID) {
-		MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(MaterialLocations.projection, &projection));
-		MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(MaterialLocations.view, &view));
-		MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(MaterialLocations.ambient_color, &ambient_color));
-		MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(MaterialLocations.view_position, &view_position));
-		MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(MaterialLocations.render_mode, &render_mode));
-		MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(MaterialLocations.time, &global_time));
+		MATERIAL_APPLY_OR_FAIL(UsedShader->SetUniformByIndex(MaterialLocations.projection, &projection));
+		MATERIAL_APPLY_OR_FAIL(UsedShader->SetUniformByIndex(MaterialLocations.view, &view));
+		MATERIAL_APPLY_OR_FAIL(UsedShader->SetUniformByIndex(MaterialLocations.ambient_color, &ambient_color));
+		MATERIAL_APPLY_OR_FAIL(UsedShader->SetUniformByIndex(MaterialLocations.view_position, &view_position));
+		MATERIAL_APPLY_OR_FAIL(UsedShader->SetUniformByIndex(MaterialLocations.render_mode, &render_mode));
+		MATERIAL_APPLY_OR_FAIL(UsedShader->SetUniformByIndex(MaterialLocations.time, &global_time));
 	}
 	else if (shader_id == UIShaderID) {
-		MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(UILocations.projection, &projection));
-		MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(UILocations.view, &view));
+		MATERIAL_APPLY_OR_FAIL(UsedShader->SetUniformByIndex(UILocations.projection, &projection));
+		MATERIAL_APPLY_OR_FAIL(UsedShader->SetUniformByIndex(UILocations.view, &view));
 	}
 	else {
 		GLOG(Log::eError, "material_system_apply_global(): Unrecognized shader id '%d' ", shader_id);
 		return false;
 	}
 
-	MATERIAL_APPLY_OR_FAIL(ShaderSystem::ApplyGlobal());
+	MATERIAL_APPLY_OR_FAIL(UsedShader->ApplyGlobal());
 
 	// Sync
-	s->RenderFrameNumber = renderer_frame_number;
+	UsedShader->RenderFrameNumber = renderer_frame_number;
 
 	return true;
 }
@@ -510,41 +506,44 @@ bool MaterialSystem::ApplyInstance(Material* mat, bool need_update) {
 		return false;
 	}
 
+	Shader* UsedShader = ShaderSystem::Get().GetByID(mat->ShaderID);
+
 	// Apply instance-level uniforms.
-	MATERIAL_APPLY_OR_FAIL(ShaderSystem::BindInstance(mat->InternalID));
+	MATERIAL_APPLY_OR_FAIL(UsedShader->BindInstance(mat->InternalID));
 	if (need_update) {
 		if (mat->ShaderID == MaterialShaderID) {
-			MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(MaterialLocations.diffuse_color, &mat->DiffuseColor));
-			MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(MaterialLocations.shininess, &mat->Shininess));
-			MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(MaterialLocations.metallic, &mat->Metallic));
-			MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(MaterialLocations.roughness, &mat->Roughness));
-			MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(MaterialLocations.ambient_occlusion, &mat->AmbientOcclusion));
-			MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(MaterialLocations.normal_intensity, &mat->NormalIntensity));
+			MATERIAL_APPLY_OR_FAIL(UsedShader->SetUniformByIndex(MaterialLocations.diffuse_color, &mat->DiffuseColor));
+			MATERIAL_APPLY_OR_FAIL(UsedShader->SetUniformByIndex(MaterialLocations.shininess, &mat->Shininess));
+			MATERIAL_APPLY_OR_FAIL(UsedShader->SetUniformByIndex(MaterialLocations.metallic, &mat->Metallic));
+			MATERIAL_APPLY_OR_FAIL(UsedShader->SetUniformByIndex(MaterialLocations.roughness, &mat->Roughness));
+			MATERIAL_APPLY_OR_FAIL(UsedShader->SetUniformByIndex(MaterialLocations.ambient_occlusion, &mat->AmbientOcclusion));
+			MATERIAL_APPLY_OR_FAIL(UsedShader->SetUniformByIndex(MaterialLocations.normal_intensity, &mat->NormalIntensity));
 
-			MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(MaterialLocations.diffuse_texture, &mat->DiffuseMap));
-			MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(MaterialLocations.normal_texture, &mat->NormalMap));
-			MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(MaterialLocations.roughness_metallic_texture, &mat->RoughnessMetallicMap));
+			MATERIAL_APPLY_OR_FAIL(UsedShader->SetUniformByIndex(MaterialLocations.diffuse_texture, &mat->DiffuseMap));
+			MATERIAL_APPLY_OR_FAIL(UsedShader->SetUniformByIndex(MaterialLocations.normal_texture, &mat->NormalMap));
+			MATERIAL_APPLY_OR_FAIL(UsedShader->SetUniformByIndex(MaterialLocations.roughness_metallic_texture, &mat->RoughnessMetallicMap));
 		}
 		else if (mat->ShaderID == UIShaderID) {
-			MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(UILocations.diffuse_color, &mat->DiffuseColor));
-			MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(UILocations.diffuse_texture, &mat->DiffuseMap));
+			MATERIAL_APPLY_OR_FAIL(UsedShader->SetUniformByIndex(UILocations.diffuse_color, &mat->DiffuseColor));
+			MATERIAL_APPLY_OR_FAIL(UsedShader->SetUniformByIndex(UILocations.diffuse_texture, &mat->DiffuseMap));
 		}
 		else {
-			GLOG(Log::eError, "material_system_apply_instance(): Unrecognized shader id '%d' on shader '%s'.", mat->ShaderID, mat->Name.c_str());
+			GLOG(Log::eError, "material_system_apply_instance(): Unrecognized shader id '%d' on shader '%s'.", mat->ShaderID, mat->Name.CStr());
 			return false;
 		}
 	}
 
-	MATERIAL_APPLY_OR_FAIL(ShaderSystem::ApplyInstance(need_update));
+	MATERIAL_APPLY_OR_FAIL(UsedShader->ApplyInstance(need_update));
 	return true;
 }
 
 bool MaterialSystem::ApplyLocal(Material* mat, const Matrix4& model) {
+	Shader* UsedShader = ShaderSystem::Get().GetByID(mat->ShaderID);
 	if (mat->ShaderID == MaterialShaderID) {
-		return ShaderSystem::SetUniformByIndex(MaterialLocations.model, &model);
+		return UsedShader->SetUniformByIndex(MaterialLocations.model, &model);
 	}
 	else if (mat->ShaderID == UIShaderID) {
-		return ShaderSystem::SetUniformByIndex(UILocations.model, &model);
+		return UsedShader->SetUniformByIndex(UILocations.model, &model);
 	}
 
 	GLOG(Log::eError, "Unrecognized shader id '%d'", mat->ShaderID);

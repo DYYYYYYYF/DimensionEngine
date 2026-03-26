@@ -1,24 +1,23 @@
 ﻿#include "RenderViewSystem.hpp"
 
-#include "Containers/THashTable.hpp"
-#include "Containers/TString.hpp"
 #include "Core/EngineLogger.hpp"
 #include "Core/DMemory.hpp"
-#include "Renderer/RendererFrontend.hpp"
-#include "Renderer/Interface/IRenderpass.hpp"
+#include "Rendering/Renderer.hpp"
+#include "Rendering/Interface/IRenderpass.hpp"
 
 // TODO: temp
-#include "Renderer/Views/RenderViewUI.hpp"
-#include "Renderer/Views/RenderViewWorld.hpp"
-#include "Renderer/Views/RenderViewDeferred.hpp"
-#include "Renderer/Views/RenderViewSkybox.hpp"
-#include "Renderer/Views/RenderViewPick.hpp"
+#include "Rendering/Views/RenderViewUI.hpp"
+#include "Rendering/Views/RenderViewWorld.hpp"
+#include "Rendering/Views/RenderViewDeferred.hpp"
+#include "Rendering/Views/RenderViewSkybox.hpp"
+#include "Rendering/Views/RenderViewPick.hpp"
+#include "Platform/File/JsonObject.h"
+#include "ResourceSystem.h"
 
-bool RenderViewSystem::Initialized = false;
-uint16_t RenderViewSystem::MaxViewCount = 0;
-IRenderer* RenderViewSystem::Renderer = nullptr;
-std::vector<IRenderView*> RenderViewSystem::RegisteredViews;
-std::unordered_map<std::string, uint16_t> RenderViewSystem::RegisteredViewMap;
+RenderViewSystem& RenderViewSystem::Get() {
+	static RenderViewSystem RenderviewSystemInstance;
+	return RenderviewSystemInstance;
+}
 
 bool RenderViewSystem::Initialize(IRenderer* renderer, SRenderViewSystemConfig config) {
 	if (renderer == nullptr) {
@@ -40,6 +39,12 @@ bool RenderViewSystem::Initialize(IRenderer* renderer, SRenderViewSystemConfig c
 		RegisteredViews[i] = nullptr;
 	}
 
+	// Load render views from app config.
+	if (!LoadRenderviewConfig(config.config_path)) {
+		GLOG(Log::eFatal, "Failed to create renderview.");
+		return false;
+	}
+	
 	Initialized = true;
 	return true;
 }
@@ -73,14 +78,14 @@ bool RenderViewSystem::Create(const RenderViewConfig& config) {
 		return false;
 	}
 
-	if (!config.name || strlen(config.name) < 1) {
+	if (config.name.IsEmpty()) {
 		GLOG(Log::eError, "RenderViewSystem::Create() name is required.");
 		return false;
 	}
 
 	uint16_t ID = INVALID_ID_U16;
 	if (RegisteredViewMap.find(config.name) != RegisteredViewMap.end()){
-		GLOG(Log::eError, "RenderViewSystem::Create() A view named '%s' already exists. A new one will not be created.", config.name);
+		GLOG(Log::eError, "RenderViewSystem::Create() A view named '%s' already exists. A new one will not be created.", config.name.CStr());
 		return false;
 	}
 
@@ -101,10 +106,7 @@ bool RenderViewSystem::Create(const RenderViewConfig& config) {
 	// TODO: Assign these function pointers to known functions based on the view type.
 	// TODO: Refactor pattern.
 	if (RegisteredViews[ID] == nullptr) {
-		if (config.type == RenderViewKnownType::eRender_View_Known_Type_World) {
-			RegisteredViews[ID] = new RenderViewWorld(config);
-		}
-		else if (config.type == RenderViewKnownType::eRender_View_Known_Type_Deferred) {
+		if (config.type == RenderViewKnownType::eRender_View_Known_Type_Deferred) {
 			RegisteredViews[ID] = new RenderViewWorldDeferred(config);
 		}
 		else if (config.type == RenderViewKnownType::eRender_View_Known_Type_UI) {
@@ -115,6 +117,9 @@ bool RenderViewSystem::Create(const RenderViewConfig& config) {
 		}
 		else if (config.type == RenderViewKnownType::eRender_View_Known_Type_Pick) {
 			RegisteredViews[ID] = new RenderViewPick(config, Renderer);
+		}
+		else {
+			return true;
 		}
 	}
 
@@ -172,7 +177,8 @@ void RenderViewSystem::RegenerateRendertargets(IRenderView* view) {
 
 			// Create the render target.
 			Renderer->CreateRenderTarget(AttachCount, Target->attachments,
-				Pass, Target->attachments[0].texture->Width, Target->attachments[0].texture->Height,
+				Pass, Target->attachments[0].texture->GetWidth(), 
+				Target->attachments[0].texture->GetHeight(),
 				&Pass->Targets[i]);
 		}
 	}
@@ -187,10 +193,10 @@ void RenderViewSystem::OnWindowResize(uint32_t width, uint32_t height) {
 	}
 }
 
-IRenderView* RenderViewSystem::Get(const std::string& name) {
+IRenderView* RenderViewSystem::Get(const FString& name) {
 	if (Initialized) {
 		if (RegisteredViewMap.find(name) == RegisteredViewMap.end()){
-			GLOG(Log::eDebug, "Can not find render view '%s', return nullptr.", name.c_str());
+			GLOG(Log::eDebug, "Can not find render view '%s', return nullptr.", name.CStr());
 			return nullptr;
 		}
 
@@ -219,4 +225,133 @@ bool RenderViewSystem::OnRender(IRenderView* view, RenderViewPacket* packet, siz
 	}
 
 	return false;
+}
+
+bool RenderViewSystem::LoadRenderviewConfig(const FString& path) {
+	std::vector<RenderViewConfig> RenderviewConfigs;
+
+	FString ConfigFilePath = path.IsEmpty() ?
+		FString(ROOT_PATH) + FString("/Configs/RenderViews.json") : path;
+
+	// ---- 加载配置文件 ----
+	File ConfigFile(ConfigFilePath);
+	if (!ConfigFile.IsExist()) {
+		GLOG(Log::eError, "RenderViews.json not found.");
+		return false;
+	}
+	JsonObject Root(ConfigFile);
+
+	// ---- 字符串 → 枚举的辅助 lambda ----
+	auto ParseType = [](const std::string& s) {
+		if (s == "Skybox")   return RenderViewKnownType::eRender_View_Known_Type_Skybox;
+		if (s == "Deferred") return RenderViewKnownType::eRender_View_Known_Type_Deferred;
+		if (s == "UI")       return RenderViewKnownType::eRender_View_Known_Type_UI;
+		if (s == "Pick")     return RenderViewKnownType::eRender_View_Known_Type_Pick;
+		return RenderViewKnownType::eRender_View_Known_Type_Unknown;
+		};
+
+	auto ParseAttachType = [](const std::string& s) {
+		if (s == "Color") return RenderTargetAttachmentType::eRender_Target_Attachment_Type_Color;
+		if (s == "Depth") return RenderTargetAttachmentType::eRender_Target_Attachment_Type_Depth;
+		return RenderTargetAttachmentType::eRender_Target_Attachment_Type_Color;
+		};
+
+	auto ParseSource = [](const std::string& s) {
+		if (s == "Default") return RenderTargetAttachmentSource::eRender_Target_Attachment_Source_Default;
+		if (s == "View")    return RenderTargetAttachmentSource::eRender_Target_Attachment_Source_View;
+		return RenderTargetAttachmentSource::eRender_Target_Attachment_Source_Default;
+		};
+
+	auto ParseLoadOp = [](const std::string& s) {
+		if (s == "DontCare") return RenderTargetAttachmentLoadOperation::eRender_Target_Attachment_Load_Operation_DontCare;
+		if (s == "Load")     return RenderTargetAttachmentLoadOperation::eRender_Target_Attachment_Load_Operation_Load;
+		if (s == "Clear")    return RenderTargetAttachmentLoadOperation::eRender_Target_Attachment_Load_Operation_Clear;
+		return RenderTargetAttachmentLoadOperation::eRender_Target_Attachment_Load_Operation_DontCare;
+		};
+
+	auto ParseStoreOp = [](const std::string& s) {
+		if (s == "Store")   return RenderTargetAttachmentStoreOperation::eRender_Target_Attachment_Store_Operation_Store;
+		if (s == "DontCare")return RenderTargetAttachmentStoreOperation::eRender_Target_Attachment_Store_Operation_DontCare;
+		return RenderTargetAttachmentStoreOperation::eRender_Target_Attachment_Store_Operation_Store;
+		};
+
+	auto ParseClearFlags = [](const JsonObject& flagsArr) {
+		uint8_t result = RenderpassClearFlags::eRenderpass_Clear_None;
+		for (size_t i = 0; i < flagsArr.Size(); ++i) {
+			std::string f = flagsArr.ArrayItemAt(i).ReadString();
+			if (f == "Color")   result = result | RenderpassClearFlags::eRenderpass_Clear_Color_Buffer;
+			if (f == "Depth")   result = result | RenderpassClearFlags::eRenderpass_Clear_Depth_Buffer;
+			if (f == "Stencil") result = result | RenderpassClearFlags::eRenderpass_Clear_Stencil_Buffer;
+		}
+		return result;
+		};
+
+	uint32_t FramebufferWidth = Renderer->GetWidth();
+	uint32_t FramebufferHeight = Renderer->GetHeight();
+
+	// ---- 遍历 renderviews 数组 ----
+	JsonObject ViewsArr = Root.Read("renderviews");
+	size_t ViewCount = ViewsArr.Size();
+
+	for (size_t vi = 0; vi < ViewCount; ++vi) {
+		JsonObject ViewJson = ViewsArr.ArrayItemAt(vi);
+
+		RenderViewConfig ViewConfig;
+		ViewConfig.name = ViewJson.ReadString("name").c_str();
+		ViewConfig.type = ParseType(ViewJson.ReadString("type"));
+		ViewConfig.width = Cast<unsigned short>(FramebufferWidth);
+		ViewConfig.height = Cast<unsigned short>(FramebufferHeight);
+		ViewConfig.view_matrix_source = RenderViewViewMatrixtSource::eRender_View_View_Matrix_Source_Scene_Camera;
+
+		JsonObject PassesArr = ViewJson.Read("passes");
+		size_t PassCount = PassesArr.Size();
+		std::vector<RenderpassConfig> Passes(PassCount);
+
+		for (size_t pi = 0; pi < PassCount; ++pi) {
+			JsonObject PassJson = PassesArr.ArrayItemAt(pi);
+			RenderpassConfig& Pass = Passes[pi];
+
+			Pass.name = PassJson.ReadString("name").c_str();
+			Pass.render_area = Vector4(0, 0, Cast<float>(FramebufferWidth), Cast<float>(FramebufferHeight));
+			Pass.depth = PassJson.ReadFloat("depth", 1.0f);
+			Pass.stencil = (uint32_t)PassJson.ReadInt("stencil", 0);
+
+			Vector4 CC = PassJson.ReadVector4("clear_color", Vector4(0, 0, 0, 1));
+			Pass.clear_color = CC;
+			Pass.clear_flags = ParseClearFlags(PassJson.Read("clear_flags"));
+
+			// render_target_count：配置文件里显式写了就用，否则用 swapchain 数量
+			int ExplicitRTC = PassJson.ReadInt("render_target_count", -1);
+			Pass.renderTargetCount = (ExplicitRTC >= 0)
+				? Cast<unsigned char>(ExplicitRTC)
+				: Renderer->GetWindowAttachmentCount();
+
+			// 附件
+			JsonObject AttachArr = PassJson.Read("attachments");
+			for (size_t ai = 0; ai < AttachArr.Size(); ++ai) {
+				JsonObject AJson = AttachArr.ArrayItemAt(ai);
+				RenderTargetAttachmentConfig Attach;
+				Memory::Zero(&Attach, sizeof(Attach));
+
+				Attach.type = ParseAttachType(AJson.ReadString("type"));
+				Attach.source = ParseSource(AJson.ReadString("source"));
+				Attach.loadOperation = ParseLoadOp(AJson.ReadString("load_op"));
+				Attach.storeOperation = ParseStoreOp(AJson.ReadString("store_op"));
+				Attach.presentAfter = AJson.ReadBool("present_after", false);
+				Attach.index = (uint32_t)AJson.ReadInt("index", 0);
+
+				Pass.target.attachments.push_back(Attach);
+			}
+		}
+
+		ViewConfig.passes = Passes;
+		ViewConfig.pass_count = (unsigned char)PassCount;
+
+		if (!RenderViewSystem::Get().Create(ViewConfig)) {
+			GLOG(Log::eFatal, "Failed to create view '%s'.", ViewConfig.name.CStr());
+			return false;
+		}
+	}
+
+	return true;
 }

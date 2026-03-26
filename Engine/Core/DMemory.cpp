@@ -2,20 +2,17 @@
 
 #include "EngineLogger.hpp"
 #include "Platform/Platform.hpp"
-#include "Containers/TString.hpp"
+#include "Containers/FString.hpp"
 
 struct Memory::SMemoryStats Memory::stats;
 size_t Memory::TotalAllocateSize;
-DynamicAllocator Memory::DynamicAlloc;
 size_t Memory::AllocateCount;
 Mutex Memory::AllocationMutex;
 
 bool Memory::Initialize(size_t size) {
 	Platform::PlatformZeroMemory(&stats, sizeof(stats));
-	if (!DynamicAlloc.Create(size)) {
-		GLOG(Log::eFatal, "Memory system is unable to setup internal allocator. Application can not continue.");
-		return false;
-	}
+	
+	DynamicAllocator::Get().Resize(size);
 
 	AllocateCount = 0;
 	TotalAllocateSize = size;
@@ -49,7 +46,7 @@ void* Memory::AllocateAligned(size_t size, size_t alignment, MemoryType type) {
 		return nullptr;
 	}
 
-	Block = DynamicAlloc.AllocateAligned(size, alignment);
+	Block = DynamicAllocator::Get().AllocateAligned(size, alignment);
 	AllocationMutex.UnLock();
 
 	if (Block == nullptr) {
@@ -101,7 +98,7 @@ void Memory::FreeAligned(void* block, size_t size, MemoryType type) {
 	stats.tagged_allocations[type] -= size;
 	AllocateCount--;
 
-	bool Result = DynamicAlloc.FreeAligned(block);
+	bool Result = DynamicAllocator::Get().FreeAligned(block);
 	AllocationMutex.UnLock();
 
 	if (!Result) {
@@ -125,7 +122,7 @@ void Memory::FreeReport(size_t size, MemoryType type) {
 }
 
 bool Memory::GetAlignmentSize(void* block, size_t* out_size, size_t* out_alignment) {
-	return DynamicAlloc.GetAlignmentSize(block, out_size, out_alignment);
+	return DynamicAllocator::Get().GetAlignmentSize(block, out_size, out_alignment);
 }
 
 void* Memory::Zero(void* block, size_t size) {
@@ -159,7 +156,7 @@ const char* Memory::GetUnitForSize(size_t size_bytes, float* out_amount) {
 	}
 }
 
-char* Memory::GetMemoryUsageStr() {
+FString Memory::GetMemoryUsageStr() {
 	char buffer[8000] = "\nSystem memory use (Type): \n";
 	size_t offset = strlen(buffer);
 	for (size_t i = 0; i < eMemory_Type_Max; i++) {
@@ -171,8 +168,9 @@ char* Memory::GetMemoryUsageStr() {
 
 	// Compute total usage.
 	{
-		size_t TotalSpace = DynamicAlloc.GetTotalSpace();
-		size_t FreeSpace = DynamicAlloc.GetFreeSpace();
+		DynamicAllocator& Allocator = DynamicAllocator::Get();
+		size_t TotalSpace = Allocator.GetTotalSpace();
+		size_t FreeSpace = Allocator.GetFreeSpace();
 		size_t UsedSpace = TotalSpace - FreeSpace;
 
 		float UsedAmount = 1.0f;
@@ -186,13 +184,12 @@ char* Memory::GetMemoryUsageStr() {
 		snprintf(buffer + offset, 8000, "Total memory usage: %.2f%s of %.2f%s (%d%%%%)\n", UsedAmount, UsedUnit, TotalAmount, TotalUnit, (int)(PercentUsed * 100));
 	}
 
-	char* outString = StringCopy(buffer);
-	return outString;
+	return buffer;
 }
 
 void Memory::ShowMemoryUsage() {
-	std::string Msg = GetMemoryUsageStr();
-	GLOG(Log::eDebug, Msg.c_str());
+	FString Msg = GetMemoryUsageStr();
+	GLOG(Log::eDebug, Msg.CStr());
 }
 
 size_t Memory::GetAllocateCount() { 

@@ -5,8 +5,8 @@
 #include <Core/Event.hpp>
 #include <Core/Metrics.hpp>
 #include <Systems/CameraSystem.h>
-#include <Containers/TString.hpp>
-#include <Platform/JsonObject.h>
+#include <Platform/File/JsonObject.h>
+#include <Containers/FString.hpp>
 
 // TODO: Temp
 #include <Systems/GeometrySystem.h>
@@ -14,7 +14,8 @@
 #include <Systems/ShaderSystem.h>
 #include <Systems/RenderViewSystem.hpp>
 #include <Core/Identifier.hpp>
-#include <Renderer/RendererFrontend.hpp>
+#include <Rendering/Renderer.hpp>
+#include <Rendering/Resources/Skybox/Skybox.hpp>
 #include "UI/Console/Keybinds.h"
 #include "UI/Console/GameCommand.h"
 #include "Math/ForwardDeclarations.hpp"
@@ -75,7 +76,7 @@ bool GameInstance::Boot(IRenderer* renderer) {
 		return false;
 	}
 
-	JsonObject Content = JsonObject(MaterialAsset.ReadBytes());
+	JsonObject Content = JsonObject(MaterialAsset.ReadText());
 	WindowSize.Width = (uint16_t)Content.ReadInt("Window.Width");
 	WindowSize.Height = (uint16_t)Content.ReadInt("Window.Height");
 
@@ -107,12 +108,6 @@ bool GameInstance::Boot(IRenderer* renderer) {
 	FontConfig.maxBitmapFontCount = 100;
 	FontConfig.maxSystemFontCount = 100;
 
-	// Configure render views.  TODO: read from file.
-	if (!ConfigureRenderviews()) {
-		GLOG(Log::eError, "Failed to configure renderer views. Aborting application.");
-		return false;
-	}
-
 	return true;
 }
 
@@ -124,7 +119,7 @@ bool GameInstance::Initialize() {
 	}
 
 	// Get transform
-	JsonObject Content = JsonObject(MaterialAsset.ReadBytes());
+	JsonObject Content = JsonObject(MaterialAsset);
 	Matrix4 Mat = Content.ReadMatrix4("Camera.Transform");
 	
 	// Load python script
@@ -133,7 +128,7 @@ bool GameInstance::Initialize() {
 	Vector3 Position = Content.ReadVector3("Camera.Position");
 	Vector3 Rotation = Content.ReadVector3("Camera.Rotation");
 
-	WorldCamera = CameraSystem::GetDefault();
+	WorldCamera = CameraSystem::Get().GetDefault();
 	WorldCamera->SetPosition(Position);
 	WorldCamera->SetEulerAngles(Rotation);
 
@@ -155,7 +150,7 @@ bool GameInstance::Initialize() {
 		\nF3: Material view.\
 		\nF4: Depth view.");
 
-	if (TestText) {
+	if (TestSysText) {
 		TestSysText->SetLocation(Vector3(100, 200, 0));
 		TestSysText->SetName("Keyboard map texts.");
 	}
@@ -164,7 +159,13 @@ bool GameInstance::Initialize() {
 	GameConsole->Initialize();
 
 	// Skybox
-	if (!SB.Create("SkyboxCube")) {
+	SB = NewObject<Skybox>();
+	if (!SB) {
+		GLOG(Log::eError, "Failed to create skybox. Exiting...");
+		return false;
+	}
+
+	if (!SB->Create("SkyboxCube")) {
 		GLOG(Log::eError, "Failed to create skybox. Exiting...");
 		return false;
 	}
@@ -237,7 +238,7 @@ bool GameInstance::Initialize() {
 	AStaticMeshActor* UIMesh = NewObject<AStaticMeshActor>("Engine Logo UI");
 	UIMesh->geometry_count = 1;
 	UIMesh->geometries = (Geometry**)Memory::Allocate(sizeof(Geometry*), MemoryType::eMemory_Type_Array);
-	UIMesh->geometries[0] = GeometrySystem::AcquireFromConfig(UIConfig, true);
+	UIMesh->geometries[0] = GeometrySystem::Get().AcquireFromConfig(UIConfig, true);
 	UIMesh->Generation = 0;
 	UIMeshes.Push(UIMesh);
 
@@ -254,7 +255,10 @@ bool GameInstance::Initialize() {
 
 void GameInstance::Shutdown() {
 	// TODO: Temp
-	SB.Destroy();
+	if (SB) {
+		SB->Destroy();
+		DeleteObject(SB);
+	}
 
 	if (GameConsole) {
 		DeleteObject(GameConsole);
@@ -267,7 +271,7 @@ void GameInstance::Shutdown() {
 		}
 	}
 
-	if (TestSysText) {
+	if (TestText) {
 		TestText->Destroy();
 		DeleteObject(TestText);
 		TestText = nullptr;
@@ -284,7 +288,7 @@ void GameInstance::Shutdown() {
 		return;
 	}
 
-	JsonObject Content = JsonObject(MaterialAsset.ReadBytes());
+	JsonObject Content = JsonObject(MaterialAsset);
 	Content.WriteInt("Window.Width", (int)WindowSize.Width);
 	Content.WriteInt("Window.Height", (int)WindowSize.Height);
 	Content.WriteVector3("Camera.Position", WorldCamera->GetPosition());
@@ -333,7 +337,7 @@ bool GameInstance::Update(float delta_time) {
 	}
 
 	// Text
-	WorldCamera = CameraSystem::GetDefault();
+	WorldCamera = CameraSystem::Get().GetDefault();
 	Vector3 Pos = WorldCamera->GetPosition();
 	Vector3 Rot = WorldCamera->GetEulerAngles();
 
@@ -466,9 +470,7 @@ bool GameInstance::Update(float delta_time) {
 		}
 	}
 
-	char FPSText[512];
-	StringFormat(FPSText,
-		"\
+	FString FPSText = FString::Format("\
 	Camera Pos: [%.3f %.3f %.3f]\tCamera Rot: [%.3f %.3f %.3f]\n\
 	L=%s R=%s\tNDC: x=%.2f, y=%.2f\tHovered Object: %s\n\
 	FPS: %d\tDelta time: %.2f\n\
@@ -499,24 +501,26 @@ bool GameInstance::Render(SRenderPacket* packet, float delta_time) {
 	packet->views.resize(packet->view_count);
 	uint32_t ViewCounter = 0;
 
+	RenderViewSystem& RenderviewSys = RenderViewSystem::Get();
+
 	// Skybox
 	SkyboxPacketData SkyboxData;
-	SkyboxData.sb = &SB;
-	IRenderView* SkyboxView = RenderViewSystem::Get("Skybox");
+	SkyboxData.sb = SB;
+	IRenderView* SkyboxView = RenderviewSys.Get("Skybox");
 	if (SkyboxView) {
-		if (!RenderViewSystem::BuildPacket(SkyboxView, &SkyboxData, &packet->views[ViewCounter++])) {
+		if (!RenderviewSys.BuildPacket(SkyboxView, &SkyboxData, &packet->views[ViewCounter++])) {
 			GLOG(Log::eError, "Failed to build packet for view 'World_Opaque'.");
 			return false;
 		}
 	}
 
 	// World
-	IRenderView* WorldView = RenderViewSystem::Get("WorldDeferred");
+	IRenderView* WorldView = RenderviewSys.Get("WorldDeferred");
 	if(WorldView) {
 		WorldPacketData WorldData;
 		WorldData.Meshes = FrameData.WorldGeometries;
 		WorldData.GlobalTime = GameTime;
-		if (!RenderViewSystem::BuildPacket(WorldView, &WorldData, &packet->views[ViewCounter++])) {
+		if (!RenderviewSys.BuildPacket(WorldView, &WorldData, &packet->views[ViewCounter++])) {
 			GLOG(Log::eError, "Failed to build packet for view 'World'.");
 			return false;
 		}
@@ -545,15 +549,15 @@ bool GameInstance::Render(SRenderPacket* packet, float delta_time) {
 	UIPacket.textCount = 4;
 	UIPacket.Textes = Texts;
 
-	IRenderView* UIView = RenderViewSystem::Get("UI");
+	IRenderView* UIView = RenderviewSys.Get("UI");
 	if (UIView) {
-		if (!RenderViewSystem::BuildPacket(RenderViewSystem::Get("UI"), &UIPacket, &packet->views[ViewCounter++])) {
+		if (!RenderviewSys.BuildPacket(RenderviewSys.Get("UI"), &UIPacket, &packet->views[ViewCounter++])) {
 			GLOG(Log::eError, "Failed to build packet for view 'UI'.");
 			return false;
 		}
 	}
 	
-	IRenderView* PickView = RenderViewSystem::Get("Pick");
+	IRenderView* PickView = RenderviewSys.Get("Pick");
 	if (PickView) {
 		// Pick uses both world and ui packet data.
 		PickPacketData PickPacket;
@@ -562,7 +566,7 @@ bool GameInstance::Render(SRenderPacket* packet, float delta_time) {
 		PickPacket.Texts = UIPacket.Textes;
 		PickPacket.TextCount = UIPacket.textCount;
 
-		if (!RenderViewSystem::BuildPacket(PickView, &PickPacket, &packet->views[ViewCounter++])) {
+		if (!RenderviewSys.BuildPacket(PickView, &PickPacket, &packet->views[ViewCounter++])) {
 			GLOG(Log::eError, "Failed to build packet for view 'Pick'.");
 			return false;
 		}
@@ -618,238 +622,9 @@ void GameInstance::OnResize(unsigned int width, unsigned int height) {
 	uint32_t UIIndices[6] = { 0, 2, 1, 0, 1, 3 };
 	UIConfig.indices = UIIndices;
 
-	GeometrySystem::Release(UIMeshes[0]->geometries[0]);
-	UIMeshes[0]->geometries[0] = GeometrySystem::AcquireFromConfig(UIConfig, true);
+	GeometrySystem::Get().Release(UIMeshes[0]->geometries[0]);
+	UIMeshes[0]->geometries[0] = GeometrySystem::Get().AcquireFromConfig(UIConfig, true);
 }
-
-bool GameInstance::ConfigureRenderviews() {
-	IRenderer* Renderer = IRenderer::GetRenderer();
-
-	RenderViewConfig SkyboxConfig;
-	SkyboxConfig.type = RenderViewKnownType::eRender_View_Known_Type_Skybox;
-	SkyboxConfig.width = GetWindowWidth();
-	SkyboxConfig.height = GetWindowHeight();
-	SkyboxConfig.name = "Skybox";
-	SkyboxConfig.pass_count = 1;
-	SkyboxConfig.view_matrix_source = RenderViewViewMatrixtSource::eRender_View_View_Matrix_Source_Scene_Camera;
-
-	// Renderpass config.
-	std::vector<RenderpassConfig> SkyboxPasses(1);
-	SkyboxPasses[0].name = "Renderpass.Builtin.Skybox";
-	SkyboxPasses[0].render_area = Vector4(0, 0, (float)GetWindowWidth(), (float)GetWindowHeight());
-	SkyboxPasses[0].clear_color = Vector4(0, 0, 0.2f, 1.0f);
-	SkyboxPasses[0].clear_flags = RenderpassClearFlags::eRenderpass_Clear_Color_Buffer;
-	SkyboxPasses[0].depth = 1.0f;
-	SkyboxPasses[0].stencil = 0;
-
-	RenderTargetAttachmentConfig SkyboxTargetAttachment;
-	// Color attachment.
-	SkyboxTargetAttachment.type = RenderTargetAttachmentType::eRender_Target_Attachment_Type_Color;
-	SkyboxTargetAttachment.source = RenderTargetAttachmentSource::eRender_Target_Attachment_Source_Default;
-	SkyboxTargetAttachment.loadOperation = RenderTargetAttachmentLoadOperation::eRender_Target_Attachment_Load_Operation_DontCare;
-	SkyboxTargetAttachment.storeOperation = RenderTargetAttachmentStoreOperation::eRender_Target_Attachment_Store_Operation_Store;
-	SkyboxTargetAttachment.presentAfter = false;
-	SkyboxTargetAttachment.index = 0;
-
-	SkyboxPasses[0].target.attachments.push_back(SkyboxTargetAttachment);
-	SkyboxPasses[0].renderTargetCount = Renderer->GetWindowAttachmentCount();
-
-	SkyboxConfig.passes = SkyboxPasses;
-	SkyboxConfig.pass_count = (unsigned char)SkyboxPasses.size();
-	Renderviews.push_back(SkyboxConfig);
-
-	// Deferred render
-	RenderViewConfig WorldViewConfig;
-	WorldViewConfig.type = RenderViewKnownType::eRender_View_Known_Type_Deferred;
-	WorldViewConfig.width = GetWindowWidth();
-	WorldViewConfig.height = GetWindowHeight();
-	WorldViewConfig.name = "WorldDeferred";
-	WorldViewConfig.pass_count = 2;
-	WorldViewConfig.view_matrix_source = RenderViewViewMatrixtSource::eRender_View_View_Matrix_Source_Scene_Camera;
-	// 延迟渲染通道配置 - 需要两个通道
-	std::vector<RenderpassConfig> WorldPasses(2);  // 改为2个通道
-
-	// 第一通道：G-Buffer渲染
-	Memory::Zero(&WorldPasses[0], sizeof(RenderpassConfig));
-
-	WorldPasses[0].name = "Renderpass.Builtin.GBuffer";
-	WorldPasses[0].render_area = Vector4(0, 0, (float)GetWindowWidth(), (float)GetWindowHeight());
-	WorldPasses[0].clear_color = Vector4(0.0f, 0.0f, 0.0f, 0.0f);  // 明确设置为0.0f
-	WorldPasses[0].clear_flags = RenderpassClearFlags::eRenderpass_Clear_Depth_Buffer |
-								 RenderpassClearFlags::eRenderpass_Clear_Stencil_Buffer;
-	WorldPasses[0].depth = 1.0f;        // 深度清除值：1.0f (最远)
-	WorldPasses[0].stencil = 0;         // 模板清除值：0
-
-	// G-Buffer颜色附件0：Albedo + Metallic (RGBA8)
-	RenderTargetAttachmentConfig GBufferAlbedoAttachment;
-	Memory::Zero(&GBufferAlbedoAttachment, sizeof(RenderTargetAttachmentConfig));
-	GBufferAlbedoAttachment.type = RenderTargetAttachmentType::eRender_Target_Attachment_Type_Color;
-	GBufferAlbedoAttachment.source = RenderTargetAttachmentSource::eRender_Target_Attachment_Source_View;
-	GBufferAlbedoAttachment.loadOperation = RenderTargetAttachmentLoadOperation::eRender_Target_Attachment_Load_Operation_Clear;
-	GBufferAlbedoAttachment.storeOperation = RenderTargetAttachmentStoreOperation::eRender_Target_Attachment_Store_Operation_Store;
-	GBufferAlbedoAttachment.presentAfter = false;
-	GBufferAlbedoAttachment.index = 0;
-	WorldPasses[0].target.attachments.push_back(GBufferAlbedoAttachment);
-
-	// G-Buffer颜色附件1：Normal + Roughness (RGBA16F)
-	RenderTargetAttachmentConfig GBufferNormalAttachment;
-	Memory::Zero(&GBufferNormalAttachment, sizeof(RenderTargetAttachmentConfig));
-	GBufferNormalAttachment.type = RenderTargetAttachmentType::eRender_Target_Attachment_Type_Color;
-	GBufferNormalAttachment.source = RenderTargetAttachmentSource::eRender_Target_Attachment_Source_View;
-	GBufferNormalAttachment.loadOperation = RenderTargetAttachmentLoadOperation::eRender_Target_Attachment_Load_Operation_Clear;
-	GBufferNormalAttachment.storeOperation = RenderTargetAttachmentStoreOperation::eRender_Target_Attachment_Store_Operation_Store;
-	GBufferNormalAttachment.presentAfter = false;
-	GBufferNormalAttachment.index = 1;
-	WorldPasses[0].target.attachments.push_back(GBufferNormalAttachment);
-
-	// G-Buffer颜色附件2：Position + Depth (RGBA32F)
-	RenderTargetAttachmentConfig GBufferPositionAttachment;
-	Memory::Zero(&GBufferPositionAttachment, sizeof(RenderTargetAttachmentConfig));
-	GBufferPositionAttachment.type = RenderTargetAttachmentType::eRender_Target_Attachment_Type_Color;
-	GBufferPositionAttachment.source = RenderTargetAttachmentSource::eRender_Target_Attachment_Source_View;
-	GBufferPositionAttachment.loadOperation = RenderTargetAttachmentLoadOperation::eRender_Target_Attachment_Load_Operation_Clear;
-	GBufferPositionAttachment.storeOperation = RenderTargetAttachmentStoreOperation::eRender_Target_Attachment_Store_Operation_Store;
-	GBufferPositionAttachment.presentAfter = false;
-	GBufferPositionAttachment.index = 2;
-	WorldPasses[0].target.attachments.push_back(GBufferPositionAttachment);
-
-	// G-Buffer深度附件
-	RenderTargetAttachmentConfig GBufferDepthAttachment;
-	Memory::Zero(&GBufferDepthAttachment, sizeof(RenderTargetAttachmentConfig));
-	GBufferDepthAttachment.type = RenderTargetAttachmentType::eRender_Target_Attachment_Type_Depth;
-	GBufferDepthAttachment.source = RenderTargetAttachmentSource::eRender_Target_Attachment_Source_Default;
-	GBufferDepthAttachment.loadOperation = RenderTargetAttachmentLoadOperation::eRender_Target_Attachment_Load_Operation_Clear;
-	GBufferDepthAttachment.storeOperation = RenderTargetAttachmentStoreOperation::eRender_Target_Attachment_Store_Operation_Store;
-	GBufferDepthAttachment.presentAfter = false;
-	GBufferDepthAttachment.index = 0;
-	WorldPasses[0].target.attachments.push_back(GBufferDepthAttachment);
-
-	// 设置G-Buffer通道的渲染目标数量
-	WorldPasses[0].renderTargetCount = Renderer->GetWindowAttachmentCount();  // 双缓冲
-
-	// 第二通道：延迟光照
-	Memory::Zero(&WorldPasses[1], sizeof(RenderpassConfig));
-	WorldPasses[1].name = "Renderpass.Builtin.DeferredLighting";
-	WorldPasses[1].render_area = Vector4(0, 0, (float)GetWindowWidth(), (float)GetWindowHeight());
-	WorldPasses[1].clear_color = Vector4(0.0f, 0.2f, 0.0f, 1.0f);  // 最终输出的清除色
-	WorldPasses[1].clear_flags = RenderpassClearFlags::eRenderpass_Clear_None;  
-	WorldPasses[1].depth = 1.0f;       
-	WorldPasses[1].stencil = 0;        
-
-	// 光照通道的颜色输出（通常是swapchain或者屏幕缓冲）
-	RenderTargetAttachmentConfig LightingColorAttachment;
-	Memory::Zero(&LightingColorAttachment, sizeof(RenderTargetAttachmentConfig));
-	LightingColorAttachment.type = RenderTargetAttachmentType::eRender_Target_Attachment_Type_Color;
-	LightingColorAttachment.source = RenderTargetAttachmentSource::eRender_Target_Attachment_Source_Default;
-	LightingColorAttachment.loadOperation = RenderTargetAttachmentLoadOperation::eRender_Target_Attachment_Load_Operation_Load;
-	LightingColorAttachment.storeOperation = RenderTargetAttachmentStoreOperation::eRender_Target_Attachment_Store_Operation_Store;
-	LightingColorAttachment.presentAfter = false; 
-	LightingColorAttachment.index = 0;
-	WorldPasses[1].target.attachments.push_back(LightingColorAttachment);
-
-	// 设置光照通道的渲染目标数量
-	WorldPasses[1].renderTargetCount = Renderer->GetWindowAttachmentCount();
-
-	// 最终配置
-	WorldViewConfig.passes = WorldPasses;
-	WorldViewConfig.pass_count = (unsigned char)WorldPasses.size();
-	Renderviews.push_back(WorldViewConfig);
-
-	// UI view
-	RenderViewConfig UIViewConfig;
-	UIViewConfig.type = RenderViewKnownType::eRender_View_Known_Type_UI;
-	UIViewConfig.width = GetWindowWidth();
-	UIViewConfig.height = GetWindowHeight();
-	UIViewConfig.name = "UI";
-	UIViewConfig.pass_count = 1;
-	UIViewConfig.view_matrix_source = RenderViewViewMatrixtSource::eRender_View_View_Matrix_Source_Scene_Camera;
-
-	// Renderpass config
-	std::vector<RenderpassConfig> UIPasses(1);
-	UIPasses[0].name = "Renderpass.Builtin.UI";
-	UIPasses[0].render_area = Vector4(0, 0, (float)GetWindowWidth(), (float)GetWindowHeight());
-	UIPasses[0].clear_color = Vector4(0, 0, 0.2f, 1.0f);
-	UIPasses[0].clear_flags = RenderpassClearFlags::eRenderpass_Clear_None;
-	UIPasses[0].depth = 1.0f;
-	UIPasses[0].stencil = 0;
-
-	RenderTargetAttachmentConfig UITargetAttachment;
-	// Color attachment.
-	UITargetAttachment.type = RenderTargetAttachmentType::eRender_Target_Attachment_Type_Color;
-	UITargetAttachment.source = RenderTargetAttachmentSource::eRender_Target_Attachment_Source_Default;
-	UITargetAttachment.loadOperation = RenderTargetAttachmentLoadOperation::eRender_Target_Attachment_Load_Operation_Load;
-	UITargetAttachment.storeOperation = RenderTargetAttachmentStoreOperation::eRender_Target_Attachment_Store_Operation_Store;
-	UITargetAttachment.presentAfter = true;
-
-	UIPasses[0].target.attachments.push_back(UITargetAttachment);
-	UIPasses[0].renderTargetCount = Renderer->GetWindowAttachmentCount();
-
-	UIViewConfig.passes = UIPasses;
-	UIViewConfig.pass_count = (unsigned char)UIPasses.size();
-	Renderviews.push_back(UIViewConfig);
-
-	// Pick pass
-	RenderViewConfig PickViewConfig;
-	PickViewConfig.type = RenderViewKnownType::eRender_View_Known_Type_Pick;
-	PickViewConfig.width = GetWindowWidth();
-	PickViewConfig.height = GetWindowHeight();
-	PickViewConfig.name = "Pick";
-	PickViewConfig.pass_count = 2;
-	PickViewConfig.view_matrix_source = RenderViewViewMatrixtSource::eRender_View_View_Matrix_Source_Scene_Camera;
-	
-	// Renderpass config.
-	std::vector<RenderpassConfig>PickPasses(2);
-	// World pick pass
-	PickPasses[0].name = "Renderpass.Builtin.WorldPick";
-	PickPasses[0].render_area = Vector4(0, 0, (float)GetWindowWidth(), (float)GetWindowHeight());
-	PickPasses[0].clear_color = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
-	PickPasses[0].clear_flags = RenderpassClearFlags::eRenderpass_Clear_Color_Buffer | RenderpassClearFlags::eRenderpass_Clear_Depth_Buffer;
-	PickPasses[0].depth = 1.0f;
-	PickPasses[0].stencil = 0;
-
-	RenderTargetAttachmentConfig WorldPickTargetColorAttachments;
-	WorldPickTargetColorAttachments.type = RenderTargetAttachmentType::eRender_Target_Attachment_Type_Color;
-	WorldPickTargetColorAttachments.source = RenderTargetAttachmentSource::eRender_Target_Attachment_Source_View;
-	WorldPickTargetColorAttachments.loadOperation = RenderTargetAttachmentLoadOperation::eRender_Target_Attachment_Load_Operation_DontCare;
-	WorldPickTargetColorAttachments.storeOperation = RenderTargetAttachmentStoreOperation::eRender_Target_Attachment_Store_Operation_Store;
-	WorldPickTargetColorAttachments.presentAfter = false;
-	PickPasses[0].target.attachments.push_back(WorldPickTargetColorAttachments);
-
-	RenderTargetAttachmentConfig WorldPickTargetDepthAttachments;
-	WorldPickTargetDepthAttachments.type = RenderTargetAttachmentType::eRender_Target_Attachment_Type_Depth;
-	WorldPickTargetDepthAttachments.source = RenderTargetAttachmentSource::eRender_Target_Attachment_Source_View;
-	WorldPickTargetDepthAttachments.loadOperation = RenderTargetAttachmentLoadOperation::eRender_Target_Attachment_Load_Operation_DontCare;
-	WorldPickTargetDepthAttachments.storeOperation = RenderTargetAttachmentStoreOperation::eRender_Target_Attachment_Store_Operation_Store;
-	WorldPickTargetDepthAttachments.presentAfter = false;
-	PickPasses[0].target.attachments.push_back(WorldPickTargetDepthAttachments);
-
-	PickPasses[0].renderTargetCount = 1;
-
-	// UI pick pass
-	PickPasses[1].name = "Renderpass.Builtin.UIPick";
-	PickPasses[1].render_area = Vector4(0, 0, (float)GetWindowWidth(), (float)GetWindowHeight());
-	PickPasses[1].clear_color = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
-	PickPasses[1].clear_flags = RenderpassClearFlags::eRenderpass_Clear_None;
-	PickPasses[1].depth = 1.0f;
-	PickPasses[1].stencil = 0;
-
-	RenderTargetAttachmentConfig UIPickTargetColorAttachments;
-	UIPickTargetColorAttachments.type = RenderTargetAttachmentType::eRender_Target_Attachment_Type_Color;
-	UIPickTargetColorAttachments.source = RenderTargetAttachmentSource::eRender_Target_Attachment_Source_View;
-	UIPickTargetColorAttachments.loadOperation = RenderTargetAttachmentLoadOperation::eRender_Target_Attachment_Load_Operation_Load;
-	UIPickTargetColorAttachments.storeOperation = RenderTargetAttachmentStoreOperation::eRender_Target_Attachment_Store_Operation_Store;
-	UIPickTargetColorAttachments.presentAfter = false;
-	PickPasses[1].target.attachments.push_back(UIPickTargetColorAttachments);
-
-	PickPasses[1].renderTargetCount = 1;
-
-	PickViewConfig.passes = PickPasses;
-	PickViewConfig.pass_count = (unsigned char)PickPasses.size();
-	Renderviews.push_back(PickViewConfig);
-
-	return true;
-}
-
 
 void LoadScene1(GameInstance* GameInst) {
 	

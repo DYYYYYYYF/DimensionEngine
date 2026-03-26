@@ -2,8 +2,10 @@
 
 #include "Defines.hpp"
 #include "EngineLogger.hpp"
-#include "DMutex.hpp"
+#include "Platform/Thread/DMutex.hpp"
 #include "Memory/DynamicAllocator.h"
+
+class FString;
 
 #ifndef DEFAULT_ALIGNMENT_SIZE
 #define DEFAULT_ALIGNMENT_SIZE 8
@@ -78,6 +80,10 @@ private:
 	};
 
 public:
+	Memory() {}
+	virtual ~Memory() { Shutdown(); }
+
+public:
 	static DAPI bool Initialize(size_t size);
 	static DAPI void Shutdown();
 
@@ -88,7 +94,7 @@ public:
 	static DAPI void* Zero(void* block, size_t size);
 	static DAPI void* Copy(void* dst, const void* src, size_t size);
 	static DAPI void* Set(void* dst, int val, size_t size);
-	static DAPI char* GetMemoryUsageStr();
+	static DAPI FString GetMemoryUsageStr();
 	static DAPI void ShowMemoryUsage();
 
 	static DAPI void AllocateReport(size_t size, MemoryType type);
@@ -103,7 +109,6 @@ private:
 public:
 	static struct SMemoryStats stats;
 	static size_t TotalAllocateSize;
-	static DynamicAllocator DynamicAlloc;
 	static size_t AllocateCount;
 	
 	static Mutex AllocationMutex;
@@ -124,8 +129,10 @@ T* NewObject(Args&&... args) {
 	try {
 		return new(memory) T(std::forward<Args>(args)...);
 	}
-	catch (...) {
+	catch (const std::exception& e)
+	{
 		Memory::Free(memory, MemoryType::eMemory_Type_Entity);
+		GLOG(Log::eFatal, "Constructor exception: %s", e.what());
 		throw;
 	}
 }

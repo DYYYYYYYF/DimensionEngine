@@ -1,19 +1,18 @@
 ﻿#include "ResourceSystem.h"
 
-#include "Renderer/Vulkan/VulkanContext.hpp"
+#include "Rendering/Vulkan/VulkanContext.hpp"
 
 // Known resource loaders.
-#include "Resources/Loaders/BinaryLoader.h"
-#include "Resources/Loaders/ImageLoader.hpp"
-#include "Resources/Loaders/MaterialLoader.h"
-#include "Resources/Loaders/ShaderLoader.h"
-#include "Resources/Loaders/MeshLoader.h"
-#include "Resources/Loaders/BitmapFontLoader.hpp"
-#include "Resources/Loaders/SystemFontLoader.hpp"
+#include "Rendering/Resources/Loaders/MaterialLoader.h"
+#include "Rendering/Resources/Loaders/ShaderLoader.h"
+#include "Rendering/Resources/Loaders/MeshLoader.h"
+#include "Rendering/Resources/Loaders/BitmapFontLoader.hpp"
+#include "Rendering/Resources/Loaders/SystemFontLoader.hpp"
 
-SResourceSystemConfig ResourceSystem::Config;
-std::vector<IResourceLoader*> ResourceSystem::RegisteredLoaders;
-bool ResourceSystem::Initilized = false;
+ResourceSystem& ResourceSystem::Get() {
+	static ResourceSystem ResouceSystemInstance;
+	return ResouceSystemInstance;
+}
 
 bool ResourceSystem::Initialize(SResourceSystemConfig config) {
 	if (config.max_loader_count == 0) {
@@ -24,10 +23,6 @@ bool ResourceSystem::Initialize(SResourceSystemConfig config) {
 	Config = config;
 
 	// NOTE: Auto-register known loader types here.
-	IResourceLoader* BinLoader = NewObject<BinaryLoader>();
-	RegisterLoader(BinLoader);
-	IResourceLoader* ImgLoader = NewObject<ImageLoader>();
-	RegisterLoader(ImgLoader);
 	IResourceLoader* MatLoader = NewObject<MaterialLoader>();
 	RegisterLoader(MatLoader);
 	IResourceLoader* ShaLoader = NewObject<ShaderLoader>();
@@ -40,7 +35,7 @@ bool ResourceSystem::Initialize(SResourceSystemConfig config) {
 	RegisterLoader(SysFontLoader);
 
 	Initilized = true;
-	GLOG(Log::eInfo, "Resource system initialize with base path: '%s'.", config.asset_base_path.c_str());
+	GLOG(Log::eInfo, "Resource system initialize with base path: '%s'.", config.asset_base_path.CStr());
 	return true;
 
 }
@@ -71,8 +66,8 @@ bool ResourceSystem::RegisterLoader(IResourceLoader* loader) {
 				GLOG(Log::eError, "Resource system register loader error. Loader of type %d already exists and will ot be registered.", loader->Type);
 				return false;
 			}
-			else if (RegisteredLoaders[i]->CustomType.length() > 0 && RegisteredLoaders[i]->CustomType.compare(loader->CustomType) == 0) {
-				GLOG(Log::eError, "Resource system register loader error. Loader of custom type %d already exists and will ot be registered.", loader->CustomType.c_str());
+			else if (RegisteredLoaders[i]->CustomType.Length() > 0 && RegisteredLoaders[i]->CustomType.Compare(loader->CustomType) == 0) {
+				GLOG(Log::eError, "Resource system register loader error. Loader of custom type %d already exists and will ot be registered.", loader->CustomType.CStr());
 				return false;
 			}
 		}
@@ -84,8 +79,8 @@ bool ResourceSystem::RegisterLoader(IResourceLoader* loader) {
 	return true;
 }
 
-bool ResourceSystem::Load(const std::string& name, ResourceType type, void* params, Resource* resource) {
-	if (type != eResource_type_Custom) {
+bool ResourceSystem::Load(const FString& name, EAssetType type, void* params, UAsset* resource) {
+	if (type != EAssetType::Custom) {
 		// Select loader.
 		uint32_t Count = Config.max_loader_count;
 		for (uint32_t i = 0; i < Count; ++i) {
@@ -101,7 +96,7 @@ bool ResourceSystem::Load(const std::string& name, ResourceType type, void* para
 	return false;
 }
 
-bool ResourceSystem::LoadCustom(const std::string& name, const char* custom_type, void* params, Resource* resource) {
+bool ResourceSystem::LoadCustom(const FString& name, const char* custom_type, void* params, UAsset* resource) {
 	if (custom_type == nullptr || strlen(custom_type) == 0) {
 		GLOG(Log::eError, "Resouce system load custom failed. custom type is invalid.");
 		return false;
@@ -109,7 +104,7 @@ bool ResourceSystem::LoadCustom(const std::string& name, const char* custom_type
 
 	uint32_t Count = Config.max_loader_count;
 	for (uint32_t i = 0; i < Count; ++i) {
-		if (RegisteredLoaders[i]->Id != INVALID_ID && RegisteredLoaders[i]->Type == eResource_type_Custom && RegisteredLoaders[i]->CustomType.compare(custom_type)== 0) {
+		if (RegisteredLoaders[i]->Id != INVALID_ID && RegisteredLoaders[i]->Type == EAssetType::Custom && RegisteredLoaders[i]->CustomType.Compare(custom_type)== 0) {
 			resource->LoaderID = RegisteredLoaders[i]->Id;
 			return RegisteredLoaders[i]->Load(name, params, resource);
 		}
@@ -120,7 +115,7 @@ bool ResourceSystem::LoadCustom(const std::string& name, const char* custom_type
 	return false;
 }
 
-void ResourceSystem::Unload(Resource* resource) {
+void ResourceSystem::Unload(UAsset* resource) {
 	if (resource == nullptr) {
 		return;
 	}
@@ -135,7 +130,7 @@ void ResourceSystem::Unload(Resource* resource) {
 
 const char* ResourceSystem::GetRootPath() {
 	if (Initilized) {
-		return Config.asset_base_path.c_str();
+		return Config.asset_base_path.CStr();
 	}
 
 	GLOG(Log::eError, "Resource system GetRootPaht() called beform initialization, returning empty string.");

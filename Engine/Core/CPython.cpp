@@ -1,5 +1,6 @@
 ﻿#include "CPython.hpp"
 #include "Core/EngineLogger.hpp"
+#include "Containers/FString.hpp"
 
 #include <Python.h>
 
@@ -11,8 +12,8 @@ void CPythonModule::ExecuteFunc(const char* funcName, const char* shaderLanguage
 	Py_Initialize();
 
 	PyRun_SimpleString("import sys");
-	std::string Header = std::string("sys.path.append('") + ROOT_PATH + "/Scripts')";
-    PyRun_SimpleString(Header.c_str());
+	FString Header = FString("sys.path.append('") + ROOT_PATH + "/Scripts')";
+    PyRun_SimpleString(Header.CStr());
 
 	PyObject* PyMoudle = PyImport_ImportModule(FileName);
 	if (PyMoudle == nullptr) {

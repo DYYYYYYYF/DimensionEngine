@@ -15,8 +15,8 @@ bool Freelist::Create(size_t total_size) {
 
 	// 限制最大节点数：基于实际需求
 	// 假设平均分配大小256字节，最大碎片化3倍
-	size_t estimated_max_blocks = (total_size / 256) * 3;
-	size_t reasonable_limit = std::min(estimated_max_blocks, static_cast<size_t>(16384)); // 最多16K节点
+	size_t estimated_max_blocks = (total_size / FREELIST_AVG_ALLOCCATE_SIZE) * FREELIST_MAX_FRAGMENT_RATE;
+	size_t reasonable_limit = std::min(estimated_max_blocks, static_cast<size_t>(FREELIST_MAX_LIMITED_NODE)); // 最多16K节点
 
 	MaxEntries = std::min(calculated_entries, reasonable_limit);
 

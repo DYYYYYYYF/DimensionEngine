@@ -1,9 +1,7 @@
 ﻿#pragma once
 
-#include "Renderer/RendererTypes.hpp"
-#include "Resources/Texture.hpp"
-#include "Resources/Resource.hpp"
-#include "Containers/THashTable.hpp"
+#include "Rendering/RenderTypes.hpp"
+#include "Rendering/Resources/Texture/Texture.hpp"
 
 #define DEFAULT_DIFFUSE_TEXTURE_NAME "DefaultBaseColorTexture"
 #define DEFAULT_SPECULAR_TEXTURE_NAME "DefaultSpecularTexture"
@@ -17,61 +15,58 @@ struct STextureSystemConfig {
 };
 
 struct TextureLoadParams {
-	std::string resource_name;
-	Texture* out_texture = nullptr;
-	Texture temp_texture;
+	FString resource_name;
+	UTexture* out_texture = nullptr;
 	uint32_t current_generation;
-	Resource ImageResource;
 };
 
 class TextureSystem {
 public:
-	static bool Initialize(IRenderer* renderer, STextureSystemConfig config);
-	static void Shutdown();
+	static TextureSystem& Get();
 
-	static Texture* Acquire(const char* name, bool auto_release);
-	static Texture* AcquireCube(const char* name, bool auto_release);
-	static Texture* AcquireWriteable(const char* name, uint32_t width, uint32_t height, 
+public:
+	bool Initialize(IRenderer* renderer, STextureSystemConfig config);
+	void Shutdown();
+
+	UTexture* Acquire(const FString& name, bool auto_release = true);
+	UTexture* AcquireCube(const FString& name, bool auto_release = true);
+	UTexture* AcquireWriteable(const FString& name, uint32_t width, uint32_t height,
 		unsigned char channel_count, bool has_transparency, bool has_depth = false);
-	static void Release(const std::string& name);
 
-	static void WrapInternal(const char* name, uint32_t width, uint32_t height, unsigned char channel_count,
-		bool has_transparency, bool is_writeable, bool register_texture, void* internal_data, Texture* tex);
-	static bool SetInternal(Texture* t, void* internal_data);
-	static bool Resize(Texture* t, uint32_t width, uint32_t height, bool regenerate_internal_data);
-	static bool WriteData(Texture* t, uint32_t offset, uint32_t size, void* data);
+	void Release(const FString& name);
+	bool Resize(UTexture* t, uint32_t width, uint32_t height, bool regenerate_internal_data);
 
-	static Texture* GetDefaultDiffuseTexture();
-	static Texture* GetDefaultSpecularTexture();
-	static Texture* GetDefaultNormalTexture();
-	static Texture* GetDefaultRoughnessMetallicTexture();
+	UTexture* GetDefaultDiffuseTexture();
+	UTexture* GetDefaultSpecularTexture();
+	UTexture* GetDefaultNormalTexture();
+	UTexture* GetDefaultRoughnessMetallicTexture();
 
 private:
-	static Texture* CheckTextureName(const std::string& name);
-	static bool LoadTexture(const std::string& name, Texture* texture);
-	static bool LoadCubeTexture(const std::string& name, const char texture_names[6][TEXTURE_NAME_MAX_LENGTH], Texture* t);
-	static void DestroyTexture(Texture* t);
+	UTexture* CheckTextureName(const FString& name);
+	bool LoadTexture(const FString& name, UTexture* texture);
+	bool LoadCubeTexture(const FString& name, const TArray<FString>& texture_names, UTexture* t);
+	void DestroyTexture(UTexture* t);
 
-	static bool CreateDefaultTexture();
-	static void DestroyDefaultTexture();
-	static bool ProcessTextureReference(const std::string& name, TextureType type,
+	bool CreateDefaultTexture();
+	void DestroyDefaultTexture();
+	bool ProcessTextureReference(const FString& name, TextureType type,
 		short reference_diff, bool auto_release, bool skip_load);
 
-	static void LoadJobSuccess(void* params);
-	static void LoadJobFail(void* params);
-	static bool LoadJobStart(void* params, void* result_data);
+	void LoadJobSuccess(void* params);
+	void LoadJobFail(void* params);
+	bool LoadJobStart(TextureLoadParams* params, TextureLoadParams* result_data);
 
 private:
-	static STextureSystemConfig TextureSystemConfig;
-	static Texture* DefaultDiffuseTexture;
-	static Texture* DefaultSpecularTexture;
-	static Texture* DefaultNormalTexture;
-	static Texture* DefaultRoughnessMetallicTexture;
+	STextureSystemConfig TextureSystemConfig;
+	UTexture* DefaultDiffuseTexture;
+	UTexture* DefaultSpecularTexture;
+	UTexture* DefaultNormalTexture;
+	UTexture* DefaultRoughnessMetallicTexture;
 
 	// Hashtable for texture lookups.
-	static std::unordered_map<std::string, Texture*> TextureMap;
+	std::unordered_map<FString, UTexture*> TextureMap;
 
-	static bool Initilized;
+	bool Initilized;
 
-	static IRenderer* Renderer;
+	IRenderer* Renderer;
 };

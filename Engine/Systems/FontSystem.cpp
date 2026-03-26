@@ -2,357 +2,202 @@
 
 #include "Core/DMemory.hpp"
 #include "Core/EngineLogger.hpp"
-#include "Containers/TString.hpp"
-#include "Resources/ResourceTypes.hpp"
-#include "Renderer/RendererFrontend.hpp"
+#include "Rendering/Resources/ResourceTypes.hpp"
 #include "Systems/TextureSystem.h"
 #include "Systems/ResourceSystem.h"
 
-// For system fonts.
-#ifndef STB_TRUETYPE_IMPLEMENTATION
-#define STB_TRUETYPE_IMPLEMENTATION
-#endif
-#include <stb_truetype.h>
+FontSystem& FontSystem::Get() {
+	static FontSystem instance;
+	return instance;
+}
 
-// Material system member
-struct BitmapFontLookup {
-	unsigned short id;
-	unsigned short referenceCount;
-	BitmapFontInternalData font;
-};
-
-struct SystemFontLookup {
-	unsigned short id;
-	unsigned short referenceCount;
-	std::vector<IFontDataBase*> sizeVariants;
-	size_t binarySize;
-	FString face = nullptr;
-	void* fontBinary = nullptr;
-	int offset;
-	int index;
-	struct stbtt_fontinfo info;
-};
-
-FontSystemConfig FontSystem::Config;
-std::vector<BitmapFontLookup*> FontSystem::BitmapFonts;
-std::vector<SystemFontLookup*> FontSystem::SystemFonts;
-IRenderer* FontSystem::Renderer = nullptr;
-bool FontSystem::Initilized = false;
-std::unordered_map<FString, uint32_t> FontSystem::SystemFontMap;
-std::unordered_map<FString, uint32_t> FontSystem::BitmapFontMap;
-
-bool FontSystem::Initialize(IRenderer* renderer, const FontSystemConfig& config){
-	if (renderer == nullptr) {
+bool FontSystem::Initialize(IRenderer* renderer, const FontSystemConfig& config) {
+	if (!renderer) {
+		GLOG(Log::eFatal, "FontSystem::Initialize() renderer must not be null.");
 		return false;
 	}
 
 	if (config.maxBitmapFontCount == 0 || config.maxSystemFontCount == 0) {
-		GLOG(Log::eFatal, "FontSystem::Initialize() config->maxBitmapFontCount and config->maxSystemFontCount must be > 0.");
+		GLOG(Log::eFatal, "FontSystem::Initialize() maxBitmapFontCount and maxSystemFontCount must be > 0.");
 		return false;
 	}
 
 	Config = config;
 	Renderer = renderer;
 
-	BitmapFonts.resize(Config.maxBitmapFontCount);
-	SystemFonts.resize(Config.maxSystemFontCount);
-
-	// Load up any default fonts.
-	// Bitmap fonts.
+	// 加载默认 Bitmap 字体
 	for (uint32_t i = 0; i < Config.defaultBitmapFontCount; ++i) {
-		if (!LoadBitmapFont(&Config.bitmapFontConfigs[i])) {
-			GLOG(Log::eError, "Failed to load bitmap font: %s.", Config.bitmapFontConfigs[i].name.CStr());
+		if (!RegisterBitmapFont(Config.bitmapFontConfigs[i])) {
+			GLOG(Log::eError, "Failed to register bitmap font: %s.", Config.bitmapFontConfigs[i].name.CStr());
 		}
 	}
 
-	// System fonts.
+	// 加载默认 System 字体
 	for (uint32_t i = 0; i < Config.defaultSystemFontCount; ++i) {
-		if (!LoadSystemFont(&Config.systemFontConfigs[i])) {
-			GLOG(Log::eError, "Failed to load system font: %s.", Config.systemFontConfigs[i].name.CStr());
+		if (!RegisterSystemFont(Config.systemFontConfigs[i])) {
+			GLOG(Log::eError, "Failed to register system font: %s.", Config.systemFontConfigs[i].name.CStr());
 		}
 	}
 
-	Initilized = true;
+	Initialized = true;
 	return true;
 }
 
 void FontSystem::Shutdown() {
-	if (Initilized) {
-		// Clean up bitmap fonts.
-		for (unsigned short i = 0; i < Config.maxBitmapFontCount; ++i) {
-			if (BitmapFonts[i] != nullptr) {
-				CleanupFontData(BitmapFonts[i]->font.resourceData->data);
-				BitmapFonts[i]->font.resourceData->data = nullptr;
-				BitmapFonts[i]->id = INVALID_ID_U16;
-				DeleteObject(BitmapFonts[i]);
-			}
-		}
+	if (!Initialized) { return; }
 
-		// Clean up system fonts.
-		for (unsigned short i = 0; i < Config.maxSystemFontCount; ++i) {
-			if (SystemFonts[i] != nullptr) {
-				// Clean up each variant.
-				uint32_t VariantCount = (uint32_t)SystemFonts[i]->sizeVariants.size();
-				for (uint32_t j = 0; j < VariantCount; ++j) {
-					CleanupFontData(SystemFonts[i]->sizeVariants[j]);
-					SystemFonts[i]->sizeVariants[j] = nullptr;
-				}
-
-				SystemFonts[i]->id = INVALID_ID_U16;
-				SystemFonts[i]->sizeVariants.clear();
-			}
-		}
+	// 释放 GPU 资源
+	for (auto& [name, font] : BitmapFonts) {
+		if (font) font->ReleaseResource();
 	}
+	BitmapFonts.Clear();
+
+	for (auto& [name, font] : SystemFonts) {
+		if(font) font->ReleaseResource(Renderer);
+	}
+	SystemFonts.Clear();
+
+	Initialized = false;
 }
 
-bool FontSystem::LoadSystemFont(SystemFontConfig* config){
-	// For system fonts, they can actually contain multiple fonts. For this reason,
-	// a copy of the resource's data will be held in each resulting variant, and the
-	// resource will be released.
-	Resource LoadedResource;
-	if (!ResourceSystem::Load(config->resourceName.CStr(), ResourceType::eResource_Type_System_Font, nullptr, &LoadedResource)) {
-		GLOG(Log::eError, "Failed to load system font.");
+bool FontSystem::RegisterBitmapFont(const BitmapFontConfig& config) {
+	if (BitmapFonts.Contains(config.name)) {
+		GLOG(Log::eWarn, "Bitmap font '%s' already registered.", config.name.CStr());
+		return true;
+	}
+
+	if (BitmapFonts.Size() >= Config.maxBitmapFontCount) {
+		GLOG(Log::eError, "Bitmap font limit reached (%u). Increase maxBitmapFontCount.", Config.maxBitmapFontCount);
 		return false;
 	}
 
-	// Keep a casted pointer to the resource data for convenience.
-	SystemFontResourceData* ResourceData = (SystemFontResourceData*)LoadedResource.Data;
+	// 从资源系统加载原始数据
+	// BitmapFont 继承自 UAsset，直接作为加载目标
+	BitmapFont* font = NewObject<BitmapFont>();
+	if (!ResourceSystem::Get().Load(config.resourceName, EAssetType::BitmapFont, nullptr, font)) {
+		GLOG(Log::eError, "Failed to load bitmap font resource: %s.", config.resourceName.CStr());
+		return false;
+	}
 
-	// Loop through the faces and create one lookup for each, as well as a default size variant for each lookup.
-	uint32_t FontFaceCount = (uint32_t)ResourceData->fonts.size();
-	for (uint32_t i = 0; i < FontFaceCount; ++i) {
-		SystemFontFace* Face = &ResourceData->fonts[i];
+	// 从 UAsset::Data 中取出 ResourceData，完成 GPU 侧初始化
+	BitmapFontResourceData* resourceData = static_cast<BitmapFontResourceData*>(font->Data);
+	if (!font->InitFromResourceData(resourceData)) {
+		GLOG(Log::eError, "Failed to initialize bitmap font: %s.", config.name.CStr());
+		return false;
+	}
 
-		// Make sure a font with this name doesn't already exist.
-		if (SystemFontMap.find(Face->name) != SystemFontMap.end()) {
-			GLOG(Log::eWarn, "A font named '%s' already exists and will not be loaded again.", config->name.CStr());
-			return true;
+	BitmapFonts[config.name] = font;
+	return true;
+}
+
+bool FontSystem::RegisterSystemFont(const SystemFontConfig& config) {
+	// 先加载资源，一个 TTF 文件可能包含多个字型（face）
+	UAsset loadedAsset;
+	if (!ResourceSystem::Get().Load(config.resourceName.CStr(), EAssetType::SystemFont, nullptr, &loadedAsset)) {
+		GLOG(Log::eError, "Failed to load system font resource: %s.", config.resourceName.CStr());
+		return false;
+	}
+
+	SystemFontResourceData* resourceData = static_cast<SystemFontResourceData*>(loadedAsset.Data);
+	uint32_t faceCount = static_cast<uint32_t>(resourceData->fonts.Size());
+
+	for (uint32_t i = 0; i < faceCount; ++i) {
+		const FString& faceName = resourceData->fonts[i].name;
+
+		if (SystemFonts.Contains(faceName)) {
+			GLOG(Log::eWarn, "System font '%s' already registered.", faceName.CStr());
+			continue;
 		}
 
-		// Get a new id
-		unsigned short ID = INVALID_ID_U16;
-		for (unsigned short j = 0; j < Config.maxSystemFontCount; ++j) {
-			if (SystemFonts[j] == nullptr) {
-				ID = j;
-				break;
+		if (SystemFonts.Size() >= Config.maxSystemFontCount) {
+			GLOG(Log::eError, "System font limit reached (%u). Increase maxSystemFontCount.", Config.maxSystemFontCount);
+			return false;
+		}
+
+		SystemFont* font = NewObject<SystemFont>();
+
+		// 传入 index=i，SystemFont 内部用它定位 TTF 文件内的具体字型
+		if (!font->InitFromResourceData(resourceData, i)) {
+			GLOG(Log::eError, "Failed to initialize system font '%s' at index %u.", faceName.CStr(), i);
+			continue;
+		}
+
+		// 预创建 defaultSize 对应的 Variant，避免首次 Acquire 时卡顿
+		if (config.defaultSize > 0) {
+			if (!font->AcquireVariant(config.defaultSize)) {
+				GLOG(Log::eError, "Failed to create default size variant for '%s'.", faceName.CStr());
 			}
 		}
 
-		if (ID == INVALID_ID_U16) {
-			GLOG(Log::eError, "No space left to allocate a new system font. Increase maximum number allowed in font system config.");
-			return false;
-		}
-
-		// Obtain the lookup.
-		SystemFontLookup* Lookup = NewObject<SystemFontLookup>();
-		Lookup->binarySize = ResourceData->binarySize;
-		Lookup->fontBinary = ResourceData->fontBinary;
-		Lookup->face = Face->name;
-		Lookup->index = i;
-
-		// The offset
-		Lookup->offset = stbtt_GetFontOffsetForIndex((unsigned char*)Lookup->fontBinary, i);
-		int Result = stbtt_InitFont(&Lookup->info, (unsigned char*)Lookup->fontBinary, Lookup->offset);
-		if (Result == 0) {
-			// Zero indicates failure.
-			GLOG(Log::eError, "Failed to init system font %s at index %i.", LoadedResource.FullPath.CStr(), i);
-			return false;
-		}
-
-		// Create a default size variant.
-		SystemFontVariantData* Variant = CreateSystemFontVariant(Lookup, config->defaultSize, Face->name.CStr());
-		if (!Variant) {
-			GLOG(Log::eError, "Failed to create variant: %s, index %i.", Face->name.CStr(), i);
-			continue;
-		}
-
-		// Also perform setup for the variant.
-		if (!SetupFontData(Variant)) {
-			GLOG(Log::eError, "Failed to setup font data.");
-			continue;
-		}
-
-		// Add to lookup's size variant.
-		Lookup->sizeVariants.push_back(Variant);
-
-		// Set the entry id here last before updating the hashtable.
-		Lookup->id = ID;
-		SystemFontMap[Face->name] = ID;
-		SystemFonts[ID] = Lookup;
+		SystemFonts[faceName] = font;
 	}
 
 	return true;
 }
 
-bool FontSystem::LoadBitmapFont(BitmapFontConfig* config) {
-	// Make sure a font with this name doesn't already exist.
-	if (BitmapFontMap.find(config->name) != BitmapFontMap.end()) {
-		GLOG(Log::eWarn, "A font named '%s already exists and will not be loaded again.", config->name.CStr());
-		return true;
-	}
-
-	// Get a new id.
-	unsigned short ID = INVALID_ID_U16;
-	for (unsigned short i = 0; i < Config.maxBitmapFontCount; ++i) {
-		if (BitmapFonts[i] == nullptr) {
-			ID = i;
-			break;
-		}
-	}
-
-	if (ID == INVALID_ID_U16) {
-		GLOG(Log::eError, "No space left to allocate a new bitmap font. Increase maximum number allowed in font system config.");
-		return false;
-	}
-
-	// Obtain the lookup.
-	BitmapFontLookup* Lookup = NewObject<BitmapFontLookup>();
-
-	if (!ResourceSystem::Load(config->resourceName.CStr(), ResourceType::eResource_Type_Bitmap_Font, nullptr, &Lookup->font.loadedResource)) {
-		GLOG(Log::eError, "Failed to load bitmap font.");
-		return false;
-	}
-
-	// Keep a casted pointer to the resource data for convenience.
-	Lookup->font.resourceData = (BitmapFontResourceData*)Lookup->font.loadedResource.Data;
-
-	// Acquire the texture.
-	// TODO: only accounts for one page at the moment.
-	Lookup->font.resourceData->data->atlas.texture = TextureSystem::Acquire(Lookup->font.resourceData->Pages[0].file.c_str(), true);
-
-	bool Result = SetupFontData(Lookup->font.resourceData->data);
-
-	// Set the entry id here last before updating the hastable.
-	Lookup->id = ID;
-	BitmapFontMap[config->name] = ID;
-	BitmapFonts[ID] = Lookup;
-
-	return Result;
-}
-
-IFontDataBase* FontSystem::Acquire(const FString& fontName, UITextType type, int fontSize) {
+IFont* FontSystem::Acquire(const FString& fontName, UITextType type, int fontSize) {
 	if (type == UITextType::eUI_Text_Type_Bitmap) {
-		if (BitmapFontMap.find(fontName) == BitmapFontMap.end()) {
-			GLOG(Log::eError, "A bitmap font named '%s' was not found. Font acquisition failed.", fontName.CStr());
+		if (!BitmapFonts.Contains(fontName)) {
+			GLOG(Log::eError, "Bitmap font '%s' not found.", fontName.CStr());
+			return nullptr;
+		}
+		
+		// BitmapFont 自身实现 IFont，直接返回
+		IFont* Font = BitmapFonts[fontName];
+		if (!Font) {
 			return nullptr;
 		}
 
-		// Get the lookup.
-		uint32_t ID = (uint16_t)BitmapFontMap[fontName];
-		BitmapFontLookup* Lookup = BitmapFonts[ID];
-
-		// Assign the data, increment the reference.
-		Lookup->referenceCount++;
-
-		return Lookup->font.resourceData->data;
+		Font->AddRef();
+		return Font;
 	}
-	else if (type == UITextType::eUI_Text_Type_system) {
-		if (SystemFontMap.find(fontName) == SystemFontMap.end()) {
-			GLOG(Log::eError, "A system font named '%s' was not found. Font acquisition failed.", fontName.CStr());
+
+	if (type == UITextType::eUI_Text_Type_system) {
+		if (!SystemFonts.Contains(fontName)) {
+			GLOG(Log::eError, "System font '%s' not found.", fontName.CStr());
+			return nullptr;
+		}
+		// 委托给 SystemFont，由它负责查找或创建对应 size 的 Variant
+		SystemFont* Font = SystemFonts[fontName];
+		if (!Font) {
 			return nullptr;
 		}
 
-		// Get the lookup.
-		uint32_t ID = SystemFontMap[fontName];
-		SystemFontLookup* Lookup = SystemFonts[ID];
-
-		// Search the size variants for the correct size.
-		uint32_t Count = (uint32_t)Lookup->sizeVariants.size();
-		for (uint32_t i = 0; i < Count; ++i) {
-			if (Lookup->sizeVariants[i]->size == (unsigned int)fontSize) {
-				// Assign the data, increment the reference.
-				Lookup->referenceCount++;
-				return Lookup->sizeVariants[i];
-			}
-		}
-
-		// If we reach this point, the size variant doesn't exist. Create it.
-		SystemFontVariantData* Variant = CreateSystemFontVariant(Lookup, fontSize, fontName);
+		SystemFontVariant* Variant = Font->AcquireVariant(fontSize);
 		if (!Variant) {
-			GLOG(Log::eError, "Failed to create variant: %s, index %i, size %i", Lookup->face.CStr(), Lookup->index, fontSize);
 			return nullptr;
 		}
 
-		// Also perform setup for the variant.
-		if (!SetupFontData(Variant)) {
-			GLOG(Log::eError, "Failed to setup font data.");
-		}
-
-		// Add to the lookup's size variant.
-		Lookup->sizeVariants.push_back(Variant);
-		uint32_t Length = (uint32_t)Lookup->sizeVariants.size();
-		// Assign the data, increment the reference.
-		Lookup->referenceCount++;
-		SystemFonts[ID] = Lookup;
-		return Lookup->sizeVariants[Length - 1];
+		Variant->AddRef();
+		return Variant;
 	}
 
-	GLOG(Log::eWarn, "Unsupported font type.");
+	GLOG(Log::eWarn, "FontSystem::Acquire() unsupported font type.");
 	return nullptr;
 }
 
-bool FontSystem::Release(IFontDataBase* text) {
-	// TODO: Lookup font by name in appropriate hashtable.
-	return true;
-}
+bool FontSystem::Release(IFont* font) {
+	if (!font) { return false; }
 
-bool FontSystem::VerifyAtlas(IFontDataBase* font, const FString& text) {
-    if (font == nullptr || text.Length() == 0){ return false;}
-    
-	if (font->type == FontType::eFont_Type_Bitmap) {
-		// Bitmaps don't need verification since they are already generated.
-		return true;
-	} 
-	else if (font->type == FontType::eFont_Type_System) {
-		if (SystemFontMap.find(font->face) == SystemFontMap.end()){
-			GLOG(Log::eError, "A system font named '%s' was not found. Font acquisition failed.", font->face.CStr());
-			return false;
-		}
-
-		// Get the lookup.
-		uint32_t ID = SystemFontMap[font->face];
-		SystemFontLookup* Lookup = SystemFonts[ID];
-
-		return VerifySystemFontSizeVariant(Lookup, font, text);
-	}
-
-	GLOG(Log::eError, "FontSystem::VerifyAtlas() Failed: unknown font type.");
-	return false;
-}
-
-bool FontSystem::SetupFontData(IFontDataBase* font) {
-	// Create map resource.
-	font->atlas.filter_magnify = TextureFilter::eTexture_Filter_Mode_Linear;
-	font->atlas.filter_minify = TextureFilter::eTexture_Filter_Mode_Linear;
-	font->atlas.usage = TextureUsage::eTexture_Usage_Map_Diffuse;
-	if (!Renderer->AcquireTextureMap(&font->atlas)) {
-		GLOG(Log::eError, "Unable to acquire resource for font atlas texture map.");
-		return false;
-	}
-
-	// Check for a tab glyph, as there may not always be one exported. If there is,
-	// store its advanceX and just use it. If there is not, then create one based off spacex4.
-	if (!font->tabXAdvance) {
-		for (uint32_t i = 0; i < font->glyphCount; ++i) {
-			if (font->glyphs[i].codePoint == '\t') {
-				font->tabXAdvance = font->glyphs[i].advanceX;
-				break;
-			}
-		}
-
-		// If still not found, use space x 4.
-		if (!font->tabXAdvance) {
-			for (uint32_t i = 0; i < font->glyphCount; ++i) {
-				// Search for space
-				if (font->glyphs[i].codePoint == ' ') {
-					font->tabXAdvance = (float)font->glyphs[i].advanceX * 4;
-					break;
+	if (font->Release()) {
+		// 引用计数归零，根据 autoRelease 决定是否卸载
+		if (Config.autoRelease) {
+			// 需要找到这个 font 属于哪张注册表并移除
+			// BitmapFont 直接在 BitmapFonts 里找
+			for (auto& [name, bitmapFont] : BitmapFonts) {
+				if (bitmapFont == font) {
+					bitmapFont->ReleaseResource();
+					BitmapFonts.Remove(name);
+					return true;
 				}
 			}
 
-			if (!font->tabXAdvance) {
-				// If still not, hard-code font size * 4.
-				font->tabXAdvance = (float)font->size * 4;
+			// SystemFontVariant 需要通过 face + size 在 SystemFonts 里找
+			// 可以通过 font->GetFace() 和 font->GetSize() 定位
+			FString FaceName = font->GetFace();
+			uint32_t FontSize = font->GetSize();
+			if (SystemFonts.Contains(FaceName)) {
+				SystemFonts[FaceName]->ReleaseVariant(FontSize);
 			}
 		}
 	}
@@ -360,196 +205,8 @@ bool FontSystem::SetupFontData(IFontDataBase* font) {
 	return true;
 }
 
-void FontSystem::CleanupFontData(IFontDataBase* font) {
-	// Relase the texture map resource.
-	Renderer->ReleaseTextureMap(&font->atlas);
-
-	// If a bitmap font, release the reference to the texture.
-	if (font->type == FontType::eFont_Type_Bitmap && font->atlas.texture) {
-		TextureSystem::Release(font->atlas.texture->GetName());
-	}
-	font->atlas.texture = nullptr;
-}
-
-SystemFontVariantData* FontSystem::CreateSystemFontVariant(SystemFontLookup* lookup, int size, const FString& fontName) {
-	SystemFontVariantData* InternalData = NewObject<SystemFontVariantData>();
-	if (!InternalData) {
-		return nullptr;
-	}
-
-	InternalData->atlasSizeX = 1024;	// TODO: Configurable
-	InternalData->atlasSizeY = 1024;
-	InternalData->size = size;
-	InternalData->type = FontType::eFont_Type_System;
-	InternalData->face = fontName;
-	InternalData->internalDataSize = sizeof(SystemFontVariantData);
-
-	// Push default codepoints (ascii 32-127) always, plus a -1 for unknown.
-	InternalData->codepoints = std::vector<int>(96);
-	InternalData->codepoints.push_back(-1);
-	for (int i = 0; i < 95; ++i) {
-		InternalData->codepoints.push_back(i + 32);
-	}
-
-	// Create textures.
-	char FontTexName[255];
-	StringFormat(FontTexName, "__system_text_atlas_%s_i%i_sz%i__", fontName.CStr(), lookup->index, size);
-	InternalData->atlas.texture = TextureSystem::AcquireWriteable(FontTexName, InternalData->atlasSizeX, InternalData->atlasSizeY, 4, true);
-
-	// Obtain some metrics.
-	InternalData->scale = stbtt_ScaleForPixelHeight(&lookup->info, (float)size);
-	int Ascent, Descent, Linegap;
-	stbtt_GetFontVMetrics(&lookup->info, &Ascent, &Descent, &Linegap);
-	InternalData->lineHeight = static_cast<int>((Ascent - Descent + Linegap) * InternalData->scale);
-
-	if (!RebuildSystemFontVariantAtlas(lookup, InternalData)) {
-		return nullptr;
-	}
-
-	return InternalData;
-}
-
-bool FontSystem::RebuildSystemFontVariantAtlas(SystemFontLookup* lookip, IFontDataBase* variant) {
-	SystemFontVariantData* InternalData = (SystemFontVariantData*)variant;
-
-	uint32_t PackImageSize = variant->atlasSizeX * variant->atlasSizeY * sizeof(unsigned char);
-	unsigned char* Pixels = (unsigned char* )Memory::Allocate(PackImageSize, MemoryType::eMemory_Type_Array);
-	uint32_t CodepointCount = (uint32_t)InternalData->codepoints.size();
-	stbtt_packedchar* PackedChars = (stbtt_packedchar*)Memory::Allocate(sizeof(stbtt_packedchar) * CodepointCount, MemoryType::eMemory_Type_Array);
-	
-	// Begin packing all known characters into the atlas. This creates a single-channel image
-	// with rendered glyphs at the given size.
-	stbtt_pack_context Context;
-	if (!stbtt_PackBegin(&Context, Pixels, variant->atlasSizeX, variant->atlasSizeY, 0, 1, 0)) {
-        GLOG(Log::eError, "stbtt_PackBegin() Failed.");
-		return false;
-	}
-
-	// Fit all codepoints into a single range for packing.
-	stbtt_pack_range Range;
-	Range.first_unicode_codepoint_in_range = 0;
-	Range.font_size = (float)variant->size;
-	Range.num_chars = CodepointCount;
-	Range.chardata_for_range = PackedChars;
-	Range.array_of_unicode_codepoints = InternalData->codepoints.data();
-	if (!stbtt_PackFontRanges(&Context, (unsigned char*)lookip->fontBinary, lookip->index, &Range, 1)) {
-        stbtt_PackEnd(&Context);
-        GLOG(Log::eError, "stbtt_PackFontRanges() Failed.");
-		return false;
-	}
-
-	stbtt_PackEnd(&Context);
-
-	// Convert from single-channel to RGBA, or pack_image_size * 4.
-	unsigned char* RGBAPixels = (unsigned char*)Memory::Allocate(PackImageSize * 4, eMemory_Type_Array);
-	for (uint32_t j = 0; j < PackImageSize; j++) {
-		RGBAPixels[(j * 4) + 0] = Pixels[j];
-		RGBAPixels[(j * 4) + 1] = Pixels[j];
-		RGBAPixels[(j * 4) + 2] = Pixels[j];
-		RGBAPixels[(j * 4) + 3] = Pixels[j];
-	}
-
-	// Write texture data to atlas.
-	TextureSystem::WriteData(variant->atlas.texture, 0, PackImageSize * 4, RGBAPixels);
-
-	// Free pixel/rgba pixel data.
-	Memory::Free(Pixels, MemoryType::eMemory_Type_Array);
-	Pixels = nullptr;
-	Memory::Free(RGBAPixels, MemoryType::eMemory_Type_Array);
-	RGBAPixels = nullptr;
-
-	// Regenerate glyphs
-	if (variant->glyphs && variant->glyphCount) {
-		Memory::Free(variant->glyphs, MemoryType::eMemory_Type_Array);
-		variant->glyphs = nullptr;
-	}
-
-	variant->glyphCount = CodepointCount;
-	variant->glyphs = (FontGlyph*)Memory::Allocate(sizeof(FontGlyph) * variant->glyphCount, MemoryType::eMemory_Type_Array);
-	for (unsigned short i = 0; i < variant->glyphCount; ++i) {
-		stbtt_packedchar* pc = &PackedChars[i];
-		FontGlyph* g = &variant->glyphs[i];
-		g->codePoint = InternalData->codepoints[i];
-		g->pageID = 0;
-		g->offsetX = (short)pc->xoff;
-		g->offsetY = (short)pc->yoff;
-		g->x = pc->x0;
-		g->y = pc->y0;
-		g->width = pc->x1 - pc->x0;
-		g->height = pc->y1 - pc->y0;
-		g->advanceX = (short)pc->xadvance;
-	}
-
-	// Regenerate kernings.
-	if (variant->kerningCount && variant->kernings) {
-		Memory::Free(variant->kernings, MemoryType::eMemory_Type_Array);
-		variant->kernings = nullptr;
-	}
-
-	variant->kerningCount = stbtt_GetKerningTableLength(&lookip->info);
-	if (variant->kerningCount) {
-		variant->kernings = (FontKerning*)Memory::Allocate(sizeof(FontKerning) * variant->kerningCount, MemoryType::eMemory_Type_Array);
-		// Get the kerning table for the current font.
-		stbtt_kerningentry* KerningTable = (stbtt_kerningentry*)Memory::Allocate(sizeof(stbtt_kerningentry) * variant->kerningCount, MemoryType::eMemory_Type_Array);
-		int EntryCount = stbtt_GetKerningTable(&lookip->info, KerningTable, variant->kerningCount);
-		if (EntryCount != (int)variant->kerningCount) {
-			GLOG(Log::eError, "Kerning entry count mismatch: %i -> %i.", EntryCount, variant->kerningCount);
-			return false;
-		}
-
-		for (uint32_t i = 0; i < variant->kerningCount; ++i) {
-			FontKerning* k = &variant->kernings[i];
-			k->codePoint0 = KerningTable[i].glyph1;
-			k->codePoint1 = KerningTable[i].glyph2;
-			k->amount = (short)KerningTable[i].advance;
-		}
-	}
-	else {
-		variant->kernings = nullptr;
-	}
-
-	return true;
-}
-
-bool FontSystem::VerifySystemFontSizeVariant(SystemFontLookup* lookup, IFontDataBase* variant, const FString& text) {
-	SystemFontVariantData* InternalData = (SystemFontVariantData*)variant;
-
-	uint32_t CharLength = (uint32_t)text.Length();
-	uint32_t AddedCodepointCount = 0;
-	for (uint32_t i = 0; i < CharLength;) {
-		FCodepointResult Result = FString::BytesToCodepoint(text, text.Length(), i);
-		if (!Result.bValid) {
-			GLOG(Log::eError, "BytesToCodepoint() Failed to get codepoint.");
-			++i;
-			continue;
-		}
-		else {
-			i += Result.Advance;
-			if (Result.Codepoint < 128) {
-				continue;
-			}
-
-			uint32_t CodepointCount = (uint32_t)InternalData->codepoints.size();
-			bool Found = false;
-			for (uint32_t j = 95; j < CodepointCount; j++) {
-				if (InternalData->codepoints[j] == Result.Codepoint) {
-					Found = true;
-					break;
-				}
-			}
-
-			if (!Found) {
-				InternalData->codepoints.push_back(Result.Codepoint);
-				AddedCodepointCount++;
-			}
-		}
-	}
-
-	// If codepoints were added, rebuild the atlas.
-	if (AddedCodepointCount > 0) {
-		return RebuildSystemFontVariantAtlas(lookup, variant);
-	}
-
-	// Otherwise, proceed as normal.
-	return true;
+bool FontSystem::VerifyAtlas(IFont* font, const FString& text) {
+	if (!font) { return false; }
+	// FontSystem 不再需要感知字体类型，直接委托
+	return font->VerifyAtlas(text);
 }

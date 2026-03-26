@@ -10,10 +10,9 @@
 #include "IGame.hpp"
 #include "Platform/Platform.hpp"
 
-#include "Renderer/RendererFrontend.hpp"
-#include "Renderer/Interface/IRenderpass.hpp"
+#include "Rendering/Renderer.hpp"
+#include "Rendering/Interface/IRenderpass.hpp"
 #include "Math/MathTypes.hpp"
-#include "Containers/TString.hpp"
 
 // Systems
 #include "Systems/TextureSystem.h"
@@ -76,9 +75,9 @@ bool Engine::Initialize(){
 	// Init texture system
 	SResourceSystemConfig ResourceSystemConfig;
 	ResourceSystemConfig.max_loader_count = 32;
-    ResourceSystemConfig.asset_base_path = std::string(ROOT_PATH) + "/Assets";
+    ResourceSystemConfig.asset_base_path = FString(ROOT_PATH) + "/Assets";
 
-	if (!ResourceSystem::Initialize(ResourceSystemConfig)) {
+	if (!ResourceSystem::Get().Initialize(ResourceSystemConfig)) {
 		GLOG(Log::eFatal, "Resource system failed to initialize!");
 		return false;
 	}
@@ -96,7 +95,7 @@ bool Engine::Initialize(){
 	ShaderSystemConfig.max_uniform_count = 128;
 	ShaderSystemConfig.max_global_textures = 31;
 	ShaderSystemConfig.max_instance_textures = 31;
-	if (!ShaderSystem::Initialize(Renderer, ShaderSystemConfig)) {
+	if (!ShaderSystem::Get().Initialize(Renderer, ShaderSystemConfig)) {
 		GLOG(Log::eFatal, "Shader system failed to initialize!");
 		return false;
 	}
@@ -120,34 +119,19 @@ bool Engine::Initialize(){
 
 	// Initialize the job system.
 	// Requires knowledge of renderer multithread support, so should be initialized here.
-	uint32_t JobThreadTypes[15];
-	for (uint32_t i = 0; i < 15; ++i) {
-		JobThreadTypes[i] = (uint32_t)JobType::eGeneral;
-	}
-
-	if (ThreadCount == 1 || !RenderWithMultithread) {
-		// Everything on one job thread.
-		JobThreadTypes[0] |= ((uint32_t)JobType::eGPU_Resource | (uint32_t)JobType::eResource_Load);
-	}
-	else if (ThreadCount == 2) {
-		// Split things between 2 threads.
-		JobThreadTypes[0] |= (uint32_t)JobType::eGPU_Resource;
-		JobThreadTypes[1] |= (uint32_t)JobType::eResource_Load;
-	}
-	else {
-		// Dedicate the first 2 threads to these thing, pass of general tasks to other threads.
-		JobThreadTypes[0] = (uint32_t)JobType::eGPU_Resource;
-		JobThreadTypes[1] = (uint32_t)JobType::eResource_Load;
-	}
+	uint32_t JobThreadTypes[3];
+	JobThreadTypes[0] = RenderWithMultithread ? ThreadCount / 2 : ThreadCount;	// General
+	JobThreadTypes[1] = RenderWithMultithread ? ThreadCount / 4 : 0;	// Render
+	JobThreadTypes[2] = RenderWithMultithread ? ThreadCount - JobThreadTypes[0] - JobThreadTypes[1] : 0;	// Resource
 
 	// Job system
-	if (!JobSystem::Initialize(ThreadCount, JobThreadTypes)) {
+	if (!JobSystem::Initialize(JobThreadTypes)) {
 		GLOG(Log::eFatal, "Job system failed to initialize!");
 		return false;
 	}
 
 	// Render system.
-	if (!Renderer->Initialize(GameInst->GetApplicationName(),Vector2(width, height), & platform)) {
+	if (!Renderer->Initialize(GameInst->GetApplicationName(),Vector2(width, height), &platform)) {
 		GLOG(Log::eFatal, "Renderer failed to initialize!");
 		return false;
 	}
@@ -161,7 +145,7 @@ bool Engine::Initialize(){
 	// Init texture system
 	STextureSystemConfig TextureSystemConfig;
 	TextureSystemConfig.max_texture_count = 65536;
-	if (!TextureSystem::Initialize(Renderer, TextureSystemConfig)) {
+	if (!TextureSystem::Get().Initialize(Renderer, TextureSystemConfig)) {
 		GLOG(Log::eFatal, "Texture system failed to initialize!");
 		return false;
 	}
@@ -169,13 +153,13 @@ bool Engine::Initialize(){
 	// Init camera system
 	SCameraSystemConfig CameraSystemConfig;
 	CameraSystemConfig.max_camera_count = 61;
-	if (!CameraSystem::Initialize(Renderer, CameraSystemConfig)) {
+	if (!CameraSystem::Get().Initialize(Renderer, CameraSystemConfig)) {
 		GLOG(Log::eFatal, "Camera system failed to initialize!");
 		return false;
 	}
 
 	// Init font system.
-	if (!FontSystem::Initialize(Renderer, GameInst->GetFontConfig())) {
+	if (!FontSystem::Get().Initialize(Renderer, GameInst->GetFontConfig())) {
 		GLOG(Log::eFatal, "Font system failed to initialize!");
 		return false;
 	}
@@ -183,34 +167,22 @@ bool Engine::Initialize(){
 	// Init render view system.
 	SRenderViewSystemConfig RenderViewSysConfig;
 	RenderViewSysConfig.max_view_count = 255;
-	if (!RenderViewSystem::Initialize(Renderer, RenderViewSysConfig)) {
+	RenderViewSysConfig.config_path = GameInst->GetRenderviewConfigPath();
+	if (!RenderViewSystem::Get().Initialize(Renderer, RenderViewSysConfig)) {
 		GLOG(Log::eFatal, "Render view system failed to intialize!");
 		return false;
-	}
-
-	// Load render views from app config.
-	const std::vector<RenderViewConfig>& Renderviews = GameInst->GetRenderviews();
-	uint32_t ViewCount = (uint32_t)Renderviews.size();
-	for (uint32_t v = 0; v < ViewCount; ++v) {
-		const RenderViewConfig& View = Renderviews[v];
-		if (!RenderViewSystem::Create(View)) {
-			GLOG(Log::eFatal, "Failed to create view '%s'.", View.name);
-			return false;
-		}
 	}
 
 	// Init material system
 	SMaterialSystemConfig MaterialSystemConfig;
 	MaterialSystemConfig.max_material_count = 4096;
-	if (!MaterialSystem::Initialize(Renderer, MaterialSystemConfig)) {
+	if (!MaterialSystem::Get().Initialize(Renderer, MaterialSystemConfig)) {
 		GLOG(Log::eFatal, "Material system failed to initialize!");
 		return false;
 	}
 
 	// Init geometry system
-	SGeometrySystemConfig GeometrySystemConfig;
-	GeometrySystemConfig.max_geometry_count = 4096;
-	if (!GeometrySystem::Initialize(Renderer, GeometrySystemConfig)) {
+	if (!GeometrySystem::Get().Initialize(Renderer)) {
 		GLOG(Log::eFatal, "Geometry system failed to initialize!");
 		return false;
 	}
@@ -239,11 +211,11 @@ bool Engine::Run() {
 	double FrameElapsedTime = 0.0;
 	double TargetFrameSeconds = 1.0 / 120.0;
 
-	GLOG(Log::eDebug, Memory::GetMemoryUsageStr());
+	GLOG(Log::eDebug, Memory::GetMemoryUsageStr().CStr());
 
 	GlobalFileWatcher = NewObject<FileWatcher>();
 
-	if (ShaderSystem::GLOBAL_SHADER_TYPE == ShaderLanguage::eGLSL) {
+	if (ShaderSystem::Get().GetShaderLanguage() == EShaderLanguage::eGLSL) {
 		GlobalFileWatcher->AddWatchFolder("../Shaders/glsl/");
 	}
 	else {
@@ -332,21 +304,21 @@ bool Engine::Run() {
 	EngineEvent::Unregister(eEventCode::Resize, nullptr,
 		std::bind(&Engine::OnResized, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
 
-	RenderViewSystem::Shutdown();
-	CameraSystem::Shutdown();
-	FontSystem::Shutdown();
-	GeometrySystem::Shutdown();
-	MaterialSystem::Shutdown();
-	TextureSystem::Shutdown();
+	RenderViewSystem::Get().Shutdown();
+	CameraSystem::Get().Shutdown();
+	FontSystem::Get().Shutdown();
+	GeometrySystem::Get().Shutdown();
+	MaterialSystem::Get().Shutdown();
+	TextureSystem::Get().Shutdown();
 	JobSystem::Shutdown();
-	ShaderSystem::Shutdown();
+	ShaderSystem::Get().Shutdown();
 
 	Renderer->Shutdown();
 	Memory::Free(Renderer, MemoryType::eMemory_Type_Renderer);
 
 	EngineEvent::Shutdown();
 	Controller::Shutdown();
-	ResourceSystem::Shutdown();
+	ResourceSystem::Get().Shutdown();
 	Platform::PlatformShutdown(&platform);
 
 	return true;

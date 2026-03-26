@@ -1,9 +1,9 @@
 ﻿#pragma once
 
-#include <string>
 #include <unordered_map>
 #include <Defines.hpp>
 #include "Framework/Classes/CameraActor.h"
+#include "Containers/FString.hpp"
 
 class IRenderer;
 
@@ -16,8 +16,11 @@ struct SCameraSystemConfig {
 
 class CameraSystem {
 public:
-	static bool Initialize(IRenderer* renderer, SCameraSystemConfig config);
-	static void Shutdown();
+	static DAPI CameraSystem& Get();
+
+public:
+	bool Initialize(IRenderer* renderer, SCameraSystemConfig config);
+	void Shutdown();
 
 	/**
 	 * @brief Acquires a pointer to a camera by name.
@@ -27,7 +30,7 @@ public:
 	 * @param name The name of the camera to acquire.
 	 * @return A pointer to a camera if successful.
 	 */
-	static ACameraActor* Acquire(const std::string& name);
+	ACameraActor* Acquire(const FString& name);
 
 	/**
 	 * @brief Releases a camera with the given name, Internal reference counter is
@@ -36,23 +39,23 @@ public:
 	 * 
 	 * @param name The name of the camera to release.
 	 */
-	static void Release(const std::string& name);
+	void Release(const FString& name);
 
 	/**
 	 * @brief Gets a pointer to the default camera.
 	 * 
 	 * @return A pointer to default camera.
 	 */
-	DAPI static ACameraActor* GetDefault();
+	DAPI ACameraActor* GetDefault();
 
 private:
-	static IRenderer* Renderer;
-	static bool Initialized;
+	IRenderer* Renderer;
+	bool Initialized;
 
-	static SCameraSystemConfig Config;
-	static std::vector<ACameraActor*> Cameras;
-	static std::unordered_map<std::string, uint64_t> CameraMap;
+	SCameraSystemConfig Config;
+	std::vector<ACameraActor*> Cameras;
+	std::unordered_map<FString, uint64_t> CameraMap;
 	
-	static ACameraActor* DefaultCamera;
+	ACameraActor* DefaultCamera;
 };
 
