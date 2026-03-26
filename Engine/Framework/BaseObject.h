@@ -3,7 +3,7 @@
 #include "Framework/IObject.h"
 
 // 类声明
-#define DECLARE_CLASS_TYPE(ClassName)                        \
+#define DECLARE_CLASS_TYPE(ClassName)  public:                   \
     static uint32_t StaticTypeID() {                             \
         static uint32_t ID = ComponentTypeCounter::Next();       \
         return ID;                                               \

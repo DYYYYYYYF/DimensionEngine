@@ -1,6 +1,7 @@
 ﻿#include "CameraSystem.h"
 #include "Core/EngineLogger.hpp"
 #include "Core/DMemory.hpp"
+#include "Framework/Components/CameraComponent.h"
 
 CameraSystem& CameraSystem::Get() {
 	static CameraSystem CameraSystemInstance;
@@ -110,7 +111,8 @@ void CameraSystem::Release(const FString& name) {
 
 			Cam->DecreaseReferenceCount();
 			if (Cam->GetReferenceCount() < 1) {
-				Cam->Reset();
+				UCameraComponent* CameraComp = Cam->GetComponent<UCameraComponent>();
+				if (CameraComp) CameraComp->Reset();
 				CameraMap[name] = INVALID_ID;
 			}
 		}

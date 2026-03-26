@@ -17,6 +17,7 @@
 #include "Rendering/Renderer.hpp"
 #include "Rendering/Interface/IRenderpass.hpp"
 #include "Rendering/Interface/IRendererBackend.hpp"
+#include "Framework/Components/CameraComponent.h"
 
 static bool RenderViewSkyboxOnEvent(eEventCode code, void* sender, void* listenerInst, SEventContext context) {
 	IRenderView* self = (IRenderView*)listenerInst;
@@ -108,7 +109,7 @@ void RenderViewSkybox::OnResize(uint32_t width, uint32_t height) {
 
 bool RenderViewSkybox::OnBuildPacket(IRenderviewPacketData* data, struct RenderViewPacket* out_packet) {
 	if (data == nullptr || out_packet == nullptr) {
-		GLOG(Log::eWarn, "RenderViewSkybox::OnBuildPacke() Requires valid pointer to packet and data.");
+		GLOG(Log::eError, "RenderViewSkybox::OnBuildPacke() Requires valid pointer to packet and data.");
 		return false;
 	}
 
@@ -116,9 +117,15 @@ bool RenderViewSkybox::OnBuildPacket(IRenderviewPacketData* data, struct RenderV
 	out_packet->view = this;
 
 	// Set matrix, etc.
+	UCameraComponent* CameraComp = WorldCamera->GetCameraComponent();
+	if (!CameraComp) {
+		GLOG(Log::eError, "RenderViewSkybox::OnBuildPacke() Camera is nullptr.");
+		return false;
+	}
+
 	out_packet->projection_matrix = ProjectionMatrix;
-	out_packet->view_matrix = WorldCamera->GetViewMatrix();
-	out_packet->view_position = WorldCamera->GetPosition();
+	out_packet->view_matrix = CameraComp->GetViewMatrix();
+	out_packet->view_position = CameraComp->GetPosition();
 
 	// Just set the extended data to the skybox data.
 	out_packet->extended_data = NewObject<SkyboxPacketData>(*SkyboxData);
@@ -152,8 +159,14 @@ bool RenderViewSkybox::OnRender(struct RenderViewPacket* packet, RHI* back_rende
 			return false;
 		}
 
+		UCameraComponent* CameraComp = WorldCamera->GetCameraComponent();
+		if (!CameraComp) {
+			GLOG(Log::eError, "RenderViewSkybox::OnBuildPacke() Camera is nullptr.");
+			return false;
+		}
+
 		// Get the view matrix, but zero out the position so the skybox stays put on screen.
-		Matrix4 ViewMatrix = WorldCamera->GetViewMatrix();
+		Matrix4 ViewMatrix = CameraComp->GetViewMatrix();
 		ViewMatrix.data[12] = 0.0f;
 		ViewMatrix.data[13] = 0.0f;
 		ViewMatrix.data[14] = 0.0f;

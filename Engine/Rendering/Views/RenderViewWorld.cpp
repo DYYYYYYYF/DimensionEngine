@@ -16,6 +16,7 @@
 #include "Rendering/Renderer.hpp"
 #include "Rendering/Interface/IRenderpass.hpp"
 #include "Rendering/Interface/IRendererBackend.hpp"
+#include "Framework/Components/CameraComponent.h"
 
 struct GeometryDistance {
 	GeometryRenderData g;
@@ -150,7 +151,7 @@ void RenderViewWorld::OnResize(uint32_t width, uint32_t height) {
 
 bool RenderViewWorld::OnBuildPacket(IRenderviewPacketData* data, struct RenderViewPacket* out_packet) {
 	if (data == nullptr || out_packet == nullptr) {
-		GLOG(Log::eWarn, "RenderViewUI::OnBuildPacke() Requires valid pointer to packet and data.");
+		GLOG(Log::eError, "RenderViewUI::OnBuildPacke() Requires valid pointer to packet and data.");
 		return false;
 	}
 
@@ -159,9 +160,14 @@ bool RenderViewWorld::OnBuildPacket(IRenderviewPacketData* data, struct RenderVi
 	out_packet->view = this;
 
 	// Set matrix, etc.
+	UCameraComponent* CameraComp = WorldCamera->GetComponent<UCameraComponent>();
+	if (!CameraComp) {
+		GLOG(Log::eError, "RenderViewUI::OnBuildPacke() Camera is nullptr.");
+		return false;
+	}
 	out_packet->projection_matrix = ProjectionMatrix;
-	out_packet->view_matrix = WorldCamera->GetViewMatrix();
-	out_packet->view_position = WorldCamera->GetPosition();
+	out_packet->view_matrix = CameraComp->GetViewMatrix();
+	out_packet->view_position = CameraComp->GetPosition();
 	out_packet->ambient_color = AmbientColor;
 	out_packet->global_time = Data->GlobalTime;
 
@@ -186,7 +192,7 @@ bool RenderViewWorld::OnBuildPacket(IRenderviewPacketData* data, struct RenderVi
 			// then calculate the distance between it and the camera, and finally save it to a list to be sorted.
 			// NOTE: This isn't perfect for translucent meshes that intersect, but is enough for our purposes now.
 			Vector3 Center = GeometryData[i].geometry->Center.Transform(GData.model_mat);
-			float Distance = Center.Distance(WorldCamera->GetPosition());
+			float Distance = Center.Distance(CameraComp->GetPosition());
 
 			GeometryDistance gDist;
 			gDist.distance = Dabs(Distance);

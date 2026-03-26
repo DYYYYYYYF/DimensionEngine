@@ -21,6 +21,7 @@
 #include "Math/ForwardDeclarations.hpp"
 #include "Framework/Classes/StaticMeshActor.h"
 #include "GameLogic/TestActors/RotationCubeActor.h"
+#include "Framework/Components/CameraComponent.h"
 
 static FrustumCullMode CullMode = FrustumCullMode::eAABB_Cull;
 static bool EnableFrustumCulling = true;
@@ -129,18 +130,26 @@ bool GameInstance::Initialize() {
 	Vector3 Rotation = Content.ReadVector3("Camera.Rotation");
 
 	WorldCamera = CameraSystem::Get().GetDefault();
-	WorldCamera->SetPosition(Position);
-	WorldCamera->SetEulerAngles(Rotation);
+	if (WorldCamera) {
+		UCameraComponent* CameraComp = WorldCamera->GetCameraComponent();
+		if (CameraComp) {
+			CameraComp->SetPosition(Position);
+			CameraComp->SetEulerAngles(Rotation);
+		}
+	}
+	
 
 	// Create test ui text objects.
-	TestText = NewObject<ATextActor>(UITextType::eUI_Text_Type_Bitmap, "Ubuntu Mono 21px", 21, "Test! \n Yooo!");
+	FString TestTextName = "Ubuntu Mono 21px";
+	FString TestTextContent = "Test! \n Yooo!";
+	TestText = NewObject<ATextActor>(UITextType::eUI_Text_Type_Bitmap, TestTextName, 21, TestTextContent);
 	if (TestText) {
 		TestText->SetLocation(Vector3(150, 450, 0));
 		TestText->SetName("Render information window.");
 	}
 
-	TestSysText = NewObject<ATextActor>(UITextType::eUI_Text_Type_system,
-		"Noto Sans CJK JP", 25, "Keyboard map:\
+	FString TestSystemName = "Noto Sans CJK JP";
+	FString TestSystemContent = "Keyboard map:\
 		\nLoad models:\
 		\n\tO: Scene1 P: Scene2\
 		\n\tK: Scene3 L: Scene4\
@@ -148,7 +157,8 @@ bool GameInstance::Initialize() {
 		\nF1: Default view.\
 		\nF2: Normal view.\
 		\nF3: Material view.\
-		\nF4: Depth view.");
+		\nF4: Depth view.";
+	TestSysText = NewObject<ATextActor>(UITextType::eUI_Text_Type_system, TestSystemName, 25, TestSystemContent);
 
 	if (TestSysText) {
 		TestSysText->SetLocation(Vector3(100, 200, 0));
@@ -288,11 +298,17 @@ void GameInstance::Shutdown() {
 		return;
 	}
 
+	UCameraComponent* CameraComp = WorldCamera->GetCameraComponent();
+	if (!CameraComp) {
+		GLOG(Log::eError, "RenderViewSkybox::OnBuildPacke() Camera is nullptr.");
+		return;
+	}
+
 	JsonObject Content = JsonObject(MaterialAsset);
 	Content.WriteInt("Window.Width", (int)WindowSize.Width);
 	Content.WriteInt("Window.Height", (int)WindowSize.Height);
-	Content.WriteVector3("Camera.Position", WorldCamera->GetPosition());
-	Content.WriteVector3("Camera.Rotation", WorldCamera->GetEulerAngles());
+	Content.WriteVector3("Camera.Position", CameraComp->GetPosition());
+	Content.WriteVector3("Camera.Rotation", CameraComp->GetEulerAngles());
 	Content.SaveToFile(MaterialAsset);
 
 	// TODO: TEMP
@@ -327,19 +343,25 @@ bool GameInstance::Update(float delta_time) {
 	Controller::GetMousePosition(cx, cy);
 	Controller::GetPreviousMousePosition(px, py);
 	float MouseMoveSpeed = 0.005f;
+	UCameraComponent* CameraComp = WorldCamera->GetCameraComponent();
+	if (!CameraComp) {
+		return false;
+	}
+
 	if (Controller::IsButtonDown(eButtons::Right)) {
 		if (cx != px) {
-			WorldCamera->RotateYaw((px - cx) * MouseMoveSpeed);
+			CameraComp->RotateYaw((px - cx) * MouseMoveSpeed);
 		}
+
 		if (cy != py) {
-			WorldCamera->RotatePitch((py - cy) * MouseMoveSpeed);
+			CameraComp->RotatePitch((py - cy) * MouseMoveSpeed);
 		}
 	}
 
 	// Text
 	WorldCamera = CameraSystem::Get().GetDefault();
-	Vector3 Pos = WorldCamera->GetPosition();
-	Vector3 Rot = WorldCamera->GetEulerAngles();
+	Vector3 Pos = CameraComp->GetPosition();
+	Vector3 Rot = CameraComp->GetEulerAngles();
 
 	// Mouse state
 	bool LeftDown = Controller::IsButtonDown(eButtons::Left);
@@ -355,11 +377,11 @@ bool GameInstance::Update(float delta_time) {
 	Metrics::Frame(&FPS, &FrameTime);
 
 	// Update the frustum.
-	Vector3 Forward = WorldCamera->Forward();
-	Vector3 Right = WorldCamera->Right();
-	Vector3 Up = WorldCamera->Up();
+	Vector3 Forward = CameraComp->Forward();
+	Vector3 Right = CameraComp->Right();
+	Vector3 Up = CameraComp->Up();
 	// TODO: Get camera fov, aspect etc.
-	CameraFrustum = Frustum(WorldCamera->GetPosition(), Forward, Right, Up, 
+	CameraFrustum = Frustum(CameraComp->GetPosition(), Forward, Right, Up,
 		(float)WindowSize.Width / (float)WindowSize.Height, Deg2Rad(45.0f), 0.1f, 1000.0f);
 
 	// NOTE: starting at a reasonable default to avoid too many realloc.
@@ -484,7 +506,7 @@ bool GameInstance::Update(float delta_time) {
 		(float)FrameTime,
 		DrawCount
 	);
-	TestText->SetContent(FPSText);
+	TestText->SetText(FPSText);
 
 	GameConsole->Tick(delta_time);
 

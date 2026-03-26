@@ -17,6 +17,7 @@
 #include "Rendering/Interface/IRendererBackend.hpp"
 #include "Framework/Classes/TextActor.h"
 #include "Framework/Components/StaticMeshComponent.h"
+#include "Framework/Components/CameraComponent.h"
 
 static bool RenderViewPickOnEvent(eEventCode code, void* sender, void* listenerInst, SEventContext context) {
 	IRenderView* self = (IRenderView*)listenerInst;
@@ -214,9 +215,18 @@ bool RenderViewPick::OnBuildPacket(IRenderviewPacketData* data, struct RenderVie
 	PickPacketData* PacketData = (PickPacketData*)data;
 	out_packet->view = this;
 
-	// TODO: Get active camera.
+	// Get active camera.
 	ACameraActor* WorldCamera = CameraSystem::Get().GetDefault();
-	WorldShaderInfo.ViewMatrix = WorldCamera->GetViewMatrix();
+	if (!WorldCamera) {
+		return false;
+	}
+
+	UCameraComponent* CameraComponent = WorldCamera->GetCameraComponent();
+	if (!CameraComponent) {
+		return false;
+	}
+
+	WorldShaderInfo.ViewMatrix = CameraComponent->GetViewMatrix();
 
 	// Set the pick packet data to extended data.
 	PacketData->UIGeometryCount = 0;
@@ -488,7 +498,12 @@ bool RenderViewPick::OnRender(struct RenderViewPacket* packet, RHI* back_rendere
 				GLOG(Log::eError, "Failde to apply model matrix for text.");
 			}
 
-			Text->Draw();
+			UTextComponent* TextComp = Text->GetTextComponent();
+			if (!TextComp) {
+				return false;
+			}
+
+			TextComp->Draw();
 		}
 
 		Pass->End();

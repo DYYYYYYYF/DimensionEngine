@@ -20,6 +20,8 @@
 #include "Rendering/Interface/IRenderpass.hpp"
 #include "Rendering/Interface/IRendererBackend.hpp"
 
+#include "Framework/Components/CameraComponent.h"
+
 static bool RenderViewWorldDeferredOnEvent(eEventCode code, void* sender, void* listenerInst, SEventContext context) {
 	IRenderView* self = (IRenderView*)listenerInst;
 	if (self == nullptr) {
@@ -212,10 +214,15 @@ bool RenderViewWorldDeferred::OnBuildPacket(IRenderviewPacketData* data, struct 
 	const std::vector<GeometryRenderData> GeometryData = Data->Meshes;
 	out_packet->view = this;
 
+	UCameraComponent* CameraComp = WorldCamera->GetCameraComponent();
+	if (!CameraComp) {
+		return false;
+	}
+
 	// 设置矩阵等
 	out_packet->projection_matrix = ProjectionMatrix;
-	out_packet->view_matrix = WorldCamera->GetViewMatrix();
-	out_packet->view_position = WorldCamera->GetPosition();
+	out_packet->view_matrix = CameraComp->GetViewMatrix();
+	out_packet->view_position = CameraComp->GetPosition();
 	out_packet->ambient_color = AmbientColor;
 	out_packet->global_time = Data->GlobalTime;
 

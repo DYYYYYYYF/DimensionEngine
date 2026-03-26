@@ -210,25 +210,29 @@ bool RenderViewUI::OnRender(struct RenderViewPacket* packet, RHI* back_renderer,
 		UIPacketData* PacketData = (UIPacketData*)packet->extended_data;
 		for (uint32_t i = 0; i < PacketData->textCount; ++i) {
 			ATextActor* Text = PacketData->Textes[i];
-			UsedShader->BindInstance(Text->InstanceID);
+			if (!Text) continue;
+			UTextComponent* TextComp = Text->GetTextComponent();
+			if (!TextComp) continue;
 
-			if (!UsedShader->SetUniformByIndex(DiffuseMapLocation, &Text->Data->GetAtlas())) {
+			UsedShader->BindInstance(TextComp->GetInstance());
+
+			if (!UsedShader->SetUniformByIndex(DiffuseMapLocation, &TextComp->GetFont()->GetAtlas())) {
 				GLOG(Log::eError, "Failed to apply bitmap font diffuse map uniform.");
 				return false;
 			}
 
 			// TODO: font color
-			Vector4 FontColor = Text->GetColor();
+			Vector4 FontColor = TextComp->GetColor();
 			if (!UsedShader->SetUniformByIndex(DiffuseColorLocation, &FontColor)) {
 				GLOG(Log::eError, "Failed to apply bitmap font diffuse color uniform.");
 				return false;
 			}
 
-			bool NeedUpdate = Text->GetFrameNumber() != frame_number;
+			bool NeedUpdate = TextComp->GetFrameNumber() != frame_number;
 			UsedShader->ApplyInstance(NeedUpdate);
 
 			// Sync frame number.
-			Text->SetFrameNumber(frame_number);
+			TextComp->SetFrameNumber(frame_number);
 
 			// Apply the locals.
 			Matrix4 Model = Text->GetLocalTransform();
@@ -236,7 +240,7 @@ bool RenderViewUI::OnRender(struct RenderViewPacket* packet, RHI* back_renderer,
 				GLOG(Log::eError, "Failde to apply model matrix for text.");
 			}
 
-			Text->Draw();
+			TextComp->Draw();
 		}
 
 		Pass->End();

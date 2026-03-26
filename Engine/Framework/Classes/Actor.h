@@ -14,7 +14,7 @@ public:
 public:
 	AActor();
 	AActor(const FString& Name);
-	virtual ~AActor() {}
+	virtual ~AActor() { Destroy(); }
 
 public:
 	virtual void BeginPlay();

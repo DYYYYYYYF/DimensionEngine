@@ -3,6 +3,7 @@
 #include <Core/DMemory.hpp>
 #include <Core/EngineLogger.hpp>
 #include <Framework/Classes/CameraActor.h>
+#include <Framework/Components/CameraComponent.h>
 
 void Keybind::GameOnEscape(eKeys key, KeymapEntryBindType type, KeymapModifierFlags modifiers, void* user_data) {
 	(void)modifiers;
@@ -30,7 +31,12 @@ void Keybind::GameOnYaw(eKeys key, KeymapEntryBindType type, KeymapModifierFlags
 		f = -1.0f;
 	}
 	
-	GameInst->WorldCamera->RotateYaw(f * GameInst->DeltaTime);
+	UCameraComponent* CameraComp = GameInst->WorldCamera->GetCameraComponent();
+	if (!GameInst->WorldCamera) {
+		GLOG(Log::eError, "RenderViewSkybox::OnBuildPacke() Camera is nullptr.");
+		return;
+	}
+	CameraComp->RotateYaw(f * GameInst->DeltaTime);
 }
 
 void Keybind::GameOnPitch(eKeys key, KeymapEntryBindType type, KeymapModifierFlags modifiers, void* user_data) {
@@ -50,7 +56,13 @@ void Keybind::GameOnPitch(eKeys key, KeymapEntryBindType type, KeymapModifierFla
 		f = -1.0f;
 	}
 
-	GameInst->WorldCamera->RotatePitch(f * GameInst->DeltaTime);
+	UCameraComponent* CameraComp = GameInst->WorldCamera->GetCameraComponent();
+	if (!GameInst->WorldCamera) {
+		GLOG(Log::eError, "RenderViewSkybox::OnBuildPacke() Camera is nullptr.");
+		return;
+	}
+
+	CameraComp->RotatePitch(f * GameInst->DeltaTime);
 }
 
 void Keybind::GameOnMoveForward(eKeys key, KeymapEntryBindType type, KeymapModifierFlags modifiers, void* user_data) {
@@ -67,7 +79,13 @@ void Keybind::GameOnMoveForward(eKeys key, KeymapEntryBindType type, KeymapModif
 	if (Controller::IsKeyDown(eKeys::Shift)) {
 		TempSpeed *= 2.0f;
 	}
-	GameInst->WorldCamera->MoveForward(TempSpeed * GameInst->DeltaTime);
+
+	UCameraComponent* CameraComp = GameInst->WorldCamera->GetCameraComponent();
+	if (!GameInst->WorldCamera) {
+		GLOG(Log::eError, "RenderViewSkybox::OnBuildPacke() Camera is nullptr.");
+		return;
+	}
+	CameraComp->MoveForward(TempSpeed * GameInst->DeltaTime);
 }
 
 void Keybind::GameOnMoveBackward(eKeys key, KeymapEntryBindType type, KeymapModifierFlags modifiers, void* user_data) {
@@ -84,7 +102,13 @@ void Keybind::GameOnMoveBackward(eKeys key, KeymapEntryBindType type, KeymapModi
 	if (Controller::IsKeyDown(eKeys::Shift)) {
 		TempSpeed *= 2.0f;
 	}
-	GameInst->WorldCamera->MoveBackward(TempSpeed * GameInst->DeltaTime);
+
+	UCameraComponent* CameraComp = GameInst->WorldCamera->GetCameraComponent();
+	if (!GameInst->WorldCamera) {
+		GLOG(Log::eError, "RenderViewSkybox::OnBuildPacke() Camera is nullptr.");
+		return;
+	}
+	CameraComp->MoveBackward(TempSpeed * GameInst->DeltaTime);
 }
 
 void Keybind::GameOnMoveLeft(eKeys key, KeymapEntryBindType type, KeymapModifierFlags modifiers, void* user_data) {
@@ -101,7 +125,13 @@ void Keybind::GameOnMoveLeft(eKeys key, KeymapEntryBindType type, KeymapModifier
 	if (Controller::IsKeyDown(eKeys::Shift)) {
 		TempSpeed *= 2.0f;
 	}
-	GameInst->WorldCamera->MoveLeft(TempSpeed * GameInst->DeltaTime);
+
+	UCameraComponent* CameraComp = GameInst->WorldCamera->GetCameraComponent();
+	if (!GameInst->WorldCamera) {
+		GLOG(Log::eError, "RenderViewSkybox::OnBuildPacke() Camera is nullptr.");
+		return;
+	}
+	CameraComp->MoveLeft(TempSpeed * GameInst->DeltaTime);
 }
 
 void Keybind::GameOnMoveRight(eKeys key, KeymapEntryBindType type, KeymapModifierFlags modifiers, void* user_data) {
@@ -118,7 +148,13 @@ void Keybind::GameOnMoveRight(eKeys key, KeymapEntryBindType type, KeymapModifie
 	if (Controller::IsKeyDown(eKeys::Shift)) {
 		TempSpeed *= 2.0f;
 	}
-	GameInst->WorldCamera->MoveRight(TempSpeed * GameInst->DeltaTime);
+
+	UCameraComponent* CameraComp = GameInst->WorldCamera->GetCameraComponent();
+	if (!GameInst->WorldCamera) {
+		GLOG(Log::eError, "RenderViewSkybox::OnBuildPacke() Camera is nullptr.");
+		return;
+	}
+	CameraComp->MoveRight(TempSpeed * GameInst->DeltaTime);
 }
 
 void Keybind::GameOnMoveUp(eKeys key, KeymapEntryBindType type, KeymapModifierFlags modifiers, void* user_data) {
@@ -135,7 +171,13 @@ void Keybind::GameOnMoveUp(eKeys key, KeymapEntryBindType type, KeymapModifierFl
 	if (Controller::IsKeyDown(eKeys::Shift)) {
 		TempSpeed *= 2.0f;
 	}
-	GameInst->WorldCamera->MoveUp(TempSpeed * GameInst->DeltaTime);
+
+	UCameraComponent* CameraComp = GameInst->WorldCamera->GetCameraComponent();
+	if (!GameInst->WorldCamera) {
+		GLOG(Log::eError, "RenderViewSkybox::OnBuildPacke() Camera is nullptr.");
+		return;
+	}
+	CameraComp->MoveUp(TempSpeed * GameInst->DeltaTime);
 }
 
 void Keybind::GameOnMoveDown(eKeys key, KeymapEntryBindType type, KeymapModifierFlags modifiers, void* user_data) {
@@ -152,7 +194,13 @@ void Keybind::GameOnMoveDown(eKeys key, KeymapEntryBindType type, KeymapModifier
 	if (Controller::IsKeyDown(eKeys::Shift)) {
 		TempSpeed *= 2.0f;
 	}
-	GameInst->WorldCamera->MoveDown(TempSpeed * GameInst->DeltaTime);
+
+	UCameraComponent* CameraComp = GameInst->WorldCamera->GetCameraComponent();
+	if (!GameInst->WorldCamera) {
+		GLOG(Log::eError, "RenderViewSkybox::OnBuildPacke() Camera is nullptr.");
+		return;
+	}
+	CameraComp->MoveDown(TempSpeed * GameInst->DeltaTime);
 }
 
 void Keybind::GameOnChangeConsoleVisibility(eKeys key, KeymapEntryBindType type, KeymapModifierFlags modifiers, void* user_data) {
