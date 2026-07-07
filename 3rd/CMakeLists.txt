@@ -1,5 +1,5 @@
 ﻿# UncleDon-Logger 日志库
-if(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/UncleDon-Logger)
+if(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/UncleDon-Logger OR NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/UncleDon-Logger/CMakeLists.txt)
     include(FetchContent)
     message("-- Download UncleDon-Logger Lib...")
     FetchContent_Declare(
@@ -33,7 +33,7 @@ if (ENABLE_PLUGINS_AUDIO)
 endif()
 
 # Json库
-if(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/nlohmann-json)
+if(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/nlohmann-json OR NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/nlohmann-json/CMakeLists.txt)
     include(FetchContent)
     message("-- Download nlohmann-json Lib...")
     FetchContent_Declare(
@@ -63,7 +63,7 @@ set(ASSIMP_BUILD_TESTS OFF CACHE BOOL "Disable assimp tests")                   
 set(ASSIMP_BUILD_ASSIMP_TOOLS OFF CACHE BOOL "Disable assimp tools")            # 不编译 assimp 的工具（如 assimp viewer、assimp_cmd）
 set(ASSIMP_BUILD_SAMPLES OFF CACHE BOOL "Disable assimp samples")               # 不编译 assimp 的样例
 
-if(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/assimp)
+if(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/assimp OR NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/assimp/CMakeLists.txt)
     include(FetchContent)
     message("-- Download assimp Lib...")
     FetchContent_Declare(
