@@ -102,9 +102,6 @@ public:
 
 	bool EnableMultithreading;
 
-	// TODO: Make dynamic
-	GeometryData Geometries[GEOMETRY_MAX_COUNT];
-
 	// Vulkan version
 	uint32_t ApiVersion;
 };

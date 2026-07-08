@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "Rendering/RenderTypes.hpp"
+#include "Systems/GeometrySystem.h"
 
 enum ShaderStage;
 struct SPlatformState;
@@ -76,6 +77,10 @@ public:
 	size_t GetFrameNum() const { return FrameNum; }
 	void SetFrameNum(size_t num) { FrameNum = num; }
 	void IncreaseFrameNum() { FrameNum++; }
+
+public:
+	// TODO: Make dynamic
+	GeometryData Geometries[4096];
 
 protected:
 	RendererBackendType BackendType = RendererBackendType::eRenderer_Backend_Type_Vulkan;

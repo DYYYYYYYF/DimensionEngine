@@ -323,7 +323,7 @@ bool VulkanRHI::Initialize(const RenderBackendConfig* config, unsigned char* out
 
 	// Mark all geometry as invalid.
 	for (uint32_t i = 0; i < GEOMETRY_MAX_COUNT; ++i) {
-		Context.Geometries[i].id = INVALID_ID;
+		Geometries[i].id = INVALID_ID;
 	}
 
 	GLOG(Log::eInfo, "Create vulkan instance succeed.");
@@ -646,7 +646,7 @@ bool VulkanRHI::CreateGeometry(Geometry* geometry, uint32_t vertex_size, uint32_
 
 	GeometryData* InternalData = nullptr;
 	if (IsReupload) {
-		InternalData = &Context.Geometries[geometry->InternalID];
+		InternalData = &Geometries[geometry->InternalID];
 
 		// Take a copy of the old range.
 		OldRange.index_buffer_offset = InternalData->index_buffer_offset;
@@ -658,11 +658,11 @@ bool VulkanRHI::CreateGeometry(Geometry* geometry, uint32_t vertex_size, uint32_
 	}
 	else {
 		for (uint32_t i = 0; i < GEOMETRY_MAX_COUNT; ++i) {
-			if (Context.Geometries[i].id == INVALID_ID) {
+			if (Geometries[i].id == INVALID_ID) {
 				// Found a free index.
 				geometry->InternalID = i;
-				Context.Geometries[i].id = i;
-				InternalData = &Context.Geometries[i];
+				Geometries[i].id = i;
+				InternalData = &Geometries[i];
 				break;
 			}
 		}
@@ -727,7 +727,7 @@ bool VulkanRHI::CreateGeometry(Geometry* geometry, uint32_t vertex_size, uint32_
 void VulkanRHI::DestroyGeometry(Geometry* geometry) {
 	if (geometry != nullptr && geometry->InternalID != INVALID_ID) {
 		Context.Device.GetLogicalDevice().waitIdle();
-		GeometryData* InternalData = &Context.Geometries[geometry->InternalID];
+		GeometryData* InternalData = &Geometries[geometry->InternalID];
 
 		// Free vertex data.
 		Context.ObjectVertexBuffer->FreeMemory(InternalData->vertex_element_size * InternalData->vertex_count, InternalData->vertext_buffer_offset);
@@ -754,7 +754,7 @@ void VulkanRHI::DrawGeometry(GeometryRenderData* geometry) {
 		return;
 	}
 
-	GeometryData* BufferData = &Context.Geometries[geometry->geometry->InternalID];
+	GeometryData* BufferData = &Geometries[geometry->geometry->InternalID];
 	bool IncludIndexData = BufferData->index_count > 0;
 	if (!DrawRenderbuffer(Context.ObjectVertexBuffer, BufferData->vertext_buffer_offset, BufferData->vertex_count, IncludIndexData)) {
 		GLOG(Log::eError, "VulkanBackend::DrawGeometry() Failed to draw vertex buffer.");
