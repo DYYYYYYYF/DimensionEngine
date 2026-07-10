@@ -1,5 +1,6 @@
 ﻿#pragma once
 #include "Rendering/Interface/IResourceLoader.hpp"
+#include "Rendering/Resources/Shader/ShaderType.hpp"
 
 struct ShaderConfig;
 
@@ -13,5 +14,6 @@ public:
 
 private:
 	bool ParseLineData(size_t index, const FString& line, ShaderConfig* resource);
+	ShaderSemantic ParseSemantic(const FString& semantic);
 
 };

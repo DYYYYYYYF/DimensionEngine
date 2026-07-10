@@ -60,6 +60,9 @@ public:
 
 private:
 	bool CreateDefaultMaterial();
+	bool CreateTextureMap(TextureMap& map, TextureUsage usage, const FString& textureName);
+
+	TextureUsage GetTextureUsageFromUniformName(const FString& name) const;
 
 public:
 	SMaterialSystemConfig MaterialSystemConfig;

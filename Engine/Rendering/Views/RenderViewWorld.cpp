@@ -181,7 +181,7 @@ bool RenderViewWorld::OnBuildPacket(IRenderviewPacketData* data, struct RenderVi
 		}
 
 		// TODO: Add something to material to check for transparency.
-		if ((GData.geometry->Material->DiffuseMap.texture->GetFlags() & TextureFlagBits::eTexture_Flag_Has_Transparency) == 0) {
+		if ((GData.geometry->Material->TextureBindings[0].texture.texture->GetFlags() & TextureFlagBits::eTexture_Flag_Has_Transparency) == 0) {
 			// Only add meshes with _no_ transparency.
 			out_packet->geometries.push_back(GeometryData[i]);
 			out_packet->geometry_count++;

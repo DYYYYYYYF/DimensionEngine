@@ -140,7 +140,28 @@ enum ShaderScope {
 	eShader_Scope_Local = 2
 };
 
+enum class ShaderSemantic {
+	eShaderSemantic_None = 0,
+
+	// Global
+	eShaderSemantic_Projection,
+	eShaderSemantic_View,
+	eShaderSemantic_ViewPosition,
+	eShaderSemantic_AmbientColor,
+	eShaderSemantic_Time,
+	eShaderSemantic_RenderMode,
+
+	// Local
+	eShaderSemantic_Model_Matrix,
+
+	// Material
+	eShaderSemantic_DiffuseColor,
+	eShaderSemantic_Roughness,
+	eShaderSemantic_Metallic,
+};
+
 struct ShaderUniform {
+	FString name;
 	size_t offset;
 	uint32_t location;
 	uint32_t index;
@@ -148,6 +169,7 @@ struct ShaderUniform {
 	uint32_t set_index;
 
 	ShaderScope scope;
+	ShaderSemantic semantic;
 	ShaderUniformType type;
 };
 
@@ -171,6 +193,7 @@ struct ShaderUniformConfig {
 	unsigned short size;
 	uint32_t location;
 	ShaderUniformType type;
+	ShaderSemantic semantic;
 	ShaderScope scope;
 };
 

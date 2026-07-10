@@ -27,9 +27,9 @@ ambient_occlusion=1.0
 normal_intensity=1.0
 
 # 材质纹理 - G-Buffer渲染阶段需要的输入纹理 (与World材质命名保持一致)
-diffuse_map_name=default_diffuse_texture
-normal_map_name=default_normal_texture
-roughness_metallic_map_name=default_orm_texture
+diffuse_texture=default_diffuse_texture
+normal_texture=default_normal_texture
+roughness_metallic_texture=default_orm_texture
 
 # Shader - 使用G-Buffer着色器
 shader=Shader.Builtin.GBuffer

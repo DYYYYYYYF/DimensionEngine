@@ -508,7 +508,7 @@ public:
         return diff.Length();
     }
 
-    static TVector4_Base StringToVec4(const char* str) {
+    static TVector4_Base FromString(const char* str) {
         if (str == nullptr) {
             return TVector4_Base{ T(1), T(1), T(1), T(1) };
         }

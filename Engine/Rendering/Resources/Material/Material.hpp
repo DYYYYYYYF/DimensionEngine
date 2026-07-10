@@ -3,6 +3,18 @@
 #include "MaterialType.hpp"
 #include "Rendering/Resources/Texture/Texture.hpp"
 
+struct ShaderUniform;
+
+struct UniformValue {
+	ShaderUniform* uniform = nullptr;
+	uint8_t data[64];
+};
+
+struct TextureBinding {
+	ShaderUniform* uniform = nullptr;
+	TextureMap texture;
+};
+
 class Material : public UAsset{
 public:
 	Material();
@@ -26,21 +38,30 @@ private:
 	bool AutoRelease = false;
 
 public:
+	// Base
+	FString Name;
 	uint32_t Generation;
 	uint32_t InternalID;
-	FString Name;
-	Vector4 DiffuseColor;
-	TextureMap DiffuseMap;
-	TextureMap NormalMap;
-	TextureMap RoughnessMetallicMap;
-	float Shininess;
-
 	uint32_t ShaderID;
 	uint32_t RenderFrameNumer;
 
-	// PBR
-	float Metallic;
-	float Roughness;
-	float AmbientOcclusion;
-	float NormalIntensity;
+	// Parameters
+	TArray<UniformValue> UnifromValues;
+	TArray<TextureBinding> TextureBindings;
+
+	// TODO: Remove
+	struct {
+		// PBR
+		const ShaderUniform* diffuseColor;
+		const ShaderUniform* shininess;
+		const ShaderUniform* metallic;
+		const ShaderUniform* roughness;
+		const ShaderUniform* ambientOcclusion;
+		const ShaderUniform* normalIntensity;
+
+		// Textures
+		const ShaderUniform* diffuseTexture;
+		const ShaderUniform* normalTexture;
+		const ShaderUniform* roughnessMetallicTexture;
+	} Handles;
 };

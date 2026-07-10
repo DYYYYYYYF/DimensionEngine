@@ -294,6 +294,9 @@ bool ShaderLoader::ParseLineData(size_t index, const FString& line, ShaderConfig
 				Uniform.scope = ShaderScope::eShader_Scope_Global;
 			}
 
+			// Parse semantic 方便应用材质参数
+			Uniform.semantic = ParseSemantic(Fields[2]);
+
 			// Take a copy of the uniform name.
 			Uniform.name_length = (unsigned short)Fields[2].Length();
 			Uniform.name = Fields[2];
@@ -308,6 +311,18 @@ bool ShaderLoader::ParseLineData(size_t index, const FString& line, ShaderConfig
 	// TODO: more fields.
 
 	return true;
+}
+
+ShaderSemantic ShaderLoader::ParseSemantic(const FString& semantic) {
+	if (semantic.Compare("projection") == 0) return ShaderSemantic::eShaderSemantic_Projection;
+	if (semantic.Compare("view") == 0) return ShaderSemantic::eShaderSemantic_View;
+	if (semantic.Compare("ambient_color") == 0) return ShaderSemantic::eShaderSemantic_AmbientColor;
+	if (semantic.Compare("view_position") == 0) return ShaderSemantic::eShaderSemantic_ViewPosition;
+	if (semantic.Compare("render_mode") == 0) return ShaderSemantic::eShaderSemantic_RenderMode;
+	if (semantic.Compare("time") == 0) return ShaderSemantic::eShaderSemantic_Time;
+	if (semantic.Compare("model") == 0) return ShaderSemantic::eShaderSemantic_Model_Matrix;
+
+	return ShaderSemantic::eShaderSemantic_None;
 }
 
 void ShaderLoader::Unload(UAsset* resource) {

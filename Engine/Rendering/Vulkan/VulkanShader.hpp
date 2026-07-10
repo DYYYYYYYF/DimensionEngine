@@ -135,6 +135,7 @@ public:
 	 * @return b8 True on success; otherwise false.
 	 */
 	virtual bool SetUniform(const FString& name, const void* value) override;
+	virtual bool SetUniform(ShaderUniform* uniform, const void* value) override;
 
 	virtual bool SetUniformByIndex(uint32_t index, const void* value) override;
 
@@ -152,6 +153,7 @@ private:
 
 	VulkanCommandBuffer* GetCurrentCommandBuffer();
 	bool SetSamplerByIndex(uint32_t index, const TextureMap* map);
+	bool SetSampler(ShaderUniform* uniform, const TextureMap* map);
 
 public:
 	void*					  MappedUniformBufferBlock = nullptr;

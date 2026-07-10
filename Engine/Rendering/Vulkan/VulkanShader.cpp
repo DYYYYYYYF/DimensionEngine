@@ -430,29 +430,32 @@ bool VulkanShader::SetUniformByIndex(uint32_t index, const void* value) {
 	}
 
 	ShaderUniform* Uniform = &Uniforms[index];
+	return SetUniform(Uniform, value);
+}
 
+bool VulkanShader::SetUniform(ShaderUniform* uniform, const void* value) {
 	// Sampler 走单独路径
-	if (Uniform->type == eShader_Uniform_Type_Sampler) {
-		return SetSamplerByIndex(index, static_cast<const TextureMap*>(value));
+	if (uniform->type == eShader_Uniform_Type_Sampler) {
+		return SetSampler(uniform, static_cast<const TextureMap*>(value));
 	}
 
-	switch (Uniform->scope) {
+	switch (uniform->scope) {
 	case eShader_Scope_Global: {
-		size_t Addr = (size_t)MappedUniformBufferBlock + GlobalUboOffset + Uniform->offset;
-		Memory::Copy(reinterpret_cast<void*>(Addr), value, Uniform->size);
+		size_t Addr = (size_t)MappedUniformBufferBlock + GlobalUboOffset + uniform->offset;
+		Memory::Copy(reinterpret_cast<void*>(Addr), value, uniform->size);
 		break;
 	}
 	case eShader_Scope_Instance: {
-		size_t Addr = (size_t)MappedUniformBufferBlock + BoundUboOffset + Uniform->offset;
-		Memory::Copy(reinterpret_cast<void*>(Addr), value, Uniform->size);
+		size_t Addr = (size_t)MappedUniformBufferBlock + BoundUboOffset + uniform->offset;
+		Memory::Copy(reinterpret_cast<void*>(Addr), value, uniform->size);
 		break;
 	}
 	case eShader_Scope_Local: {
 		GetCurrentCommandBuffer()->CommandBuffer.pushConstants(
 			Pipeline.PipelineLayout,
 			vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment,
-			(uint32_t)Uniform->offset,
-			Uniform->size,
+			(uint32_t)uniform->offset,
+			uniform->size,
 			value);
 		break;
 	}
@@ -490,21 +493,24 @@ VulkanCommandBuffer* VulkanShader::GetCurrentCommandBuffer() {
 
 bool VulkanShader::SetSamplerByIndex(uint32_t index, const TextureMap* map) {
 	ShaderUniform* Uniform = &Uniforms[index];
+	return SetSampler(Uniform, map);
+}
 
-	if (Uniform->scope == eShader_Scope_Global) {
-		if (Uniform->location >= (uint32_t)GlobalTextureMaps.size()) {
+bool VulkanShader::SetSampler(ShaderUniform* uniform, const TextureMap* map){
+	if (uniform->scope == eShader_Scope_Global) {
+		if (uniform->location >= (uint32_t)GlobalTextureMaps.size()) {
 			GLOG(Log::eError, "SetSamplerByIndex — Global sampler location 越界。");
 			return false;
 		}
-		GlobalTextureMaps[Uniform->location] = const_cast<TextureMap*>(map);
+		GlobalTextureMaps[uniform->location] = const_cast<TextureMap*>(map);
 	}
 	else {
 		VulkanShaderInstanceState& State = InstanceStates[BoundInstanceId];
-		if (Uniform->location >= (uint32_t)State.instance_texture_maps.size()) {
+		if (uniform->location >= (uint32_t)State.instance_texture_maps.size()) {
 			GLOG(Log::eError, "SetSamplerByIndex — Instance sampler location 越界。");
 			return false;
 		}
-		State.instance_texture_maps[Uniform->location] = const_cast<TextureMap*>(map);
+		State.instance_texture_maps[uniform->location] = const_cast<TextureMap*>(map);
 	}
 
 	return true;

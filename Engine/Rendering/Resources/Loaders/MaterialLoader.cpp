@@ -27,7 +27,9 @@ bool MaterialLoader::Load(const FString& name, void* params, UAsset* resource) {
 	}
 
 	// TODO: Should be using an allocator here.
-	SMaterialConfig* ResourceData = (SMaterialConfig*)Memory::Allocate(sizeof(SMaterialConfig), MemoryType::eMemory_Type_Material_Instance);
+	void* mem = Memory::Allocate(sizeof(SMaterialConfig), MemoryType::eMemory_Type_Material_Instance);
+	SMaterialConfig* ResourceData = new(mem) SMaterialConfig();
+
 	// Set defaults.
 	ResourceData->auto_release = true;
 	ResourceData->shader_name = "Shader.Builtin.World";
@@ -86,56 +88,12 @@ bool MaterialLoader::ParseLineData(size_t index, const FString& line, SMaterialC
 	else if (TrimmedVarName.Compare("name") == 0) {
 		resource->name = std::move(TrimmedValue);
 	}
-	else if (TrimmedVarName.Compare("diffuse_map_name") == 0) {
-		resource->diffuse_map_name = TrimmedValue;
-	}
-	else if (TrimmedVarName.Compare("specular_map_name") == 0) {
-		resource->specular_map_name = TrimmedValue;
-	}
-	else if (TrimmedVarName.Compare("normal_map_name") == 0) {
-		resource->normal_map_name = TrimmedValue;
-	}
-	else if (TrimmedVarName.Compare("roughness_metallic_map_name") == 0) {
-		resource->MetallicRoughnessTexName = TrimmedValue;
-	}
-	else if (TrimmedVarName.Compare("diffuse_color") == 0) {
-		resource->diffuse_color = Vector4::StringToVec4(TrimmedValue.CStr());
-	}
 	else if (TrimmedVarName.Compare("shader") == 0) {
 		resource->shader_name = TrimmedValue;
 	}
-	else if (TrimmedVarName.Compare("shininess") == 0) {
-		if (!FString::ToFloat(TrimmedValue, &resource->shininess)) {
-			GLOG(Log::eWarn, "Error parsing shininess in file '%s'. Using default of 32.0f instead.", resource->name.CStr());
-			resource->shininess = 32.0f;
-		}
+	else {
+		resource->Properties.Insert(TrimmedVarName, TrimmedValue);
 	}
-	else if (TrimmedVarName.Compare("metallic") == 0) {
-		if (!FString::ToFloat(TrimmedValue, &resource->Metallic)) {
-			GLOG(Log::eWarn, "Error parsing metallic in file '%s'. Using default of 0.1f instead.", resource->name.CStr());
-			resource->Metallic = 0.1f;
-		}
-	}
-	else if (TrimmedVarName.Compare("roughness") == 0) {
-		if (!FString::ToFloat(TrimmedValue, &resource->Roughness)) {
-			GLOG(Log::eWarn, "Error parsing Roughness in file '%s'. Using default of 0.5f instead.", resource->name.CStr());
-			resource->Roughness = 0.5f;
-		}
-	}
-	else if (TrimmedVarName.Compare("ambient_occlusion") == 0) {
-		if (!FString::ToFloat(TrimmedValue, &resource->AmbientOcclusion)) {
-			GLOG(Log::eWarn, "Error parsing AmbientOcclusion in file '%s'. Using default of 0.7f instead.", resource->name.CStr());
-			resource->AmbientOcclusion = 0.7f;
-		}
-	}
-	else if (TrimmedVarName.Compare("normal_intensity") == 0) {
-		if (!FString::ToFloat(TrimmedValue, &resource->NormalIntensity)) {
-			GLOG(Log::eWarn, "Error parsing AmbientOcclusion in file '%s'. Using default of 0.7f instead.", resource->name.CStr());
-			resource->NormalIntensity = 1.0f;
-		}
-	}
-	// TODO: more fields.
-
 	return true;
 }
 

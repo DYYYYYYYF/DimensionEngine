@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include <variant>
 #include "Math/MathTypes.hpp"
 #include "Containers/FString.hpp"
 
@@ -27,4 +28,6 @@ struct SMaterialConfig {
 	FString EmissiveFactorTexName;		// 自发光Texture
 
 	float NormalIntensity = 1.0f;
+
+	TMap<FString, FString> Properties;
 };

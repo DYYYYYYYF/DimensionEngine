@@ -363,7 +363,7 @@ bool RenderViewWorldDeferred::OnRender(struct RenderViewPacket* packet, RHI* bac
 	GBufferShader->SetUniform("projection", &packet->projection_matrix);
 	GBufferShader->SetUniform("view", &packet->view_matrix);
 	GBufferShader->SetUniform("view_position", &packet->view_position);
-	GBufferShader->SetUniform("mode", &render_mode);
+	GBufferShader->SetUniform("render_mode", &render_mode);
 	GBufferShader->SetUniform("time", &packet->global_time);
 	GBufferShader->ApplyGlobal();
 

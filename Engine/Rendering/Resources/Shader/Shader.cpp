@@ -193,7 +193,7 @@ void Shader::AddSampler(const ShaderUniformConfig& config) {
 	// hashtable entry's 'location' field value directly, and is then set to the index of the uniform array.
 	// This allows location lookups for samplers as if they were uniforms as well (since technically they are).
 	// TODO: might need to store this elsewhere
-	AddUniform(config.name, 0, config.type, config.scope, Location, true);
+	AddUniform(config.name, 0, config.type, config.scope, ShaderSemantic::eShaderSemantic_None, Location, true);
 }
 
 void Shader::AddUniform(const ShaderUniformConfig& config) {
@@ -201,16 +201,19 @@ void Shader::AddUniform(const ShaderUniformConfig& config) {
 		return;
 	}
 
-	AddUniform(config.name, config.size, config.type, config.scope, 0, false);
+	AddUniform(config.name, config.size, config.type, config.scope, config.semantic, 0, false);
 }
 
-void Shader::AddUniform(const FString& uniform_name, uint32_t size,
-	ShaderUniformType type, ShaderScope scope, uint32_t set_location, bool is_sampler){
+void Shader::AddUniform(const FString& uniform_name, uint32_t size, ShaderUniformType type, 
+	ShaderScope scope, ShaderSemantic semantic, uint32_t set_location, bool is_sampler){
 	uint16_t UniformCount = (uint16_t)Uniforms.size();
 	ShaderUniform Entry;
+	Entry.name = uniform_name;
 	Entry.index = UniformCount;
 	Entry.scope = scope;
 	Entry.type = type;
+	Entry.semantic = semantic;
+
 	bool IsGlobal = (scope == eShader_Scope_Global);
 	if (is_sampler) {
 		Entry.location = set_location;
@@ -275,6 +278,27 @@ uint32_t Shader::GetUniformIndex(const FString& name) const {
 	return Uniforms[ArrayIndex].index;
 }
 
+ShaderUniform* Shader::GetUniformHandle(const FString& name) {
+	if (Status == EShaderStatus::eShader_State_Uninitialized) {
+		GLOG(Log::eError, "Shader::GetUniformIndex — Shader '%s' is not init.", Name.CStr());
+		return nullptr;
+	}
+
+	auto It = HashMap.find(name);
+	if (It == HashMap.end()) {
+		GLOG(Log::eError, "Shader '%s' not found uniform '%s'.",
+			Name.CStr(), name.CStr());
+		return nullptr;
+	}
+
+	uint32_t ArrayIndex = It->second;
+	if (ArrayIndex >= (uint32_t)Uniforms.size()) {
+		return nullptr;
+	}
+
+	// HashMap 存的是 Uniforms 数组下标，Uniforms[i].index 才是真正的 uniform index
+	return &Uniforms[ArrayIndex];
+}
 
 bool Shader::IsUniformNameValid(const FString& uniform_name) {
 	if (uniform_name.IsEmpty()) {

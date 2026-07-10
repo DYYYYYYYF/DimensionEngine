@@ -431,7 +431,7 @@ private:
                 slot.State == EBucketState::Deleted) {
                 // 找到空槽：放入候选
                 if (!result) result = &slot.Data.Value;
-                slot = static_cast<Bucket&&>(candidate);
+                slot = std::move(candidate);
                 ++Count_;
                 return result;
             }
@@ -446,13 +446,13 @@ private:
             if (slot.ProbeLen < candidate.ProbeLen) {
                 if (!result) result = &slot.Data.Value;
                 // 交换 candidate 和 slot
-                Bucket tmp = static_cast<Bucket&&>(slot);
-                slot = static_cast<Bucket&&>(candidate);
-                candidate = static_cast<Bucket&&>(tmp);
+                Bucket tmp = std::move(slot);
+                slot = std::move(candidate);
+                candidate = std::move(tmp);
             }
 
-            ++probe;
-            candidate.ProbeLen = probe;
+            probe++;
+            candidate.ProbeLen++;
         }
     }
 
