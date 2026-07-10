@@ -91,6 +91,43 @@ struct RenderTarget {
 	void* internal_framebuffer = nullptr;
 };
 
+// DrawCall
+enum class ERenderQueueType {
+	Opaque,
+	Transparent,
+	UI,
+	Skybox
+};
+
+class Geometry;
+class Material;
+
+// G-Buffer纹理
+#include "Resources/Texture/TextureType.hpp"
+struct GBufferSet {
+	UTexture* AlbedoTexture = nullptr;
+	UTexture* NormalTexture = nullptr;
+	UTexture* PositionTexture = nullptr;
+	UTexture* DepthTexture = nullptr;
+
+	TextureMap AlbedoTextureMap;
+	TextureMap NormalTextureMap;
+	TextureMap PositionTextureMap;
+	TextureMap DepthTextureMap;
+};
+
+struct DrawCall {
+	Geometry* geometry;
+	Material* material;
+	Matrix4 model;
+	Shader* shader;
+	uint32_t sortKey;
+	void* userData;
+
+	bool indexed;
+};
+
+// TODO: 替换成DrawCall
 struct IRenderviewPacketData {};
 struct WorldPacketData : public IRenderviewPacketData {
 public:

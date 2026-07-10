@@ -20,6 +20,7 @@ public:
 
 	virtual bool BeginFrame(double delta_time) override;
 	virtual void DrawGeometry(GeometryRenderData* geometry) override;
+	virtual void ExecuteDrawCalls(const std::vector<DrawCall>& draw_calls, size_t frame_number, void* custom_context = nullptr) override;
 	virtual bool EndFrame(double delta_time) override;
 	virtual void Resize(unsigned short width, unsigned short height) override;
 

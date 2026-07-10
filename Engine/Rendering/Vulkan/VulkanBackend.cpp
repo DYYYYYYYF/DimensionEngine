@@ -769,6 +769,69 @@ void VulkanRHI::DrawGeometry(GeometryRenderData* geometry) {
 	}
 }
 
+void VulkanRHI::ExecuteDrawCalls(const std::vector<DrawCall>& draw_calls,
+	size_t frame_number, void* custom_context) {
+	Shader* currentShader = nullptr;
+	Material* currentMaterial = nullptr;
+
+	for (const DrawCall& dc : draw_calls) {
+		if (currentShader != dc.shader)
+		{
+			dc.shader->Use();
+			currentShader = dc.shader;
+		}
+
+		if (currentMaterial != dc.material)
+		{
+			bool needUpdate = dc.material->RenderFrameNumer != frame_number;
+
+			if (dc.shader->Name.Compare("Shader.Builtin.DeferredLighting") == 0)
+			{
+				if (needUpdate){
+					GBufferSet* gbuffer = (GBufferSet*)dc.userData;
+					currentShader->BindInstance(dc.material->InternalID);
+					Vector4 LightIntensity = { 1.0f };
+					int RenderMode = 1;
+					currentShader->SetUniform("light_intensity", &LightIntensity);
+					currentShader->SetUniform("debug_mode", &RenderMode);
+
+					currentShader->SetUniform(
+						"albedo_texture",
+						&gbuffer->AlbedoTextureMap);
+
+					currentShader->SetUniform(
+						"normal_texture",
+						&gbuffer->NormalTextureMap);
+
+					currentShader->SetUniform(
+						"position_texture",
+						&gbuffer->PositionTextureMap);
+
+					currentShader->ApplyInstance(needUpdate);
+				} else {
+				}
+			}
+			else {
+				MaterialSystem::Get().ApplyInstance(dc.material, needUpdate);
+				currentMaterial = dc.material;
+				MaterialSystem::Get().ApplyLocal(dc.material, dc.model);
+			}
+		}
+		// 模型需要ModelMat
+		else {
+			MaterialSystem::Get().ApplyLocal(dc.material, dc.model);
+		}
+
+		dc.material->RenderFrameNumer = (uint32_t)frame_number;
+
+		// 真正Draw
+		GeometryRenderData renderData;
+		renderData.geometry = dc.geometry;
+		renderData.model_mat = dc.model;
+		DrawGeometry(&renderData);
+	}
+}
+
 bool VulkanRHI::BeginRenderpass(IRenderpass* pass, RenderTarget* target) {
 	pass->Begin(target);
 	return true;

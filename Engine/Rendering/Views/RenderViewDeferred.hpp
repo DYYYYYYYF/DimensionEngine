@@ -7,19 +7,6 @@
 class Shader;
 class ACameraActor;
 
-// G-Buffer纹理
-struct GBufferSet {
-	UTexture* AlbedoTexture = nullptr;
-	UTexture* NormalTexture = nullptr;
-	UTexture* PositionTexture = nullptr;
-	UTexture* DepthTexture = nullptr;
-
-	TextureMap AlbedoTextureMap;
-	TextureMap NormalTextureMap;
-	TextureMap PositionTextureMap;
-	TextureMap DepthTextureMap;
-};
-
 class RenderViewWorldDeferred : public IRenderView {
 public:
 	RenderViewWorldDeferred();

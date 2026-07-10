@@ -294,7 +294,7 @@ bool RenderViewWorldDeferred::RegenerateAttachmentTarget(uint32_t passIndex, Ren
 }
 
 bool RenderViewWorldDeferred::OnRender(struct RenderViewPacket* packet, RHI* back_renderer, size_t frame_number, size_t render_target_index) {
-	// 创建全屏四边形
+	// 确保全屏四边形存在
 	if (!FullscreenQuad) {
 		if (!CreateFullscreenQuad()) {
 			GLOG(Log::eError, "Failed to create fullscreen quad.");
@@ -302,11 +302,54 @@ bool RenderViewWorldDeferred::OnRender(struct RenderViewPacket* packet, RHI* bac
 		}
 	}
 
-	// 获取当前GBuffer纹理组
-	// TODO: 这里应该使用 render_target_index 获取当前GBuffer
+	// 获取当前帧的 GBuffer 纹理组
 	GBufferSet* CurrentGBuffer = GetCurrentGBufferSet(0);
 
-	// 第一通道：G-Buffer渲染
+	// 阶段一：DRAWCALL 生成、收集与状态排序
+	std::vector<DrawCall> GBufferDrawCalls;
+	std::vector<DrawCall> LightingDrawCalls;
+
+	// --- 收集 GBuffer 几何体的 DrawCall ---
+	uint32_t GeometryCount = packet->geometry_count;
+	for (uint32_t i = 0; i < GeometryCount; ++i) {
+		GeometryRenderData* SrcData = &packet->geometries[i];
+		if (!SrcData->geometry) continue;
+
+		Material* Mat = SrcData->geometry->Material
+			? SrcData->geometry->Material
+			: MaterialSystem::Get().GetDefaultMaterial();
+
+		DrawCall dc;
+		dc.geometry = SrcData->geometry;
+		dc.model = SrcData->model_mat;
+		dc.material= Mat;
+		dc.shader = GBufferShader;
+		dc.userData = nullptr;
+		dc.sortKey = ((uint64_t)dc.shader->ID << 32) | (uint64_t)Mat->InternalID;
+
+		GBufferDrawCalls.push_back(dc);
+	}
+
+	// 状态排序
+	std::sort(GBufferDrawCalls.begin(), GBufferDrawCalls.end(), [](const DrawCall& a, const DrawCall& b) {
+		return a.sortKey < b.sortKey;
+		});
+
+	// --- 收集 延迟光照 的 DrawCall ---
+	Material* DeferredLightingMat = FullscreenQuad->Material;
+
+	DrawCall LightingDC;
+	LightingDC.geometry = FullscreenQuad;
+	LightingDC.model = Matrix4::Identity();
+	LightingDC.material = DeferredLightingMat;
+	LightingDC.shader = LightingShader;
+	LightingDC.userData = CurrentGBuffer;
+	LightingDC.sortKey = ((uint64_t)LightingDC.shader->ID << 32) | (uint64_t)DeferredLightingMat->InternalID;
+
+	LightingDrawCalls.push_back(LightingDC);
+
+
+	// 阶段二：第一通道 —— G-BUFFER 通道绘制（直接呼叫后端执行）
 	IRenderpass* GBufferPass = (IRenderpass*)&Passes[0];
 	GBufferPass->Begin(&GBufferPass->Targets[render_target_index]);
 
@@ -316,7 +359,7 @@ bool RenderViewWorldDeferred::OnRender(struct RenderViewPacket* packet, RHI* bac
 		return false;
 	}
 
-	// 应用全局uniform 
+	// 绑定 Pass 全局不变量
 	GBufferShader->SetUniform("projection", &packet->projection_matrix);
 	GBufferShader->SetUniform("view", &packet->view_matrix);
 	GBufferShader->SetUniform("view_position", &packet->view_position);
@@ -324,30 +367,12 @@ bool RenderViewWorldDeferred::OnRender(struct RenderViewPacket* packet, RHI* bac
 	GBufferShader->SetUniform("time", &packet->global_time);
 	GBufferShader->ApplyGlobal();
 
-	// 渲染所有几何体到G-Buffer
-	uint32_t Count = packet->geometry_count;
-	for (uint32_t i = 0; i < Count; ++i) {
-		Material* Mat = packet->geometries[i].geometry->Material
-			? packet->geometries[i].geometry->Material
-			: MaterialSystem::Get().GetDefaultMaterial();
+	back_renderer->ExecuteDrawCalls(GBufferDrawCalls, frame_number, nullptr);
 
-		// 应用材质
-		bool IsNeedUpdate = Mat->RenderFrameNumer != frame_number;
-		if (!MaterialSystem::Get().ApplyInstance(Mat, IsNeedUpdate)) {
-			GLOG(Log::eWarn, "Failed to apply G-Buffer material '%s'. Skipping draw.", Mat->Name.CStr());
-			continue;
-		}
-		Mat->RenderFrameNumer = (uint32_t)frame_number;
-
-		// 应用模型矩阵
-		MaterialSystem::Get().ApplyLocal(Mat, packet->geometries[i].model_mat);
-
-		// 绘制几何体
-		back_renderer->DrawGeometry(&packet->geometries[i]);
-	}
 	GBufferPass->End();
 
-	// 第二通道：延迟光照
+
+	// 阶段三：第二通道 —— 延迟光照通道绘制（直接呼叫后端执行）
 	IRenderpass* LightingPass = (IRenderpass*)&Passes[1];
 	LightingPass->Begin(&LightingPass->Targets[render_target_index]);
 
@@ -357,35 +382,11 @@ bool RenderViewWorldDeferred::OnRender(struct RenderViewPacket* packet, RHI* bac
 		return false;
 	}
 
-	// 应用全局uniform (环境光、视角位置等) - 延迟光照专用接口
+	// 绑定 Pass 全局不变量
 	LightingShader->SetUniform("time", &packet->global_time);
 	LightingShader->ApplyGlobal();
 
-	// 创建延迟光照材质并应用
-	Material* DeferredLightingMat = FullscreenQuad->Material;
-
-	// 应用延迟光照材质
-	bool LightingNeedsUpdate = DeferredLightingMat->RenderFrameNumer != frame_number;
-	if (LightingNeedsUpdate) {
-		LightingShader->BindInstance(DeferredLightingMat->InternalID);
-		Vector4 LightIntensity = { 1.0f };
-		LightingShader->SetUniform("light_intensity", &LightIntensity);
-		LightingShader->SetUniform("debug_mode", &render_mode);
-
-		LightingShader->SetUniform("albedo_texture", &CurrentGBuffer->AlbedoTextureMap);		 // 复用DiffuseMap绑定点
-		LightingShader->SetUniform("normal_texture", &CurrentGBuffer->NormalTextureMap);		 // 复用NormalMap绑定点  
-		LightingShader->SetUniform("position_texture", &CurrentGBuffer->PositionTextureMap);	 // 复用SpecularMap绑定点
-		LightingShader->ApplyInstance(LightingNeedsUpdate);
-	}
-	else {
-		DeferredLightingMat->RenderFrameNumer = (uint32_t)frame_number;
-	}
-
-	// 渲染全屏四边形进行光照计算
-	GeometryRenderData QuadRenderData;
-	QuadRenderData.geometry = FullscreenQuad;
-	QuadRenderData.model_mat = Matrix4::Identity();
-	back_renderer->DrawGeometry(&QuadRenderData);
+	back_renderer->ExecuteDrawCalls(LightingDrawCalls, frame_number, CurrentGBuffer);
 
 	LightingPass->End();
 
