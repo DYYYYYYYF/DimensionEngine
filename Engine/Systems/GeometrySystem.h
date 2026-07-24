@@ -46,11 +46,11 @@ public:
 	Geometry* AcquireFromConfig(SGeometryConfig config, bool auto_release);
 
 	/*
-	* @brief Releases a reference to the provided geometry.
-	* 
-	* @prama geometry The geometry to be released.
+	* @brief Registers and acquires a new dynamic geometry.
+	*
+	* @returna A pointer to the acquired geometry or nullptr if failed.
 	*/
-	void Release(Geometry* geometry);
+	Geometry* AcquireDynamic();
 
 	/*
 	*@brief Obtains a pointer to the default geometry.
@@ -108,10 +108,11 @@ public:
 
 	void ConfigDispose(SGeometryConfig* config);
 
+	void DestroyGeometry(Geometry* geometry);
+
 private:
 	bool CreateDefaultGeometries();
 	Geometry* CreateGeometry(SGeometryConfig config);
-	void DestroyGeometry(Geometry* geometry);
 
 public:
 	Geometry* DefaultGeometry = nullptr;

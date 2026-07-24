@@ -162,89 +162,86 @@ bool RenderViewUI::RegenerateAttachmentTarget(uint32_t passIndex, RenderTargetAt
 }
 
 bool RenderViewUI::OnRender(struct RenderViewPacket* packet, RHI* back_renderer, size_t frame_number, size_t render_target_index) {
-	uint32_t SID = UsedShader->ID;
-	for (uint32_t p = 0; p < RenderpassCount; ++p) {
-		IRenderpass* Pass = (IRenderpass*)&Passes[p];
-		Pass->Begin(&Pass->Targets[render_target_index]);
+	std::vector<DrawCall> UIDrawCalls;
+	// UI draw calls.
+	for (uint32_t i = 0; i < packet->geometry_count; ++i) {
+		GeometryRenderData* SrcData = &packet->geometries[i];
+		if (!SrcData->geometry) continue;
 
-		if (!UsedShader->Use()) {
-			GLOG(Log::eError, "RenderViewUI::OnRender() Failed to use material shader. Render frame failed.");
-			return false;
-		}
+		DrawCall dc;
+		Material* Mat = SrcData->geometry->Material ? SrcData->geometry->Material : MaterialSystem::Get().GetDefaultMaterial();
+		dc.geometry = SrcData->geometry;
+		dc.model = SrcData->model_mat;
+		dc.material = Mat;
+		dc.shader = UsedShader;
+		dc.userData = nullptr;
+		dc.sortKey = ((uint64_t)dc.shader->ID << 32) | (uint64_t)Mat->GetInternalID();
 
-		// Apply globals.
-		if (!MaterialSystem::Get().ApplyGlobal(SID, frame_number, packet->projection_matrix, packet->view_matrix, Vector4(0), Vector3(0), (int)render_mode, 0.0f)) {
-			GLOG(Log::eError, "RenderViewUI::OnRender() Failed to use global shader. Render frame failed.");
-			return false;
-		}
-
-		// Draw geometries.
-		uint32_t Count = packet->geometry_count;
-		for (uint32_t i = 0; i < Count; ++i) {
-			Material* Mat = nullptr;
-			if (packet->geometries[i].geometry->Material) {
-				Mat = packet->geometries[i].geometry->Material;
-			}
-			else {
-				Mat = MaterialSystem::Get().GetDefaultMaterial();
-			}
-
-			bool IsNeedUpdate = Mat->RenderFrameNumer != frame_number;
-			if (!MaterialSystem::Get().ApplyInstance(Mat, IsNeedUpdate)) {
-				GLOG(Log::eWarn, "Failed to apply material '%s'. Skipping draw.", Mat->Name.CStr());
-				continue;
-			}
-			else {
-				// Sync the frame number.
-				Mat->RenderFrameNumer = (uint32_t)frame_number;
-			}
-
-			// Apply local
-			MaterialSystem::Get().ApplyLocal(Mat, packet->geometries[i].model_mat);
-
-			// Draw
-			back_renderer->DrawGeometry(&packet->geometries[i]);
-		}
-
-		// Draw bitmap text.
-		UIPacketData* PacketData = (UIPacketData*)packet->extended_data;
-		for (uint32_t i = 0; i < PacketData->textCount; ++i) {
-			ATextActor* Text = PacketData->Textes[i];
-			if (!Text) continue;
-			UTextComponent* TextComp = Text->GetTextComponent();
-			if (!TextComp) continue;
-
-			UsedShader->BindInstance(TextComp->GetInstance());
-
-			if (!UsedShader->SetUniformByIndex(DiffuseMapLocation, &TextComp->GetFont()->GetAtlas())) {
-				GLOG(Log::eError, "Failed to apply bitmap font diffuse map uniform.");
-				return false;
-			}
-
-			// TODO: font color
-			Vector4 FontColor = TextComp->GetColor();
-			if (!UsedShader->SetUniformByIndex(DiffuseColorLocation, &FontColor)) {
-				GLOG(Log::eError, "Failed to apply bitmap font diffuse color uniform.");
-				return false;
-			}
-
-			bool NeedUpdate = TextComp->GetFrameNumber() != frame_number;
-			UsedShader->ApplyInstance(NeedUpdate);
-
-			// Sync frame number.
-			TextComp->SetFrameNumber(frame_number);
-
-			// Apply the locals.
-			Matrix4 Model = Text->GetLocalTransform();
-			if (!UsedShader->SetUniformByIndex(ModelLocation, &Model)) {
-				GLOG(Log::eError, "Failde to apply model matrix for text.");
-			}
-
-			TextComp->Draw();
-		}
-
-		Pass->End();
+		UIDrawCalls.push_back(dc);
 	}
+
+	std::sort( UIDrawCalls.begin(), UIDrawCalls.end(), 
+		[](const DrawCall& a, const DrawCall& b){
+			return a.sortKey < b.sortKey;
+		});
+
+	// Text draw calls.
+	UIPacketData* PacketData = (UIPacketData*)packet->extended_data;
+	for (uint32_t i = 0; i < PacketData->textCount; ++i) {
+		ATextActor* Text = PacketData->Textes[i];
+		if (!Text) continue;
+		UTextComponent* TextComp = Text->GetTextComponent();
+		if (!TextComp) continue;
+
+		DrawCall dc;
+		Material* Mat = TextComp->GetFontMaterial();
+		dc.geometry = nullptr;
+		dc.model = Text->GetLocalTransform();
+		dc.material = Mat;
+		dc.shader = UsedShader;
+		dc.userData = nullptr;
+		dc.sortKey = ((uint64_t)dc.shader->ID << 32) | (uint64_t)Mat->GetInternalID();
+
+		//UsedShader->BindInstance(TextComp->GetInstance());
+
+		//if (!UsedShader->SetUniformByIndex(DiffuseMapLocation, &TextComp->GetFont()->GetAtlas())) {
+		//	GLOG(Log::eError, "Failed to apply bitmap font diffuse map uniform.");
+		//	return false;
+		//}
+
+		//// TODO: font color
+		//Vector4 FontColor = TextComp->GetColor();
+		//if (!UsedShader->SetUniformByIndex(DiffuseColorLocation, &FontColor)) {
+		//	GLOG(Log::eError, "Failed to apply bitmap font diffuse color uniform.");
+		//	return false;
+		//}
+
+		//bool NeedUpdate = TextComp->GetFrameNumber() != frame_number;
+		//UsedShader->ApplyInstance(NeedUpdate);
+
+		//// Sync frame number.
+		//TextComp->SetFrameNumber(frame_number);
+
+		//// Apply the locals.
+		//Matrix4 Model = Text->GetLocalTransform();
+		//if (!UsedShader->SetUniformByIndex(ModelLocation, &Model)) {
+		//	GLOG(Log::eError, "Failde to apply model matrix for text.");
+		//}
+
+		//TextComp->Draw();
+	}
+
+	FrameData UIData;
+	UIData.projection = packet->projection_matrix;
+	UIData.view = packet->view_matrix;
+	UIData.ambieantColor = Vector4(0.0f);
+	UIData.cameraPosition = Vector3(0.0f);
+	UIData.renderMode = render_mode;
+	UIData.time = packet->global_time;
+
+	Passes[0].Begin(&Passes[0].Targets[render_target_index]);
+	back_renderer->ExecuteDrawCalls(UIDrawCalls, frame_number, UIData);
+	Passes[0].End();
 
 	return true;
 }

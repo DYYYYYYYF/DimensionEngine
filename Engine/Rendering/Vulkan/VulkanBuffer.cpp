@@ -334,7 +334,6 @@ bool VulkanBuffer::AllocateMemory(size_t size, size_t* out_offset) {
 
 bool VulkanBuffer::FreeMemory(size_t size, size_t offset) {
 	if (size == 0) {
-		GLOG(Log::eError, "IRenderer::FreeRenderbuffer() Requires valid pointer, a non-zero size.");
 		return false;
 	}
 

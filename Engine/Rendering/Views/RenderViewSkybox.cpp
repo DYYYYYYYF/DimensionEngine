@@ -66,9 +66,6 @@ bool RenderViewSkybox::OnCreate(const RenderViewConfig& config) {
 
 	// Get either the custom shader override or the defined default.
 	UsedShader = ShaderSystem::Get().Get(CustomShaderName.IsEmpty() ? ShaderName : CustomShaderName);
-	ProjectionLocation = UsedShader->GetUniformIndex("projection");
-	ViewLocation = UsedShader->GetUniformIndex("view");
-	CubeMapLocation = UsedShader->GetUniformIndex("cube_texture");
 	
 	// TODO: Set from configurable.
 	NearClip = 0.1f;
@@ -149,63 +146,101 @@ bool RenderViewSkybox::RegenerateAttachmentTarget(uint32_t passIndex, RenderTarg
 
 bool RenderViewSkybox::OnRender(struct RenderViewPacket* packet, RHI* back_renderer, size_t frame_number, size_t render_target_index) {
 	SkyboxPacketData* SkyboxData = (SkyboxPacketData*)packet->extended_data;
+	if (!SkyboxData || !SkyboxData->sb || !SkyboxData->sb->g) {
+		return false;
+	}
+
+	UCameraComponent* CameraComp = WorldCamera->GetCameraComponent();
+	if (!CameraComp) {
+		return false;
+	}
+
+	// Skybox需要让它始终和摄像机原点一致（玩家永远不能到达）
+	Matrix4 ViewMatrix = CameraComp->GetViewMatrix();
+	ViewMatrix.data[12] = 0.0f;
+	ViewMatrix.data[13] = 0.0f;
+	ViewMatrix.data[14] = 0.0f;
+
+	FrameData Data;
+	Data.projection = packet->projection_matrix;
+	Data.view = ViewMatrix;
+	Data.time = packet->global_time;
+
+	DrawCall DC;
+	DC.geometry = SkyboxData->sb->g;
+	DC.model = Matrix4::Identity();
+	DC.material = SkyboxData->sb->g->Material;
+	DC.shader = UsedShader;
+	DC.userData = SkyboxData->sb;
+	DC.sortKey = ((uint64_t)UsedShader->ID << 32) | (uint64_t)DC.material->GetInternalID();
+
+	std::vector<DrawCall> DrawCalls;
+	DrawCalls.push_back(DC);
 
 	for (uint32_t p = 0; p < RenderpassCount; ++p) {
 		IRenderpass* Pass = (IRenderpass*)&Passes[p];
 		Pass->Begin(&Pass->Targets[render_target_index]);
-
-		if (!UsedShader->Use()) {
-			GLOG(Log::eError, "RenderViewSkybox::OnRender() Failed to use material shader. Render frame failed.");
-			return false;
-		}
-
-		UCameraComponent* CameraComp = WorldCamera->GetCameraComponent();
-		if (!CameraComp) {
-			GLOG(Log::eError, "RenderViewSkybox::OnBuildPacke() Camera is nullptr.");
-			return false;
-		}
-
-		// Get the view matrix, but zero out the position so the skybox stays put on screen.
-		Matrix4 ViewMatrix = CameraComp->GetViewMatrix();
-		ViewMatrix.data[12] = 0.0f;
-		ViewMatrix.data[13] = 0.0f;
-		ViewMatrix.data[14] = 0.0f;
-
-		// Apply globals
-		// TODO: This is terrible
-		UsedShader->BindGlobal();
-		if (!UsedShader->SetUniformByIndex(ProjectionLocation, &packet->projection_matrix)) {
-			GLOG(Log::eError, "RenderViewSkybox::OnRender() Failed to apply skybox projection uniform.");
-			return false;
-		}
-
-		if (!UsedShader->SetUniformByIndex(ViewLocation, &ViewMatrix)) {
-			GLOG(Log::eError, "RenderViewSkybox::OnRender() Failed to apply skybox view uniform.");
-			return false;
-		}
-
-		UsedShader->ApplyGlobal();
-
-		// Instance.
-		UsedShader->BindInstance(SkyboxData->sb->InstanceID);
-		if (!UsedShader->SetUniformByIndex(CubeMapLocation, &SkyboxData->sb->CubeMap)) {
-			GLOG(Log::eError, "RenderViewSkybox::OnRender() Failed to apply cube map uniform.");
-			return false;
-		}
-
-		bool NeedsUpdate = SkyboxData->sb->RenderFrameNumber != frame_number;
-		UsedShader->ApplyInstance(NeedsUpdate);
-
-		// Sync the frame num.
-		SkyboxData->sb->RenderFrameNumber = frame_number;
-
-		// Draw
-		GeometryRenderData RenderData;
-		RenderData.geometry = SkyboxData->sb->g;
-		back_renderer->DrawGeometry(&RenderData);
-
+		back_renderer->ExecuteDrawCalls( DrawCalls, frame_number, Data);
 		Pass->End();
 	}
+
+
+	//for (uint32_t p = 0; p < RenderpassCount; ++p) {
+	//	IRenderpass* Pass = (IRenderpass*)&Passes[p];
+	//	Pass->Begin(&Pass->Targets[render_target_index]);
+
+	//	if (!UsedShader->Use()) {
+	//		GLOG(Log::eError, "RenderViewSkybox::OnRender() Failed to use material shader. Render frame failed.");
+	//		return false;
+	//	}
+
+	//	UCameraComponent* CameraComp = WorldCamera->GetCameraComponent();
+	//	if (!CameraComp) {
+	//		GLOG(Log::eError, "RenderViewSkybox::OnBuildPacke() Camera is nullptr.");
+	//		return false;
+	//	}
+
+	//	// Get the view matrix, but zero out the position so the skybox stays put on screen.
+	//	Matrix4 ViewMatrix = CameraComp->GetViewMatrix();
+	//	ViewMatrix.data[12] = 0.0f;
+	//	ViewMatrix.data[13] = 0.0f;
+	//	ViewMatrix.data[14] = 0.0f;
+
+	//	// Apply globals
+	//	// TODO: This is terrible
+	//	UsedShader->BindGlobal();
+	//	if (!UsedShader->SetUniformByIndex(ProjectionLocation, &packet->projection_matrix)) {
+	//		GLOG(Log::eError, "RenderViewSkybox::OnRender() Failed to apply skybox projection uniform.");
+	//		return false;
+	//	}
+
+	//	if (!UsedShader->SetUniformByIndex(ViewLocation, &ViewMatrix)) {
+	//		GLOG(Log::eError, "RenderViewSkybox::OnRender() Failed to apply skybox view uniform.");
+	//		return false;
+	//	}
+
+	//	UsedShader->ApplyGlobal();
+
+	//	// Instance.
+	//	UsedShader->BindInstance(SkyboxData->sb->InstanceID);
+	//	if (!UsedShader->SetUniformByIndex(CubeMapLocation, &SkyboxData->sb->CubeMap)) {
+	//		GLOG(Log::eError, "RenderViewSkybox::OnRender() Failed to apply cube map uniform.");
+	//		return false;
+	//	}
+
+	//	bool NeedsUpdate = SkyboxData->sb->RenderFrameNumber != frame_number;
+	//	UsedShader->ApplyInstance(NeedsUpdate);
+
+	//	// Sync the frame num.
+	//	SkyboxData->sb->RenderFrameNumber = frame_number;
+
+	//	// Draw
+	//	GeometryRenderData RenderData;
+	//	RenderData.geometry = SkyboxData->sb->g;
+	//	back_renderer->DrawGeometry(&RenderData);
+
+	//	Pass->End();
+	//}
 
 	return true;
 }

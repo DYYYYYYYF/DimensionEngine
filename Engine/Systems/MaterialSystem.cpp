@@ -50,7 +50,6 @@ void MaterialSystem::Shutdown() {
 	for (Material* m : RegisteredMaterials) {
 		if (m) {
 			DestroyMaterial(m);
-			DeleteObject(m);
 			m = nullptr;
 		}
 	};
@@ -109,7 +108,7 @@ Material* MaterialSystem::AcquireFromConfig(SMaterialConfig config) {
 			if (RegisteredMaterials[i] == nullptr) {
 				// A free slot has been found. Use it index as the handle.
 				RegisteredMaterials[i] = NewObject<Material>();
-				RegisteredMaterials[i]->SetID(i);
+				RegisteredMaterials[i]->SetInternalID(i);
 				MaterialMap[config.name] = i;
 				m = RegisteredMaterials[i];
 				break;
@@ -117,7 +116,7 @@ Material* MaterialSystem::AcquireFromConfig(SMaterialConfig config) {
 		}
 
 		// Make sure an empty slot was actually found.
-		if (m == nullptr || m->GetID() == INVALID_ID) {
+		if (m == nullptr || m->GetInternalID() == INVALID_ID) {
 			GLOG(Log::eFatal, "Material acquire failed. Material system cannot hold anymore materials. Adjust configuration to allow more.");
 			return nullptr;
 		}
@@ -175,14 +174,8 @@ void MaterialSystem::Release(const FString& name) {
 		Mat->DecreaseReferenceCount();
 		if (Mat->GetReferenceCount() == 0 && Mat->IsAutoRelease()) {
 			// Release material.
-			DestroyMaterial(Mat);
-			DeleteObject(Mat);
-			RegisteredMaterials[MaterialID] = nullptr;
-			GLOG(Log::eInfo, "Released material '%s'. Material unloaded.", CopyMatName.CStr());
+			DestroyMaterial(Mat);	
 		}
-
-		// Update the entry.
-		MaterialMap.erase(CopyMatName);
 	}
 }
 
@@ -238,6 +231,20 @@ bool MaterialSystem::LoadMaterial(SMaterialConfig config, Material* mat) {
 		}
 		break;
 
+		case eShader_Uniform_Type_Float_4:
+		{
+			Vector4 vec = property ? Vector4::FromString((*property).CStr()) : Vector4();
+
+			UniformValue MatValue;
+			MatValue.uniform = s->GetUniformHandle(uniform.name);
+
+			// 清零目标区域（保证未使用的字节干净）
+			std::memset(MatValue.data, 0, 64);
+			std::memcpy(MatValue.data, &vec, sizeof(vec));
+			mat->UnifromValues.Push(std::move(MatValue));
+		}
+		break;
+
 		case eShader_Uniform_Type_UInt32:
 		{
 			Vector4 vec = property? Vector4::FromString((*property).CStr()) : Vector4();
@@ -257,32 +264,10 @@ bool MaterialSystem::LoadMaterial(SMaterialConfig config, Material* mat) {
 			TextureBinding texValue;
 			texValue.uniform = s->GetUniformHandle(uniform.name);
 
-			// 默认使用引擎初始贴图
+			// 如果材质有指定贴图则使用,如果没有内部指定Default
 			TextureUsage usage = GetTextureUsageFromUniformName(uniform.name);
-			switch (usage)
-			{
-			case TextureUsage::eTexture_Usage_Map_Normal:
-			{ 
-				texValue.texture.texture = TextureSystem::Get().GetDefaultNormalTexture();
-			}
-			break;
-
-			case TextureUsage::eTexture_Usage_Map_RoughnessMetallic:
-			{ 
-				texValue.texture.texture = TextureSystem::Get().GetDefaultRoughnessMetallicTexture(); 
-			}
-			break;
-			default:
-			{ 
-				texValue.texture.texture = TextureSystem::Get().GetDefaultDiffuseTexture(); 
-			}
-			break;
-			}
-
-			// 如果材质有指定贴图则使用
-			if (property) {
-				CreateTextureMap(texValue.texture, usage, *property);
-			}
+			if (property) CreateTextureMap(texValue.texture, usage, *property);
+			else CreateTextureMap(texValue.texture, usage, FString());
 
 			mat->TextureBindings.Push(std::move(texValue));
 		}
@@ -324,11 +309,19 @@ void MaterialSystem::DestroyMaterial(Material* mat) {
 		mat->ShaderID = INVALID_ID;
 	}
 
-	// Zero it out, invalidate Ids.
-	mat->SetID(INVALID_ID);
-	mat->Generation = INVALID_ID;
-	mat->InternalID = INVALID_ID;
-	mat->RenderFrameNumer = INVALID_ID;
+	// Remove from the registered materials list.
+	if (MaterialMap.find(mat->Name) != MaterialMap.end())
+	{
+		uint32_t MaterialID = MaterialMap[mat->Name];
+		RegisteredMaterials[MaterialID] = nullptr;
+		GLOG(Log::eInfo, "Released material '%s'. Material unloaded.", mat->Name.CStr());
+
+		// Update the entry.
+		MaterialMap.erase(mat->Name);
+	}
+
+	// Delete the material object.
+	DeleteObject(mat);
 }
 
 bool MaterialSystem::CreateDefaultMaterial() {
@@ -402,21 +395,13 @@ bool MaterialSystem::CreateDefaultMaterial() {
 }
 
 bool MaterialSystem::CreateTextureMap(TextureMap& map, TextureUsage usage, const FString& textureName) {
-	map.filter_minify = TextureFilter::eTexture_Filter_Mode_Linear;
-	map.filter_magnify = TextureFilter::eTexture_Filter_Mode_Linear;
-	map.repeat_u = TextureRepeat::eTexture_Repeat_Repeat;
-	map.repeat_v = TextureRepeat::eTexture_Repeat_Repeat;
-	map.repeat_w = TextureRepeat::eTexture_Repeat_Repeat;
-
-	if (!Renderer->AcquireTextureMap(&map)) return false;
-
 	map.usage = usage;
 
 	TextureSystem& texSys = TextureSystem::Get();
-
 	if (!textureName.IsEmpty())
 	{
-		map.texture = texSys.Acquire(textureName, true);
+		if (usage != TextureUsage::eTexture_Usage_Map_Cubemap) map.texture = texSys.Acquire(textureName, true); 
+		else map.texture = texSys.AcquireCube(textureName, true);
 	}
 
 	if (!map.texture)
@@ -434,7 +419,22 @@ bool MaterialSystem::CreateTextureMap(TextureMap& map, TextureUsage usage, const
 		case TextureUsage::eTexture_Usage_Map_RoughnessMetallic:
 			map.texture = texSys.GetDefaultRoughnessMetallicTexture();
 			break;
+		case TextureUsage::eTexture_Usage_Map_Cubemap:
+		{
+			// Cubemap需要特殊处理
+			map.filter_magnify = TextureFilter::eTexture_Filter_Mode_Linear;
+			map.filter_minify = TextureFilter::eTexture_Filter_Mode_Linear;
+			map.repeat_u = TextureRepeat::eTexture_Repeat_Clamp_To_Edge;
+			map.repeat_v = TextureRepeat::eTexture_Repeat_Clamp_To_Edge;
+			map.repeat_w = TextureRepeat::eTexture_Repeat_Clamp_To_Edge;
+			map.usage = TextureUsage::eTexture_Usage_Map_Cubemap;
+		} break;
 		}
+	}
+
+	// 创建Sampler
+	if (!Renderer->AcquireTextureMap(&map)) {
+		return false;
 	}
 
 	return true;
@@ -456,6 +456,9 @@ TextureUsage MaterialSystem::GetTextureUsageFromUniformName(const FString& name)
 	else if (name.Compare("specular_texture") == 0) {
 		return TextureUsage::eTexture_Usage_Map_Specular;
 	}
+	else if (name.Compare("skybox_texture") == 0) {
+		return TextureUsage::eTexture_Usage_Map_Cubemap;
+	}
 
 	return TextureUsage::eTexture_Usage_Unknown;
 }
@@ -470,9 +473,7 @@ TextureUsage MaterialSystem::GetTextureUsageFromUniformName(const FString& name)
 #define MATERIAL_APPLY_OR_FAIL(expr) expr
 #endif
 
-bool MaterialSystem::ApplyGlobal(uint32_t shader_id, size_t renderer_frame_number, 
-	const Matrix4& projection, const Matrix4& view, const Vector4& ambient_color, 
-	const Vector3& view_position, uint32_t render_mode, float global_time) {
+bool MaterialSystem::ApplyGlobal(uint32_t shader_id, size_t renderer_frame_number, const FrameData& data) {
 
 	Shader* UsedShader = ShaderSystem::Get().GetByID(shader_id);
 	if (UsedShader == nullptr) {
@@ -490,27 +491,27 @@ bool MaterialSystem::ApplyGlobal(uint32_t shader_id, size_t renderer_frame_numbe
 		switch (uniform.semantic)
 		{
 		case ShaderSemantic::eShaderSemantic_Projection:
-			MATERIAL_APPLY_OR_FAIL(UsedShader->SetUniform(&uniform, &projection));
+			MATERIAL_APPLY_OR_FAIL(UsedShader->SetUniform(&uniform, &data.projection));
 			break;
 
 		case ShaderSemantic::eShaderSemantic_View:
-			MATERIAL_APPLY_OR_FAIL(UsedShader->SetUniform(&uniform, &view));
+			MATERIAL_APPLY_OR_FAIL(UsedShader->SetUniform(&uniform, &data.view));
 			break;
 
 		case ShaderSemantic::eShaderSemantic_ViewPosition:
-			MATERIAL_APPLY_OR_FAIL(UsedShader->SetUniform(&uniform, &view_position));
+			MATERIAL_APPLY_OR_FAIL(UsedShader->SetUniform(&uniform, &data.cameraPosition));
 			break;
 
 		case ShaderSemantic::eShaderSemantic_AmbientColor:
-			MATERIAL_APPLY_OR_FAIL(UsedShader->SetUniform(&uniform, &ambient_color));
+			MATERIAL_APPLY_OR_FAIL(UsedShader->SetUniform(&uniform, &data.ambieantColor));
 			break;
 
 		case ShaderSemantic::eShaderSemantic_Time:
-			MATERIAL_APPLY_OR_FAIL(UsedShader->SetUniform(&uniform, &global_time));
+			MATERIAL_APPLY_OR_FAIL(UsedShader->SetUniform(&uniform, &data.time));
 			break;
 
 		case ShaderSemantic::eShaderSemantic_RenderMode:
-			MATERIAL_APPLY_OR_FAIL(UsedShader->SetUniform(&uniform, &render_mode));
+			MATERIAL_APPLY_OR_FAIL(UsedShader->SetUniform(&uniform, &data.renderMode));
 			break;
 
 		default:
@@ -526,7 +527,7 @@ bool MaterialSystem::ApplyGlobal(uint32_t shader_id, size_t renderer_frame_numbe
 	return true;
 }
 
-bool MaterialSystem::ApplyInstance(Material* mat, bool need_update) {
+bool MaterialSystem::ApplyInstance(Material* mat, const FrameData& data, bool need_update) {
 	if (mat->InternalID == INVALID_ID) {
 		return false;
 	}
@@ -543,7 +544,59 @@ bool MaterialSystem::ApplyInstance(Material* mat, bool need_update) {
 
 		for (const auto& tex : mat->TextureBindings)
 		{
-			MATERIAL_APPLY_OR_FAIL(UsedShader->SetUniform(tex.uniform, &tex.texture));
+			switch (tex.uniform->semantic)
+			{
+			case ShaderSemantic::eSemantic_GBuffer_Albedo:
+				MATERIAL_APPLY_OR_FAIL(UsedShader->SetUniform(tex.uniform, &data.gBuffer->AlbedoTextureMap));
+				break;
+
+			case ShaderSemantic::eSemantic_GBuffer_Normal:
+				MATERIAL_APPLY_OR_FAIL(UsedShader->SetUniform(tex.uniform, &data.gBuffer->NormalTextureMap));
+				break;
+
+			case ShaderSemantic::eSemantic_GBuffer_Position:
+				MATERIAL_APPLY_OR_FAIL(UsedShader->SetUniform(tex.uniform, &data.gBuffer->PositionTextureMap));
+				break;
+
+			case ShaderSemantic::eSemantic_Diffuse_Texture:
+			{
+				if (tex.texture.texture) {
+					MATERIAL_APPLY_OR_FAIL(UsedShader->SetUniform(tex.uniform, &tex.texture))
+				}
+				else {
+					TextureSystem::Get().GetDefaultDiffuseTexture();
+					MATERIAL_APPLY_OR_FAIL(UsedShader->SetUniform(tex.uniform, &tex.texture));
+				}
+			} break;
+
+			case ShaderSemantic::eSemantic_Normal_Texture:
+			{
+				if (tex.texture.texture) {
+					MATERIAL_APPLY_OR_FAIL(UsedShader->SetUniform(tex.uniform, &tex.texture))
+				}
+				else {
+					TextureSystem::Get().GetDefaultNormalTexture();
+					MATERIAL_APPLY_OR_FAIL(UsedShader->SetUniform(tex.uniform, &tex.texture));
+				}
+			} break;
+
+			case ShaderSemantic::eSemantic_Roughness_Metallic_Texture:
+			{
+				if (tex.texture.texture) {
+					MATERIAL_APPLY_OR_FAIL(UsedShader->SetUniform(tex.uniform, &tex.texture))
+				}
+				else {
+					TextureSystem::Get().GetDefaultRoughnessMetallicTexture();
+					MATERIAL_APPLY_OR_FAIL(UsedShader->SetUniform(tex.uniform, &tex.texture));
+				}
+			} break;
+			case ShaderSemantic::eSemantic_Skybox_Texture:
+				MATERIAL_APPLY_OR_FAIL(UsedShader->SetUniform(tex.uniform, &tex.texture));
+				break;
+			default:
+				GLOG(Log::Level::eError, "MaterialSystem::ApplyInstance() Unknow texture binding semantic.");
+				break;
+			}
 		}
 	}
 
@@ -566,5 +619,5 @@ bool MaterialSystem::ApplyLocal(Material* mat, const Matrix4& model) {
 		}
 	}
 
-	return false;
+	return true;
 }

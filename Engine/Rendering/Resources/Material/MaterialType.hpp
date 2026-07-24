@@ -19,6 +19,8 @@ struct SMaterialConfig {
 	FString specular_map_name;
 	FString normal_map_name;
 
+	Vector4 light_intensity = Vector4(1.0f);
+
 	// PBR
 	float Metallic = 0.1f;					// 金属度
 	float Roughness = 0.5f;					// 粗糙度

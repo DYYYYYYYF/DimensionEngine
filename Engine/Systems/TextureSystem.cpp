@@ -557,7 +557,8 @@ bool TextureSystem::ProcessTextureReference(const FString& name, TextureType typ
 		}
 	}
 
-	Tex->IncreaseReferenceCount(reference_diff);
+	if (reference_diff > 0) Tex->IncreaseReferenceCount();
+	else Tex->DecreaseReferenceCount();
 
 	// Take a copy of the name since it would be wiped out if destroyed,
 	// (as passed in name is generally a pointer to the actual texture's name).

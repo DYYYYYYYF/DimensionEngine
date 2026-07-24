@@ -3,6 +3,8 @@
 #include "Rendering/Resources/Font/Font.hpp"
 
 class IGPUBuffer;
+class Geometry;
+class Material;
 
 enum class UITextType {
 	eUI_Text_Type_Bitmap,
@@ -26,7 +28,7 @@ public:
 	FString GetContent()     const { return Content; }
 	uint32_t GetContentLength() const { return (uint32_t)Content.Length(); }
 
-	Vector4 GetColor()       const { return Color; }
+	const Vector4& GetColor() const { return Color; }
 	void SetColor(Vector4 col) { Color = col; }
 
 	size_t GetFrameNumber() const { return RenderFrameNumber; }
@@ -37,13 +39,19 @@ public:
 	void SetInstance(uint32_t id) { InstanceID = id; }
 	uint32_t GetInstance() const { return InstanceID; }
 
+	Geometry* GetTextGeometry() const { return TextGeometry; }
+	Material* GetFontMaterial() const { return FontMaterial; }
+
 private:
 	void RegenerateGeometry();
 
 protected:
 	FString Content;
 	UITextType     Type = UITextType::eUI_Text_Type_Bitmap;
+	Geometry* TextGeometry = nullptr;
 	IFont* FontData = nullptr;       
+	Material* FontMaterial = nullptr;
+
 	IGPUBuffer* VertexBuffer = nullptr;
 	IGPUBuffer* IndexBuffer = nullptr;
 

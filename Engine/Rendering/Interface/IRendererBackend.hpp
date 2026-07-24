@@ -33,13 +33,13 @@ public:
 	virtual bool EndFrame(double delta_time) = 0;
 	virtual void Resize(unsigned short width, unsigned short height) = 0;
 	virtual void DrawGeometry(GeometryRenderData* geometry) = 0;
-	virtual void ExecuteDrawCalls(const std::vector<DrawCall>& draw_calls, size_t frame_number, void* custom_context) = 0;
+	virtual void ExecuteDrawCalls(const std::vector<DrawCall>& draw_calls, size_t frame_number, const FrameData& data) = 0;
 
 	// Texture
 	virtual UTexture* AcquireTexture(const FString& name, bool auto_release) = 0;
 
 	// Geometry
-	virtual bool CreateGeometry(Geometry* geometry, uint32_t vertex_size, uint32_t vertex_count, const void* vertices, uint32_t index_size, uint32_t index_count, const void* indices) = 0;
+	virtual bool CreateGeometry(Geometry* geometry, const SGeometryConfig& config) = 0;
 	virtual void DestroyGeometry(Geometry* geometry) = 0;
 	
 	// Renderpass

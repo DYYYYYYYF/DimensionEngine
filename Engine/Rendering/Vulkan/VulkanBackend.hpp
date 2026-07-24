@@ -20,15 +20,14 @@ public:
 
 	virtual bool BeginFrame(double delta_time) override;
 	virtual void DrawGeometry(GeometryRenderData* geometry) override;
-	virtual void ExecuteDrawCalls(const std::vector<DrawCall>& draw_calls, size_t frame_number, void* custom_context = nullptr) override;
+	virtual void ExecuteDrawCalls(const std::vector<DrawCall>& draw_calls, size_t frame_number, const FrameData& data) override;
 	virtual bool EndFrame(double delta_time) override;
 	virtual void Resize(unsigned short width, unsigned short height) override;
 
 	// Textures
 	virtual UTexture* AcquireTexture(const FString& name, bool auto_release) override;
 
-	virtual bool CreateGeometry(Geometry* geometry, uint32_t vertex_size, uint32_t vertex_count, 
-		const void* vertices, uint32_t index_size, uint32_t index_count, const void* indices) override;
+	virtual bool CreateGeometry(Geometry* geometry, const SGeometryConfig& config) override;
 	virtual void DestroyGeometry(Geometry* geometry) override;
 
 	// Renderpass

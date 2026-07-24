@@ -38,7 +38,7 @@ public:
 	 * @param view A constant pointer to a view matrix.
 	 * @return True on success; otherwise false.
 	 */
-	bool ApplyGlobal(uint32_t shader_id, size_t renderer_frame_number, const Matrix4& projection, const Matrix4& view, const Vector4& ambient_color, const Vector3& view_position, uint32_t render_mode, float global_time);
+	bool ApplyGlobal(uint32_t shader_id, size_t renderer_frame_number, const FrameData& data);
 
 	/**
 	 * @brief Applies instance-level material data for the given material.
@@ -47,7 +47,7 @@ public:
 	 * @param need_update Indicates if the material needs to be update.
 	 * @return True on success; otherwise false.
 	 */
-	bool ApplyInstance(Material* mat, bool need_update);
+	bool ApplyInstance(Material* mat, const FrameData& data, bool need_update);
 
 	/**
 	 * @brief Applies local-level material data (typically just model matrix).

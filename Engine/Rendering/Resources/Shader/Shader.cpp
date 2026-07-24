@@ -193,7 +193,7 @@ void Shader::AddSampler(const ShaderUniformConfig& config) {
 	// hashtable entry's 'location' field value directly, and is then set to the index of the uniform array.
 	// This allows location lookups for samplers as if they were uniforms as well (since technically they are).
 	// TODO: might need to store this elsewhere
-	AddUniform(config.name, 0, config.type, config.scope, ShaderSemantic::eShaderSemantic_None, Location, true);
+	AddUniform(config.name, 0, config.type, config.scope, config.semantic, Location, true);
 }
 
 void Shader::AddUniform(const ShaderUniformConfig& config) {

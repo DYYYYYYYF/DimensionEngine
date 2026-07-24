@@ -31,6 +31,7 @@ bool MaterialLoader::Load(const FString& name, void* params, UAsset* resource) {
 	SMaterialConfig* ResourceData = new(mem) SMaterialConfig();
 
 	// Set defaults.
+	resource->AssetType = Type;
 	ResourceData->auto_release = true;
 	ResourceData->shader_name = "Shader.Builtin.World";
 	ResourceData->diffuse_color = Vector4(1.0f);	// White

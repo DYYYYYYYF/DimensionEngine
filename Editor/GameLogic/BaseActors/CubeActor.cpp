@@ -11,6 +11,7 @@ ACubeActor::ACubeActor(const FString& Name) : AStaticMeshActor(Name) {
 	SGeometryConfig GeoConfig = GeoSys.GenerateCubeConfig(10.0f, 10.0f, 10.0f, 1.0f, 1.0f, "TestCube", "Material.Builtin.GBuffer");
 	geometries[0] = GeoSys.AcquireFromConfig(GeoConfig, true);
 	Generation = 0;
+	geometries[0]->IncreaseReferenceCount();
 
 	// Clean up the allocations for the geometry config.
 	GeoSys.ConfigDispose(&GeoConfig);

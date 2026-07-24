@@ -5,6 +5,8 @@
 #include "Containers/FString.hpp"
 #include "Containers/TArray.hpp"
 
+struct GBufferSet;
+
 enum class EShaderLanguage {
 	eHLSL,
 	eGLSL
@@ -151,6 +153,19 @@ enum class ShaderSemantic {
 	eShaderSemantic_Time,
 	eShaderSemantic_RenderMode,
 
+	// Dynamic Instance
+	eSemantic_GBuffer_Albedo,
+	eSemantic_GBuffer_Normal,
+	eSemantic_GBuffer_Position,
+
+	// PBR Texture
+	eSemantic_Diffuse_Texture,
+	eSemantic_Normal_Texture,
+	eSemantic_Roughness_Metallic_Texture,
+
+	// Skybox
+	eSemantic_Skybox_Texture,
+
 	// Local
 	eShaderSemantic_Model_Matrix,
 
@@ -173,8 +188,30 @@ struct ShaderUniform {
 	ShaderUniformType type;
 };
 
+struct FrameData {
+	Matrix4 projection;
+	Matrix4 view;
+
+	Matrix4 invProjection;
+	Matrix4 invView;
+	Matrix4 viewProjection;
+
+	Vector3 cameraPosition;
+
+	float time;
+	float deltaTime;
+
+	Vector2 screenSize;
+	Vector2 invScreenSize;
+	Vector4 ambieantColor;
+
+	EShaderRenderMode renderMode;
+
+	GBufferSet* gBuffer;
+};
+
 struct ShaderAttribute {
-	FString name = nullptr;
+	FString name;
 	uint32_t size;
 	ShaderAttributeType type;
 };

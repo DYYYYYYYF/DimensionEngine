@@ -6,9 +6,23 @@
 class Material;
 
 class DAPI Geometry : public UAsset {
+	friend class GeometrySystem;
+
 public:
 	Geometry();
 	Geometry(const FString& name);
+	virtual ~Geometry();
+
+public:
+	inline size_t GetReferenceCount() const { return ReferenceCount; }
+	inline void IncreaseReferenceCount(uint32_t count = 1) { ReferenceCount += count; }
+	void DecreaseReferenceCount(uint32_t count = 1);
+
+	inline bool IsAutoRelease() const { return AutoRelease; }
+	inline void SetIsAutoRelease(bool b) { AutoRelease = b; }
+
+private:
+	void DestroyInstance();
 
 public:
 	uint32_t ID;
@@ -19,6 +33,7 @@ public:
 	FString name;
 	Material* Material = nullptr;
 
-	size_t reference_count = 0;
-	bool auto_release = false;
+private:
+	size_t ReferenceCount = 0;
+	bool AutoRelease = true;
 };

@@ -176,12 +176,16 @@ bool RenderViewWorld::OnBuildPacket(IRenderviewPacketData* data, struct RenderVi
 	uint32_t GeometryDataCount = (uint32_t)GeometryData.size();
 	for (uint32_t i = 0; i < GeometryDataCount; ++i) {
 		const GeometryRenderData& GData = GeometryData[i];
-		if (GData.geometry == nullptr) {
-			continue;
-		}
+		if (!GData.geometry) continue;
+
+		Material* Mat = GData.geometry->Material;
+		if (!Mat) continue;
+
+		const TArray<TextureBinding>& TextureBindings = Mat->GetTextureBindings();
+		if (TextureBindings.IsEmpty()) continue;
 
 		// TODO: Add something to material to check for transparency.
-		if ((GData.geometry->Material->TextureBindings[0].texture.texture->GetFlags() & TextureFlagBits::eTexture_Flag_Has_Transparency) == 0) {
+		if ((TextureBindings[0].texture.texture->GetFlags() & TextureFlagBits::eTexture_Flag_Has_Transparency) == 0) {
 			// Only add meshes with _no_ transparency.
 			out_packet->geometries.push_back(GeometryData[i]);
 			out_packet->geometry_count++;
@@ -241,7 +245,15 @@ bool RenderViewWorld::OnRender(struct RenderViewPacket* packet, RHI* back_render
 		}
 
 		// Apply globals.
-		if (!MaterialSystem::Get().ApplyGlobal(SID, frame_number, packet->projection_matrix, packet->view_matrix, packet->ambient_color, packet->view_position, (int)render_mode, packet->global_time)) {
+		FrameData Data;
+		Data.projection = packet->projection_matrix;
+		Data.view = packet->view_matrix;
+		Data.ambieantColor = packet->ambient_color;
+		Data.cameraPosition = packet->view_position;
+		Data.renderMode = render_mode;
+		Data.time = packet->global_time;
+
+		if (!MaterialSystem::Get().ApplyGlobal(SID, frame_number, Data)) {
 			GLOG(Log::eError, "RenderViewUI::OnRender() Failed to use global shader. Render frame failed.");
 			return false;
 		}
@@ -261,14 +273,14 @@ bool RenderViewWorld::OnRender(struct RenderViewPacket* packet, RHI* back_render
 			// same material from being updated multiple times. It still needs to be bound
 			// either way, so this check result gets passed to the backend which either
 			// updates the internal shader bindings and binds them, or only binds them.
-			bool IsNeedUpdate = Mat->RenderFrameNumer != frame_number;
-			if (!MaterialSystem::Get().ApplyInstance(Mat, IsNeedUpdate)) {
-				GLOG(Log::eWarn, "Failed to apply material '%s'. Skipping draw.", Mat->Name.CStr());
+			bool IsNeedUpdate = Mat->IsNeedUpdate(frame_number);
+			if (!MaterialSystem::Get().ApplyInstance(Mat, Data, IsNeedUpdate)) {
+				GLOG(Log::eWarn, "Failed to apply material '%s'. Skipping draw.", Mat->GetName().CStr());
 				continue;
 			}
 			else {
 				// Sync the frame number.
-				Mat->RenderFrameNumer = (uint32_t)frame_number;
+				Mat->SetFrameNumber(frame_number);
 			}
 
 			// Apply local

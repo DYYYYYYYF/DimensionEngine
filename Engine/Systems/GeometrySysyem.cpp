@@ -43,7 +43,7 @@ void GeometrySystem::Shutdown() {
 
 Geometry* GeometrySystem::AcquireByID(uint32_t id) {
 	if (id < RegisteredGeometries.Size() && RegisteredGeometries[id]->ID != INVALID_ID) {
-		RegisteredGeometries[id]->reference_count++;
+		RegisteredGeometries[id]->IncreaseReferenceCount();
 		return RegisteredGeometries[id];
 	}
 
@@ -65,28 +65,9 @@ Geometry* GeometrySystem::AcquireFromConfig(SGeometryConfig config, bool auto_re
 	return geometry;
 }
 
-void GeometrySystem::Release(Geometry* geometry) {
-	if (!geometry) {
-		return;
-	}
-
-	if (geometry->ID != INVALID_ID) {
-		// Take a copy of id.
-		if (geometry->reference_count > 0) {
-			geometry->reference_count--;
-		}
-
-		// Also blanks out the geometry id.
-		if (geometry->reference_count < 1 && geometry->auto_release) {
-			DestroyGeometry(geometry);
-			geometry->reference_count = 0;
-			geometry->auto_release = false;
-		}
-
-		return;
-	}
-
-	GLOG(Log::eWarn, "Geometry system release by id can not release invalid geometry id. Nothing was down.");
+Geometry* GeometrySystem::AcquireDynamic() {
+	Geometry* geometry = new Geometry();
+	return geometry;
 }
 
 Geometry* GeometrySystem::GetDefaultGeometry() {
@@ -140,8 +121,15 @@ bool GeometrySystem::CreateDefaultGeometries() {
 	}
 
 	// Send the geometry off to the renderer to be uploaded to the GPU.
-	DefaultGeometry->InternalID = INVALID_ID;
-	if (!Renderer->CreateGeometry(DefaultGeometry, sizeof(Vertex), 4, Verts, sizeof(uint32_t), 6, Indices)) {
+	SGeometryConfig config;
+	config.vertex_size = sizeof(Vertex);
+	config.vertex_count = 4;
+	config.vertices = Verts;
+	config.index_size = sizeof(uint32_t);
+	config.index_count = 6;
+	config.indices = Indices;
+
+	if (!Renderer->CreateGeometry(DefaultGeometry, config)) {
 		GLOG(Log::eFatal, "Failed to create default geometry. Application quit now!");
 		return false;
 	}
@@ -183,8 +171,15 @@ bool GeometrySystem::CreateDefaultGeometries() {
 	}
 
 	// Send the geometry off to the renderer to be uploaded to the GPU.
-	Default2DGeometry->InternalID = INVALID_ID;
-	if (!Renderer->CreateGeometry(Default2DGeometry, sizeof(Vertex2D), 4, Verts2D, sizeof(uint32_t), 6, Indices2D)) {
+	SGeometryConfig config2D;
+	config2D.vertex_size = sizeof(Vertex2D);
+	config2D.vertex_count = 4;
+	config2D.vertices = Verts2D;
+	config2D.index_size = sizeof(uint32_t);
+	config2D.index_count = 6;
+	config2D.indices = Indices2D;
+
+	if (!Renderer->CreateGeometry(Default2DGeometry, config2D)) {
 		GLOG(Log::eFatal, "Failed to create default 2d geometry. Application quit now!");
 		return false;
 	}
@@ -203,7 +198,7 @@ Geometry* GeometrySystem::CreateGeometry(SGeometryConfig config) {
 	}
 
 	// Send the geometry off to the renderer to be uploaded to the GPU.
-	if (!Renderer->CreateGeometry(geometry, config.vertex_size, config.vertex_count, config.vertices, config.index_size, config.index_count, config.indices)) {
+	if (!Renderer->CreateGeometry(geometry, config)) {
 		// Invalidate the entry.
 		DeleteObject(geometry);
 		return nullptr;
@@ -218,11 +213,6 @@ Geometry* GeometrySystem::CreateGeometry(SGeometryConfig config) {
 	// Acquire the material.
 	if (config.material_name.Length() > 0) {
 		geometry->Material = MaterialSystem::Get().Acquire(config.material_name.CStr());
-	}
-
-	if (geometry->Material == nullptr) {
-		GLOG(Log::eWarn, "Default use default material.");
-		geometry->Material = MaterialSystem::Get().GetDefaultMaterial();
 	}
 
 	RegisteredGeometries.Push(geometry);
@@ -250,12 +240,6 @@ void GeometrySystem::DestroyGeometry(Geometry* geometry) {
 	geometry->InternalID = INVALID_ID;
 
 	geometry->name[0] = '0';
-
-	// Release the material.
-	if (geometry->Material) {
-		MaterialSystem::Get().Release(geometry->Material->Name);
-		geometry->Material = nullptr;
-	}
 }
 
 SGeometryConfig GeometrySystem::GeneratePlaneConfig(float width, float height, uint32_t x_segment_count,
@@ -539,5 +523,6 @@ Geometry* GeometrySystem::GenerateQuad(const FString& name, const FString& mater
 		return nullptr;
 	}
 
+	NewGeom->IncreaseReferenceCount();
 	return NewGeom;
 }

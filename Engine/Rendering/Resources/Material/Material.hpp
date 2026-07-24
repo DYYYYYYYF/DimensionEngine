@@ -16,52 +16,46 @@ struct TextureBinding {
 };
 
 class Material : public UAsset{
+	friend class MaterialSystem;
+
 public:
 	Material();
 	virtual ~Material();
 
 public:
-	inline uint32_t GetID() const { return ID; }
-	inline void SetID(uint32_t id) { ID = id; }
+	inline uint32_t GetInternalID() const { return InternalID; }
+	inline void SetInternalID(uint32_t id) { InternalID = id; }
 
 	inline size_t GetReferenceCount() const { return ReferenceCount; }
-	inline void SetReferenceCount(uint32_t count) { ReferenceCount = count; }
 	inline void IncreaseReferenceCount(uint32_t count = 1) { ReferenceCount += count; }
-	inline void DecreaseReferenceCount(uint32_t count = 1) { ReferenceCount -= count; }
+	void DecreaseReferenceCount(uint32_t count = 1);
 
 	inline bool IsAutoRelease() const { return AutoRelease; }
 	inline void SetIsAutoRelease(bool b) { AutoRelease = b; }
 
-private:
-	uint32_t ID;
-	size_t ReferenceCount = 0;
-	bool AutoRelease = false;
+	const TArray<UniformValue>& GetUniformValues() const { return UnifromValues; }
+	const TArray<TextureBinding>& GetTextureBindings() const { return TextureBindings; }
 
-public:
+	void SetFrameNumber(size_t frame_number) { RenderFrameNumer = frame_number; }
+	bool IsNeedUpdate(size_t current_frame_number) const { return RenderFrameNumer != current_frame_number; }
+
+private:
+	void DestroyInstance();
+
+protected:
 	// Base
 	FString Name;
 	uint32_t Generation;
 	uint32_t InternalID;
 	uint32_t ShaderID;
-	uint32_t RenderFrameNumer;
+	size_t RenderFrameNumer;
 
 	// Parameters
 	TArray<UniformValue> UnifromValues;
 	TArray<TextureBinding> TextureBindings;
+	
+private:
+	size_t ReferenceCount = 0;
+	bool AutoRelease = true;
 
-	// TODO: Remove
-	struct {
-		// PBR
-		const ShaderUniform* diffuseColor;
-		const ShaderUniform* shininess;
-		const ShaderUniform* metallic;
-		const ShaderUniform* roughness;
-		const ShaderUniform* ambientOcclusion;
-		const ShaderUniform* normalIntensity;
-
-		// Textures
-		const ShaderUniform* diffuseTexture;
-		const ShaderUniform* normalTexture;
-		const ShaderUniform* roughnessMetallicTexture;
-	} Handles;
 };

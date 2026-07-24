@@ -34,8 +34,7 @@ public:
 
 	virtual UTexture* AcquireTexture(const FString& name, bool auto_release = true);
 
-	virtual bool CreateGeometry(Geometry* geometry, uint32_t vertex_size, uint32_t vertex_count, 
-		const void* vertices, uint32_t index_size, uint32_t index_count, const void* indices);
+	virtual bool CreateGeometry(Geometry* geometry, const SGeometryConfig& config);
 	virtual void DestroyGeometry(Geometry* geometry);
 
 	virtual bool GetEnabledMutiThread() const;

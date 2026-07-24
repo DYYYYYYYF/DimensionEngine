@@ -180,9 +180,8 @@ UTexture* IRenderer::AcquireTexture(const FString& name, bool auto_release) {
 	return RHI_->AcquireTexture(name, auto_release);
 }
 
-bool IRenderer::CreateGeometry(Geometry* geometry, uint32_t vertex_size, uint32_t vertex_count,
-	const void* vertices, uint32_t index_size, uint32_t index_count, const void* indices) {
-	return RHI_->CreateGeometry(geometry, vertex_size, vertex_count, vertices, index_size, index_count, indices);
+bool IRenderer::CreateGeometry(Geometry* geometry, const SGeometryConfig& config) {
+	return RHI_->CreateGeometry(geometry, config);
 }
 
 void IRenderer::DestroyGeometry(Geometry* geometry) {

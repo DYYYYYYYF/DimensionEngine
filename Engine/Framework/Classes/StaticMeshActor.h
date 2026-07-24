@@ -26,6 +26,8 @@ public:
 	DAPI bool LoadFromResource(const FString& resource_name);
 	DAPI void Unload();
 
+	DAPI bool SetMeshResource(UAsset* mesh_resource);
+
 private:
 	void LoadJobSuccess();
 	void LoadJobFail();

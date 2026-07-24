@@ -633,10 +633,9 @@ UTexture* VulkanRHI::AcquireTexture(const FString& name, bool auto_release) {
 	return tex;
 }
 
-bool VulkanRHI::CreateGeometry(Geometry* geometry, uint32_t vertex_size, uint32_t vertex_count, 
-	const void* vertices, uint32_t index_size, uint32_t index_count, const void* indices) {
-	if (vertex_count == 0 || vertices == nullptr) {
-		GLOG(Log::eError, "Vulkan renderer create geometry requires vertex data, and none was supplied. vertex_count=%d, vertices=%p", vertex_count, vertices);
+bool VulkanRHI::CreateGeometry(Geometry* geometry, const SGeometryConfig& config) {
+	if (config.vertex_count == 0 || config.vertices == nullptr) {
+		GLOG(Log::eError, "Vulkan renderer create geometry requires vertex data, and none was supplied. vertex_count=%d, vertices=%p", config.vertex_count, config.vertices);
 		return false;
 	}
 
@@ -647,6 +646,10 @@ bool VulkanRHI::CreateGeometry(Geometry* geometry, uint32_t vertex_size, uint32_
 	GeometryData* InternalData = nullptr;
 	if (IsReupload) {
 		InternalData = &Geometries[geometry->InternalID];
+		if (!InternalData) {
+			GLOG(Log::eError, "Vulkan renderer create geometry failed to find the internal data for a re-upload. Geometry ID: %d", geometry->InternalID);
+			return false;
+		}
 
 		// Take a copy of the old range.
 		OldRange.index_buffer_offset = InternalData->index_buffer_offset;
@@ -674,31 +677,31 @@ bool VulkanRHI::CreateGeometry(Geometry* geometry, uint32_t vertex_size, uint32_
 	}
 
 	// Vertex data.
-	InternalData->vertex_count = vertex_count;
-	InternalData->vertex_element_size = sizeof(Vertex);
-	uint32_t VertexTotalSize = vertex_size * vertex_count;
+	InternalData->vertex_count = config.vertex_count;
+	InternalData->vertex_element_size = config.vertex_size;
+	uint32_t VertexTotalSize = config.vertex_size * config.vertex_count;
 	// Allocate space in the buffer.
 	if (!Context.ObjectVertexBuffer->AllocateMemory(VertexTotalSize, &InternalData->vertext_buffer_offset)) {
 		GLOG(Log::eError, "Vulkan renderer create geometry failed to allocate vertex data.");
 		return false;
 	}
 
-	if (!Context.ObjectVertexBuffer->Load(InternalData->vertext_buffer_offset, VertexTotalSize, vertices)) {
+	if (!Context.ObjectVertexBuffer->Load(InternalData->vertext_buffer_offset, VertexTotalSize, config.vertices)) {
 		GLOG(Log::eError, "Vulkan renderer create geometry failed to upload vertex data.");
 		return false;
 	}
 
 	// Index data. If Applicable.
-	if (index_count != 0 && indices != nullptr) {
-		InternalData->index_count = index_count;
-		InternalData->index_element_size = sizeof(uint32_t);
-		uint32_t IndexTotalSize = index_size * index_count;
+	if (config.index_count != 0 && config.indices != nullptr) {
+		InternalData->index_count = config.index_count;
+		InternalData->index_element_size = config.index_size;
+		uint32_t IndexTotalSize = config.index_size * config.index_count;
 		if (!Context.ObjectIndexBuffer->AllocateMemory(IndexTotalSize, &InternalData->index_buffer_offset)) {
 			GLOG(Log::eError, "Vulkan renderer create geometry failed to allocate index data.");
 			return false;
 		}
 
-		if (!Context.ObjectIndexBuffer->Load(InternalData->index_buffer_offset, IndexTotalSize, indices)) {
+		if (!Context.ObjectIndexBuffer->Load(InternalData->index_buffer_offset, IndexTotalSize, config.indices)) {
 			GLOG(Log::eError, "Vulkan renderer create geometry failed to upload index data.");
 			return false;
 		}
@@ -770,7 +773,8 @@ void VulkanRHI::DrawGeometry(GeometryRenderData* geometry) {
 }
 
 void VulkanRHI::ExecuteDrawCalls(const std::vector<DrawCall>& draw_calls,
-	size_t frame_number, void* custom_context) {
+	size_t frame_number, const FrameData& data) {
+	// 每个DrawCall重置
 	Shader* currentShader = nullptr;
 	Material* currentMaterial = nullptr;
 
@@ -779,50 +783,30 @@ void VulkanRHI::ExecuteDrawCalls(const std::vector<DrawCall>& draw_calls,
 		{
 			dc.shader->Use();
 			currentShader = dc.shader;
-		}
 
-		if (currentMaterial != dc.material)
-		{
-			bool needUpdate = dc.material->RenderFrameNumer != frame_number;
-
-			if (dc.shader->Name.Compare("Shader.Builtin.DeferredLighting") == 0)
-			{
-				if (needUpdate){
-					GBufferSet* gbuffer = (GBufferSet*)dc.userData;
-					currentShader->BindInstance(dc.material->InternalID);
-					Vector4 LightIntensity = { 1.0f };
-					int RenderMode = 1;
-					currentShader->SetUniform("light_intensity", &LightIntensity);
-					currentShader->SetUniform("debug_mode", &RenderMode);
-
-					currentShader->SetUniform(
-						"albedo_texture",
-						&gbuffer->AlbedoTextureMap);
-
-					currentShader->SetUniform(
-						"normal_texture",
-						&gbuffer->NormalTextureMap);
-
-					currentShader->SetUniform(
-						"position_texture",
-						&gbuffer->PositionTextureMap);
-
-					currentShader->ApplyInstance(needUpdate);
-				} else {
-				}
-			}
-			else {
-				MaterialSystem::Get().ApplyInstance(dc.material, needUpdate);
-				currentMaterial = dc.material;
-				MaterialSystem::Get().ApplyLocal(dc.material, dc.model);
+			// 一个Shader只需要绑定一次
+			if (!MaterialSystem::Get().ApplyGlobal(currentShader->GetUniqueID(), frame_number, data)) {
+				GLOG(Log::eError, "VulkanRHI::ExecuteDrawCalls() Failed to use global shader. Render frame failed.");
+				continue;
 			}
 		}
-		// 模型需要ModelMat
-		else {
-			MaterialSystem::Get().ApplyLocal(dc.material, dc.model);
+
+		if (currentMaterial != dc.material) {
+			bool needUpdate = dc.material->IsNeedUpdate(frame_number);
+			if (!MaterialSystem::Get().ApplyInstance(dc.material, data, needUpdate)) {
+				GLOG(Log::eError, "VulkanRHI::ExecuteDrawCalls() Failed to use iinstance shader. Render frame failed.");
+				continue;
+			}
+
+			currentMaterial = dc.material;
 		}
 
-		dc.material->RenderFrameNumer = (uint32_t)frame_number;
+		if (!MaterialSystem::Get().ApplyLocal(dc.material, dc.model)) {
+			GLOG(Log::eError, "VulkanRHI::ExecuteDrawCalls() Failed to use local shader. Render frame failed.");
+			continue;
+		}
+			
+		dc.material->SetFrameNumber((uint32_t)frame_number);
 
 		// 真正Draw
 		GeometryRenderData renderData;

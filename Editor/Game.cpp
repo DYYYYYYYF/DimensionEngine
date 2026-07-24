@@ -247,8 +247,8 @@ bool GameInstance::Initialize() {
 	// Get UI geometry from config.
 	AStaticMeshActor* UIMesh = NewObject<AStaticMeshActor>("Engine Logo UI");
 	UIMesh->geometry_count = 1;
-	UIMesh->geometries = (Geometry**)Memory::Allocate(sizeof(Geometry*), MemoryType::eMemory_Type_Array);
-	UIMesh->geometries[0] = GeometrySystem::Get().AcquireFromConfig(UIConfig, true);
+	Geometry* UIGeometry = GeometrySystem::Get().AcquireFromConfig(UIConfig, true);
+	UIMesh->SetMeshResource(UIGeometry);
 	UIMesh->Generation = 0;
 	UIMeshes.Push(UIMesh);
 
@@ -644,7 +644,7 @@ void GameInstance::OnResize(unsigned int width, unsigned int height) {
 	uint32_t UIIndices[6] = { 0, 2, 1, 0, 1, 3 };
 	UIConfig.indices = UIIndices;
 
-	GeometrySystem::Get().Release(UIMeshes[0]->geometries[0]);
+	UIMeshes[0]->geometries[0]->DecreaseReferenceCount();
 	UIMeshes[0]->geometries[0] = GeometrySystem::Get().AcquireFromConfig(UIConfig, true);
 }
 

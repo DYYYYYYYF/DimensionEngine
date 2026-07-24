@@ -1,5 +1,6 @@
 #include "TextComponent.h"
 
+#include "Systems/MaterialSystem.h"
 #include "Systems/ShaderSystem.h"
 #include "Systems/FontSystem.hpp"
 #include "Rendering/Renderer.hpp"
@@ -98,6 +99,13 @@ bool UTextComponent::Load(UITextType type, const FString& fontName, int fontSize
 	// 校验 atlas 是否包含所需字符
 	if (!FontSystem.VerifyAtlas(FontData, textContent)) {
 		GLOG(Log::eError, "Font atlas verification failed.");
+		return false;
+	}
+
+	// 加载Material
+	FontMaterial = MaterialSystem::Get().Acquire("Material.Builtin.Text");
+	if (!FontMaterial) {
+		GLOG(Log::eError, "UIText::Load() Failed to acquire builtin text material.");
 		return false;
 	}
 

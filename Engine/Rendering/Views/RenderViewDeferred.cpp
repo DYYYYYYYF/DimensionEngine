@@ -315,18 +315,14 @@ bool RenderViewWorldDeferred::OnRender(struct RenderViewPacket* packet, RHI* bac
 		GeometryRenderData* SrcData = &packet->geometries[i];
 		if (!SrcData->geometry) continue;
 
-		Material* Mat = SrcData->geometry->Material
-			? SrcData->geometry->Material
-			: MaterialSystem::Get().GetDefaultMaterial();
-
 		DrawCall dc;
+		Material* Mat = SrcData->geometry->Material ? SrcData->geometry->Material : MaterialSystem::Get().GetDefaultMaterial();
 		dc.geometry = SrcData->geometry;
 		dc.model = SrcData->model_mat;
 		dc.material= Mat;
 		dc.shader = GBufferShader;
 		dc.userData = nullptr;
-		dc.sortKey = ((uint64_t)dc.shader->ID << 32) | (uint64_t)Mat->InternalID;
-
+		dc.sortKey = ((uint64_t)dc.shader->ID << 32) | (uint64_t)Mat->GetInternalID();
 		GBufferDrawCalls.push_back(dc);
 	}
 
@@ -336,15 +332,14 @@ bool RenderViewWorldDeferred::OnRender(struct RenderViewPacket* packet, RHI* bac
 		});
 
 	// --- 收集 延迟光照 的 DrawCall ---
-	Material* DeferredLightingMat = FullscreenQuad->Material;
-
 	DrawCall LightingDC;
+	Material* DeferredLightingMat = FullscreenQuad->Material;
 	LightingDC.geometry = FullscreenQuad;
 	LightingDC.model = Matrix4::Identity();
 	LightingDC.material = DeferredLightingMat;
 	LightingDC.shader = LightingShader;
 	LightingDC.userData = CurrentGBuffer;
-	LightingDC.sortKey = ((uint64_t)LightingDC.shader->ID << 32) | (uint64_t)DeferredLightingMat->InternalID;
+	LightingDC.sortKey = ((uint64_t)LightingDC.shader->ID << 32) | (uint64_t)DeferredLightingMat->GetInternalID();
 
 	LightingDrawCalls.push_back(LightingDC);
 
@@ -360,17 +355,15 @@ bool RenderViewWorldDeferred::OnRender(struct RenderViewPacket* packet, RHI* bac
 	}
 
 	// 绑定 Pass 全局不变量
-	GBufferShader->SetUniform("projection", &packet->projection_matrix);
-	GBufferShader->SetUniform("view", &packet->view_matrix);
-	GBufferShader->SetUniform("view_position", &packet->view_position);
-	GBufferShader->SetUniform("render_mode", &render_mode);
-	GBufferShader->SetUniform("time", &packet->global_time);
-	GBufferShader->ApplyGlobal();
+	FrameData GBufferData;
+	GBufferData.projection = packet->projection_matrix;
+	GBufferData.view = packet->view_matrix;
+	GBufferData.cameraPosition = packet->view_position;
+	GBufferData.renderMode = render_mode;
+	GBufferData.time = packet->global_time;
 
-	back_renderer->ExecuteDrawCalls(GBufferDrawCalls, frame_number, nullptr);
-
+	back_renderer->ExecuteDrawCalls(GBufferDrawCalls, frame_number, GBufferData);
 	GBufferPass->End();
-
 
 	// 阶段三：第二通道 —— 延迟光照通道绘制（直接呼叫后端执行）
 	IRenderpass* LightingPass = (IRenderpass*)&Passes[1];
@@ -383,11 +376,11 @@ bool RenderViewWorldDeferred::OnRender(struct RenderViewPacket* packet, RHI* bac
 	}
 
 	// 绑定 Pass 全局不变量
-	LightingShader->SetUniform("time", &packet->global_time);
-	LightingShader->ApplyGlobal();
+	FrameData LightingData;
+	LightingData.time = packet->global_time;
+	LightingData.gBuffer = CurrentGBuffer;
 
-	back_renderer->ExecuteDrawCalls(LightingDrawCalls, frame_number, CurrentGBuffer);
-
+	back_renderer->ExecuteDrawCalls(LightingDrawCalls, frame_number, LightingData);
 	LightingPass->End();
 
 	return true;
@@ -447,6 +440,6 @@ bool RenderViewWorldDeferred::CreateFullscreenQuad() {
 
 void RenderViewWorldDeferred::DestroyFullscreenQuad() {
 	if (FullscreenQuad) {
-		GeometrySystem::Get().Release(FullscreenQuad);
+		FullscreenQuad->DecreaseReferenceCount();
 	}
 }

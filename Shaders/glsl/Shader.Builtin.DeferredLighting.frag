@@ -106,9 +106,9 @@ void main(){
         
         // 添加方向光
         FragColor += CalculateDirectionalLight(dir_light, worldNormal, viewDirection, albedo, metallic, roughness);
-        
+
         // 添加第二个点光源
-        FragColor += CalculatePointLight(point_light_1, worldNormal, worldPosition, viewDirection, albedo, metallic, roughness);
+        //FragColor += CalculatePointLight(point_light_1, worldNormal, worldPosition, viewDirection, albedo, metallic, roughness);
         
         // 应用环境光
         vec3 ambient = in_dto.ambient_color.rgb * albedo;
@@ -123,7 +123,7 @@ vec4 CalculateDirectionalLight(DirectionalLight light, vec3 normal, vec3 view_di
     float fDiffuseFactor = max(dot(normal, -light.direction), 0.0f);
     
     vec3 HalfDirection = normalize(-view_direction - light.direction);
-    float SpecularFactor = pow(max(dot(HalfDirection, normal), 0.0f), (1.0 - roughness) * 128.0);
+    float SpecularFactor = pow(max(dot(HalfDirection, normal), 0.0f), mix(128.0, 1.0, roughness));
     
     vec4 Ambient = vec4(vec3(in_dto.ambient_color * vec4(albedo, 1.0)), 1.0);
     vec4 Diffuse = vec4(vec3(albedo * fDiffuseFactor), 1.0);
@@ -137,7 +137,7 @@ vec4 CalculatePointLight(PointLight light, vec3 normal, vec3 frag_position, vec3
     float Diff = max(dot(normal, LightDirection), 0.0f);
     
     vec3 ReflectDirection = reflect(-LightDirection, normal);
-    float Spec = pow(max(dot(view_direction, ReflectDirection), 0.0f), (1.0 - roughness) * 128.0);
+    float Spec = pow(max(dot(view_direction, ReflectDirection), 0.0f), mix(128.0, 1.0, roughness));
     
     // 计算衰减
     float Distance = length(light.position - frag_position);

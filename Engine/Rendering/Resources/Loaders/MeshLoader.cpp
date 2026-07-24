@@ -648,6 +648,12 @@ bool MeshLoader::WriteDmtFile(const FString& mtl_file_path, SMaterialConfig* con
 	LineBuf = FString::Format("name=%s", config->name.CStr());
 	f.WriteLine(LineBuf);
 
+	// Base
+	LineBuf = FString::Format("light_intensity=%.6f %.6f %.6f %.6f",
+		config->light_intensity.r, config->light_intensity.g,
+		config->light_intensity.b, config->light_intensity.a);
+	f.WriteLine(LineBuf);
+
 	// BlinnPhong
 	LineBuf = FString::Format("diffuse_color=%.6f %.6f %.6f %.6f",
 		config->diffuse_color.r, config->diffuse_color.g,
@@ -669,19 +675,19 @@ bool MeshLoader::WriteDmtFile(const FString& mtl_file_path, SMaterialConfig* con
 
 	// Textures
 	if (!config->diffuse_map_name.IsEmpty()) {
-		LineBuf = FString::Format("diffuse_map_name=%s", config->diffuse_map_name.CStr());
+		LineBuf = FString::Format("diffuse_texture=%s", config->diffuse_map_name.CStr());
 		f.WriteLine(LineBuf);
 	}
 	if (!config->specular_map_name.IsEmpty()) {
-		LineBuf = FString::Format("specular_map_name=%s", config->specular_map_name.CStr());
+		LineBuf = FString::Format("specular_texture=%s", config->specular_map_name.CStr());
 		f.WriteLine(LineBuf);
 	}
 	if (!config->normal_map_name.IsEmpty()) {
-		LineBuf = FString::Format("normal_map_name=%s", config->normal_map_name.CStr());
+		LineBuf = FString::Format("normal_texture=%s", config->normal_map_name.CStr());
 		f.WriteLine(LineBuf);
 	}
 	if (!config->MetallicRoughnessTexName.IsEmpty()) {
-		LineBuf = FString::Format("roughness_metallic_map_name=%s", config->MetallicRoughnessTexName.CStr());
+		LineBuf = FString::Format("roughness_metallic_texture=%s", config->MetallicRoughnessTexName.CStr());
 		f.WriteLine(LineBuf);
 	}
 

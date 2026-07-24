@@ -25,6 +25,7 @@ void AStaticMeshActor::LoadJobSuccess() {
 	for (uint32_t i = 0; i < LoadParams.out_mesh->geometry_count; ++i) {
 		SGeometryConfig& Config = Configs[i];
 		LoadParams.out_mesh->geometries[i] = GeometrySystem::Get().AcquireFromConfig(Config, true);
+		LoadParams.out_mesh->geometries[i]->IncreaseReferenceCount();
 	}
 	LoadParams.out_mesh->Generation++;
 
@@ -63,7 +64,8 @@ bool AStaticMeshActor::LoadFromResource(const FString& resource_name) {
 
 void AStaticMeshActor::Unload() {
 	for (uint32_t i = 0; i < geometry_count; ++i) {
-		GeometrySystem::Get().Release(geometries[i]);
+		geometries[i]->DecreaseReferenceCount();
+		geometries[i] = nullptr;
 	}
 
 	Memory::Free(geometries, MemoryType::eMemory_Type_Array);
@@ -72,4 +74,24 @@ void AStaticMeshActor::Unload() {
 	// For good measure. Invalidate the geometry so it doesn't attemp to be renderer.
 	geometry_count = 0;
 	Generation = INVALID_ID_U8;
+}
+
+bool AStaticMeshActor::SetMeshResource(UAsset* mesh_resource)
+{
+	Geometry* geometry = dynamic_cast<Geometry*>(mesh_resource);
+	if (!geometry) {
+		GLOG(Log::eError, "Failed to set mesh resource: '%s'. The provided resource is not a Geometry.", mesh_resource->GetName().CStr());
+		return false;
+	}
+
+	if (!geometries) {
+		geometries = (Geometry**)Memory::Allocate(sizeof(Geometry*), MemoryType::eMemory_Type_Array);
+	}
+	else
+	{
+		geometries[0]->DecreaseReferenceCount();
+	}
+
+	geometries[0] = geometry;
+	return true;
 }
