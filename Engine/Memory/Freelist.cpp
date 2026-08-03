@@ -67,7 +67,7 @@ void Freelist::Destroy() {
 bool Freelist::AllocateBlock(size_t size, size_t* offset) {
 	MutexGuard Guard(freelist_mutex);
 
-	if (offset == nullptr || ListMemory == nullptr) {
+	if (!offset || !ListMemory || size == 0) {
 		return false;
 	}
 
@@ -88,7 +88,7 @@ bool Freelist::AllocateBlock(size_t size, size_t* offset) {
 				ReturnNode = Head;
 				Head = Node->next;
 			}
-			ResetNodeUnsafe(ReturnNode);  // 修复：使用不加锁版本
+			ResetNodeUnsafe(ReturnNode);  // 使用不加锁版本
 			return true;
 		}
 		else if (Node->size > size) {
@@ -109,116 +109,118 @@ bool Freelist::AllocateBlock(size_t size, size_t* offset) {
 	return false;
 }
 
-bool Freelist::FreeBlock(size_t size, size_t offset) {
+bool Freelist::FreeBlock(size_t size, size_t offset)
+{
 	MutexGuard Guard(freelist_mutex);
 
 	if (ListMemory == nullptr || size == 0) {
 		return false;
 	}
 
-	FreelistNode* Node = Head;
-	FreelistNode* Prev = nullptr;
+	// 如果有 TotalSize，建议在这里检查：
+	if (offset > TotalSize || size > TotalSize - offset)
+		return false;
 
-	if (Node == nullptr) {
-		// Check for the case where the entire thing is allocated.
-		// In this case a new node is needed at the head.
-		FreelistNode* NewNode = AcquireFreeNodeUnsafe();  // 调用内部不加锁版本
-		if (NewNode == nullptr) {
-			GLOG(Log::eError, "Cannot acquire free node for freelist.");
+	// 防止 offset + size 溢出
+	if (size > SIZE_MAX - offset) {
+		return false;
+	}
+
+	const size_t End = offset + size;
+
+	FreelistNode* Prev = nullptr;
+	FreelistNode* Node = Head;
+
+	// 找到第一个 Node->offset >= offset 的节点
+	while (Node != nullptr && Node->offset < offset) {
+		Prev = Node;
+		Node = Node->next;
+	}
+
+	// 检查和前一个 free block 是否重叠
+	if (Prev != nullptr) {
+		const size_t PrevEnd = Prev->offset + Prev->size;
+
+		if (PrevEnd > offset) {
+			GLOG(Log::eError,
+				"Attempting to free overlapping block: "
+				"request=[%llu, %llu), size=%llu, "
+				"existing=[%llu, %llu), existing_size=%llu.",
+				offset,
+				offset + size,
+				size,
+				Node->offset,
+				Node->offset + Node->size,
+				Node->size);
 			return false;
 		}
-		NewNode->offset = offset;
-		NewNode->size = size;
-		NewNode->next = nullptr;
-		Head = NewNode;
-		return true;
 	}
-	else
-	{
-		while (Node != nullptr) {
-			if (Node->offset + Node->size == offset) {
-				// Can just be appended to right of this node.
-				Node->size += size;
 
-				// Check if this then connects the range between this and the next node,
-				// and if so, combine them and return the second node.
-				if (Node->next && Node->next->offset == Node->offset + Node->size) {
-					Node->size += Node->next->size;
-					FreelistNode* Next = Node->next;
-					Node->next = Node->next->next;
-					ResetNodeUnsafe(Next);  // 调用内部不加锁版本
-				}
-				return true;
-			}
-			else if (Node->offset == offset) {
-				// If there is a exact match, this means the exact block of memory
-				// that is already free is being freed again.
-				GLOG(Log::eFatal, "Attemping to free already-freed block of memory at offset %llu.", Node->offset);
-				return false;
-			}
-			else if (Node->offset > offset) {
-				// Iterated beyond the space to be freed. Need a new node.
-				FreelistNode* NewNode = AcquireFreeNodeUnsafe();
-				if (NewNode == nullptr) {
-					GLOG(Log::eError, "Cannot acquire free node for freelist.");
-					return false;
-				}
-				NewNode->offset = offset;
-				NewNode->size = size;
-
-				// If there is a previous node, the new node should be inserted between this and it.
-				if (Prev) {
-					Prev->next = NewNode;
-					NewNode->next = Node;
-				}
-				else {
-					// Otherwise, the new node becomes the head.
-					NewNode->next = Node;
-					Head = NewNode;
-				}
-
-				// Double check next node to see if it can be joined.
-				if (NewNode->next && NewNode->offset + NewNode->size == NewNode->next->offset) {
-					NewNode->size += NewNode->next->size;
-					FreelistNode* Rubbish = NewNode->next;
-					NewNode->next = Rubbish->next;
-					ResetNodeUnsafe(Rubbish);
-				}
-
-				// Double check previous node to see if it can be joined.
-				if (Prev && Prev->offset + Prev->size == NewNode->offset) {
-					Prev->size += NewNode->size;
-					FreelistNode* Rubbish = NewNode;
-					Prev->next = Rubbish->next;
-					ResetNodeUnsafe(Rubbish);
-				}
-
-				return true;
-			}
-
-			// If on the last node and the last node's offset+size < the free offset,
-			// a new node is required.
-			if (!Node->next && Node->offset + Node->size < offset) {
-				FreelistNode* NewNode = AcquireFreeNodeUnsafe();
-				if (NewNode == nullptr) {
-					GLOG(Log::eError, "Cannot acquire free node for freelist.");
-					return false;
-				}
-				NewNode->offset = offset;
-				NewNode->size = size;
-				NewNode->next = nullptr;
-				Node->next = NewNode;
-
-				return true;
-			}
-
-			Prev = Node;
-			Node = Node->next;
+	// 检查和后一个 free block 是否重叠
+	if (Node != nullptr) {
+		if (End > Node->offset) {
+			GLOG(Log::eError,
+				"Attempting to free overlapping block: "
+				"request=[%llu, %llu), size=%llu, "
+				"existing=[%llu, %llu), existing_size=%llu.",
+				offset,
+				offset + size,
+				size,
+				Node->offset,
+				Node->offset + Node->size,
+				Node->size);
+			return false;
 		}
 	}
 
-	GLOG(Log::eWarn, "Unable to find block to be freed. Corruption possible?");
-	return false;
+	const bool MergePrev =
+		Prev != nullptr &&
+		Prev->offset + Prev->size == offset;
+
+	const bool MergeNext =
+		Node != nullptr &&
+		End == Node->offset;
+
+	if (MergePrev && MergeNext) {
+		// [Prev][new][Node] -> [Prev + new + Node]
+		Prev->size += size + Node->size;
+		Prev->next = Node->next;
+		ResetNodeUnsafe(Node);
+		return true;
+	}
+
+	if (MergePrev) {
+		// [Prev][new] -> [Prev]
+		Prev->size += size;
+		return true;
+	}
+
+	if (MergeNext) {
+		// [new][Node] -> [Node]
+		Node->offset = offset;
+		Node->size += size;
+		return true;
+	}
+
+	// 单独插入
+	FreelistNode* NewNode = AcquireFreeNodeUnsafe();
+	if (NewNode == nullptr) {
+		GLOG(Log::eError, "Cannot acquire free node for freelist.");
+		return false;
+	}
+
+	NewNode->offset = offset;
+	NewNode->size = size;
+	NewNode->next = Node;
+
+	if (Prev != nullptr) {
+		Prev->next = NewNode;
+	}
+	else {
+		Head = NewNode;
+	}
+
+	return true;
 }
 
 bool Freelist::Resize(size_t new_size) {
