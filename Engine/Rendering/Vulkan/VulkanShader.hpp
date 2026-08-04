@@ -65,7 +65,7 @@ struct VulkanShaderInstanceState {
 	uint32_t id = INVALID_ID;
 	size_t offset = 0;
 	VulkanShaderDescriptorSetState descriptor_set_state;
-	std::vector<TextureMap*> instance_texture_maps;
+	std::vector<FTextureMap*> instance_texture_maps;
 };
 
 // The index of the global descriptor set.
@@ -73,7 +73,7 @@ constexpr uint32_t DESC_SET_INDEX_GLOBAL = 0;
 // The index of the instance descriptor set.
 constexpr uint32_t DESC_SET_INDEX_INSTANCE = 1;
 
-class VulkanShader : public Shader {
+class VulkanShader : public UShader {
 public:
 	VulkanShader();
 	
@@ -152,8 +152,8 @@ private:
 	bool CreatePipeline();
 
 	VulkanCommandBuffer* GetCurrentCommandBuffer();
-	bool SetSamplerByIndex(uint32_t index, const TextureMap* map);
-	bool SetSampler(ShaderUniform* uniform, const TextureMap* map);
+	bool SetSamplerByIndex(uint32_t index, const FTextureMap* map);
+	bool SetSampler(ShaderUniform* uniform, const FTextureMap* map);
 
 public:
 	void*					  MappedUniformBufferBlock = nullptr;

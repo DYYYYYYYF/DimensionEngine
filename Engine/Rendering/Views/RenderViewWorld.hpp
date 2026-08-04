@@ -3,7 +3,7 @@
 #include "Defines.hpp"
 #include "Rendering/Interface/IRenderView.hpp"
 
-class Shader;
+class UShader;
 class ACameraActor;
 
 class RenderViewWorld : public IRenderView {
@@ -27,12 +27,12 @@ public:
 		return CustomShaderName.IsEmpty() ? UsedShader->Name : CustomShaderName;
 	}
 
-	void SetShader(Shader* shader) { UsedShader = shader; }
-	Shader* GetShader() const { return UsedShader; }
+	void SetShader(UShader* shader) { UsedShader = shader; }
+	UShader* GetShader() const { return UsedShader; }
 
 
 private:
-	Shader* UsedShader = nullptr;
+	UShader* UsedShader = nullptr;
 	float NearClip;
 	float FarClip;
 	float Fov;

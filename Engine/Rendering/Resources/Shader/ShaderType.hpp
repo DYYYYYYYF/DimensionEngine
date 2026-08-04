@@ -88,7 +88,7 @@ enum ShaderFlags {
 
 typedef unsigned int ShaderFlagBits;
 
-struct MaterialShaderUniformLocations {
+struct FMaterialShaderUniformLocations {
 	uint32_t projection = INVALID_ID;
 	uint32_t view = INVALID_ID;
 	uint32_t ambient_color = INVALID_ID;
@@ -166,7 +166,7 @@ struct ShaderUniform {
 	ShaderUniformType type;
 };
 
-struct FrameData {
+struct FFrameData {
 	Matrix4 projection;
 	Matrix4 view;
 
@@ -212,25 +212,9 @@ struct ShaderUniformConfig {
 	ShaderScope scope;
 };
 
-// Uniform Buffer Object
-struct MaterialShaderGlobalUbo {
-	Matrix4 projection;	// 64 bytes
-	Matrix4 view;		// 64 bytes
-	Matrix4 reserved0;	// 64 bytes, reserved for future use
-	Matrix4 reserved1;	// 64 bytes, reserved for future use
-};
-
-// Object Material
-struct MaterialShaderInstanceUbo {
-	Vector4 diffuse_color;	// 16 Bytes
-	Vector4 v_reserved0;	// 16 Bytes,reserved for future use
-	Vector4 v_reserved1;	// 16 Bytes,reserved for future use
-	Vector4 v_reserved2;	// 16 Bytes,reserved for future use
-};
-
-struct ShaderConfig {
+struct FShaderConfig {
 public:
-	ShaderConfig() {
+	FShaderConfig() {
 		cull_mode = FaceCullMode::eFace_Cull_Mode_Back;
 		polygon_mode = PolygonMode::ePology_Mode_Fill;
 		PrimTopo = PrimitiveTopology::eTriangleList;

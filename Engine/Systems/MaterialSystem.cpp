@@ -62,7 +62,7 @@ UMaterial* MaterialSystem::Acquire(const FString& name) {
 	// Now acquire from loaded config.
 	UMaterial* Mat = nullptr;
 	if (MatResource.Data) {
-		Mat = AcquireFromConfig(*(SMaterialConfig*)MatResource.Data);
+		Mat = AcquireFromConfig(*(FMaterialConfig*)MatResource.Data);
 	}
 
 	// Clean up
@@ -76,7 +76,7 @@ UMaterial* MaterialSystem::Acquire(const FString& name) {
 	return Mat;
 }
 
-UMaterial* MaterialSystem::AcquireFromConfig(SMaterialConfig config) {
+UMaterial* MaterialSystem::AcquireFromConfig(FMaterialConfig config) {
 	// 如果找不到材质，则创建一个新的材质。
 	if (MaterialMap.find(config.name) == MaterialMap.end()) {
 		uint32_t Count = MaterialSystemConfig.max_material_count;
@@ -130,11 +130,11 @@ UMaterial* MaterialSystem::AcquireFromConfig(SMaterialConfig config) {
 	return Mat;
 }
 
-bool MaterialSystem::LoadMaterial(SMaterialConfig config, UMaterial* mat) {
+bool MaterialSystem::LoadMaterial(FMaterialConfig config, UMaterial* mat) {
 	// name
 	mat->Name = config.name;
 	mat->ShaderID = ShaderSystem::Get().GetID(config.shader_name);
-	Shader* s = ShaderSystem::Get().GetByID(mat->ShaderID);
+	UShader* s = ShaderSystem::Get().GetByID(mat->ShaderID);
 	if (!s)
 	{
 		GLOG(Log::eError, "Unable to load material because its shader was not found: '%s'. This is likely a problem with the material asset.", config.shader_name.CStr());
@@ -219,7 +219,7 @@ bool MaterialSystem::LoadMaterial(SMaterialConfig config, UMaterial* mat) {
 	}
 
 	// Gather a list of pointers to texture maps.
-	std::vector<TextureMap*> Maps;
+	std::vector<FTextureMap*> Maps;
 	for (TextureBinding& TexBinding : mat->TextureBindings) {
 		Maps.push_back(&(TexBinding.texture));
 	}
@@ -247,7 +247,7 @@ void MaterialSystem::DestroyMaterial(UMaterial* mat) {
 
 	//Release renderer resources.
 	if (mat->ShaderID != INVALID_ID && mat->InternalID != INVALID_ID) {
-		Shader* s = ShaderSystem::Get().GetByID(mat->ShaderID);
+		UShader* s = ShaderSystem::Get().GetByID(mat->ShaderID);
 		Renderer->ReleaseInstanceResource(s, mat->InternalID);
 		mat->ShaderID = INVALID_ID;
 	}
@@ -267,7 +267,7 @@ void MaterialSystem::DestroyMaterial(UMaterial* mat) {
 	DeleteObject(mat);
 }
 
-bool MaterialSystem::CreateTextureMap(TextureMap& map, TextureUsage usage, const FString& textureName) {
+bool MaterialSystem::CreateTextureMap(FTextureMap& map, TextureUsage usage, const FString& textureName) {
 	map.usage = usage;
 
 	TextureSystem& texSys = TextureSystem::Get();
@@ -346,9 +346,9 @@ TextureUsage MaterialSystem::GetTextureUsageFromUniformName(const FString& name)
 #define MATERIAL_APPLY_OR_FAIL(expr) expr
 #endif
 
-bool MaterialSystem::ApplyGlobal(uint32_t shader_id, size_t renderer_frame_number, const FrameData& data) {
+bool MaterialSystem::ApplyGlobal(uint32_t shader_id, size_t renderer_frame_number, const FFrameData& data) {
 
-	Shader* UsedShader = ShaderSystem::Get().GetByID(shader_id);
+	UShader* UsedShader = ShaderSystem::Get().GetByID(shader_id);
 	if (UsedShader == nullptr) {
 		return false;
 	}
@@ -400,7 +400,7 @@ bool MaterialSystem::ApplyGlobal(uint32_t shader_id, size_t renderer_frame_numbe
 	return true;
 }
 
-bool MaterialSystem::ApplyInstance(UMaterialInstance* mat, const FrameData& data) {
+bool MaterialSystem::ApplyInstance(UMaterialInstance* mat, const FFrameData& data) {
 	if (!mat || mat->InternalID == INVALID_ID) {
 		return false;
 	}
@@ -410,7 +410,7 @@ bool MaterialSystem::ApplyInstance(UMaterialInstance* mat, const FrameData& data
 		return false;
 	}
 
-	Shader* UsedShader = ShaderSystem::Get().GetByID(OriginMaterial->ShaderID);
+	UShader* UsedShader = ShaderSystem::Get().GetByID(OriginMaterial->ShaderID);
 	if (!UsedShader) {
 		return false;
 	}
@@ -441,7 +441,7 @@ bool MaterialSystem::ApplyInstance(UMaterialInstance* mat, const FrameData& data
 		case ShaderSemantic::eSemantic_Diffuse_Texture:
 		{
 			if (tex.texture.texture) {
-				MATERIAL_APPLY_OR_FAIL(UsedShader->SetUniform(tex.uniform, &tex.texture))
+				MATERIAL_APPLY_OR_FAIL(UsedShader->SetUniform(tex.uniform, &tex.texture));
 			}
 			else {
 				TextureSystem::Get().GetDefaultDiffuseTexture();
@@ -452,7 +452,7 @@ bool MaterialSystem::ApplyInstance(UMaterialInstance* mat, const FrameData& data
 		case ShaderSemantic::eSemantic_Normal_Texture:
 		{
 			if (tex.texture.texture) {
-				MATERIAL_APPLY_OR_FAIL(UsedShader->SetUniform(tex.uniform, &tex.texture))
+				MATERIAL_APPLY_OR_FAIL(UsedShader->SetUniform(tex.uniform, &tex.texture));
 			}
 			else {
 				TextureSystem::Get().GetDefaultNormalTexture();
@@ -463,7 +463,7 @@ bool MaterialSystem::ApplyInstance(UMaterialInstance* mat, const FrameData& data
 		case ShaderSemantic::eSemantic_Roughness_Metallic_Texture:
 		{
 			if (tex.texture.texture) {
-				MATERIAL_APPLY_OR_FAIL(UsedShader->SetUniform(tex.uniform, &tex.texture))
+				MATERIAL_APPLY_OR_FAIL(UsedShader->SetUniform(tex.uniform, &tex.texture));
 			}
 			else {
 				TextureSystem::Get().GetDefaultRoughnessMetallicTexture();
@@ -488,7 +488,7 @@ bool MaterialSystem::ApplyLocal(UMaterialInstance* mat, const Matrix4& model) {
 	if (!OriginMaterial) {
 		return false;
 	}
-	Shader* UsedShader = ShaderSystem::Get().GetByID(OriginMaterial->ShaderID);
+	UShader* UsedShader = ShaderSystem::Get().GetByID(OriginMaterial->ShaderID);
 
 	// 使用shader的本地uniform列表来设置模型矩阵
 	std::vector<ShaderUniform> uniforms = UsedShader->GetUniformList();

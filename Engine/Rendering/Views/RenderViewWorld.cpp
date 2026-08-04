@@ -94,7 +94,7 @@ bool RenderViewWorld::OnCreate(const RenderViewConfig& config) {
 		return false;
 	}
 
-	ShaderConfig* Config = (ShaderConfig*)ConfigResource.Data;
+	FShaderConfig* Config = (FShaderConfig*)ConfigResource.Data;
 	// NOTE: Assuming the first pass since that's all this view has.
 	if (!ShaderSystem::Get().Create(&Passes[0], Config)) {
 		GLOG(Log::eError, "Failed to load builtin world shader.");
@@ -245,7 +245,7 @@ bool RenderViewWorld::OnRender(struct RenderViewPacket* packet, RHI* back_render
 		}
 
 		// Apply globals.
-		FrameData Data;
+		FFrameData Data;
 		Data.projection = packet->projection_matrix;
 		Data.view = packet->view_matrix;
 		Data.ambieantColor = packet->ambient_color;

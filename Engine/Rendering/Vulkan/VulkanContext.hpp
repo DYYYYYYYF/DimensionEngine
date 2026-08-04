@@ -90,7 +90,7 @@ public:
 	VulkanSwapchain Swapchain;
 
 	// Shaders
-	Shader* Shaders;
+	UShader* Shaders;
 	uint32_t MaxShaderCount;
 
 	// Geometry

@@ -180,7 +180,7 @@ UTexture* IRenderer::AcquireTexture(const FString& name, bool auto_release) {
 	return RHI_->AcquireTexture(name, auto_release);
 }
 
-bool IRenderer::CreateGeometry(UGeometry* geometry, const SGeometryConfig& config) {
+bool IRenderer::CreateGeometry(UGeometry* geometry, const FGeometryConfig& config) {
 	return RHI_->CreateGeometry(geometry, config);
 }
 
@@ -200,31 +200,31 @@ bool IRenderer::EndRenderpass(IRenderpass* pass) {
 	return RHI_->EndRenderpass(pass);
 }
 
-bool IRenderer::CreateRenderShader(Shader* shader, const ShaderConfig* config, IRenderpass* pass, const TArray<FString>& stage_filenames, std::vector<ShaderStage> stages) {
+bool IRenderer::CreateRenderShader(UShader* shader, const FShaderConfig* config, IRenderpass* pass, const TArray<FString>& stage_filenames, std::vector<ShaderStage> stages) {
 	return RHI_->CreateShader(shader, config, pass, stage_filenames, stages);
 }
 
-void IRenderer::DestroyRenderShader(Shader* shader) {
+void IRenderer::DestroyRenderShader(UShader* shader) {
 	shader->Destroy();
 }
 
-bool IRenderer::InitializeRenderShader(Shader* shader) {
+bool IRenderer::InitializeRenderShader(UShader* shader) {
 	return shader->Initialize();
 }
 
-uint32_t IRenderer::AcquireInstanceResource(Shader* shader, std::vector<TextureMap*> maps) {
+uint32_t IRenderer::AcquireInstanceResource(UShader* shader, std::vector<FTextureMap*> maps) {
 	return RHI_->AcquireInstanceResource(shader, maps);
 }
 
-bool IRenderer::ReleaseInstanceResource(Shader* shader, uint32_t instance_id) {
+bool IRenderer::ReleaseInstanceResource(UShader* shader, uint32_t instance_id) {
 	return RHI_->ReleaseInstanceResource(shader, instance_id);
 }
 
-bool IRenderer::AcquireTextureMap(TextureMap* map) {
+bool IRenderer::AcquireTextureMap(FTextureMap* map) {
 	return RHI_->AcquireTextureMap(map);
 }
 
-void IRenderer::ReleaseTextureMap(TextureMap* map) {
+void IRenderer::ReleaseTextureMap(FTextureMap* map) {
 	RHI_->ReleaseTextureMap(map);
 }
 

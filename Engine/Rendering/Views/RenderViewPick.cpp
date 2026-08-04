@@ -54,14 +54,14 @@ static bool OnMouseMoved(eEventCode code, void* sender, void* listenerInst, SEve
 
 void RenderViewPick::AcquireShaderInstance() {
 	// UI Shader.
-	uint32_t Instance = Renderer->AcquireInstanceResource(UIShaderInfo.UsedShader, std::vector<TextureMap*>());
+	uint32_t Instance = Renderer->AcquireInstanceResource(UIShaderInfo.UsedShader, std::vector<FTextureMap*>());
 	if (Instance == INVALID_ID) {
 		GLOG(Log::eError, "Failed to acquire shader resource.");
 		return;
 	}
 
 	// World Shader.
-	Instance = Renderer->AcquireInstanceResource(WorldShaderInfo.UsedShader, std::vector<TextureMap*>());
+	Instance = Renderer->AcquireInstanceResource(WorldShaderInfo.UsedShader, std::vector<FTextureMap*>());
 	if (Instance == INVALID_ID) {
 		GLOG(Log::eError, "Failed to acquire shader resource.");
 		return;
@@ -109,7 +109,7 @@ bool RenderViewPick::OnCreate(const RenderViewConfig& config) {
 		GLOG(Log::eError, "Failed to load builtin UI Pick shader.");
 		return false;
 	}
-	ShaderConfig* Config = (ShaderConfig*)ConfigResource.Data;
+	FShaderConfig* Config = (FShaderConfig*)ConfigResource.Data;
 	if (!ShaderSystem::Get().Create(UIShaderInfo.Pass, Config)) {
 		GLOG(Log::eError, "Failed to load builtin UI Pick shader.");
 		return false;
@@ -136,7 +136,7 @@ bool RenderViewPick::OnCreate(const RenderViewConfig& config) {
 		GLOG(Log::eError, "Failed to load builtin UI Pick shader.");
 		return false;
 	}
-	Config = (ShaderConfig*)ConfigResource.Data;
+	Config = (FShaderConfig*)ConfigResource.Data;
 	if (!ShaderSystem::Get().Create(WorldShaderInfo.Pass, Config)) {
 		GLOG(Log::eError, "Failed to load builtin UI Pick shader.");
 		return false;
@@ -364,7 +364,7 @@ bool RenderViewPick::OnRender(struct RenderViewPacket* packet, RHI* back_rendere
 		PickPacketData* PacketData = (PickPacketData*)packet->extended_data;
 
 		uint64_t CurrentInstanceID = 0;
-		Shader* WorldShader = WorldShaderInfo.UsedShader;
+		UShader* WorldShader = WorldShaderInfo.UsedShader;
 		if (!WorldShader) {
 			GLOG(Log::eError, "Failed to use world pick shader. WorldShader is nullptr.");
 			return false;
@@ -424,7 +424,7 @@ bool RenderViewPick::OnRender(struct RenderViewPacket* packet, RHI* back_rendere
 		Pass->Begin(&Pass->Targets[render_target_index]);
 
 		// UI
-		Shader* UIShader = UIShaderInfo.UsedShader;
+		UShader* UIShader = UIShaderInfo.UsedShader;
 		if (!UIShader) {
 			return false;
 		}

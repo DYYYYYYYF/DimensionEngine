@@ -3,7 +3,7 @@
 #include "Rendering/Interface/IResourceLoader.hpp"
 #include "Systems/ResourceSystem.h"
 
-struct SMaterialConfig;
+struct FMaterialConfig;
 
 class MaterialLoader : public IResourceLoader {
 public:
@@ -14,6 +14,6 @@ public:
 	virtual void Unload(UAsset* resource) override;
 
 private:
-	bool ParseLineData(size_t index, const FString& line, SMaterialConfig* resource);
+	bool ParseLineData(size_t index, const FString& line, FMaterialConfig* resource);
 
 };

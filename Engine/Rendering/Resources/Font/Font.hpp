@@ -10,7 +10,7 @@
 
 // Forward declarations
 class IRenderer;
-struct SystemFontContext;
+struct FSystemFontContext;
 
 enum class UITextType {
 	eUI_Text_Type_Bitmap,
@@ -32,11 +32,11 @@ public:
 	virtual bool VerifyAtlas(const FString& text) = 0;
 
 	// ── 数据访问 ──────────────────────────────
-	virtual const FontGlyph* GetGlyphs()       const = 0;
+	virtual const FFontGlyph* GetGlyphs()       const = 0;
 	virtual uint32_t           GetGlyphCount()   const = 0;
-	virtual const FontKerning* GetKernings()     const = 0;
+	virtual const FFontKerning* GetKernings()     const = 0;
 	virtual uint32_t           GetKerningCount() const = 0;
-	virtual const TextureMap& GetAtlas()        const = 0;
+	virtual const FTextureMap& GetAtlas()        const = 0;
 	virtual int                GetLineHeight()   const = 0;
 	virtual int                GetBaseLine()     const = 0;
 	virtual float              GetTabXAdvance()  const = 0;

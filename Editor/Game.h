@@ -12,7 +12,7 @@
 
 #define EDITOR_CONFIG_PATH FString::Format("%s%s", ROOT_PATH, "/Editor/Config.json")
 
-class Skybox;
+class USkybox;
 class ACameraActor;
 
 class GameInstance : public IGame {
@@ -33,7 +33,7 @@ public:
 	Frustum CameraFrustum;
 
 	// TODO: temp
-	Skybox* SB;
+	USkybox* SB;
 	Keymap* ConsoleKeymap;
 	DebugConsoleActor* GameConsole = nullptr;
 

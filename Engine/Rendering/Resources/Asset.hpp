@@ -22,7 +22,7 @@ enum class EAssetType {
 	Unkonw
 };
 
-struct ResourceHeader {
+struct FResourceHeader {
 	uint32_t magicNumber;
 	unsigned char resourceType;
 	unsigned char version;
@@ -65,13 +65,6 @@ public:
 };
 
 // TODO: 移到Image内部
-struct ImageResourceData {
-	unsigned char channel_count = 4;
-	uint32_t width = 1920;
-	uint32_t height = 1080;
-	unsigned char* pixels = nullptr;
-};
-
-struct ImageResourceParams {
+struct FImageResourceParams {
 	bool flip_y = false;
 };

@@ -13,7 +13,7 @@ class RHI;
 class IGPUBuffer;
 class IRenderpass;
 class UGeometry;
-class Shader;
+class UShader;
 class Camera;
 
 class IRenderer {
@@ -34,7 +34,7 @@ public:
 
 	virtual UTexture* AcquireTexture(const FString& name, bool auto_release = true);
 
-	virtual bool CreateGeometry(UGeometry* geometry, const SGeometryConfig& config);
+	virtual bool CreateGeometry(UGeometry* geometry, const FGeometryConfig& config);
 	virtual void DestroyGeometry(UGeometry* geometry);
 
 	virtual bool GetEnabledMutiThread() const;
@@ -73,13 +73,13 @@ public:
 	 * @param stages A array of shader_stages indicating what render stages (vertex, fragment, etc.) used in this shader.
 	 * @return True on success; otherwise false.
 	 */
-	virtual bool CreateRenderShader(Shader* shader, const ShaderConfig* config, IRenderpass* pass, const TArray<FString>& stage_filenames, std::vector<ShaderStage> stages);
+	virtual bool CreateRenderShader(UShader* shader, const FShaderConfig* config, IRenderpass* pass, const TArray<FString>& stage_filenames, std::vector<ShaderStage> stages);
 
 	/**
 	 * @brief Destroys the given shader and releases any resources held by it.
 	 * @param shader A pointer to the shader to be destroyed.
 	 */
-	virtual void DestroyRenderShader(Shader* shader);
+	virtual void DestroyRenderShader(UShader* shader);
 
 	/**
 	 * @brief Initializes a configured shader. Will be automatically destroyed if this step fails.
@@ -88,7 +88,7 @@ public:
 	 * @param shader A pointer to the shader to be initialized.
 	 * @return True on success; otherwise false.
 	 */
-	virtual bool InitializeRenderShader(Shader* shader);
+	virtual bool InitializeRenderShader(UShader* shader);
 
 	
 	/**
@@ -98,7 +98,7 @@ public:
 	 * @param maps Array to hold the texture maps.
 	 * @return INVALID_ID on false; otherwise return the instance id.
 	 */
-	virtual uint32_t AcquireInstanceResource(Shader* shader, std::vector<TextureMap*> maps);
+	virtual uint32_t AcquireInstanceResource(UShader* shader, std::vector<FTextureMap*> maps);
 
 	/**
 	 * @brief Releases internal instance-level resources for the given instance id.
@@ -107,7 +107,7 @@ public:
 	 * @param instance_id The instance identifier whose resources are to be released.
 	 * @return True on success; otherwise false.
 	 */
-	virtual bool ReleaseInstanceResource(Shader* shader, uint32_t instance_id);
+	virtual bool ReleaseInstanceResource(UShader* shader, uint32_t instance_id);
 
 	
 	/**
@@ -116,14 +116,14 @@ public:
 	 * @param map A pointer to texture map to obtain resources for.
 	 * @return True on success.
 	 */
-	virtual bool AcquireTextureMap(TextureMap* map);
+	virtual bool AcquireTextureMap(FTextureMap* map);
 	
 	/**
 	 * @brief Release internal resource for the given texture map.
 	 *
 	 * @param map A pointer to texture map to obtain resources for.
 	 */
-	virtual void ReleaseTextureMap(TextureMap* map);
+	virtual void ReleaseTextureMap(FTextureMap* map);
 
 	// Renderbuffer
 	virtual bool DrawRenderbuffer(IGPUBuffer* buffer, size_t offset, uint32_t element_count, bool bind_only);

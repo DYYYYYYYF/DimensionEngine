@@ -19,11 +19,11 @@ void AStaticMeshActor::Draw() {
 
 void AStaticMeshActor::LoadJobSuccess() {
 	// This also handle the GPU upload. Can't be jobified until the renderer is multithread.
-	SGeometryConfig* Configs = (SGeometryConfig*)LoadParams.mesh_resource.Data;
+	FGeometryConfig* Configs = (FGeometryConfig*)LoadParams.mesh_resource.Data;
 	LoadParams.out_mesh->geometry_count = (unsigned short)LoadParams.mesh_resource.DataCount;
 	LoadParams.out_mesh->geometries = (UGeometry**)Memory::Allocate(sizeof(UGeometry*) * LoadParams.out_mesh->geometry_count, MemoryType::eMemory_Type_Array);
 	for (uint32_t i = 0; i < LoadParams.out_mesh->geometry_count; ++i) {
-		SGeometryConfig& Config = Configs[i];
+		FGeometryConfig& Config = Configs[i];
 		LoadParams.out_mesh->geometries[i] = GeometrySystem::Get().AcquireFromConfig(Config, true);
 	}
 	LoadParams.out_mesh->Generation++;

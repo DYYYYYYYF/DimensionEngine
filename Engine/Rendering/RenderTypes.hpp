@@ -12,7 +12,7 @@
 
 struct RenderpassConfig;
 class Mesh;
-class Skybox;
+class USkybox;
 class IRenderer;
 class IRenderpass;
 
@@ -110,17 +110,17 @@ struct GBufferSet {
 	UTexture* PositionTexture = nullptr;
 	UTexture* DepthTexture = nullptr;
 
-	TextureMap AlbedoTextureMap;
-	TextureMap NormalTextureMap;
-	TextureMap PositionTextureMap;
-	TextureMap DepthTextureMap;
+	FTextureMap AlbedoTextureMap;
+	FTextureMap NormalTextureMap;
+	FTextureMap PositionTextureMap;
+	FTextureMap DepthTextureMap;
 };
 
 struct DrawCall {
 	UGeometry* geometry;
 	UMaterialInstance* material;
 	Matrix4 model;
-	Shader* shader;
+	UShader* shader;
 	uint32_t sortKey;
 	void* userData;
 
@@ -186,7 +186,7 @@ public:
 		sb = data.sb;
 	}
 
-	Skybox* sb = nullptr;
+	USkybox* sb = nullptr;
 };
 
 struct RenderBackendConfig {

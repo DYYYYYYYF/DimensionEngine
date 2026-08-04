@@ -52,7 +52,7 @@ UGeometry* GeometrySystem::AcquireByID(uint32_t id) {
 	return nullptr;
 }
 
-UGeometry* GeometrySystem::AcquireFromConfig(SGeometryConfig config, bool auto_release) {
+UGeometry* GeometrySystem::AcquireFromConfig(FGeometryConfig config, bool auto_release) {
 	UGeometry* geometry = CreateGeometry(config);
 	if (!geometry) {
 		GLOG(Log::eError, "Failed to create geometry '%s'. Returning nullptr.", config.name.CStr());
@@ -132,7 +132,7 @@ bool GeometrySystem::CreateDefaultGeometries() {
 	}
 
 	// Send the geometry off to the renderer to be uploaded to the GPU.
-	SGeometryConfig config;
+	FGeometryConfig config;
 	config.vertex_size = sizeof(Vertex);
 	config.vertex_count = 4;
 	config.vertices = Verts;
@@ -188,7 +188,7 @@ bool GeometrySystem::CreateDefaultGeometries() {
 	Default2DGeometry->IncreaseReferenceCount();
 
 	// Send the geometry off to the renderer to be uploaded to the GPU.
-	SGeometryConfig config2D;
+	FGeometryConfig config2D;
 	config2D.vertex_size = sizeof(Vertex2D);
 	config2D.vertex_count = 4;
 	config2D.vertices = Verts2D;
@@ -208,7 +208,7 @@ bool GeometrySystem::CreateDefaultGeometries() {
 	return true;
 }
 
-UGeometry* GeometrySystem::CreateGeometry(SGeometryConfig config) {
+UGeometry* GeometrySystem::CreateGeometry(FGeometryConfig config) {
 	UGeometry* geometry = NewObject<UGeometry>(config.name);
 	if (!geometry) {
 		return nullptr;
@@ -238,7 +238,7 @@ UGeometry* GeometrySystem::CreateGeometry(SGeometryConfig config) {
 	return geometry;
 }
 
-void GeometrySystem::ConfigDispose(SGeometryConfig* config) {
+void GeometrySystem::ConfigDispose(FGeometryConfig* config) {
 	if (config) {
 		if (config->vertices) {
 			Memory::Free(config->vertices, MemoryType::eMemory_Type_Array);
@@ -246,7 +246,7 @@ void GeometrySystem::ConfigDispose(SGeometryConfig* config) {
 		if (config->indices) {
 			Memory::Free(config->indices, MemoryType::eMemory_Type_Array);
 		}
-		Memory::Zero(config, sizeof(SGeometryConfig));
+		Memory::Zero(config, sizeof(FGeometryConfig));
 	}
 }
 
@@ -258,7 +258,7 @@ void GeometrySystem::DestroyGeometry(UGeometry* geometry) {
 	geometry->name = "";
 }
 
-SGeometryConfig GeometrySystem::GeneratePlaneConfig(float width, float height, uint32_t x_segment_count,
+FGeometryConfig GeometrySystem::GeneratePlaneConfig(float width, float height, uint32_t x_segment_count,
 	uint32_t y_segment_count, float tile_x, float tile_y, const FString& name, const FString& material_name) {
 	if (width == 0) {
 		GLOG(Log::eWarn, "width must be non-zero. Defauting to one.");
@@ -290,7 +290,7 @@ SGeometryConfig GeometrySystem::GeneratePlaneConfig(float width, float height, u
 		tile_y = 1.0f;
 	}
 
-	SGeometryConfig Config;
+	FGeometryConfig Config;
 	Config.vertex_size = sizeof(Vertex);
 	Config.vertex_count = x_segment_count * y_segment_count * 4; // 4 vertex per segment.
 	Config.vertices = (Vertex*)Memory::Allocate(sizeof(Vertex) * Config.vertex_count, MemoryType::eMemory_Type_Array);
@@ -370,7 +370,7 @@ SGeometryConfig GeometrySystem::GeneratePlaneConfig(float width, float height, u
 	return Config;
 }
 
-SGeometryConfig GeometrySystem::GenerateCubeConfig(float width, float height,
+FGeometryConfig GeometrySystem::GenerateCubeConfig(float width, float height,
 	float depth, float tile_x, float tile_y, const FString& name, const FString& material_name) {
 	if (width == 0) {
 			GLOG(Log::eWarn, "width must be non-zero. Defauting to one.");
@@ -397,7 +397,7 @@ SGeometryConfig GeometrySystem::GenerateCubeConfig(float width, float height,
 			tile_y = 1.0f;
 		}
 
-		SGeometryConfig Config;
+		FGeometryConfig Config;
 		Config.vertex_size = sizeof(Vertex);
 		Config.vertex_count = 6 * 4; // 4 vertex per segment.
 		Config.vertices = (Vertex*)Memory::Allocate(sizeof(Vertex) * Config.vertex_count, MemoryType::eMemory_Type_Array);
@@ -532,7 +532,7 @@ SGeometryConfig GeometrySystem::GenerateCubeConfig(float width, float height,
 }
 
 UGeometry* GeometrySystem::GenerateQuad(const FString& name, const FString& material_name) {
-	SGeometryConfig Config = GeneratePlaneConfig(2, 2, 1, 1, 1, 1, name, material_name);
+	FGeometryConfig Config = GeneratePlaneConfig(2, 2, 1, 1, 1, 1, name, material_name);
 	UGeometry* NewGeom = AcquireFromConfig(Config, true);
 	if (!NewGeom) {
 		GLOG(Log::eWarn, "Generated simple fullscreen quad geometry configuration falied.");

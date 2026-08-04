@@ -9,7 +9,7 @@
 
 class Texture;
 
-struct SMaterialConfig {
+struct FMaterialConfig {
 	FString name;
 	FString shader_name;
 	bool auto_release;

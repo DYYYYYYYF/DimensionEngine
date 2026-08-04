@@ -5,7 +5,7 @@
 #include "../Texture/TextureType.hpp"
 #include "Systems/TextureSystem.h"
 
-std::vector<uint32_t> Shader::CompileShaderToSPV(const FString& filename, enum ShaderStage shaderStage, bool writeToDisk) {
+std::vector<uint32_t> UShader::CompileShaderToSPV(const FString& filename, enum ShaderStage shaderStage, bool writeToDisk) {
 	size_t PrePathIndex = filename.IndexOf('/');
 	size_t SufPathIndex = filename.LastIndexOf('.');
 	FString PrePath = filename.SubStr(0, PrePathIndex);
@@ -86,13 +86,13 @@ std::vector<uint32_t> Shader::CompileShaderToSPV(const FString& filename, enum S
 	return SPRIV;
 }
 
-void Shader::ProcessAttributes(const std::vector<ShaderAttributeConfig>& attributes) {
+void UShader::ProcessAttributes(const std::vector<ShaderAttributeConfig>& attributes) {
 	for (uint32_t i = 0; i < attributes.size(); ++i) {
 		AddAttribute(attributes[i]);
 	}
 }
 
-void Shader::ProcessUniforms(const std::vector<ShaderUniformConfig>& uniforms) {
+void UShader::ProcessUniforms(const std::vector<ShaderUniformConfig>& uniforms) {
 	for (uint32_t i = 0; i < uniforms.size(); ++i) {
 		if (uniforms[i].type == eShader_Uniform_Type_Sampler) {
 			AddSampler(uniforms[i]);
@@ -103,7 +103,7 @@ void Shader::ProcessUniforms(const std::vector<ShaderUniformConfig>& uniforms) {
 	}
 }
 
-void Shader::AddAttribute(const ShaderAttributeConfig& config) {
+void UShader::AddAttribute(const ShaderAttributeConfig& config) {
 	uint32_t Size = 0;
 	switch (config.type) {
 	case eShader_Attribute_Type_Int8:
@@ -145,7 +145,7 @@ void Shader::AddAttribute(const ShaderAttributeConfig& config) {
 	Attributes.push_back(Attrib);
 }
 
-void Shader::AddSampler(const ShaderUniformConfig& config) {
+void UShader::AddSampler(const ShaderUniformConfig& config) {
 	// Samples can't be used for push constants.
 	if (config.scope == eShader_Scope_Local) {
 		GLOG(Log::eError, "add_sampler cannot add a sampler at local scope.");
@@ -164,7 +164,7 @@ void Shader::AddSampler(const ShaderUniformConfig& config) {
 		Location = GlobalTextureCount;
 
 		// NOTE: Create a default texture map to be used here. Can always be updated later.
-		TextureMap DefaultMap;
+		FTextureMap DefaultMap;
 		DefaultMap.filter_magnify = TextureFilter::eTexture_Filter_Mode_Linear;
 		DefaultMap.filter_minify = TextureFilter::eTexture_Filter_Mode_Linear;
 		DefaultMap.repeat_u = TextureRepeat::eTexture_Repeat_Repeat;
@@ -178,7 +178,7 @@ void Shader::AddSampler(const ShaderUniformConfig& config) {
 
 		// Allocate a pointer assign the texture, and push into global texture maps.
 		// NOTE: This allocation is only done for global texture maps.
-		TextureMap* Map = (TextureMap*)Memory::Allocate(sizeof(TextureMap), MemoryType::eMemory_Type_Renderer);
+		FTextureMap* Map = (FTextureMap*)Memory::Allocate(sizeof(FTextureMap), MemoryType::eMemory_Type_Renderer);
 		*Map = DefaultMap;
 		Map->texture = TextureSystem::Get().GetDefaultDiffuseTexture();
 		GlobalTextureMaps.push_back(Map);
@@ -196,7 +196,7 @@ void Shader::AddSampler(const ShaderUniformConfig& config) {
 	AddUniform(config.name, 0, config.type, config.scope, config.semantic, Location, true);
 }
 
-void Shader::AddUniform(const ShaderUniformConfig& config) {
+void UShader::AddUniform(const ShaderUniformConfig& config) {
 	if (!IsUniformNameValid(config.name) || !IsUniformAddStateValid()) {
 		return;
 	}
@@ -204,7 +204,7 @@ void Shader::AddUniform(const ShaderUniformConfig& config) {
 	AddUniform(config.name, config.size, config.type, config.scope, config.semantic, 0, false);
 }
 
-void Shader::AddUniform(const FString& uniform_name, uint32_t size, ShaderUniformType type, 
+void UShader::AddUniform(const FString& uniform_name, uint32_t size, ShaderUniformType type, 
 	ShaderScope scope, ShaderSemantic semantic, uint32_t set_location, bool is_sampler){
 	uint16_t UniformCount = (uint16_t)Uniforms.size();
 	ShaderUniform Entry;
@@ -256,7 +256,7 @@ void Shader::AddUniform(const FString& uniform_name, uint32_t size, ShaderUnifor
 	}
 }
 
-uint32_t Shader::GetUniformIndex(const FString& name) const {
+uint32_t UShader::GetUniformIndex(const FString& name) const {
 	if (Status == EShaderStatus::eShader_State_Uninitialized) {
 		GLOG(Log::eError, "Shader::GetUniformIndex — Shader '%s' is not init.", Name.CStr());
 		return INVALID_ID;
@@ -278,7 +278,7 @@ uint32_t Shader::GetUniformIndex(const FString& name) const {
 	return Uniforms[ArrayIndex].index;
 }
 
-ShaderUniform* Shader::GetUniformHandle(const FString& name) {
+ShaderUniform* UShader::GetUniformHandle(const FString& name) {
 	if (Status == EShaderStatus::eShader_State_Uninitialized) {
 		GLOG(Log::eError, "Shader::GetUniformIndex — Shader '%s' is not init.", Name.CStr());
 		return nullptr;
@@ -300,7 +300,7 @@ ShaderUniform* Shader::GetUniformHandle(const FString& name) {
 	return &Uniforms[ArrayIndex];
 }
 
-bool Shader::IsUniformNameValid(const FString& uniform_name) {
+bool UShader::IsUniformNameValid(const FString& uniform_name) {
 	if (uniform_name.IsEmpty()) {
 		GLOG(Log::eError, "Uniform name must exist.");
 		return false;
@@ -315,7 +315,7 @@ bool Shader::IsUniformNameValid(const FString& uniform_name) {
 	return true;
 }
 
-bool Shader::IsUniformAddStateValid() {
+bool UShader::IsUniformAddStateValid() {
 	if (Status != EShaderStatus::eShader_State_Uninitialized) {
 		GLOG(Log::eError, "Uniforms may only be added to shaders before initialization.");
 		return false;

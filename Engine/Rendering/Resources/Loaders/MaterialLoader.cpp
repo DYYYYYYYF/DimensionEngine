@@ -27,8 +27,8 @@ bool MaterialLoader::Load(const FString& name, void* params, UAsset* resource) {
 	}
 
 	// TODO: Should be using an allocator here.
-	void* mem = Memory::Allocate(sizeof(SMaterialConfig), MemoryType::eMemory_Type_Material_Instance);
-	SMaterialConfig* ResourceData = new(mem) SMaterialConfig();
+	void* mem = Memory::Allocate(sizeof(FMaterialConfig), MemoryType::eMemory_Type_Material_Instance);
+	FMaterialConfig* ResourceData = new(mem) FMaterialConfig();
 
 	// Set defaults.
 	resource->AssetType = Type;
@@ -47,7 +47,7 @@ bool MaterialLoader::Load(const FString& name, void* params, UAsset* resource) {
 	});
 
 	resource->Data = ResourceData;
-	resource->DataSize = sizeof(SMaterialConfig);
+	resource->DataSize = sizeof(FMaterialConfig);
 	resource->Name = name;
 	resource->FullPath = FullFilePath;
 	resource->DataCount = 1;
@@ -55,7 +55,7 @@ bool MaterialLoader::Load(const FString& name, void* params, UAsset* resource) {
 	return true;
 }
 
-bool MaterialLoader::ParseLineData(size_t index, const FString& line, SMaterialConfig* resource) {
+bool MaterialLoader::ParseLineData(size_t index, const FString& line, FMaterialConfig* resource) {
 	// Trim the string.
 	FString TrimmedLine = line.Trimmed();
 

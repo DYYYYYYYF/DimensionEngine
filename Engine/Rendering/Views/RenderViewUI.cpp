@@ -52,7 +52,7 @@ bool RenderViewUI::OnCreate(const RenderViewConfig& config) {
 		return false;
 	}
 
-	ShaderConfig* Config = (ShaderConfig*)ConfigResource.Data;
+	FShaderConfig* Config = (FShaderConfig*)ConfigResource.Data;
 	// NOTE: Assuming the first pass since that's all this view has.
 	if (!ShaderSystem::Get().Create(&Passes[0], Config)) {
 		GLOG(Log::eError, "Failed to load builtin UI shader.");
@@ -214,7 +214,7 @@ bool RenderViewUI::OnRender(struct RenderViewPacket* packet, RHI* back_renderer,
 			return a.sortKey < b.sortKey;
 		});
 
-	FrameData UIData;
+	FFrameData UIData;
 	UIData.projection = packet->projection_matrix;
 	UIData.view = packet->view_matrix;
 	UIData.ambieantColor = Vector4(0.0f);

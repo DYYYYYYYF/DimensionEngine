@@ -20,14 +20,14 @@ public:
 
 	virtual bool BeginFrame(double delta_time) override;
 	virtual void DrawGeometry(GeometryRenderData* geometry) override;
-	virtual void ExecuteDrawCalls(const std::vector<DrawCall>& draw_calls, size_t frame_number, const FrameData& data) override;
+	virtual void ExecuteDrawCalls(const std::vector<DrawCall>& draw_calls, size_t frame_number, const FFrameData& data) override;
 	virtual bool EndFrame(double delta_time) override;
 	virtual void Resize(unsigned short width, unsigned short height) override;
 
 	// Textures
 	virtual UTexture* AcquireTexture(const FString& name, bool auto_release) override;
 
-	virtual bool CreateGeometry(UGeometry* geometry, const SGeometryConfig& config) override;
+	virtual bool CreateGeometry(UGeometry* geometry, const FGeometryConfig& config) override;
 	virtual void DestroyGeometry(UGeometry* geometry) override;
 
 	// Renderpass
@@ -52,12 +52,12 @@ public:
 	virtual void ResetScissor() override;
 
 	// Shaders.
-	virtual bool CreateShader(Shader* shader, const ShaderConfig* config, IRenderpass* pass, const TArray<FString>& stage_filenames, std::vector<ShaderStage>& stages) override;
-	virtual uint32_t AcquireInstanceResource(Shader* shader, std::vector<TextureMap*>& maps) override;
-	virtual bool ReleaseInstanceResource(Shader* shader, uint64_t instance_id) override;
+	virtual bool CreateShader(UShader* shader, const FShaderConfig* config, IRenderpass* pass, const TArray<FString>& stage_filenames, std::vector<ShaderStage>& stages) override;
+	virtual uint32_t AcquireInstanceResource(UShader* shader, std::vector<FTextureMap*>& maps) override;
+	virtual bool ReleaseInstanceResource(UShader* shader, uint64_t instance_id) override;
 
-	virtual bool AcquireTextureMap(TextureMap* map) override;
-	virtual void ReleaseTextureMap(TextureMap* map) override;
+	virtual bool AcquireTextureMap(FTextureMap* map) override;
+	virtual void ReleaseTextureMap(FTextureMap* map) override;
 	virtual bool GetEnabledMultiThread() const override;
 
 public:

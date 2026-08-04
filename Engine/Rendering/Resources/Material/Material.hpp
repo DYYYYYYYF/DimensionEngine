@@ -12,7 +12,7 @@ struct UniformValue {
 
 struct TextureBinding {
 	ShaderUniform* uniform = nullptr;
-	TextureMap texture;
+	FTextureMap texture;
 };
 
 class UMaterial : public UAsset{
@@ -67,7 +67,7 @@ public:
 
 public:
 	bool IsTextureBindingExist(const FString& UniformName) const;
-	bool SetTextureOnBinding(const FString& UniformName, TextureMap Texture);
+	bool SetTextureOnBinding(const FString& UniformName, FTextureMap Texture);
 
 public:
 	UMaterial* GetParentMaterial() const { return BaseMaterial; }

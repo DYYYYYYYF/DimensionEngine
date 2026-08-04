@@ -169,7 +169,7 @@ bool GameInstance::Initialize() {
 	GameConsole->Initialize();
 
 	// Skybox
-	SB = NewObject<Skybox>();
+	SB = NewObject<USkybox>();
 	if (!SB) {
 		GLOG(Log::eError, "Failed to create skybox. Exiting...");
 		return false;
@@ -204,7 +204,7 @@ bool GameInstance::Initialize() {
 	Meshes.Push(CubeMesh3);
 
 	// Load up some test UI geometry.
-	SGeometryConfig UIConfig;
+	FGeometryConfig UIConfig;
 	UIConfig.vertex_size = sizeof(Vertex2D);
 	UIConfig.vertex_count = 4;
 	UIConfig.index_size = sizeof(uint32_t);
@@ -633,7 +633,7 @@ void GameInstance::OnResize(unsigned int width, unsigned int height) {
 	TestSysText->SetLocation(Vector3(100, (float)height - 400, 0));
 
 	// TODO: Temp
-	SGeometryConfig UIConfig;
+	FGeometryConfig UIConfig;
 	UIConfig.vertex_size = sizeof(Vertex2D);
 	UIConfig.vertex_count = 4;
 	UIConfig.index_size = sizeof(uint32_t);

@@ -4,11 +4,11 @@
 #include "Rendering/Interface/IRenderView.hpp"
 #include "Rendering/Resources/Texture/Texture.hpp"
 
-class Shader;
+class UShader;
 class IREnderer;
 
 struct RenderviewPickShaderInfo {
-	Shader* UsedShader = nullptr;
+	UShader* UsedShader = nullptr;
 	VulkanRenderPass* Pass = nullptr;
 	float NearClip = 0.1f;
 	float FarClip = 10000.0f;

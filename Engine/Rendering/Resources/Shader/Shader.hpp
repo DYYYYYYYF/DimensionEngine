@@ -7,13 +7,13 @@
 // Shader compiler
 #include <shaderc/shaderc.hpp>
 
-struct TextureMap;
+struct FTextureMap;
 class IRenderer;
 
-class Shader : public UAsset{
+class UShader : public UAsset{
 public:
-	Shader() = default;
-	virtual ~Shader() = default;
+	UShader() = default;
+	virtual ~UShader() = default;
 
 public:
 	virtual bool Reload() = 0;
@@ -123,6 +123,6 @@ public:
 	// Uniform / Attribute 表
 	std::vector<ShaderUniform>              Uniforms;
 	std::vector<ShaderAttribute>            Attributes;
-	std::vector<TextureMap*>                GlobalTextureMaps;
+	std::vector<FTextureMap*>                GlobalTextureMaps;
 	std::unordered_map<FString, uint32_t>   HashMap;
 };

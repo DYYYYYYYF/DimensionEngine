@@ -80,16 +80,16 @@ bool UTextComponent::BuildGeometry() {
 	}
 
 	// Font 数据
-	const FontGlyph* Glyphs = TextFont->GetGlyphs();
+	const FFontGlyph* Glyphs = TextFont->GetGlyphs();
 	const uint32_t GlyphCount = TextFont->GetGlyphCount();
 
-	const FontKerning* Kernings = TextFont->GetKernings();
+	const FFontKerning* Kernings = TextFont->GetKernings();
 	const uint32_t KerningCount = TextFont->GetKerningCount();
 
 	const int LineHeight = TextFont->GetLineHeight();
 	const float TabXAdvance = TextFont->GetTabXAdvance();
 
-	const TextureMap& Atlas = TextFont->GetAtlas();
+	const FTextureMap& Atlas = TextFont->GetAtlas();
 	const int AtlasSizeX = Atlas.texture ? Atlas.texture->GetWidth() : 1024;
 	const int AtlasSizeY = Atlas.texture ? Atlas.texture->GetHeight() : 1024;
 
@@ -145,7 +145,7 @@ bool UTextComponent::BuildGeometry() {
 		}
 
 		// 查找 Glyph
-		const FontGlyph* Glyph = nullptr;
+		const FFontGlyph* Glyph = nullptr;
 		for (uint32_t i = 0; i < GlyphCount; ++i) {
 			if (Glyphs[i].codePoint == CodePoint) {
 				Glyph = &Glyphs[i];
@@ -222,7 +222,7 @@ bool UTextComponent::BuildGeometry() {
 	const uint32_t VertexCount = QuadIndex * 4;
 	const uint32_t IndexCount = QuadIndex * 6;
 	if (!TextGeometry) {
-		SGeometryConfig Config;
+		FGeometryConfig Config;
 
 		Config.name = GetOwner()->GetName();
 
@@ -254,7 +254,7 @@ bool UTextComponent::BuildGeometry() {
 		}
 	}
 	else {
-		SGeometryConfig Config;
+		FGeometryConfig Config;
 
 		Config.vertex_size = VertexSize;
 		Config.vertex_count = VertexCount;
@@ -289,7 +289,7 @@ bool UTextComponent::BuildGeometry() {
 
 
 void UTextComponent::BuildCharacterQuad(uint32_t CharacterIndex, float X, float Y, 
-	const FontGlyph& Glyph, int AtlasSizeX, int AtlasSizeY, Vertex2D* Vertices, uint32_t* Indices) {
+	const FFontGlyph& Glyph, int AtlasSizeX, int AtlasSizeY, Vertex2D* Vertices, uint32_t* Indices) {
 
 	// Glyph 在屏幕/局部空间中的位置
 	// offsetX / offsetY 是 Glyph 相对于当前 pen position 的偏移。

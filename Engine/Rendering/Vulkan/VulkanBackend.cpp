@@ -633,7 +633,7 @@ UTexture* VulkanRHI::AcquireTexture(const FString& name, bool auto_release) {
 	return tex;
 }
 
-bool VulkanRHI::CreateGeometry(UGeometry* geometry, const SGeometryConfig& config) {
+bool VulkanRHI::CreateGeometry(UGeometry* geometry, const FGeometryConfig& config) {
 	if (!geometry || config.vertex_count == 0 || !config.vertices) {
 		return false;
 	}
@@ -788,9 +788,9 @@ void VulkanRHI::DrawGeometry(GeometryRenderData* geometry) {
 }
 
 void VulkanRHI::ExecuteDrawCalls(const std::vector<DrawCall>& draw_calls,
-	size_t frame_number, const FrameData& data) {
+	size_t frame_number, const FFrameData& data) {
 	// 每个DrawCall重置
-	Shader* currentShader = nullptr;
+	UShader* currentShader = nullptr;
 	UMaterial* currentMaterial = nullptr;
 	UMaterialInstance* currentMaterialInstance = nullptr;
 
@@ -861,7 +861,7 @@ bool VulkanRHI::VerifyShaderID(uint32_t shader_id) {
 }
 #endif	// LEVEL_DEBUG
 
-bool VulkanRHI::CreateShader(Shader* shader, const ShaderConfig* config, IRenderpass* pass,
+bool VulkanRHI::CreateShader(UShader* shader, const FShaderConfig* config, IRenderpass* pass,
 	const TArray<FString>& stage_filenames, std::vector<ShaderStage>& stages) {
 	// Translate stages.
 	vk::ShaderStageFlags VkStages[VULKAN_SHADER_MAX_STAGES];
@@ -1080,7 +1080,7 @@ vk::Filter VulkanRHI::ConvertFilterType(const char* op, TextureFilter filter) {
 	}
 }
 
-bool VulkanRHI::AcquireTextureMap(TextureMap* map) {
+bool VulkanRHI::AcquireTextureMap(FTextureMap* map) {
 	// Create a sampler for the texture.
 	vk::SamplerCreateInfo SamplerInfo;
 	SamplerInfo.setMinFilter(ConvertFilterType("min", map->filter_minify))
@@ -1110,7 +1110,7 @@ bool VulkanRHI::AcquireTextureMap(TextureMap* map) {
 	return true;
 }
 
-void VulkanRHI::ReleaseTextureMap(TextureMap* map) {
+void VulkanRHI::ReleaseTextureMap(FTextureMap* map) {
 	if (map) {
 		Context.Device.GetLogicalDevice().waitIdle();
 		Context.Device.GetLogicalDevice().destroySampler(*((vk::Sampler*)&map->internal_data), Context.Allocator);
@@ -1118,7 +1118,7 @@ void VulkanRHI::ReleaseTextureMap(TextureMap* map) {
 	}
 }
 
-uint32_t VulkanRHI::AcquireInstanceResource(Shader* shader, std::vector<TextureMap*>& maps) {
+uint32_t VulkanRHI::AcquireInstanceResource(UShader* shader, std::vector<FTextureMap*>& maps) {
 	VulkanShader* VkShader = (VulkanShader*)shader;
 	// TODO: Dynamic
 	uint32_t OutInstanceID = INVALID_ID;
@@ -1194,7 +1194,7 @@ uint32_t VulkanRHI::AcquireInstanceResource(Shader* shader, std::vector<TextureM
 	return OutInstanceID;
 }
 
-bool VulkanRHI::ReleaseInstanceResource(Shader* shader, uint64_t instance_id) {
+bool VulkanRHI::ReleaseInstanceResource(UShader* shader, uint64_t instance_id) {
 	if (shader == nullptr) {
 		return false;
 	}

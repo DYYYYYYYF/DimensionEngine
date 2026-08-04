@@ -6,10 +6,10 @@
 #include "Systems/TextureSystem.h"
 #include "Systems/GeometrySystem.h"
 
-bool Skybox::Create(const FString& cubeName) {
+bool USkybox::Create(const FString& cubeName) {
 	Renderer = IRenderer::GetRenderer();
 
-	SGeometryConfig SkyboxCubeConfig = GeometrySystem::Get().GenerateCubeConfig(10.0f, 10.0f, 10.0f, 1.0f, 1.0f, cubeName, FString());
+	FGeometryConfig SkyboxCubeConfig = GeometrySystem::Get().GenerateCubeConfig(10.0f, 10.0f, 10.0f, 1.0f, 1.0f, cubeName, FString());
 
 	// Clear out the material name.
 	geo = GeometrySystem::Get().AcquireFromConfig(SkyboxCubeConfig, true);
@@ -25,7 +25,7 @@ bool Skybox::Create(const FString& cubeName) {
 	return true;
 }
 
-void Skybox::Destroy() {
+void USkybox::Destroy() {
 	if (geo) {
 		DeleteObject(geo);
 		geo = nullptr;

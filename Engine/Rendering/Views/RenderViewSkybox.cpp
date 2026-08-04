@@ -56,7 +56,7 @@ bool RenderViewSkybox::OnCreate(const RenderViewConfig& config) {
 		return false;
 	}
 
-	ShaderConfig* Config = (ShaderConfig*)ConfigResource.Data;
+	FShaderConfig* Config = (FShaderConfig*)ConfigResource.Data;
 	// NOTE: Assuming the first pass since that's all this view has.
 	if (!ShaderSystem::Get().Create(&Passes[0], Config)) {
 		GLOG(Log::eError, "Failed to load builtin ksybox shader.");
@@ -150,7 +150,7 @@ bool RenderViewSkybox::OnRender(struct RenderViewPacket* packet, RHI* back_rende
 		return false;
 	}
 
-	Skybox* SkyBoxAsset = SkyboxData->sb;
+	USkybox* SkyBoxAsset = SkyboxData->sb;
 	if (!SkyBoxAsset) {
 		return false;
 	}
@@ -171,7 +171,7 @@ bool RenderViewSkybox::OnRender(struct RenderViewPacket* packet, RHI* back_rende
 	ViewMatrix.data[13] = 0.0f;
 	ViewMatrix.data[14] = 0.0f;
 
-	FrameData Data;
+	FFrameData Data;
 	Data.projection = packet->projection_matrix;
 	Data.view = ViewMatrix;
 	Data.time = packet->global_time;

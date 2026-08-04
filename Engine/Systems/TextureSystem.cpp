@@ -354,11 +354,11 @@ bool TextureSystem::LoadCubeTexture(const FString& name, const TArray<FString>& 
 	unsigned char* piexels = nullptr;
 	size_t ImageSize = 0;
 	for (unsigned char i = 0; i < 6; ++i) {
-		ImageResourceParams Params;
+		FImageResourceParams Params;
 		Params.flip_y = false;
 
 		UTexture* ImageResource = Renderer->AcquireTexture(texture_names[i]);
-		if (!TextureHelper::Load(texture_names[i], &Params, ImageResource)) {
+		if (!UTextureHelper::Load(texture_names[i], &Params, ImageResource)) {
 			GLOG(Log::eError, "TextureSystem::LoadCubeTexture() Failed to load image resource for texture '%s'.", texture_names[i].CStr());
 			return false;
 		}
@@ -377,7 +377,7 @@ bool TextureSystem::LoadCubeTexture(const FString& name, const TArray<FString>& 
 		Memory::Copy(piexels + sizeof(unsigned char) * ImageSize * i, ImageResource->GetPixels(), ImageSize);
 
 		// Clean up data.
-		TextureHelper::Unload(ImageResource);
+		UTextureHelper::Unload(ImageResource);
 
 		DestroyTexture(ImageResource);
 		ImageResource = nullptr;
@@ -402,17 +402,17 @@ void TextureSystem::LoadJobSuccess(void* params) {
 void TextureSystem::LoadJobFail(void* params) {
 	TextureLoadParams* TextureParams = (TextureLoadParams*)params;
 	GLOG(Log::eError, "Failed to load texture '%s'.", TextureParams->resource_name.CStr());
-	TextureHelper::Unload(TextureParams->out_texture);
+	UTextureHelper::Unload(TextureParams->out_texture);
 }
 
 bool TextureSystem::LoadJobStart(TextureLoadParams* params, TextureLoadParams* result_data) {
 	TextureLoadParams* LoadParams = (TextureLoadParams*)params;
 
-	ImageResourceParams ResourceParams;
+	FImageResourceParams ResourceParams;
 	ResourceParams.flip_y = true;
 	
 	ASSERT(LoadParams->out_texture);
-	bool Result = TextureHelper::Load(LoadParams->resource_name, &ResourceParams, LoadParams->out_texture);
+	bool Result = UTextureHelper::Load(LoadParams->resource_name, &ResourceParams, LoadParams->out_texture);
 	if (!Result) {
 		return false;
 	}

@@ -43,7 +43,7 @@ public:
 	* @param auto_release Indicates if the acquired geometry should be unloaded when its reference count reaches 0.
 	* @returna A pointer to the acquired geometry or nullptr if failed.
 	*/
-	UGeometry* AcquireFromConfig(SGeometryConfig config, bool auto_release);
+	UGeometry* AcquireFromConfig(FGeometryConfig config, bool auto_release);
 
 	/*
 	* @brief Registers and acquires a new dynamic geometry.
@@ -81,7 +81,7 @@ public:
 	* @param material_name The name of the material to be used.
 	* @returns A geometry configuration which can then be fed into AcquireFromConfig().
 	*/
-	SGeometryConfig GeneratePlaneConfig(float width, float height, uint32_t x_segment_count, uint32_t y_segment_count,
+	FGeometryConfig GeneratePlaneConfig(float width, float height, uint32_t x_segment_count, uint32_t y_segment_count,
 		float tile_x, float tile_y, const FString& name, const FString& material_name);
 
 	/*
@@ -95,7 +95,7 @@ public:
 	* @param material_name The name of the material to be used.
 	* @returns A geometry configuration which can then be fed into AcquireFromConfig().
 	*/
-	SGeometryConfig GenerateCubeConfig(float width, float height, 
+	FGeometryConfig GenerateCubeConfig(float width, float height, 
 		float depth, float tile_x, float tile_y, const FString& name, const FString& material_name);
 
 	/*
@@ -106,13 +106,13 @@ public:
 	UGeometry* GenerateQuad(const FString& name, const FString& material_name);
 
 
-	void ConfigDispose(SGeometryConfig* config);
+	void ConfigDispose(FGeometryConfig* config);
 
 	void DestroyGeometry(UGeometry* geometry);
 
 private:
 	bool CreateDefaultGeometries();
-	UGeometry* CreateGeometry(SGeometryConfig config);
+	UGeometry* CreateGeometry(FGeometryConfig config);
 
 public:
 	UGeometry* DefaultGeometry = nullptr;

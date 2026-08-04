@@ -8,7 +8,7 @@
 #include "Core/Utils.hpp"
 #include "VulkanTexture.hpp"
 
-VulkanShader::VulkanShader() : Shader() {
+VulkanShader::VulkanShader() : UShader() {
 	ID = INVALID_ID;
 	MappedUniformBufferBlock = nullptr;
 	Renderpass = nullptr;
@@ -215,7 +215,7 @@ void VulkanShader::Destroy(){
 		GlobalTextureMaps[i] = nullptr;
 	}
 	GlobalTextureMaps.clear();
-	std::vector<TextureMap*>().swap(GlobalTextureMaps);
+	std::vector<FTextureMap*>().swap(GlobalTextureMaps);
 }
 
 bool VulkanShader::Use() {
@@ -265,7 +265,7 @@ bool VulkanShader::ApplyGlobal() {
 	uint32_t ValidCount = 0;
 
 	for (uint32_t i = 0; i < SamplerCount; ++i) {
-		TextureMap* Map = GlobalTextureMaps[i];
+		FTextureMap* Map = GlobalTextureMaps[i];
 		VulkanTexture* VkTex = Map && Map->texture
 			? static_cast<VulkanTexture*>(Map->texture)
 			: nullptr;
@@ -354,7 +354,7 @@ bool VulkanShader::ApplyInstance() {
 		uint32_t UpdateSamplerCount = 0;
 
 		for (uint32_t i = 0; i < TotalSamplerCount; ++i) {
-			TextureMap* Map = State.instance_texture_maps[i];
+			FTextureMap* Map = State.instance_texture_maps[i];
 			if (!Map) continue;
 
 			UTexture* Tex = Map->texture;
@@ -428,7 +428,7 @@ bool VulkanShader::SetUniformByIndex(uint32_t index, const void* value) {
 bool VulkanShader::SetUniform(ShaderUniform* uniform, const void* value) {
 	// Sampler 走单独路径
 	if (uniform->type == eShader_Uniform_Type_Sampler) {
-		return SetSampler(uniform, static_cast<const TextureMap*>(value));
+		return SetSampler(uniform, static_cast<const FTextureMap*>(value));
 	}
 
 	switch (uniform->scope) {
@@ -483,18 +483,18 @@ VulkanCommandBuffer* VulkanShader::GetCurrentCommandBuffer() {
 	return &Backend->Context.GraphicsCommandBuffers[Backend->Context.ImageIndex];
 }
 
-bool VulkanShader::SetSamplerByIndex(uint32_t index, const TextureMap* map) {
+bool VulkanShader::SetSamplerByIndex(uint32_t index, const FTextureMap* map) {
 	ShaderUniform* Uniform = &Uniforms[index];
 	return SetSampler(Uniform, map);
 }
 
-bool VulkanShader::SetSampler(ShaderUniform* uniform, const TextureMap* map){
+bool VulkanShader::SetSampler(ShaderUniform* uniform, const FTextureMap* map){
 	if (uniform->scope == eShader_Scope_Global) {
 		if (uniform->location >= (uint32_t)GlobalTextureMaps.size()) {
 			GLOG(Log::eError, "SetSamplerByIndex — Global sampler location 越界。");
 			return false;
 		}
-		GlobalTextureMaps[uniform->location] = const_cast<TextureMap*>(map);
+		GlobalTextureMaps[uniform->location] = const_cast<FTextureMap*>(map);
 	}
 	else {
 		VulkanShaderInstanceState& State = InstanceStates[BoundInstanceId];
@@ -502,7 +502,7 @@ bool VulkanShader::SetSampler(ShaderUniform* uniform, const TextureMap* map){
 			GLOG(Log::eError, "SetSamplerByIndex — Instance sampler location 越界。");
 			return false;
 		}
-		State.instance_texture_maps[uniform->location] = const_cast<TextureMap*>(map);
+		State.instance_texture_maps[uniform->location] = const_cast<FTextureMap*>(map);
 	}
 
 	return true;

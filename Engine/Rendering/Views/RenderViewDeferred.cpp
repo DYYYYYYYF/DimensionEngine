@@ -85,7 +85,7 @@ bool RenderViewWorldDeferred::OnCreate(const RenderViewConfig& config) {
 		return false;
 	}
 
-	ShaderConfig* Config = (ShaderConfig*)ConfigResource.Data;
+	FShaderConfig* Config = (FShaderConfig*)ConfigResource.Data;
 	// 第一个通道用于G-Buffer渲染
 	if (!ShaderSystem::Get().Create(&Passes[0], Config)) {
 		GLOG(Log::eError, "Failed to create G-Buffer shader.");
@@ -102,7 +102,7 @@ bool RenderViewWorldDeferred::OnCreate(const RenderViewConfig& config) {
 		return false;
 	}
 
-	Config = (ShaderConfig*)ConfigResource.Data;
+	Config = (FShaderConfig*)ConfigResource.Data;
 	// 第二个通道用于光照计算
 	if (!ShaderSystem::Get().Create(&Passes[1], Config)) {
 		GLOG(Log::eError, "Failed to create deferred lighting shader.");
@@ -351,7 +351,7 @@ bool RenderViewWorldDeferred::OnRender(struct RenderViewPacket* packet, RHI* bac
 	IRenderpass* GBufferPass = (IRenderpass*)&Passes[0];
 
 	// 绑定 Pass 全局不变量
-	FrameData GBufferData;
+	FFrameData GBufferData;
 	GBufferData.projection = packet->projection_matrix;
 	GBufferData.view = packet->view_matrix;
 	GBufferData.cameraPosition = packet->view_position;
@@ -366,7 +366,7 @@ bool RenderViewWorldDeferred::OnRender(struct RenderViewPacket* packet, RHI* bac
 	IRenderpass* LightingPass = (IRenderpass*)&Passes[1];
 
 	// 绑定 Pass 全局不变量
-	FrameData LightingData;
+	FFrameData LightingData;
 	LightingData.time = packet->global_time;
 	LightingData.gBuffer = CurrentGBuffer;
 

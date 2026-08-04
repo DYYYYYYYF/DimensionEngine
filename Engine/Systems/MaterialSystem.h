@@ -20,9 +20,9 @@ public:
 	void Shutdown();
 
 	UMaterial* Acquire(const FString& name);
-	UMaterial* AcquireFromConfig(SMaterialConfig config);
+	UMaterial* AcquireFromConfig(FMaterialConfig config);
 
-	bool LoadMaterial(SMaterialConfig config, UMaterial* mat);
+	bool LoadMaterial(FMaterialConfig config, UMaterial* mat);
 	void DestroyMaterial(UMaterial* mat);
 
 	/**
@@ -33,7 +33,7 @@ public:
 	 * @param view A constant pointer to a view matrix.
 	 * @return True on success; otherwise false.
 	 */
-	bool ApplyGlobal(uint32_t shader_id, size_t renderer_frame_number, const FrameData& data);
+	bool ApplyGlobal(uint32_t shader_id, size_t renderer_frame_number, const FFrameData& data);
 
 	/**
 	 * @brief Applies instance-level material data for the given material.
@@ -42,7 +42,7 @@ public:
 	 * @param need_update Indicates if the material needs to be update.
 	 * @return True on success; otherwise false.
 	 */
-	bool ApplyInstance(UMaterialInstance* mat, const FrameData& data);
+	bool ApplyInstance(UMaterialInstance* mat, const FFrameData& data);
 
 	/**
 	 * @brief Applies local-level material data (typically just model matrix).
@@ -54,7 +54,7 @@ public:
 	bool ApplyLocal(UMaterialInstance* mat, const Matrix4& model);
 
 private:
-	bool CreateTextureMap(TextureMap& map, TextureUsage usage, const FString& textureName);
+	bool CreateTextureMap(FTextureMap& map, TextureUsage usage, const FString& textureName);
 
 	TextureUsage GetTextureUsageFromUniformName(const FString& name) const;
 
@@ -67,7 +67,7 @@ public:
 	std::unordered_map<FString, uint32_t> MaterialMap;
 
 	// Know locations for the material shader.
-	MaterialShaderUniformLocations MaterialLocations;
+	FMaterialShaderUniformLocations MaterialLocations;
 	uint32_t MaterialShaderID = INVALID_ID;
 
 	// Know locations for the deferred lighting material shader.

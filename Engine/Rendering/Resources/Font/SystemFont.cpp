@@ -8,7 +8,7 @@
 #endif
 #include <stb_truetype.h>
 
-struct SystemFontContext {
+struct FSystemFontContext {
 	void* fontBinary = nullptr;
 	size_t         binarySize = 0;
 	int            offset = 0;
@@ -16,10 +16,10 @@ struct SystemFontContext {
 	stbtt_fontinfo info = {};
 };
 
-bool SystemFont::InitFromResourceData(SystemFontResourceData* resourceData, int index) {
+bool USystemFont::InitFromResourceData(FSystemFontResourceData* resourceData, int index) {
 	if (!resourceData) { return false; }
 
-	ctx_ = NewObject<SystemFontContext>();
+	ctx_ = NewObject<FSystemFontContext>();
 	if (!ctx_) {
 		return false;
 	}
@@ -40,7 +40,7 @@ bool SystemFont::InitFromResourceData(SystemFontResourceData* resourceData, int 
 	return true;
 }
 
-void SystemFont::ReleaseResource(IRenderer* renderer) {
+void USystemFont::ReleaseResource(IRenderer* renderer) {
 	// 清理所有 Variant
 	for (auto& [size, variant] : variants_) {
 		variant->Cleanup();
@@ -48,7 +48,7 @@ void SystemFont::ReleaseResource(IRenderer* renderer) {
 	variants_.Clear();
 }
 
-SystemFontVariant* SystemFont::AcquireVariant(int size) {
+USystemFontVariant* USystemFont::AcquireVariant(int size) {
 	// 已存在直接返回
 	if (variants_.Contains(size)) {
 		return variants_[size];
@@ -58,7 +58,7 @@ SystemFontVariant* SystemFont::AcquireVariant(int size) {
 	return CreateVariant(size);
 }
 
-bool SystemFont::ReleaseVariant(int size) {
+bool USystemFont::ReleaseVariant(int size) {
 	IRenderer* renderer = IRenderer::GetRenderer();
 	if (!renderer) {
 		GLOG(Log::eError, "SystemFont::ReleaseVariant() failed to get renderer.");
@@ -74,8 +74,8 @@ bool SystemFont::ReleaseVariant(int size) {
 	return true;
 }
 
-SystemFontVariant* SystemFont::CreateVariant(int size) {
-	SystemFontVariant* variant = NewObject<SystemFontVariant>(ctx_, size, face_);
+USystemFontVariant* USystemFont::CreateVariant(int size) {
+	USystemFontVariant* variant = NewObject<USystemFontVariant>(ctx_, size, face_);
 	if (!variant) {
 		return nullptr;
 	}
@@ -90,7 +90,7 @@ SystemFontVariant* SystemFont::CreateVariant(int size) {
 	return variant;
 }
 
-SystemFontVariant::SystemFontVariant(SystemFontContext* ctx, int size, const FString& face)
+USystemFontVariant::USystemFontVariant(FSystemFontContext* ctx, int size, const FString& face)
 	: ctx_(ctx), size_(size), face_(face) {
 
 	// 预填 ASCII 95 个可打印字符（32-126）以及 -1（未知字符占位）
@@ -101,7 +101,7 @@ SystemFontVariant::SystemFontVariant(SystemFontContext* ctx, int size, const FSt
 	}
 }
 
-SystemFontVariant::~SystemFontVariant() {
+USystemFontVariant::~USystemFontVariant() {
 	// GPU 资源由 Cleanup() 显式释放，此处不重复操作
 	if (glyphs_) {
 		Memory::Free(glyphs_, MemoryType::eMemory_Type_Array);
@@ -113,7 +113,7 @@ SystemFontVariant::~SystemFontVariant() {
 	}
 }
 
-bool SystemFontVariant::Setup() {
+bool USystemFontVariant::Setup() {
 	// 设置字体类型
 	TextType = UITextType::eUI_Text_Type_System;
 
@@ -176,7 +176,7 @@ bool SystemFontVariant::Setup() {
 	return true;
 }
 
-void SystemFontVariant::Cleanup() {
+void USystemFontVariant::Cleanup() {
 	IRenderer* Renderer = IRenderer::GetRenderer();
 	if (!Renderer) {
 		GLOG(Log::eError, "SystemFont::Cleanup() failed to get renderer.");
@@ -190,7 +190,7 @@ void SystemFontVariant::Cleanup() {
 	}
 }
 
-bool SystemFontVariant::VerifyAtlas(const FString& text) {
+bool USystemFontVariant::VerifyAtlas(const FString& text) {
 	uint32_t charLen = static_cast<uint32_t>(text.Length());
 	uint32_t addedCount = 0;
 
@@ -231,7 +231,7 @@ bool SystemFontVariant::VerifyAtlas(const FString& text) {
 	return true;
 }
 
-bool SystemFontVariant::RebuildAtlas() {
+bool USystemFontVariant::RebuildAtlas() {
 	uint32_t packImageSize = atlasSizeX_ * atlasSizeY_ * sizeof(unsigned char);
 	uint32_t codepointCount = static_cast<uint32_t>(codepoints_.size());
 
@@ -288,12 +288,12 @@ bool SystemFontVariant::RebuildAtlas() {
 	}
 
 	glyphCount_ = codepointCount;
-	glyphs_ = static_cast<FontGlyph*>(
-		Memory::Allocate(sizeof(FontGlyph) * glyphCount_, MemoryType::eMemory_Type_Array));
+	glyphs_ = static_cast<FFontGlyph*>(
+		Memory::Allocate(sizeof(FFontGlyph) * glyphCount_, MemoryType::eMemory_Type_Array));
 
 	for (uint32_t i = 0; i < glyphCount_; ++i) {
 		const stbtt_packedchar& pc = packedChars[i];
-		FontGlyph& g = glyphs_[i];
+		FFontGlyph& g = glyphs_[i];
 		g.codePoint = codepoints_[i];
 		g.pageID = 0;
 		g.offsetX = static_cast<short>(pc.xoff);
@@ -314,8 +314,8 @@ bool SystemFontVariant::RebuildAtlas() {
 
 	kerningCount_ = static_cast<uint32_t>(stbtt_GetKerningTableLength(&ctx_->info));
 	if (kerningCount_ > 0) {
-		kernings_ = static_cast<FontKerning*>(
-			Memory::Allocate(sizeof(FontKerning) * kerningCount_, MemoryType::eMemory_Type_Array));
+		kernings_ = static_cast<FFontKerning*>(
+			Memory::Allocate(sizeof(FFontKerning) * kerningCount_, MemoryType::eMemory_Type_Array));
 
 		stbtt_kerningentry* kerningTable = static_cast<stbtt_kerningentry*>(
 			Memory::Allocate(sizeof(stbtt_kerningentry) * kerningCount_, MemoryType::eMemory_Type_Array));

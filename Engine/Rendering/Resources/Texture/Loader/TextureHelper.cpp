@@ -17,7 +17,7 @@
 #include "stb_image.h"
 #include "../Texture.hpp"
 
-bool TextureHelper::Load(const FString& name, void* params, UTexture* resource) {
+bool UTextureHelper::Load(const FString& name, void* params, UTexture* resource) {
 	if (name.Length() == 0 || resource == nullptr) {
 		return false;
 	}
@@ -27,7 +27,7 @@ bool TextureHelper::Load(const FString& name, void* params, UTexture* resource) 
 		return false;
 	}
 
-	ImageResourceParams* TypedParams = (ImageResourceParams*)params;
+	FImageResourceParams* TypedParams = (FImageResourceParams*)params;
 	if (params == nullptr) {
 		GLOG(Log::eError, "ImageLoader::Load() Required a valid params (ImageResourceParams).");
 		return false;
@@ -94,7 +94,7 @@ bool TextureHelper::Load(const FString& name, void* params, UTexture* resource) 
 	return true;
 }
 
-void TextureHelper::Unload(UTexture* resource) {
+void UTextureHelper::Unload(UTexture* resource) {
 	if (!resource) {
 		return;
 	}

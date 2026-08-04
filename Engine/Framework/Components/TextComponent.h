@@ -38,7 +38,7 @@ public:
 private:
 	bool BuildGeometry();
 	void BuildCharacterQuad(uint32_t CharacterIndex, float X, float Y,
-		const FontGlyph& Glyph, int AtlasSizeX, int AtlasSizeY, Vertex2D* Vertices, uint32_t* Indices);
+		const FFontGlyph& Glyph, int AtlasSizeX, int AtlasSizeY, Vertex2D* Vertices, uint32_t* Indices);
 
 private:
 	FString Text;

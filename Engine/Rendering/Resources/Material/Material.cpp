@@ -61,7 +61,7 @@ bool UMaterialInstance::IsTextureBindingExist(const FString& UniformName) const 
 	return false;
 }
 
-bool UMaterialInstance::SetTextureOnBinding(const FString& UniformName, TextureMap Texture) {
+bool UMaterialInstance::SetTextureOnBinding(const FString& UniformName, FTextureMap Texture) {
 	for (TextureBinding& binding : TextureBindings) {
 		if (binding.uniform && binding.uniform->name == UniformName) {
 			binding.texture.texture = Texture.texture;

@@ -4,7 +4,7 @@
 #include "Rendering/Resources/Texture/Texture.hpp"
 #include "Rendering/Interface/IRenderView.hpp"
 
-class Shader;
+class UShader;
 class ACameraActor;
 
 class RenderViewWorldDeferred : public IRenderView {
@@ -27,10 +27,10 @@ public:
 		return GBufferShader->Name.CStr();
 	}
 
-	void SetGBufferShader(Shader* shader) { GBufferShader = shader; }
-	void SetLightingShader(Shader* shader) { LightingShader = shader; }
-	Shader* GetGBufferShader() const { return GBufferShader; }
-	Shader* GetLightingShader() const { return LightingShader; }
+	void SetGBufferShader(UShader* shader) { GBufferShader = shader; }
+	void SetLightingShader(UShader* shader) { LightingShader = shader; }
+	UShader* GetGBufferShader() const { return GBufferShader; }
+	UShader* GetLightingShader() const { return LightingShader; }
 
 private:
 	GBufferSet* GetCurrentGBufferSet(size_t render_target_index) {
@@ -41,9 +41,9 @@ private:
 	IRenderer* Renderer;
 
 	// G-Buffer渲染着色器
-	Shader* GBufferShader = nullptr;
+	UShader* GBufferShader = nullptr;
 	// 光照计算着色器
-	Shader* LightingShader = nullptr;
+	UShader* LightingShader = nullptr;
 
 	float NearClip;
 	float FarClip;

@@ -6,7 +6,7 @@
 class UGeometry;
 class IRenderer;
 
-class DAPI Skybox : public UAsset {
+class DAPI USkybox : public UAsset {
 public:
 	bool Create(const FString& cubeName);
 	void Destroy();
@@ -16,7 +16,7 @@ public:
 
 public:
 	IRenderer* Renderer = nullptr;
-	TextureMap CubeMap;
+	FTextureMap CubeMap;
 	uint32_t InstanceID = INVALID_ID;
 	size_t RenderFrameNumber = 0;
 

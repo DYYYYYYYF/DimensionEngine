@@ -3,7 +3,7 @@
 #include "Defines.hpp"
 #include "Rendering/Interface/IRenderView.hpp"
 
-class Shader;
+class UShader;
 class ACameraActor;
 
 class RenderViewSkybox : public IRenderView {
@@ -19,7 +19,7 @@ public:
 	virtual bool RegenerateAttachmentTarget(uint32_t passIndex, RenderTargetAttachment* attachment) override;
 
 private:
-	Shader* UsedShader = nullptr;
+	UShader* UsedShader = nullptr;
 	float Fov;
 	float NearClip;
 	float FarClip;

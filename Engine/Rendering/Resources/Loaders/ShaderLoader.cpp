@@ -31,8 +31,8 @@ bool ShaderLoader::Load(const FString& name, void* params, UAsset* resource) {
 	resource->Name = name;
 
 	// Set some defaults, create arrays.
-	ShaderConfig* ResourceData = (ShaderConfig*)Memory::Allocate(sizeof(ShaderConfig), MemoryType::eMemory_Type_Resource);
-	ResourceData = new(ResourceData)ShaderConfig();
+	FShaderConfig* ResourceData = (FShaderConfig*)Memory::Allocate(sizeof(FShaderConfig), MemoryType::eMemory_Type_Resource);
+	ResourceData = new(ResourceData)FShaderConfig();
 	ASSERT(ResourceData);
 
 	AssetFile.ReadLineByLine([this, ResourceData](size_t index, const FString& line) {
@@ -41,12 +41,12 @@ bool ShaderLoader::Load(const FString& name, void* params, UAsset* resource) {
 
 	resource->Data = ResourceData;
 	resource->DataCount = 1;
-	resource->DataSize = sizeof(ShaderConfig);
+	resource->DataSize = sizeof(FShaderConfig);
 
 	return true;
 }
 
-bool ShaderLoader::ParseLineData(size_t index, const FString& line, ShaderConfig* resource) {
+bool ShaderLoader::ParseLineData(size_t index, const FString& line, FShaderConfig* resource) {
 	// Trim the string.
 	FString TrimmedLine = line.Trimmed();
 
@@ -336,7 +336,7 @@ ShaderSemantic ShaderLoader::ParseSemantic(const FString& semantic) {
 }
 
 void ShaderLoader::Unload(UAsset* resource) {
-	ShaderConfig* Data = (ShaderConfig*)resource->Data;
+	FShaderConfig* Data = (FShaderConfig*)resource->Data;
 
 	Data->stage_filenames.Clear();
 	Data->stage_names.Clear();

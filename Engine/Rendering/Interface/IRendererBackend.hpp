@@ -8,14 +8,14 @@ struct SPlatformState;
 struct ShaderUniform;
 struct GeometryRenderData;
 struct RenderTarget;
-struct TextureMap;
+struct FTextureMap;
 struct RenderBackendConfig;
-struct ShaderConfig;
+struct FShaderConfig;
 
 class Texture;
 class UMaterial;
 class UGeometry;
-class Shader;
+class UShader;
 class IRenderpass;
 class IGPUBuffer;
 
@@ -33,13 +33,13 @@ public:
 	virtual bool EndFrame(double delta_time) = 0;
 	virtual void Resize(unsigned short width, unsigned short height) = 0;
 	virtual void DrawGeometry(GeometryRenderData* geometry) = 0;
-	virtual void ExecuteDrawCalls(const std::vector<DrawCall>& draw_calls, size_t frame_number, const FrameData& data) = 0;
+	virtual void ExecuteDrawCalls(const std::vector<DrawCall>& draw_calls, size_t frame_number, const FFrameData& data) = 0;
 
 	// Texture
 	virtual UTexture* AcquireTexture(const FString& name, bool auto_release) = 0;
 
 	// Geometry
-	virtual bool CreateGeometry(UGeometry* geometry, const SGeometryConfig& config) = 0;
+	virtual bool CreateGeometry(UGeometry* geometry, const FGeometryConfig& config) = 0;
 	virtual void DestroyGeometry(UGeometry* geometry) = 0;
 	
 	// Renderpass
@@ -64,12 +64,12 @@ public:
 	virtual void ResetScissor() = 0;
 
 	// Shader
-	virtual bool CreateShader(Shader* shader, const ShaderConfig* config, IRenderpass* pass, const TArray<FString>& stage_filenames, std::vector<ShaderStage>& stages) = 0;
-	virtual uint32_t AcquireInstanceResource(Shader* shader, std::vector<TextureMap*>& maps) = 0;
-	virtual bool ReleaseInstanceResource(Shader* shader, uint64_t instance_id) = 0;
+	virtual bool CreateShader(UShader* shader, const FShaderConfig* config, IRenderpass* pass, const TArray<FString>& stage_filenames, std::vector<ShaderStage>& stages) = 0;
+	virtual uint32_t AcquireInstanceResource(UShader* shader, std::vector<FTextureMap*>& maps) = 0;
+	virtual bool ReleaseInstanceResource(UShader* shader, uint64_t instance_id) = 0;
 
-	virtual bool AcquireTextureMap(TextureMap* map) = 0;
-	virtual void ReleaseTextureMap(TextureMap* map) = 0;
+	virtual bool AcquireTextureMap(FTextureMap* map) = 0;
+	virtual void ReleaseTextureMap(FTextureMap* map) = 0;
 	virtual bool GetEnabledMultiThread() const { return false; }
 
 public:

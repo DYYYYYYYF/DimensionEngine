@@ -23,8 +23,8 @@ bool SystemFontLoader::Load(const FString& name, void* params, UAsset* resource)
 	//   1. Loader 负责读取 TTF 二进制和 face 元数据 → SystemFontResourceData
 	//   2. SystemFont::InitFromResourceData() 负责 stbtt 初始化和 GPU 资源
 	// 此处只完成第一步，resource->Data 指向 SystemFontResourceData
-	resource->Data = NewObject<SystemFontResourceData>();
-	SystemFontResourceData* resourceData = static_cast<SystemFontResourceData*>(resource->Data);
+	resource->Data = NewObject<FSystemFontResourceData>();
+	FSystemFontResourceData* resourceData = static_cast<FSystemFontResourceData*>(resource->Data);
 
 	const char* formatStr = "%s/%s/%s%s";
 
@@ -81,14 +81,14 @@ bool SystemFontLoader::Load(const FString& name, void* params, UAsset* resource)
 		return false;
 	}
 
-	resource->DataSize = sizeof(SystemFontResourceData);
+	resource->DataSize = sizeof(FSystemFontResourceData);
 	return true;
 }
 
 void SystemFontLoader::Unload(UAsset* resource) {
 	if (!resource || !resource->Data) { return; }
 
-	SystemFontResourceData* data = static_cast<SystemFontResourceData*>(resource->Data);
+	FSystemFontResourceData* data = static_cast<FSystemFontResourceData*>(resource->Data);
 
 	data->fonts.Clear();
 
@@ -108,7 +108,7 @@ void SystemFontLoader::Unload(UAsset* resource) {
 }
 
 bool SystemFontLoader::ImportFontconfigFile(const FString& configPath, const FString& typePath,
-	const FString& outDSFFilename, SystemFontResourceData* outResource) {
+	const FString& outDSFFilename, FSystemFontResourceData* outResource) {
 
 	outResource->binarySize = 0;
 	outResource->fontBinary = nullptr;
@@ -165,7 +165,7 @@ bool SystemFontLoader::ImportFontconfigFile(const FString& configPath, const FSt
 				Memory::Copy(outResource->fontBinary, bytes.data(), outResource->binarySize);
 			}
 			else if (varName.Equali("face")) {
-				SystemFontFace newFace;
+				FSystemFontFace newFace;
 				newFace.name = value;
 				outResource->fonts.Push(newFace);
 			}
@@ -188,7 +188,7 @@ bool SystemFontLoader::ImportFontconfigFile(const FString& configPath, const FSt
 	return WriteDSFFile(outDSFFilename, outResource);
 }
 
-bool SystemFontLoader::ReadDSFFile(const FString& path, SystemFontResourceData* data) {
+bool SystemFontLoader::ReadDSFFile(const FString& path, FSystemFontResourceData* data) {
 	File f(path.CStr());
 	if (!f.IsExist()) {
 		GLOG(Log::eError, "SystemFontLoader: DSF file '%s' does not exist.", path.CStr());
@@ -201,7 +201,7 @@ bool SystemFontLoader::ReadDSFFile(const FString& path, SystemFontResourceData* 
 	}
 
 	// 文件头校验
-	ResourceHeader header;
+	FResourceHeader header;
 	if (!f.Read(&header)) return false;
 
 	if (header.magicNumber != RESOURCES_MAGIC ||
@@ -241,7 +241,7 @@ bool SystemFontLoader::ReadDSFFile(const FString& path, SystemFontResourceData* 
 	return true;
 }
 
-bool SystemFontLoader::WriteDSFFile(const FString& outDSFFilename, SystemFontResourceData* resource) {
+bool SystemFontLoader::WriteDSFFile(const FString& outDSFFilename, FSystemFontResourceData* resource) {
 	File f(outDSFFilename.CStr());
 	if (!f.Open(eFileMode::Write, true)) {
 		GLOG(Log::eError, "SystemFontLoader: failed to open DSF for writing: %s.", outDSFFilename.CStr());
@@ -249,7 +249,7 @@ bool SystemFontLoader::WriteDSFFile(const FString& outDSFFilename, SystemFontRes
 	}
 
 	// 文件头
-	ResourceHeader header;
+	FResourceHeader header;
 	header.magicNumber = RESOURCES_MAGIC;
 	header.resourceType = static_cast<char>(EAssetType::SystemFont);
 	header.version = 0x01U;

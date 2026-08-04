@@ -3,7 +3,7 @@
 #include "Defines.hpp"
 #include "Rendering/Interface/IRenderView.hpp"
 
-class Shader;
+class UShader;
 
 class RenderViewUI : public IRenderView {
 public:
@@ -18,7 +18,7 @@ public:
 	virtual bool RegenerateAttachmentTarget(uint32_t passIndex, RenderTargetAttachment* attachment) override;
 
 private:
-	Shader* UsedShader = nullptr;
+	UShader* UsedShader = nullptr;
 	float NearClip;
 	float FarClip;
 	Matrix4 ProjectionMatrix;

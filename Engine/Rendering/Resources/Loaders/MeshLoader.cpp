@@ -30,14 +30,14 @@ bool MeshLoader::Load(const FString& name, void* params, UAsset* resource) {
 	const char* FormatStr = "%s/%s/%s%s";
 
 #define SUPPORTED_FILETYPE_COUNT 7  // 增加支持的文件类型数量
-	SupportedMeshFileType SupportedFileTypes[SUPPORTED_FILETYPE_COUNT];
-	SupportedFileTypes[0] = SupportedMeshFileType{ ".dsm", MeshFileType::eMesh_File_Type_DSM, true };
-	SupportedFileTypes[1] = SupportedMeshFileType{ ".obj", MeshFileType::eMesh_File_Type_3D_Model, false };
-	SupportedFileTypes[2] = SupportedMeshFileType{ ".gltf", MeshFileType::eMesh_File_Type_3D_Model, false };
-	SupportedFileTypes[3] = SupportedMeshFileType{ ".glb", MeshFileType::eMesh_File_Type_3D_Model, true };  // 二进制GLTF
-	SupportedFileTypes[4] = SupportedMeshFileType{ ".fbx", MeshFileType::eMesh_File_Type_3D_Model, true };  // FBX
-	SupportedFileTypes[5] = SupportedMeshFileType{ ".dae", MeshFileType::eMesh_File_Type_3D_Model, false }; // Collada
-	SupportedFileTypes[6] = SupportedMeshFileType{ ".3ds", MeshFileType::eMesh_File_Type_3D_Model, true };  // 3DS Max
+	FSupportedMeshFileType SupportedFileTypes[SUPPORTED_FILETYPE_COUNT];
+	SupportedFileTypes[0] = FSupportedMeshFileType{ ".dsm", MeshFileType::eMesh_File_Type_DSM, true };
+	SupportedFileTypes[1] = FSupportedMeshFileType{ ".obj", MeshFileType::eMesh_File_Type_3D_Model, false };
+	SupportedFileTypes[2] = FSupportedMeshFileType{ ".gltf", MeshFileType::eMesh_File_Type_3D_Model, false };
+	SupportedFileTypes[3] = FSupportedMeshFileType{ ".glb", MeshFileType::eMesh_File_Type_3D_Model, true };  // 二进制GLTF
+	SupportedFileTypes[4] = FSupportedMeshFileType{ ".fbx", MeshFileType::eMesh_File_Type_3D_Model, true };  // FBX
+	SupportedFileTypes[5] = FSupportedMeshFileType{ ".dae", MeshFileType::eMesh_File_Type_3D_Model, false }; // Collada
+	SupportedFileTypes[6] = FSupportedMeshFileType{ ".3ds", MeshFileType::eMesh_File_Type_3D_Model, true };  // 3DS Max
 
 	FString FullFilePath;
 	MeshFileType MeshFileType = MeshFileType::eMesh_File_Type_Not_Found;
@@ -61,7 +61,7 @@ bool MeshLoader::Load(const FString& name, void* params, UAsset* resource) {
 	resource->Name = name;
 
 	// 资源数据是几何体配置的数组
-	std::vector<SGeometryConfig> ResourceDatas;
+	std::vector<FGeometryConfig> ResourceDatas;
 	ResourceDatas.reserve(25968);
 	bool Result = false;
 
@@ -107,14 +107,14 @@ bool MeshLoader::Load(const FString& name, void* params, UAsset* resource) {
 	}
 
 	// 分配内存并复制数据
-	resource->Data = Memory::Allocate(sizeof(SGeometryConfig) * ResourceDatas.size(), MemoryType::eMemory_Type_Array);
+	resource->Data = Memory::Allocate(sizeof(FGeometryConfig) * ResourceDatas.size(), MemoryType::eMemory_Type_Array);
 	for (size_t i = 0; i < ResourceDatas.size(); ++i) {
-		new (static_cast<SGeometryConfig*>(resource->Data) + i) SGeometryConfig(ResourceDatas[i]); // 使用移动构造
+		new (static_cast<FGeometryConfig*>(resource->Data) + i) FGeometryConfig(ResourceDatas[i]); // 使用移动构造
 	}
-	resource->DataSize = sizeof(SGeometryConfig);
+	resource->DataSize = sizeof(FGeometryConfig);
 	resource->DataCount = ResourceDatas.size();
 
-	std::vector<SGeometryConfig>().swap(ResourceDatas);
+	std::vector<FGeometryConfig>().swap(ResourceDatas);
 
 	GLOG(Log::eInfo, "Successfully loaded mesh resource '%s' with %u geometries", name.CStr(), resource->DataCount);
 	return true;
@@ -122,7 +122,7 @@ bool MeshLoader::Load(const FString& name, void* params, UAsset* resource) {
 
 void MeshLoader::Unload(UAsset* resource) {
 	for (uint32_t i = 0; i < resource->DataCount; ++i) {
-		SGeometryConfig* Config = &((SGeometryConfig*)resource->Data)[i];
+		FGeometryConfig* Config = &((FGeometryConfig*)resource->Data)[i];
 		GeometrySystem::Get().ConfigDispose(Config);
 		//static_cast<SGeometryConfig*>(resource->Data)[i].~SGeometryConfig();
 	}
@@ -138,7 +138,7 @@ void MeshLoader::Unload(UAsset* resource) {
 	resource = nullptr;
 }
 
-bool MeshLoader::Import3DModelFile(const FString& model_file, const FString& out_dsm_filename, std::vector<SGeometryConfig>& out_geometries) {
+bool MeshLoader::Import3DModelFile(const FString& model_file, const FString& out_dsm_filename, std::vector<FGeometryConfig>& out_geometries) {
 	Assimp::Importer importer;
 
 	// 设置后处理标志 - 适用于所有3D格式
@@ -170,7 +170,7 @@ bool MeshLoader::Import3DModelFile(const FString& model_file, const FString& out
 	GLOG(Log::eDebug, "Model contains %u meshes, %u materials", scene->mNumMeshes, scene->mNumMaterials);
 
 	// 材质配置
-	std::vector<SMaterialConfig> MaterialConfigs;
+	std::vector<FMaterialConfig> MaterialConfigs;
 
 	// 处理材质
 	if (!ProcessAssimpMaterials(scene, out_dsm_filename, MaterialConfigs)) {
@@ -189,10 +189,10 @@ bool MeshLoader::Import3DModelFile(const FString& model_file, const FString& out
 	return WriteDsmFile(out_dsm_filename, model_file, out_geometries);
 }
 
-bool MeshLoader::ProcessAssimpMaterials(const aiScene* scene, const FString& out_dsm_filename, std::vector<SMaterialConfig>& materialConfigs) {
+bool MeshLoader::ProcessAssimpMaterials(const aiScene* scene, const FString& out_dsm_filename, std::vector<FMaterialConfig>& materialConfigs) {
 	for (unsigned int i = 0; i < scene->mNumMaterials; ++i) {
 		const aiMaterial* mat = scene->mMaterials[i];
-		SMaterialConfig config;
+		FMaterialConfig config;
 
 		// 材质名称
 		aiString name;
@@ -280,7 +280,7 @@ bool MeshLoader::ProcessAssimpMaterials(const aiScene* scene, const FString& out
 
 	// 如果没有材质，创建一个默认材质
 	if (materialConfigs.empty()) {
-		SMaterialConfig defaultConfig;
+		FMaterialConfig defaultConfig;
 		defaultConfig.name = "DefaultMaterial";
 		defaultConfig.diffuse_color = Vector4(0.8f, 0.8f, 0.8f, 1.0f);
 		defaultConfig.shininess = 32.0f;
@@ -295,7 +295,7 @@ bool MeshLoader::ProcessAssimpMaterials(const aiScene* scene, const FString& out
 	return true;
 }
 
-void MeshLoader::ProcessAssimpTextures(const aiMaterial* mat, SMaterialConfig& config) {
+void MeshLoader::ProcessAssimpTextures(const aiMaterial* mat, FMaterialConfig& config) {
 	aiString texPath;
 
 	// 漫反射/基础颜色贴图
@@ -352,7 +352,7 @@ void MeshLoader::ProcessAssimpTextures(const aiMaterial* mat, SMaterialConfig& c
 	}
 }
 
-void MeshLoader::ProcessAssimpNode(aiNode* node, const aiScene* scene, const std::vector<SMaterialConfig>& materialConfigs, const Matrix4& parentTransform, std::vector<SGeometryConfig>& out_geometries) {
+void MeshLoader::ProcessAssimpNode(aiNode* node, const aiScene* scene, const std::vector<FMaterialConfig>& materialConfigs, const Matrix4& parentTransform, std::vector<FGeometryConfig>& out_geometries) {
 	// 计算当前节点的变换矩阵
 	aiMatrix4x4 aiTrans = node->mTransformation;
 
@@ -379,7 +379,7 @@ void MeshLoader::ProcessAssimpNode(aiNode* node, const aiScene* scene, const std
 	}
 }
 
-void MeshLoader::ProcessAssimpMesh(aiMesh* mesh, const aiScene* scene, const std::vector<SMaterialConfig>& materialConfigs, const Matrix4& transform, std::vector<SGeometryConfig>& out_geometries) {
+void MeshLoader::ProcessAssimpMesh(aiMesh* mesh, const aiScene* scene, const std::vector<FMaterialConfig>& materialConfigs, const Matrix4& transform, std::vector<FGeometryConfig>& out_geometries) {
 	if (!mesh->HasFaces()) {
 		GLOG(Log::eWarn, "Mesh has no faces, skipping: %s", mesh->mName.C_Str());
 		return;
@@ -434,7 +434,7 @@ void MeshLoader::ProcessAssimpMesh(aiMesh* mesh, const aiScene* scene, const std
 	}
 
 	// 转换为MeshFaceData格式以复用现有逻辑
-	std::vector<MeshFaceData> faces;
+	std::vector<FMeshFaceData> faces;
 	faces.reserve(mesh->mNumFaces);
 
 	for (unsigned int i = 0; i < mesh->mNumFaces; ++i) {
@@ -461,7 +461,7 @@ void MeshLoader::ProcessAssimpMesh(aiMesh* mesh, const aiScene* scene, const std
 			continue;
 		}
 
-		MeshFaceData meshFace;
+		FMeshFaceData meshFace;
 		for (unsigned int j = 0; j < 3; ++j) {
 			uint32_t idx = face.mIndices[j];
 			meshFace.vertices[j].position_index = idx;
@@ -484,7 +484,7 @@ void MeshLoader::ProcessAssimpMesh(aiMesh* mesh, const aiScene* scene, const std
 	}
 
 	// 创建几何体配置
-	SGeometryConfig newData;
+	FGeometryConfig newData;
 
 	// 设置名称
 	if (strlen(mesh->mName.C_Str()) > 0) {
@@ -510,7 +510,7 @@ void MeshLoader::ProcessAssimpMesh(aiMesh* mesh, const aiScene* scene, const std
 		newData.name.CStr(), newData.vertex_count, (uint32_t)faces.size());
 }
 
-void MeshLoader::ProcessSubobject(std::vector<Vector3>& positions, std::vector<Vector3>& normals, std::vector<Vector2f>& texcoords, std::vector<MeshFaceData>& faces, SGeometryConfig* out_data) {
+void MeshLoader::ProcessSubobject(std::vector<Vector3>& positions, std::vector<Vector3>& normals, std::vector<Vector2f>& texcoords, std::vector<FMeshFaceData>& faces, FGeometryConfig* out_data) {
 	std::vector<uint32_t> Indices;
 	std::vector<Vertex> Vertices;
 	Indices.reserve(65535);
@@ -541,9 +541,9 @@ void MeshLoader::ProcessSubobject(std::vector<Vector3>& positions, std::vector<V
 		// 确保法线存在
 		Vector3 DefaultNormal = Vector3(0, 0, 1);
 		if (SkipNormal) {
-			MeshVertexIndexData IndexData1 = faces[f].vertices[0];
-			MeshVertexIndexData IndexData2 = faces[f].vertices[1];
-			MeshVertexIndexData IndexData3 = faces[f].vertices[2];
+			FMeshVertexIndexData IndexData1 = faces[f].vertices[0];
+			FMeshVertexIndexData IndexData2 = faces[f].vertices[1];
+			FMeshVertexIndexData IndexData3 = faces[f].vertices[2];
 
 			Vector3 Pos1 = positions[IndexData1.position_index];
 			Vector3 Pos2 = positions[IndexData2.position_index];
@@ -557,7 +557,7 @@ void MeshLoader::ProcessSubobject(std::vector<Vector3>& positions, std::vector<V
 
 		// Each vertex
 		for (size_t i = 0; i < 3; ++i) {
-			MeshVertexIndexData IndexData = faces[f].vertices[i];
+			FMeshVertexIndexData IndexData = faces[f].vertices[i];
 			Indices.push_back((uint32_t)(i + (f * 3)));
 
 			Vertex Vert;
@@ -626,7 +626,7 @@ void MeshLoader::ProcessSubobject(std::vector<Vector3>& positions, std::vector<V
 	std::vector<uint32_t>().swap(Indices);
 	std::vector<Vertex>().swap(Vertices);
 }	
-bool MeshLoader::WriteDmtFile(const FString& mtl_file_path, SMaterialConfig* config) {
+bool MeshLoader::WriteDmtFile(const FString& mtl_file_path, FMaterialConfig* config) {
 	// 从 mtl 文件路径提取目录，拼接目标路径
 	FString Directory = FString::DirectoryFromPath(mtl_file_path);
 	FString FullFilePath = FString::Format("%s../Materials/%s%s", Directory.CStr(), config->name.CStr(), ".dmt");
@@ -699,7 +699,7 @@ bool MeshLoader::WriteDmtFile(const FString& mtl_file_path, SMaterialConfig* con
 	return true;
 }
 
-bool MeshLoader::LoadDsmFile(const FString& path, std::vector<SGeometryConfig>& out_geometries) {
+bool MeshLoader::LoadDsmFile(const FString& path, std::vector<FGeometryConfig>& out_geometries) {
 	File f(path.CStr());
 	if (!f.IsExist()) {
 		GLOG(Log::eError, "DSM file '%s' does not exist.", path.CStr());
@@ -726,7 +726,7 @@ bool MeshLoader::LoadDsmFile(const FString& path, std::vector<SGeometryConfig>& 
 	if (!f.Read(&GeometryCount)) return false;
 
 	for (uint32_t i = 0; i < GeometryCount; ++i) {
-		SGeometryConfig g;
+		FGeometryConfig g;
 
 		// Vertices (size / count / array)
 		if (!f.Read(&g.vertex_size))  return false;
@@ -776,7 +776,7 @@ bool MeshLoader::LoadDsmFile(const FString& path, std::vector<SGeometryConfig>& 
 	return true;
 }
 
-bool MeshLoader::WriteDsmFile(const FString& path, const FString& name, std::vector<SGeometryConfig>& geometries) {
+bool MeshLoader::WriteDsmFile(const FString& path, const FString& name, std::vector<FGeometryConfig>& geometries) {
 	File f(path.CStr());
 
 	if (f.IsExist()) {
@@ -803,7 +803,7 @@ bool MeshLoader::WriteDsmFile(const FString& path, const FString& name, std::vec
 	if (!f.Write(&geometry_count)) return false;
 
 	for (uint32_t i = 0; i < geometry_count; ++i) {
-		SGeometryConfig* g = &geometries[i];
+		FGeometryConfig* g = &geometries[i];
 
 		// Vertices (size / count / array)
 		if (!f.Write(&g->vertex_size))  return false;
@@ -836,12 +836,12 @@ bool MeshLoader::WriteDsmFile(const FString& path, const FString& name, std::vec
 	f.Close();
 	return true;
 }
-bool MeshLoader::DeduplicateGeometry(std::vector<SGeometryConfig>& outGeometries) {
+bool MeshLoader::DeduplicateGeometry(std::vector<FGeometryConfig>& outGeometries) {
 	size_t Count = outGeometries.size();
 	uint32_t NewVertCount = 0;
 	Vertex* UniqueVerts = nullptr;
 	for (size_t i = 0; i < Count; ++i) {
-		SGeometryConfig* g = &outGeometries[i];
+		FGeometryConfig* g = &outGeometries[i];
 		GLOG(Log::eDebug, "Geometry de-duplication process starting on geometry object named '%s'.", g->name.CStr());
 		GeometryUtils::DeduplicateVertices(g->vertex_count, (Vertex*)g->vertices, g->index_count, (uint32_t*)g->indices, &NewVertCount, &UniqueVerts);
 
