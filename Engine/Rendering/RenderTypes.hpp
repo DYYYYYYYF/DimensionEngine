@@ -70,7 +70,7 @@ struct RenderTargetAttachment {
 
 struct GeometryRenderData {
 	Matrix4 model_mat;
-	class Geometry* geometry = nullptr;
+	class UGeometry* geometry = nullptr;
 	uint64_t uniqueID = INVALID_ID;
 	uint32_t InstanceIndex = 0;		// 用来存Shader
 };
@@ -99,8 +99,8 @@ enum class ERenderQueueType {
 	Skybox
 };
 
-class Geometry;
-class Material;
+class UGeometry;
+class UMaterialInstance;
 
 // G-Buffer纹理
 #include "Resources/Texture/TextureType.hpp"
@@ -117,8 +117,8 @@ struct GBufferSet {
 };
 
 struct DrawCall {
-	Geometry* geometry;
-	Material* material;
+	UGeometry* geometry;
+	UMaterialInstance* material;
 	Matrix4 model;
 	Shader* shader;
 	uint32_t sortKey;

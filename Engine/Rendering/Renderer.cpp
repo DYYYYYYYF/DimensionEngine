@@ -180,11 +180,11 @@ UTexture* IRenderer::AcquireTexture(const FString& name, bool auto_release) {
 	return RHI_->AcquireTexture(name, auto_release);
 }
 
-bool IRenderer::CreateGeometry(Geometry* geometry, const SGeometryConfig& config) {
+bool IRenderer::CreateGeometry(UGeometry* geometry, const SGeometryConfig& config) {
 	return RHI_->CreateGeometry(geometry, config);
 }
 
-void IRenderer::DestroyGeometry(Geometry* geometry) {
+void IRenderer::DestroyGeometry(UGeometry* geometry) {
 	RHI_->DestroyGeometry(geometry);
 }
 

@@ -58,7 +58,7 @@ private:
 	uint32_t InstanceID = INVALID_ID;
 
 	// 全屏四边形用于光照计算
-	Geometry* FullscreenQuad = nullptr;
+	UGeometry* FullscreenQuad = nullptr;
 
 	// 着色器uniform位置
 	struct GBufferUniforms {

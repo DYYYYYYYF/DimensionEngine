@@ -36,7 +36,7 @@ private:
 public:
 	unsigned char Generation;
 	unsigned short geometry_count;
-	Geometry** geometries;
+	UGeometry** geometries;
 
 	struct FMeshLoadParams LoadParams;
 };

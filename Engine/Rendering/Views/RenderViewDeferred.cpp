@@ -315,9 +315,12 @@ bool RenderViewWorldDeferred::OnRender(struct RenderViewPacket* packet, RHI* bac
 		GeometryRenderData* SrcData = &packet->geometries[i];
 		if (!SrcData->geometry) continue;
 
+		UGeometry* geometry = SrcData->geometry;
+		if (!geometry) continue;
+
 		DrawCall dc;
-		Material* Mat = SrcData->geometry->Material ? SrcData->geometry->Material : MaterialSystem::Get().GetDefaultMaterial();
-		dc.geometry = SrcData->geometry;
+		UMaterialInstance* Mat = geometry->GetMaterialInstance();
+		dc.geometry = geometry;
 		dc.model = SrcData->model_mat;
 		dc.material= Mat;
 		dc.shader = GBufferShader;
@@ -333,7 +336,7 @@ bool RenderViewWorldDeferred::OnRender(struct RenderViewPacket* packet, RHI* bac
 
 	// --- 收集 延迟光照 的 DrawCall ---
 	DrawCall LightingDC;
-	Material* DeferredLightingMat = FullscreenQuad->Material;
+	UMaterialInstance* DeferredLightingMat = FullscreenQuad->GetMaterialInstance();
 	LightingDC.geometry = FullscreenQuad;
 	LightingDC.model = Matrix4::Identity();
 	LightingDC.material = DeferredLightingMat;
@@ -346,13 +349,6 @@ bool RenderViewWorldDeferred::OnRender(struct RenderViewPacket* packet, RHI* bac
 
 	// 阶段二：第一通道 —— G-BUFFER 通道绘制（直接呼叫后端执行）
 	IRenderpass* GBufferPass = (IRenderpass*)&Passes[0];
-	GBufferPass->Begin(&GBufferPass->Targets[render_target_index]);
-
-	if (!GBufferShader->Use()) {
-		GLOG(Log::eError, "Failed to use G-Buffer shader.");
-		GBufferPass->End();
-		return false;
-	}
 
 	// 绑定 Pass 全局不变量
 	FrameData GBufferData;
@@ -362,24 +358,19 @@ bool RenderViewWorldDeferred::OnRender(struct RenderViewPacket* packet, RHI* bac
 	GBufferData.renderMode = render_mode;
 	GBufferData.time = packet->global_time;
 
+	GBufferPass->Begin(&GBufferPass->Targets[render_target_index]);
 	back_renderer->ExecuteDrawCalls(GBufferDrawCalls, frame_number, GBufferData);
 	GBufferPass->End();
 
 	// 阶段三：第二通道 —— 延迟光照通道绘制（直接呼叫后端执行）
 	IRenderpass* LightingPass = (IRenderpass*)&Passes[1];
-	LightingPass->Begin(&LightingPass->Targets[render_target_index]);
-
-	if (!LightingShader->Use()) {
-		GLOG(Log::eError, "Failed to use deferred lighting shader.");
-		LightingPass->End();
-		return false;
-	}
 
 	// 绑定 Pass 全局不变量
 	FrameData LightingData;
 	LightingData.time = packet->global_time;
 	LightingData.gBuffer = CurrentGBuffer;
 
+	LightingPass->Begin(&LightingPass->Targets[render_target_index]);
 	back_renderer->ExecuteDrawCalls(LightingDrawCalls, frame_number, LightingData);
 	LightingPass->End();
 
@@ -440,6 +431,6 @@ bool RenderViewWorldDeferred::CreateFullscreenQuad() {
 
 void RenderViewWorldDeferred::DestroyFullscreenQuad() {
 	if (FullscreenQuad) {
-		FullscreenQuad->DecreaseReferenceCount();
+		DeleteObject(FullscreenQuad);
 	}
 }

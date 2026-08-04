@@ -4,7 +4,7 @@
 #include "Math/MathTypes.hpp"
 #include "Containers/FString.hpp"
 
-#define DEFAULT_MATERIAL_NAME "Builtin.Material.Default"
+#define DEFAULT_MATERIAL_NAME "Material.Builtin.GBuffer"
 #define VULKAN_MAX_MATERIAL_COUNT 1024
 
 class Texture;

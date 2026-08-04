@@ -41,29 +41,17 @@ bool MaterialSystem::Initialize(IRenderer* renderer, SMaterialSystemConfig confi
 
 void MaterialSystem::Shutdown() {
 	// Destroy all loaded textures.
-	for (Material* m : RegisteredMaterials) {
+	for (UMaterial* m : RegisteredMaterials) {
 		if (m) {
 			DestroyMaterial(m);
 			m = nullptr;
 		}
 	};
 	RegisteredMaterials.clear();
-	std::vector<Material*>().swap(RegisteredMaterials);
-
-	if (DefaultMaterial) {
-		DestroyMaterial(DefaultMaterial);
-		DeleteObject(DefaultMaterial);
-		DefaultMaterial = nullptr;
-	}
-
 	MaterialMap.clear();
 }
 
-Material* MaterialSystem::Acquire(const FString& name) {
-	if (name.Compare(DEFAULT_MATERIAL_NAME) == 0) {
-		return DefaultMaterial;
-	}
-
+UMaterial* MaterialSystem::Acquire(const FString& name) {
 	// Load the given material configuration from disk.
 	UAsset MatResource;
 	if (!ResourceSystem::Get().Load(name, EAssetType::Material, nullptr, &MatResource)) {
@@ -72,7 +60,7 @@ Material* MaterialSystem::Acquire(const FString& name) {
 	}
 
 	// Now acquire from loaded config.
-	Material* Mat = nullptr;
+	UMaterial* Mat = nullptr;
 	if (MatResource.Data) {
 		Mat = AcquireFromConfig(*(SMaterialConfig*)MatResource.Data);
 	}
@@ -80,7 +68,7 @@ Material* MaterialSystem::Acquire(const FString& name) {
 	// Clean up
 	ResourceSystem::Get().Unload(&MatResource);
 
-	if (Mat == nullptr) {
+	if (!Mat) {
 		GLOG(Log::eError, "Failed to load material resource, returning nullptr.");
 		return nullptr;
 	}
@@ -88,20 +76,15 @@ Material* MaterialSystem::Acquire(const FString& name) {
 	return Mat;
 }
 
-Material* MaterialSystem::AcquireFromConfig(SMaterialConfig config) {
-	// Return default material.
-	if (config.name.Compare(DEFAULT_MATERIAL_NAME) == 0) {
-		return DefaultMaterial;
-	}
-
+UMaterial* MaterialSystem::AcquireFromConfig(SMaterialConfig config) {
 	// 如果找不到材质，则创建一个新的材质。
 	if (MaterialMap.find(config.name) == MaterialMap.end()) {
 		uint32_t Count = MaterialSystemConfig.max_material_count;
-		Material* m = nullptr;
+		UMaterial* m = nullptr;
 		for (uint32_t i = 0; i < Count; ++i) {
 			if (RegisteredMaterials[i] == nullptr) {
 				// A free slot has been found. Use it index as the handle.
-				RegisteredMaterials[i] = NewObject<Material>();
+				RegisteredMaterials[i] = NewObject<UMaterial>();
 				RegisteredMaterials[i]->SetInternalID(i);
 				MaterialMap[config.name] = i;
 				m = RegisteredMaterials[i];
@@ -130,7 +113,7 @@ Material* MaterialSystem::AcquireFromConfig(SMaterialConfig config) {
 	}
 
 	uint32_t MaterialID = MaterialMap[config.name];
-	Material* Mat = GetDefaultMaterial();
+	UMaterial* Mat = nullptr;
 	if (MaterialID != INVALID_ID) {
 		Mat = RegisteredMaterials[MaterialID];
 	}
@@ -141,47 +124,13 @@ Material* MaterialSystem::AcquireFromConfig(SMaterialConfig config) {
 		Mat->SetIsAutoRelease(config.auto_release);
 	}
 
-	Mat->IncreaseReferenceCount();
 	GLOG(Log::eDebug, "Material '%s' Reference count increased to %i.", config.name.CStr(), Mat->GetReferenceCount());
 
 	// Update the entry.
 	return Mat;
 }
 
-void MaterialSystem::Release(const FString& name) {
-	// Ignore release requests for the default material.
-	if (name.Compare(DEFAULT_MATERIAL_NAME) == 0) {
-		return;
-	}
-
-	// Take a copy of name, it will be zero-out in DestroyMaterial();
-	FString CopyMatName = name;
-
-	if (MaterialMap.find(CopyMatName) != MaterialMap.end()) {
-		uint32_t MaterialID = MaterialMap[CopyMatName];
-		Material* Mat = RegisteredMaterials[MaterialID];
-		if (Mat->GetReferenceCount() == 0) {
-			GLOG(Log::eWarn, "Tried to release non-existent material: %s", CopyMatName.CStr());
-			return;
-		}
-
-		Mat->DecreaseReferenceCount();
-		if (Mat->GetReferenceCount() == 0 && Mat->IsAutoRelease()) {
-			// Release material.
-			DestroyMaterial(Mat);	
-		}
-	}
-}
-
-Material* MaterialSystem::GetDefaultMaterial() {
-	if (Initilized) {
-		return DefaultMaterial;
-	}
-
-	return nullptr;
-}
-
-bool MaterialSystem::LoadMaterial(SMaterialConfig config, Material* mat) {
+bool MaterialSystem::LoadMaterial(SMaterialConfig config, UMaterial* mat) {
 	// name
 	mat->Name = config.name;
 	mat->ShaderID = ShaderSystem::Get().GetID(config.shader_name);
@@ -193,7 +142,7 @@ bool MaterialSystem::LoadMaterial(SMaterialConfig config, Material* mat) {
 	}
 
 	// 由Shader反射具体Property后在config中查找
-	const std::vector<ShaderUniform>& Uniforms = s->GetUnifromList();
+	const std::vector<ShaderUniform>& Uniforms = s->GetUniformList();
 	for (const ShaderUniform& uniform: Uniforms) {
 		switch (uniform.scope)
 		{
@@ -284,7 +233,7 @@ bool MaterialSystem::LoadMaterial(SMaterialConfig config, Material* mat) {
 	return true;
 }
 
-void MaterialSystem::DestroyMaterial(Material* mat) {
+void MaterialSystem::DestroyMaterial(UMaterial* mat) {
 	GLOG(Log::eInfo, "Destroying material '%s'...", mat->Name.CStr());
 
 	// Release texture references.
@@ -408,7 +357,7 @@ bool MaterialSystem::ApplyGlobal(uint32_t shader_id, size_t renderer_frame_numbe
 		return true;
 	}
 
-	std::vector<ShaderUniform> uniforms = UsedShader->GetUnifromList();
+	std::vector<ShaderUniform> uniforms = UsedShader->GetUniformList();
 	for (ShaderUniform& uniform : uniforms) {
 		if (uniform.scope != eShader_Scope_Global) continue;
 
@@ -451,87 +400,98 @@ bool MaterialSystem::ApplyGlobal(uint32_t shader_id, size_t renderer_frame_numbe
 	return true;
 }
 
-bool MaterialSystem::ApplyInstance(Material* mat, const FrameData& data, bool need_update) {
-	if (mat->InternalID == INVALID_ID) {
+bool MaterialSystem::ApplyInstance(UMaterialInstance* mat, const FrameData& data) {
+	if (!mat || mat->InternalID == INVALID_ID) {
 		return false;
 	}
 
-	Shader* UsedShader = ShaderSystem::Get().GetByID(mat->ShaderID);
+	UMaterial* OriginMaterial = mat->GetParentMaterial();
+	if (!OriginMaterial) {
+		return false;
+	}
+
+	Shader* UsedShader = ShaderSystem::Get().GetByID(OriginMaterial->ShaderID);
+	if (!UsedShader) {
+		return false;
+	}
 
 	// Apply instance-level uniforms.
 	MATERIAL_APPLY_OR_FAIL(UsedShader->BindInstance(mat->InternalID));
-	if (need_update) {
-		for (const auto& value : mat->UniformValues)
+	for (const auto& value : mat->UniformValues)
+	{
+		MATERIAL_APPLY_OR_FAIL(UsedShader->SetUniform(value.uniform, value.data));
+	}
+
+	for (const auto& tex : mat->TextureBindings)
+	{
+		switch (tex.uniform->semantic)
 		{
-			MATERIAL_APPLY_OR_FAIL(UsedShader->SetUniform(value.uniform, value.data));
-		}
+		case ShaderSemantic::eSemantic_GBuffer_Albedo:
+			MATERIAL_APPLY_OR_FAIL(UsedShader->SetUniform(tex.uniform, &data.gBuffer->AlbedoTextureMap));
+			break;
 
-		for (const auto& tex : mat->TextureBindings)
+		case ShaderSemantic::eSemantic_GBuffer_Normal:
+			MATERIAL_APPLY_OR_FAIL(UsedShader->SetUniform(tex.uniform, &data.gBuffer->NormalTextureMap));
+			break;
+
+		case ShaderSemantic::eSemantic_GBuffer_Position:
+			MATERIAL_APPLY_OR_FAIL(UsedShader->SetUniform(tex.uniform, &data.gBuffer->PositionTextureMap));
+			break;
+
+		case ShaderSemantic::eSemantic_Diffuse_Texture:
 		{
-			switch (tex.uniform->semantic)
-			{
-			case ShaderSemantic::eSemantic_GBuffer_Albedo:
-				MATERIAL_APPLY_OR_FAIL(UsedShader->SetUniform(tex.uniform, &data.gBuffer->AlbedoTextureMap));
-				break;
-
-			case ShaderSemantic::eSemantic_GBuffer_Normal:
-				MATERIAL_APPLY_OR_FAIL(UsedShader->SetUniform(tex.uniform, &data.gBuffer->NormalTextureMap));
-				break;
-
-			case ShaderSemantic::eSemantic_GBuffer_Position:
-				MATERIAL_APPLY_OR_FAIL(UsedShader->SetUniform(tex.uniform, &data.gBuffer->PositionTextureMap));
-				break;
-
-			case ShaderSemantic::eSemantic_Diffuse_Texture:
-			{
-				if (tex.texture.texture) {
-					MATERIAL_APPLY_OR_FAIL(UsedShader->SetUniform(tex.uniform, &tex.texture))
-				}
-				else {
-					TextureSystem::Get().GetDefaultDiffuseTexture();
-					MATERIAL_APPLY_OR_FAIL(UsedShader->SetUniform(tex.uniform, &tex.texture));
-				}
-			} break;
-
-			case ShaderSemantic::eSemantic_Normal_Texture:
-			{
-				if (tex.texture.texture) {
-					MATERIAL_APPLY_OR_FAIL(UsedShader->SetUniform(tex.uniform, &tex.texture))
-				}
-				else {
-					TextureSystem::Get().GetDefaultNormalTexture();
-					MATERIAL_APPLY_OR_FAIL(UsedShader->SetUniform(tex.uniform, &tex.texture));
-				}
-			} break;
-
-			case ShaderSemantic::eSemantic_Roughness_Metallic_Texture:
-			{
-				if (tex.texture.texture) {
-					MATERIAL_APPLY_OR_FAIL(UsedShader->SetUniform(tex.uniform, &tex.texture))
-				}
-				else {
-					TextureSystem::Get().GetDefaultRoughnessMetallicTexture();
-					MATERIAL_APPLY_OR_FAIL(UsedShader->SetUniform(tex.uniform, &tex.texture));
-				}
-			} break;
-			case ShaderSemantic::eSemantic_Skybox_Texture:
-				MATERIAL_APPLY_OR_FAIL(UsedShader->SetUniform(tex.uniform, &tex.texture));
-				break;
-			default:
-				GLOG(Log::Level::eError, "MaterialSystem::ApplyInstance() Unknow texture binding semantic.");
-				break;
+			if (tex.texture.texture) {
+				MATERIAL_APPLY_OR_FAIL(UsedShader->SetUniform(tex.uniform, &tex.texture))
 			}
+			else {
+				TextureSystem::Get().GetDefaultDiffuseTexture();
+				MATERIAL_APPLY_OR_FAIL(UsedShader->SetUniform(tex.uniform, &tex.texture));
+			}
+		} break;
+
+		case ShaderSemantic::eSemantic_Normal_Texture:
+		{
+			if (tex.texture.texture) {
+				MATERIAL_APPLY_OR_FAIL(UsedShader->SetUniform(tex.uniform, &tex.texture))
+			}
+			else {
+				TextureSystem::Get().GetDefaultNormalTexture();
+				MATERIAL_APPLY_OR_FAIL(UsedShader->SetUniform(tex.uniform, &tex.texture));
+			}
+		} break;
+
+		case ShaderSemantic::eSemantic_Roughness_Metallic_Texture:
+		{
+			if (tex.texture.texture) {
+				MATERIAL_APPLY_OR_FAIL(UsedShader->SetUniform(tex.uniform, &tex.texture))
+			}
+			else {
+				TextureSystem::Get().GetDefaultRoughnessMetallicTexture();
+				MATERIAL_APPLY_OR_FAIL(UsedShader->SetUniform(tex.uniform, &tex.texture));
+			}
+		} break;
+		case ShaderSemantic::eSemantic_Skybox_Texture:
+			MATERIAL_APPLY_OR_FAIL(UsedShader->SetUniform(tex.uniform, &tex.texture));
+			break;
+		default:
+			GLOG(Log::Level::eError, "MaterialSystem::ApplyInstance() Unknow texture binding semantic.");
+			break;
 		}
 	}
 
-	MATERIAL_APPLY_OR_FAIL(UsedShader->ApplyInstance(need_update));
+	MATERIAL_APPLY_OR_FAIL(UsedShader->ApplyInstance());
 	return true;
 }
 
-bool MaterialSystem::ApplyLocal(Material* mat, const Matrix4& model) {
-	Shader* UsedShader = ShaderSystem::Get().GetByID(mat->ShaderID);
-	std::vector<ShaderUniform> uniforms = UsedShader->GetUnifromList();
+bool MaterialSystem::ApplyLocal(UMaterialInstance* mat, const Matrix4& model) {
+	UMaterial* OriginMaterial = mat->GetParentMaterial();
+	if (!OriginMaterial) {
+		return false;
+	}
+	Shader* UsedShader = ShaderSystem::Get().GetByID(OriginMaterial->ShaderID);
 
+	// 使用shader的本地uniform列表来设置模型矩阵
+	std::vector<ShaderUniform> uniforms = UsedShader->GetUniformList();
 	for (ShaderUniform& uniform : uniforms)
 	{
 		if (uniform.scope != eShader_Scope_Local) continue;

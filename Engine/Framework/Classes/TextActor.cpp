@@ -1,8 +1,8 @@
 ﻿#include "TextActor.h"
 #include "Systems/FontSystem.hpp"
 
-ATextActor::ATextActor() : AActor() {
-	TextComponent = CreateComponent<UTextComponent>();
+ATextActor::ATextActor() {
+	ATextActor("TextActor");
 }
 
 ATextActor::ATextActor(const FString& Name) : AActor(Name) {

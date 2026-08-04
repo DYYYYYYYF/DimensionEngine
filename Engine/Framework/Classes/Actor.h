@@ -44,6 +44,9 @@ public:
 	void SetName(const FString& Name) { Name_ = Name; }
 	FString GetName() const { return Name_; }
 
+	bool IsEnableTick() const { return IsEnableTick_; }
+	void SetEnableTick(bool bEnable) { IsEnableTick_ = bEnable; }
+
 public:
 	template<typename T, typename... Args>
 	T* CreateComponent(Args&&... args) {
@@ -114,4 +117,6 @@ protected:
 	// 父对象
 	AActor* ParentActor;
 	TArray<AActor*> ChildrenActors;
+
+	bool IsEnableTick_;
 };

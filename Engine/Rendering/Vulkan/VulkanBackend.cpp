@@ -633,7 +633,7 @@ UTexture* VulkanRHI::AcquireTexture(const FString& name, bool auto_release) {
 	return tex;
 }
 
-bool VulkanRHI::CreateGeometry(Geometry* geometry, const SGeometryConfig& config) {
+bool VulkanRHI::CreateGeometry(UGeometry* geometry, const SGeometryConfig& config) {
 	if (!geometry || config.vertex_count == 0 || !config.vertices) {
 		return false;
 	}
@@ -742,7 +742,7 @@ bool VulkanRHI::CreateGeometry(Geometry* geometry, const SGeometryConfig& config
 	return true;
 }
 
-void VulkanRHI::DestroyGeometry(Geometry* geometry) {
+void VulkanRHI::DestroyGeometry(UGeometry* geometry) {
 	if (geometry != nullptr && geometry->InternalID != INVALID_ID) {
 		Context.Device.GetLogicalDevice().waitIdle();
 		GeometryData* InternalData = &Geometries[geometry->InternalID];
@@ -791,7 +791,8 @@ void VulkanRHI::ExecuteDrawCalls(const std::vector<DrawCall>& draw_calls,
 	size_t frame_number, const FrameData& data) {
 	// 每个DrawCall重置
 	Shader* currentShader = nullptr;
-	Material* currentMaterial = nullptr;
+	UMaterial* currentMaterial = nullptr;
+	UMaterialInstance* currentMaterialInstance = nullptr;
 
 	for (const DrawCall& dc : draw_calls) {
 		if (currentShader != dc.shader)
@@ -801,23 +802,25 @@ void VulkanRHI::ExecuteDrawCalls(const std::vector<DrawCall>& draw_calls,
 			currentShader = dc.shader;
 
 			if (!MaterialSystem::Get().ApplyGlobal(currentShader->GetUniqueID(), frame_number, data)) {
-				GLOG(Log::eError, "VulkanRHI::ExecuteDrawCalls() Failed to use global shader. Render frame failed.");
+				GLOG(Log::eError, "VulkanRHI::ExecuteDrawCalls() Failed to apply global material. Render frame failed.");
 				continue;
 			}
 		}
 
-		if (currentMaterial != dc.material) {
-			bool needUpdate = dc.material->IsNeedUpdate(frame_number);
-			if (!MaterialSystem::Get().ApplyInstance(dc.material, data, needUpdate)) {
-				GLOG(Log::eError, "VulkanRHI::ExecuteDrawCalls() Failed to use iinstance shader. Render frame failed.");
+		// 绑定材质实例（Uniform等数据）
+		if (currentMaterial != dc.material->GetParentMaterial() && currentMaterialInstance != dc.material) {
+			if (!dc.material->IsNeedUpdate(frame_number)) continue;
+			if (!MaterialSystem::Get().ApplyInstance(dc.material, data)) {
+				GLOG(Log::eError, "VulkanRHI::ExecuteDrawCalls() Failed to apply instance material. Render frame failed.");
 				continue;
 			}
 
-			currentMaterial = dc.material;
+			currentMaterial = dc.material->GetParentMaterial();
+			currentMaterialInstance = dc.material;
 		}
 
 		if (!MaterialSystem::Get().ApplyLocal(dc.material, dc.model)) {
-			GLOG(Log::eError, "VulkanRHI::ExecuteDrawCalls() Failed to use local shader. Render frame failed.");
+			GLOG(Log::eError, "VulkanRHI::ExecuteDrawCalls() Failed to apply local material. Render frame failed.");
 			continue;
 		}
 			

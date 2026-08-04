@@ -19,16 +19,11 @@ public:
 	bool Initialize(IRenderer* renderer, SMaterialSystemConfig config);
 	void Shutdown();
 
-	Material* Acquire(const FString& name);
-	Material* AcquireFromConfig(SMaterialConfig config);
+	UMaterial* Acquire(const FString& name);
+	UMaterial* AcquireFromConfig(SMaterialConfig config);
 
-	void Release(const FString& name);
-
-	Material* GetDefaultMaterial();
-
-	bool LoadMaterial(SMaterialConfig config, Material* mat);
-	void DestroyMaterial(Material* mat);
-
+	bool LoadMaterial(SMaterialConfig config, UMaterial* mat);
+	void DestroyMaterial(UMaterial* mat);
 
 	/**
 	 * @brief Applies global-level data for the material shader id.
@@ -47,7 +42,7 @@ public:
 	 * @param need_update Indicates if the material needs to be update.
 	 * @return True on success; otherwise false.
 	 */
-	bool ApplyInstance(Material* mat, const FrameData& data, bool need_update);
+	bool ApplyInstance(UMaterialInstance* mat, const FrameData& data);
 
 	/**
 	 * @brief Applies local-level material data (typically just model matrix).
@@ -56,7 +51,7 @@ public:
 	 * @param model A constant pointer to the model matrix to be applied.
 	 * @return True on success; otherwise false.
 	 */
-	bool ApplyLocal(Material* mat, const Matrix4& model);
+	bool ApplyLocal(UMaterialInstance* mat, const Matrix4& model);
 
 private:
 	bool CreateTextureMap(TextureMap& map, TextureUsage usage, const FString& textureName);
@@ -65,10 +60,9 @@ private:
 
 public:
 	SMaterialSystemConfig MaterialSystemConfig;
-	Material* DefaultMaterial = nullptr;
 
 	// Array of registered materials.
-	std::vector<Material*> RegisteredMaterials;
+	std::vector<UMaterial*> RegisteredMaterials;
 	// Hashtable for material lookups.
 	std::unordered_map<FString, uint32_t> MaterialMap;
 

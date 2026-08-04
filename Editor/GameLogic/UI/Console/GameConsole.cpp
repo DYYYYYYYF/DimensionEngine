@@ -122,6 +122,7 @@ DebugConsoleActor::DebugConsoleActor(){
 	TextControl = nullptr;
 	EntryControl = nullptr;
 
+	SetEnableTick(true);
 	Console::RegisterConsumer(std::bind(&DebugConsoleActor::Write, this, std::placeholders::_1, std::placeholders::_2));
 }
 

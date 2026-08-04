@@ -2,7 +2,7 @@
 
 #include "MeshComponent.h"
 
-class Geometry;
+class UGeometry;
 
 class UStaticMeshComponent : public UMeshComponent {
 public:
@@ -13,5 +13,5 @@ public:
 	virtual void DrawMesh() override;
 
 protected:
-	Geometry* Mesh = nullptr;
+	UGeometry* Mesh = nullptr;
 };

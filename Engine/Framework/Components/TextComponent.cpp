@@ -247,7 +247,7 @@ bool UTextComponent::BuildGeometry() {
 		// --------------------------------------------------------
 		// 设置字体 Atlas
 		// --------------------------------------------------------
-		Material* TextMaterial = TextGeometry->GetMaterial();
+		UMaterialInstance* TextMaterial = TextGeometry->GetMaterialInstance();
 
 		if (TextMaterial && TextMaterial->IsTextureBindingExist("diffuse_texture")) {
 			TextMaterial->SetTextureOnBinding("diffuse_texture", TextFont->GetAtlas());
@@ -273,7 +273,7 @@ bool UTextComponent::BuildGeometry() {
 		}
 
 		// 如果字体可能发生变化，建议这里也重新设置 Atlas。
-		Material* TextMaterial = TextGeometry->GetMaterial();
+		UMaterialInstance* TextMaterial = TextGeometry->GetMaterialInstance();
 		if (TextMaterial && TextMaterial->IsTextureBindingExist("diffuse_texture")) {
 			TextMaterial->SetTextureOnBinding("diffuse_texture", TextFont->GetAtlas());
 		}
@@ -358,7 +358,7 @@ const Vector4& UTextComponent::GetColor() const {
 }
 
 
-Geometry* UTextComponent::GetGeometry() const {
+UGeometry* UTextComponent::GetGeometry() const {
 	return TextGeometry;
 }
 

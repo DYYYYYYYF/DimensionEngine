@@ -13,8 +13,8 @@ struct RenderBackendConfig;
 struct ShaderConfig;
 
 class Texture;
-class Material;
-class Geometry;
+class UMaterial;
+class UGeometry;
 class Shader;
 class IRenderpass;
 class IGPUBuffer;
@@ -39,8 +39,8 @@ public:
 	virtual UTexture* AcquireTexture(const FString& name, bool auto_release) = 0;
 
 	// Geometry
-	virtual bool CreateGeometry(Geometry* geometry, const SGeometryConfig& config) = 0;
-	virtual void DestroyGeometry(Geometry* geometry) = 0;
+	virtual bool CreateGeometry(UGeometry* geometry, const SGeometryConfig& config) = 0;
+	virtual void DestroyGeometry(UGeometry* geometry) = 0;
 	
 	// Renderpass
 	virtual bool BeginRenderpass(IRenderpass* pass, RenderTarget* target) = 0;

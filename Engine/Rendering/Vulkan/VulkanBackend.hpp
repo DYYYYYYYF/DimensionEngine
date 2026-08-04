@@ -27,8 +27,8 @@ public:
 	// Textures
 	virtual UTexture* AcquireTexture(const FString& name, bool auto_release) override;
 
-	virtual bool CreateGeometry(Geometry* geometry, const SGeometryConfig& config) override;
-	virtual void DestroyGeometry(Geometry* geometry) override;
+	virtual bool CreateGeometry(UGeometry* geometry, const SGeometryConfig& config) override;
+	virtual void DestroyGeometry(UGeometry* geometry) override;
 
 	// Renderpass
 	virtual bool BeginRenderpass(IRenderpass* pass, RenderTarget* target) override;

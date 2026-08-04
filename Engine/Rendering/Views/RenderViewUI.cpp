@@ -169,7 +169,7 @@ bool RenderViewUI::OnRender(struct RenderViewPacket* packet, RHI* back_renderer,
 		if (!SrcData->geometry) continue;
 
 		DrawCall dc;
-		Material* Mat = SrcData->geometry->Material ? SrcData->geometry->Material : MaterialSystem::Get().GetDefaultMaterial();
+		UMaterialInstance* Mat = SrcData->geometry->GetMaterialInstance();
 		dc.geometry = SrcData->geometry;
 		dc.model = SrcData->model_mat;
 		dc.material = Mat;
@@ -187,12 +187,13 @@ bool RenderViewUI::OnRender(struct RenderViewPacket* packet, RHI* back_renderer,
 		if (!Text) continue;
 		UTextComponent* TextComp = Text->GetTextComponent();
 		if (!TextComp) continue;
-		
-		if (!TextComp->GetGeometry()) continue;
+
+		UGeometry* TextGeometry = TextComp->GetGeometry();
+		if (!TextGeometry) continue;
 
 		DrawCall dc;
-		Material* Mat = TextComp->GetGeometry()->GetMaterial();
-		dc.geometry = TextComp->GetGeometry();
+		UMaterialInstance* Mat = TextGeometry->GetMaterialInstance();
+		dc.geometry = TextGeometry;
 		dc.model = Text->GetLocalTransform();
 		dc.material = Mat;
 		dc.shader = UsedShader;

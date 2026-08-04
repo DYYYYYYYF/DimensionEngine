@@ -146,7 +146,17 @@ bool RenderViewSkybox::RegenerateAttachmentTarget(uint32_t passIndex, RenderTarg
 
 bool RenderViewSkybox::OnRender(struct RenderViewPacket* packet, RHI* back_renderer, size_t frame_number, size_t render_target_index) {
 	SkyboxPacketData* SkyboxData = (SkyboxPacketData*)packet->extended_data;
-	if (!SkyboxData || !SkyboxData->sb || !SkyboxData->sb->g) {
+	if (!SkyboxData) {
+		return false;
+	}
+
+	Skybox* SkyBoxAsset = SkyboxData->sb;
+	if (!SkyBoxAsset) {
+		return false;
+	}
+
+	UGeometry* Geo = SkyBoxAsset->GetGeometry();
+	if (!Geo) {
 		return false;
 	}
 
@@ -167,9 +177,9 @@ bool RenderViewSkybox::OnRender(struct RenderViewPacket* packet, RHI* back_rende
 	Data.time = packet->global_time;
 
 	DrawCall DC;
-	DC.geometry = SkyboxData->sb->g;
+	DC.geometry = Geo;
 	DC.model = Matrix4::Identity();
-	DC.material = SkyboxData->sb->g->Material;
+	DC.material = Geo->GetMaterialInstance();
 	DC.shader = UsedShader;
 	DC.userData = SkyboxData->sb;
 	DC.sortKey = ((uint64_t)UsedShader->ID << 32) | (uint64_t)DC.material->GetInternalID();

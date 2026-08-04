@@ -79,6 +79,10 @@ void FTransform::UpdateLocal() const {
 }
 
 Matrix4 FTransform::GetLocal() const {
+	if (bIsDirty) {
+		UpdateLocal();
+	}
+
 	return Local;
 }
 
@@ -86,6 +90,7 @@ Matrix4 FTransform::GetWorldMatrix() const {
 	if (bIsDirty) {
 		UpdateLocal();
 	}
+
 	return Local;
 }
 

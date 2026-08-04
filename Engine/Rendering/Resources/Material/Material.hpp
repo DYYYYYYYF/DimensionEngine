@@ -15,32 +15,26 @@ struct TextureBinding {
 	TextureMap texture;
 };
 
-class Material : public UAsset{
+class UMaterial : public UAsset{
 	friend class MaterialSystem;
 
 public:
-	Material();
-	virtual ~Material();
+	UMaterial();
+	virtual ~UMaterial();
 
 public:
-	bool IsTextureBindingExist(const FString& uniform_name) const;
-	bool SetTextureOnBinding(const FString& uniform_name, TextureMap texture);
-
 	inline uint32_t GetInternalID() const { return InternalID; }
-	inline void SetInternalID(uint32_t id) { InternalID = id; }
+	inline void SetInternalID(uint32_t ID) { InternalID = ID; }
 
 	inline size_t GetReferenceCount() const { return ReferenceCount; }
-	inline void IncreaseReferenceCount(uint32_t count = 1) { ReferenceCount += count; }
-	void DecreaseReferenceCount(uint32_t count = 1);
+	inline void IncreaseReferenceCount(uint32_t Count = 1) { ReferenceCount += Count; }
+	void DecreaseReferenceCount(uint32_t Count = 1);
 
 	inline bool IsAutoRelease() const { return AutoRelease; }
-	inline void SetIsAutoRelease(bool b) { AutoRelease = b; }
+	inline void SetIsAutoRelease(bool B) { AutoRelease = B; }
 
 	const TArray<UniformValue>& GetUniformValues() const { return UniformValues; }
 	const TArray<TextureBinding>& GetTextureBindings() const { return TextureBindings; }
-
-	void SetFrameNumber(size_t frame_number) { RenderFrameNumer = frame_number; }
-	bool IsNeedUpdate(size_t current_frame_number) const { return RenderFrameNumer != current_frame_number; }
 
 private:
 	void DestroyInstance();
@@ -51,7 +45,6 @@ protected:
 	uint32_t Generation;
 	uint32_t InternalID;
 	uint32_t ShaderID;
-	size_t RenderFrameNumer;
 
 	// Parameters
 	TArray<UniformValue> UniformValues;
@@ -60,5 +53,44 @@ protected:
 private:
 	size_t ReferenceCount = 0;
 	bool AutoRelease = true;
+
+};
+
+
+// Material Instance
+class UMaterialInstance {
+	friend class MaterialSystem;
+
+public:
+	explicit UMaterialInstance(UMaterial* BaseMat);
+	virtual ~UMaterialInstance();
+
+public:
+	bool IsTextureBindingExist(const FString& UniformName) const;
+	bool SetTextureOnBinding(const FString& UniformName, TextureMap Texture);
+
+public:
+	UMaterial* GetParentMaterial() const { return BaseMaterial; }
+
+	uint32_t GetInternalID() const { return InternalID; }
+	void SetInternalID(uint32_t ID) { InternalID = ID; }
+
+	void SetFrameNumber(size_t Framenumber) { RenderFrameNumer = Framenumber; }
+	bool IsNeedUpdate(size_t CurrentFramenumber) const { return RenderFrameNumer != CurrentFramenumber; }
+
+	const TArray<UniformValue>& GetUniformValues() const { return UniformValues; }
+	const TArray<TextureBinding>& GetTextureBindings() const { return TextureBindings; }
+
+	void Release();
+
+protected:
+	// Parameters
+	TArray<UniformValue> UniformValues;
+	TArray<TextureBinding> TextureBindings;
+
+private:
+	UMaterial* BaseMaterial;
+	uint32_t InternalID = INVALID_ID;
+	size_t RenderFrameNumer = 0;
 
 };

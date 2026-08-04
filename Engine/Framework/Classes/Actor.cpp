@@ -16,13 +16,17 @@ void AActor::BeginPlay() {
 			Pair.Value->OnEnable();
 		}
 	}
+
+	// 开始时先更新一次，确保 LocalTransform 的矩阵是最新的
+	if (LocalTransform->IsDirty()) {
+		LocalTransform->UpdateLocal();
+	}
 }
 
 void AActor::Tick(float DeltaTime) {
 	if (LocalTransform->IsDirty()) {
 		LocalTransform->UpdateLocal();
 	}
-
 }
 
 void AActor::Destroy() {

@@ -2,28 +2,37 @@
 #include "Systems/GeometrySystem.h"
 #include "Rendering/Resources/Material/Material.hpp"
 
-Geometry::Geometry(){
+UGeometry::UGeometry(const FString& name) : UAsset(name){
 	InternalID = INVALID_ID;
 	AssetType = EAssetType::Geometry;
 }
 
-Geometry::Geometry(const FString& name) : UAsset(name){
-	InternalID = INVALID_ID;
-	AssetType = EAssetType::Geometry;
-}
+UGeometry::~UGeometry() {
+	DecreaseReferenceCount();
 
-Geometry::~Geometry() {
 	if (ReferenceCount > 0 && AutoRelease) {
 		GLOG(Log::eWarn, "Geometry '%s' is being destroyed while still in use. Reference count: %zu", name.CStr(), ReferenceCount);
 	}
 }
 
-void Geometry::DecreaseReferenceCount(uint32_t count/* = 1*/) {
+void UGeometry::SetMaterial(UMaterial* Mat) {
+	if (MaterialInstance) {
+		MaterialInstance->Release();
+	}
+
+	if (Mat) {
+		MaterialInstance = NewObject<UMaterialInstance>(Mat);
+	}
+	else {
+		MaterialInstance = nullptr;
+	}
+}
+
+void UGeometry::DecreaseReferenceCount(uint32_t count/* = 1*/) {
 	if (ReferenceCount <= 0) return;
 
-	// Also decrease the reference count of the associated material.
-	if (Material) {
-		Material->DecreaseReferenceCount();
+	if (MaterialInstance) {
+		MaterialInstance->Release();
 	}
 
 	ReferenceCount -= count;
@@ -34,6 +43,12 @@ void Geometry::DecreaseReferenceCount(uint32_t count/* = 1*/) {
 }
 
 
-void Geometry::DestroyInstance() {
+void UGeometry::DestroyInstance() {
+	// delete the associated material.
+	if (MaterialInstance) {
+		DeleteObject(MaterialInstance);
+		MaterialInstance = nullptr;
+	}
+
 	GeometrySystem::Get().DestroyGeometry(this);
 }

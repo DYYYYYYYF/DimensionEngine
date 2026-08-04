@@ -178,7 +178,7 @@ bool RenderViewWorld::OnBuildPacket(IRenderviewPacketData* data, struct RenderVi
 		const GeometryRenderData& GData = GeometryData[i];
 		if (!GData.geometry) continue;
 
-		Material* Mat = GData.geometry->Material;
+		UMaterialInstance* Mat = GData.geometry->GetMaterialInstance();
 		if (!Mat) continue;
 
 		const TArray<TextureBinding>& TextureBindings = Mat->GetTextureBindings();
@@ -261,21 +261,17 @@ bool RenderViewWorld::OnRender(struct RenderViewPacket* packet, RHI* back_render
 		// Draw geometries.
 		uint32_t Count = packet->geometry_count;
 		for (uint32_t i = 0; i < Count; ++i) {
-			Material* Mat = nullptr;
-			if (packet->geometries[i].geometry->Material) {
-				Mat = packet->geometries[i].geometry->Material;
-			}
-			else {
-				Mat = MaterialSystem::Get().GetDefaultMaterial();
+			UMaterialInstance* Mat = nullptr;
+			if (packet->geometries[i].geometry->GetMaterialInstance()) {
+				Mat = packet->geometries[i].geometry->GetMaterialInstance();
 			}
 
 			// Update the material if it hasn't already been this frame. This keeps the
 			// same material from being updated multiple times. It still needs to be bound
 			// either way, so this check result gets passed to the backend which either
 			// updates the internal shader bindings and binds them, or only binds them.
-			bool IsNeedUpdate = Mat->IsNeedUpdate(frame_number);
-			if (!MaterialSystem::Get().ApplyInstance(Mat, Data, IsNeedUpdate)) {
-				GLOG(Log::eWarn, "Failed to apply material '%s'. Skipping draw.", Mat->GetName().CStr());
+			if (!MaterialSystem::Get().ApplyInstance(Mat, Data)) {
+				GLOG(Log::eWarn, "Failed to apply material '%s'. Skipping draw.", Mat->GetParentMaterial()->GetName().CStr());
 				continue;
 			}
 			else {

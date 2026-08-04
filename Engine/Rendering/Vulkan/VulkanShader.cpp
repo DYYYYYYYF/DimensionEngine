@@ -307,21 +307,13 @@ bool VulkanShader::ApplyGlobal() {
 	return true;
 }
 
-bool VulkanShader::ApplyInstance(bool need_update) {
+bool VulkanShader::ApplyInstance() {
 	VulkanRHI* Backend = (VulkanRHI*)Renderer->GetRenderBackend();
 	VulkanContext& Context = Backend->Context;
 	uint32_t       ImageIndex = Context.ImageIndex;
 
 	VulkanShaderInstanceState& State = InstanceStates[BoundInstanceId];
 	vk::DescriptorSet          DescSet = State.descriptor_set_state.descriptorSets[ImageIndex];
-
-	if (!need_update) {
-		GetCurrentCommandBuffer()->CommandBuffer.bindDescriptorSets(
-			vk::PipelineBindPoint::eGraphics,
-			Pipeline.PipelineLayout,
-			1, 1, &DescSet, 0, nullptr);
-		return true;
-	}
 
 	std::vector<vk::WriteDescriptorSet> DescriptorWrites;
 	uint32_t DescriptorIndex = 0;

@@ -21,11 +21,10 @@ void AStaticMeshActor::LoadJobSuccess() {
 	// This also handle the GPU upload. Can't be jobified until the renderer is multithread.
 	SGeometryConfig* Configs = (SGeometryConfig*)LoadParams.mesh_resource.Data;
 	LoadParams.out_mesh->geometry_count = (unsigned short)LoadParams.mesh_resource.DataCount;
-	LoadParams.out_mesh->geometries = (Geometry**)Memory::Allocate(sizeof(Geometry*) * LoadParams.out_mesh->geometry_count, MemoryType::eMemory_Type_Array);
+	LoadParams.out_mesh->geometries = (UGeometry**)Memory::Allocate(sizeof(UGeometry*) * LoadParams.out_mesh->geometry_count, MemoryType::eMemory_Type_Array);
 	for (uint32_t i = 0; i < LoadParams.out_mesh->geometry_count; ++i) {
 		SGeometryConfig& Config = Configs[i];
 		LoadParams.out_mesh->geometries[i] = GeometrySystem::Get().AcquireFromConfig(Config, true);
-		LoadParams.out_mesh->geometries[i]->IncreaseReferenceCount();
 	}
 	LoadParams.out_mesh->Generation++;
 
@@ -78,14 +77,14 @@ void AStaticMeshActor::Unload() {
 
 bool AStaticMeshActor::SetMeshResource(UAsset* mesh_resource)
 {
-	Geometry* geometry = dynamic_cast<Geometry*>(mesh_resource);
+	UGeometry* geometry = dynamic_cast<UGeometry*>(mesh_resource);
 	if (!geometry) {
 		GLOG(Log::eError, "Failed to set mesh resource: '%s'. The provided resource is not a Geometry.", mesh_resource->GetName().CStr());
 		return false;
 	}
 
 	if (!geometries) {
-		geometries = (Geometry**)Memory::Allocate(sizeof(Geometry*), MemoryType::eMemory_Type_Array);
+		geometries = (UGeometry**)Memory::Allocate(sizeof(UGeometry*), MemoryType::eMemory_Type_Array);
 	}
 	else
 	{

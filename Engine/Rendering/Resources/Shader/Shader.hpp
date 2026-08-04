@@ -35,7 +35,7 @@ public:
 	 * 将已写入的实例 uniform 提交到 GPU。
 	 * @param need_update 为 false 时只绑定描述符集，不更新数据（同一帧复用时）
 	 */
-	virtual bool ApplyInstance(bool need_update) = 0;
+	virtual bool ApplyInstance() = 0;
 
 	/**
 	 * 按 uniform index 写值。
@@ -73,7 +73,7 @@ public:
 	 */
 	ShaderUniform* GetUniformHandle(const FString& name);
 
-	const std::vector<ShaderUniform>& GetUnifromList() const { return Uniforms; }
+	const std::vector<ShaderUniform>& GetUniformList() const { return Uniforms; }
 
 protected:
 	// Shader utils

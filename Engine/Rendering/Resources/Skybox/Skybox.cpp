@@ -12,25 +12,24 @@ bool Skybox::Create(const FString& cubeName) {
 	SGeometryConfig SkyboxCubeConfig = GeometrySystem::Get().GenerateCubeConfig(10.0f, 10.0f, 10.0f, 1.0f, 1.0f, cubeName, FString());
 
 	// Clear out the material name.
-	g = GeometrySystem::Get().AcquireFromConfig(SkyboxCubeConfig, true);
-	g->IncreaseReferenceCount();
+	geo = GeometrySystem::Get().AcquireFromConfig(SkyboxCubeConfig, true);
 	RenderFrameNumber = INVALID_ID_U64;
 
-	Material* Mat = MaterialSystem::Get().Acquire("Material.Builtin.Skybox");
+	UMaterial* Mat = MaterialSystem::Get().Acquire("Material.Builtin.Skybox");
 	if (!Mat) {
 		return false;
 	}
 
-	g->Material = Mat;
+	geo->SetMaterial(Mat);
 
 	return true;
 }
 
 void Skybox::Destroy() {
-	TextureSystem::Get().Release("skybox");
-
-	if (g) {
-		g->DecreaseReferenceCount();
-		g = nullptr;
+	if (geo) {
+		DeleteObject(geo);
+		geo = nullptr;
 	}
+
+	TextureSystem::Get().Release("skybox");
 }

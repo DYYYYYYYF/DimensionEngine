@@ -125,7 +125,7 @@ public:
 	 * @param need_update
 	 * @return True on success; otherwise false.
 	 */
-	virtual bool ApplyInstance(bool need_update) override;
+	virtual bool ApplyInstance() override;
 
 	/**
 	 * @brief Sets the uniform of the given shader to the provided value.

@@ -3,7 +3,7 @@
 #include "PrimitiveComponent.h"
 #include "Containers/TArray.hpp"
 
-class Material;
+class UMaterial;
 class UTexture;
 
 /**
@@ -18,6 +18,6 @@ public:
 	virtual void DrawMesh() = 0;
 
 protected:
-	TArray<Material*> Materials;	// 材质
+	TArray<UMaterial*> Materials;	// 材质
 	TArray<UTexture*> Textures;		// 纹理
 };

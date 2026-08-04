@@ -2,7 +2,7 @@
 #include "PrimitiveComponent.h"
 #include "Rendering/Resources/Font/Font.hpp"
 
-class Geometry;
+class UGeometry;
 
 class UTextComponent : public UPrimitiveComponent
 {
@@ -30,7 +30,7 @@ public:
 	IFont* GetFont() const;
 	const Vector4& GetColor() const;
 
-	Geometry* GetGeometry() const;
+	UGeometry* GetGeometry() const;
 
 	size_t GetFrameNumber() const;
 	void SetFrameNumber(size_t frame_number);
@@ -42,13 +42,9 @@ private:
 
 private:
 	FString Text;
-
 	IFont* TextFont = nullptr;
-
 	Vector4 Color = Vector4(1.0f);
-
-	Geometry* TextGeometry = nullptr;
-
+	UGeometry* TextGeometry = nullptr;
 	size_t RenderFrameNumber = INVALID_ID_U64;
 
 	float CharacterWidth = 1.0f;

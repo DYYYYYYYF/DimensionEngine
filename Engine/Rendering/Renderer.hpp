@@ -12,7 +12,7 @@ class RHI;
 class RHI;
 class IGPUBuffer;
 class IRenderpass;
-class Geometry;
+class UGeometry;
 class Shader;
 class Camera;
 
@@ -34,8 +34,8 @@ public:
 
 	virtual UTexture* AcquireTexture(const FString& name, bool auto_release = true);
 
-	virtual bool CreateGeometry(Geometry* geometry, const SGeometryConfig& config);
-	virtual void DestroyGeometry(Geometry* geometry);
+	virtual bool CreateGeometry(UGeometry* geometry, const SGeometryConfig& config);
+	virtual void DestroyGeometry(UGeometry* geometry);
 
 	virtual bool GetEnabledMutiThread() const;
 

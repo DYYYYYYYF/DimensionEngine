@@ -403,8 +403,7 @@ bool RenderViewPick::OnRender(struct RenderViewPacket* packet, RHI* back_rendere
 				return false;
 			}
 
-			bool NeedsUpdate = !InstanceUpdated[CurrentInstanceID];
-			WorldShader->ApplyInstance(NeedsUpdate);
+			WorldShader->ApplyInstance();
 			InstanceUpdated[CurrentInstanceID] = true;
 
 			// Apply the locals.
@@ -461,8 +460,7 @@ bool RenderViewPick::OnRender(struct RenderViewPacket* packet, RHI* back_rendere
 				return false;
 			}
 
-			bool NeedsUpdate = !InstanceUpdated[CurrentInstanceID];
-			UIShader->ApplyInstance(NeedsUpdate);
+			UIShader->ApplyInstance();
 			InstanceUpdated[CurrentInstanceID] = true;
 
 			// Apply the locals.
@@ -490,7 +488,7 @@ bool RenderViewPick::OnRender(struct RenderViewPacket* packet, RHI* back_rendere
 				return false;
 			}
 
-			UIShader->ApplyInstance(true);
+			UIShader->ApplyInstance();
 
 			// Apply the locals.
 			Matrix4 Model = Text->GetLocalTransform();

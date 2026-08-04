@@ -247,7 +247,7 @@ bool GameInstance::Initialize() {
 	// Get UI geometry from config.
 	AStaticMeshActor* UIMesh = NewObject<AStaticMeshActor>("Engine Logo UI");
 	UIMesh->geometry_count = 1;
-	Geometry* UIGeometry = GeometrySystem::Get().AcquireFromConfig(UIConfig, true);
+	UGeometry* UIGeometry = GeometrySystem::Get().AcquireFromConfig(UIConfig, true);
 	UIMesh->SetMeshResource(UIGeometry);
 	UIMesh->Generation = 0;
 	UIMeshes.Push(UIMesh);
@@ -259,6 +259,21 @@ bool GameInstance::Initialize() {
 	EngineEvent::Register(eEventCode::Debug_3, this, GameOnDebugEvent);
 	EngineEvent::Register(eEventCode::Object_Hover_ID_Changed, this, GameOnEvent);
 	// TEMP
+
+	// 模拟 World Begin Play
+	for (AStaticMeshActor* m : Meshes) {
+		if (m) {
+			m->BeginPlay();
+		}
+	}
+
+	if (TestText) {
+		TestText->BeginPlay();
+	}
+
+	if (TestSysText) {
+		TestSysText->BeginPlay();
+	}
 
 	return true;
 }
@@ -276,6 +291,12 @@ void GameInstance::Shutdown() {
 
 	// Delete meshes.
 	for (AStaticMeshActor* m : Meshes) {
+		if (m) {
+			DeleteObject(m);
+		}
+	}
+
+	for (AStaticMeshActor* m : UIMeshes) {
 		if (m) {
 			DeleteObject(m);
 		}
@@ -322,15 +343,23 @@ void GameInstance::Shutdown() {
 
 bool GameInstance::Update(float delta_time) {
 	for (int i = 0; i < Meshes.Size(); ++i) {
-		Meshes[i]->Tick(delta_time);
+		AActor* Actor = Meshes[i];
+		if (Actor->IsEnableTick()) {
+			Actor->Tick(delta_time);
+		}
 	}
 
 	for(int i = 0; i < UIMeshes.Size(); ++i) {
-		UIMeshes[i]->Tick(delta_time);
+		if (UIMeshes[i]->IsEnableTick()) UIMeshes[i]->Tick(delta_time);
 	}
 
-	TestText->Tick(delta_time);
-	TestSysText->Tick(delta_time);
+	if (TestText) {
+		if (TestText->IsEnableTick()) TestText->Tick(delta_time);
+	}
+
+	if (TestSysText) {
+		if (TestSysText->IsEnableTick()) TestSysText->Tick(delta_time);
+	}
 
 	// Ensure this is cleaned up to avoid leaking memory.
 	// TODO: Need a version of this that uses the frame allocator.
@@ -396,7 +425,7 @@ bool GameInstance::Update(float delta_time) {
 			Matrix4 Model = m->GetWorldTransform();
 
 			for (uint32_t j = 0; j < m->geometry_count; j++) {
-				Geometry* g = m->geometries[j];
+				UGeometry* g = m->geometries[j];
 				if (g == nullptr) {
 					continue;
 				}

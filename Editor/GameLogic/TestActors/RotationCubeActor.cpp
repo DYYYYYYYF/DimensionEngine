@@ -1,7 +1,12 @@
 ﻿#include "RotationCubeActor.h"
 
-ARotationCubeActor::ARotationCubeActor() : ACubeActor() {}
-ARotationCubeActor::ARotationCubeActor(const FString& Name) : ACubeActor(Name) {}
+ARotationCubeActor::ARotationCubeActor() : ACubeActor() {
+	ARotationCubeActor("RotationCubeActor");
+}
+
+ARotationCubeActor::ARotationCubeActor(const FString& Name) : ACubeActor(Name) {
+	SetEnableTick(true);
+}
 
 void ARotationCubeActor::Tick(float DeltaTime) {
 	Quaternion RotationY = Quaternion(Axis::Y, 0.5f * (float)DeltaTime, false);
