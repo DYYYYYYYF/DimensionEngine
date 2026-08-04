@@ -1,4 +1,5 @@
 ﻿#include "TextActor.h"
+#include "Systems/FontSystem.hpp"
 
 ATextActor::ATextActor() : AActor() {
 	TextComponent = CreateComponent<UTextComponent>();
@@ -16,7 +17,15 @@ ATextActor::ATextActor(UITextType type, const FString& fontName,
 		return;
 	}
 
-	if (!TextComponent->Load(type, fontName, fontSize, textContent)) {
+	FontSystem& FontSystem = FontSystem::Get();
+	IFont* FontData = FontSystem.Acquire(fontName, type, fontSize);
+	if (!FontData) {
+		GLOG(Log::eError, "Unable to acquire font: '%s'. UIText can not be created.", fontName.CStr());
+		return;
+	}
+	TextComponent->SetFont(FontData);
+
+	if (!TextComponent->Initialize()) {
 		GLOG(Log::Level::eError, "Load font %s failed. font type: %i", fontName.CStr(), (int)type);
 		return;
 	}
@@ -27,7 +36,7 @@ ATextActor::~ATextActor() {
 		return;
 	}
 
-	TextComponent->Unload();
+	TextComponent->Destroy();
 }
 
 void ATextActor::SetText(const FString& content) {
@@ -35,7 +44,7 @@ void ATextActor::SetText(const FString& content) {
 		return;
 	}
 
-	TextComponent->SetContent(content);
+	TextComponent->SetText(content);
 }
 
 FString ATextActor::GetText() const { 
@@ -43,5 +52,5 @@ FString ATextActor::GetText() const {
 		return FString();
 	}
 
-	return TextComponent->GetContent();
+	return TextComponent->GetText();
 }

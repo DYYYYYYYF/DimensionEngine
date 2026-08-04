@@ -21,6 +21,8 @@ public:
 	inline bool IsAutoRelease() const { return AutoRelease; }
 	inline void SetIsAutoRelease(bool b) { AutoRelease = b; }
 
+	Material* GetMaterial() const { return Material; }
+
 private:
 	void DestroyInstance();
 

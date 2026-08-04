@@ -23,6 +23,9 @@ public:
 	virtual ~Material();
 
 public:
+	bool IsTextureBindingExist(const FString& uniform_name) const;
+	bool SetTextureOnBinding(const FString& uniform_name, TextureMap texture);
+
 	inline uint32_t GetInternalID() const { return InternalID; }
 	inline void SetInternalID(uint32_t id) { InternalID = id; }
 
@@ -33,7 +36,7 @@ public:
 	inline bool IsAutoRelease() const { return AutoRelease; }
 	inline void SetIsAutoRelease(bool b) { AutoRelease = b; }
 
-	const TArray<UniformValue>& GetUniformValues() const { return UnifromValues; }
+	const TArray<UniformValue>& GetUniformValues() const { return UniformValues; }
 	const TArray<TextureBinding>& GetTextureBindings() const { return TextureBindings; }
 
 	void SetFrameNumber(size_t frame_number) { RenderFrameNumer = frame_number; }
@@ -51,7 +54,7 @@ protected:
 	size_t RenderFrameNumer;
 
 	// Parameters
-	TArray<UniformValue> UnifromValues;
+	TArray<UniformValue> UniformValues;
 	TArray<TextureBinding> TextureBindings;
 	
 private:

@@ -35,12 +35,6 @@ bool MaterialSystem::Initialize(IRenderer* renderer, SMaterialSystemConfig confi
 	uint32_t Count = MaterialSystemConfig.max_material_count;
 	RegisteredMaterials.resize(Count);
 
-	// Create default textures for use in the system.
-	if (!CreateDefaultMaterial()) {
-		GLOG(Log::eFatal, "Create default material failed. Application quit now!");
-		return false;
-	}
-
 	Initilized = true;
 	return true;
 }
@@ -227,7 +221,7 @@ bool MaterialSystem::LoadMaterial(SMaterialConfig config, Material* mat) {
 			// 清零目标区域（保证未使用的字节干净）
 			std::memset(MatValue.data, 0, 64);
 			std::memcpy(MatValue.data, &value, sizeof(value));
-			mat->UnifromValues.Push(std::move(MatValue));
+			mat->UniformValues.Push(std::move(MatValue));
 		}
 		break;
 
@@ -241,7 +235,7 @@ bool MaterialSystem::LoadMaterial(SMaterialConfig config, Material* mat) {
 			// 清零目标区域（保证未使用的字节干净）
 			std::memset(MatValue.data, 0, 64);
 			std::memcpy(MatValue.data, &vec, sizeof(vec));
-			mat->UnifromValues.Push(std::move(MatValue));
+			mat->UniformValues.Push(std::move(MatValue));
 		}
 		break;
 
@@ -255,7 +249,7 @@ bool MaterialSystem::LoadMaterial(SMaterialConfig config, Material* mat) {
 			// 清零目标区域（保证未使用的字节干净）
 			std::memset(MatValue.data, 0, 64);
 			std::memcpy(MatValue.data, &vec, sizeof(vec));
-			mat->UnifromValues.Push(std::move(MatValue));
+			mat->UniformValues.Push(std::move(MatValue));
 		}
 		break;
 
@@ -322,76 +316,6 @@ void MaterialSystem::DestroyMaterial(Material* mat) {
 
 	// Delete the material object.
 	DeleteObject(mat);
-}
-
-bool MaterialSystem::CreateDefaultMaterial() {
-	if (DefaultMaterial) {
-		GLOG(Log::eWarn, "Already exist default material.");
-		return true;
-	}
-
-	//TextureSystem& TextureSystemInst = TextureSystem::Get();
-
-	//DefaultMaterial = NewObject<Material>();
-	//DefaultMaterial->SetID(INVALID_ID);
-	//DefaultMaterial->Generation = INVALID_ID;
-	//DefaultMaterial->Name = DEFAULT_MATERIAL_NAME;
-	//DefaultMaterial->DiffuseColor = Vector4{ 1.0f, 1.0f, 1.0f, 1.0f };
-	//DefaultMaterial->DiffuseMap.usage = TextureUsage::eTexture_Usage_Map_Diffuse;
-	//DefaultMaterial->DiffuseMap.filter_magnify = TextureFilter::eTexture_Filter_Mode_Linear;
-	//DefaultMaterial->DiffuseMap.filter_minify = TextureFilter::eTexture_Filter_Mode_Linear;
-	//DefaultMaterial->DiffuseMap.repeat_u = eTexture_Repeat_Repeat;
-	//DefaultMaterial->DiffuseMap.repeat_v = eTexture_Repeat_Repeat;
-	//DefaultMaterial->DiffuseMap.repeat_w = eTexture_Repeat_Repeat;
-	//DefaultMaterial->DiffuseMap.texture = TextureSystemInst.GetDefaultDiffuseTexture();
-	//if (!Renderer->AcquireTextureMap(&DefaultMaterial->DiffuseMap)) {
-	//	GLOG(Log::eError, "Unable to acquire resources for diffuse texture map.");
-	//	return false;
-	//}
-
-	//DefaultMaterial->NormalMap.usage = TextureUsage::eTexture_Usage_Map_Normal;
-	//DefaultMaterial->NormalMap.filter_magnify = TextureFilter::eTexture_Filter_Mode_Linear;
-	//DefaultMaterial->NormalMap.filter_minify = TextureFilter::eTexture_Filter_Mode_Linear;
-	//DefaultMaterial->NormalMap.repeat_u = eTexture_Repeat_Repeat;
-	//DefaultMaterial->NormalMap.repeat_v = eTexture_Repeat_Repeat;
-	//DefaultMaterial->NormalMap.repeat_w = eTexture_Repeat_Repeat;
-	//DefaultMaterial->NormalMap.texture = TextureSystemInst.GetDefaultNormalTexture();
-	//if (!Renderer->AcquireTextureMap(&DefaultMaterial->NormalMap)) {
-	//	GLOG(Log::eError, "Unable to acquire resources for diffuse texture map.");
-	//	return false;
-	//}
-
-	//DefaultMaterial->RoughnessMetallicMap.usage = TextureUsage::eTexture_Usage_Map_Normal;
-	//DefaultMaterial->RoughnessMetallicMap.filter_magnify = TextureFilter::eTexture_Filter_Mode_Linear;
-	//DefaultMaterial->RoughnessMetallicMap.filter_minify = TextureFilter::eTexture_Filter_Mode_Linear;
-	//DefaultMaterial->RoughnessMetallicMap.repeat_u = eTexture_Repeat_Repeat;
-	//DefaultMaterial->RoughnessMetallicMap.repeat_v = eTexture_Repeat_Repeat;
-	//DefaultMaterial->RoughnessMetallicMap.repeat_w = eTexture_Repeat_Repeat;
-	//DefaultMaterial->RoughnessMetallicMap.texture = TextureSystemInst.GetDefaultNormalTexture();
-	//if (!Renderer->AcquireTextureMap(&DefaultMaterial->RoughnessMetallicMap)) {
-	//	GLOG(Log::eError, "Unable to acquire resources for diffuse texture map.");
-	//	return false;
-	//}
-
-	//std::vector<TextureMap*> Maps = { &DefaultMaterial->DiffuseMap, &DefaultMaterial->NormalMap, &DefaultMaterial->RoughnessMetallicMap };
-
-	//Shader* s = ShaderSystem::Get().Get("Shader.Builtin.GBuffer");
-	//if (s == nullptr) {
-	//	GLOG(Log::eFatal, "Shader.Builtin.GBuffer shader is nullptr.");
-	//	ASSERT(s);
-	//	return false;
-	//}
-
-	//DefaultMaterial->InternalID = Renderer->AcquireInstanceResource(s, Maps);
-	//if (DefaultMaterial->InternalID == INVALID_ID) {
-	//	GLOG(Log::eError, "Create default material failed. Application quit now!");
-	//	return false;
-	//}
-
-	//// Make sure to assign the shader id.
-	//DefaultMaterial->ShaderID = s->ID;
-
-	return true;
 }
 
 bool MaterialSystem::CreateTextureMap(TextureMap& map, TextureUsage usage, const FString& textureName) {
@@ -537,7 +461,7 @@ bool MaterialSystem::ApplyInstance(Material* mat, const FrameData& data, bool ne
 	// Apply instance-level uniforms.
 	MATERIAL_APPLY_OR_FAIL(UsedShader->BindInstance(mat->InternalID));
 	if (need_update) {
-		for (const auto& value : mat->UnifromValues)
+		for (const auto& value : mat->UniformValues)
 		{
 			MATERIAL_APPLY_OR_FAIL(UsedShader->SetUniform(value.uniform, value.data));
 		}

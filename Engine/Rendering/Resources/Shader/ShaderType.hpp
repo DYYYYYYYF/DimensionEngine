@@ -110,28 +110,6 @@ struct MaterialShaderUniformLocations {
 	uint32_t render_mode = INVALID_ID;
 };
 
-struct DRShaderUniformLocations {
-	uint32_t projection = INVALID_ID;
-	uint32_t view = INVALID_ID;
-	uint32_t ambient_color = INVALID_ID;
-	uint32_t view_position = INVALID_ID;
-	uint32_t mode = INVALID_ID;
-	uint32_t time = INVALID_ID;
-	uint32_t albedo_texture = INVALID_ID;
-	uint32_t normal_texture = INVALID_ID;
-	uint32_t position_texture = INVALID_ID;
-	uint32_t light_intensity = INVALID_ID;
-	uint32_t debug_mode = INVALID_ID;
-};
-
-struct UIShaderUniformLocations {
-	uint32_t projection = INVALID_ID_U16;
-	uint32_t view = INVALID_ID_U16;
-	uint32_t diffuse_color = INVALID_ID_U16;
-	uint32_t diffuse_texture = INVALID_ID_U16;
-	uint32_t model = INVALID_ID_U16;
-};
-
 /**
  * @brief Defines shader scope, which indicates how
  * often it gets updated

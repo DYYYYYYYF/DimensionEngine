@@ -318,7 +318,7 @@ bool VulkanBuffer::CopyRange(IGPUBuffer* src, size_t src_offset, size_t dst_offs
 }
 
 bool VulkanBuffer::AllocateMemory(size_t size, size_t* out_offset) {
-	if (size == 0 || out_offset == nullptr) {
+	if (size == 0 || !out_offset) {
 		GLOG(Log::eError, "IRenderer::AllocateRenderbuffer() Requires valid pointer, a non-zero size and valid pointer to hlod offset.");
 		return false;
 	}

@@ -152,7 +152,7 @@ IFont* FontSystem::Acquire(const FString& fontName, UITextType type, int fontSiz
 		return Font;
 	}
 
-	if (type == UITextType::eUI_Text_Type_system) {
+	if (type == UITextType::eUI_Text_Type_System) {
 		if (!SystemFonts.Contains(fontName)) {
 			GLOG(Log::eError, "System font '%s' not found.", fontName.CStr());
 			return nullptr;

@@ -114,6 +114,9 @@ SystemFontVariant::~SystemFontVariant() {
 }
 
 bool SystemFontVariant::Setup() {
+	// 设置字体类型
+	TextType = UITextType::eUI_Text_Type_System;
+
 	// 建立 atlas 纹理
 	FString texName = FString::Format(
 		"__system_text_atlas_%s_i%i_sz%i__", face_.CStr(), ctx_->index, size_

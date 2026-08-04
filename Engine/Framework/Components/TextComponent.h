@@ -2,61 +2,56 @@
 #include "PrimitiveComponent.h"
 #include "Rendering/Resources/Font/Font.hpp"
 
-class IGPUBuffer;
 class Geometry;
-class Material;
 
-enum class UITextType {
-	eUI_Text_Type_Bitmap,
-	eUI_Text_Type_system
-};
-
-class DAPI UTextComponent : public UPrimitiveComponent {
+class UTextComponent : public UPrimitiveComponent
+{
 	DECLARE_CLASS_TYPE(UTextComponent)
 
+public:
 	UTextComponent();
-	virtual ~UTextComponent();
+	~UTextComponent();
 
 public:
-	virtual void Draw();
+	bool Create();
+	void Destroy();
 
-	bool Load(UITextType type, const FString& fontName, int fontSize, const FString& textContent);
-	void Unload();
+	bool SetText(const FString& text);
+	void SetFont(IFont* font);
+
+	void SetColor(const Vector4& color);
+
+	bool Regenerate();
+
+	void Draw();
 
 public:
-	void SetContent(const FString& content);
-	FString GetContent()     const { return Content; }
-	uint32_t GetContentLength() const { return (uint32_t)Content.Length(); }
+	const FString& GetText() const;
+	IFont* GetFont() const;
+	const Vector4& GetColor() const;
 
-	const Vector4& GetColor() const { return Color; }
-	void SetColor(Vector4 col) { Color = col; }
+	Geometry* GetGeometry() const;
 
-	size_t GetFrameNumber() const { return RenderFrameNumber; }
-	void SetFrameNumber(size_t num) { RenderFrameNumber = num; }
-
-	IFont* GetFont() { return FontData; }
-
-	void SetInstance(uint32_t id) { InstanceID = id; }
-	uint32_t GetInstance() const { return InstanceID; }
-
-	Geometry* GetTextGeometry() const { return TextGeometry; }
-	Material* GetFontMaterial() const { return FontMaterial; }
+	size_t GetFrameNumber() const;
+	void SetFrameNumber(size_t frame_number);
 
 private:
-	void RegenerateGeometry();
+	bool BuildGeometry();
+	void BuildCharacterQuad(uint32_t CharacterIndex, float X, float Y,
+		const FontGlyph& Glyph, int AtlasSizeX, int AtlasSizeY, Vertex2D* Vertices, uint32_t* Indices);
 
-protected:
-	FString Content;
-	UITextType     Type = UITextType::eUI_Text_Type_Bitmap;
-	Geometry* TextGeometry = nullptr;
-	IFont* FontData = nullptr;       
-	Material* FontMaterial = nullptr;
+private:
+	FString Text;
 
-	IGPUBuffer* VertexBuffer = nullptr;
-	IGPUBuffer* IndexBuffer = nullptr;
+	IFont* TextFont = nullptr;
 
 	Vector4 Color = Vector4(1.0f);
-	size_t  RenderFrameNumber = 0;
 
-	uint32_t InstanceID = INVALID_ID;
+	Geometry* TextGeometry = nullptr;
+
+	size_t RenderFrameNumber = INVALID_ID_U64;
+
+	float CharacterWidth = 1.0f;
+	float CharacterHeight = 1.0f;
+	float CharacterSpacing = 0.0f;
 };

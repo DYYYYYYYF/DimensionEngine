@@ -5,6 +5,7 @@
 bool BitmapFont::InitFromResourceData(BitmapFontResourceData* resourceData) {
 	if (!resourceData) { return false; }
 
+	TextType = UITextType::eUI_Text_Type_Bitmap;
 	resourceData_ = resourceData;
 
 	IRenderer* Renderer = IRenderer::GetRenderer();

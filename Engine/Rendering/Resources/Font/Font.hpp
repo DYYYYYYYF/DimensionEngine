@@ -12,6 +12,12 @@
 class IRenderer;
 struct SystemFontContext;
 
+enum class UITextType {
+	eUI_Text_Type_Bitmap,
+	eUI_Text_Type_System,
+	eUI_Text_Type_Unknown
+};
+
 // ─────────────────────────────────────────────
 //  IFont —— 渲染层接口
 //  职责：提供渲染所需的 glyph / atlas / kerning 数据
@@ -38,8 +44,12 @@ public:
 	virtual unsigned int       GetSize()         const = 0;
 
 public:
+	UITextType GetFontType() const { return TextType; }
 	void AddRef() { ++refCount_; }
 	bool Release() { return --refCount_ == 0; }
+
+protected:
+	UITextType TextType = UITextType::eUI_Text_Type_Unknown;
 
 private:
 	int refCount_ = 0;

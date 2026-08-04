@@ -180,11 +180,6 @@ bool RenderViewUI::OnRender(struct RenderViewPacket* packet, RHI* back_renderer,
 		UIDrawCalls.push_back(dc);
 	}
 
-	std::sort( UIDrawCalls.begin(), UIDrawCalls.end(), 
-		[](const DrawCall& a, const DrawCall& b){
-			return a.sortKey < b.sortKey;
-		});
-
 	// Text draw calls.
 	UIPacketData* PacketData = (UIPacketData*)packet->extended_data;
 	for (uint32_t i = 0; i < PacketData->textCount; ++i) {
@@ -192,22 +187,18 @@ bool RenderViewUI::OnRender(struct RenderViewPacket* packet, RHI* back_renderer,
 		if (!Text) continue;
 		UTextComponent* TextComp = Text->GetTextComponent();
 		if (!TextComp) continue;
+		
+		if (!TextComp->GetGeometry()) continue;
 
 		DrawCall dc;
-		Material* Mat = TextComp->GetFontMaterial();
-		dc.geometry = nullptr;
+		Material* Mat = TextComp->GetGeometry()->GetMaterial();
+		dc.geometry = TextComp->GetGeometry();
 		dc.model = Text->GetLocalTransform();
 		dc.material = Mat;
 		dc.shader = UsedShader;
 		dc.userData = nullptr;
 		dc.sortKey = ((uint64_t)dc.shader->ID << 32) | (uint64_t)Mat->GetInternalID();
-
-		//UsedShader->BindInstance(TextComp->GetInstance());
-
-		//if (!UsedShader->SetUniformByIndex(DiffuseMapLocation, &TextComp->GetFont()->GetAtlas())) {
-		//	GLOG(Log::eError, "Failed to apply bitmap font diffuse map uniform.");
-		//	return false;
-		//}
+		UIDrawCalls.push_back(dc);
 
 		//// TODO: font color
 		//Vector4 FontColor = TextComp->GetColor();
@@ -215,21 +206,12 @@ bool RenderViewUI::OnRender(struct RenderViewPacket* packet, RHI* back_renderer,
 		//	GLOG(Log::eError, "Failed to apply bitmap font diffuse color uniform.");
 		//	return false;
 		//}
-
-		//bool NeedUpdate = TextComp->GetFrameNumber() != frame_number;
-		//UsedShader->ApplyInstance(NeedUpdate);
-
-		//// Sync frame number.
-		//TextComp->SetFrameNumber(frame_number);
-
-		//// Apply the locals.
-		//Matrix4 Model = Text->GetLocalTransform();
-		//if (!UsedShader->SetUniformByIndex(ModelLocation, &Model)) {
-		//	GLOG(Log::eError, "Failde to apply model matrix for text.");
-		//}
-
-		//TextComp->Draw();
 	}
+
+	std::sort(UIDrawCalls.begin(), UIDrawCalls.end(),
+		[](const DrawCall& a, const DrawCall& b) {
+			return a.sortKey < b.sortKey;
+		});
 
 	FrameData UIData;
 	UIData.projection = packet->projection_matrix;

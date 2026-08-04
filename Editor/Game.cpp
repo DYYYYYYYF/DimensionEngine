@@ -158,7 +158,7 @@ bool GameInstance::Initialize() {
 		\nF2: Normal view.\
 		\nF3: Material view.\
 		\nF4: Depth view.";
-	TestSysText = NewObject<ATextActor>(UITextType::eUI_Text_Type_system, TestSystemName, 25, TestSystemContent);
+	TestSysText = NewObject<ATextActor>(UITextType::eUI_Text_Type_System, TestSystemName, 25, TestSystemContent);
 
 	if (TestSysText) {
 		TestSysText->SetLocation(Vector3(100, 200, 0));

@@ -59,7 +59,6 @@ public:
 	bool ApplyLocal(Material* mat, const Matrix4& model);
 
 private:
-	bool CreateDefaultMaterial();
 	bool CreateTextureMap(TextureMap& map, TextureUsage usage, const FString& textureName);
 
 	TextureUsage GetTextureUsageFromUniformName(const FString& name) const;
@@ -78,11 +77,9 @@ public:
 	uint32_t MaterialShaderID = INVALID_ID;
 
 	// Know locations for the deferred lighting material shader.
-	DRShaderUniformLocations DeferredLightMaterialLocations;
 	uint32_t DeferredLightMaterialShaderID = INVALID_ID;
 
 	// Know locations for the ui shader.
-	UIShaderUniformLocations UILocations;
 	uint32_t UIShaderID = INVALID_ID;
 
 	bool Initilized = false;
