@@ -9,7 +9,7 @@ def delete_files(folder_path, exclude_files=None, recursive=False):
     :param recursive: 是否递归子目录
     """
     if exclude_files is None:
-        exclude_files = ['Material.dmt', 'Material.UI.dmt', 'Material.World.dmt', 'Material.Builtin.GBuffer.dmt', 'Material.Builtin.DeferredLighting.dmt']
+        exclude_files = ['Material.dmt', 'Material.Builtin.Text.dmt', 'Material.Builtin.Skybox.dmt', 'Material.Builtin.GBuffer.dmt', 'Material.Builtin.DeferredLighting.dmt']
 
     extensions = ('.dsm', '.dmt', '.spv', '.dbf', '.dsf')
     walker = os.walk(folder_path) if recursive else [(folder_path, [], os.listdir(folder_path))]

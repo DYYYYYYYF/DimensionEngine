@@ -1,0 +1,10 @@
+#material file - Skybox Material
+
+version=0.1
+name=Material.Builtin.Skybox
+
+# skybox texture name
+skybox_texture=skybox
+
+# Shader
+shader=Shader.Builtin.Skybox
