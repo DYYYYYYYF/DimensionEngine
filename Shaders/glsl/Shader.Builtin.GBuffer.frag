@@ -63,10 +63,16 @@ void main(){
     }
     else if (in_mode == 3) {
         // 深度可视化模式
-        float depth = 1.0f - gl_FragCoord.z;
+        float nearPlane = 0.1;
+        float farPlane = 300.0;
+        float viewDepth = abs(in_dto.vWorldPosition.z - in_dto.vViewPosition.z);
+        float depth = (viewDepth - nearPlane) / (farPlane - nearPlane);
+        depth = clamp(depth, 0.0, 1.0);
+        depth = 1.0 - depth;
+
         out_albedo = vec4(depth, depth, depth, 1.0);
         out_normal = vec4(worldNormal * 0.5 + 0.5, roughness);
-        out_position = vec4(in_dto.vWorldPosition, depth);
+        out_position = vec4(in_dto.vWorldPosition, 1.0);
     }
     else {
         // 标准G-Buffer输出模式

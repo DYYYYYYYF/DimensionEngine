@@ -91,7 +91,7 @@ void main(){
     }
     else if (InstanceUBO.debug_mode == 3) {
         // 深度可视化
-        FragColor = vec4(depth, depth, depth, 1.0);
+        FragColor = vec4(albedo, 1.0);
     }
     else if (InstanceUBO.debug_mode == 4) {
         // 反照率可视化
