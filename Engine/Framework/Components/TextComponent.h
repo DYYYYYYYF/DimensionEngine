@@ -30,7 +30,7 @@ public:
 	IFont* GetFont() const;
 	const Vector4& GetColor() const;
 
-	UGeometry* GetGeometry() const;
+	UGeometry* GetGeometry();
 
 	size_t GetFrameNumber() const;
 	void SetFrameNumber(size_t frame_number);
@@ -50,4 +50,6 @@ private:
 	float CharacterWidth = 1.0f;
 	float CharacterHeight = 1.0f;
 	float CharacterSpacing = 0.0f;
+
+	bool IsDirty = true;
 };

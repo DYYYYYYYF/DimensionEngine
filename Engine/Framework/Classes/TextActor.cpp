@@ -12,19 +12,23 @@ ATextActor::ATextActor(const FString& Name) : AActor(Name) {
 ATextActor::ATextActor(UITextType type, const FString& fontName,
 	int fontSize, const FString& textContent) : AActor() {
 	TextComponent = CreateComponent<UTextComponent>();
-
 	if (!TextComponent) {
 		return;
 	}
-
+	
+	// 获取字体资产
 	FontSystem& FontSystem = FontSystem::Get();
 	IFont* FontData = FontSystem.Acquire(fontName, type, fontSize);
 	if (!FontData) {
 		GLOG(Log::eError, "Unable to acquire font: '%s'. UIText can not be created.", fontName.CStr());
 		return;
 	}
-	TextComponent->SetFont(FontData);
 
+	// 设置字体和内容
+	TextComponent->SetFont(FontData);
+	TextComponent->SetText(textContent);
+
+	// 初始化
 	if (!TextComponent->Initialize()) {
 		GLOG(Log::Level::eError, "Load font %s failed. font type: %i", fontName.CStr(), (int)type);
 		return;

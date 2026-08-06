@@ -43,7 +43,8 @@ bool UTextComponent::SetText(const FString& text) {
 	}
 
 	Text = text;
-	return Regenerate();
+	IsDirty = true;
+	return true;
 }
 
 
@@ -53,8 +54,7 @@ void UTextComponent::SetFont(IFont* font) {
 	}
 
 	TextFont = font;
-
-	Regenerate();
+	IsDirty = true;
 }
 
 
@@ -282,6 +282,8 @@ bool UTextComponent::BuildGeometry() {
 	delete[] Vertices;
 	delete[] Indices;
 
+	// 重置脏标记
+	IsDirty = false;
 	RenderFrameNumber = INVALID_ID_U64;
 
 	return true;
@@ -358,7 +360,12 @@ const Vector4& UTextComponent::GetColor() const {
 }
 
 
-UGeometry* UTextComponent::GetGeometry() const {
+UGeometry* UTextComponent::GetGeometry() {
+	if (IsDirty)
+	{
+		Regenerate();
+	}
+
 	return TextGeometry;
 }
 
