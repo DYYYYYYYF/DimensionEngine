@@ -2,6 +2,7 @@
 
 #include "MaterialType.hpp"
 #include "Rendering/Resources/Texture/Texture.hpp"
+#include "Framework/Object.h"
 
 struct ShaderUniform;
 
@@ -58,7 +59,8 @@ private:
 
 
 // Material Instance
-class UMaterialInstance {
+class UMaterialInstance : public UObject, public TRequireClassType<UMaterialInstance> {
+	DECLARE_CLASS_TYPE(UMaterialInstance)
 	friend class MaterialSystem;
 
 public:

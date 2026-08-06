@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-#include "Framework/Iobject.h"
+#include "Framework/Object.h"
 #include "Containers/FString.hpp"
 
 /** @brief A magic number indicating the file as engine file. */
@@ -29,10 +29,12 @@ struct FResourceHeader {
 	unsigned short reserved;
 };
 
-class DAPI UAsset : public IObject {
+class DAPI UAsset : public UObject, public TRequireClassType<UAsset> {
+	DECLARE_CLASS_TYPE(UAsset)
+
 public:
-	UAsset() {}
-	UAsset(const FString& name) : Name(name){}
+	UAsset() : UObject() {}
+	UAsset(const FString& name) : UObject(), Name(name) {}
 
 	virtual ~UAsset() = default;
 

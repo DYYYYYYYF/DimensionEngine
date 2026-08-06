@@ -1,9 +1,11 @@
 ﻿#pragma once
 #include "Core/CoreMinimal.hpp"
-#include "Framework/BaseObject.h"
+#include "Framework/Object.h"
 #include "Containers/TArray.hpp"
 
-class UWidget : public ABaseObject {
+class UWidget : public UObject, public TRequireClassType<UWidget> {
+	DECLARE_CLASS_TYPE(UWidget)
+
 public:
 	UWidget() : Parent(nullptr), bIsVisible(true) {}
 	virtual ~UWidget() { ClearChildren(); }

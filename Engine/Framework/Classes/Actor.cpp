@@ -1,6 +1,6 @@
 ﻿#include "Actor.h"
 
-AActor::AActor() :ABaseObject(), ParentActor(nullptr) {
+AActor::AActor() :UObject(), ParentActor(nullptr) {
 	LocalTransform = CreateComponent<UTransformComponent>();
 	ASSERT(LocalTransform);
 }
