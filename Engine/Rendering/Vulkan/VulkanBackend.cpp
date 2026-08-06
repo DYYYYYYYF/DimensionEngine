@@ -808,7 +808,7 @@ void VulkanRHI::ExecuteDrawCalls(const std::vector<DrawCall>& draw_calls,
 		}
 
 		// 绑定材质实例（Uniform等数据）
-		if (currentMaterial != dc.material->GetParentMaterial() && currentMaterialInstance != dc.material) {
+		if (currentMaterialInstance != dc.material) {
 			if (!dc.material->IsNeedUpdate(frame_number)) continue;
 			if (!MaterialSystem::Get().ApplyInstance(dc.material, data)) {
 				GLOG(Log::eError, "VulkanRHI::ExecuteDrawCalls() Failed to apply instance material. Render frame failed.");
@@ -1219,7 +1219,7 @@ bool VulkanRHI::ReleaseInstanceResource(UShader* shader, uint64_t instance_id) {
 	}
 
 	VkShader->UniformBuffer.FreeMemory(shader->UboStride, InstanceState->offset);
-	InstanceState->offset = INVALID_ID;
+	InstanceState->offset = 0;
 	InstanceState->id = INVALID_ID;
 
 	return true;

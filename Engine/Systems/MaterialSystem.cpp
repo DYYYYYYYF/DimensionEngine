@@ -119,6 +119,21 @@ UMaterial* MaterialSystem::AcquireFromConfig(FMaterialConfig config) {
 	}
 	ASSERT(Mat != nullptr);
 
+
+	// TODO:这里实际上是创建了一个独立的DescriptorSet，后续需要移动到Material中，不应该存在shader中。
+	std::vector<FTextureMap*> Maps;
+	for (TextureBinding& TexBinding : Mat->TextureBindings) {
+		Maps.push_back(&(TexBinding.texture));
+	}
+
+	UShader* s = ShaderSystem::Get().Get(config.shader_name);
+	Mat->InternalID = Renderer->AcquireInstanceResource(s, Maps);
+	if (Mat->InternalID == INVALID_ID) {
+		GLOG(Log::eError, "Failed to acquire renderer resources for material '%s'.", Mat->Name.CStr());
+		return nullptr;
+	}
+
+
 	// This can only be changed the first time a material is loaded.
 	if (Mat->GetReferenceCount() == 0) {
 		Mat->SetIsAutoRelease(config.auto_release);
@@ -216,18 +231,6 @@ bool MaterialSystem::LoadMaterial(FMaterialConfig config, UMaterial* mat) {
 		}
 		break;
 		}
-	}
-
-	// Gather a list of pointers to texture maps.
-	std::vector<FTextureMap*> Maps;
-	for (TextureBinding& TexBinding : mat->TextureBindings) {
-		Maps.push_back(&(TexBinding.texture));
-	}
-
-	mat->InternalID = Renderer->AcquireInstanceResource(s, Maps);
-	if (mat->InternalID == INVALID_ID) {
-		GLOG(Log::eError, "Failed to acquire renderer resources for material '%s'.", mat->Name.CStr());
-		return false;
 	}
 
 	return true;
