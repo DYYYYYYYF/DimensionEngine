@@ -12,10 +12,6 @@ class IRenderer;
 
 class UShader : public UAsset{
 public:
-	UShader() = default;
-	virtual ~UShader() = default;
-
-public:
 	virtual bool Reload() = 0;
 	virtual void Destroy() = 0;
 

@@ -1,14 +1,13 @@
 ﻿#pragma once
 
-#include "Framework/BaseObject.h"
+#include "Framework/Object.h"
 #include "Containers/TMap.hpp"
 #include "Containers/FString.hpp"
 #include "Framework/Components/TransformComponent.h"
 #include <typeinfo>
 #include <typeindex>
 
-class ENGINE_API AActor : public ABaseObject {
-public:
+class ENGINE_API AActor : public UObject, public TRequireClassType<AActor> {
 	DECLARE_CLASS_TYPE(AActor)
 
 public:

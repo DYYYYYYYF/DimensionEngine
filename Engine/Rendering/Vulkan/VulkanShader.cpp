@@ -233,7 +233,7 @@ bool VulkanShader::BindInstance(uint64_t instance_id) {
 	BoundInstanceId = instance_id;
 	BoundScope = eShader_Scope_Instance;
 
-	VulkanShaderInstanceState& State = InstanceStates[instance_id];
+	const VulkanShaderInstanceState& State = InstanceStates[instance_id];
 	BoundUboOffset = (uint32_t)State.offset;
 
 	return true;

@@ -5,10 +5,12 @@
 
 #include <vector>
 
+class AStaticMeshActor;
+
 struct FMeshLoadParams {
 	FString resource_name;
-	class AStaticMeshActor* out_mesh = nullptr;
-	class UAsset mesh_resource;
+	AStaticMeshActor* out_mesh = nullptr;
+	UAsset mesh_resource;
 };
 
 class AStaticMeshActor : public AActor{

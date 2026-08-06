@@ -1,12 +1,11 @@
 ﻿#pragma once
 
-#include "Framework/BaseObject.h"
+#include "Framework/Object.h"
 #include "Containers/FString.hpp"
 
 class AActor;
 
-class ENGINE_API UComponent : public ABaseObject {
-public:
+class ENGINE_API UComponent : public UObject, public TRequireClassType<UComponent> {
 	DECLARE_CLASS_TYPE(UComponent)
 
 public:

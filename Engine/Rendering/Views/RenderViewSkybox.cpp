@@ -59,7 +59,7 @@ bool RenderViewSkybox::OnCreate(const RenderViewConfig& config) {
 	FShaderConfig* Config = (FShaderConfig*)ConfigResource.Data;
 	// NOTE: Assuming the first pass since that's all this view has.
 	if (!ShaderSystem::Get().Create(&Passes[0], Config)) {
-		GLOG(Log::eError, "Failed to load builtin ksybox shader.");
+		GLOG(Log::eError, "Failed to load builtin skybox shader.");
 		return false;
 	}
 	ResourceSystem::Get().Unload(&ConfigResource);
