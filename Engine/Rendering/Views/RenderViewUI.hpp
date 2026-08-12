@@ -7,7 +7,6 @@ class UShader;
 
 class RenderViewUI : public IRenderView {
 public:
-	RenderViewUI();
 	RenderViewUI(const RenderViewConfig& config);
 	virtual bool OnCreate(const RenderViewConfig& config) override;
 	virtual void OnDestroy() override;
@@ -17,12 +16,16 @@ public:
 	virtual bool OnRender(struct RenderViewPacket* packet, RHI* back_renderer, size_t frame_number, size_t render_target_index) override;
 	virtual bool RegenerateAttachmentTarget(uint32_t passIndex, RenderTargetAttachment* attachment) override;
 
+	virtual void Render(const TArray<FRenderProxy*>& RenderObejcts) override;
+
 private:
 	UShader* UsedShader = nullptr;
 	float NearClip;
 	float FarClip;
 	Matrix4 ProjectionMatrix;
 	Matrix4 ViewMatrix;
+
+	IRenderer* Renderer;
 
 	// UI text
 	uint32_t DiffuseMapLocation;

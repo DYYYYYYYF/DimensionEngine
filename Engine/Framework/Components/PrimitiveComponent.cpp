@@ -28,6 +28,9 @@ void UPrimitiveComponent::OnRegister()
 
 	RenderWorld->AddProxy(RenderProxy);
 	IsRegistered = true;
+
+	// 注册到场景后更新
+	UpdateRenderProxy();
 }
 
 void UPrimitiveComponent::OnUnregister() {

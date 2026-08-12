@@ -21,6 +21,14 @@ bool UWorld::Initialize() {
 	return true;
 }
 
+void UWorld::BeginPlay() {
+	for (AActor* Actor : WorldActors) {
+		if (Actor && Actor->IsEnableTick()) {
+			Actor->BeginPlay();
+		}
+	}
+}
+
 void UWorld::Tick(float DeltaTime) {
 	for (AActor* Actor : WorldActors) {
 		if (Actor && Actor->IsEnableTick()) {

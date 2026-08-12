@@ -147,6 +147,7 @@ bool GameInstance::Initialize() {
 	TestText = NewObject<ATextActor>("Render information window.", UITextType::eUI_Text_Type_Bitmap, TestTextName, 21, TestTextContent);
 	if (TestText) {
 		TestText->SetActorLocation(Vector3(150, 450, 0));
+		World->AddActor(TestText);
 	}
 
 	FString TestSystemName = "Noto Sans CJK JP";
@@ -163,6 +164,7 @@ bool GameInstance::Initialize() {
 
 	if (TestSysText) {
 		TestSysText->SetActorLocation(Vector3(100, 200, 0));
+		World->AddActor(TestSysText);
 	}
 
 	// Load console
@@ -211,24 +213,12 @@ bool GameInstance::Initialize() {
 	EngineEvent::Register(eEventCode::Object_Hover_ID_Changed, this, GameOnEvent);
 	// TEMP
 
-	// 模拟 World Begin Play
-	for (AStaticMeshActor* m : Meshes) {
-		if (m) {
-			m->BeginPlay();
-		}
-	}
-
-	if (TestText) {
-		TestText->BeginPlay();
-	}
-
-	if (TestSysText) {
-		TestSysText->BeginPlay();
-	}
-
-
-
 	return true;
+}
+
+void GameInstance::BeginPlay() {
+	if (!World) return;
+	World->BeginPlay();
 }
 
 void GameInstance::Shutdown() {
@@ -304,19 +294,6 @@ bool GameInstance::Update(float delta_time) {
 
 	for(int i = 0; i < UIMeshes.Size(); ++i) {
 		if (UIMeshes[i]->IsEnableTick()) UIMeshes[i]->Tick(delta_time);
-	}
-
-	if (TestText) {
-		if (TestText->IsEnableTick()) TestText->Tick(delta_time);
-	}
-
-	if (TestSysText) {
-		if (TestSysText->IsEnableTick()) TestSysText->Tick(delta_time);
-	}
-
-	if (World)
-	{
-		World->Tick(delta_time);
 	}
 
 	int px, py, cx, cy;
@@ -407,6 +384,10 @@ bool GameInstance::Update(float delta_time) {
 	TestText->SetText(FPSText);
 
 	GameConsole->Tick(delta_time);
+
+	if (World) {
+		World->Tick(delta_time);
+	}
 
 	return true;
 }

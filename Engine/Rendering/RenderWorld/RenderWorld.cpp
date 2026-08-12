@@ -10,16 +10,23 @@ void URenderWorld::Record(float DeltaTime) {
 
 	IRenderView* RenderViewDeferred = RenderViewSystem::Get().Get(ERenderViewType::Deferred);
 	if (!RenderViewDeferred) return;
+	IRenderView* RenderViewUI = RenderViewSystem::Get().Get(ERenderViewType::UI);
+	if (!RenderViewUI) return;
 
 	// 临时使用数组存放，后续可以作为成员变量
 	TArray<FRenderProxy*> VisibleProxies;
+	TArray<FRenderProxy*> UIProxies;
 	for (FRenderProxy* Proxy : Proxies) {
 		if (Proxy->GetRenderFeatureFlags() & ERenderFeature::DeferredLighting) {
 			VisibleProxies.Push(Proxy);
 		}
+		if (Proxy->GetRenderFeatureFlags() & ERenderFeature::UI) {
+			UIProxies.Push(Proxy);
+		}
 	}
 
 	RenderViewDeferred->Render(VisibleProxies);
+	RenderViewUI->Render(UIProxies);
 }
 
 void URenderWorld::AddProxy(FRenderProxy* Proxy) {
@@ -40,7 +47,7 @@ void URenderWorld::FrustumCull() {
 
 		// 只有特定类型需要参与剔除（暂时只有StaticMesh）
 		FStaticMeshRenderProxy* Proxy = Cast<FStaticMeshRenderProxy*>(Proxies[i]);
-		if (!Proxy) continue;
+		if (!Proxy || (Proxy->GetRenderFeatureFlags() & ERenderFeature::DeferredLighting) == 0) continue;
 
 		// 获取视锥体
 		ACameraActor* WorldCamera = CameraSystem::Get().GetMainCamera();

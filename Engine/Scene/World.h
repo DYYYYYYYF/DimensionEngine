@@ -17,6 +17,7 @@ public:
 	virtual bool Initialize() override;
 	virtual void PostInitialize() override {};
 
+	virtual void BeginPlay();
 	virtual void Tick(float DeltaTime);
 
 	virtual void Destroy();

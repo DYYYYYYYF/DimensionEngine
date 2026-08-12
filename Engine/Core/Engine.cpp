@@ -211,10 +211,7 @@ bool Engine::Run() {
 	double FrameElapsedTime = 0.0;
 	double TargetFrameSeconds = 1.0 / 120.0;
 
-	GLOG(Log::eDebug, Memory::GetMemoryUsageStr().CStr());
-
-	GlobalFileWatcher = NewObject<FileWatcher>();
-
+	GlobalFileWatcher = NewObject<FileWatcher>(MemoryType::eMemory_Type_Application);
 	if (ShaderSystem::Get().GetShaderLanguage() == EShaderLanguage::eGLSL) {
 		GlobalFileWatcher->AddWatchFolder("../Shaders/glsl/");
 	}
@@ -222,6 +219,7 @@ bool Engine::Run() {
 		GlobalFileWatcher->AddWatchFolder("../Shaders/hlsl/");
 	}
 
+	GLOG(Log::eDebug, Memory::GetMemoryUsageStr().CStr());
 	while (is_running) {
 		if (!Platform::PlatformPumpMessage(&platform)) {
 			is_running = false;

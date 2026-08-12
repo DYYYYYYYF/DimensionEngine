@@ -18,14 +18,16 @@ bool UStaticMeshComponent::CreateRenderProxy() {
 		return false;
 	}
 
-	UpdateRenderProxy();
 	return true;
 }
 
 void UStaticMeshComponent::UpdateRenderProxy() {
+	// 还未注册到场景
+	if (!IsRegistered) return;
+
 	FStaticMeshRenderProxy* Proxy = Cast<FStaticMeshRenderProxy*>(RenderProxy);
 	if (!Proxy) {
-		GLOG(Log::eError, "RenderProxy is null. Cannot update.");
+		GLOG(Log::eError, "UStaticMeshComponent RenderProxy is null. Cannot update.");
 		return;
 	}
 

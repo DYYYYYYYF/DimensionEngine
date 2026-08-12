@@ -28,6 +28,7 @@ public:
 	virtual bool Boot() override;
 	virtual void Shutdown() override;
 	virtual bool Initialize() override;
+	virtual void BeginPlay() override;
 	virtual bool Update(float delta_time) override;
 	virtual bool Render(struct SRenderPacket* packet, float delta_time) override;
 	virtual void OnResize(unsigned int width, unsigned int height) override;

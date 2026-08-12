@@ -12,6 +12,8 @@ public:
 	UTextComponent(const FString& Name);
 	~UTextComponent();
 
+	virtual bool Initialize() override;
+	virtual void Tick(float deltaTime) override;
 	virtual bool CreateRenderProxy() override;
 	virtual void UpdateRenderProxy() override;
 
@@ -54,5 +56,5 @@ private:
 	float CharacterHeight = 1.0f;
 	float CharacterSpacing = 0.0f;
 
-	bool IsDirty = true;
+	bool IsTextDirty = true;
 };

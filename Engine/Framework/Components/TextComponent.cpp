@@ -21,6 +21,19 @@ UTextComponent::~UTextComponent() {
 	Destroy();
 }
 
+bool UTextComponent::Initialize() {
+	if (!BuildGeometry()) {
+		return false;
+	}
+
+	return true;
+}
+
+void UTextComponent::Tick(float deltaTime) {
+	if (IsTextDirty) {
+		Regenerate();
+	}
+}
 
 bool UTextComponent::CreateRenderProxy() {
 	RenderProxy = NewObject<FRenderProxy>(MemoryType::eMemory_Type_Renderer);
@@ -29,27 +42,30 @@ bool UTextComponent::CreateRenderProxy() {
 		return false;
 	}
 
-	UpdateRenderProxy();
 	return true;
 }
 
 void UTextComponent::UpdateRenderProxy() {
-	if (!RenderProxy) {
-		GLOG(Log::eError, "RenderProxy is null. Cannot update.");
+	// 还未注册到场景
+	if (!IsRegistered) return;
+
+	FTextRenderProxy* Proxy = Cast<FTextRenderProxy*>(RenderProxy);
+	if (!Proxy) {
+		GLOG(Log::eError, "UTextComponent RenderProxy is null. Cannot update.");
 		return;
 	}
 
 	AActor* Owner = GetOwner();
 	if (!Owner) {
-		GLOG(Log::eError, "StaticMeshComponent has no owner.");
+		GLOG(Log::eError, "TextComponent has no owner.");
 		return;
 	}
 
 	// 填充数据
-	//RenderProxy->SetMesh(TextGeometry);
-	RenderProxy->SetRenderFeatureFlags(ERenderFeature::UI);
-	RenderProxy->SetModelMatrix(Owner->GetWorldTransform());
-	RenderProxy->SetUniqueID(Owner->GetUniqueID());
+	Proxy->SetMesh(TextGeometry);
+	Proxy->SetRenderFeatureFlags(ERenderFeature::UI);
+	Proxy->SetModelMatrix(Owner->GetWorldTransform());
+	Proxy->SetUniqueID(Owner->GetUniqueID());
 }
 
 bool UTextComponent::Create() {
@@ -74,7 +90,8 @@ bool UTextComponent::SetText(const FString& text) {
 	}
 
 	Text = text;
-	IsDirty = true;
+	IsTextDirty = true;
+
 	return true;
 }
 
@@ -85,7 +102,7 @@ void UTextComponent::SetFont(IFont* font) {
 	}
 
 	TextFont = font;
-	IsDirty = true;
+	IsTextDirty = true;
 }
 
 
@@ -95,7 +112,12 @@ void UTextComponent::SetColor(const Vector4& color) {
 
 
 bool UTextComponent::Regenerate() {
-	return BuildGeometry();
+	if (!BuildGeometry()) {
+		return false;
+	}
+
+	UpdateRenderProxy();
+	return true;
 }
 
 
@@ -314,7 +336,7 @@ bool UTextComponent::BuildGeometry() {
 	delete[] Indices;
 
 	// 重置脏标记
-	IsDirty = false;
+	IsTextDirty = false;
 	RenderFrameNumber = INVALID_ID_U64;
 
 	return true;
@@ -392,7 +414,7 @@ const Vector4& UTextComponent::GetColor() const {
 
 
 UGeometry* UTextComponent::GetGeometry() {
-	if (IsDirty)
+	if (IsTextDirty)
 	{
 		Regenerate();
 	}

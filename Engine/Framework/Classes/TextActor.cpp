@@ -3,6 +3,7 @@
 
 ATextActor::ATextActor(const FString& Name) : AActor(Name) {
 	TextComponent = CreateComponent<UTextComponent>("TextComponent");
+	SetEnableTick(true);
 }
 
 ATextActor::ATextActor(const FString& Name, UITextType type, const FString& fontName,
@@ -29,6 +30,9 @@ ATextActor::ATextActor(const FString& Name, UITextType type, const FString& font
 		GLOG(Log::Level::eError, "Load font %s failed. font type: %i", fontName.CStr(), (int)type);
 		return;
 	}
+
+	// 开启Tick
+	SetEnableTick(true);
 }
 
 ATextActor::~ATextActor() {

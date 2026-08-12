@@ -27,6 +27,7 @@ public:
 	virtual void Shutdown() = 0;
 
 	virtual bool Initialize() = 0;
+	virtual void BeginPlay() = 0;
 	virtual bool Update(float delta_time) = 0;
 	virtual bool Render(SRenderPacket* packet, float delta_time) = 0;
 
