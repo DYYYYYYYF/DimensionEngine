@@ -15,6 +15,7 @@ class IRenderpass;
 class UGeometry;
 class UShader;
 class Camera;
+class UWorld;
 
 class IRenderer {
 public:
@@ -30,8 +31,10 @@ public:
 	virtual void Shutdown();
 
 	virtual void OnResize(unsigned short width, unsigned short height);
-	virtual bool DrawFrame(SRenderPacket* packet);
+	virtual bool DrawFrame(UWorld* World, SRenderPacket* packet);
+	virtual void ExecuteDrawCalls(const std::vector<DrawCall>& draw_calls, size_t frame_number, const FFrameData& data);
 
+public:
 	virtual UTexture* AcquireTexture(const FString& name, bool auto_release = true);
 
 	virtual bool CreateGeometry(UGeometry* geometry, const FGeometryConfig& config);
@@ -39,7 +42,6 @@ public:
 
 	virtual bool GetEnabledMutiThread() const;
 
-public:
 	/**
 	 * @beief Draws the given geometry. Should only be called inside a renderpas, within a frame.
 	 * 
@@ -145,6 +147,8 @@ public:
 	virtual unsigned char GetWindowAttachmentCount() const;
 	virtual UTexture* GetDepthAttachment(unsigned char index);
 	virtual unsigned char GetWindowAttachmentIndex();
+
+	size_t GetFrameNum() const;
 
 public:
 	RendererBackendType GetBackendType() const { return BackendType; }

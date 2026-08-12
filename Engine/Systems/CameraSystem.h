@@ -46,7 +46,7 @@ public:
 	 * 
 	 * @return A pointer to default camera.
 	 */
-	DAPI ACameraActor* GetDefault();
+	DAPI ACameraActor* GetMainCamera();
 
 private:
 	IRenderer* Renderer;
@@ -56,6 +56,6 @@ private:
 	std::vector<ACameraActor*> Cameras;
 	std::unordered_map<FString, uint64_t> CameraMap;
 	
-	ACameraActor* DefaultCamera;
+	ACameraActor* MainCamera;
 };
 

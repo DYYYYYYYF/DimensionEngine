@@ -4,6 +4,11 @@
 
 class UCameraComponent;
 
+enum class ECameraProjectionMode {
+	Perspective,
+	Orthographic
+};
+
 class ENGINE_API ACameraActor : public AActor {
 public:
     DECLARE_CLASS_TYPE(ACameraActor)
@@ -19,7 +24,22 @@ public:
     virtual void Tick(float DeltaTime) override;
     virtual void Destroy() override;
 
-    UCameraComponent* GetCameraComponent() { return CameraComponent; }
+    UCameraComponent* GetCameraComponent() const { return CameraComponent; }
+
+	// 设置摄像机组件
+	void SetFOV(float FOV);
+	float GetFOV() const;
+	void SetAspectRatio(float AspectRatio);
+	float GetAspectRatio() const;
+	void SetNearPlane(float NearPlane);
+	float GetNearPlane() const;
+	void SetFarPlane(float FarPlane);
+	float GetFarPlane() const;
+
+	Matrix4 GetProjectionMatrix(ECameraProjectionMode Mode = ECameraProjectionMode::Perspective) const;
+	Matrix4 GetViewMatrix() const;
+
+	const FFrustum& GetFrustum();
 
 public:
     // 引用次数
@@ -29,6 +49,11 @@ public:
 	void DecreaseReferenceCount(uint32_t count = 1) { ReferenceCount -= count; }
 
 private:
+	// 视锥体
+	FFrustum Frustum;
+	bool IsFrustumDirty = true;
+
+	// 其他
     uint32_t ReferenceCount = 0;
     UCameraComponent* CameraComponent;
 };

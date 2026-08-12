@@ -19,10 +19,12 @@ public:
 	virtual void PostInitialize() override {}
 
 	// 生命周期
-	virtual void OnAttach() {};   // 组件添加到Actor时调用
-	virtual void OnDetach() {};   // 组件从Actor移除时调用
-	virtual void OnEnable() {};   // 组件启用时调用
-	virtual void OnDisable() {};   // 组件禁用时调用
+	virtual void OnRegister() {};		// 组件注册到Actor时调用
+	virtual void OnUnregister() {};		// 组件从Actor移除时调用
+	virtual void OnAttach() {};			// 组件添加到Actor时调用
+	virtual void OnDetach() {};			// 组件从Actor移除时调用
+	virtual void OnEnable() {};			// 组件启用时调用
+	virtual void OnDisable() {};		// 组件禁用时调用
 
 	// 更新
 	virtual void Tick(float deltaTime) {};

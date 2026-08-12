@@ -78,7 +78,7 @@ void FTransform::UpdateLocal() const {
 	bInverseDirty = true; // 标记逆矩阵需要更新
 }
 
-Matrix4 FTransform::GetLocal() const {
+const Matrix4& FTransform::GetLocal() const {
 	if (bIsDirty) {
 		UpdateLocal();
 	}
@@ -86,7 +86,7 @@ Matrix4 FTransform::GetLocal() const {
 	return Local;
 }
 
-Matrix4 FTransform::GetWorldMatrix() const {
+const Matrix4& FTransform::GetWorldMatrix() const {
 	if (bIsDirty) {
 		UpdateLocal();
 	}
@@ -94,7 +94,7 @@ Matrix4 FTransform::GetWorldMatrix() const {
 	return Local;
 }
 
-Matrix4 FTransform::GetInverseWorldMatrix() const {
+const Matrix4& FTransform::GetInverseWorldMatrix() const {
 	if (bIsDirty) {
 		UpdateLocal();
 	}

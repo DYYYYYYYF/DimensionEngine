@@ -15,9 +15,16 @@ public:
 	DECLARE_CLASS_TYPE(UMeshComponent)
 
 public:
+	UMeshComponent(const FString& Name) : UPrimitiveComponent(Name) {}
 	virtual void DrawMesh() = 0;
 
 protected:
+	void SetBoundingBox(Extents3D BB) { MeshBounding = BB; }
+	const Extents3D GetBoundingBox() const { return MeshBounding; }
+	virtual void UpdateBounding() = 0;
+
+protected:
+	Extents3D MeshBounding;
 	TArray<UMaterial*> Materials;	// 材质
 	TArray<UTexture*> Textures;		// 纹理
 };

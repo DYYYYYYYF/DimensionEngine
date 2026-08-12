@@ -7,7 +7,7 @@
 #include "Rendering/Renderer.hpp"
 #include "Rendering/Vulkan/VulkanBuffer.hpp"
 
-UTextComponent::UTextComponent() {
+UTextComponent::UTextComponent(const FString& Name) : UPrimitiveComponent(Name){
 	TextFont = nullptr;
 	TextGeometry = nullptr;
 	Text = "";
@@ -20,6 +20,10 @@ UTextComponent::~UTextComponent() {
 	Destroy();
 }
 
+
+bool UTextComponent::CreateRenderProxy() {
+	return true;
+}
 
 bool UTextComponent::Create() {
 	return true;

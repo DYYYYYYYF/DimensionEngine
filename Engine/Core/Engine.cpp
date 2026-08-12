@@ -137,7 +137,7 @@ bool Engine::Initialize(){
 	}
 
 	// Perform the game's boot sequence.
-	if (!GameInst->Boot(Renderer)) {
+	if (!GameInst->Boot()) {
 		GLOG(Log::eFatal, "Game boot sequence failed!");
 		return false;
 	}
@@ -260,7 +260,7 @@ bool Engine::Run() {
 				break;
 			}
 
-			Renderer->DrawFrame(&Packet);
+			Renderer->DrawFrame(GameInst->GetWorld(), &Packet);
 
 			// Cleanup the packet.
 			for (uint32_t i = 0; i < (uint32_t)Packet.views.size(); ++i) {

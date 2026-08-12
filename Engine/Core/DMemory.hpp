@@ -114,13 +114,17 @@ public:
 	static Mutex AllocationMutex;
 };
 
-
 template<typename T, typename... Args>
 T* NewObject(Args&&... args) {
+	return NewObject<T>(MemoryType::eMemory_Type_Entity, std::forward<Args>(args)...);
+}
+
+template<typename T, typename... Args>
+T* NewObject(MemoryType ObjMemoryType, Args&&... args) {
 	static_assert(std::is_constructible_v<T, Args...>,
 		"T must be constructible with given arguments");
 
-	void* memory = Memory::Allocate(sizeof(T), MemoryType::eMemory_Type_Entity);
+	void* memory = Memory::Allocate(sizeof(T), ObjMemoryType);
 	if (memory == nullptr) {
 		GLOG(Log::eFatal, "Failed to allocate memory");
 		return nullptr;

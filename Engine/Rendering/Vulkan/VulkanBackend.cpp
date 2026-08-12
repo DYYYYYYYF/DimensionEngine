@@ -447,7 +447,7 @@ bool VulkanRHI::BeginFrame(double delta_time){
 	return true;
 }
 
-bool VulkanRHI::EndFrame(double delta_time) {
+bool VulkanRHI::EndFrame() {
 
 	VulkanCommandBuffer* CommandBuffer = &Context.GraphicsCommandBuffers[Context.ImageIndex];
 	

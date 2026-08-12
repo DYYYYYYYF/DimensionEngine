@@ -1,17 +1,13 @@
 ﻿#include "TextActor.h"
 #include "Systems/FontSystem.hpp"
 
-ATextActor::ATextActor() {
-	ATextActor("TextActor");
-}
-
 ATextActor::ATextActor(const FString& Name) : AActor(Name) {
-	TextComponent = CreateComponent<UTextComponent>();
+	TextComponent = CreateComponent<UTextComponent>("TextComponent");
 }
 
-ATextActor::ATextActor(UITextType type, const FString& fontName,
-	int fontSize, const FString& textContent) : AActor() {
-	TextComponent = CreateComponent<UTextComponent>();
+ATextActor::ATextActor(const FString& Name, UITextType type, const FString& fontName,
+	int fontSize, const FString& textContent) : AActor(fontName) {
+	TextComponent = CreateComponent<UTextComponent>("TextComponent");
 	if (!TextComponent) {
 		return;
 	}

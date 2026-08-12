@@ -22,9 +22,7 @@
 #include "Framework/Classes/StaticMeshActor.h"
 #include "GameLogic/TestActors/RotationCubeActor.h"
 #include "Framework/Components/CameraComponent.h"
-
-static FrustumCullMode CullMode = FrustumCullMode::eAABB_Cull;
-static bool EnableFrustumCulling = true;
+#include <Scene/World.h>
 
 bool GameOnEvent(eEventCode code, void* sender, void* listender_inst, SEventContext context) {
 	GameInstance* GameInst = (GameInstance*)listender_inst;
@@ -69,7 +67,11 @@ bool GameOnDebugEvent(eEventCode code, void* sender, void* listener_instance, SE
 	return false;
 }
 
-bool GameInstance::Boot(IRenderer* renderer) {
+bool GameInstance::Boot() {
+	if (!IGame::Boot()) {
+		return false;
+	}
+
 	GLOG(Log::eInfo, "Booting...");
 
 	File MaterialAsset(EDITOR_CONFIG_PATH);
@@ -81,7 +83,7 @@ bool GameInstance::Boot(IRenderer* renderer) {
 	WindowSize.Width = (uint16_t)Content.ReadInt("Window.Width");
 	WindowSize.Height = (uint16_t)Content.ReadInt("Window.Height");
 
-	GameConsole = NewObject<DebugConsoleActor>();
+	GameConsole = NewObject<DebugConsoleActor>("Debug console panel");
 
 	Keybind GameKeybind;
 	GameKeybind.Setup(this);
@@ -129,7 +131,7 @@ bool GameInstance::Initialize() {
 	Vector3 Position = Content.ReadVector3("Camera.Position");
 	Vector3 Rotation = Content.ReadVector3("Camera.Rotation");
 
-	WorldCamera = CameraSystem::Get().GetDefault();
+	WorldCamera = CameraSystem::Get().GetMainCamera();
 	if (WorldCamera) {
 		UCameraComponent* CameraComp = WorldCamera->GetCameraComponent();
 		if (CameraComp) {
@@ -142,10 +144,9 @@ bool GameInstance::Initialize() {
 	// Create test ui text objects.
 	FString TestTextName = "Ubuntu Mono 21px";
 	FString TestTextContent = "Test! \n Yooo!";
-	TestText = NewObject<ATextActor>(UITextType::eUI_Text_Type_Bitmap, TestTextName, 21, TestTextContent);
+	TestText = NewObject<ATextActor>("Render information window.", UITextType::eUI_Text_Type_Bitmap, TestTextName, 21, TestTextContent);
 	if (TestText) {
-		TestText->SetLocation(Vector3(150, 450, 0));
-		TestText->SetName("Render information window.");
+		TestText->SetActorLocation(Vector3(150, 450, 0));
 	}
 
 	FString TestSystemName = "Noto Sans CJK JP";
@@ -158,11 +159,10 @@ bool GameInstance::Initialize() {
 		\nF2: Normal view.\
 		\nF3: Material view.\
 		\nF4: Depth view.";
-	TestSysText = NewObject<ATextActor>(UITextType::eUI_Text_Type_System, TestSystemName, 25, TestSystemContent);
+	TestSysText = NewObject<ATextActor>("Keyboard map texts.", UITextType::eUI_Text_Type_System, TestSystemName, 25, TestSystemContent);
 
 	if (TestSysText) {
-		TestSysText->SetLocation(Vector3(100, 200, 0));
-		TestSysText->SetName("Keyboard map texts.");
+		TestSysText->SetActorLocation(Vector3(100, 200, 0));
 	}
 
 	// Load console
@@ -182,75 +182,26 @@ bool GameInstance::Initialize() {
 
 	// World meshes
 	ARotationCubeActor* CubeMesh = NewObject<ARotationCubeActor>("TestCube");
-	UTransformComponent* TansformComp1 = CubeMesh->GetComponent<UTransformComponent>();
-	TansformComp1->SetLocation(Vector(0.0f, 0.0f, 0.0f));
-	TansformComp1->SetRotation(Vector(0.0f));
+	CubeMesh->SetActorLocation(Vector(0.0f, 0.0f, 0.0f));
+	CubeMesh->SetActorRotation(Vector(0.0f));
 	Meshes.Push(CubeMesh);
+	World->AddActor(CubeMesh);
 
 	ARotationCubeActor* CubeMesh2 = NewObject<ARotationCubeActor>("TestCube2");
-	UTransformComponent* TansformComp2 = CubeMesh2->GetComponent<UTransformComponent>();
-	TansformComp2->SetLocation(Vector(10.0f, 0.0f, 0.0f));
-	TansformComp2->SetRotation(Vector(0.0f));
-	TansformComp2->SetScale(Vector(0.5f));
+	CubeMesh2->SetActorLocation(Vector(10.0f, 0.0f, 0.0f));
+	CubeMesh2->SetActorRotation(Vector(0.0f));
+	CubeMesh2->SetWorldScale(Vector(0.5f));
 	CubeMesh2->AttachTo(CubeMesh);
 	Meshes.Push(CubeMesh2);
+	World->AddActor(CubeMesh2);
 
 	ARotationCubeActor* CubeMesh3 = NewObject<ARotationCubeActor>("TestCube3");
-	UTransformComponent* TansformComp3 = CubeMesh3->GetComponent<UTransformComponent>();
-	TansformComp3->SetLocation(Vector(15.0f, 0.0f, 0.0f));
-	TansformComp3->SetRotation(Vector(0.0f));
-	TansformComp3->SetScale(Vector(0.3f));
+	CubeMesh3->SetActorLocation(Vector(15.0f, 0.0f, 0.0f));
+	CubeMesh3->SetActorRotation(Vector(0.0f));
+	CubeMesh3->SetWorldScale(Vector(0.3f));
 	CubeMesh3->AttachTo(CubeMesh2);
 	Meshes.Push(CubeMesh3);
-
-	// Load up some test UI geometry.
-	FGeometryConfig UIConfig;
-	UIConfig.vertex_size = sizeof(Vertex2D);
-	UIConfig.vertex_count = 4;
-	UIConfig.index_size = sizeof(uint32_t);
-	UIConfig.index_count = 6;
-	UIConfig.material_name = "Material.UI";
-	UIConfig.name = "Material.UI";
-
-	const float h = WindowSize.Height / 3.0f;
-	const float w = h * 200.0f / 470.0f;
-	const float x = 0.0f;
-	const float y = 0.0f;
-
-	Vertex2D UIVerts[4];
-	UIVerts[0].position.x = x;
-	UIVerts[0].position.y = y;
-	UIVerts[0].texcoord.x = 0.0f;
-	UIVerts[0].texcoord.y = 1.0f;
-
-	UIVerts[1].position.x = x + h;
-	UIVerts[1].position.y = y + w;
-	UIVerts[1].texcoord.x = 1.0f;
-	UIVerts[1].texcoord.y = 0.0f;
-
-	UIVerts[2].position.x = x;
-	UIVerts[2].position.y = y + w;
-	UIVerts[2].texcoord.x = 0.0f;
-	UIVerts[2].texcoord.y = 0.0f;
-
-	UIVerts[3].position.x = x + h;
-	UIVerts[3].position.y = y;
-	UIVerts[3].texcoord.x = 1.0f;
-	UIVerts[3].texcoord.y = 1.0f;
-
-	UIConfig.vertices = UIVerts;
-
-	// Indices
-	uint32_t UIIndices[6] = { 0, 2, 1, 0, 1, 3 };
-	UIConfig.indices = UIIndices;
-
-	// Get UI geometry from config.
-	AStaticMeshActor* UIMesh = NewObject<AStaticMeshActor>("Engine Logo UI");
-	UIMesh->geometry_count = 1;
-	UGeometry* UIGeometry = GeometrySystem::Get().AcquireFromConfig(UIConfig, true);
-	UIMesh->SetMeshResource(UIGeometry);
-	UIMesh->Generation = 0;
-	UIMeshes.Push(UIMesh);
+	World->AddActor(CubeMesh3);
 
 	// TODO: TEMP
 	EngineEvent::Register(eEventCode::Debug_0, this, GameOnDebugEvent);
@@ -274,6 +225,8 @@ bool GameInstance::Initialize() {
 	if (TestSysText) {
 		TestSysText->BeginPlay();
 	}
+
+
 
 	return true;
 }
@@ -361,11 +314,9 @@ bool GameInstance::Update(float delta_time) {
 		if (TestSysText->IsEnableTick()) TestSysText->Tick(delta_time);
 	}
 
-	// Ensure this is cleaned up to avoid leaking memory.
-	// TODO: Need a version of this that uses the frame allocator.
-	if (!FrameData.WorldGeometries.empty()) {
-		FrameData.WorldGeometries.clear();
-		std::vector<GeometryRenderData>().swap(FrameData.WorldGeometries);
+	if (World)
+	{
+		World->Tick(delta_time);
 	}
 
 	int px, py, cx, cy;
@@ -388,7 +339,7 @@ bool GameInstance::Update(float delta_time) {
 	}
 
 	// Text
-	WorldCamera = CameraSystem::Get().GetDefault();
+	WorldCamera = CameraSystem::Get().GetMainCamera();
 	Vector3 Pos = CameraComp->GetPosition();
 	Vector3 Rot = CameraComp->GetEulerAngles();
 
@@ -409,91 +360,9 @@ bool GameInstance::Update(float delta_time) {
 	Vector3 Forward = CameraComp->Forward();
 	Vector3 Right = CameraComp->Right();
 	Vector3 Up = CameraComp->Up();
-	// TODO: Get camera fov, aspect etc.
-	CameraFrustum = Frustum(CameraComp->GetPosition(), Forward, Right, Up,
-		(float)WindowSize.Width / (float)WindowSize.Height, Deg2Rad(45.0f), 0.1f, 1000.0f);
 
 	// NOTE: starting at a reasonable default to avoid too many realloc.
-	uint32_t DrawCount = 0;
-	for (uint32_t i = 0; i < (uint32_t)Meshes.Size(); ++i) {
-		AStaticMeshActor* m = Meshes[i];
-		if (m == nullptr) {
-			continue;
-		}
-
-		if (m->Generation != INVALID_ID_U8) {
-			Matrix4 Model = m->GetWorldTransform();
-
-			for (uint32_t j = 0; j < m->geometry_count; j++) {
-				UGeometry* g = m->geometries[j];
-				if (g == nullptr) {
-					continue;
-				}
-
-				switch (CullMode)
-				{
-				// Bounding sphere calculation
-				case FrustumCullMode::eSphere_Cull:
-				{
-					Vector3 ExtensMin = g->Extents.min.Transform(Model);
-					Vector3 ExtensMax = g->Extents.max.Transform(Model);
-
-					float Min = DMIN(DMIN(ExtensMin.x, ExtensMin.y), ExtensMin.z);
-					float Max = DMIN(DMIN(ExtensMax.x, ExtensMax.y), ExtensMax.z);
-					float Diff = Dabs(Max - Min);
-					float Radius = Diff / 2.0f;
-
-					// Translate/scale the center.
-					Vector3 Center = g->Center.Transform(Model);
-
-					if (CameraFrustum.IntersectsSphere(Center, Radius)) {
-						// Add it to the list to be rendered.
-						GeometryRenderData Data;
-						Data.model_mat = Model;
-						Data.geometry = g;
-						Data.uniqueID = m->GetUniqueID();
-						FrameData.WorldGeometries.push_back(Data);
-						DrawCount++;
-					}
-				} break;
-				// AABB calculation
-				case FrustumCullMode::eAABB_Cull:
-				{
-					// Translate/scale the extents.
-					Vector3 ExtentsMax = g->Extents.max.Transform(Model);
-
-					// Translate/scale the center.
-					Vector3 Center = g->Center.Transform(Model);
-					Vector3 HalfExtents = {
-						Dabs(ExtentsMax.x - Center.x),
-						Dabs(ExtentsMax.y - Center.y),
-						Dabs(ExtentsMax.z - Center.z)
-					};
-
-					if (CameraFrustum.IntersectsAABB(Center, HalfExtents) && EnableFrustumCulling) {
-						// Add it to the list to be rendered.
-						GeometryRenderData Data;
-						Data.model_mat = Model;
-						Data.geometry = g;
-						Data.uniqueID = m->GetUniqueID();
-						FrameData.WorldGeometries.push_back(Data);
-						DrawCount++;
-					}
-					else if (!EnableFrustumCulling) {
-						// Add it to the list to be rendered.
-						GeometryRenderData Data;
-						Data.model_mat = Model;
-						Data.geometry = g;
-						Data.uniqueID = m->GetUniqueID();
-						FrameData.WorldGeometries.push_back(Data);
-						DrawCount++;
-					}
-				} break;
-				}
-			}
-		}
-	}
-
+	uint32_t DrawCount = (uint32_t)World->GetVisibleActors().Size();
 
 	// TODO: Temp
 	std::string HoverdObjectName = "None";
@@ -557,7 +426,7 @@ bool GameInstance::Render(SRenderPacket* packet, float delta_time) {
 	// Skybox
 	SkyboxPacketData SkyboxData;
 	SkyboxData.sb = SB;
-	IRenderView* SkyboxView = RenderviewSys.Get("Skybox");
+	IRenderView* SkyboxView = RenderviewSys.Get(ERenderViewType::Skybox);
 	if (SkyboxView) {
 		if (!RenderviewSys.BuildPacket(SkyboxView, &SkyboxData, &packet->views[ViewCounter++])) {
 			GLOG(Log::eError, "Failed to build packet for view 'World_Opaque'.");
@@ -566,10 +435,10 @@ bool GameInstance::Render(SRenderPacket* packet, float delta_time) {
 	}
 
 	// World
-	IRenderView* WorldView = RenderviewSys.Get("WorldDeferred");
+	IRenderView* WorldView = RenderviewSys.Get(ERenderViewType::Deferred);
 	if(WorldView) {
 		WorldPacketData WorldData;
-		WorldData.Meshes = FrameData.WorldGeometries;
+		WorldData.Meshes = std::vector<GeometryRenderData>();
 		WorldData.GlobalTime = GameTime;
 		if (!RenderviewSys.BuildPacket(WorldView, &WorldData, &packet->views[ViewCounter++])) {
 			GLOG(Log::eError, "Failed to build packet for view 'World'.");
@@ -600,20 +469,20 @@ bool GameInstance::Render(SRenderPacket* packet, float delta_time) {
 	UIPacket.textCount = 4;
 	UIPacket.Textes = Texts;
 
-	IRenderView* UIView = RenderviewSys.Get("UI");
+	IRenderView* UIView = RenderviewSys.Get(ERenderViewType::UI);
 	if (UIView) {
-		if (!RenderviewSys.BuildPacket(RenderviewSys.Get("UI"), &UIPacket, &packet->views[ViewCounter++])) {
+		if (!RenderviewSys.BuildPacket(UIView, &UIPacket, &packet->views[ViewCounter++])) {
 			GLOG(Log::eError, "Failed to build packet for view 'UI'.");
 			return false;
 		}
 	}
-	
-	IRenderView* PickView = RenderviewSys.Get("Pick");
+
+	IRenderView* PickView = RenderviewSys.Get(ERenderViewType::Pick);
 	if (PickView) {
 		// Pick uses both world and ui packet data.
 		PickPacketData PickPacket;
 		PickPacket.UIMeshData = UIPacket.meshData;
-		PickPacket.WorldMeshData = FrameData.WorldGeometries;
+		PickPacket.WorldMeshData = std::vector<GeometryRenderData>();
 		PickPacket.Texts = UIPacket.Textes;
 		PickPacket.TextCount = UIPacket.textCount;
 
@@ -629,52 +498,8 @@ bool GameInstance::Render(SRenderPacket* packet, float delta_time) {
 void GameInstance::OnResize(unsigned int width, unsigned int height) {
 	WindowSize = { (uint16_t)width, (uint16_t)height };
 
-	TestText->SetLocation(Vector3(180, (float)height - 150, 0));
-	TestSysText->SetLocation(Vector3(100, (float)height - 400, 0));
-
-	// TODO: Temp
-	FGeometryConfig UIConfig;
-	UIConfig.vertex_size = sizeof(Vertex2D);
-	UIConfig.vertex_count = 4;
-	UIConfig.index_size = sizeof(uint32_t);
-	UIConfig.index_count = 6;
-	UIConfig.material_name = "Material.UI";
-	UIConfig.name = "Material.UI";
-
-	const float h = WindowSize.Height / 3.0f;
-	const float w = h * 200.0f / 470.0f;
-	const float x = 0.0f;
-	const float y = 0.0f;
-
-	Vertex2D UIVerts[4];
-	UIVerts[0].position.x = x;
-	UIVerts[0].position.y = y;
-	UIVerts[0].texcoord.x = 0.0f;
-	UIVerts[0].texcoord.y = 1.0f;
-
-	UIVerts[1].position.x = x + h;
-	UIVerts[1].position.y = y + w;
-	UIVerts[1].texcoord.x = 1.0f;
-	UIVerts[1].texcoord.y = 0.0f;
-
-	UIVerts[2].position.x = x;
-	UIVerts[2].position.y = y + w;
-	UIVerts[2].texcoord.x = 0.0f;
-	UIVerts[2].texcoord.y = 0.0f;
-
-	UIVerts[3].position.x = x + h;
-	UIVerts[3].position.y = y;
-	UIVerts[3].texcoord.x = 1.0f;
-	UIVerts[3].texcoord.y = 1.0f;
-
-	UIConfig.vertices = UIVerts;
-
-	// Indices
-	uint32_t UIIndices[6] = { 0, 2, 1, 0, 1, 3 };
-	UIConfig.indices = UIIndices;
-
-	UIMeshes[0]->geometries[0]->DecreaseReferenceCount();
-	UIMeshes[0]->geometries[0] = GeometrySystem::Get().AcquireFromConfig(UIConfig, true);
+	TestText->SetActorLocation(Vector3(180, (float)height - 150, 0));
+	TestSysText->SetActorLocation(Vector3(100, (float)height - 400, 0));
 }
 
 void LoadScene1(GameInstance* GameInst) {
@@ -691,24 +516,22 @@ void LoadScene2(GameInstance* GameInst) {
 
 	AStaticMeshActor* Model1 = NewObject<AStaticMeshActor>("sponza");
 	Model1->LoadFromResource("sponza");
-	UTransformComponent* TansformComp1 = Model1->GetComponent<UTransformComponent>();
-	TansformComp1->SetLocation(Vector(0.0f, -10.0f, 0.0f));
-	TansformComp1->SetRotation(Vector(0.0f, 90.0f, 0.0f));
-	TansformComp1->SetScale(Vector(0.1f));
-	GameInst->Meshes.Push(Model1);
+	Model1->SetActorLocation(Vector(0.0f, -10.0f, 0.0f));
+	Model1->SetActorRotation(Vector(0.0f, 90.0f, 0.0f));
+	Model1->SetWorldScale(Vector(0.1f));
+	GameInst->GetWorld()->AddActor(Model1);
 
 	AStaticMeshActor* Model2 = NewObject<AStaticMeshActor>("bunny");
 	Model2->LoadFromResource("bunny");
-	UTransformComponent* TansformComp2 = Model2->GetComponent<UTransformComponent>();
-	TansformComp2->SetLocation(Vector(30.0f, 0.0f, 0.0f));
-	TansformComp2->SetScale(Vector(5.0f));
-	GameInst->Meshes.Push(Model2);
+	Model2->SetActorLocation(Vector(30.0f, 0.0f, 0.0f));
+	Model2->SetActorRotation(Vector(0.0f, 90.0f, 0.0f));
+	Model2->SetWorldScale(Vector(5.0f));
+	GameInst->GetWorld()->AddActor(Model2);
 
 	AStaticMeshActor* Model3 = NewObject<AStaticMeshActor>("falcon");
 	Model3->LoadFromResource("falcon");
-	UTransformComponent* TansformComp3 = Model3->GetComponent<UTransformComponent>();
-	TansformComp3->SetLocation(Vector(-30.0f, 0.0f, 0.0f));
-	GameInst->Meshes.Push(Model3);
+	Model3->SetActorLocation(Vector(-30.0f, 0.0f, 0.0f));
+	GameInst->GetWorld()->AddActor(Model3);
 }
 
 void LoadScene3(GameInstance* GameInst) {

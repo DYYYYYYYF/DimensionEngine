@@ -23,6 +23,11 @@ public:
 	inline bool IsAutoRelease() const { return AutoRelease; }
 	inline void SetIsAutoRelease(bool b) { AutoRelease = b; }
 
+	void SetVisibility(bool VisibleFlag) { bIsVisible = VisibleFlag; }
+	bool IsVisible() const { return bIsVisible; }
+
+	const Extents3D& GetBoundingBox() const { return Extents; }
+
 	UMaterialInstance* GetMaterialInstance() const { return MaterialInstance; }
 
 private:
@@ -42,5 +47,6 @@ protected:
 private:
 	size_t ReferenceCount = 0;
 	bool AutoRelease = true;
+	bool bIsVisible = true;
 
 };

@@ -30,7 +30,7 @@ public:
 	virtual bool Initialize(const RenderBackendConfig* config, unsigned char* out_window_render_target_count, SPlatformState* plat_state) = 0;
 	virtual void Shutdown() = 0;
 	virtual bool BeginFrame(double delta_time) = 0;
-	virtual bool EndFrame(double delta_time) = 0;
+	virtual bool EndFrame() = 0;
 	virtual void Resize(unsigned short width, unsigned short height) = 0;
 	virtual void DrawGeometry(GeometryRenderData* geometry) = 0;
 	virtual void ExecuteDrawCalls(const std::vector<DrawCall>& draw_calls, size_t frame_number, const FFrameData& data) = 0;

@@ -1,13 +1,8 @@
 ﻿#include "Actor.h"
 
-AActor::AActor() :UObject(), ParentActor(nullptr) {
-	LocalTransform = CreateComponent<UTransformComponent>();
-	ASSERT(LocalTransform);
-}
-
 AActor::AActor(const FString& Name) : Name_(Name), ParentActor(nullptr) { 
-	LocalTransform = CreateComponent<UTransformComponent>();
-	ASSERT(LocalTransform);
+	RootComponent = CreateComponent<USceneComponent>("SceneComponent");
+	ASSERT(RootComponent);
 }
 
 void AActor::BeginPlay() {
@@ -16,16 +11,29 @@ void AActor::BeginPlay() {
 			Pair.Value->OnEnable();
 		}
 	}
+}
 
-	// 开始时先更新一次，确保 LocalTransform 的矩阵是最新的
-	if (LocalTransform->IsDirty()) {
-		LocalTransform->UpdateLocal();
+void AActor::RegisterComponents() {
+	for (auto& Pair : ContainComponents) {
+		if (Pair.Value) {
+			Pair.Value->OnRegister();
+		}
 	}
 }
 
 void AActor::Tick(float DeltaTime) {
-	if (LocalTransform->IsDirty()) {
-		LocalTransform->UpdateLocal();
+	for (auto& Pair : ContainComponents) {
+		if (Pair.Value && Pair.Value->IsEnabled()) {
+			Pair.Value->Tick(DeltaTime);
+		}
+	}
+}
+
+void AActor::UnregisterComponents() {
+	for (auto& Pair : ContainComponents) {
+		if (Pair.Value) {
+			Pair.Value->OnUnregister();
+		}
 	}
 }
 
@@ -60,7 +68,7 @@ bool AActor::AddChild(AActor* child) {
 }
 
 Matrix4 AActor::GetLocalTransform() const {
-	return LocalTransform->GetLocal();
+	return RootComponent->GetLocalMatrix();
 }
 
 Matrix4 AActor::GetWorldTransform() const {

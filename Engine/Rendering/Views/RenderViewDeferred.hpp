@@ -19,6 +19,8 @@ public:
 	virtual bool OnRender(struct RenderViewPacket* packet, RHI* back_renderer, size_t frame_number, size_t render_target_index) override;
 	virtual bool RegenerateAttachmentTarget(uint32_t passIndex, RenderTargetAttachment* attachment) override;
 
+	virtual void Render(const TArray<FRenderProxy*>& RenderProxies) override;
+
 public:
 	const char* GetShaderName() const {
 		if (GBufferShader->Name.IsEmpty()) {

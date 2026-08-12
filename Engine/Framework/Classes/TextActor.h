@@ -11,9 +11,8 @@ public:
 	DECLARE_CLASS_TYPE(ATextActor)
 
 public:
-	ATextActor();
 	ATextActor(const FString& Name);
-	ATextActor(UITextType type, const FString& fontName, int fontSize, const FString& textContent);
+	ATextActor(const FString& Name, UITextType type, const FString& fontName, int fontSize, const FString& textContent);
 	virtual ~ATextActor();
 
 	UTextComponent* GetTextComponent() { return TextComponent; }

@@ -1,0 +1,94 @@
+﻿#include "RenderWorld.h"
+#include "Framework/Classes/CameraActor.h"
+#include "Systems/CameraSystem.h"
+#include "Systems/RenderViewSystem.hpp"
+#include "Rendering/Resources/Geometry/Geometry.hpp"
+
+void URenderWorld::Record(float DeltaTime) {
+	// 这里临时调用Renderview
+	FrustumCull();
+
+	IRenderView* RenderViewDeferred = RenderViewSystem::Get().Get(ERenderViewType::Deferred);
+	if (!RenderViewDeferred) return;
+
+	// 临时使用数组存放，后续可以作为成员变量
+	TArray<FRenderProxy*> VisibleProxies;
+	for (FRenderProxy* Proxy : Proxies) {
+		if (Proxy->GetRenderFeatureFlags() & ERenderFeature::DeferredLighting) {
+			VisibleProxies.Push(Proxy);
+		}
+	}
+
+	RenderViewDeferred->Render(VisibleProxies);
+}
+
+void URenderWorld::AddProxy(FRenderProxy* Proxy) {
+	Proxies.Push(Proxy);
+}
+
+void URenderWorld::RemoveProxy(FRenderProxy* Proxy) {
+	for (uint32_t i = 0; i < (uint32_t)Proxies.Size(); ++i) {
+		if (Proxies[i] == Proxy) {
+			Proxies.PopAt(i);
+			break;
+		}
+	}	
+}
+
+void URenderWorld::FrustumCull() {
+	for (uint32_t i = 0; i < (uint32_t)Proxies.Size(); ++i) {
+		FRenderProxy* Proxy = Proxies[i];
+		if (!Proxy) continue;
+
+		// 获取视锥体
+		ACameraActor* WorldCamera = CameraSystem::Get().GetMainCamera();
+		if (!WorldCamera) return;
+		FFrustum CameraFrustum = WorldCamera->GetFrustum();
+
+		// 模型初筛
+		const Extents3D& Extents = Proxy->GetBoundingBox();
+		bool IsMeshVisible = FrustumCullInside(CameraFrustum, Extents);
+		Proxy->SetVisibility(IsMeshVisible);
+
+		// 如果模型可见再判断是否模型内所有Submesh都可见
+		if (IsMeshVisible) {
+			TArray<UGeometry*> SubMeshes = Proxy->GetMesh();
+			for (UGeometry* Geometry : SubMeshes) {
+				const Extents3D& GeometryExtents = Geometry->GetBoundingBox();
+				Geometry->SetVisibility(FrustumCullInside(CameraFrustum, GeometryExtents));
+			}
+		}
+	}
+}
+
+bool URenderWorld::FrustumCullInside(const FFrustum& Frustum, const Extents3D& Extent) {
+	Vector3 ExtentsMin = Extent.min;
+	Vector3 ExtentsMax = Extent.max;
+	Vector3 Center = (ExtentsMin + ExtentsMax) * 0.5f;
+	switch (CullMode)
+	{
+		// Bounding sphere calculation
+	case FrustumCullMode::eSphere_Cull:
+	{
+		float MMin = DMIN(DMIN(ExtentsMin.x, ExtentsMin.y), ExtentsMin.z);
+		float MMax = DMIN(DMIN(ExtentsMax.x, ExtentsMax.y), ExtentsMax.z);
+		float Diff = Dabs(MMax - MMin);
+		float Radius = Diff / 2.0f;
+
+		return Frustum.IntersectsSphere(Center, Radius);
+	} break;
+	// AABB calculation
+	case FrustumCullMode::eAABB_Cull:
+	{
+		Vector3 HalfExtents = {
+					Dabs(ExtentsMax.x - Center.x),
+					Dabs(ExtentsMax.y - Center.y),
+					Dabs(ExtentsMax.z - Center.z)
+		};
+
+		return Frustum.IntersectsAABB(Center, HalfExtents);
+	} break;
+	}
+
+	return false;
+}

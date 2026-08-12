@@ -74,7 +74,7 @@ bool RenderViewSkybox::OnCreate(const RenderViewConfig& config) {
 
 	// Default
 	ProjectionMatrix = Matrix4::Perspective(Fov, (float)config.width / config.height, NearClip, FarClip);
-	WorldCamera = CameraSystem::Get().GetDefault();
+	WorldCamera = CameraSystem::Get().GetMainCamera();
 
 	if (!EngineEvent::Register(eEventCode::Default_Rendertarget_Refresh_Required, this, RenderViewSkyboxOnEvent)) {
 		GLOG(Log::eError, "Unable to listen for refresh required event, creation failed.");

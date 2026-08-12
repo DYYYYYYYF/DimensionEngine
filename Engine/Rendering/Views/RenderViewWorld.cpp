@@ -110,8 +110,12 @@ bool RenderViewWorld::OnCreate(const RenderViewConfig& config) {
 	Fov = Deg2Rad(45.0f);
 
 	// Default
-	ProjectionMatrix = Matrix4::Perspective(Fov, (float)config.width / config.height, NearClip, FarClip);
-	WorldCamera = CameraSystem::Get().GetDefault();
+	WorldCamera = CameraSystem::Get().GetMainCamera();
+	WorldCamera->SetFOV(Fov);
+	WorldCamera->SetAspectRatio((float)config.width / config.height);
+	WorldCamera->SetNearPlane(NearClip);
+	WorldCamera->SetFarPlane(FarClip);
+	ProjectionMatrix = WorldCamera->GetProjectionMatrix(ECameraProjectionMode::Perspective);
 
 	// TODO: Obtain from scene.
 	AmbientColor = Vector4(0.7f, 0.7f, 0.7f, 1.0f);

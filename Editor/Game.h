@@ -10,6 +10,10 @@
 #include "Framework/Classes/StaticMeshActor.h"
 #include "Framework/Classes/TextActor.h"
 
+#ifndef EIDTOR_MODE
+#define EIDTOR_MODE
+#endif
+
 #define EDITOR_CONFIG_PATH FString::Format("%s%s", ROOT_PATH, "/Editor/Config.json")
 
 class USkybox;
@@ -17,11 +21,11 @@ class ACameraActor;
 
 class GameInstance : public IGame {
 public:
-	GameInstance() : WorldCamera(nullptr), ConsoleKeymap(nullptr){}
+	GameInstance() :WorldCamera(nullptr), ConsoleKeymap(nullptr){}
 	virtual ~GameInstance() {};
 
 public:
-	virtual bool Boot(IRenderer* renderer) override;
+	virtual bool Boot() override;
 	virtual void Shutdown() override;
 	virtual bool Initialize() override;
 	virtual bool Update(float delta_time) override;
@@ -30,7 +34,6 @@ public:
 
 public:
 	ACameraActor* WorldCamera;
-	Frustum CameraFrustum;
 
 	// TODO: temp
 	USkybox* SB;

@@ -113,7 +113,7 @@ bool DebugConsoleActor::OnKey(eEventCode code, void* sender, void* listener_inst
 	return true;
 }
 
-DebugConsoleActor::DebugConsoleActor(){
+DebugConsoleActor::DebugConsoleActor(const FString& Name) : AActor(Name) {
 	DisplayLineCount = 10;
 	LineOffset = 0;
 	Visible = false;
@@ -146,22 +146,22 @@ bool DebugConsoleActor::Initialize() {
 	AActor::Initialize();
 
 	// Create UI text control for rendering.
-	TextControl = NewObject<ATextActor>(UITextType::eUI_Text_Type_System, "Noto Sans CJK JP", 26, "No Log.");
+	TextControl = NewObject<ATextActor>("Debug console text", UITextType::eUI_Text_Type_System, "Noto Sans CJK JP", 26, "No Log.");
 	if (!TextControl) {
 		GLOG(Log::eFatal, "Unable to create text control for debug console.");
 		return false;
 	}
 
-	TextControl->SetLocation(Vector3(0.7f * Renderer->GetWidth(), 100, 0));
+	TextControl->SetActorLocation(Vector3(0.7f * Renderer->GetWidth(), 100, 0));
 
 	// Create another ui text control for rendering typed text.
-	EntryControl = NewObject<ATextActor>(UITextType::eUI_Text_Type_System, "Noto Sans CJK JP", 26, "Press ' ~ ' to record command.");
+	EntryControl = NewObject<ATextActor>("Debug console entry", UITextType::eUI_Text_Type_System, "Noto Sans CJK JP", 26, "Press ' ~ ' to record command.");
 	if (!EntryControl) {
 		GLOG(Log::eFatal, "Unable to create entry control for debug console.");
 		return false;
 	}
 
-	EntryControl->SetLocation(Vector3(0.7f * Renderer->GetWidth(), 100 + (31.0f * DisplayLineCount), 0.0f));
+	EntryControl->SetActorLocation(Vector3(0.7f * Renderer->GetWidth(), 100 + (31.0f * DisplayLineCount), 0.0f));
 
 	EngineEvent::Register(eEventCode::Key_Pressed, nullptr,
 		std::bind(

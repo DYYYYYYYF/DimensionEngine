@@ -9,8 +9,10 @@ class UTextComponent : public UPrimitiveComponent
 	DECLARE_CLASS_TYPE(UTextComponent)
 
 public:
-	UTextComponent();
+	UTextComponent(const FString& Name);
 	~UTextComponent();
+
+	virtual bool CreateRenderProxy() override;
 
 public:
 	bool Create();

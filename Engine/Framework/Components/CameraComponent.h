@@ -1,8 +1,8 @@
 #pragma once
-#include "Component.h"
+#include "SceneComponent.h"
 #include "Math/MathTypes.hpp"
 
-class DAPI UCameraComponent : public UComponent {
+class DAPI UCameraComponent : public USceneComponent {
 	DECLARE_CLASS_TYPE(UCameraComponent)
 
 public:
@@ -40,6 +40,16 @@ public:
 	Vector3 Right() { return GetViewMatrix().Right(); }
 	Vector3 Up() { return GetViewMatrix().Up(); }
 
+	// 基础信息
+	void SetFOV(float FOV) { FOV_ = FOV; }
+	float GetFOV() const { return FOV_; }
+	void SetAspectRatio(float AspectRatio) { AspectRatio_ = AspectRatio; }
+	float GetAspectRatio() const { return AspectRatio_; }
+	void SetNearPlane(float NearPlane) { NearPlane_ = NearPlane; }
+	float GetNearPlane() const { return NearPlane_; }
+	void SetFarPlane(float FarPlane) { FarPlane_ = FarPlane; }
+	float GetFarPlane() const { return FarPlane_; }
+
 	//  重置
 	void Reset();
 
@@ -52,12 +62,16 @@ protected:
 
 
 protected:
+	// 基础设置
+	float FOV_ = 60.0f;   // 视野角度（度）
+	float AspectRatio_ = 16.0f / 9.0f;   // 宽高比
+	float NearPlane_ = 0.1f;   // 近平面
+	float FarPlane_ = 1000.0f;   // 远平面
+
 	// 旋转以弧度存储（pitch=x, yaw=y, roll=z），是唯一旋转真相来源
 	Vector3 EulerRotation_{ 0.0f, 0.0f, 0.0f };
-
 	// 缓存的 ViewMatrix
 	Matrix4 ViewMatrix_;
-
 	// ViewMatrix 是否需要重建
 	bool IsDirty_ = true;
 

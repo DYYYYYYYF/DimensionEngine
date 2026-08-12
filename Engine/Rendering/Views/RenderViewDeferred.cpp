@@ -21,6 +21,7 @@
 #include "Rendering/Interface/IRendererBackend.hpp"
 
 #include "Framework/Components/CameraComponent.h"
+#include "Rendering/RenderWorld/RenderProxy.h"
 
 static bool RenderViewWorldDeferredOnEvent(eEventCode code, void* sender, void* listenerInst, SEventContext context) {
 	IRenderView* self = (IRenderView*)listenerInst;
@@ -118,7 +119,7 @@ bool RenderViewWorldDeferred::OnCreate(const RenderViewConfig& config) {
 	Fov = Deg2Rad(45.0f);
 
 	ProjectionMatrix = Matrix4::Perspective(Fov, (float)config.width / config.height, NearClip, FarClip);
-	WorldCamera = CameraSystem::Get().GetDefault();
+	WorldCamera = CameraSystem::Get().GetMainCamera();
 
 	// 环境光设置 (与原World渲染保持一致)
 	AmbientColor = Vector4(0.7f, 0.7f, 0.7f, 1.0f);
@@ -293,12 +294,12 @@ bool RenderViewWorldDeferred::RegenerateAttachmentTarget(uint32_t passIndex, Ren
 	return true;
 }
 
-bool RenderViewWorldDeferred::OnRender(struct RenderViewPacket* packet, RHI* back_renderer, size_t frame_number, size_t render_target_index) {
+void RenderViewWorldDeferred::Render(const TArray<FRenderProxy*>& RenderProxies) {
 	// 确保全屏四边形存在
 	if (!FullscreenQuad) {
 		if (!CreateFullscreenQuad()) {
 			GLOG(Log::eError, "Failed to create fullscreen quad.");
-			return false;
+			return;
 		}
 	}
 
@@ -310,23 +311,24 @@ bool RenderViewWorldDeferred::OnRender(struct RenderViewPacket* packet, RHI* bac
 	std::vector<DrawCall> LightingDrawCalls;
 
 	// --- 收集 GBuffer 几何体的 DrawCall ---
-	uint32_t GeometryCount = packet->geometry_count;
-	for (uint32_t i = 0; i < GeometryCount; ++i) {
-		GeometryRenderData* SrcData = &packet->geometries[i];
-		if (!SrcData->geometry) continue;
+	for (uint32_t i = 0; i < RenderProxies.Size(); ++i) {
+		FRenderProxy* RenderProxy = RenderProxies[i];
+		if (!RenderProxy || !RenderProxy->IsVisible()) continue;
 
-		UGeometry* geometry = SrcData->geometry;
-		if (!geometry) continue;
+		TArray<UGeometry*> Geometries = RenderProxy->GetMesh();
+		for (UGeometry* Geometry : Geometries) {
+			if (!Geometry || !Geometry->IsVisible()) continue;
 
-		DrawCall dc;
-		UMaterialInstance* Mat = geometry->GetMaterialInstance();
-		dc.geometry = geometry;
-		dc.model = SrcData->model_mat;
-		dc.material= Mat;
-		dc.shader = GBufferShader;
-		dc.userData = nullptr;
-		dc.sortKey = ((uint64_t)dc.shader->ID << 32) | (uint64_t)Mat->GetInternalID();
-		GBufferDrawCalls.push_back(dc);
+			DrawCall dc;
+			UMaterialInstance* Mat = Geometry->GetMaterialInstance();
+			dc.geometry = Geometry;
+			dc.model = RenderProxy->GetModelMatrix();
+			dc.material = Mat;
+			dc.shader = GBufferShader;
+			dc.userData = nullptr;
+			dc.sortKey = ((uint64_t)dc.shader->ID << 32) | (uint64_t)Mat->GetInternalID();
+			GBufferDrawCalls.push_back(dc);
+		}
 	}
 
 	// 状态排序
@@ -352,14 +354,17 @@ bool RenderViewWorldDeferred::OnRender(struct RenderViewPacket* packet, RHI* bac
 
 	// 绑定 Pass 全局不变量
 	FFrameData GBufferData;
-	GBufferData.projection = packet->projection_matrix;
-	GBufferData.view = packet->view_matrix;
-	GBufferData.cameraPosition = packet->view_position;
+	GBufferData.projection = ProjectionMatrix;
+	GBufferData.view = WorldCamera->GetViewMatrix();
+	GBufferData.cameraPosition = WorldCamera->GetActorLocation();
 	GBufferData.renderMode = render_mode;
-	GBufferData.time = packet->global_time;
+	GBufferData.time = 0.0f;
 
-	GBufferPass->Begin(&GBufferPass->Targets[render_target_index]);
-	back_renderer->ExecuteDrawCalls(GBufferDrawCalls, frame_number, GBufferData);
+	uint8_t RTIndex = Renderer->GetWindowAttachmentIndex();
+	uint64_t FrameNumber = Renderer->GetFrameNum();
+
+	GBufferPass->Begin(&GBufferPass->Targets[RTIndex]);
+	Renderer->ExecuteDrawCalls(GBufferDrawCalls, FrameNumber, GBufferData);
 	GBufferPass->End();
 
 	// 阶段三：第二通道 —— 延迟光照通道绘制（直接呼叫后端执行）
@@ -367,12 +372,94 @@ bool RenderViewWorldDeferred::OnRender(struct RenderViewPacket* packet, RHI* bac
 
 	// 绑定 Pass 全局不变量
 	FFrameData LightingData;
-	LightingData.time = packet->global_time;
+	LightingData.time = 0.0f;
 	LightingData.gBuffer = CurrentGBuffer;
 
-	LightingPass->Begin(&LightingPass->Targets[render_target_index]);
-	back_renderer->ExecuteDrawCalls(LightingDrawCalls, frame_number, LightingData);
+	LightingPass->Begin(&LightingPass->Targets[RTIndex]);
+	Renderer->ExecuteDrawCalls(LightingDrawCalls, FrameNumber, LightingData);
 	LightingPass->End();
+}
+
+bool RenderViewWorldDeferred::OnRender(struct RenderViewPacket* packet, RHI* back_renderer, size_t frame_number, size_t render_target_index) {
+	//// 确保全屏四边形存在
+	//if (!FullscreenQuad) {
+	//	if (!CreateFullscreenQuad()) {
+	//		GLOG(Log::eError, "Failed to create fullscreen quad.");
+	//		return false;
+	//	}
+	//}
+
+	//// 获取当前帧的 GBuffer 纹理组
+	//GBufferSet* CurrentGBuffer = GetCurrentGBufferSet(0);
+
+	//// 阶段一：DRAWCALL 生成、收集与状态排序
+	//std::vector<DrawCall> GBufferDrawCalls;
+	//std::vector<DrawCall> LightingDrawCalls;
+
+	//// --- 收集 GBuffer 几何体的 DrawCall ---
+	//uint32_t GeometryCount = packet->geometry_count;
+	//for (uint32_t i = 0; i < GeometryCount; ++i) {
+	//	GeometryRenderData* SrcData = &packet->geometries[i];
+	//	if (!SrcData->geometry) continue;
+
+	//	UGeometry* geometry = SrcData->geometry;
+	//	if (!geometry) continue;
+
+	//	DrawCall dc;
+	//	UMaterialInstance* Mat = geometry->GetMaterialInstance();
+	//	dc.geometry = geometry;
+	//	dc.model = SrcData->model_mat;
+	//	dc.material= Mat;
+	//	dc.shader = GBufferShader;
+	//	dc.userData = nullptr;
+	//	dc.sortKey = ((uint64_t)dc.shader->ID << 32) | (uint64_t)Mat->GetInternalID();
+	//	GBufferDrawCalls.push_back(dc);
+	//}
+
+	//// 状态排序
+	//std::sort(GBufferDrawCalls.begin(), GBufferDrawCalls.end(), [](const DrawCall& a, const DrawCall& b) {
+	//	return a.sortKey < b.sortKey;
+	//	});
+
+	//// --- 收集 延迟光照 的 DrawCall ---
+	//DrawCall LightingDC;
+	//UMaterialInstance* DeferredLightingMat = FullscreenQuad->GetMaterialInstance();
+	//LightingDC.geometry = FullscreenQuad;
+	//LightingDC.model = Matrix4::Identity();
+	//LightingDC.material = DeferredLightingMat;
+	//LightingDC.shader = LightingShader;
+	//LightingDC.userData = CurrentGBuffer;
+	//LightingDC.sortKey = ((uint64_t)LightingDC.shader->ID << 32) | (uint64_t)DeferredLightingMat->GetInternalID();
+
+	//LightingDrawCalls.push_back(LightingDC);
+
+
+	//// 阶段二：第一通道 —— G-BUFFER 通道绘制（直接呼叫后端执行）
+	//IRenderpass* GBufferPass = (IRenderpass*)&Passes[0];
+
+	//// 绑定 Pass 全局不变量
+	//FFrameData GBufferData;
+	//GBufferData.projection = packet->projection_matrix;
+	//GBufferData.view = packet->view_matrix;
+	//GBufferData.cameraPosition = packet->view_position;
+	//GBufferData.renderMode = render_mode;
+	//GBufferData.time = packet->global_time;
+
+	//GBufferPass->Begin(&GBufferPass->Targets[render_target_index]);
+	//back_renderer->ExecuteDrawCalls(GBufferDrawCalls, frame_number, GBufferData);
+	//GBufferPass->End();
+
+	//// 阶段三：第二通道 —— 延迟光照通道绘制（直接呼叫后端执行）
+	//IRenderpass* LightingPass = (IRenderpass*)&Passes[1];
+
+	//// 绑定 Pass 全局不变量
+	//FFrameData LightingData;
+	//LightingData.time = packet->global_time;
+	//LightingData.gBuffer = CurrentGBuffer;
+
+	//LightingPass->Begin(&LightingPass->Targets[render_target_index]);
+	//back_renderer->ExecuteDrawCalls(LightingDrawCalls, frame_number, LightingData);
+	//LightingPass->End();
 
 	return true;
 }

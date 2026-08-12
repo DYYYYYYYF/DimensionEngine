@@ -7,7 +7,7 @@ class IRenderer;
 
 class DebugConsoleActor : public AActor {
 public:
-	DebugConsoleActor();
+	DebugConsoleActor(const FString& Name);
 	virtual ~DebugConsoleActor();
 
 public:

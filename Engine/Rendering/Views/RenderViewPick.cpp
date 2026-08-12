@@ -216,7 +216,7 @@ bool RenderViewPick::OnBuildPacket(IRenderviewPacketData* data, struct RenderVie
 	out_packet->view = this;
 
 	// Get active camera.
-	ACameraActor* WorldCamera = CameraSystem::Get().GetDefault();
+	ACameraActor* WorldCamera = CameraSystem::Get().GetMainCamera();
 	if (!WorldCamera) {
 		return false;
 	}
