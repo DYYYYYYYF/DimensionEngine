@@ -36,7 +36,7 @@ void UTextComponent::Tick(float deltaTime) {
 }
 
 bool UTextComponent::CreateRenderProxy() {
-	RenderProxy = NewObject<FRenderProxy>(MemoryType::eMemory_Type_Renderer);
+	RenderProxy = NewObject<FTextRenderProxy>(MemoryType::eMemory_Type_Renderer);
 	if (!RenderProxy) {
 		GLOG(Log::eError, "Failed to create RenderProxy for StaticMeshComponent.");
 		return false;
@@ -63,7 +63,6 @@ void UTextComponent::UpdateRenderProxy() {
 
 	// 填充数据
 	Proxy->SetMesh(TextGeometry);
-	Proxy->SetRenderFeatureFlags(ERenderFeature::UI);
 	Proxy->SetModelMatrix(Owner->GetWorldTransform());
 	Proxy->SetUniqueID(Owner->GetUniqueID());
 }

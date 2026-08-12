@@ -4,7 +4,7 @@
 
 class UGeometry;
 
-class UStaticMeshComponent : public UMeshComponent {
+class ENGINE_API UStaticMeshComponent : public UMeshComponent {
 public:
 	DECLARE_CLASS_TYPE(UStaticMeshComponent)
 

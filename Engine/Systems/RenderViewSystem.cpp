@@ -211,22 +211,6 @@ IRenderView* RenderViewSystem::Get(ERenderViewType Type) {
 	return nullptr;
 }
 
-bool RenderViewSystem::BuildPacket(IRenderView* view, IRenderviewPacketData* data, struct RenderViewPacket* out_packet) {
-	if (out_packet && view) {
-		return view->OnBuildPacket(data, out_packet);
-	}
-
-	return false;
-}
-
-bool RenderViewSystem::OnRender(IRenderView* view, RenderViewPacket* packet, size_t frame_number, size_t render_target_index) {
-	if (view && Renderer) {
-		return view->OnRender(packet, Renderer->GetRenderBackend(), frame_number, render_target_index);
-	}
-
-	return false;
-}
-
 bool RenderViewSystem::LoadRenderviewConfig(const FString& path) {
 	std::vector<RenderViewConfig> RenderviewConfigs;
 

@@ -46,9 +46,6 @@ public:
 	virtual bool OnCreate(const RenderViewConfig& config) = 0;
 	virtual void OnDestroy() = 0;
 	virtual void OnResize(uint32_t width, uint32_t height) = 0;
-	virtual bool OnBuildPacket(IRenderviewPacketData* data, struct RenderViewPacket* out_packet) = 0;
-	virtual void OnDestroyPacket(struct RenderViewPacket* packet) = 0;
-	virtual bool OnRender(struct RenderViewPacket* packet, class RHI* back_renderer, size_t frame_number, size_t render_target_index) = 0;
 	virtual bool RegenerateAttachmentTarget(uint32_t passIndex, RenderTargetAttachment* attachment) = 0;
 
 	virtual void Render(const TArray<FRenderProxy*>& RenderObejcts) {};

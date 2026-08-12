@@ -10,7 +10,7 @@ class UTexture;
  * 这是一个纯虚类，主要用于定义一些列接口
  * 需要存放一些材质、纹理等资源，并且提供一个Draw接口供渲染系统调用
  */
-class UMeshComponent : public UPrimitiveComponent {
+class ENGINE_API UMeshComponent : public UPrimitiveComponent {
 public:
 	DECLARE_CLASS_TYPE(UMeshComponent)
 

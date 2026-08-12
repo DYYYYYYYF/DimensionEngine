@@ -11,11 +11,12 @@ enum ERenderFeature : uint32_t {
 	DeferredLighting = 1 << 2,
 	UI = 1 << 3,
 	Lighting = 1 << 4,
+	Skybox = 1 << 5,
 };
 
 class FRenderProxy {
 public:
-	FRenderProxy() : bVisible(true), DistanceToCamera(0.0f) {}
+	FRenderProxy() : bVisible(true), DistanceToCamera(0.0f), UniqueID(INVALID_ID), ModelMatrix(Matrix4::Identity()){}
 
 	void SetModelMatrix(const Matrix4& InModelMatrix) { ModelMatrix = InModelMatrix; }
 	const Matrix4& GetModelMatrix() const { return ModelMatrix; }
@@ -37,11 +38,13 @@ protected:
 	Matrix4 ModelMatrix;   // Transformation matrix for the proxy
 	bool bVisible;        // Visibility flag for rendering
 	float DistanceToCamera; // Distance from the camera for sorting purposes
-	uint64_t UniqueID = INVALID_ID;
+	uint64_t UniqueID;
 };
 
 class FStaticMeshRenderProxy : public FRenderProxy {
 public:
+	FStaticMeshRenderProxy() : FRenderProxy() { RenderFeatureFlags |= ERenderFeature::DeferredLighting; }
+
 	void SetMesh(TArray<UGeometry*> InMesh) { Mesh = InMesh; }
 	TArray<UGeometry*> GetMesh() const { return Mesh; }
 
@@ -56,6 +59,20 @@ protected:
 
 class FTextRenderProxy : public FRenderProxy {
 public:
+	FTextRenderProxy() : FRenderProxy(), Mesh(nullptr) { RenderFeatureFlags |= ERenderFeature::UI; }
+
+	void SetMesh(UGeometry* InMesh) { Mesh = InMesh; }
+	UGeometry* GetMesh() const { return Mesh; }
+
+protected:
+	UGeometry* Mesh;
+
+};
+
+class FSkyboxRenderProxy : public FRenderProxy {
+public:
+	FSkyboxRenderProxy() : FRenderProxy(), Mesh(nullptr) { RenderFeatureFlags |= ERenderFeature::Skybox; }
+
 	void SetMesh(UGeometry* InMesh) { Mesh = InMesh; }
 	UGeometry* GetMesh() const { return Mesh; }
 

@@ -210,9 +210,6 @@ void DebugConsoleActor::Tick(float DeltaTime) {
 	// Once the string is built, set the text.
 	TextControl->SetText(Buffer.c_str());
 	Dirty = false;
-
-	TextControl->Tick(DeltaTime);
-	EntryControl->Tick(DeltaTime);
 }
 
 ATextActor* DebugConsoleActor::GetText() {

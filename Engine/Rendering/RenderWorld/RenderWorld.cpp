@@ -4,18 +4,21 @@
 #include "Systems/RenderViewSystem.hpp"
 #include "Rendering/Resources/Geometry/Geometry.hpp"
 
-void URenderWorld::Record(float DeltaTime) {
+void URenderWorld::Record() {
 	// 这里临时调用Renderview
 	FrustumCull();
 
-	IRenderView* RenderViewDeferred = RenderViewSystem::Get().Get(ERenderViewType::Deferred);
-	if (!RenderViewDeferred) return;
-	IRenderView* RenderViewUI = RenderViewSystem::Get().Get(ERenderViewType::UI);
-	if (!RenderViewUI) return;
+	IRenderView* RenderviewSkybox = RenderViewSystem::Get().Get(ERenderViewType::Skybox);
+	if (!RenderviewSkybox) return;
+	IRenderView* RenderviewDeferred = RenderViewSystem::Get().Get(ERenderViewType::Deferred);
+	if (!RenderviewDeferred) return;
+	IRenderView* RenderviewUI = RenderViewSystem::Get().Get(ERenderViewType::UI);
+	if (!RenderviewUI) return;
 
 	// 临时使用数组存放，后续可以作为成员变量
 	TArray<FRenderProxy*> VisibleProxies;
 	TArray<FRenderProxy*> UIProxies;
+	TArray<FRenderProxy*> SkyboxProxies;
 	for (FRenderProxy* Proxy : Proxies) {
 		if (Proxy->GetRenderFeatureFlags() & ERenderFeature::DeferredLighting) {
 			VisibleProxies.Push(Proxy);
@@ -23,10 +26,14 @@ void URenderWorld::Record(float DeltaTime) {
 		if (Proxy->GetRenderFeatureFlags() & ERenderFeature::UI) {
 			UIProxies.Push(Proxy);
 		}
+		if (Proxy->GetRenderFeatureFlags() & ERenderFeature::Skybox) {
+			SkyboxProxies.Push(Proxy);
+		}
 	}
 
-	RenderViewDeferred->Render(VisibleProxies);
-	RenderViewUI->Render(UIProxies);
+	RenderviewSkybox->Render(SkyboxProxies);
+	RenderviewDeferred->Render(VisibleProxies);
+	RenderviewUI->Render(UIProxies);
 }
 
 void URenderWorld::AddProxy(FRenderProxy* Proxy) {

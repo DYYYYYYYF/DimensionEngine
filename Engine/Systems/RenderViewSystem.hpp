@@ -17,17 +17,13 @@ public:
 	static DAPI RenderViewSystem& Get();
 
 public:
+	IRenderView* Get(ERenderViewType Type);
+
 	bool Initialize(IRenderer* renderer, SRenderViewSystemConfig config);
 	void Shutdown();
 
 	bool Create(const RenderViewConfig& config);
 	void OnWindowResize(uint32_t width, uint32_t height);
-
-	DAPI IRenderView* Get(ERenderViewType Type);
-
-	DAPI bool BuildPacket(IRenderView* view, IRenderviewPacketData* data, struct RenderViewPacket* out_packet);
-	bool OnRender(IRenderView* view, RenderViewPacket* packet, size_t frame_number, size_t render_target_index);
-
 	void RegenerateRendertargets(IRenderView* view);
 
 private:

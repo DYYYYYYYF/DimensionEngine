@@ -19,7 +19,6 @@ public:
 		Allocator = nullptr;
 		Shaders = nullptr;
 		GraphicsCommandBuffers = nullptr;
-		FrameDeltaTime = 0.0;
 		FrameBufferWidth = 1920;
 		FrameBufferHeight = 1080;
 		FramebufferSizeGenerate = 0;
@@ -48,8 +47,6 @@ public:
 	}
 
 public:
-	double FrameDeltaTime;
-
 	uint32_t FrameBufferWidth;
 	uint32_t FrameBufferHeight;
 

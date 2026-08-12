@@ -31,7 +31,7 @@ public:
 	virtual void Shutdown();
 
 	virtual void OnResize(unsigned short width, unsigned short height);
-	virtual bool DrawFrame(UWorld* World, SRenderPacket* packet);
+	virtual bool DrawFrame(UWorld* World);
 	virtual void ExecuteDrawCalls(const std::vector<DrawCall>& draw_calls, size_t frame_number, const FFrameData& data);
 
 public:

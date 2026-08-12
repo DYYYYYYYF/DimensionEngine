@@ -18,6 +18,7 @@
 #include "Rendering/Interface/IRenderpass.hpp"
 #include "Rendering/Interface/IRendererBackend.hpp"
 #include "Framework/Components/CameraComponent.h"
+#include "Rendering/RenderWorld/RenderProxy.h"
 
 static bool RenderViewSkyboxOnEvent(eEventCode code, void* sender, void* listenerInst, SEventContext context) {
 	IRenderView* self = (IRenderView*)listenerInst;
@@ -36,16 +37,13 @@ static bool RenderViewSkyboxOnEvent(eEventCode code, void* sender, void* listene
 	return false;
 }
 
-RenderViewSkybox::RenderViewSkybox() {
-	
-}
-
 RenderViewSkybox::RenderViewSkybox(const RenderViewConfig& config) {
 	Type = config.type;
 	Name = config.name;
 	CustomShaderName = config.custom_shader_name;
 	RenderpassCount = config.pass_count;
 	Passes.resize(RenderpassCount);
+	Renderer = IRenderer::GetRenderer();
 }
 
 bool RenderViewSkybox::OnCreate(const RenderViewConfig& config) {
@@ -104,65 +102,31 @@ void RenderViewSkybox::OnResize(uint32_t width, uint32_t height) {
 	}
 }
 
-bool RenderViewSkybox::OnBuildPacket(IRenderviewPacketData* data, struct RenderViewPacket* out_packet) {
-	if (data == nullptr || out_packet == nullptr) {
-		GLOG(Log::eError, "RenderViewSkybox::OnBuildPacke() Requires valid pointer to packet and data.");
-		return false;
-	}
-
-	SkyboxPacketData* SkyboxData = (SkyboxPacketData*)data;
-	out_packet->view = this;
-
-	// Set matrix, etc.
-	UCameraComponent* CameraComp = WorldCamera->GetCameraComponent();
-	if (!CameraComp) {
-		GLOG(Log::eError, "RenderViewSkybox::OnBuildPacke() Camera is nullptr.");
-		return false;
-	}
-
-	out_packet->projection_matrix = ProjectionMatrix;
-	out_packet->view_matrix = CameraComp->GetViewMatrix();
-	out_packet->view_position = CameraComp->GetPosition();
-
-	// Just set the extended data to the skybox data.
-	out_packet->extended_data = NewObject<SkyboxPacketData>(*SkyboxData);
-
-	return true;
-}
-
-void RenderViewSkybox::OnDestroyPacket(struct RenderViewPacket* packet) {
-	if (packet->extended_data) {
-		DeleteObject(packet->extended_data);
-		packet->extended_data = nullptr;
-	}
-
-	// No much to do here, just zero mem.
-	Memory::Zero(packet, sizeof(RenderViewPacket));
-}
-
 bool RenderViewSkybox::RegenerateAttachmentTarget(uint32_t passIndex, RenderTargetAttachment* attachment) {
 	return false;
 }
 
-bool RenderViewSkybox::OnRender(struct RenderViewPacket* packet, RHI* back_renderer, size_t frame_number, size_t render_target_index) {
-	SkyboxPacketData* SkyboxData = (SkyboxPacketData*)packet->extended_data;
-	if (!SkyboxData) {
-		return false;
+void RenderViewSkybox::Render(const TArray<FRenderProxy*>& RenderObejcts) {
+	if (RenderObejcts.IsEmpty()) return;
+
+	UGeometry* SkyboxGeometry = nullptr;
+	size_t ObjectCount = RenderObejcts.Size();
+	if (ObjectCount > 1) {
+		GLOG(Log::Level::eWarn, "");
 	}
 
-	USkybox* SkyBoxAsset = SkyboxData->sb;
-	if (!SkyBoxAsset) {
-		return false;
-	}
+	// 使用最后一个Skybox对象
+	FSkyboxRenderProxy* Proxy = Cast<FSkyboxRenderProxy*>(RenderObejcts[ObjectCount-1]);
+	if (!Proxy) return;
 
-	UGeometry* Geo = SkyBoxAsset->GetGeometry();
-	if (!Geo) {
-		return false;
+	SkyboxGeometry = Proxy->GetMesh();
+	if (!SkyboxGeometry) {
+		return;
 	}
 
 	UCameraComponent* CameraComp = WorldCamera->GetCameraComponent();
 	if (!CameraComp) {
-		return false;
+		return;
 	}
 
 	// Skybox需要让它始终和摄像机原点一致（玩家永远不能到达）
@@ -171,86 +135,30 @@ bool RenderViewSkybox::OnRender(struct RenderViewPacket* packet, RHI* back_rende
 	ViewMatrix.data[13] = 0.0f;
 	ViewMatrix.data[14] = 0.0f;
 
+	// Record
 	FFrameData Data;
-	Data.projection = packet->projection_matrix;
+	Data.projection = ProjectionMatrix;
 	Data.view = ViewMatrix;
-	Data.time = packet->global_time;
+	Data.time = 0.0f;
 
 	DrawCall DC;
-	DC.geometry = Geo;
+	DC.geometry = SkyboxGeometry;
 	DC.model = Matrix4::Identity();
-	DC.material = Geo->GetMaterialInstance();
+	DC.material = SkyboxGeometry->GetMaterialInstance();
 	DC.shader = UsedShader;
-	DC.userData = SkyboxData->sb;
 	DC.sortKey = ((uint64_t)UsedShader->ID << 32) | (uint64_t)DC.material->GetInternalID();
 
 	std::vector<DrawCall> DrawCalls;
 	DrawCalls.push_back(DC);
 
-	for (uint32_t p = 0; p < RenderpassCount; ++p) {
-		IRenderpass* Pass = (IRenderpass*)&Passes[p];
-		Pass->Begin(&Pass->Targets[render_target_index]);
-		back_renderer->ExecuteDrawCalls( DrawCalls, frame_number, Data);
-		Pass->End();
-	}
+	// Execute pass
+	IRenderpass* SkyboxPass = (IRenderpass*)&Passes[0];
+	if (!SkyboxPass) return;
 
+	uint8_t RTIndex = Renderer->GetWindowAttachmentIndex();
+	uint64_t FrameNumber = Renderer->GetFrameNum();
 
-	//for (uint32_t p = 0; p < RenderpassCount; ++p) {
-	//	IRenderpass* Pass = (IRenderpass*)&Passes[p];
-	//	Pass->Begin(&Pass->Targets[render_target_index]);
-
-	//	if (!UsedShader->Use()) {
-	//		GLOG(Log::eError, "RenderViewSkybox::OnRender() Failed to use material shader. Render frame failed.");
-	//		return false;
-	//	}
-
-	//	UCameraComponent* CameraComp = WorldCamera->GetCameraComponent();
-	//	if (!CameraComp) {
-	//		GLOG(Log::eError, "RenderViewSkybox::OnBuildPacke() Camera is nullptr.");
-	//		return false;
-	//	}
-
-	//	// Get the view matrix, but zero out the position so the skybox stays put on screen.
-	//	Matrix4 ViewMatrix = CameraComp->GetViewMatrix();
-	//	ViewMatrix.data[12] = 0.0f;
-	//	ViewMatrix.data[13] = 0.0f;
-	//	ViewMatrix.data[14] = 0.0f;
-
-	//	// Apply globals
-	//	// TODO: This is terrible
-	//	UsedShader->BindGlobal();
-	//	if (!UsedShader->SetUniformByIndex(ProjectionLocation, &packet->projection_matrix)) {
-	//		GLOG(Log::eError, "RenderViewSkybox::OnRender() Failed to apply skybox projection uniform.");
-	//		return false;
-	//	}
-
-	//	if (!UsedShader->SetUniformByIndex(ViewLocation, &ViewMatrix)) {
-	//		GLOG(Log::eError, "RenderViewSkybox::OnRender() Failed to apply skybox view uniform.");
-	//		return false;
-	//	}
-
-	//	UsedShader->ApplyGlobal();
-
-	//	// Instance.
-	//	UsedShader->BindInstance(SkyboxData->sb->InstanceID);
-	//	if (!UsedShader->SetUniformByIndex(CubeMapLocation, &SkyboxData->sb->CubeMap)) {
-	//		GLOG(Log::eError, "RenderViewSkybox::OnRender() Failed to apply cube map uniform.");
-	//		return false;
-	//	}
-
-	//	bool NeedsUpdate = SkyboxData->sb->RenderFrameNumber != frame_number;
-	//	UsedShader->ApplyInstance(NeedsUpdate);
-
-	//	// Sync the frame num.
-	//	SkyboxData->sb->RenderFrameNumber = frame_number;
-
-	//	// Draw
-	//	GeometryRenderData RenderData;
-	//	RenderData.geometry = SkyboxData->sb->g;
-	//	back_renderer->DrawGeometry(&RenderData);
-
-	//	Pass->End();
-	//}
-
-	return true;
+	SkyboxPass->Begin(&SkyboxPass->Targets[RTIndex]);
+	Renderer->ExecuteDrawCalls(DrawCalls, FrameNumber, Data);
+	SkyboxPass->End();
 }

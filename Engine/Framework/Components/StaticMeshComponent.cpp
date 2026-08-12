@@ -44,7 +44,6 @@ void UStaticMeshComponent::UpdateRenderProxy() {
 
 	// 填充数据
 	Proxy->SetMesh(Mesh);
-	Proxy->SetRenderFeatureFlags(ERenderFeature::DeferredLighting);
 	Proxy->SetBoundingBox(GetBoundingBox());
 	Proxy->SetModelMatrix(Owner->GetWorldTransform());
 	Proxy->SetUniqueID(Owner->GetUniqueID());

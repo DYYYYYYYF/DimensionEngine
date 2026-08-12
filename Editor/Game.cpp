@@ -23,6 +23,7 @@
 #include "GameLogic/TestActors/RotationCubeActor.h"
 #include "Framework/Components/CameraComponent.h"
 #include <Scene/World.h>
+#include "Framework/Classes/SkyboxActor.h"
 
 bool GameOnEvent(eEventCode code, void* sender, void* listender_inst, SEventContext context) {
 	GameInstance* GameInst = (GameInstance*)listender_inst;
@@ -169,6 +170,8 @@ bool GameInstance::Initialize() {
 
 	// Load console
 	GameConsole->Initialize();
+	World->AddActor(GameConsole->GetText());
+	World->AddActor(GameConsole->GetEntryText());
 
 	// Skybox
 	SB = NewObject<USkybox>();
@@ -180,6 +183,11 @@ bool GameInstance::Initialize() {
 	if (!SB->Create("SkyboxCube")) {
 		GLOG(Log::eError, "Failed to create skybox. Exiting...");
 		return false;
+	}
+
+	ASkyboxActor* SkyboxActor = NewObject<ASkyboxActor>("SkyboxActor");
+	if (SkyboxActor) {
+		World->AddActor(SkyboxActor);
 	}
 
 	// World meshes
@@ -398,80 +406,24 @@ bool GameInstance::Render(SRenderPacket* packet, float delta_time) {
 	GameTime += delta_time;
 
 	// TODO: Read from config.
-	packet->view_count = 4;
+	packet->view_count = 0;
 	packet->views.resize(packet->view_count);
 	uint32_t ViewCounter = 0;
 
-	RenderViewSystem& RenderviewSys = RenderViewSystem::Get();
+	//IRenderView* PickView = RenderviewSys.Get(ERenderViewType::Pick);
+	//if (PickView) {
+	//	// Pick uses both world and ui packet data.
+	//	PickPacketData PickPacket;
+	//	PickPacket.UIMeshData = UIPacket.meshData;
+	//	PickPacket.WorldMeshData = std::vector<GeometryRenderData>();
+	//	PickPacket.Texts = UIPacket.Textes;
+	//	PickPacket.TextCount = UIPacket.textCount;
 
-	// Skybox
-	SkyboxPacketData SkyboxData;
-	SkyboxData.sb = SB;
-	IRenderView* SkyboxView = RenderviewSys.Get(ERenderViewType::Skybox);
-	if (SkyboxView) {
-		if (!RenderviewSys.BuildPacket(SkyboxView, &SkyboxData, &packet->views[ViewCounter++])) {
-			GLOG(Log::eError, "Failed to build packet for view 'World_Opaque'.");
-			return false;
-		}
-	}
-
-	// World
-	IRenderView* WorldView = RenderviewSys.Get(ERenderViewType::Deferred);
-	if(WorldView) {
-		WorldPacketData WorldData;
-		WorldData.Meshes = std::vector<GeometryRenderData>();
-		WorldData.GlobalTime = GameTime;
-		if (!RenderviewSys.BuildPacket(WorldView, &WorldData, &packet->views[ViewCounter++])) {
-			GLOG(Log::eError, "Failed to build packet for view 'World'.");
-			return false;
-		}
-	}
-	
-	// UI
-	uint32_t UIMeshCount = 0;
-	AStaticMeshActor** TempUIMeshes = (AStaticMeshActor**)Memory::Allocate(sizeof(AStaticMeshActor*) * 10, MemoryType::eMemory_Type_Array);
-	// TODO: Flexible size array.
-	for (uint32_t i = 0; i < (uint32_t)UIMeshes.Size(); ++i) {
-		if (UIMeshes[i]->Generation != INVALID_ID_U8) {
-			TempUIMeshes[UIMeshCount] = UIMeshes[i];
-			UIMeshCount++;
-		}
-	}
-
-	ATextActor** Texts = (ATextActor**)Memory::Allocate(sizeof(ATextActor*) * 4, MemoryType::eMemory_Type_Array);
-	Texts[0] = TestText;
-	Texts[1] = TestSysText;
-	Texts[2] = GameConsole->GetText();
-	Texts[3] = GameConsole->GetEntryText();
-
-	UIPacketData UIPacket;
-	UIPacket.meshData.mesh_count = UIMeshCount;
-	UIPacket.meshData.meshes = (AActor**)TempUIMeshes;
-	UIPacket.textCount = 4;
-	UIPacket.Textes = Texts;
-
-	IRenderView* UIView = RenderviewSys.Get(ERenderViewType::UI);
-	if (UIView) {
-		if (!RenderviewSys.BuildPacket(UIView, &UIPacket, &packet->views[ViewCounter++])) {
-			GLOG(Log::eError, "Failed to build packet for view 'UI'.");
-			return false;
-		}
-	}
-
-	IRenderView* PickView = RenderviewSys.Get(ERenderViewType::Pick);
-	if (PickView) {
-		// Pick uses both world and ui packet data.
-		PickPacketData PickPacket;
-		PickPacket.UIMeshData = UIPacket.meshData;
-		PickPacket.WorldMeshData = std::vector<GeometryRenderData>();
-		PickPacket.Texts = UIPacket.Textes;
-		PickPacket.TextCount = UIPacket.textCount;
-
-		if (!RenderviewSys.BuildPacket(PickView, &PickPacket, &packet->views[ViewCounter++])) {
-			GLOG(Log::eError, "Failed to build packet for view 'Pick'.");
-			return false;
-		}
-	}
+	//	if (!RenderviewSys.BuildPacket(PickView, &PickPacket, &packet->views[ViewCounter++])) {
+	//		GLOG(Log::eError, "Failed to build packet for view 'Pick'.");
+	//		return false;
+	//	}
+	//}
 
 	return true;
 }

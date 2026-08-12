@@ -6,7 +6,7 @@
 
 class URenderWorld {
 public:
-	void Record(float DeltaTime);
+	void Record();
 
 public:
 	void AddProxy(FRenderProxy* Proxy);

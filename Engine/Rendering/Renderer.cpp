@@ -108,7 +108,7 @@ void IRenderer::OnResize(unsigned short width, unsigned short height) {
 	}
 }
 
-bool IRenderer::DrawFrame(UWorld* World, SRenderPacket* packet) {
+bool IRenderer::DrawFrame(UWorld* World) {
 	RHI_->IncreaseFrameNum();
 
 	// Make sure the window is not currently being resized by waiting a designated
@@ -138,21 +138,13 @@ bool IRenderer::DrawFrame(UWorld* World, SRenderPacket* packet) {
 		}
 	}
 
-	if (RHI_->BeginFrame(packet->delta_time)) {
+	if (RHI_->BeginFrame()) {
 		unsigned char AttachmentIndex = RHI_->GetWindowAttachmentIndex();
-
-		// Render each view.
-		for (uint32_t i = 0; (uint32_t)i < packet->views.size(); ++i) {
-			if (!RenderViewSystem::Get().OnRender(packet->views[i].view, &packet->views[i], RHI_->GetFrameNum(), AttachmentIndex)) {
-				GLOG(Log::eError, "Error rendering view index '%i'.", i);
-				return false;
-			}
-		}
 
 		// Renderer Tick
 		URenderWorld* RWorld = World->GetRenderWorld();
 		if (RWorld) {
-			RWorld->Record((float)packet->delta_time);
+			RWorld->Record();
 		}
 
 		// End frame

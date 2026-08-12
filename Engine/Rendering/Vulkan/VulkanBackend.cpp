@@ -393,8 +393,7 @@ void VulkanRHI::Shutdown() {
 	}
 }
 
-bool VulkanRHI::BeginFrame(double delta_time){
-	Context.FrameDeltaTime = delta_time;
+bool VulkanRHI::BeginFrame(){
 	VulkanDevice* Device = &Context.Device;
 
 	// Check if recreating swap chain and boot out
