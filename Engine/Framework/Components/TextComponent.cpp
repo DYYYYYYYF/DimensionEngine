@@ -6,6 +6,7 @@
 #include "Systems/GeometrySystem.h"
 #include "Rendering/Renderer.hpp"
 #include "Rendering/Vulkan/VulkanBuffer.hpp"
+#include "Rendering/RenderWorld/RenderProxy.h"
 
 UTextComponent::UTextComponent(const FString& Name) : UPrimitiveComponent(Name){
 	TextFont = nullptr;
@@ -22,7 +23,33 @@ UTextComponent::~UTextComponent() {
 
 
 bool UTextComponent::CreateRenderProxy() {
+	RenderProxy = NewObject<FRenderProxy>(MemoryType::eMemory_Type_Renderer);
+	if (!RenderProxy) {
+		GLOG(Log::eError, "Failed to create RenderProxy for StaticMeshComponent.");
+		return false;
+	}
+
+	UpdateRenderProxy();
 	return true;
+}
+
+void UTextComponent::UpdateRenderProxy() {
+	if (!RenderProxy) {
+		GLOG(Log::eError, "RenderProxy is null. Cannot update.");
+		return;
+	}
+
+	AActor* Owner = GetOwner();
+	if (!Owner) {
+		GLOG(Log::eError, "StaticMeshComponent has no owner.");
+		return;
+	}
+
+	// 填充数据
+	//RenderProxy->SetMesh(TextGeometry);
+	RenderProxy->SetRenderFeatureFlags(ERenderFeature::UI);
+	RenderProxy->SetModelMatrix(Owner->GetWorldTransform());
+	RenderProxy->SetUniqueID(Owner->GetUniqueID());
 }
 
 bool UTextComponent::Create() {

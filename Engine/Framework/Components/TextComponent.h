@@ -13,6 +13,7 @@ public:
 	~UTextComponent();
 
 	virtual bool CreateRenderProxy() override;
+	virtual void UpdateRenderProxy() override;
 
 public:
 	bool Create();

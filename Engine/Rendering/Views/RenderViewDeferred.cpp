@@ -312,7 +312,7 @@ void RenderViewWorldDeferred::Render(const TArray<FRenderProxy*>& RenderProxies)
 
 	// --- 收集 GBuffer 几何体的 DrawCall ---
 	for (uint32_t i = 0; i < RenderProxies.Size(); ++i) {
-		FRenderProxy* RenderProxy = RenderProxies[i];
+		FStaticMeshRenderProxy* RenderProxy = Cast<FStaticMeshRenderProxy*>(RenderProxies[i]);
 		if (!RenderProxy || !RenderProxy->IsVisible()) continue;
 
 		TArray<UGeometry*> Geometries = RenderProxy->GetMesh();

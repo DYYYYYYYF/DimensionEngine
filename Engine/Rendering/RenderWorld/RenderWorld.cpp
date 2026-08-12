@@ -37,7 +37,9 @@ void URenderWorld::RemoveProxy(FRenderProxy* Proxy) {
 
 void URenderWorld::FrustumCull() {
 	for (uint32_t i = 0; i < (uint32_t)Proxies.Size(); ++i) {
-		FRenderProxy* Proxy = Proxies[i];
+
+		// 只有特定类型需要参与剔除（暂时只有StaticMesh）
+		FStaticMeshRenderProxy* Proxy = Cast<FStaticMeshRenderProxy*>(Proxies[i]);
 		if (!Proxy) continue;
 
 		// 获取视锥体

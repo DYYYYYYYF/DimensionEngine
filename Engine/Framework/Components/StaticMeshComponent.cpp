@@ -12,7 +12,7 @@ void UStaticMeshComponent::DrawMesh() {
 }
 
 bool UStaticMeshComponent::CreateRenderProxy() {
-	RenderProxy = NewObject<FRenderProxy>(MemoryType::eMemory_Type_Renderer);
+	RenderProxy = NewObject<FStaticMeshRenderProxy>(MemoryType::eMemory_Type_Renderer);
 	if (!RenderProxy) {
 		GLOG(Log::eError, "Failed to create RenderProxy for StaticMeshComponent.");
 		return false;
@@ -23,7 +23,8 @@ bool UStaticMeshComponent::CreateRenderProxy() {
 }
 
 void UStaticMeshComponent::UpdateRenderProxy() {
-	if (!RenderProxy) {
+	FStaticMeshRenderProxy* Proxy = Cast<FStaticMeshRenderProxy*>(RenderProxy);
+	if (!Proxy) {
 		GLOG(Log::eError, "RenderProxy is null. Cannot update.");
 		return;
 	}
@@ -40,11 +41,11 @@ void UStaticMeshComponent::UpdateRenderProxy() {
 	}
 
 	// 填充数据
-	RenderProxy->SetMesh(Mesh);
-	RenderProxy->SetRenderFeatureFlags(ERenderFeature::DeferredLighting);
-	RenderProxy->SetBoundingBox(GetBoundingBox());
-	RenderProxy->SetModelMatrix(Owner->GetWorldTransform());
-	RenderProxy->SetUniqueID(Owner->GetUniqueID());
+	Proxy->SetMesh(Mesh);
+	Proxy->SetRenderFeatureFlags(ERenderFeature::DeferredLighting);
+	Proxy->SetBoundingBox(GetBoundingBox());
+	Proxy->SetModelMatrix(Owner->GetWorldTransform());
+	Proxy->SetUniqueID(Owner->GetUniqueID());
 }
 
 void UStaticMeshComponent::SetMesh(TArray<UGeometry*> InMesh) {
