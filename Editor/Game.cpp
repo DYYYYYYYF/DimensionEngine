@@ -339,7 +339,7 @@ bool GameInstance::Update(float delta_time) {
 	Vector3 Up = CameraComp->Up();
 
 	// NOTE: starting at a reasonable default to avoid too many realloc.
-	uint32_t DrawCount = (uint32_t)World->GetVisibleActors().Size();
+	uint32_t DrawCount = (uint32_t)World->GetVisibleGeometryCount();
 
 	// TODO: Temp
 	std::string HoverdObjectName = "None";

@@ -39,7 +39,7 @@ public:
 	Matrix4 GetProjectionMatrix(ECameraProjectionMode Mode = ECameraProjectionMode::Perspective) const;
 	Matrix4 GetViewMatrix() const;
 
-	const FFrustum& GetFrustum();
+	const FFrustum& GetFrustum() const;
 
 public:
     // 引用次数
@@ -49,10 +49,6 @@ public:
 	void DecreaseReferenceCount(uint32_t count = 1) { ReferenceCount -= count; }
 
 private:
-	// 视锥体
-	FFrustum Frustum;
-	bool IsFrustumDirty = true;
-
 	// 其他
     uint32_t ReferenceCount = 0;
     UCameraComponent* CameraComponent;

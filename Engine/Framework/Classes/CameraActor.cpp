@@ -1,10 +1,6 @@
 ﻿#include "CameraActor.h"
 #include "Framework/Components/CameraComponent.h"
 
-// ============================================================
-//  构造
-// ============================================================
-
 ACameraActor::ACameraActor()
 	: AActor("CameraActor") {
 	CameraComponent = CreateComponent<UCameraComponent>("CameraComponent");
@@ -14,10 +10,6 @@ ACameraActor::ACameraActor(const FString& Name)
 	: AActor(Name) {
 	CameraComponent = CreateComponent<UCameraComponent>("CameraComponent");
 }
-
-// ============================================================
-//  生命周期
-// ============================================================
 
 void ACameraActor::BeginPlay() {
 	AActor::BeginPlay();
@@ -33,14 +25,14 @@ void ACameraActor::Destroy() {
 }
 
 // 基础设置
-void ACameraActor::SetFOV(float FOV) { GetCameraComponent()->SetFOV(FOV); }
-float ACameraActor::GetFOV() const { return GetCameraComponent()->GetFOV(); }
-void ACameraActor::SetAspectRatio(float AspectRatio) { GetCameraComponent()->SetAspectRatio(AspectRatio); }
-float ACameraActor::GetAspectRatio() const { return GetCameraComponent()->GetAspectRatio(); }
-void ACameraActor::SetNearPlane(float NearPlane) { GetCameraComponent()->SetNearPlane(NearPlane); }
-float ACameraActor::GetNearPlane() const { return GetCameraComponent()->GetNearPlane(); }
-void ACameraActor::SetFarPlane(float FarPlane) { GetCameraComponent()->SetFarPlane(FarPlane); }
-float ACameraActor::GetFarPlane() const { return GetCameraComponent()->GetFarPlane(); }
+float ACameraActor::GetFOV() const { return CameraComponent->GetFOV(); }
+void ACameraActor::SetFOV(float FOV) { CameraComponent->SetFOV(FOV); }
+float ACameraActor::GetAspectRatio() const { return CameraComponent->GetAspectRatio(); }
+void ACameraActor::SetAspectRatio(float AspectRatio) { CameraComponent->SetAspectRatio(AspectRatio); }
+float ACameraActor::GetNearPlane() const { return CameraComponent->GetNearPlane(); }
+void ACameraActor::SetNearPlane(float NearPlane) { CameraComponent->SetNearPlane(NearPlane); }
+float ACameraActor::GetFarPlane() const { return CameraComponent->GetFarPlane(); }
+void ACameraActor::SetFarPlane(float FarPlane) { CameraComponent->SetFarPlane(FarPlane); }
 
 Matrix4 ACameraActor::GetProjectionMatrix(ECameraProjectionMode Mode) const {
 	switch (Mode) {
@@ -57,19 +49,6 @@ Matrix4 ACameraActor::GetViewMatrix() const {
 	return GetCameraComponent()->GetViewMatrix();
 }
 
-const FFrustum& ACameraActor::GetFrustum() {
-	if (IsFrustumDirty) {
-		Vector3 CameraPos = GetCameraComponent()->GetPosition();
-		Vector3 CameraForward = GetCameraComponent()->Forward();
-		Vector3 CameraRight = GetCameraComponent()->Right();
-		Vector3 CameraUp = GetCameraComponent()->Up();
-		float AspectRatio = GetAspectRatio();
-		float FOV = Deg2Rad(GetFOV());
-		float NearPlane = GetNearPlane();
-		float FarPlane = GetFarPlane();
-		Frustum = FFrustum(CameraPos, CameraForward, CameraRight, CameraUp, AspectRatio, FOV, NearPlane, FarPlane);
-		IsFrustumDirty = false;
-	}
-
-	return Frustum;
+const FFrustum& ACameraActor::GetFrustum() const {
+	return CameraComponent->GetFrustum();
 }

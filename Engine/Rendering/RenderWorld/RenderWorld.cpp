@@ -42,7 +42,13 @@ void URenderWorld::RemoveProxy(FRenderProxy* Proxy) {
 	}	
 }
 
+uint64_t URenderWorld::GetVisibleGeometryCount() const {
+	return VisibleCount;
+}
+
 void URenderWorld::FrustumCull() {
+	// 重置可见对象数量（geometry为最小单位）
+	VisibleCount = 0;
 	for (uint32_t i = 0; i < (uint32_t)Proxies.Size(); ++i) {
 
 		// 只有特定类型需要参与剔除（暂时只有StaticMesh）
@@ -55,8 +61,11 @@ void URenderWorld::FrustumCull() {
 		FFrustum CameraFrustum = WorldCamera->GetFrustum();
 
 		// 模型初筛
+		Matrix4 ModelMat = Proxy->GetModelMatrix();
 		const Extents3D& Extents = Proxy->GetBoundingBox();
-		bool IsMeshVisible = FrustumCullInside(CameraFrustum, Extents);
+		Extents3D PostExtents = TransformBounds(Extents, ModelMat);
+
+		bool IsMeshVisible = FrustumCullInside(CameraFrustum, PostExtents);
 		Proxy->SetVisibility(IsMeshVisible);
 
 		// 如果模型可见再判断是否模型内所有Submesh都可见
@@ -64,10 +73,20 @@ void URenderWorld::FrustumCull() {
 			TArray<UGeometry*> SubMeshes = Proxy->GetMesh();
 			for (UGeometry* Geometry : SubMeshes) {
 				const Extents3D& GeometryExtents = Geometry->GetBoundingBox();
-				Geometry->SetVisibility(FrustumCullInside(CameraFrustum, GeometryExtents));
+				Extents3D PostGeometryExtents = TransformBounds(GeometryExtents, ModelMat);
+				if (FrustumCullInside(CameraFrustum, PostGeometryExtents)) {
+					Geometry->SetVisibility(true);
+					VisibleCount++;
+				}
 			}
 		}
 	}
+}
+
+Extents3D URenderWorld::TransformBounds(const Extents3D& LocalBounds, const Matrix4& ModelMatrix) {
+	Vector3 ExtensMin = LocalBounds.min.Transform(ModelMatrix);
+	Vector3 ExtensMax = LocalBounds.max.Transform(ModelMatrix);
+	return Extents3D{ ExtensMin, ExtensMax };
 }
 
 bool URenderWorld::FrustumCullInside(const FFrustum& Frustum, const Extents3D& Extent) {
@@ -79,11 +98,8 @@ bool URenderWorld::FrustumCullInside(const FFrustum& Frustum, const Extents3D& E
 		// Bounding sphere calculation
 	case FrustumCullMode::eSphere_Cull:
 	{
-		float MMin = DMIN(DMIN(ExtentsMin.x, ExtentsMin.y), ExtentsMin.z);
-		float MMax = DMIN(DMIN(ExtentsMax.x, ExtentsMax.y), ExtentsMax.z);
-		float Diff = Dabs(MMax - MMin);
-		float Radius = Diff / 2.0f;
-
+		Vector3 HalfExtents = (ExtentsMax - ExtentsMin) * 0.5f;
+		float Radius = HalfExtents.Length();
 		return Frustum.IntersectsSphere(Center, Radius);
 	} break;
 	// AABB calculation

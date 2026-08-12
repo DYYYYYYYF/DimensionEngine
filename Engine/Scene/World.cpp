@@ -64,3 +64,12 @@ void UWorld::RemoveActor(AActor* Actor) {
 void UWorld::ClearActor() {
 	WorldActors.Clear();
 }
+
+uint64_t UWorld::GetVisibleGeometryCount() const {
+	URenderWorld* RenderViewWorld = GetRenderWorld();
+	if (!RenderViewWorld) {
+		return 0;
+	}
+
+	return RenderViewWorld->GetVisibleGeometryCount();
+}

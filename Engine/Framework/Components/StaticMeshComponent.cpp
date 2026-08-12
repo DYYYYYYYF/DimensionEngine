@@ -62,13 +62,13 @@ void UStaticMeshComponent::UpdateBounding() {
 		const Extents3D GeometryBounding = Geometry->GetBoundingBox();
 		// X
 		Bounding.min.x = DMIN(Bounding.min.x, GeometryBounding.min.x);
-		Bounding.max.x = DMIN(Bounding.max.x, GeometryBounding.max.x);
+		Bounding.max.x = DMAX(Bounding.max.x, GeometryBounding.max.x);
 		// Y
 		Bounding.min.y = DMIN(Bounding.min.y, GeometryBounding.min.y);
-		Bounding.max.y = DMIN(Bounding.max.y, GeometryBounding.max.y);
+		Bounding.max.y = DMAX(Bounding.max.y, GeometryBounding.max.y);
 		// Z
 		Bounding.min.z = DMIN(Bounding.min.z, GeometryBounding.min.z);
-		Bounding.max.z = DMIN(Bounding.max.z, GeometryBounding.max.z);
+		Bounding.max.z = DMAX(Bounding.max.z, GeometryBounding.max.z);
 	}
 
 	SetBoundingBox(Bounding);

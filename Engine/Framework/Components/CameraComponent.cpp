@@ -16,6 +16,11 @@ UCameraComponent::UCameraComponent(const FString& Name) :USceneComponent(Name) {
 	IsDirty_ = true;
 }
 
+void UCameraComponent::OnTransformChanged() {
+	// 更新视锥体
+	UpdateFrustum();
+}
+
 void UCameraComponent::SetPosition(const Vector3& Pos) {
 	AActor* Owner = GetOwner();
 	if (!Owner) {
@@ -51,7 +56,7 @@ Vector3 UCameraComponent::GetEulerAngles() const {
 	);
 }
 
-void UCameraComponent::RebuildViewMatrix() {
+void UCameraComponent::RebuildViewMatrix() const {
 	AActor* Owner = GetOwner();
 	if (!Owner) {
 		return;
@@ -63,7 +68,7 @@ void UCameraComponent::RebuildViewMatrix() {
 	IsDirty_ = false;
 }
 
-Matrix4 UCameraComponent::GetViewMatrix() {
+Matrix4 UCameraComponent::GetViewMatrix() const {
 	if (IsDirty_) {
 		RebuildViewMatrix();
 	}
@@ -163,6 +168,27 @@ void UCameraComponent::RotatePitch(float Amount) {
 	EulerRotation_.x = CLAMP(EulerRotation_.x, -PitchLimit, PitchLimit);
 	IsDirty_ = true;
 	SyncToTransform();
+}
+
+const FFrustum& UCameraComponent::GetFrustum() const {
+	// 基础数据改变时更新视锥体，摄像机位置改为通过OnTransformChanged更新
+	if (IsBaseDataDirty_) {
+		UpdateFrustum();
+	}
+
+	return Frustum_;
+}
+
+void UCameraComponent::UpdateFrustum() const {
+	Vector3 CameraPos = GetPosition();
+	Vector3 CameraForward = Forward();
+	Vector3 CameraRight = Right();
+	Vector3 CameraUp =  Up();
+	float AspectRatio = GetAspectRatio();
+	float FOV = Deg2Rad(GetFOV());
+	float NearPlane = GetNearPlane();
+	float FarPlane = GetFarPlane();
+	Frustum_ = FFrustum(CameraPos, CameraForward, CameraRight, CameraUp, AspectRatio, FOV, NearPlane, FarPlane);
 }
 
 void UCameraComponent::Reset() {

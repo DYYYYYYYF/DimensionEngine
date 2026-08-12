@@ -30,10 +30,10 @@ public:
 	void ClearActor();
 
 	const TArray<AActor*>& GetWorldActors() const { return WorldActors; }
-	const TArray<AActor*>& GetVisibleActors() const { return VisibleActors; }
+
+	uint64_t GetVisibleGeometryCount() const;
 
 protected:
 	TArray<AActor*> WorldActors;
-	TArray<AActor*> VisibleActors;
 	URenderWorld* RenderWorldInstance;
 };
