@@ -63,7 +63,7 @@ void UTextComponent::UpdateRenderProxy() {
 
 	// 填充数据
 	Proxy->SetMesh(TextGeometry);
-	Proxy->SetModelMatrix(Owner->GetWorldTransform());
+	Proxy->SetModelMatrix(GetLocalMatrix());
 	Proxy->SetUniqueID(Owner->GetUniqueID());
 }
 

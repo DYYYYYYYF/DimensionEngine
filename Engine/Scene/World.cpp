@@ -12,21 +12,49 @@ UWorld::~UWorld() {
 }
 
 bool UWorld::Initialize() {
-	RenderWorldInstance = NewObject<URenderWorld>();
-	if (!RenderWorldInstance) {
-		return false;
+	// Preinitialize
+	for (AActor* Actor : WorldActors) {
+		if (Actor) {
+			Actor->PreInitialize();
+		}
 	}
 
+	// Initialize
+	for (AActor* Actor : WorldActors) {
+		if (Actor) {
+			Actor->Initialize();
+		}
+	}
+
+	// Postinitialize
+	for (AActor* Actor : WorldActors) {
+		if (Actor) {
+			Actor->PostInitialize();
+		}
+	}
 
 	return true;
 }
 
+void UWorld::RegisterActors() {
+	for (AActor* Actor : WorldActors) {
+		if (Actor) {
+			Actor->RegisterComponents();
+		}
+	}
+}
+
 void UWorld::BeginPlay() {
+	// 初始化之后在进行Register，这时Mesh已经生成
+	RegisterActors();
+
 	for (AActor* Actor : WorldActors) {
 		if (Actor && Actor->IsEnableTick()) {
 			Actor->BeginPlay();
 		}
 	}
+
+	IsRunning = true;
 }
 
 void UWorld::Tick(float DeltaTime) {
@@ -38,6 +66,18 @@ void UWorld::Tick(float DeltaTime) {
 }
 
 void UWorld::Destroy() {
+	// 移除所有Actor
+	for (AActor* Actor : WorldActors) {
+		// 从场景中移除
+		Actor->UnregisterComponents();
+
+		// 清空内存
+		Actor->Destroy();
+		DeleteObject(Actor);
+		Actor = nullptr;
+	}
+	WorldActors.Empty();
+
 	if (RenderWorldInstance) {
 		DeleteObject(RenderWorldInstance);
 		RenderWorldInstance = nullptr;
@@ -45,10 +85,14 @@ void UWorld::Destroy() {
 }
 
 void UWorld::AddActor(AActor* Actor) {
-	Actor->SetWorld(this);
-	Actor->RegisterComponents();
 	if (!Actor) return;
+	Actor->SetWorld(this);
 	WorldActors.Push(Actor);
+
+	// 如果已经在运行中则直接注册
+	if (IsRunning) {
+		Actor->RegisterComponents();
+	}
 }
 
 void UWorld::RemoveActor(AActor* Actor) {

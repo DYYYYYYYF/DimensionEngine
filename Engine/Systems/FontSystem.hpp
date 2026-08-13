@@ -58,7 +58,7 @@ struct FontSystemConfig {
 //    直接调用 font->VerifyAtlas(text)，FontSystem 不再感知字体类型
 // ─────────────────────────────────────────────
 
-class FontSystem {
+class ENGINE_API FontSystem {
 public:
 	static FontSystem& Get();
 

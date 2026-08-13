@@ -42,6 +42,7 @@ void UTransformComponent::SetLocalTransform(const FTransform& Transform) {
 }
 
 void UTransformComponent::SetLocation(const Vector3& Position) {
+	if (Position.Equals(GetLocation())) return;
 	LocalTransform.SetLocation(Position);
 	MarkTransformDirty();
 }
@@ -55,6 +56,7 @@ const Vector3& UTransformComponent::GetLocation() const {
 }
 
 void UTransformComponent::SetQuaternion(const Quaternion& Rotation) {
+	if (Rotation.Equals(GetLocation())) return;
 	LocalTransform.SetQuaternion(Rotation);
 	MarkTransformDirty();
 }
@@ -68,6 +70,7 @@ const Quaternion& UTransformComponent::GetQuaternion() const {
 }
 
 void UTransformComponent::SetRotation(const Vector3& Rotation) {
+	if (Rotation.Equals(GetRotation())) return;
 	LocalTransform.SetRotation(Rotation);
 	MarkTransformDirty();
 }

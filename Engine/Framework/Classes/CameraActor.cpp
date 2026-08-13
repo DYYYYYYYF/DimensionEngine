@@ -4,11 +4,13 @@
 ACameraActor::ACameraActor()
 	: AActor("CameraActor") {
 	CameraComponent = CreateComponent<UCameraComponent>("CameraComponent");
+	SetRootComponent(CameraComponent);
 }
 
 ACameraActor::ACameraActor(const FString& Name)
 	: AActor(Name) {
 	CameraComponent = CreateComponent<UCameraComponent>("CameraComponent");
+	SetRootComponent(CameraComponent);
 }
 
 void ACameraActor::BeginPlay() {

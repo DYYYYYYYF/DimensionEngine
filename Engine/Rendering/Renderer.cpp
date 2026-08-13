@@ -139,8 +139,6 @@ bool IRenderer::DrawFrame(UWorld* World) {
 	}
 
 	if (RHI_->BeginFrame()) {
-		unsigned char AttachmentIndex = RHI_->GetWindowAttachmentIndex();
-
 		// Renderer Tick
 		URenderWorld* RWorld = World->GetRenderWorld();
 		if (RWorld) {

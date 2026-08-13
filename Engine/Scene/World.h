@@ -16,7 +16,7 @@ public:
 	virtual void PreInitialize() override {};
 	virtual bool Initialize() override;
 	virtual void PostInitialize() override {};
-
+	virtual void RegisterActors();
 	virtual void BeginPlay();
 	virtual void Tick(float DeltaTime);
 
@@ -34,6 +34,7 @@ public:
 	uint64_t GetVisibleGeometryCount() const;
 
 protected:
+	bool IsRunning = false;
 	TArray<AActor*> WorldActors;
 	URenderWorld* RenderWorldInstance;
 };

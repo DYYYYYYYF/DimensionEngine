@@ -219,7 +219,13 @@ bool Engine::Run() {
 		GlobalFileWatcher->AddWatchFolder("../Shaders/hlsl/");
 	}
 
+	// Begin play
+	GameInst->BeginPlay();
+
+	// DEBUG info
 	GLOG(Log::eDebug, Memory::GetMemoryUsageStr().CStr());
+
+	// Running
 	while (is_running) {
 		if (!Platform::PlatformPumpMessage(&platform)) {
 			is_running = false;
@@ -250,13 +256,6 @@ bool Engine::Run() {
 			// TODO: Refactor packet creation.
 			SRenderPacket Packet;
 			Packet.delta_time = DeltaTime;
-
-			// Call the game's render routine.
-			if (!GameInst->Render(&Packet, (float)DeltaTime)) {
-				GLOG(Log::eFatal, "Game render faield. shutting down.");
-				is_running = false;
-				break;
-			}
 
 			// 渲染帧数据
 			Renderer->DrawFrame(GameInst->GetWorld());

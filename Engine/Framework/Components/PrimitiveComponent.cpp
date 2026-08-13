@@ -31,6 +31,8 @@ void UPrimitiveComponent::OnRegister()
 
 	// 注册到场景后更新
 	UpdateRenderProxy();
+
+	UComponent::OnRegister();
 }
 
 void UPrimitiveComponent::OnUnregister() {
@@ -53,6 +55,8 @@ void UPrimitiveComponent::OnUnregister() {
 		RenderProxy = nullptr;
 		IsRegistered = false;
 	}
+
+	UComponent::OnUnregister();
 }
 
 void UPrimitiveComponent::OnTransformChanged() {

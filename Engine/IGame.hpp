@@ -29,8 +29,6 @@ public:
 	virtual bool Initialize() = 0;
 	virtual void BeginPlay() = 0;
 	virtual bool Update(float delta_time) = 0;
-	virtual bool Render(SRenderPacket* packet, float delta_time) = 0;
-
 	virtual void OnResize(unsigned int width, unsigned int height) = 0;
 
 	void Add(AActor* Actor) { World->AddActor(Actor); }

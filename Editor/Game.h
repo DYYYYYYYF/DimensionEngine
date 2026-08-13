@@ -1,6 +1,5 @@
 ﻿#pragma once
 
-#include "UI/Console/GameConsole.h"
 #include <Defines.hpp>
 #include <IGame.hpp>
 #include <Math/MathTypes.hpp>
@@ -16,7 +15,7 @@
 
 #define EDITOR_CONFIG_PATH FString::Format("%s%s", ROOT_PATH, "/Editor/Config.json")
 
-class USkybox;
+class DebugConsoleActor;
 class ACameraActor;
 
 class GameInstance : public IGame {
@@ -30,23 +29,14 @@ public:
 	virtual bool Initialize() override;
 	virtual void BeginPlay() override;
 	virtual bool Update(float delta_time) override;
-	virtual bool Render(struct SRenderPacket* packet, float delta_time) override;
 	virtual void OnResize(unsigned int width, unsigned int height) override;
 
 public:
 	ACameraActor* WorldCamera;
+	DebugConsoleActor* GameConsole;
 
 	// TODO: temp
-	USkybox* SB;
 	Keymap* ConsoleKeymap;
-	DebugConsoleActor* GameConsole = nullptr;
-
-	TArray<AStaticMeshActor*> Meshes;
-	TArray<AStaticMeshActor*> UIMeshes;
-	ATextActor* TestText = nullptr;
-	ATextActor* TestSysText = nullptr;
-
-	uint32_t HoveredObjectID = INVALID_ID;
 	CPythonModule TestPython;
 	// TODO: end temp
 

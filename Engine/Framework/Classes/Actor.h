@@ -17,6 +17,7 @@ public:
 	virtual ~AActor() { Destroy(); }
 
 public:
+	virtual bool Initialize();
 	virtual void BeginPlay();
 	virtual void RegisterComponents();
 	virtual void Tick(float DeltaTime);
@@ -71,11 +72,11 @@ public:
 		static_assert(std::is_base_of<UComponent, T>::value,
 			"T must derive from Component");
 
-		ContainComponents[T::StaticTypeID()] = Comp;
-
 		UComponent* BaseComp = static_cast<UComponent*>(Comp);
 		BaseComp->SetOwner(this);
 		BaseComp->OnAttach();
+
+		ContainComponents[T::StaticTypeID()].Push(Comp);
 	}
 
 	template<typename T>
@@ -89,7 +90,8 @@ public:
 		}
 
 		auto Pair = ContainComponents.Get(ID);
-		return static_cast<T*>(Pair.Value);
+		// 返回第一个
+		return static_cast<T*>(Pair.Value[0]);
 	}
 
 	template<typename T>
@@ -99,7 +101,13 @@ public:
 
 		uint32_t ID = T::StaticTypeID();
 		if (ContainComponents.Find(ID)) {
-			ContainComponents.Remove(ID);
+			TArray<UComponent*>& TypeComponents = ContainComponents.At(ID);
+			for (size_t i = 0; i < TypeComponents.Size(); ++i) {
+				if (TypeComponents[i] && TypeComponents[i]->GetUniqueID() == T.GetUniqueID()) {
+					TypeComponents.PopAt(i);
+					break;
+				}
+			}
 		}
 	}
 
@@ -119,7 +127,7 @@ protected:
 	USceneComponent* RootComponent;
 
 	// 组件存储（按类型索引）
-	TMap<uint32_t, UComponent*> ContainComponents;
+	TMap<uint32_t, TArray<UComponent*>> ContainComponents;
 
 	UWorld* World = nullptr;
 

@@ -1,38 +1,26 @@
 ﻿#include "Game.h"
 
-#include <Core/EngineLogger.hpp>
 #include <Core/Controller.hpp>
 #include <Core/Event.hpp>
-#include <Core/Metrics.hpp>
 #include <Systems/CameraSystem.h>
 #include <Platform/File/JsonObject.h>
-#include <Containers/FString.hpp>
+#include <Scene/World.h>
+#include "UI/Console/GameConsole.h"
+#include "GameLogic/UI/WindowDataPanel.h"
 
 // TODO: Temp
-#include <Systems/GeometrySystem.h>
-#include <Systems/TextureSystem.h>
-#include <Systems/ShaderSystem.h>
-#include <Systems/RenderViewSystem.hpp>
-#include <Core/Identifier.hpp>
-#include <Rendering/Renderer.hpp>
-#include <Rendering/Resources/Skybox/Skybox.hpp>
 #include "UI/Console/Keybinds.h"
 #include "UI/Console/GameCommand.h"
-#include "Math/ForwardDeclarations.hpp"
-#include "Framework/Classes/StaticMeshActor.h"
-#include "GameLogic/TestActors/RotationCubeActor.h"
+#include "GameLogic/LogicActors/RotationCubeActor.h"
 #include "Framework/Components/CameraComponent.h"
-#include <Scene/World.h>
 #include "Framework/Classes/SkyboxActor.h"
 
 bool GameOnEvent(eEventCode code, void* sender, void* listender_inst, SEventContext context) {
-	GameInstance* GameInst = (GameInstance*)listender_inst;
-
 	switch (code)
 	{
         case eEventCode::Object_Hover_ID_Changed: 
         {
-            GameInst->HoveredObjectID = context.data.u32[0];
+            //GameInst->HoveredObjectID = context.data.u32[0];
             return true;
         }break;
     }
@@ -83,8 +71,6 @@ bool GameInstance::Boot() {
 	JsonObject Content = JsonObject(MaterialAsset.ReadText());
 	WindowSize.Width = (uint16_t)Content.ReadInt("Window.Width");
 	WindowSize.Height = (uint16_t)Content.ReadInt("Window.Height");
-
-	GameConsole = NewObject<DebugConsoleActor>("Debug console panel");
 
 	Keybind GameKeybind;
 	GameKeybind.Setup(this);
@@ -143,11 +129,13 @@ bool GameInstance::Initialize() {
 	
 
 	// Create test ui text objects.
-	FString TestTextName = "Ubuntu Mono 21px";
-	FString TestTextContent = "Test! \n Yooo!";
-	TestText = NewObject<ATextActor>("Render information window.", UITextType::eUI_Text_Type_Bitmap, TestTextName, 21, TestTextContent);
+	ATextActor* TestText = NewObject<AWindowDataPanel>("Render information window.");
 	if (TestText) {
-		TestText->SetActorLocation(Vector3(150, 450, 0));
+		FString TestTextName = "Ubuntu Mono 21px";
+		FString TestTextContent = "Test! \n Yooo!";
+		TestText->SetFontSize(21);
+		TestText->SetTextFont(TestTextName, UITextType::eUI_Text_Type_Bitmap);
+		TestText->SetActorLocation(Vector3(350, 600, 0));
 		World->AddActor(TestText);
 	}
 
@@ -161,30 +149,20 @@ bool GameInstance::Initialize() {
 		\nF2: Normal view.\
 		\nF3: Material view.\
 		\nF4: Depth view.";
-	TestSysText = NewObject<ATextActor>("Keyboard map texts.", UITextType::eUI_Text_Type_System, TestSystemName, 25, TestSystemContent);
+	ATextActor* TestSysText = NewObject<ATextActor>("Keyboard map texts.", UITextType::eUI_Text_Type_System, TestSystemName, 25, TestSystemContent);
 
 	if (TestSysText) {
-		TestSysText->SetActorLocation(Vector3(100, 200, 0));
+		TestSysText->SetActorLocation(Vector3(100, 600, 0));
 		World->AddActor(TestSysText);
 	}
 
 	// Load console
-	GameConsole->Initialize();
-	World->AddActor(GameConsole->GetText());
-	World->AddActor(GameConsole->GetEntryText());
+	GameConsole = NewObject<DebugConsoleActor>("Debug console panel");
+	if (GameConsole) {
+		World->AddActor(GameConsole);
+	}
 
 	// Skybox
-	SB = NewObject<USkybox>();
-	if (!SB) {
-		GLOG(Log::eError, "Failed to create skybox. Exiting...");
-		return false;
-	}
-
-	if (!SB->Create("SkyboxCube")) {
-		GLOG(Log::eError, "Failed to create skybox. Exiting...");
-		return false;
-	}
-
 	ASkyboxActor* SkyboxActor = NewObject<ASkyboxActor>("SkyboxActor");
 	if (SkyboxActor) {
 		World->AddActor(SkyboxActor);
@@ -194,7 +172,6 @@ bool GameInstance::Initialize() {
 	ARotationCubeActor* CubeMesh = NewObject<ARotationCubeActor>("TestCube");
 	CubeMesh->SetActorLocation(Vector(0.0f, 0.0f, 0.0f));
 	CubeMesh->SetActorRotation(Vector(0.0f));
-	Meshes.Push(CubeMesh);
 	World->AddActor(CubeMesh);
 
 	ARotationCubeActor* CubeMesh2 = NewObject<ARotationCubeActor>("TestCube2");
@@ -202,7 +179,6 @@ bool GameInstance::Initialize() {
 	CubeMesh2->SetActorRotation(Vector(0.0f));
 	CubeMesh2->SetWorldScale(Vector(0.5f));
 	CubeMesh2->AttachTo(CubeMesh);
-	Meshes.Push(CubeMesh2);
 	World->AddActor(CubeMesh2);
 
 	ARotationCubeActor* CubeMesh3 = NewObject<ARotationCubeActor>("TestCube3");
@@ -210,7 +186,6 @@ bool GameInstance::Initialize() {
 	CubeMesh3->SetActorRotation(Vector(0.0f));
 	CubeMesh3->SetWorldScale(Vector(0.3f));
 	CubeMesh3->AttachTo(CubeMesh2);
-	Meshes.Push(CubeMesh3);
 	World->AddActor(CubeMesh3);
 
 	// TODO: TEMP
@@ -221,6 +196,11 @@ bool GameInstance::Initialize() {
 	EngineEvent::Register(eEventCode::Object_Hover_ID_Changed, this, GameOnEvent);
 	// TEMP
 
+	// 优先初始化World
+	// World->Actor->Component
+	// Component中可能会初始化Geometry，后续在RegisterToWorld时需要这些数据
+	World->Initialize();
+
 	return true;
 }
 
@@ -230,41 +210,12 @@ void GameInstance::BeginPlay() {
 }
 
 void GameInstance::Shutdown() {
-	// TODO: Temp
-	if (SB) {
-		SB->Destroy();
-		DeleteObject(SB);
+	if (World) {
+		// Actor示例由World清空
+		World->Destroy();
 	}
 
-	if (GameConsole) {
-		DeleteObject(GameConsole);
-	}
-
-	// Delete meshes.
-	for (AStaticMeshActor* m : Meshes) {
-		if (m) {
-			DeleteObject(m);
-		}
-	}
-
-	for (AStaticMeshActor* m : UIMeshes) {
-		if (m) {
-			DeleteObject(m);
-		}
-	}
-
-	if (TestText) {
-		TestText->Destroy();
-		DeleteObject(TestText);
-		TestText = nullptr;
-	}
-
-	if (TestSysText) {
-		TestSysText->Destroy();
-		DeleteObject(TestSysText);
-		TestSysText = nullptr;
-	}
-
+	// 序列化数据
 	File MaterialAsset(EDITOR_CONFIG_PATH);
 	if (!MaterialAsset.IsExist()) {
 		return;
@@ -293,17 +244,11 @@ void GameInstance::Shutdown() {
 }
 
 bool GameInstance::Update(float delta_time) {
-	for (int i = 0; i < Meshes.Size(); ++i) {
-		AActor* Actor = Meshes[i];
-		if (Actor->IsEnableTick()) {
-			Actor->Tick(delta_time);
-		}
+	if (World) {
+		World->Tick(delta_time);
 	}
 
-	for(int i = 0; i < UIMeshes.Size(); ++i) {
-		if (UIMeshes[i]->IsEnableTick()) UIMeshes[i]->Tick(delta_time);
-	}
-
+	// Controller
 	int px, py, cx, cy;
 	Controller::GetMousePosition(cx, cy);
 	Controller::GetPreviousMousePosition(px, py);
@@ -323,116 +268,11 @@ bool GameInstance::Update(float delta_time) {
 		}
 	}
 
-	// Text
-	WorldCamera = CameraSystem::Get().GetMainCamera();
-	Vector3 Pos = CameraComp->GetPosition();
-	Vector3 Rot = CameraComp->GetEulerAngles();
-
-	// Mouse state
-	bool LeftDown = Controller::IsButtonDown(eButtons::Left);
-	bool RightDown = Controller::IsButtonDown(eButtons::Right);
-	int MouseX, MouseY;
-	Controller::GetMousePosition(MouseX, MouseY);
-
-	// Convert to NDC.
-	float MouseX_NDC = RangeConvertfloat((float)MouseX, 0.0f, (float)WindowSize.Width, -1.0f, 1.0f);
-	float MouseY_NDC = RangeConvertfloat((float)MouseY, 0.0f, (float)WindowSize.Height, -1.0f, 1.0f);
-
-	double FPS, FrameTime;
-	Metrics::Frame(&FPS, &FrameTime);
-
-	// Update the frustum.
-	Vector3 Forward = CameraComp->Forward();
-	Vector3 Right = CameraComp->Right();
-	Vector3 Up = CameraComp->Up();
-
-	// NOTE: starting at a reasonable default to avoid too many realloc.
-	uint32_t DrawCount = (uint32_t)World->GetVisibleGeometryCount();
-
-	// TODO: Temp
-	std::string HoverdObjectName = "None";
-	if (HoveredObjectID != INVALID_ID) {
-		if (HoveredObjectID == TestText->GetUniqueID()) {
-			HoverdObjectName = TestText->GetName().CStr();
-		}
-		if (HoveredObjectID == TestSysText->GetUniqueID()) {
-			HoverdObjectName = TestSysText->GetName().CStr();
-		}
-
-		for (AStaticMeshActor* Mesh : Meshes) {
-			if (Mesh->GetUniqueID() == HoveredObjectID)
-			{
-				HoverdObjectName = Mesh->GetName().CStr();
-				break;
-			}
-		}
-		for (AStaticMeshActor* UI : UIMeshes) {
-			if (UI->GetUniqueID() == HoveredObjectID)
-			{
-				HoverdObjectName = UI->GetName().CStr();
-				break;
-			}
-		}
-	}
-
-	FString FPSText = FString::Format("\
-	Camera Pos: [%.3f %.3f %.3f]\tCamera Rot: [%.3f %.3f %.3f]\n\
-	L=%s R=%s\tNDC: x=%.2f, y=%.2f\tHovered Object: %s\n\
-	FPS: %d\tDelta time: %.2f\n\
-	Drawn Count: %-5u",
-		Pos.x, Pos.y, Pos.z,
-		Rot.x, Rot.y, Rot.z,
-		LeftDown ? "Y" : "N", RightDown ? "Y" : "N",
-		MouseX_NDC, MouseY_NDC,
-		HoverdObjectName.c_str(),
-		(int)FPS,
-		(float)FrameTime,
-		DrawCount
-	);
-	TestText->SetText(FPSText);
-
-	GameConsole->Tick(delta_time);
-
-	if (World) {
-		World->Tick(delta_time);
-	}
-
-	return true;
-}
-
-static float GameTime = 0.0f;
-
-bool GameInstance::Render(SRenderPacket* packet, float delta_time) {
-	GameTime += delta_time;
-
-	// TODO: Read from config.
-	packet->view_count = 0;
-	packet->views.resize(packet->view_count);
-	uint32_t ViewCounter = 0;
-
-	//IRenderView* PickView = RenderviewSys.Get(ERenderViewType::Pick);
-	//if (PickView) {
-	//	// Pick uses both world and ui packet data.
-	//	PickPacketData PickPacket;
-	//	PickPacket.UIMeshData = UIPacket.meshData;
-	//	PickPacket.WorldMeshData = std::vector<GeometryRenderData>();
-	//	PickPacket.Texts = UIPacket.Textes;
-	//	PickPacket.TextCount = UIPacket.textCount;
-
-	//	if (!RenderviewSys.BuildPacket(PickView, &PickPacket, &packet->views[ViewCounter++])) {
-	//		GLOG(Log::eError, "Failed to build packet for view 'Pick'.");
-	//		return false;
-	//	}
-	//}
-
 	return true;
 }
 
 void GameInstance::OnResize(unsigned int width, unsigned int height) {
 	WindowSize = { (uint16_t)width, (uint16_t)height };
-
-	TestText->SetActorLocation(Vector3(180, (float)height - 150, 0));
-	TestSysText->SetActorLocation(Vector3(100, (float)height - 400, 0));
 }
 
 void LoadScene1(GameInstance* GameInst) {
@@ -440,13 +280,6 @@ void LoadScene1(GameInstance* GameInst) {
 }
 
 void LoadScene2(GameInstance* GameInst) {
-	for (size_t i = GameInst->Meshes.Size() - 1; i >= 3; --i) {
-		AStaticMeshActor* M = GameInst->Meshes[i];
-		DeleteObject(M);
-		GameInst->Meshes[i] = nullptr;
-		GameInst->Meshes.Pop();
-	}
-
 	AStaticMeshActor* Model1 = NewObject<AStaticMeshActor>("sponza");
 	Model1->LoadFromResource("sponza");
 	Model1->SetActorLocation(Vector(0.0f, -10.0f, 0.0f));

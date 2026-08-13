@@ -18,6 +18,12 @@ public:
 	UTextComponent* GetTextComponent() { return TextComponent; }
 
 public:
+	void SetFontSize(uint32_t FontSize);
+	uint32_t GetFontSize() const;
+
+	void SetTextFont(const FString& FontName, UITextType Type, uint32_t FontSize = 25);
+	void SetTextFont(IFont* Font);
+
 	void SetText(const FString& content);
 	FString GetText() const;
 

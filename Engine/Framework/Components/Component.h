@@ -19,8 +19,8 @@ public:
 	virtual void PostInitialize() override {}
 
 	// 生命周期
-	virtual void OnRegister() {};		// 组件注册到Actor时调用
-	virtual void OnUnregister() {};		// 组件从Actor移除时调用
+	virtual void OnRegister() { IsRegistered_ = true; };		// 组件注册到Actor时调用
+	virtual void OnUnregister() { IsRegistered_ = false; };		// 组件从Actor移除时调用
 	virtual void OnAttach() {};			// 组件添加到Actor时调用
 	virtual void OnDetach() {};			// 组件从Actor移除时调用
 	virtual void OnEnable() {};			// 组件启用时调用
@@ -34,6 +34,7 @@ public:
 	virtual void SetOwner(AActor* owner) { Owner_ = owner; }
 	
 	// 启用/禁用
+	bool IsRegistered() const { return IsRegistered_; }
 	bool IsEnabled() const { return IsEnabled_; }
 	void SetEnabled(bool Enabled) {
 		if (IsEnabled_ != Enabled) {
@@ -45,6 +46,7 @@ public:
 protected:
 	FString Name_;
 	AActor* Owner_ = nullptr;
+	bool IsRegistered_ = false;
 	bool IsEnabled_ = true;
 
 };

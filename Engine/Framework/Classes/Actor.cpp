@@ -5,42 +5,77 @@ AActor::AActor(const FString& Name) : Name_(Name), ParentActor(nullptr) {
 	ASSERT(RootComponent);
 }
 
+bool AActor::Initialize() {
+	for (auto Pair : ContainComponents) {
+		for (UComponent* Component : Pair.Value) {
+			if (!Component) {
+				continue;
+			}
+
+			Component->Initialize();
+		}
+	}
+
+	return true;
+}
+
 void AActor::BeginPlay() {
+	// 启用
 	for (auto& Pair : ContainComponents) {
-		if (Pair.Value && Pair.Value->IsEnabled()) {
-			Pair.Value->OnEnable();
+		for (UComponent* Component : Pair.Value) {
+			if (!Component || !Component->IsEnabled()) {
+				continue;
+			}
+
+			Component->OnEnable();
 		}
 	}
 }
 
 void AActor::RegisterComponents() {
 	for (auto& Pair : ContainComponents) {
-		if (Pair.Value) {
-			Pair.Value->OnRegister();
+		for (UComponent* Component : Pair.Value) {
+			if (!Component || Component->IsRegistered()) {
+				continue;
+			}
+
+			Component->OnRegister();
 		}
 	}
 }
 
 void AActor::Tick(float DeltaTime) {
 	for (auto& Pair : ContainComponents) {
-		if (Pair.Value && Pair.Value->IsEnabled()) {
-			Pair.Value->Tick(DeltaTime);
+		for (UComponent* Component : Pair.Value) {
+			if (!Component || !Component->IsEnabled()) {
+				continue;
+			}
+
+			Component->Tick(DeltaTime);
 		}
 	}
 }
 
 void AActor::UnregisterComponents() {
 	for (auto& Pair : ContainComponents) {
-		if (Pair.Value) {
-			Pair.Value->OnUnregister();
+		for (UComponent* Component : Pair.Value) {
+			if (!Component || !Component->IsRegistered()) {
+				continue;
+			}
+
+			Component->OnUnregister();
 		}
 	}
 }
 
 void AActor::Destroy() {
 	for (auto& Pair : ContainComponents) {
-		if (Pair.Value && Pair.Value->IsEnabled()) {
-			Pair.Value->OnDisable();
+		for (UComponent* Component : Pair.Value) {
+			if (!Component || !Component->IsEnabled()) {
+				continue;
+			}
+
+			Component->OnDisable();
 		}
 	}
 

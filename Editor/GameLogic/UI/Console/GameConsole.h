@@ -2,8 +2,9 @@
 #include <Platform/Thread/DMutex.hpp>
 #include <Framework/Classes/Actor.h>
 
-class ATextActor;
+class IFont;
 class IRenderer;
+class UTextComponent;
 
 class DebugConsoleActor : public AActor {
 public:
@@ -13,9 +14,6 @@ public:
 public:
 	virtual bool Initialize() override;
 	virtual void Tick(float DeltaTime) override;
-
-	ATextActor* GetText();
-	ATextActor* GetEntryText();
 
 	void MoveUp();
 	void MoveDown();
@@ -35,11 +33,12 @@ private:
 	int LineOffset;
 	std::vector<std::string> Lines;
 
-	bool Dirty;
+	bool isContentDirty;
 	bool Visible;
 
-	ATextActor* TextControl;	// Log text.
-	ATextActor* EntryControl;	// Command text.
+	IFont* ConsoleFont;
+	UTextComponent* ConsolePanelComponent;	// Log text.
+	UTextComponent* EntryPanelComponent;	// Command text.
 
 	IRenderer* Renderer;
 

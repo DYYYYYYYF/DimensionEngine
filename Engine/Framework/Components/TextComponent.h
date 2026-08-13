@@ -4,7 +4,7 @@
 
 class UGeometry;
 
-class UTextComponent : public UPrimitiveComponent
+class DAPI UTextComponent : public UPrimitiveComponent
 {
 	DECLARE_CLASS_TYPE(UTextComponent)
 
@@ -21,22 +21,20 @@ public:
 	bool Create();
 	void Destroy();
 
+	const FString& GetText() const;
 	bool SetText(const FString& text);
+
+	IFont* GetFont() const;
 	void SetFont(IFont* font);
 
+	const Vector4& GetColor() const;
 	void SetColor(const Vector4& color);
 
 	bool Regenerate();
-
 	void Draw();
 
 public:
-	const FString& GetText() const;
-	IFont* GetFont() const;
-	const Vector4& GetColor() const;
-
 	UGeometry* GetGeometry();
-
 	size_t GetFrameNumber() const;
 	void SetFrameNumber(size_t frame_number);
 
