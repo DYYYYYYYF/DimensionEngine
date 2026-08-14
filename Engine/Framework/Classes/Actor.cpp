@@ -102,16 +102,10 @@ bool AActor::AddChild(AActor* child) {
 	return true;
 }
 
-Matrix4 AActor::GetLocalTransform() const {
+const Matrix4& AActor::GetLocalTransform() const {
 	return RootComponent->GetLocalMatrix();
 }
 
-Matrix4 AActor::GetWorldTransform() const {
-	Matrix4 LocalMat = GetLocalTransform();
-	if (ParentActor != nullptr) {
-		Matrix4 ParentMat = ParentActor->GetWorldTransform();
-		return ParentMat.Multiply(LocalMat);
-	}
-
-	return LocalMat;
+const Matrix4& AActor::GetWorldTransform() const {
+	return RootComponent->GetWorldMatrix();
 }

@@ -68,7 +68,7 @@ void URenderWorld::FrustumCull() {
 		FFrustum CameraFrustum = WorldCamera->GetFrustum();
 
 		// 模型初筛
-		Matrix4 ModelMat = Proxy->GetModelMatrix();
+		const Matrix4& ModelMat = Proxy->GetModelMatrix();
 		const Extents3D& Extents = Proxy->GetBoundingBox();
 		Extents3D PostExtents = TransformBounds(Extents, ModelMat);
 

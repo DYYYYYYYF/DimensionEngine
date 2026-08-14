@@ -1,4 +1,4 @@
-#include "CameraComponent.h"
+ï»¿#include "CameraComponent.h"
 #include "Framework/Classes/Actor.h"
 #include "Math/Frustum.hpp"
 
@@ -8,16 +8,16 @@ UCameraComponent::UCameraComponent(const FString& Name) :USceneComponent(Name) {
 		return;
 	}
 
-	// ÒÔ LocalTransform µÄ³õÊ¼Öµ³õÊ¼»¯Ğı×ª×´Ì¬
+	// ä»¥ LocalTransform çš„åˆå§‹å€¼åˆå§‹åŒ–æ—‹è½¬çŠ¶æ€
 	Quaternion Q = GetQuaternion();
 	Matrix4 RotMat = Q.ToRotationMatrix();
-	// ´ÓĞı×ª¾ØÕó·´½â Euler£¨Í¨¹ı MatrixToQuat ÔÙ ToEuler ±£³ÖÒ»ÖÂĞÔ£©
+	// ä»æ—‹è½¬çŸ©é˜µåè§£ Eulerï¼ˆé€šè¿‡ MatrixToQuat å† ToEuler ä¿æŒä¸€è‡´æ€§ï¼‰
 	EulerRotation_ = MatrixToQuat(RotMat).ToEuler();
 	IsDirty_ = true;
 }
 
 void UCameraComponent::OnTransformChanged() {
-	// ¸üĞÂÊÓ×¶Ìå
+	// æ›´æ–°è§†é”¥ä½“
 	UpdateFrustum();
 }
 
@@ -81,8 +81,8 @@ void UCameraComponent::SetViewMatrix(const Matrix4& Mat) {
 		return;
 	}
 
-	// ´Ó ViewMatrix ·´½â Position ºÍĞı×ª£¬±£³ÖÄÚ²¿×´Ì¬Ò»ÖÂ
-	// ViewMatrix = Inverse(T * R)£¬ËùÒÔ WorldMatrix = Inverse(ViewMatrix)
+	// ä» ViewMatrix åè§£ Position å’Œæ—‹è½¬ï¼Œä¿æŒå†…éƒ¨çŠ¶æ€ä¸€è‡´
+	// ViewMatrix = Inverse(T * R)ï¼Œæ‰€ä»¥ WorldMatrix = Inverse(ViewMatrix)
 	Matrix4 WorldMat = Mat.Inverse();
 
 	Vector3 Pos = WorldMat.GetTranslation();
@@ -171,7 +171,7 @@ void UCameraComponent::RotatePitch(float Amount) {
 }
 
 const FFrustum& UCameraComponent::GetFrustum() const {
-	// »ù´¡Êı¾İ¸Ä±äÊ±¸üĞÂÊÓ×¶Ìå£¬ÉãÏñ»úÎ»ÖÃ¸ÄÎªÍ¨¹ıOnTransformChanged¸üĞÂ
+	// åŸºç¡€æ•°æ®æ”¹å˜æ—¶æ›´æ–°è§†é”¥ä½“ï¼Œæ‘„åƒæœºä½ç½®æ”¹ä¸ºé€šè¿‡OnTransformChangedæ›´æ–°
 	if (IsBaseDataDirty_) {
 		UpdateFrustum();
 	}

@@ -1,4 +1,4 @@
-#include "WindowDataPanel.h"
+ï»¿#include "WindowDataPanel.h"
 #include <Systems/CameraSystem.h>
 #include <Core/Controller.hpp>
 #include <Core/Metrics.hpp>
@@ -38,7 +38,7 @@ void AWindowDataPanel::Tick(float DeltaTime) {
 	// NOTE: starting at a reasonable default to avoid too many realloc.
 	uint32_t DrawCount = (uint32_t)GetWorld()->GetVisibleGeometryCount();
 
-	// ¸üÐÂÎÄ±¾
+	// æ›´æ–°æ–‡æœ¬
 	FString FPSText = FString::Format("\
 	Camera Pos: [%.3f %.3f %.3f]\tCamera Rot: [%.3f %.3f %.3f]\n\
 	FPS: %d\tDelta time: %.2f\tL=%s R=%s\tNDC: x=%.2f, y=%.2f\n\

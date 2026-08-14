@@ -1,4 +1,4 @@
-#include "SkyboxComponent.h"
+ï»¿#include "SkyboxComponent.h"
 #include "Framework/Classes/Actor.h"
 #include "Systems/MaterialSystem.h"
 #include "Systems/GeometrySystem.h"
@@ -32,7 +32,7 @@ bool USkyboxComponent::CreateRenderProxy() {
 }
 
 void USkyboxComponent::UpdateRenderProxy() {
-	// »¹Î´×¢²áµ½³¡¾°
+	// è¿˜æœªæ³¨å†Œåˆ°åœºæ™¯
 	if (!IsRegistered) return;
 
 	FSkyboxRenderProxy* Proxy = Cast<FSkyboxRenderProxy*>(RenderProxy);
@@ -47,7 +47,7 @@ void USkyboxComponent::UpdateRenderProxy() {
 		return;
 	}
 
-	// Ìî³äÊý¾Ý
+	// å¡«å……æ•°æ®
 	Proxy->SetMesh(SkyboxGeometry);
 	Proxy->SetModelMatrix(Owner->GetWorldTransform());
 	Proxy->SetUniqueID(Owner->GetUniqueID());

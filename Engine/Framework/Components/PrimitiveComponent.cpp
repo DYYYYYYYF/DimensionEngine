@@ -1,4 +1,4 @@
-#include "PrimitiveComponent.h"
+ï»¿#include "PrimitiveComponent.h"
 #include "Scene/World.h"
 #include "Framework/Classes/Actor.h"
 #include "Rendering/RenderWorld/RenderProxy.h"
@@ -22,14 +22,14 @@ void UPrimitiveComponent::OnRegister()
 		return;
 	}
 	
-	// ×¢²áµ½RenderWorldÖÐ
+	// æ³¨å†Œåˆ°RenderWorldä¸­
 	URenderWorld* RenderWorld = World->GetRenderWorld();
 	if (!RenderWorld) return;
 
 	RenderWorld->AddProxy(RenderProxy);
 	IsRegistered = true;
 
-	// ×¢²áµ½³¡¾°ºó¸üÐÂ
+	// æ³¨å†Œåˆ°åœºæ™¯åŽæ›´æ–°
 	UpdateRenderProxy();
 
 	UComponent::OnRegister();
@@ -37,12 +37,12 @@ void UPrimitiveComponent::OnRegister()
 
 void UPrimitiveComponent::OnUnregister() {
 	if (RenderProxy) {
-		// ¼ì²éÊÇ·ñÒÑ¾­×¢²á
+		// æ£€æŸ¥æ˜¯å¦å·²ç»æ³¨å†Œ
 		if (!IsRegistered) {
 			GLOG(Log::eWarn, "RenderProxy is not registered in the RenderWorld.");
 		}
 
-		// ´Ó RenderWorld ÖÐÒÆ³ý RenderProxy
+		// ä»Ž RenderWorld ä¸­ç§»é™¤ RenderProxy
 		UWorld* World = GetOwner() ? GetOwner()->GetWorld() : nullptr;
 		if (World) {
 			World->GetRenderWorld()->RemoveProxy(RenderProxy);

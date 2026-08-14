@@ -40,13 +40,14 @@ public:
 	void SetWorld(UWorld* InWorld) { World = InWorld; }
 	UWorld* GetWorld() const { return World; }
 
-	Matrix4 GetLocalTransform() const;
-	Matrix4 GetWorldTransform() const;
+	const Matrix4& GetLocalTransform() const;
+	const Matrix4& GetWorldTransform() const;
 
+	AActor* GetParent() const { return ParentActor; }
 	bool AttachTo(AActor* Own);
 	bool AddChild(AActor* Child);
 
-	void SetRootComponent(USceneComponent* Root) { RootComponent = Root; }
+	void SetRootComponent(USceneComponent* Root) { if(Root) RootComponent = Root; }
 	USceneComponent* GetRootComponent() const { return RootComponent; }
 
 	void SetName(const FString& Name) { Name_ = Name; }

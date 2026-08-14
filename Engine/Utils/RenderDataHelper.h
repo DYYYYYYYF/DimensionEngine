@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "Math/MathTypes.hpp"
 
 class ENGINE_API URenderDataHelper {

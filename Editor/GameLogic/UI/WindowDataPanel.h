@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <Framework/Classes/TextActor.h>
 
 class AWindowDataPanel : public ATextActor {

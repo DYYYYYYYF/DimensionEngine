@@ -1,4 +1,5 @@
 #include "TransformComponent.h"
+#include "Framework/Classes/Actor.h"
 
 void UTransformComponent::OnEnable() {
 	// 开始时先更新一次，确保 LocalTransform 的矩阵是最新的
@@ -6,7 +7,9 @@ void UTransformComponent::OnEnable() {
 }
 
 void UTransformComponent::Tick(float DeltaTime) {
-	UpdateTransform();
+	if (bTransformDirty) {
+		UpdateTransform();
+	}
 }
 
 const FTransform& UTransformComponent::GetLocalTransform() const {
@@ -17,20 +20,20 @@ const FTransform& UTransformComponent::GetLocalTransform() const {
 	return LocalTransform;
 }
 
-const FTransform& UTransformComponent::GetWorldTransform() const {
-	if (bTransformDirty) {
-		UpdateTransform();
-	}
-
-	return WorldTransform;
-}
-
 const Matrix4& UTransformComponent::GetLocalMatrix() const {
 	if (bTransformDirty) {
 		UpdateTransform();
 	}
 
 	return LocalTransform.GetLocal();
+}
+
+const Matrix4& UTransformComponent::GetWorldMatrix() const {
+	if (bTransformDirty) {
+		UpdateTransform();
+	}
+
+	return WorldTransform;
 }
 
 Vector3 UTransformComponent::TransformPointToWorld(const Vector3& LocalPoint) const {
@@ -106,6 +109,21 @@ void UTransformComponent::UpdateTransform() const {
 		return;
 
 	LocalTransform.UpdateLocal();
+
+	const Matrix4& LocalMat = LocalTransform.GetLocal();
+	// 更新WorldTransform
+	AActor* Owner = GetOwner();
+	if (Owner) {
+		AActor* OwnerParent = Owner->GetParent();
+		if (OwnerParent) {
+			const Matrix4& ParentMat = OwnerParent->GetWorldTransform();
+			WorldTransform = ParentMat.Multiply(LocalMat);
+		}
+		else {
+			WorldTransform = LocalMat;
+		}
+	}
+
 	bTransformDirty = false;
 
 	const_cast<UTransformComponent*>(this)->OnTransformChanged();

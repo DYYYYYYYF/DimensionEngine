@@ -1,4 +1,4 @@
-#include "RenderDataHelper.h"
+﻿#include "RenderDataHelper.h"
 #include "Rendering/Renderer.hpp"
 
 Vector2f URenderDataHelper::GetRTSize() {

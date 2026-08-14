@@ -15,8 +15,8 @@ class ENGINE_API UTransformComponent : public UComponent
 	DECLARE_CLASS_TYPE(UTransformComponent)
 
 public:
-	UTransformComponent() : UComponent("TransformComponent") {}
-	UTransformComponent(const FString& Name) : UComponent(Name) {}
+	UTransformComponent() : UComponent("TransformComponent"), WorldTransform(Matrix4::Identity()) {}
+	UTransformComponent(const FString& Name) : UComponent(Name), WorldTransform(Matrix4::Identity()) {}
 	virtual void OnEnable() override;
 	virtual void Tick(float DeltaTime) override;
 
@@ -24,9 +24,9 @@ public:
 
 	void SetLocalTransform(const FTransform& Transform);
 	const FTransform& GetLocalTransform() const;
-	const FTransform& GetWorldTransform() const;
 
 	const Matrix4& GetLocalMatrix() const;
+	const Matrix4& GetWorldMatrix() const;
 	Vector3 TransformPointToWorld(const Vector3& LocalPoint) const;
 
 	void SetLocation(const Vector3& Position);
@@ -50,6 +50,6 @@ private:
 
 private:
 	mutable FTransform LocalTransform;
-	mutable FTransform WorldTransform;
+	mutable Matrix4 WorldTransform;
 	mutable bool bTransformDirty = true;
 };
