@@ -110,8 +110,12 @@ bool RenderViewWorld::OnCreate(const RenderViewConfig& config) {
 	Fov = Deg2Rad(45.0f);
 
 	// Default
-	ProjectionMatrix = Matrix4::Perspective(Fov, (float)config.width / config.height, NearClip, FarClip);
-	WorldCamera = CameraSystem::Get().GetDefault();
+	WorldCamera = CameraSystem::Get().GetMainCamera();
+	WorldCamera->SetFOV(Fov);
+	WorldCamera->SetAspectRatio((float)config.width / config.height);
+	WorldCamera->SetNearPlane(NearClip);
+	WorldCamera->SetFarPlane(FarClip);
+	ProjectionMatrix = WorldCamera->GetProjectionMatrix(ECameraProjectionMode::Perspective);
 
 	// TODO: Obtain from scene.
 	AmbientColor = Vector4(0.7f, 0.7f, 0.7f, 1.0f);
@@ -149,149 +153,9 @@ void RenderViewWorld::OnResize(uint32_t width, uint32_t height) {
 	}
 }
 
-bool RenderViewWorld::OnBuildPacket(IRenderviewPacketData* data, struct RenderViewPacket* out_packet) {
-	if (data == nullptr || out_packet == nullptr) {
-		GLOG(Log::eError, "RenderViewUI::OnBuildPacke() Requires valid pointer to packet and data.");
-		return false;
-	}
-
-	WorldPacketData* Data = (WorldPacketData*)data;
-	const std::vector<GeometryRenderData> GeometryData = Data->Meshes;
-	out_packet->view = this;
-
-	// Set matrix, etc.
-	UCameraComponent* CameraComp = WorldCamera->GetComponent<UCameraComponent>();
-	if (!CameraComp) {
-		GLOG(Log::eError, "RenderViewUI::OnBuildPacke() Camera is nullptr.");
-		return false;
-	}
-	out_packet->projection_matrix = ProjectionMatrix;
-	out_packet->view_matrix = CameraComp->GetViewMatrix();
-	out_packet->view_position = CameraComp->GetPosition();
-	out_packet->ambient_color = AmbientColor;
-	out_packet->global_time = Data->GlobalTime;
-
-	// Obtain all geometries from the current scene.
-	std::vector<GeometryDistance> GeometryDistances;
-	uint32_t GeometryDataCount = (uint32_t)GeometryData.size();
-	for (uint32_t i = 0; i < GeometryDataCount; ++i) {
-		const GeometryRenderData& GData = GeometryData[i];
-		if (!GData.geometry) continue;
-
-		UMaterialInstance* Mat = GData.geometry->GetMaterialInstance();
-		if (!Mat) continue;
-
-		const TArray<TextureBinding>& TextureBindings = Mat->GetTextureBindings();
-		if (TextureBindings.IsEmpty()) continue;
-
-		// TODO: Add something to material to check for transparency.
-		if ((TextureBindings[0].texture.texture->GetFlags() & TextureFlagBits::eTexture_Flag_Has_Transparency) == 0) {
-			// Only add meshes with _no_ transparency.
-			out_packet->geometries.push_back(GeometryData[i]);
-			out_packet->geometry_count++;
-		}
-		else {
-			// For meshes _with_ transparency, add them to a separate list to be sorted by distance later.
-			// Get the center, extract the global position from the model matrix and add it to the center,
-			// then calculate the distance between it and the camera, and finally save it to a list to be sorted.
-			// NOTE: This isn't perfect for translucent meshes that intersect, but is enough for our purposes now.
-			Vector3 Center = GeometryData[i].geometry->Center.Transform(GData.model_mat);
-			float Distance = Center.Distance(CameraComp->GetPosition());
-
-			GeometryDistance gDist;
-			gDist.distance = Dabs(Distance);
-			gDist.g = GeometryData[i];
-
-			GeometryDistances.push_back(gDist);
-		}
-	}
-
-	// Sort the distances.
-	uint32_t GeometryCount = (uint32_t)GeometryDistances.size();
-	QuickSort(GeometryDistances, 0, GeometryCount - 1, true);
-
-	// Add them to packet geometry.
-	for (uint32_t i = 0; i < GeometryCount; ++i) {
-		out_packet->geometries.push_back(GeometryDistances[i].g);
-		out_packet->geometry_count++;
-	}
-
-	GeometryDistances.clear();
-	std::vector<GeometryDistance>().swap(GeometryDistances);
-
-	return true;
-}
-
-
-void RenderViewWorld::OnDestroyPacket(struct RenderViewPacket* packet) {
-	// No much to do here, just zero mem.
-	packet->geometries.clear();
-	std::vector<GeometryRenderData>().swap(packet->geometries);
-}
-
 bool RenderViewWorld::RegenerateAttachmentTarget(uint32_t passIndex, RenderTargetAttachment* attachment) {
 	return true;
 }
-
-bool RenderViewWorld::OnRender(struct RenderViewPacket* packet, RHI* back_renderer, size_t frame_number, size_t render_target_index) {
-	uint32_t SID = UsedShader->ID;
-	for (uint32_t p = 0; p < RenderpassCount; ++p) {
-		IRenderpass* Pass = (IRenderpass*)&Passes[p];
-		Pass->Begin(&Pass->Targets[render_target_index]);
-
-		if (!UsedShader->Use()) {
-			GLOG(Log::eError, "RenderViewUI::OnRender() Failed to use material shader. Render frame failed.");
-			return false;
-		}
-
-		// Apply globals.
-		FFrameData Data;
-		Data.projection = packet->projection_matrix;
-		Data.view = packet->view_matrix;
-		Data.ambieantColor = packet->ambient_color;
-		Data.cameraPosition = packet->view_position;
-		Data.renderMode = render_mode;
-		Data.time = packet->global_time;
-
-		if (!MaterialSystem::Get().ApplyGlobal(SID, frame_number, Data)) {
-			GLOG(Log::eError, "RenderViewUI::OnRender() Failed to use global shader. Render frame failed.");
-			return false;
-		}
-
-		// Draw geometries.
-		uint32_t Count = packet->geometry_count;
-		for (uint32_t i = 0; i < Count; ++i) {
-			UMaterialInstance* Mat = nullptr;
-			if (packet->geometries[i].geometry->GetMaterialInstance()) {
-				Mat = packet->geometries[i].geometry->GetMaterialInstance();
-			}
-
-			// Update the material if it hasn't already been this frame. This keeps the
-			// same material from being updated multiple times. It still needs to be bound
-			// either way, so this check result gets passed to the backend which either
-			// updates the internal shader bindings and binds them, or only binds them.
-			if (!MaterialSystem::Get().ApplyInstance(Mat, Data)) {
-				GLOG(Log::eWarn, "Failed to apply material '%s'. Skipping draw.", Mat->GetParentMaterial()->GetName().CStr());
-				continue;
-			}
-			else {
-				// Sync the frame number.
-				Mat->SetFrameNumber(frame_number);
-			}
-
-			// Apply local
-			MaterialSystem::Get().ApplyLocal(Mat, packet->geometries[i].model_mat);
-
-			// Draw
-			back_renderer->DrawGeometry(&packet->geometries[i]);
-		}
-
-		Pass->End();
-	}
-
-	return true;
-}
-
 
 // Quick sort geometry distance.
 static void Swap(GeometryDistance* a, GeometryDistance* b) {

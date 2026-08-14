@@ -13,6 +13,8 @@
 #include "Systems/TextureSystem.h"
 #include "Systems/CameraSystem.h"
 #include "Systems/RenderViewSystem.hpp"
+#include "Scene/World.h"
+#include "RenderWorld/RenderWorld.h"
 
 IRenderer* IRenderer::Renderer = nullptr;
 
@@ -106,7 +108,7 @@ void IRenderer::OnResize(unsigned short width, unsigned short height) {
 	}
 }
 
-bool IRenderer::DrawFrame(SRenderPacket* packet) {
+bool IRenderer::DrawFrame(UWorld* World) {
 	RHI_->IncreaseFrameNum();
 
 	// Make sure the window is not currently being resized by waiting a designated
@@ -136,19 +138,15 @@ bool IRenderer::DrawFrame(SRenderPacket* packet) {
 		}
 	}
 
-	if (RHI_->BeginFrame(packet->delta_time)) {
-		unsigned char AttachmentIndex = RHI_->GetWindowAttachmentIndex();
-
-		// Render each view.
-		for (uint32_t i = 0; (uint32_t)i < packet->views.size(); ++i) {
-			if (!RenderViewSystem::Get().OnRender(packet->views[i].view, &packet->views[i], RHI_->GetFrameNum(), AttachmentIndex)) {
-				GLOG(Log::eError, "Error rendering view index '%i'.", i);
-				return false;
-			}
+	if (RHI_->BeginFrame()) {
+		// Renderer Tick
+		URenderWorld* RWorld = World->GetRenderWorld();
+		if (RWorld) {
+			RWorld->Record();
 		}
 
 		// End frame
-		bool result = RHI_->EndFrame(packet->delta_time);
+		bool result = RHI_->EndFrame();
 
 		if (!result) {
 			GLOG(Log::eError, "Renderer end frame failed.");
@@ -158,6 +156,11 @@ bool IRenderer::DrawFrame(SRenderPacket* packet) {
 	}
 
 	return true;
+}
+
+void IRenderer::ExecuteDrawCalls(
+	const std::vector<DrawCall>& draw_calls, size_t frame_number, const FFrameData& data) {
+	RHI_->ExecuteDrawCalls(draw_calls, frame_number, data);
 }
 
 void IRenderer::SetViewport(Vector4 rect) {
@@ -250,6 +253,10 @@ UTexture* IRenderer::GetDepthAttachment(unsigned char index) {
 
 unsigned char IRenderer::GetWindowAttachmentIndex() {
 	return RHI_->GetWindowAttachmentIndex();
+}
+
+size_t IRenderer::GetFrameNum() const {
+	return RHI_->GetFrameNum();
 }
 
 bool IRenderer::CreateRenderpass(IRenderpass* out_renderpass, const RenderpassConfig& config) {

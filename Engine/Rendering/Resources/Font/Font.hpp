@@ -44,6 +44,12 @@ public:
 	virtual unsigned int       GetSize()         const = 0;
 
 public:
+	uint32_t GetFontSize() const { return FontSize; }
+	void SetFontSize(uint32_t Size) { FontSize = Size; }
+
+	const FString& GetFontName() const { return FontName; }
+	void SetFontName(const FString& Name) { FontName = Name; }
+
 	UITextType GetFontType() const { return TextType; }
 	void AddRef() { ++refCount_; }
 	bool Release() { return --refCount_ == 0; }
@@ -52,5 +58,7 @@ protected:
 	UITextType TextType = UITextType::eUI_Text_Type_Unknown;
 
 private:
+	FString FontName;
+	uint32_t FontSize;
 	int refCount_ = 0;
 };

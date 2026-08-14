@@ -7,6 +7,16 @@
 #include "Systems/GeometrySystem.h"
 #include "Systems/JobSystem.hpp"
 #include "Rendering/RenderTypes.hpp"
+#include "Framework/Components/StaticMeshComponent.h"
+
+AStaticMeshActor::AStaticMeshActor(const FString& Name) 
+	: AActor(Name), geometries(nullptr), geometry_count(0), Generation(INVALID_ID_U8) 
+{
+	MeshComponent = CreateComponent<UStaticMeshComponent>("MeshComponent");
+	if (MeshComponent) {
+		SetRootComponent(MeshComponent);
+	}
+}
 
 void AStaticMeshActor::Draw() {
 	for (uint32_t j = 0; j < geometry_count; j++) {
@@ -22,14 +32,21 @@ void AStaticMeshActor::LoadJobSuccess() {
 	FGeometryConfig* Configs = (FGeometryConfig*)LoadParams.mesh_resource.Data;
 	LoadParams.out_mesh->geometry_count = (unsigned short)LoadParams.mesh_resource.DataCount;
 	LoadParams.out_mesh->geometries = (UGeometry**)Memory::Allocate(sizeof(UGeometry*) * LoadParams.out_mesh->geometry_count, MemoryType::eMemory_Type_Array);
+
+	TArray<UGeometry*> Mesh;
 	for (uint32_t i = 0; i < LoadParams.out_mesh->geometry_count; ++i) {
 		FGeometryConfig& Config = Configs[i];
-		LoadParams.out_mesh->geometries[i] = GeometrySystem::Get().AcquireFromConfig(Config, true);
+		UGeometry* NewGeometry = GeometrySystem::Get().AcquireFromConfig(Config, true);
+		if (NewGeometry) Mesh.Push(NewGeometry);
 	}
 	LoadParams.out_mesh->Generation++;
 
 	GLOG(Log::eInfo, "Successfully loaded mesh: '%s'.", LoadParams.resource_name.CStr());
 	ResourceSystem::Get().Unload(&LoadParams.mesh_resource);
+
+	// 更新Proxy
+	MeshComponent->SetMesh(Mesh);
+	MeshComponent->UpdateRenderProxy();
 }
 
 void AStaticMeshActor::LoadJobFail() {
@@ -63,6 +80,7 @@ bool AStaticMeshActor::LoadFromResource(const FString& resource_name) {
 
 void AStaticMeshActor::Unload() {
 	for (uint32_t i = 0; i < geometry_count; ++i) {
+		if (!geometries || !geometries[i]) continue;
 		geometries[i]->DecreaseReferenceCount();
 		geometries[i] = nullptr;
 	}
@@ -75,22 +93,10 @@ void AStaticMeshActor::Unload() {
 	Generation = INVALID_ID_U8;
 }
 
-bool AStaticMeshActor::SetMeshResource(UAsset* mesh_resource)
+bool AStaticMeshActor::SetMeshResource(UGeometry* mesh_resource)
 {
-	UGeometry* geometry = dynamic_cast<UGeometry*>(mesh_resource);
-	if (!geometry) {
-		GLOG(Log::eError, "Failed to set mesh resource: '%s'. The provided resource is not a Geometry.", mesh_resource->GetName().CStr());
-		return false;
-	}
+	if (!MeshComponent) return false;
 
-	if (!geometries) {
-		geometries = (UGeometry**)Memory::Allocate(sizeof(UGeometry*), MemoryType::eMemory_Type_Array);
-	}
-	else
-	{
-		geometries[0]->DecreaseReferenceCount();
-	}
-
-	geometries[0] = geometry;
+	MeshComponent->SetMesh({mesh_resource});
 	return true;
 }

@@ -192,6 +192,21 @@ public:
         return &Buckets_[idx].Data.Value;
     }
 
+    /*
+    * @brief 查找键，确保存在时调用
+    */
+    V& At(const K& key) {
+		size_t idx = FindBucket(key);
+        if (idx == kInvalid) GLOG(Log::eError, "Please call TMap::At() function after confirm.");
+		return Buckets_[idx].Data.Value;
+    }
+
+    const V& At(const K& key) const {
+		size_t idx = FindBucket(key);
+		if (idx == kInvalid) GLOG(Log::eError, "Please call TMap::At() function after confirm.");
+		return Buckets_[idx].Data.Value;
+    }
+
     /**
      * @brief 判断键是否存在。
      */

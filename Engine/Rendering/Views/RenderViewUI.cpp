@@ -15,6 +15,7 @@
 #include "Rendering/Interface/IRendererBackend.hpp"
 #include "Framework/Classes/TextActor.h"
 #include "Framework/Components/StaticMeshComponent.h"
+#include "Rendering/RenderWorld/RenderProxy.h"
 
 static bool RenderViewUIOnEvent(eEventCode code, void* sender, void* listenerInst, SEventContext context) {
 	IRenderView* self = (IRenderView*)listenerInst;
@@ -33,14 +34,13 @@ static bool RenderViewUIOnEvent(eEventCode code, void* sender, void* listenerIns
 	return false;
 }
 
-RenderViewUI::RenderViewUI() {}
-
 RenderViewUI::RenderViewUI(const RenderViewConfig& config) {
 	Type = config.type;
 	Name = config.name;
 	CustomShaderName = config.custom_shader_name;
 	RenderpassCount = config.pass_count;
 	Passes.resize(RenderpassCount);
+	Renderer = IRenderer::GetRenderer();
 }
 
 bool RenderViewUI::OnCreate(const RenderViewConfig& config) {
@@ -101,112 +101,30 @@ void RenderViewUI::OnResize(uint32_t width, uint32_t height) {
 	}
 }
 
-bool RenderViewUI::OnBuildPacket(IRenderviewPacketData* data, struct RenderViewPacket* out_packet) {
-	if (data == nullptr || out_packet == nullptr) {
-		GLOG(Log::eWarn, "RenderViewUI::OnBuildPacke() Requires valid pointer to packet and data.");
-		return false;
-	}
-
-	UIPacketData* PacketData = (UIPacketData*)data;
-	out_packet->view = this;
-
-	// Set matrix, etc.
-	out_packet->projection_matrix = ProjectionMatrix;
-	out_packet->view_matrix = ViewMatrix;
-
-	// TODO: Temp set extended data to the test text objects for now.
-	out_packet->extended_data = NewObject<UIPacketData>(*PacketData);
-
-	// Obtain all geometries from the current scene.
-	// Iterate all meshes and them to the packet's geometries collection.
-	for (uint32_t i = 0; i < PacketData->meshData.mesh_count; ++i) {
-		UStaticMeshComponent* MeshComp = PacketData->meshData.meshes[i]->GetComponent<UStaticMeshComponent>();
-		if (!MeshComp) {
-			continue;
-		}
-
-		MeshComp->DrawMesh();
-		/*out_packet->geometries.push_back(RenderData);
-		out_packet->geometry_count++;*/
-	}
-
-	return true;
-}
-
-void RenderViewUI::OnDestroyPacket(struct RenderViewPacket* packet) {
-	// No much to do here, just zero mem.
-	packet->geometries.clear();
-	std::vector<GeometryRenderData>().swap(packet->geometries);
-
-	if (packet->extended_data) {
-		UIPacketData* PacketData = (UIPacketData*)packet->extended_data;
-		if (PacketData->Textes != nullptr) {
-			Memory::Free(PacketData->Textes, MemoryType::eMemory_Type_Array);
-			PacketData->Textes = nullptr;
-		}
-
-		if (PacketData->meshData.meshes != nullptr) {
-			Memory::Free(PacketData->meshData.meshes, MemoryType::eMemory_Type_Array);
-			PacketData->meshData.meshes = nullptr;
-		}
-
-		DeleteObject(packet->extended_data);
-		packet->extended_data = nullptr;
-	}
-
-	Memory::Zero(packet, sizeof(RenderViewPacket));
-}
-
 bool RenderViewUI::RegenerateAttachmentTarget(uint32_t passIndex, RenderTargetAttachment* attachment) {
 	return true;
 }
 
-bool RenderViewUI::OnRender(struct RenderViewPacket* packet, RHI* back_renderer, size_t frame_number, size_t render_target_index) {
+void RenderViewUI::Render(const TArray<FRenderProxy*>& RenderObejcts) {
 	std::vector<DrawCall> UIDrawCalls;
 	// UI draw calls.
-	for (uint32_t i = 0; i < packet->geometry_count; ++i) {
-		GeometryRenderData* SrcData = &packet->geometries[i];
-		if (!SrcData->geometry) continue;
+	for (FRenderProxy* RenderProxy : RenderObejcts) {
+		FTextRenderProxy* Proxy = Cast<FTextRenderProxy*>(RenderProxy);
+		if (!Proxy) continue;
+
+		UGeometry* Geometry = Proxy->GetMesh();
+		if (!Geometry) continue;
 
 		DrawCall dc;
-		UMaterialInstance* Mat = SrcData->geometry->GetMaterialInstance();
-		dc.geometry = SrcData->geometry;
-		dc.model = SrcData->model_mat;
+		UMaterialInstance* Mat = Geometry->GetMaterialInstance();
+		dc.geometry = Geometry;
+		dc.model = Proxy->GetModelMatrix();
 		dc.material = Mat;
 		dc.shader = UsedShader;
 		dc.userData = nullptr;
 		dc.sortKey = ((uint64_t)dc.shader->ID << 32) | (uint64_t)Mat->GetInternalID();
 
 		UIDrawCalls.push_back(dc);
-	}
-
-	// Text draw calls.
-	UIPacketData* PacketData = (UIPacketData*)packet->extended_data;
-	for (uint32_t i = 0; i < PacketData->textCount; ++i) {
-		ATextActor* Text = PacketData->Textes[i];
-		if (!Text) continue;
-		UTextComponent* TextComp = Text->GetTextComponent();
-		if (!TextComp) continue;
-
-		UGeometry* TextGeometry = TextComp->GetGeometry();
-		if (!TextGeometry) continue;
-
-		DrawCall dc;
-		UMaterialInstance* Mat = TextGeometry->GetMaterialInstance();
-		dc.geometry = TextGeometry;
-		dc.model = Text->GetLocalTransform();
-		dc.material = Mat;
-		dc.shader = UsedShader;
-		dc.userData = nullptr;
-		dc.sortKey = ((uint64_t)dc.shader->ID << 32) | (uint64_t)Mat->GetInternalID();
-		UIDrawCalls.push_back(dc);
-
-		//// TODO: font color
-		//Vector4 FontColor = TextComp->GetColor();
-		//if (!UsedShader->SetUniformByIndex(DiffuseColorLocation, &FontColor)) {
-		//	GLOG(Log::eError, "Failed to apply bitmap font diffuse color uniform.");
-		//	return false;
-		//}
 	}
 
 	std::sort(UIDrawCalls.begin(), UIDrawCalls.end(),
@@ -215,16 +133,17 @@ bool RenderViewUI::OnRender(struct RenderViewPacket* packet, RHI* back_renderer,
 		});
 
 	FFrameData UIData;
-	UIData.projection = packet->projection_matrix;
-	UIData.view = packet->view_matrix;
+	UIData.projection = ProjectionMatrix;
+	UIData.view = ViewMatrix;
 	UIData.ambieantColor = Vector4(0.0f);
 	UIData.cameraPosition = Vector3(0.0f);
 	UIData.renderMode = render_mode;
-	UIData.time = packet->global_time;
+	UIData.time = 0.0f;
 
-	Passes[0].Begin(&Passes[0].Targets[render_target_index]);
-	back_renderer->ExecuteDrawCalls(UIDrawCalls, frame_number, UIData);
+	uint8_t RTIndex = Renderer->GetWindowAttachmentIndex();
+	uint64_t FrameNumber = Renderer->GetFrameNum();
+
+	Passes[0].Begin(&Passes[0].Targets[RTIndex]);
+	Renderer->ExecuteDrawCalls(UIDrawCalls, FrameNumber, UIData);
 	Passes[0].End();
-
-	return true;
 }

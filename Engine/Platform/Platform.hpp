@@ -8,9 +8,6 @@ struct SPlatformState{
 
 class DAPI Platform {
 public:
-	Platform() {};
-
-public:
 	static bool PlatformStartup(SPlatformState* platform_state, const std::string& application_name,
 		int x, int y, int width, int height);
 

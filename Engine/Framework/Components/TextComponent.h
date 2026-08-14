@@ -1,37 +1,40 @@
-#pragma once
+﻿#pragma once
 #include "PrimitiveComponent.h"
 #include "Rendering/Resources/Font/Font.hpp"
 
 class UGeometry;
 
-class UTextComponent : public UPrimitiveComponent
+class DAPI UTextComponent : public UPrimitiveComponent
 {
 	DECLARE_CLASS_TYPE(UTextComponent)
 
 public:
-	UTextComponent();
+	UTextComponent(const FString& Name);
 	~UTextComponent();
+
+	virtual bool Initialize() override;
+	virtual void Tick(float deltaTime) override;
+	virtual bool CreateRenderProxy() override;
+	virtual void UpdateRenderProxy() override;
 
 public:
 	bool Create();
 	void Destroy();
 
+	const FString& GetText() const;
 	bool SetText(const FString& text);
+
+	IFont* GetFont() const;
 	void SetFont(IFont* font);
 
+	const Vector4& GetColor() const;
 	void SetColor(const Vector4& color);
 
 	bool Regenerate();
-
 	void Draw();
 
 public:
-	const FString& GetText() const;
-	IFont* GetFont() const;
-	const Vector4& GetColor() const;
-
 	UGeometry* GetGeometry();
-
 	size_t GetFrameNumber() const;
 	void SetFrameNumber(size_t frame_number);
 
@@ -51,5 +54,5 @@ private:
 	float CharacterHeight = 1.0f;
 	float CharacterSpacing = 0.0f;
 
-	bool IsDirty = true;
+	bool IsTextDirty = true;
 };

@@ -393,8 +393,7 @@ void VulkanRHI::Shutdown() {
 	}
 }
 
-bool VulkanRHI::BeginFrame(double delta_time){
-	Context.FrameDeltaTime = delta_time;
+bool VulkanRHI::BeginFrame(){
 	VulkanDevice* Device = &Context.Device;
 
 	// Check if recreating swap chain and boot out
@@ -447,7 +446,7 @@ bool VulkanRHI::BeginFrame(double delta_time){
 	return true;
 }
 
-bool VulkanRHI::EndFrame(double delta_time) {
+bool VulkanRHI::EndFrame() {
 
 	VulkanCommandBuffer* CommandBuffer = &Context.GraphicsCommandBuffers[Context.ImageIndex];
 	

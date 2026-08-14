@@ -1,5 +1,6 @@
 ﻿#include "CubeActor.h"
 #include <Systems/GeometrySystem.h>
+#include <Framework/Classes/StaticMeshActor.h>
 
 ACubeActor::ACubeActor() : ACubeActor("CubeActor") {}
 
@@ -15,6 +16,8 @@ ACubeActor::ACubeActor(const FString& Name) : AStaticMeshActor(Name) {
 
 	// Clean up the allocations for the geometry config.
 	GeoSys.ConfigDispose(&GeoConfig);
+
+	SetMeshResource(geometries[0]);
 }
 
 ACubeActor::~ACubeActor() {

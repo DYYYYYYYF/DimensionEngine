@@ -1,16 +1,12 @@
 ﻿#pragma once
 
 #include "Core/Engine.hpp"
+#include "Scene/World.h"
 
 struct SRenderPacket;
 
 class IGame {
 private:
-	struct GameFrameData {
-	public:
-		std::vector<GeometryRenderData> WorldGeometries;
-	};
-
 	struct WindowRect {
 	public:
 		uint16_t Width;
@@ -19,14 +15,23 @@ private:
 
 public:
     virtual ~IGame(){}
-	virtual bool Boot(IRenderer* renderer) = 0;
+	virtual bool Boot() {
+		World = NewObject<UWorld>();
+		if (!World) {
+			return false;
+		}
+
+		return true;
+	};
+
 	virtual void Shutdown() = 0;
 
 	virtual bool Initialize() = 0;
+	virtual void BeginPlay() = 0;
 	virtual bool Update(float delta_time) = 0;
-	virtual bool Render(SRenderPacket* packet, float delta_time) = 0;
-
 	virtual void OnResize(unsigned int width, unsigned int height) = 0;
+
+	void Add(AActor* Actor) { World->AddActor(Actor); }
 
 public:
 	// 基础属性
@@ -56,9 +61,10 @@ public:
 	void SetRenderviewConfigPath(const FString& Path) { RenderviewConfigPath = Path; }
 	const FString& GetRenderviewConfigPath() const { return RenderviewConfigPath; }
 
+	UWorld* GetWorld() const { return World; }
+
 public:
 	float DeltaTime;
-	GameFrameData FrameData;
 
 protected:
 	std::string ApplicationName;
@@ -67,4 +73,5 @@ protected:
 	FontSystemConfig FontConfig;
 	FString RenderviewConfigPath;
 
+	UWorld* World;
 };

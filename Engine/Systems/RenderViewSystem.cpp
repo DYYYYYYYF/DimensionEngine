@@ -84,8 +84,8 @@ bool RenderViewSystem::Create(const RenderViewConfig& config) {
 	}
 
 	uint16_t ID = INVALID_ID_U16;
-	if (RegisteredViewMap.find(config.name) != RegisteredViewMap.end()){
-		GLOG(Log::eError, "RenderViewSystem::Create() A view named '%s' already exists. A new one will not be created.", config.name.CStr());
+	if (RegisteredViewMap.find(config.type) != RegisteredViewMap.end()){
+		GLOG(Log::eError, "RenderViewSystem::Create() A view of type '%d' already exists. A new one will not be created.", config.type);
 		return false;
 	}
 
@@ -106,17 +106,17 @@ bool RenderViewSystem::Create(const RenderViewConfig& config) {
 	// TODO: Assign these function pointers to known functions based on the view type.
 	// TODO: Refactor pattern.
 	if (RegisteredViews[ID] == nullptr) {
-		if (config.type == RenderViewKnownType::eRender_View_Known_Type_Deferred) {
-			RegisteredViews[ID] = new RenderViewWorldDeferred(config);
+		if (config.type == ERenderViewType::Deferred) {
+			RegisteredViews[ID] = NewObject<RenderViewWorldDeferred>(MemoryType::eMemory_Type_Renderer, config);
 		}
-		else if (config.type == RenderViewKnownType::eRender_View_Known_Type_UI) {
-			RegisteredViews[ID] = new RenderViewUI(config);
+		else if (config.type == ERenderViewType::UI) {
+			RegisteredViews[ID] = NewObject<RenderViewUI>(MemoryType::eMemory_Type_Renderer, config);
 		}
-		else if (config.type == RenderViewKnownType::eRender_View_Known_Type_Skybox) {
-			RegisteredViews[ID] = new RenderViewSkybox(config);
+		else if (config.type == ERenderViewType::Skybox) {
+			RegisteredViews[ID] = NewObject<RenderViewSkybox>(MemoryType::eMemory_Type_Renderer, config);
 		}
-		else if (config.type == RenderViewKnownType::eRender_View_Known_Type_Pick) {
-			RegisteredViews[ID] = new RenderViewPick(config, Renderer);
+		else if (config.type == ERenderViewType::Pick) {
+			RegisteredViews[ID] = NewObject<RenderViewPick>(MemoryType::eMemory_Type_Renderer, config, Renderer);
 		}
 		else {
 			return true;
@@ -137,7 +137,7 @@ bool RenderViewSystem::Create(const RenderViewConfig& config) {
 	RegenerateRendertargets(View);
 
 	// Update the hashtable entry.
-	RegisteredViewMap[config.name] = ID;
+	RegisteredViewMap[config.type] = ID;
 
 	return true;
 }
@@ -193,14 +193,14 @@ void RenderViewSystem::OnWindowResize(uint32_t width, uint32_t height) {
 	}
 }
 
-IRenderView* RenderViewSystem::Get(const FString& name) {
+IRenderView* RenderViewSystem::Get(ERenderViewType Type) {
 	if (Initialized) {
-		if (RegisteredViewMap.find(name) == RegisteredViewMap.end()){
-			GLOG(Log::eDebug, "Can not find render view '%s', return nullptr.", name.CStr());
+		if (RegisteredViewMap.find(Type) == RegisteredViewMap.end()){
+			GLOG(Log::eDebug, "Can not find render view of type '%d', return nullptr.", Type);
 			return nullptr;
 		}
 
-		uint16_t ID = RegisteredViewMap[name];
+		uint16_t ID = RegisteredViewMap[Type];
 		if (ID != INVALID_ID_U16) {
 			IRenderView* Result = RegisteredViews[ID];
 			return Result;
@@ -209,22 +209,6 @@ IRenderView* RenderViewSystem::Get(const FString& name) {
 
 	GLOG(Log::eError, "RenderViewSystem::Get() Acquire renderview beform renderview system initialize.");
 	return nullptr;
-}
-
-bool RenderViewSystem::BuildPacket(IRenderView* view, IRenderviewPacketData* data, struct RenderViewPacket* out_packet) {
-	if (out_packet && view) {
-		return view->OnBuildPacket(data, out_packet);
-	}
-
-	return false;
-}
-
-bool RenderViewSystem::OnRender(IRenderView* view, RenderViewPacket* packet, size_t frame_number, size_t render_target_index) {
-	if (view && Renderer) {
-		return view->OnRender(packet, Renderer->GetRenderBackend(), frame_number, render_target_index);
-	}
-
-	return false;
 }
 
 bool RenderViewSystem::LoadRenderviewConfig(const FString& path) {
@@ -243,11 +227,11 @@ bool RenderViewSystem::LoadRenderviewConfig(const FString& path) {
 
 	// ---- 字符串 → 枚举的辅助 lambda ----
 	auto ParseType = [](const std::string& s) {
-		if (s == "Skybox")   return RenderViewKnownType::eRender_View_Known_Type_Skybox;
-		if (s == "Deferred") return RenderViewKnownType::eRender_View_Known_Type_Deferred;
-		if (s == "UI")       return RenderViewKnownType::eRender_View_Known_Type_UI;
-		if (s == "Pick")     return RenderViewKnownType::eRender_View_Known_Type_Pick;
-		return RenderViewKnownType::eRender_View_Known_Type_Unknown;
+		if (s == "Skybox")   return ERenderViewType::Skybox;
+		if (s == "Deferred") return ERenderViewType::Deferred;
+		if (s == "UI")       return ERenderViewType::UI;
+		if (s == "Pick")     return ERenderViewType::Pick;
+		return ERenderViewType::Unknown;
 		};
 
 	auto ParseAttachType = [](const std::string& s) {

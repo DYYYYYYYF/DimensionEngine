@@ -137,7 +137,7 @@ bool Engine::Initialize(){
 	}
 
 	// Perform the game's boot sequence.
-	if (!GameInst->Boot(Renderer)) {
+	if (!GameInst->Boot()) {
 		GLOG(Log::eFatal, "Game boot sequence failed!");
 		return false;
 	}
@@ -211,10 +211,7 @@ bool Engine::Run() {
 	double FrameElapsedTime = 0.0;
 	double TargetFrameSeconds = 1.0 / 120.0;
 
-	GLOG(Log::eDebug, Memory::GetMemoryUsageStr().CStr());
-
-	GlobalFileWatcher = NewObject<FileWatcher>();
-
+	GlobalFileWatcher = NewObject<FileWatcher>(MemoryType::eMemory_Type_Application);
 	if (ShaderSystem::Get().GetShaderLanguage() == EShaderLanguage::eGLSL) {
 		GlobalFileWatcher->AddWatchFolder("../Shaders/glsl/");
 	}
@@ -222,6 +219,13 @@ bool Engine::Run() {
 		GlobalFileWatcher->AddWatchFolder("../Shaders/hlsl/");
 	}
 
+	// Begin play
+	GameInst->BeginPlay();
+
+	// DEBUG info
+	GLOG(Log::eDebug, Memory::GetMemoryUsageStr().CStr());
+
+	// Running
 	while (is_running) {
 		if (!Platform::PlatformPumpMessage(&platform)) {
 			is_running = false;
@@ -253,24 +257,8 @@ bool Engine::Run() {
 			SRenderPacket Packet;
 			Packet.delta_time = DeltaTime;
 
-			// Call the game's render routine.
-			if (!GameInst->Render(&Packet, (float)DeltaTime)) {
-				GLOG(Log::eFatal, "Game render faield. shutting down.");
-				is_running = false;
-				break;
-			}
-
-			Renderer->DrawFrame(&Packet);
-
-			// Cleanup the packet.
-			for (uint32_t i = 0; i < (uint32_t)Packet.views.size(); ++i) {
-				IRenderView* RenderView = Packet.views[i].view;
-				if (RenderView) {
-					RenderView->OnDestroyPacket(&Packet.views[i]);
-				}
-			}
-			Packet.views.clear();
-			std::vector<struct RenderViewPacket>().swap(Packet.views);
+			// 渲染帧数据
+			Renderer->DrawFrame(GameInst->GetWorld());
 
 			double FrameEndTime = Platform::PlatformGetAbsoluteTime();
 			FrameElapsedTime = FrameEndTime - FrameStartTime;

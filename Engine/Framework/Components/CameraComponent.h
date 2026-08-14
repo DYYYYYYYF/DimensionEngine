@@ -1,27 +1,29 @@
-#pragma once
-#include "Component.h"
+ï»¿#pragma once
+#include "SceneComponent.h"
 #include "Math/MathTypes.hpp"
 
-class DAPI UCameraComponent : public UComponent {
+class DAPI UCameraComponent : public USceneComponent {
 	DECLARE_CLASS_TYPE(UCameraComponent)
 
 public:
 	UCameraComponent(const FString& Name);
 
+	virtual void OnTransformChanged() override;
+
 public:
-	//  Î»ÖÃ£¨¸²¸Ç Actor »ùÀà£¬¶îÍâ±ê¼Ç IsDirty£©
+	//  ä½ç½®ï¼ˆè¦†ç›– Actor åŸºç±»ï¼Œé¢å¤–æ ‡è®° IsDirtyï¼‰
 	void    SetPosition(const Vector3& Pos);
 	Vector3 GetPosition() const;
 
-	//  Ğı×ª ¡ª¡ª Euler ½Ç¶ÈÖÆ£¨ÓëÔ­ Camera ½Ó¿Ú±£³ÖÒ»ÖÂ£©
+	//  æ—‹è½¬ â€”â€” Euler è§’åº¦åˆ¶ï¼ˆä¸åŸ Camera æ¥å£ä¿æŒä¸€è‡´ï¼‰
 	void    SetEulerAngles(const Vector3& EulerDeg);
 	Vector3 GetEulerAngles() const;
 
 	//  ViewMatrix
-	Matrix4 GetViewMatrix();
+	Matrix4 GetViewMatrix() const;
 	void    SetViewMatrix(const Matrix4& Mat);
 
-	//  ÒÆ¶¯
+	//  ç§»åŠ¨
 	void MoveForward(float Amount);
 	void MoveBackward(float Amount);
 	void MoveLeft(float Amount);
@@ -29,38 +31,60 @@ public:
 	void MoveUp(float Amount);
 	void MoveDown(float Amount);
 
-	//  Ğı×ª
-	void RotateYaw(float Amount);   // ÈÆ Y Öá£¬´«Èë»¡¶ÈÔöÁ¿
-	void RotatePitch(float Amount);   // ÈÆ X Öá£¬´«Èë»¡¶ÈÔöÁ¿£¬ÄÚ²¿ÏŞ·ù
+	//  æ—‹è½¬
+	void RotateYaw(float Amount);   // ç»• Y è½´ï¼Œä¼ å…¥å¼§åº¦å¢é‡
+	void RotatePitch(float Amount);   // ç»• X è½´ï¼Œä¼ å…¥å¼§åº¦å¢é‡ï¼Œå†…éƒ¨é™å¹…
 
-	//  ·½ÏòÏòÁ¿£¨´Ó ViewMatrix ¶ÁÈ¡£©
-	Vector3 Forward() { return GetViewMatrix().Forward(); }
-	Vector3 Backward() { return GetViewMatrix().Backward(); }
-	Vector3 Left() { return GetViewMatrix().Left(); }
-	Vector3 Right() { return GetViewMatrix().Right(); }
-	Vector3 Up() { return GetViewMatrix().Up(); }
+	//  æ–¹å‘å‘é‡ï¼ˆä» ViewMatrix è¯»å–ï¼‰
+	Vector3 Forward() const { return GetViewMatrix().Forward(); }
+	Vector3 Backward() const { return GetViewMatrix().Backward(); }
+	Vector3 Left() const { return GetViewMatrix().Left(); }
+	Vector3 Right() const { return GetViewMatrix().Right(); }
+	Vector3 Up() const { return GetViewMatrix().Up(); }
 
-	//  ÖØÖÃ
+	// åŸºç¡€ä¿¡æ¯
+	void SetFOV(float FOV) { FOV_ = FOV; }
+	float GetFOV() const { return FOV_; }
+	void SetAspectRatio(float AspectRatio) { AspectRatio_ = AspectRatio; }
+	float GetAspectRatio() const { return AspectRatio_; }
+	void SetNearPlane(float NearPlane) { NearPlane_ = NearPlane; }
+	float GetNearPlane() const { return NearPlane_; }
+	void SetFarPlane(float FarPlane) { FarPlane_ = FarPlane; }
+	float GetFarPlane() const { return FarPlane_; }
+
+	// è·å–è§†é”¥ä½“
+	const FFrustum& GetFrustum() const;
+	void UpdateFrustum() const;
+
+	//  é‡ç½®
 	void Reset();
 
 protected:
-	// ViewMatrix ÖØ½¨£¨µ± IsDirty_ Ê±µ÷ÓÃ£©
-	void RebuildViewMatrix();
+	// ViewMatrix é‡å»ºï¼ˆå½“ IsDirty_ æ—¶è°ƒç”¨ï¼‰
+	void RebuildViewMatrix() const;
 
-	// ½«µ±Ç° EulerRotation_/Position Í¬²½Ğ´Èë LocalTransform
+	// å°†å½“å‰ EulerRotation_/Position åŒæ­¥å†™å…¥ LocalTransform
 	void SyncToTransform();
 
 
 protected:
-	// Ğı×ªÒÔ»¡¶È´æ´¢£¨pitch=x, yaw=y, roll=z£©£¬ÊÇÎ¨Ò»Ğı×ªÕæÏàÀ´Ô´
+	// åŸºç¡€è®¾ç½®
+	float FOV_ = 60.0f;   // è§†é‡è§’åº¦ï¼ˆåº¦ï¼‰
+	float AspectRatio_ = 16.0f / 9.0f;   // å®½é«˜æ¯”
+	float NearPlane_ = 0.1f;   // è¿‘å¹³é¢
+	float FarPlane_ = 1000.0f;   // è¿œå¹³é¢
+
+	// è§†é”¥ä½“
+	mutable FFrustum Frustum_;
+	mutable bool IsBaseDataDirty_ = true;
+
+	// æ—‹è½¬ä»¥å¼§åº¦å­˜å‚¨ï¼ˆpitch=x, yaw=y, roll=zï¼‰ï¼Œæ˜¯å”¯ä¸€æ—‹è½¬çœŸç›¸æ¥æº
 	Vector3 EulerRotation_{ 0.0f, 0.0f, 0.0f };
+	// ç¼“å­˜çš„ ViewMatrix
+	mutable Matrix4 ViewMatrix_;
+	// ViewMatrix æ˜¯å¦éœ€è¦é‡å»º
+	mutable bool IsDirty_ = true;
 
-	// »º´æµÄ ViewMatrix
-	Matrix4 ViewMatrix_;
-
-	// ViewMatrix ÊÇ·ñĞèÒªÖØ½¨
-	bool IsDirty_ = true;
-
-	// Pitch ÏŞ·ù£¨»¡¶È£©£¬±ÜÃâÍòÏòËø£¬Ô¼ ¡À89¡ã
+	// Pitch é™å¹…ï¼ˆå¼§åº¦ï¼‰ï¼Œé¿å…ä¸‡å‘é”ï¼Œçº¦ Â±89Â°
 	static constexpr float PitchLimit = 1.55334306f;
 };

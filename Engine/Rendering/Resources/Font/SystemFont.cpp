@@ -87,6 +87,8 @@ USystemFontVariant* USystemFont::CreateVariant(int size) {
 	}
 
 	variants_[size] = variant;
+	variant->SetFontSize(size);
+
 	return variant;
 }
 

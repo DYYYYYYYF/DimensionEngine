@@ -73,7 +73,7 @@ bool FontSystem::RegisterBitmapFont(const BitmapFontConfig& config) {
 
 	// 从资源系统加载原始数据
 	// BitmapFont 继承自 UAsset，直接作为加载目标
-	UBitmapFont* font = NewObject<UBitmapFont>();
+	UBitmapFont* font = NewObject<UBitmapFont>(MemoryType::eMemory_Type_Resource);
 	if (!ResourceSystem::Get().Load(config.resourceName, EAssetType::BitmapFont, nullptr, font)) {
 		GLOG(Log::eError, "Failed to load bitmap font resource: %s.", config.resourceName.CStr());
 		return false;
@@ -114,7 +114,7 @@ bool FontSystem::RegisterSystemFont(const SystemFontConfig& config) {
 			return false;
 		}
 
-		USystemFont* font = NewObject<USystemFont>();
+		USystemFont* font = NewObject<USystemFont>(MemoryType::eMemory_Type_Resource);
 
 		// 传入 index=i，SystemFont 内部用它定位 TTF 文件内的具体字型
 		if (!font->InitFromResourceData(resourceData, i)) {
@@ -148,6 +148,8 @@ IFont* FontSystem::Acquire(const FString& fontName, UITextType type, int fontSiz
 			return nullptr;
 		}
 
+		Font->SetFontName(fontName);
+		Font->SetFontSize(fontSize);
 		Font->AddRef();
 		return Font;
 	}
@@ -168,6 +170,7 @@ IFont* FontSystem::Acquire(const FString& fontName, UITextType type, int fontSiz
 			return nullptr;
 		}
 
+		Variant->SetFontName(fontName);
 		Variant->AddRef();
 		return Variant;
 	}

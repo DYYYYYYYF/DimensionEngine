@@ -18,10 +18,10 @@ public:
 	virtual bool Initialize(const RenderBackendConfig* config, unsigned char* out_window_render_target_count, struct SPlatformState* plat_state) override;
 	virtual void Shutdown() override;
 
-	virtual bool BeginFrame(double delta_time) override;
+	virtual bool BeginFrame() override;
 	virtual void DrawGeometry(GeometryRenderData* geometry) override;
 	virtual void ExecuteDrawCalls(const std::vector<DrawCall>& draw_calls, size_t frame_number, const FFrameData& data) override;
-	virtual bool EndFrame(double delta_time) override;
+	virtual bool EndFrame() override;
 	virtual void Resize(unsigned short width, unsigned short height) override;
 
 	// Textures
