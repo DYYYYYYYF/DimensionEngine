@@ -29,7 +29,7 @@ void main(){
         gl_Position = vec4(fragPosition, 0.0, 1.0);
         OutDto.vTexcoord = vec2(0, 1);
     } else if (gl_VertexIndex == 3) {
-         vec2 fragPosition = vec2(1.0, 1.0);   // 右上角 3
+        vec2 fragPosition = vec2(1.0, 1.0);   // 右上角 3
         gl_Position = vec4(fragPosition, 0.0, 1.0);
         OutDto.vTexcoord = vec2(1, 0);
     }
@@ -37,4 +37,5 @@ void main(){
     // Copy props
     out_time = GlobalUBO.global_time;
     OutDto.ambient_color = vec4(0.18, 0.18, 0.18, 1.0);
+    OutDto.view_position = vec3(0.0, 0.0, 0.0);
 }

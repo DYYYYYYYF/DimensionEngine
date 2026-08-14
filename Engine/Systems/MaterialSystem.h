@@ -19,16 +19,11 @@ public:
 	bool Initialize(IRenderer* renderer, SMaterialSystemConfig config);
 	void Shutdown();
 
-	Material* Acquire(const FString& name);
-	Material* AcquireFromConfig(SMaterialConfig config);
+	UMaterial* Acquire(const FString& name);
+	UMaterial* AcquireFromConfig(FMaterialConfig config);
 
-	void Release(const FString& name);
-
-	Material* GetDefaultMaterial();
-
-	bool LoadMaterial(SMaterialConfig config, Material* mat);
-	void DestroyMaterial(Material* mat);
-
+	bool LoadMaterial(FMaterialConfig config, UMaterial* mat);
+	void DestroyMaterial(UMaterial* mat);
 
 	/**
 	 * @brief Applies global-level data for the material shader id.
@@ -38,7 +33,7 @@ public:
 	 * @param view A constant pointer to a view matrix.
 	 * @return True on success; otherwise false.
 	 */
-	bool ApplyGlobal(uint32_t shader_id, size_t renderer_frame_number, const Matrix4& projection, const Matrix4& view, const Vector4& ambient_color, const Vector3& view_position, uint32_t render_mode, float global_time);
+	bool ApplyGlobal(uint32_t shader_id, size_t renderer_frame_number, const FFrameData& data);
 
 	/**
 	 * @brief Applies instance-level material data for the given material.
@@ -47,7 +42,7 @@ public:
 	 * @param need_update Indicates if the material needs to be update.
 	 * @return True on success; otherwise false.
 	 */
-	bool ApplyInstance(Material* mat, bool need_update);
+	bool ApplyInstance(UMaterialInstance* mat, const FFrameData& data);
 
 	/**
 	 * @brief Applies local-level material data (typically just model matrix).
@@ -56,30 +51,29 @@ public:
 	 * @param model A constant pointer to the model matrix to be applied.
 	 * @return True on success; otherwise false.
 	 */
-	bool ApplyLocal(Material* mat, const Matrix4& model);
+	bool ApplyLocal(UMaterialInstance* mat, const Matrix4& model);
 
 private:
-	bool CreateDefaultMaterial();
+	bool CreateTextureMap(FTextureMap& map, TextureUsage usage, const FString& textureName);
+
+	TextureUsage GetTextureUsageFromUniformName(const FString& name) const;
 
 public:
 	SMaterialSystemConfig MaterialSystemConfig;
-	Material* DefaultMaterial = nullptr;
 
 	// Array of registered materials.
-	std::vector<Material*> RegisteredMaterials;
+	std::vector<UMaterial*> RegisteredMaterials;
 	// Hashtable for material lookups.
 	std::unordered_map<FString, uint32_t> MaterialMap;
 
 	// Know locations for the material shader.
-	MaterialShaderUniformLocations MaterialLocations;
+	FMaterialShaderUniformLocations MaterialLocations;
 	uint32_t MaterialShaderID = INVALID_ID;
 
 	// Know locations for the deferred lighting material shader.
-	DRShaderUniformLocations DeferredLightMaterialLocations;
 	uint32_t DeferredLightMaterialShaderID = INVALID_ID;
 
 	// Know locations for the ui shader.
-	UIShaderUniformLocations UILocations;
 	uint32_t UIShaderID = INVALID_ID;
 
 	bool Initilized = false;

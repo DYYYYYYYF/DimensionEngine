@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-#include "Framework/Iobject.h"
+#include "Framework/Object.h"
 #include "Containers/FString.hpp"
 
 /** @brief A magic number indicating the file as engine file. */
@@ -22,17 +22,19 @@ enum class EAssetType {
 	Unkonw
 };
 
-struct ResourceHeader {
+struct FResourceHeader {
 	uint32_t magicNumber;
 	unsigned char resourceType;
 	unsigned char version;
 	unsigned short reserved;
 };
 
-class DAPI UAsset : public IObject {
+class DAPI UAsset : public UObject, public TRequireClassType<UAsset> {
+	DECLARE_CLASS_TYPE(UAsset)
+
 public:
-	UAsset() {}
-	UAsset(const FString& name) : Name(name){}
+	UAsset() : UObject() {}
+	UAsset(const FString& name) : UObject(), Name(name) {}
 
 	virtual ~UAsset() = default;
 
@@ -65,13 +67,6 @@ public:
 };
 
 // TODO: 移到Image内部
-struct ImageResourceData {
-	unsigned char channel_count = 4;
-	uint32_t width = 1920;
-	uint32_t height = 1080;
-	unsigned char* pixels = nullptr;
-};
-
-struct ImageResourceParams {
+struct FImageResourceParams {
 	bool flip_y = false;
 };

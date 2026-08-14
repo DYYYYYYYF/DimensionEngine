@@ -3,7 +3,7 @@
 #include "Containers/FString.hpp"
 #include "Containers/TArray.hpp"
 
-struct FontGlyph {
+struct FFontGlyph {
 	int            codePoint;
 	unsigned short x;
 	unsigned short y;
@@ -15,29 +15,29 @@ struct FontGlyph {
 	unsigned char  pageID;
 };
 
-struct FontKerning {
+struct FFontKerning {
 	int   codePoint0;
 	int   codePoint1;
 	short amount;
 };
 
-struct BitmapFontPage {
+struct FBitmapFontPage {
 	char        id = INVALID_ID_U8;
 	FString filename;
 };
 
-struct BitmapFontResourceData {
-	class BitmapFont* data = nullptr;   // 改为指向 BitmapFont 自身
-	BitmapFontPage* Pages = nullptr;
+struct FBitmapFontResourceData {
+	class UBitmapFont* data = nullptr;   // 改为指向 BitmapFont 自身
+	FBitmapFontPage* Pages = nullptr;
 	unsigned int      pageCount = 0;
 };
 
-struct SystemFontFace {
+struct FSystemFontFace {
 	FString name;
 };
 
-struct SystemFontResourceData {
-	TArray<SystemFontFace> fonts;
+struct FSystemFontResourceData {
+	TArray<FSystemFontFace> fonts;
 	size_t binarySize = 0;
 	void* fontBinary = nullptr;
 };

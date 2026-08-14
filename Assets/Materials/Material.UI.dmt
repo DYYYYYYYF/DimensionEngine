@@ -5,7 +5,7 @@ name=TestUIMaterial
 diffuse_color=1.0 1.0 1.0 1.0
 
 # Textures
-diffuse_map_name=DimensionEngine
+diffuse_texture=DimensionEngine
 
 # Shader
 shader=Shader.Builtin.UI

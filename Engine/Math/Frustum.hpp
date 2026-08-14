@@ -50,7 +50,7 @@ public:
 	 * @param radius The radius of the sphere.
 	 * @return True if the sphere intersects the plane; otherwise false.
 	 */
-	bool IntersectsSphere(const TVector3<float>& center, float radius) {
+	bool IntersectsSphere(const TVector3<float>& center, float radius) const {
 		return SignedDistance(center) > -radius;
 	}
 
@@ -61,7 +61,7 @@ public:
 	 * @param extents The half-extents of an axis-aligned bounding box.
 	 * @return True if the axis-aligned bounding box intersects the plane; otherwise false.
 	 */
-	bool IntersectsAABB(const TVector3<float>& center, const TVector3<float>& extents) {
+	bool IntersectsAABB(const TVector3<float>& center, const TVector3<float>& extents) const {
 		float r = extents.x * Dabs(Normal.x) +
 			extents.y * Dabs(Normal.y) +
 			extents.z * Dabs(Normal.z);
@@ -73,9 +73,9 @@ public:
 	float Distance;
 };
 
-struct Frustum {
+struct ENGINE_API FFrustum {
 public:
-	Frustum() {}
+	FFrustum() {}
 
 	/**
 	 * @brief Creates and returns a frustum based on the provided position, direction vectors, aspect, field of view,
@@ -90,7 +90,7 @@ public:
 	 * @param near The near clipping plane distance.
 	 * @param far The far clipping plane distance.
 	 */
-	Frustum(const TVector3<float>& position, const TVector3<float>& forward, const TVector3<float>& right, const TVector3<float>& up, float aspect, float fov, float near, float far) {
+	FFrustum(const TVector3<float>& position, const TVector3<float>& forward, const TVector3<float>& right, const TVector3<float>& up, float aspect, float fov, float near, float far) {
 		const float HalfV = far * tanf(fov * 0.5f);
 		const float HalfH = HalfV * aspect;
 		const TVector3<float> fwd = forward;
@@ -114,7 +114,7 @@ public:
 	 * @param radius The radius of the sphere.
 	 * @return True if the sphere is intersected by or contained within the frustum f; otherwise false.
 	 */
-	bool IntersectsSphere(const TVector3<float>& center, float radius) {
+	bool IntersectsSphere(const TVector3<float>& center, float radius) const {
 		for (unsigned char i = 0; i < 6; ++i) {
 			if (!Sides[i].IntersectsSphere(center, radius)) {
 				return false;
@@ -131,7 +131,7 @@ public:
 	 * @param extents The half-extents of an axis-aligned bounding box.
 	 * @return True if the axis-aligned bounding box is intersected by or contained within the frustum f; otherwise false.
 	 */
-	bool IntersectsAABB(const TVector3<float>& center, const TVector3<float>& extents) {
+	bool IntersectsAABB(const TVector3<float>& center, const TVector3<float>& extents) const {
 		for (unsigned char i = 0; i < 6; ++i) {
 			if (!Sides[i].IntersectsAABB(center, extents)) {
 				return false;

@@ -15,6 +15,7 @@
 #include "Rendering/Interface/IRendererBackend.hpp"
 #include "Framework/Classes/TextActor.h"
 #include "Framework/Components/StaticMeshComponent.h"
+#include "Rendering/RenderWorld/RenderProxy.h"
 
 static bool RenderViewUIOnEvent(eEventCode code, void* sender, void* listenerInst, SEventContext context) {
 	IRenderView* self = (IRenderView*)listenerInst;
@@ -33,14 +34,13 @@ static bool RenderViewUIOnEvent(eEventCode code, void* sender, void* listenerIns
 	return false;
 }
 
-RenderViewUI::RenderViewUI() {}
-
 RenderViewUI::RenderViewUI(const RenderViewConfig& config) {
 	Type = config.type;
 	Name = config.name;
 	CustomShaderName = config.custom_shader_name;
 	RenderpassCount = config.pass_count;
 	Passes.resize(RenderpassCount);
+	Renderer = IRenderer::GetRenderer();
 }
 
 bool RenderViewUI::OnCreate(const RenderViewConfig& config) {
@@ -52,7 +52,7 @@ bool RenderViewUI::OnCreate(const RenderViewConfig& config) {
 		return false;
 	}
 
-	ShaderConfig* Config = (ShaderConfig*)ConfigResource.Data;
+	FShaderConfig* Config = (FShaderConfig*)ConfigResource.Data;
 	// NOTE: Assuming the first pass since that's all this view has.
 	if (!ShaderSystem::Get().Create(&Passes[0], Config)) {
 		GLOG(Log::eError, "Failed to load builtin UI shader.");
@@ -101,150 +101,49 @@ void RenderViewUI::OnResize(uint32_t width, uint32_t height) {
 	}
 }
 
-bool RenderViewUI::OnBuildPacket(IRenderviewPacketData* data, struct RenderViewPacket* out_packet) {
-	if (data == nullptr || out_packet == nullptr) {
-		GLOG(Log::eWarn, "RenderViewUI::OnBuildPacke() Requires valid pointer to packet and data.");
-		return false;
-	}
-
-	UIPacketData* PacketData = (UIPacketData*)data;
-	out_packet->view = this;
-
-	// Set matrix, etc.
-	out_packet->projection_matrix = ProjectionMatrix;
-	out_packet->view_matrix = ViewMatrix;
-
-	// TODO: Temp set extended data to the test text objects for now.
-	out_packet->extended_data = NewObject<UIPacketData>(*PacketData);
-
-	// Obtain all geometries from the current scene.
-	// Iterate all meshes and them to the packet's geometries collection.
-	for (uint32_t i = 0; i < PacketData->meshData.mesh_count; ++i) {
-		UStaticMeshComponent* MeshComp = PacketData->meshData.meshes[i]->GetComponent<UStaticMeshComponent>();
-		if (!MeshComp) {
-			continue;
-		}
-
-		MeshComp->DrawMesh();
-		/*out_packet->geometries.push_back(RenderData);
-		out_packet->geometry_count++;*/
-	}
-
-	return true;
-}
-
-void RenderViewUI::OnDestroyPacket(struct RenderViewPacket* packet) {
-	// No much to do here, just zero mem.
-	packet->geometries.clear();
-	std::vector<GeometryRenderData>().swap(packet->geometries);
-
-	if (packet->extended_data) {
-		UIPacketData* PacketData = (UIPacketData*)packet->extended_data;
-		if (PacketData->Textes != nullptr) {
-			Memory::Free(PacketData->Textes, MemoryType::eMemory_Type_Array);
-			PacketData->Textes = nullptr;
-		}
-
-		if (PacketData->meshData.meshes != nullptr) {
-			Memory::Free(PacketData->meshData.meshes, MemoryType::eMemory_Type_Array);
-			PacketData->meshData.meshes = nullptr;
-		}
-
-		DeleteObject(packet->extended_data);
-		packet->extended_data = nullptr;
-	}
-
-	Memory::Zero(packet, sizeof(RenderViewPacket));
-}
-
 bool RenderViewUI::RegenerateAttachmentTarget(uint32_t passIndex, RenderTargetAttachment* attachment) {
 	return true;
 }
 
-bool RenderViewUI::OnRender(struct RenderViewPacket* packet, RHI* back_renderer, size_t frame_number, size_t render_target_index) {
-	uint32_t SID = UsedShader->ID;
-	for (uint32_t p = 0; p < RenderpassCount; ++p) {
-		IRenderpass* Pass = (IRenderpass*)&Passes[p];
-		Pass->Begin(&Pass->Targets[render_target_index]);
+void RenderViewUI::Render(const TArray<FRenderProxy*>& RenderObejcts) {
+	std::vector<DrawCall> UIDrawCalls;
+	// UI draw calls.
+	for (FRenderProxy* RenderProxy : RenderObejcts) {
+		FTextRenderProxy* Proxy = Cast<FTextRenderProxy*>(RenderProxy);
+		if (!Proxy) continue;
 
-		if (!UsedShader->Use()) {
-			GLOG(Log::eError, "RenderViewUI::OnRender() Failed to use material shader. Render frame failed.");
-			return false;
-		}
+		UGeometry* Geometry = Proxy->GetMesh();
+		if (!Geometry) continue;
 
-		// Apply globals.
-		if (!MaterialSystem::Get().ApplyGlobal(SID, frame_number, packet->projection_matrix, packet->view_matrix, Vector4(0), Vector3(0), (int)render_mode, 0.0f)) {
-			GLOG(Log::eError, "RenderViewUI::OnRender() Failed to use global shader. Render frame failed.");
-			return false;
-		}
+		DrawCall dc;
+		UMaterialInstance* Mat = Geometry->GetMaterialInstance();
+		dc.geometry = Geometry;
+		dc.model = Proxy->GetModelMatrix();
+		dc.material = Mat;
+		dc.shader = UsedShader;
+		dc.userData = nullptr;
+		dc.sortKey = ((uint64_t)dc.shader->ID << 32) | (uint64_t)Mat->GetInternalID();
 
-		// Draw geometries.
-		uint32_t Count = packet->geometry_count;
-		for (uint32_t i = 0; i < Count; ++i) {
-			Material* Mat = nullptr;
-			if (packet->geometries[i].geometry->Material) {
-				Mat = packet->geometries[i].geometry->Material;
-			}
-			else {
-				Mat = MaterialSystem::Get().GetDefaultMaterial();
-			}
-
-			bool IsNeedUpdate = Mat->RenderFrameNumer != frame_number;
-			if (!MaterialSystem::Get().ApplyInstance(Mat, IsNeedUpdate)) {
-				GLOG(Log::eWarn, "Failed to apply material '%s'. Skipping draw.", Mat->Name.CStr());
-				continue;
-			}
-			else {
-				// Sync the frame number.
-				Mat->RenderFrameNumer = (uint32_t)frame_number;
-			}
-
-			// Apply local
-			MaterialSystem::Get().ApplyLocal(Mat, packet->geometries[i].model_mat);
-
-			// Draw
-			back_renderer->DrawGeometry(&packet->geometries[i]);
-		}
-
-		// Draw bitmap text.
-		UIPacketData* PacketData = (UIPacketData*)packet->extended_data;
-		for (uint32_t i = 0; i < PacketData->textCount; ++i) {
-			ATextActor* Text = PacketData->Textes[i];
-			if (!Text) continue;
-			UTextComponent* TextComp = Text->GetTextComponent();
-			if (!TextComp) continue;
-
-			UsedShader->BindInstance(TextComp->GetInstance());
-
-			if (!UsedShader->SetUniformByIndex(DiffuseMapLocation, &TextComp->GetFont()->GetAtlas())) {
-				GLOG(Log::eError, "Failed to apply bitmap font diffuse map uniform.");
-				return false;
-			}
-
-			// TODO: font color
-			Vector4 FontColor = TextComp->GetColor();
-			if (!UsedShader->SetUniformByIndex(DiffuseColorLocation, &FontColor)) {
-				GLOG(Log::eError, "Failed to apply bitmap font diffuse color uniform.");
-				return false;
-			}
-
-			bool NeedUpdate = TextComp->GetFrameNumber() != frame_number;
-			UsedShader->ApplyInstance(NeedUpdate);
-
-			// Sync frame number.
-			TextComp->SetFrameNumber(frame_number);
-
-			// Apply the locals.
-			Matrix4 Model = Text->GetLocalTransform();
-			if (!UsedShader->SetUniformByIndex(ModelLocation, &Model)) {
-				GLOG(Log::eError, "Failde to apply model matrix for text.");
-			}
-
-			TextComp->Draw();
-		}
-
-		Pass->End();
+		UIDrawCalls.push_back(dc);
 	}
 
-	return true;
+	std::sort(UIDrawCalls.begin(), UIDrawCalls.end(),
+		[](const DrawCall& a, const DrawCall& b) {
+			return a.sortKey < b.sortKey;
+		});
+
+	FFrameData UIData;
+	UIData.projection = ProjectionMatrix;
+	UIData.view = ViewMatrix;
+	UIData.ambieantColor = Vector4(0.0f);
+	UIData.cameraPosition = Vector3(0.0f);
+	UIData.renderMode = render_mode;
+	UIData.time = 0.0f;
+
+	uint8_t RTIndex = Renderer->GetWindowAttachmentIndex();
+	uint64_t FrameNumber = Renderer->GetFrameNum();
+
+	Passes[0].Begin(&Passes[0].Targets[RTIndex]);
+	Renderer->ExecuteDrawCalls(UIDrawCalls, FrameNumber, UIData);
+	Passes[0].End();
 }

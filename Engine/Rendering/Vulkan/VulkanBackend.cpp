@@ -393,8 +393,7 @@ void VulkanRHI::Shutdown() {
 	}
 }
 
-bool VulkanRHI::BeginFrame(double delta_time){
-	Context.FrameDeltaTime = delta_time;
+bool VulkanRHI::BeginFrame(){
 	VulkanDevice* Device = &Context.Device;
 
 	// Check if recreating swap chain and boot out
@@ -447,7 +446,7 @@ bool VulkanRHI::BeginFrame(double delta_time){
 	return true;
 }
 
-bool VulkanRHI::EndFrame(double delta_time) {
+bool VulkanRHI::EndFrame() {
 
 	VulkanCommandBuffer* CommandBuffer = &Context.GraphicsCommandBuffers[Context.ImageIndex];
 	
@@ -633,33 +632,42 @@ UTexture* VulkanRHI::AcquireTexture(const FString& name, bool auto_release) {
 	return tex;
 }
 
-bool VulkanRHI::CreateGeometry(Geometry* geometry, uint32_t vertex_size, uint32_t vertex_count, 
-	const void* vertices, uint32_t index_size, uint32_t index_count, const void* indices) {
-	if (vertex_count == 0 || vertices == nullptr) {
-		GLOG(Log::eError, "Vulkan renderer create geometry requires vertex data, and none was supplied. vertex_count=%d, vertices=%p", vertex_count, vertices);
+bool VulkanRHI::CreateGeometry(UGeometry* geometry, const FGeometryConfig& config) {
+	if (!geometry || config.vertex_count == 0 || !config.vertices) {
 		return false;
 	}
 
-	// Check if this is a re-upload. If it is, need to free old data afterward.
-	bool IsReupload = geometry->InternalID != INVALID_ID;
-	GeometryData OldRange;
-
 	GeometryData* InternalData = nullptr;
-	if (IsReupload) {
+	if (geometry->InternalID != INVALID_ID) {
+		if (geometry->InternalID >= GEOMETRY_MAX_COUNT) {
+			return false;
+		}
+
 		InternalData = &Geometries[geometry->InternalID];
 
-		// Take a copy of the old range.
-		OldRange.index_buffer_offset = InternalData->index_buffer_offset;
-		OldRange.index_count = InternalData->index_count;
-		OldRange.index_element_size = InternalData->index_element_size;
-		OldRange.vertext_buffer_offset = InternalData->vertext_buffer_offset;
-		OldRange.vertex_count = InternalData->vertex_count;
-		OldRange.vertex_element_size = InternalData->vertex_element_size;
+		// Debug log.
+		/*GLOG(Log::eDebug,
+			"CreateGeometry: geometry=%p InternalID=%u "
+			"OLD vertex offset=%llu size=%llu "
+			"OLD index offset=%llu size=%llu "
+			"NEW vertex size=%llu "
+			"NEW index size=%llu",
+			geometry,
+			geometry->InternalID,
+			InternalData->vertext_buffer_offset,
+			static_cast<size_t>(InternalData->vertex_element_size) *
+			InternalData->vertex_count,
+			InternalData->index_buffer_offset,
+			static_cast<size_t>(InternalData->index_element_size) *
+			InternalData->index_count,
+			config.vertex_size * config.vertex_count,
+			config.index_size * config.index_count);
+		*/
 	}
 	else {
+		// 新资源寻找新的Slot
 		for (uint32_t i = 0; i < GEOMETRY_MAX_COUNT; ++i) {
 			if (Geometries[i].id == INVALID_ID) {
-				// Found a free index.
 				geometry->InternalID = i;
 				Geometries[i].id = i;
 				InternalData = &Geometries[i];
@@ -668,41 +676,60 @@ bool VulkanRHI::CreateGeometry(Geometry* geometry, uint32_t vertex_size, uint32_
 		}
 	}
 
-	if (InternalData == nullptr) {
-		GLOG(Log::eFatal, "Vulkan renderer create geometry failed to find a free index for a new geometry upload. Adjust config to allow for more.");
+	if (!InternalData) {
 		return false;
 	}
 
-	// Vertex data.
-	InternalData->vertex_count = vertex_count;
-	InternalData->vertex_element_size = sizeof(Vertex);
-	uint32_t VertexTotalSize = vertex_size * vertex_count;
-	// Allocate space in the buffer.
-	if (!Context.ObjectVertexBuffer->AllocateMemory(VertexTotalSize, &InternalData->vertext_buffer_offset)) {
-		GLOG(Log::eError, "Vulkan renderer create geometry failed to allocate vertex data.");
+	size_t NewVertexOffset = 0;
+	const size_t NewVertexSize = static_cast<size_t>(config.vertex_size) * config.vertex_count;
+	if (!Context.ObjectVertexBuffer->AllocateMemory(NewVertexSize, &NewVertexOffset)) {
 		return false;
 	}
 
-	if (!Context.ObjectVertexBuffer->Load(InternalData->vertext_buffer_offset, VertexTotalSize, vertices)) {
-		GLOG(Log::eError, "Vulkan renderer create geometry failed to upload vertex data.");
+	if (!Context.ObjectVertexBuffer->Load(NewVertexOffset, NewVertexSize, config.vertices)) {
+		Context.ObjectVertexBuffer->FreeMemory(NewVertexOffset, NewVertexSize);
 		return false;
 	}
 
-	// Index data. If Applicable.
-	if (index_count != 0 && indices != nullptr) {
-		InternalData->index_count = index_count;
-		InternalData->index_element_size = sizeof(uint32_t);
-		uint32_t IndexTotalSize = index_size * index_count;
-		if (!Context.ObjectIndexBuffer->AllocateMemory(IndexTotalSize, &InternalData->index_buffer_offset)) {
-			GLOG(Log::eError, "Vulkan renderer create geometry failed to allocate index data.");
+	// 分配缓冲区内存
+	size_t NewIndexOffset = 0;
+	size_t NewIndexSize = 0;
+	if (config.index_count != 0 && config.indices != nullptr) {
+		NewIndexSize = static_cast<size_t>(config.index_size) * config.index_count;
+
+		if (!Context.ObjectIndexBuffer->AllocateMemory(NewIndexSize, &NewIndexOffset)) {
+			Context.ObjectVertexBuffer->FreeMemory(NewVertexSize, NewVertexOffset);
 			return false;
 		}
 
-		if (!Context.ObjectIndexBuffer->Load(InternalData->index_buffer_offset, IndexTotalSize, indices)) {
-			GLOG(Log::eError, "Vulkan renderer create geometry failed to upload index data.");
+		if (!Context.ObjectIndexBuffer->Load(NewIndexOffset, NewIndexSize, config.indices)) {
+			Context.ObjectIndexBuffer->FreeMemory(NewIndexOffset, NewIndexSize);
+			Context.ObjectVertexBuffer->FreeMemory(NewVertexSize, NewVertexOffset);
 			return false;
 		}
 	}
+
+	// 释放旧资源
+	if (InternalData->vertex_count != 0 && InternalData->vertex_element_size != 0) {
+		const size_t OldVertexSize =
+			static_cast<size_t>(InternalData->vertex_element_size) * InternalData->vertex_count;
+		Context.ObjectVertexBuffer->FreeMemory(OldVertexSize, InternalData->vertext_buffer_offset);
+	}
+
+	if (InternalData->index_count != 0 && InternalData->index_element_size != 0) {
+		const size_t OldIndexSize = 
+			static_cast<size_t>(InternalData->index_element_size) * InternalData->index_count;
+		Context.ObjectIndexBuffer->FreeMemory(OldIndexSize, InternalData->index_buffer_offset);
+	}
+
+	// Commit new state.
+	InternalData->vertex_count = config.vertex_count;
+	InternalData->vertex_element_size = config.vertex_size;
+	InternalData->vertext_buffer_offset = NewVertexOffset;
+
+	InternalData->index_count = config.index_count;
+	InternalData->index_element_size = config.index_count != 0 ? config.index_size : 0;
+	InternalData->index_buffer_offset = config.index_count != 0 ? NewIndexOffset : 0;
 
 	if (InternalData->generation == INVALID_ID) {
 		InternalData->generation = 0;
@@ -711,20 +738,10 @@ bool VulkanRHI::CreateGeometry(Geometry* geometry, uint32_t vertex_size, uint32_
 		InternalData->generation++;
 	}
 
-	if (IsReupload) {
-		// Free vertex data.
-		Context.ObjectVertexBuffer->FreeMemory(OldRange.vertext_buffer_offset, OldRange.vertex_element_size * OldRange.vertex_count);
-
-		// Free index data.
-		if (OldRange.index_element_size > 0) {
-			Context.ObjectIndexBuffer->FreeMemory(OldRange.index_buffer_offset, OldRange.index_element_size * OldRange.index_count);
-		}
-	}
-
 	return true;
 }
 
-void VulkanRHI::DestroyGeometry(Geometry* geometry) {
+void VulkanRHI::DestroyGeometry(UGeometry* geometry) {
 	if (geometry != nullptr && geometry->InternalID != INVALID_ID) {
 		Context.Device.GetLogicalDevice().waitIdle();
 		GeometryData* InternalData = &Geometries[geometry->InternalID];
@@ -769,6 +786,53 @@ void VulkanRHI::DrawGeometry(GeometryRenderData* geometry) {
 	}
 }
 
+void VulkanRHI::ExecuteDrawCalls(const std::vector<DrawCall>& draw_calls,
+	size_t frame_number, const FFrameData& data) {
+	// 每个DrawCall重置
+	UShader* currentShader = nullptr;
+	UMaterial* currentMaterial = nullptr;
+	UMaterialInstance* currentMaterialInstance = nullptr;
+
+	for (const DrawCall& dc : draw_calls) {
+		if (currentShader != dc.shader)
+		{
+			// 一个Shader只需要绑定一次
+			dc.shader->Use();
+			currentShader = dc.shader;
+
+			if (!MaterialSystem::Get().ApplyGlobal(currentShader->GetUniqueID(), frame_number, data)) {
+				GLOG(Log::eError, "VulkanRHI::ExecuteDrawCalls() Failed to apply global material. Render frame failed.");
+				continue;
+			}
+		}
+
+		// 绑定材质实例（Uniform等数据）
+		if (currentMaterialInstance != dc.material) {
+			if (!dc.material->IsNeedUpdate(frame_number)) continue;
+			if (!MaterialSystem::Get().ApplyInstance(dc.material, data)) {
+				GLOG(Log::eError, "VulkanRHI::ExecuteDrawCalls() Failed to apply instance material. Render frame failed.");
+				continue;
+			}
+
+			currentMaterial = dc.material->GetParentMaterial();
+			currentMaterialInstance = dc.material;
+		}
+
+		if (!MaterialSystem::Get().ApplyLocal(dc.material, dc.model)) {
+			GLOG(Log::eError, "VulkanRHI::ExecuteDrawCalls() Failed to apply local material. Render frame failed.");
+			continue;
+		}
+			
+		dc.material->SetFrameNumber((uint32_t)frame_number);
+
+		// 真正Draw
+		GeometryRenderData renderData;
+		renderData.geometry = dc.geometry;
+		renderData.model_mat = dc.model;
+		DrawGeometry(&renderData);
+	}
+}
+
 bool VulkanRHI::BeginRenderpass(IRenderpass* pass, RenderTarget* target) {
 	pass->Begin(target);
 	return true;
@@ -796,7 +860,7 @@ bool VulkanRHI::VerifyShaderID(uint32_t shader_id) {
 }
 #endif	// LEVEL_DEBUG
 
-bool VulkanRHI::CreateShader(Shader* shader, const ShaderConfig* config, IRenderpass* pass,
+bool VulkanRHI::CreateShader(UShader* shader, const FShaderConfig* config, IRenderpass* pass,
 	const TArray<FString>& stage_filenames, std::vector<ShaderStage>& stages) {
 	// Translate stages.
 	vk::ShaderStageFlags VkStages[VULKAN_SHADER_MAX_STAGES];
@@ -1015,7 +1079,7 @@ vk::Filter VulkanRHI::ConvertFilterType(const char* op, TextureFilter filter) {
 	}
 }
 
-bool VulkanRHI::AcquireTextureMap(TextureMap* map) {
+bool VulkanRHI::AcquireTextureMap(FTextureMap* map) {
 	// Create a sampler for the texture.
 	vk::SamplerCreateInfo SamplerInfo;
 	SamplerInfo.setMinFilter(ConvertFilterType("min", map->filter_minify))
@@ -1045,7 +1109,7 @@ bool VulkanRHI::AcquireTextureMap(TextureMap* map) {
 	return true;
 }
 
-void VulkanRHI::ReleaseTextureMap(TextureMap* map) {
+void VulkanRHI::ReleaseTextureMap(FTextureMap* map) {
 	if (map) {
 		Context.Device.GetLogicalDevice().waitIdle();
 		Context.Device.GetLogicalDevice().destroySampler(*((vk::Sampler*)&map->internal_data), Context.Allocator);
@@ -1053,7 +1117,7 @@ void VulkanRHI::ReleaseTextureMap(TextureMap* map) {
 	}
 }
 
-uint32_t VulkanRHI::AcquireInstanceResource(Shader* shader, std::vector<TextureMap*>& maps) {
+uint32_t VulkanRHI::AcquireInstanceResource(UShader* shader, std::vector<FTextureMap*>& maps) {
 	VulkanShader* VkShader = (VulkanShader*)shader;
 	// TODO: Dynamic
 	uint32_t OutInstanceID = INVALID_ID;
@@ -1129,7 +1193,7 @@ uint32_t VulkanRHI::AcquireInstanceResource(Shader* shader, std::vector<TextureM
 	return OutInstanceID;
 }
 
-bool VulkanRHI::ReleaseInstanceResource(Shader* shader, uint64_t instance_id) {
+bool VulkanRHI::ReleaseInstanceResource(UShader* shader, uint64_t instance_id) {
 	if (shader == nullptr) {
 		return false;
 	}
@@ -1154,7 +1218,7 @@ bool VulkanRHI::ReleaseInstanceResource(Shader* shader, uint64_t instance_id) {
 	}
 
 	VkShader->UniformBuffer.FreeMemory(shader->UboStride, InstanceState->offset);
-	InstanceState->offset = INVALID_ID;
+	InstanceState->offset = 0;
 	InstanceState->id = INVALID_ID;
 
 	return true;

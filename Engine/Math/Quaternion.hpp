@@ -96,6 +96,13 @@ public:
 	}
 
 public:
+	constexpr bool Equals(const TQuaternion& quat, T tolerance = T(0.000001)) const noexcept {
+		return Dabs(x - quat.x) <= tolerance &&
+			Dabs(y - quat.y) <= tolerance &&
+			Dabs(z - quat.z) <= tolerance &&
+			Dabs(w - quat.w) <= tolerance;
+	}
+
 	inline void UpdateByEuler(const TVector3<T>& euler) {
 		T EulerX = Deg2Rad(euler.x);
 		T EulerY = Deg2Rad(euler.y);

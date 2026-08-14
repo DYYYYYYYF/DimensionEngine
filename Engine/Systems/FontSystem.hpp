@@ -58,7 +58,7 @@ struct FontSystemConfig {
 //    直接调用 font->VerifyAtlas(text)，FontSystem 不再感知字体类型
 // ─────────────────────────────────────────────
 
-class FontSystem {
+class ENGINE_API FontSystem {
 public:
 	static FontSystem& Get();
 
@@ -87,8 +87,8 @@ public:
 private:
 	// 内部注册表
 	// BitmapFont 和 SystemFont 都继承自 UAsset，用 unique_ptr 管理生命周期
-	TMap<FString, BitmapFont*> BitmapFonts;
-	TMap<FString, SystemFont*> SystemFonts;
+	TMap<FString, UBitmapFont*> BitmapFonts;
+	TMap<FString, USystemFont*> SystemFonts;
 
 	bool       Initialized;
 	IRenderer* Renderer;

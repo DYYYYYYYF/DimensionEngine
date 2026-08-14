@@ -366,11 +366,11 @@ public:
 
 		// 变换组合测试
 		UTransformComponent t3;
-		t3.Translate(Vector3(1.0f, 0.0f, 0.0f));
-		t3.Scale(Vector3(2.0f, 2.0f, 2.0f));
+		t3.SetLocation(Vector3(1.0f, 0.0f, 0.0f));
+		t3.SetScale(Vector3(2.0f, 2.0f, 2.0f));
 
 		Vector3 test_point(1.0f, 1.0f, 1.0f);
-		Vector3 result = t3.TransformPoint(test_point);
+		Vector3 result = t3.TransformPointToWorld(test_point);
 		// (1,1,1) -> 缩放(2,2,2) -> 平移(1,0,0) -> (3,2,2)
 		ASSERT_VECTOR3_EQUAL(Vector3(3.0f, 2.0f, 2.0f), result, "Transform composition");
 	}

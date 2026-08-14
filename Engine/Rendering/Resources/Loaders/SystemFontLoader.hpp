@@ -3,7 +3,7 @@
 #include "Rendering/Interface/IResourceLoader.hpp"
 
 struct FileHandle;
-struct SystemFontResourceData;
+struct FSystemFontResourceData;
 
 enum SystemFontFileType {
 	eSystem_Font_File_Type_Not_Found,
@@ -42,9 +42,9 @@ public:
 private:
 	// 从 .fontcfg 文本文件导入，并输出 .dsf 二进制缓存
 	bool ImportFontconfigFile(const FString& f, const FString& typePath,
-		const FString& outDSFFilename, SystemFontResourceData* outResource);
+		const FString& outDSFFilename, FSystemFontResourceData* outResource);
 
 	// 读 / 写引擎二进制格式 .dsf
-	bool ReadDSFFile(const FString& file, SystemFontResourceData* data);
-	bool WriteDSFFile(const FString& outDSFFilename, SystemFontResourceData* resource);
+	bool ReadDSFFile(const FString& file, FSystemFontResourceData* data);
+	bool WriteDSFFile(const FString& outDSFFilename, FSystemFontResourceData* resource);
 };

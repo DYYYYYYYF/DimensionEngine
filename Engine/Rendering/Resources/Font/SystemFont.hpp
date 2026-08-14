@@ -8,7 +8,7 @@
 //  对外不可见，仅在 Font.hpp / FontSystem.cpp 内部使用
 // ─────────────────────────────────────────────
 
-struct SystemFontContext;
+struct FSystemFontContext;
 
 // ─────────────────────────────────────────────
 //  SystemFontVariant : IFont
@@ -16,22 +16,22 @@ struct SystemFontContext;
 //  生命周期依附于父级 SystemFont，不是独立的磁盘资源
 // ─────────────────────────────────────────────
 
-class SystemFontVariant : public IFont {
+class USystemFontVariant : public IFont {
 public:
-	SystemFontVariant(SystemFontContext* ctx, int size, const FString& face);
-	~SystemFontVariant();
+	USystemFontVariant(FSystemFontContext* ctx, int size, const FString& face);
+	~USystemFontVariant();
 
 	// 禁止拷贝
-	SystemFontVariant(const SystemFontVariant&) = delete;
-	SystemFontVariant& operator=(const SystemFontVariant&) = delete;
+	USystemFontVariant(const USystemFontVariant&) = delete;
+	USystemFontVariant& operator=(const USystemFontVariant&) = delete;
 
 	// ── IFont 接口 ────────────────────────────
 	bool               VerifyAtlas(const FString& text) override;
-	const FontGlyph* GetGlyphs()       const override { return glyphs_; }
+	const FFontGlyph* GetGlyphs()       const override { return glyphs_; }
 	uint32_t           GetGlyphCount()   const override { return glyphCount_; }
-	const FontKerning* GetKernings()     const override { return kernings_; }
+	const FFontKerning* GetKernings()     const override { return kernings_; }
 	uint32_t           GetKerningCount() const override { return kerningCount_; }
-	const TextureMap& GetAtlas()        const override { return atlas_; }
+	const FTextureMap& GetAtlas()        const override { return atlas_; }
 	int                GetLineHeight()   const override { return lineHeight_; }
 	int                GetBaseLine()     const override { return baseLine_; }
 	float              GetTabXAdvance()  const override { return tabXAdvance_; }
@@ -51,7 +51,7 @@ private:
 	void AddCodepoint(int codepoint);
 
 	// ── 运行时数据 ────────────────────────────
-	SystemFontContext* ctx_ = nullptr;  // 不拥有，借用父级数据
+	FSystemFontContext* ctx_ = nullptr;  // 不拥有，借用父级数据
 	FString            face_;
 	unsigned int       size_ = 0;
 	float              scale_ = 0.f;
@@ -60,10 +60,10 @@ private:
 	float              tabXAdvance_ = 0.f;
 	int                atlasSizeX_ = 1024;
 	int                atlasSizeY_ = 1024;
-	TextureMap         atlas_ = {};
-	FontGlyph* glyphs_ = nullptr;
+	FTextureMap         atlas_ = {};
+	FFontGlyph* glyphs_ = nullptr;
 	uint32_t           glyphCount_ = 0;
-	FontKerning* kernings_ = nullptr;
+	FFontKerning* kernings_ = nullptr;
 	uint32_t           kerningCount_ = 0;
 	std::vector<int>   codepoints_;
 };
@@ -75,36 +75,36 @@ private:
 //  本身不实现 IFont，因为没有具体尺寸就没有渲染数据
 // ─────────────────────────────────────────────
 
-class SystemFont : public UAsset {
+class USystemFont : public UAsset {
 public:
-	SystemFont() = default;
-	~SystemFont() = default;
+	USystemFont() = default;
+	~USystemFont() = default;
 
 	// 禁止拷贝
-	SystemFont(const SystemFont&) = delete;
-	SystemFont& operator=(const SystemFont&) = delete;
+	USystemFont(const USystemFont&) = delete;
+	USystemFont& operator=(const USystemFont&) = delete;
 
 	// ── UAsset 资源层 ─────────────────────────
 	// 从已加载的 SystemFontResourceData 初始化，建立 stbtt 解析上下文
 	// index 对应 TTF 文件内的字体索引（一个 TTF 可含多个字型）
-	bool InitFromResourceData(SystemFontResourceData* resourceData, int index);
+	bool InitFromResourceData(FSystemFontResourceData* resourceData, int index);
 	void ReleaseResource(IRenderer* renderer);
 
 	// ── Variant 工厂 ──────────────────────────
 	// 按尺寸获取 Variant；不存在则创建并初始化
 	// 返回 nullptr 表示创建失败
-	SystemFontVariant* AcquireVariant(int size);
+	USystemFontVariant* AcquireVariant(int size);
 	bool ReleaseVariant(int size);
 
 	const FString& GetFace() const { return face_; }
 
 private:
-	SystemFontVariant* CreateVariant(int size);
+	USystemFontVariant* CreateVariant(int size);
 
 	// ── 数据成员 ──────────────────────────────
 	FString            face_;
-	SystemFontContext* ctx_ = {};   // stbtt 运行时数据，共享给所有 Variant
+	FSystemFontContext* ctx_ = {};   // stbtt 运行时数据，共享给所有 Variant
 
 	// size → Variant，替代原来的 vector + 线性搜索
-	TMap<int, SystemFontVariant*> variants_;
+	TMap<int, USystemFontVariant*> variants_;
 };

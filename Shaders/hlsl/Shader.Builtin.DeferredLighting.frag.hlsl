@@ -176,7 +176,7 @@ float4 CalculateDirectionalLight(DirectionalLight light, float3 normal, float3 v
     float fDiffuseFactor = max(dot(normal, -light.direction), 0.0f);
     
     float3 HalfDirection = normalize(-view_direction - light.direction);
-    float SpecularFactor = pow(max(dot(HalfDirection, normal), 0.0f), (1.0 - roughness) * 128.0);
+    float SpecularFactor = pow(max(dot(HalfDirection, normal), 0.0f), lerp(128.0, 1.0, roughness));
     
     float4 Ambient = float4(ambient_color.rgb * albedo, 1.0);
     float4 Diffuse = float4(albedo * fDiffuseFactor, 1.0);
@@ -192,7 +192,7 @@ float4 CalculatePointLight(PointLight light, float3 normal, float3 frag_position
     float Diff = max(dot(normal, LightDirection), 0.0f);
     
     float3 ReflectDirection = reflect(-LightDirection, normal);
-    float Spec = pow(max(dot(view_direction, ReflectDirection), 0.0f), (1.0 - roughness) * 128.0);
+    float Spec = pow(max(dot(view_direction, ReflectDirection), 0.0f), lerp(128.0, 1.0, roughness));
     
     // 计算衰减
     float Distance = length(light.position - frag_position);

@@ -2,9 +2,10 @@
 #include "Rendering/Renderer.hpp"
 #include "Systems/TextureSystem.h"
 
-bool BitmapFont::InitFromResourceData(BitmapFontResourceData* resourceData) {
+bool UBitmapFont::InitFromResourceData(FBitmapFontResourceData* resourceData) {
 	if (!resourceData) { return false; }
 
+	TextType = UITextType::eUI_Text_Type_Bitmap;
 	resourceData_ = resourceData;
 
 	IRenderer* Renderer = IRenderer::GetRenderer();
@@ -15,7 +16,7 @@ bool BitmapFont::InitFromResourceData(BitmapFontResourceData* resourceData) {
 	// resourceData->data 原来指向 IFontDataBase，现在指向 BitmapFont 自身
 	// 在 ResourceSystem 加载完成后由外部赋值，或在此处直接读取字段
 	// 此处假设 ResourceSystem 已将 glyph/kerning 数据填入 resourceData
-	BitmapFont* src = resourceData->data;
+	UBitmapFont* src = resourceData->data;
 	if (src) {
 		face_ = src->face_;
 		size_ = src->size_;
@@ -52,7 +53,7 @@ bool BitmapFont::InitFromResourceData(BitmapFontResourceData* resourceData) {
 	return true;
 }
 
-void BitmapFont::ReleaseResource() {
+void UBitmapFont::ReleaseResource() {
 	IRenderer* Renderer = IRenderer::GetRenderer();
 	if (Renderer) {
 		Renderer->ReleaseTextureMap(&atlas_);
@@ -64,7 +65,7 @@ void BitmapFont::ReleaseResource() {
 	}
 }
 
-void BitmapFont::ComputeTabXAdvance() {
+void UBitmapFont::ComputeTabXAdvance() {
 	if (tabXAdvance_ != 0.f) { return; }
 
 	// 优先使用 \t glyph 的 advanceX

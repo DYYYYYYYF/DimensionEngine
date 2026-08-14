@@ -4,21 +4,8 @@
 #include "Rendering/Resources/Texture/Texture.hpp"
 #include "Rendering/Interface/IRenderView.hpp"
 
-class Shader;
+class UShader;
 class ACameraActor;
-
-// G-Buffer纹理
-struct GBufferSet {
-	UTexture* AlbedoTexture = nullptr;
-	UTexture* NormalTexture = nullptr;
-	UTexture* PositionTexture = nullptr;
-	UTexture* DepthTexture = nullptr;
-
-	TextureMap AlbedoTextureMap;
-	TextureMap NormalTextureMap;
-	TextureMap PositionTextureMap;
-	TextureMap DepthTextureMap;
-};
 
 class RenderViewWorldDeferred : public IRenderView {
 public:
@@ -27,10 +14,9 @@ public:
 	virtual bool OnCreate(const RenderViewConfig& config) override;
 	virtual void OnDestroy() override;
 	virtual void OnResize(uint32_t width, uint32_t height) override;
-	virtual bool OnBuildPacket(IRenderviewPacketData* data, struct RenderViewPacket* out_packet) override;
-	virtual void OnDestroyPacket(struct RenderViewPacket* packet) override;
-	virtual bool OnRender(struct RenderViewPacket* packet, RHI* back_renderer, size_t frame_number, size_t render_target_index) override;
 	virtual bool RegenerateAttachmentTarget(uint32_t passIndex, RenderTargetAttachment* attachment) override;
+
+	virtual void Render(const TArray<FRenderProxy*>& RenderProxies) override;
 
 public:
 	const char* GetShaderName() const {
@@ -40,10 +26,10 @@ public:
 		return GBufferShader->Name.CStr();
 	}
 
-	void SetGBufferShader(Shader* shader) { GBufferShader = shader; }
-	void SetLightingShader(Shader* shader) { LightingShader = shader; }
-	Shader* GetGBufferShader() const { return GBufferShader; }
-	Shader* GetLightingShader() const { return LightingShader; }
+	void SetGBufferShader(UShader* shader) { GBufferShader = shader; }
+	void SetLightingShader(UShader* shader) { LightingShader = shader; }
+	UShader* GetGBufferShader() const { return GBufferShader; }
+	UShader* GetLightingShader() const { return LightingShader; }
 
 private:
 	GBufferSet* GetCurrentGBufferSet(size_t render_target_index) {
@@ -54,9 +40,9 @@ private:
 	IRenderer* Renderer;
 
 	// G-Buffer渲染着色器
-	Shader* GBufferShader = nullptr;
+	UShader* GBufferShader = nullptr;
 	// 光照计算着色器
-	Shader* LightingShader = nullptr;
+	UShader* LightingShader = nullptr;
 
 	float NearClip;
 	float FarClip;
@@ -71,7 +57,7 @@ private:
 	uint32_t InstanceID = INVALID_ID;
 
 	// 全屏四边形用于光照计算
-	Geometry* FullscreenQuad = nullptr;
+	UGeometry* FullscreenQuad = nullptr;
 
 	// 着色器uniform位置
 	struct GBufferUniforms {

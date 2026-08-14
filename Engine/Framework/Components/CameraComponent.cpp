@@ -1,23 +1,24 @@
-#include "CameraComponent.h"
+ï»¿#include "CameraComponent.h"
 #include "Framework/Classes/Actor.h"
+#include "Math/Frustum.hpp"
 
-UCameraComponent::UCameraComponent(const FString& Name) :UComponent(Name) {
+UCameraComponent::UCameraComponent(const FString& Name) :USceneComponent(Name) {
 	AActor* Owner = GetOwner();
 	if (!Owner) {
 		return;
 	}
 
-	UTransformComponent* LocalTransform = Owner->GetTransformComponent();
-	if (!LocalTransform) {
-		return;
-	}
-
-	// ÒÔ LocalTransform µÄ³õÊ¼Öµ³õÊ¼»¯Ðý×ª×´Ì¬
-	Quaternion Q = LocalTransform->GetQuaternion();
+	// ä»¥ LocalTransform çš„åˆå§‹å€¼åˆå§‹åŒ–æ—‹è½¬çŠ¶æ€
+	Quaternion Q = GetQuaternion();
 	Matrix4 RotMat = Q.ToRotationMatrix();
-	// ´ÓÐý×ª¾ØÕó·´½â Euler£¨Í¨¹ý MatrixToQuat ÔÙ ToEuler ±£³ÖÒ»ÖÂÐÔ£©
+	// ä»Žæ—‹è½¬çŸ©é˜µåè§£ Eulerï¼ˆé€šè¿‡ MatrixToQuat å† ToEuler ä¿æŒä¸€è‡´æ€§ï¼‰
 	EulerRotation_ = MatrixToQuat(RotMat).ToEuler();
 	IsDirty_ = true;
+}
+
+void UCameraComponent::OnTransformChanged() {
+	// æ›´æ–°è§†é”¥ä½“
+	UpdateFrustum();
 }
 
 void UCameraComponent::SetPosition(const Vector3& Pos) {
@@ -26,12 +27,7 @@ void UCameraComponent::SetPosition(const Vector3& Pos) {
 		return;
 	}
 
-	UTransformComponent* LocalTransform = Owner->GetTransformComponent();
-	if (!LocalTransform) {
-		return;
-	}
-
-	LocalTransform->SetLocation(Pos);
+	SetLocation(Pos);
 	IsDirty_ = true;
 }
 
@@ -41,12 +37,7 @@ Vector3 UCameraComponent::GetPosition() const {
 		return Vector3();
 	}
 
-	UTransformComponent* LocalTransform = Owner->GetTransformComponent();
-	if (!LocalTransform) {
-		return Vector3();
-	}
-
-	return LocalTransform->GetLocation(); 
+	return GetLocation(); 
 }
 
 void UCameraComponent::SetEulerAngles(const Vector3& EulerDeg) {
@@ -65,24 +56,19 @@ Vector3 UCameraComponent::GetEulerAngles() const {
 	);
 }
 
-void UCameraComponent::RebuildViewMatrix() {
+void UCameraComponent::RebuildViewMatrix() const {
 	AActor* Owner = GetOwner();
 	if (!Owner) {
 		return;
 	}
 
-	UTransformComponent* LocalTransform = Owner->GetTransformComponent();
-	if (!LocalTransform) {
-		return;
-	}
-
 	Matrix4 R = Matrix4::EulerXYZ(EulerRotation_.x, EulerRotation_.y, EulerRotation_.z);
-	Matrix4 T = Matrix4::FromTranslation(LocalTransform->GetLocation());
+	Matrix4 T = Matrix4::FromTranslation(GetLocation());
 	ViewMatrix_ = T.Multiply(R).Inverse();
 	IsDirty_ = false;
 }
 
-Matrix4 UCameraComponent::GetViewMatrix() {
+Matrix4 UCameraComponent::GetViewMatrix() const {
 	if (IsDirty_) {
 		RebuildViewMatrix();
 	}
@@ -95,17 +81,12 @@ void UCameraComponent::SetViewMatrix(const Matrix4& Mat) {
 		return;
 	}
 
-	UTransformComponent* LocalTransform = Owner->GetTransformComponent();
-	if (!LocalTransform) {
-		return;
-	}
-
-	// ´Ó ViewMatrix ·´½â Position ºÍÐý×ª£¬±£³ÖÄÚ²¿×´Ì¬Ò»ÖÂ
-	// ViewMatrix = Inverse(T * R)£¬ËùÒÔ WorldMatrix = Inverse(ViewMatrix)
+	// ä»Ž ViewMatrix åè§£ Position å’Œæ—‹è½¬ï¼Œä¿æŒå†…éƒ¨çŠ¶æ€ä¸€è‡´
+	// ViewMatrix = Inverse(T * R)ï¼Œæ‰€ä»¥ WorldMatrix = Inverse(ViewMatrix)
 	Matrix4 WorldMat = Mat.Inverse();
 
 	Vector3 Pos = WorldMat.GetTranslation();
-	LocalTransform->SetLocation(Pos);
+	SetLocation(Pos);
 
 	Quaternion Q = MatrixToQuat(WorldMat);
 	EulerRotation_ = Q.ToEuler();
@@ -122,12 +103,7 @@ void UCameraComponent::MoveForward(float Amount) {
 		return;
 	}
 
-	UTransformComponent* LocalTransform = Owner->GetTransformComponent();
-	if (!LocalTransform) {
-		return;
-	}
-
-	LocalTransform->SetLocation(LocalTransform->GetLocation() + Forward() * Amount);
+	SetLocation(GetLocation() + Forward() * Amount);
 	IsDirty_ = true;
 }
 
@@ -137,12 +113,7 @@ void UCameraComponent::MoveBackward(float Amount) {
 		return;
 	}
 
-	UTransformComponent* LocalTransform = Owner->GetTransformComponent();
-	if (!LocalTransform) {
-		return;
-	}
-
-	LocalTransform->SetLocation(LocalTransform->GetLocation() + Backward() * Amount);
+	SetLocation(GetLocation() + Backward() * Amount);
 	IsDirty_ = true;
 }
 
@@ -152,12 +123,7 @@ void UCameraComponent::MoveLeft(float Amount) {
 		return;
 	}
 
-	UTransformComponent* LocalTransform = Owner->GetTransformComponent();
-	if (!LocalTransform) {
-		return;
-	}
-
-	LocalTransform->SetLocation(LocalTransform->GetLocation() + Left() * Amount);
+	SetLocation(GetLocation() + Left() * Amount);
 	IsDirty_ = true;
 }
 
@@ -167,12 +133,7 @@ void UCameraComponent::MoveRight(float Amount) {
 		return;
 	}
 
-	UTransformComponent* LocalTransform = Owner->GetTransformComponent();
-	if (!LocalTransform) {
-		return;
-	}
-
-	LocalTransform->SetLocation(LocalTransform->GetLocation() + Right() * Amount);
+	SetLocation(GetLocation() + Right() * Amount);
 	IsDirty_ = true;
 }
 
@@ -182,12 +143,7 @@ void UCameraComponent::MoveUp(float Amount) {
 		return;
 	}
 
-	UTransformComponent* LocalTransform = Owner->GetTransformComponent();
-	if (!LocalTransform) {
-		return;
-	}
-
-	LocalTransform->SetLocation(LocalTransform->GetLocation() + Vector3::Up() * Amount);
+	SetLocation(GetLocation() + Vector3::Up() * Amount);
 	IsDirty_ = true;
 }
 
@@ -197,12 +153,7 @@ void UCameraComponent::MoveDown(float Amount) {
 		return;
 	}
 
-	UTransformComponent* LocalTransform = Owner->GetTransformComponent();
-	if (!LocalTransform) {
-		return;
-	}
-
-	LocalTransform->SetLocation(LocalTransform->GetLocation() + Vector3::Down() * Amount);
+	SetLocation(GetLocation() + Vector3::Down() * Amount);
 	IsDirty_ = true;
 }
 
@@ -219,20 +170,36 @@ void UCameraComponent::RotatePitch(float Amount) {
 	SyncToTransform();
 }
 
+const FFrustum& UCameraComponent::GetFrustum() const {
+	// åŸºç¡€æ•°æ®æ”¹å˜æ—¶æ›´æ–°è§†é”¥ä½“ï¼Œæ‘„åƒæœºä½ç½®æ”¹ä¸ºé€šè¿‡OnTransformChangedæ›´æ–°
+	if (IsBaseDataDirty_) {
+		UpdateFrustum();
+	}
+
+	return Frustum_;
+}
+
+void UCameraComponent::UpdateFrustum() const {
+	Vector3 CameraPos = GetPosition();
+	Vector3 CameraForward = Forward();
+	Vector3 CameraRight = Right();
+	Vector3 CameraUp =  Up();
+	float AspectRatio = GetAspectRatio();
+	float FOV = Deg2Rad(GetFOV());
+	float NearPlane = GetNearPlane();
+	float FarPlane = GetFarPlane();
+	Frustum_ = FFrustum(CameraPos, CameraForward, CameraRight, CameraUp, AspectRatio, FOV, NearPlane, FarPlane);
+}
+
 void UCameraComponent::Reset() {
 	AActor* Owner = GetOwner();
 	if (!Owner) {
 		return;
 	}
 
-	UTransformComponent* LocalTransform = Owner->GetTransformComponent();
-	if (!LocalTransform) {
-		return;
-	}
-
 	EulerRotation_ = Vector3(0.0f);
-	LocalTransform->SetLocation(Vector3(0.0f));
-	LocalTransform->SetQuaternion(Quaternion());
+	SetLocation(Vector3(0.0f));
+	SetQuaternion(Quaternion());
 	ViewMatrix_ = Matrix4::Identity();
 	IsDirty_ = false;
 }
@@ -243,12 +210,7 @@ void UCameraComponent::SyncToTransform() {
 		return;
 	}
 
-	UTransformComponent* LocalTransform = Owner->GetTransformComponent();
-	if (!LocalTransform) {
-		return;
-	}
-
 	Matrix4    RotMat = Matrix4::EulerXYZ(EulerRotation_.x, EulerRotation_.y, EulerRotation_.z);
 	Quaternion Quat = MatrixToQuat(RotMat);
-	LocalTransform->SetQuaternion(Quat);
+	SetQuaternion(Quat);
 }

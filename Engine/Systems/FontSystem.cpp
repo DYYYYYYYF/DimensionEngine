@@ -73,14 +73,14 @@ bool FontSystem::RegisterBitmapFont(const BitmapFontConfig& config) {
 
 	// 从资源系统加载原始数据
 	// BitmapFont 继承自 UAsset，直接作为加载目标
-	BitmapFont* font = NewObject<BitmapFont>();
+	UBitmapFont* font = NewObject<UBitmapFont>(MemoryType::eMemory_Type_Resource);
 	if (!ResourceSystem::Get().Load(config.resourceName, EAssetType::BitmapFont, nullptr, font)) {
 		GLOG(Log::eError, "Failed to load bitmap font resource: %s.", config.resourceName.CStr());
 		return false;
 	}
 
 	// 从 UAsset::Data 中取出 ResourceData，完成 GPU 侧初始化
-	BitmapFontResourceData* resourceData = static_cast<BitmapFontResourceData*>(font->Data);
+	FBitmapFontResourceData* resourceData = static_cast<FBitmapFontResourceData*>(font->Data);
 	if (!font->InitFromResourceData(resourceData)) {
 		GLOG(Log::eError, "Failed to initialize bitmap font: %s.", config.name.CStr());
 		return false;
@@ -98,7 +98,7 @@ bool FontSystem::RegisterSystemFont(const SystemFontConfig& config) {
 		return false;
 	}
 
-	SystemFontResourceData* resourceData = static_cast<SystemFontResourceData*>(loadedAsset.Data);
+	FSystemFontResourceData* resourceData = static_cast<FSystemFontResourceData*>(loadedAsset.Data);
 	uint32_t faceCount = static_cast<uint32_t>(resourceData->fonts.Size());
 
 	for (uint32_t i = 0; i < faceCount; ++i) {
@@ -114,7 +114,7 @@ bool FontSystem::RegisterSystemFont(const SystemFontConfig& config) {
 			return false;
 		}
 
-		SystemFont* font = NewObject<SystemFont>();
+		USystemFont* font = NewObject<USystemFont>(MemoryType::eMemory_Type_Resource);
 
 		// 传入 index=i，SystemFont 内部用它定位 TTF 文件内的具体字型
 		if (!font->InitFromResourceData(resourceData, i)) {
@@ -148,26 +148,29 @@ IFont* FontSystem::Acquire(const FString& fontName, UITextType type, int fontSiz
 			return nullptr;
 		}
 
+		Font->SetFontName(fontName);
+		Font->SetFontSize(fontSize);
 		Font->AddRef();
 		return Font;
 	}
 
-	if (type == UITextType::eUI_Text_Type_system) {
+	if (type == UITextType::eUI_Text_Type_System) {
 		if (!SystemFonts.Contains(fontName)) {
 			GLOG(Log::eError, "System font '%s' not found.", fontName.CStr());
 			return nullptr;
 		}
 		// 委托给 SystemFont，由它负责查找或创建对应 size 的 Variant
-		SystemFont* Font = SystemFonts[fontName];
+		USystemFont* Font = SystemFonts[fontName];
 		if (!Font) {
 			return nullptr;
 		}
 
-		SystemFontVariant* Variant = Font->AcquireVariant(fontSize);
+		USystemFontVariant* Variant = Font->AcquireVariant(fontSize);
 		if (!Variant) {
 			return nullptr;
 		}
 
+		Variant->SetFontName(fontName);
 		Variant->AddRef();
 		return Variant;
 	}

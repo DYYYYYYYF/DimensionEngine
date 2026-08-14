@@ -5,6 +5,8 @@
 #include "Containers/FString.hpp"
 #include "Containers/TArray.hpp"
 
+struct GBufferSet;
+
 enum class EShaderLanguage {
 	eHLSL,
 	eGLSL
@@ -86,7 +88,7 @@ enum ShaderFlags {
 
 typedef unsigned int ShaderFlagBits;
 
-struct MaterialShaderUniformLocations {
+struct FMaterialShaderUniformLocations {
 	uint32_t projection = INVALID_ID;
 	uint32_t view = INVALID_ID;
 	uint32_t ambient_color = INVALID_ID;
@@ -108,28 +110,6 @@ struct MaterialShaderUniformLocations {
 	uint32_t render_mode = INVALID_ID;
 };
 
-struct DRShaderUniformLocations {
-	uint32_t projection = INVALID_ID;
-	uint32_t view = INVALID_ID;
-	uint32_t ambient_color = INVALID_ID;
-	uint32_t view_position = INVALID_ID;
-	uint32_t mode = INVALID_ID;
-	uint32_t time = INVALID_ID;
-	uint32_t albedo_texture = INVALID_ID;
-	uint32_t normal_texture = INVALID_ID;
-	uint32_t position_texture = INVALID_ID;
-	uint32_t light_intensity = INVALID_ID;
-	uint32_t debug_mode = INVALID_ID;
-};
-
-struct UIShaderUniformLocations {
-	uint32_t projection = INVALID_ID_U16;
-	uint32_t view = INVALID_ID_U16;
-	uint32_t diffuse_color = INVALID_ID_U16;
-	uint32_t diffuse_texture = INVALID_ID_U16;
-	uint32_t model = INVALID_ID_U16;
-};
-
 /**
  * @brief Defines shader scope, which indicates how
  * often it gets updated
@@ -140,7 +120,41 @@ enum ShaderScope {
 	eShader_Scope_Local = 2
 };
 
+enum class ShaderSemantic {
+	eShaderSemantic_None = 0,
+
+	// Global
+	eShaderSemantic_Projection,
+	eShaderSemantic_View,
+	eShaderSemantic_ViewPosition,
+	eShaderSemantic_AmbientColor,
+	eShaderSemantic_Time,
+	eShaderSemantic_RenderMode,
+
+	// Dynamic Instance
+	eSemantic_GBuffer_Albedo,
+	eSemantic_GBuffer_Normal,
+	eSemantic_GBuffer_Position,
+
+	// PBR Texture
+	eSemantic_Diffuse_Texture,
+	eSemantic_Normal_Texture,
+	eSemantic_Roughness_Metallic_Texture,
+
+	// Skybox
+	eSemantic_Skybox_Texture,
+
+	// Local
+	eShaderSemantic_Model_Matrix,
+
+	// Material
+	eShaderSemantic_DiffuseColor,
+	eShaderSemantic_Roughness,
+	eShaderSemantic_Metallic,
+};
+
 struct ShaderUniform {
+	FString name;
 	size_t offset;
 	uint32_t location;
 	uint32_t index;
@@ -148,11 +162,34 @@ struct ShaderUniform {
 	uint32_t set_index;
 
 	ShaderScope scope;
+	ShaderSemantic semantic;
 	ShaderUniformType type;
 };
 
+struct FFrameData {
+	Matrix4 projection;
+	Matrix4 view;
+
+	Matrix4 invProjection;
+	Matrix4 invView;
+	Matrix4 viewProjection;
+
+	Vector3 cameraPosition;
+
+	float time;
+	float deltaTime;
+
+	Vector2 screenSize;
+	Vector2 invScreenSize;
+	Vector4 ambieantColor;
+
+	EShaderRenderMode renderMode;
+
+	GBufferSet* gBuffer;
+};
+
 struct ShaderAttribute {
-	FString name = nullptr;
+	FString name;
 	uint32_t size;
 	ShaderAttributeType type;
 };
@@ -171,28 +208,13 @@ struct ShaderUniformConfig {
 	unsigned short size;
 	uint32_t location;
 	ShaderUniformType type;
+	ShaderSemantic semantic;
 	ShaderScope scope;
 };
 
-// Uniform Buffer Object
-struct MaterialShaderGlobalUbo {
-	Matrix4 projection;	// 64 bytes
-	Matrix4 view;		// 64 bytes
-	Matrix4 reserved0;	// 64 bytes, reserved for future use
-	Matrix4 reserved1;	// 64 bytes, reserved for future use
-};
-
-// Object Material
-struct MaterialShaderInstanceUbo {
-	Vector4 diffuse_color;	// 16 Bytes
-	Vector4 v_reserved0;	// 16 Bytes,reserved for future use
-	Vector4 v_reserved1;	// 16 Bytes,reserved for future use
-	Vector4 v_reserved2;	// 16 Bytes,reserved for future use
-};
-
-struct ShaderConfig {
+struct FShaderConfig {
 public:
-	ShaderConfig() {
+	FShaderConfig() {
 		cull_mode = FaceCullMode::eFace_Cull_Mode_Back;
 		polygon_mode = PolygonMode::ePology_Mode_Fill;
 		PrimTopo = PrimitiveTopology::eTriangleList;

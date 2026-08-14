@@ -3,12 +3,35 @@
 #include "GeometryType.hpp"
 #include "Rendering/Resources/Asset.hpp"
 
-class Material;
+class UMaterial;
+class UMaterialInstance;
 
-class DAPI Geometry : public UAsset {
+class DAPI UGeometry : public UAsset {
+	friend class GeometrySystem;
+
 public:
-	Geometry();
-	Geometry(const FString& name);
+	UGeometry(const FString& name);
+	virtual ~UGeometry();
+
+public:
+	void SetMaterial(UMaterial* Mat);
+
+	inline size_t GetReferenceCount() const { return ReferenceCount; }
+	inline void IncreaseReferenceCount(uint32_t count = 1) { ReferenceCount += count; }
+	void DecreaseReferenceCount(uint32_t count = 1);
+
+	inline bool IsAutoRelease() const { return AutoRelease; }
+	inline void SetIsAutoRelease(bool b) { AutoRelease = b; }
+
+	void SetVisibility(bool VisibleFlag) { bIsVisible = VisibleFlag; }
+	bool IsVisible() const { return bIsVisible; }
+
+	const Extents3D& GetBoundingBox() const { return Extents; }
+
+	UMaterialInstance* GetMaterialInstance() const { return MaterialInstance; }
+
+private:
+	void DestroyInstance();
 
 public:
 	uint32_t ID;
@@ -17,8 +40,13 @@ public:
 	Vector3 Center;
 	Extents3D Extents;
 	FString name;
-	Material* Material = nullptr;
 
-	size_t reference_count = 0;
-	bool auto_release = false;
+protected:
+	UMaterialInstance* MaterialInstance = nullptr;
+
+private:
+	size_t ReferenceCount = 0;
+	bool AutoRelease = true;
+	bool bIsVisible = true;
+
 };

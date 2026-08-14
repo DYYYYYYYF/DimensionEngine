@@ -13,6 +13,8 @@
 #include "Systems/TextureSystem.h"
 #include "Systems/CameraSystem.h"
 #include "Systems/RenderViewSystem.hpp"
+#include "Scene/World.h"
+#include "RenderWorld/RenderWorld.h"
 
 IRenderer* IRenderer::Renderer = nullptr;
 
@@ -106,7 +108,7 @@ void IRenderer::OnResize(unsigned short width, unsigned short height) {
 	}
 }
 
-bool IRenderer::DrawFrame(SRenderPacket* packet) {
+bool IRenderer::DrawFrame(UWorld* World) {
 	RHI_->IncreaseFrameNum();
 
 	// Make sure the window is not currently being resized by waiting a designated
@@ -136,19 +138,15 @@ bool IRenderer::DrawFrame(SRenderPacket* packet) {
 		}
 	}
 
-	if (RHI_->BeginFrame(packet->delta_time)) {
-		unsigned char AttachmentIndex = RHI_->GetWindowAttachmentIndex();
-
-		// Render each view.
-		for (uint32_t i = 0; (uint32_t)i < packet->views.size(); ++i) {
-			if (!RenderViewSystem::Get().OnRender(packet->views[i].view, &packet->views[i], RHI_->GetFrameNum(), AttachmentIndex)) {
-				GLOG(Log::eError, "Error rendering view index '%i'.", i);
-				return false;
-			}
+	if (RHI_->BeginFrame()) {
+		// Renderer Tick
+		URenderWorld* RWorld = World->GetRenderWorld();
+		if (RWorld) {
+			RWorld->Record();
 		}
 
 		// End frame
-		bool result = RHI_->EndFrame(packet->delta_time);
+		bool result = RHI_->EndFrame();
 
 		if (!result) {
 			GLOG(Log::eError, "Renderer end frame failed.");
@@ -158,6 +156,11 @@ bool IRenderer::DrawFrame(SRenderPacket* packet) {
 	}
 
 	return true;
+}
+
+void IRenderer::ExecuteDrawCalls(
+	const std::vector<DrawCall>& draw_calls, size_t frame_number, const FFrameData& data) {
+	RHI_->ExecuteDrawCalls(draw_calls, frame_number, data);
 }
 
 void IRenderer::SetViewport(Vector4 rect) {
@@ -180,12 +183,11 @@ UTexture* IRenderer::AcquireTexture(const FString& name, bool auto_release) {
 	return RHI_->AcquireTexture(name, auto_release);
 }
 
-bool IRenderer::CreateGeometry(Geometry* geometry, uint32_t vertex_size, uint32_t vertex_count,
-	const void* vertices, uint32_t index_size, uint32_t index_count, const void* indices) {
-	return RHI_->CreateGeometry(geometry, vertex_size, vertex_count, vertices, index_size, index_count, indices);
+bool IRenderer::CreateGeometry(UGeometry* geometry, const FGeometryConfig& config) {
+	return RHI_->CreateGeometry(geometry, config);
 }
 
-void IRenderer::DestroyGeometry(Geometry* geometry) {
+void IRenderer::DestroyGeometry(UGeometry* geometry) {
 	RHI_->DestroyGeometry(geometry);
 }
 
@@ -201,31 +203,31 @@ bool IRenderer::EndRenderpass(IRenderpass* pass) {
 	return RHI_->EndRenderpass(pass);
 }
 
-bool IRenderer::CreateRenderShader(Shader* shader, const ShaderConfig* config, IRenderpass* pass, const TArray<FString>& stage_filenames, std::vector<ShaderStage> stages) {
+bool IRenderer::CreateRenderShader(UShader* shader, const FShaderConfig* config, IRenderpass* pass, const TArray<FString>& stage_filenames, std::vector<ShaderStage> stages) {
 	return RHI_->CreateShader(shader, config, pass, stage_filenames, stages);
 }
 
-void IRenderer::DestroyRenderShader(Shader* shader) {
+void IRenderer::DestroyRenderShader(UShader* shader) {
 	shader->Destroy();
 }
 
-bool IRenderer::InitializeRenderShader(Shader* shader) {
+bool IRenderer::InitializeRenderShader(UShader* shader) {
 	return shader->Initialize();
 }
 
-uint32_t IRenderer::AcquireInstanceResource(Shader* shader, std::vector<TextureMap*> maps) {
+uint32_t IRenderer::AcquireInstanceResource(UShader* shader, std::vector<FTextureMap*> maps) {
 	return RHI_->AcquireInstanceResource(shader, maps);
 }
 
-bool IRenderer::ReleaseInstanceResource(Shader* shader, uint32_t instance_id) {
+bool IRenderer::ReleaseInstanceResource(UShader* shader, uint32_t instance_id) {
 	return RHI_->ReleaseInstanceResource(shader, instance_id);
 }
 
-bool IRenderer::AcquireTextureMap(TextureMap* map) {
+bool IRenderer::AcquireTextureMap(FTextureMap* map) {
 	return RHI_->AcquireTextureMap(map);
 }
 
-void IRenderer::ReleaseTextureMap(TextureMap* map) {
+void IRenderer::ReleaseTextureMap(FTextureMap* map) {
 	RHI_->ReleaseTextureMap(map);
 }
 
@@ -251,6 +253,10 @@ UTexture* IRenderer::GetDepthAttachment(unsigned char index) {
 
 unsigned char IRenderer::GetWindowAttachmentIndex() {
 	return RHI_->GetWindowAttachmentIndex();
+}
+
+size_t IRenderer::GetFrameNum() const {
+	return RHI_->GetFrameNum();
 }
 
 bool IRenderer::CreateRenderpass(IRenderpass* out_renderpass, const RenderpassConfig& config) {

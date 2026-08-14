@@ -1,14 +1,15 @@
 ﻿#pragma once
 
+#include <variant>
 #include "Math/MathTypes.hpp"
 #include "Containers/FString.hpp"
 
-#define DEFAULT_MATERIAL_NAME "Builtin.Material.Default"
+#define DEFAULT_MATERIAL_NAME "Material.Builtin.GBuffer"
 #define VULKAN_MAX_MATERIAL_COUNT 1024
 
 class Texture;
 
-struct SMaterialConfig {
+struct FMaterialConfig {
 	FString name;
 	FString shader_name;
 	bool auto_release;
@@ -17,6 +18,8 @@ struct SMaterialConfig {
 	FString diffuse_map_name;
 	FString specular_map_name;
 	FString normal_map_name;
+
+	Vector4 light_intensity = Vector4(1.0f);
 
 	// PBR
 	float Metallic = 0.1f;					// 金属度
@@ -27,4 +30,6 @@ struct SMaterialConfig {
 	FString EmissiveFactorTexName;		// 自发光Texture
 
 	float NormalIntensity = 1.0f;
+
+	TMap<FString, FString> Properties;
 };

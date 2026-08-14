@@ -28,8 +28,8 @@ bool CameraSystem::Initialize(IRenderer* renderer, SCameraSystemConfig config) {
 	Cameras.resize(Config.max_camera_count);
 
 	// Setup default camera.
-	DefaultCamera = NewObject<ACameraActor>();
-	Cameras[0] = DefaultCamera;
+	MainCamera = NewObject<ACameraActor>();
+	Cameras[0] = MainCamera;
 	CameraMap[DEFAULT_CAMERA_NAME] = 0;
 
 	Initialized = true;
@@ -51,7 +51,7 @@ void CameraSystem::Shutdown() {
 ACameraActor* CameraSystem::Acquire(const FString& name) {
 	if (Initialized) {
 		if (name.Compare(DEFAULT_CAMERA_NAME) == 0) {
-			return DefaultCamera;
+			return MainCamera;
 		}
 
 		uint64_t ID = INVALID_ID;
@@ -119,9 +119,9 @@ void CameraSystem::Release(const FString& name) {
 	}
 }
 
-ACameraActor* CameraSystem::GetDefault() {
-	if (Initialized && DefaultCamera) {
-		return DefaultCamera;
+ACameraActor* CameraSystem::GetMainCamera() {
+	if (Initialized && MainCamera) {
+		return MainCamera;
 	}
 
 	return nullptr;

@@ -107,10 +107,16 @@ GBufferOutput main(PSInput input)
     else if (input.in_mode == 3)
     {
         // 深度可视化模式
-        float depth = input.vWorldPosition.z; // 使用世界空间Z坐标
+        float nearPlane = 0.1; // 近裁剪面
+        float farPlane = 300.0; // 远裁剪面
+        float viewDepth = abs(input.vWorldPosition.z - input.vViewPosition.z); // 计算视图空间深度
+        float depth = (viewDepth - nearPlane) / (farPlane - nearPlane); // 归一化深度
+        depth = clamp(depth, 0.0, 1.0); // 限制在[0,1]范围内
+        depth = 1.0 - depth;
+        
         output.out_albedo = float4(depth, depth, depth, 1.0);
         output.out_normal = float4(worldNormal * 0.5 + 0.5, roughness);
-        output.out_position = float4(input.vWorldPosition, depth);
+        output.out_position = float4(input.vWorldPosition, 1.0);
     }
     else
     {

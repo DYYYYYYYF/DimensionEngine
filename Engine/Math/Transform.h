@@ -71,9 +71,9 @@ public:
     void TransformRotate(const Vector3& translation, const Quaternion& rotation);
 
     // ── 矩阵 ───────────────────────────────────────────────
-    Matrix4 GetLocal()              const;
-    Matrix4 GetWorldMatrix()        const;
-    Matrix4 GetInverseWorldMatrix() const;
+    const Matrix4& GetLocal()              const;
+    const Matrix4& GetWorldMatrix()        const;
+    const Matrix4& GetInverseWorldMatrix() const;
 
     // ── 空间变换 ───────────────────────────────────────────
     Vector3 TransformPoint(const Vector3& point)     const;

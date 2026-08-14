@@ -44,7 +44,7 @@ public:
 	 *
 	 * @return True on success; otherwise false.
 	 */
-	bool Create(IRenderpass* pass, ShaderConfig* config);
+	bool Create(IRenderpass* pass, FShaderConfig* config);
 
 	/**
 	 * @brief Gets the identifier of a shader by name.
@@ -60,7 +60,7 @@ public:
 	 * @param shader_id The shader identifier.
 	 * @return A pointer to a shader, if found; otherwise 0.
 	 */
-	Shader* GetByID(uint32_t shader_id);
+	UShader* GetByID(uint32_t shader_id);
 
 	/**
 	 * @brief Returns a pointer to a shader with the given name.
@@ -68,10 +68,10 @@ public:
 	 * @param shader_name The name to search for. Case sensitive.
 	 * @return A pointer to a shader, if found; otherwise 0.
 	 */
-	Shader* Get(const FString& shader_name);
+	UShader* Get(const FString& shader_name);
 
 	bool ReloadShader(const FString& shader_name, EShaderLanguage language = EShaderLanguage::eGLSL);
-	bool ReloadShader(Shader* shader, EShaderLanguage language = EShaderLanguage::eGLSL);
+	bool ReloadShader(UShader* shader, EShaderLanguage language = EShaderLanguage::eGLSL);
 	
 public:
 	EShaderLanguage GetShaderLanguage() const { return GLOBAL_SHADER_TYPE; }
@@ -87,7 +87,7 @@ public:
 	ShaderSystem::Config ShaderSystemConfig;
 	
 	std::unordered_map<FString, uint32_t> ShaderMap;
-	TMap<size_t, Shader*> Shaders;
+	TMap<size_t, UShader*> Shaders;
 	
 	bool Initilized = false;
 	EShaderLanguage GLOBAL_SHADER_TYPE = EShaderLanguage::eGLSL;

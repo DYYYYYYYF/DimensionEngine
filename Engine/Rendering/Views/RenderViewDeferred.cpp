@@ -21,6 +21,7 @@
 #include "Rendering/Interface/IRendererBackend.hpp"
 
 #include "Framework/Components/CameraComponent.h"
+#include "Rendering/RenderWorld/RenderProxy.h"
 
 static bool RenderViewWorldDeferredOnEvent(eEventCode code, void* sender, void* listenerInst, SEventContext context) {
 	IRenderView* self = (IRenderView*)listenerInst;
@@ -85,7 +86,7 @@ bool RenderViewWorldDeferred::OnCreate(const RenderViewConfig& config) {
 		return false;
 	}
 
-	ShaderConfig* Config = (ShaderConfig*)ConfigResource.Data;
+	FShaderConfig* Config = (FShaderConfig*)ConfigResource.Data;
 	// 第一个通道用于G-Buffer渲染
 	if (!ShaderSystem::Get().Create(&Passes[0], Config)) {
 		GLOG(Log::eError, "Failed to create G-Buffer shader.");
@@ -102,7 +103,7 @@ bool RenderViewWorldDeferred::OnCreate(const RenderViewConfig& config) {
 		return false;
 	}
 
-	Config = (ShaderConfig*)ConfigResource.Data;
+	Config = (FShaderConfig*)ConfigResource.Data;
 	// 第二个通道用于光照计算
 	if (!ShaderSystem::Get().Create(&Passes[1], Config)) {
 		GLOG(Log::eError, "Failed to create deferred lighting shader.");
@@ -118,7 +119,7 @@ bool RenderViewWorldDeferred::OnCreate(const RenderViewConfig& config) {
 	Fov = Deg2Rad(45.0f);
 
 	ProjectionMatrix = Matrix4::Perspective(Fov, (float)config.width / config.height, NearClip, FarClip);
-	WorldCamera = CameraSystem::Get().GetDefault();
+	WorldCamera = CameraSystem::Get().GetMainCamera();
 
 	// 环境光设置 (与原World渲染保持一致)
 	AmbientColor = Vector4(0.7f, 0.7f, 0.7f, 1.0f);
@@ -204,49 +205,6 @@ void RenderViewWorldDeferred::OnResize(uint32_t width, uint32_t height) {
 	}
 }
 
-bool RenderViewWorldDeferred::OnBuildPacket(IRenderviewPacketData* data, struct RenderViewPacket* out_packet) {
-	if (data == nullptr || out_packet == nullptr) {
-		GLOG(Log::eWarn, "RenderViewWorldDeferred::OnBuildPacket() Requires valid pointer to packet and data.");
-		return false;
-	}
-
-	WorldPacketData* Data = (WorldPacketData*)data;
-	const std::vector<GeometryRenderData> GeometryData = Data->Meshes;
-	out_packet->view = this;
-
-	UCameraComponent* CameraComp = WorldCamera->GetCameraComponent();
-	if (!CameraComp) {
-		return false;
-	}
-
-	// 设置矩阵等
-	out_packet->projection_matrix = ProjectionMatrix;
-	out_packet->view_matrix = CameraComp->GetViewMatrix();
-	out_packet->view_position = CameraComp->GetPosition();
-	out_packet->ambient_color = AmbientColor;
-	out_packet->global_time = Data->GlobalTime;
-
-	// 获取所有几何体
-	uint32_t GeometryDataCount = (uint32_t)GeometryData.size();
-	for (uint32_t i = 0; i < GeometryDataCount; ++i) {
-		const GeometryRenderData& GData = GeometryData[i];
-		if (GData.geometry == nullptr) {
-			continue;
-		}
-
-		// 延迟渲染中，不需要按透明度排序，统一处理
-		out_packet->geometries.push_back(GeometryData[i]);
-		out_packet->geometry_count++;
-	}
-
-	return true;
-}
-
-void RenderViewWorldDeferred::OnDestroyPacket(struct RenderViewPacket* packet) {
-	packet->geometries.clear();
-	std::vector<GeometryRenderData>().swap(packet->geometries);
-}
-
 bool RenderViewWorldDeferred::RegenerateAttachmentTarget(uint32_t passIndex, RenderTargetAttachment* attachment) {
 	if (passIndex == 0) {
 		// G-Buffer通道 - 多个渲染目标
@@ -293,103 +251,90 @@ bool RenderViewWorldDeferred::RegenerateAttachmentTarget(uint32_t passIndex, Ren
 	return true;
 }
 
-bool RenderViewWorldDeferred::OnRender(struct RenderViewPacket* packet, RHI* back_renderer, size_t frame_number, size_t render_target_index) {
-	// 创建全屏四边形
+void RenderViewWorldDeferred::Render(const TArray<FRenderProxy*>& RenderProxies) {
+	// 确保全屏四边形存在
 	if (!FullscreenQuad) {
 		if (!CreateFullscreenQuad()) {
 			GLOG(Log::eError, "Failed to create fullscreen quad.");
-			return false;
+			return;
 		}
 	}
 
-	// 获取当前GBuffer纹理组
-	// TODO: 这里应该使用 render_target_index 获取当前GBuffer
+	// 获取当前帧的 GBuffer 纹理组
 	GBufferSet* CurrentGBuffer = GetCurrentGBufferSet(0);
 
-	// 第一通道：G-Buffer渲染
-	IRenderpass* GBufferPass = (IRenderpass*)&Passes[0];
-	GBufferPass->Begin(&GBufferPass->Targets[render_target_index]);
+	// 阶段一：DRAWCALL 生成、收集与状态排序
+	std::vector<DrawCall> GBufferDrawCalls;
+	std::vector<DrawCall> LightingDrawCalls;
 
-	if (!GBufferShader->Use()) {
-		GLOG(Log::eError, "Failed to use G-Buffer shader.");
-		GBufferPass->End();
-		return false;
-	}
+	// --- 收集 GBuffer 几何体的 DrawCall ---
+	for (uint32_t i = 0; i < RenderProxies.Size(); ++i) {
+		FStaticMeshRenderProxy* RenderProxy = Cast<FStaticMeshRenderProxy*>(RenderProxies[i]);
+		if (!RenderProxy || !RenderProxy->IsVisible()) continue;
 
-	// 应用全局uniform 
-	GBufferShader->SetUniform("projection", &packet->projection_matrix);
-	GBufferShader->SetUniform("view", &packet->view_matrix);
-	GBufferShader->SetUniform("view_position", &packet->view_position);
-	GBufferShader->SetUniform("mode", &render_mode);
-	GBufferShader->SetUniform("time", &packet->global_time);
-	GBufferShader->ApplyGlobal();
+		TArray<UGeometry*> Geometries = RenderProxy->GetMesh();
+		for (UGeometry* Geometry : Geometries) {
+			if (!Geometry || !Geometry->IsVisible()) continue;
 
-	// 渲染所有几何体到G-Buffer
-	uint32_t Count = packet->geometry_count;
-	for (uint32_t i = 0; i < Count; ++i) {
-		Material* Mat = packet->geometries[i].geometry->Material
-			? packet->geometries[i].geometry->Material
-			: MaterialSystem::Get().GetDefaultMaterial();
-
-		// 应用材质
-		bool IsNeedUpdate = Mat->RenderFrameNumer != frame_number;
-		if (!MaterialSystem::Get().ApplyInstance(Mat, IsNeedUpdate)) {
-			GLOG(Log::eWarn, "Failed to apply G-Buffer material '%s'. Skipping draw.", Mat->Name.CStr());
-			continue;
+			DrawCall dc;
+			UMaterialInstance* Mat = Geometry->GetMaterialInstance();
+			dc.geometry = Geometry;
+			dc.model = RenderProxy->GetModelMatrix();
+			dc.material = Mat;
+			dc.shader = GBufferShader;
+			dc.userData = nullptr;
+			dc.sortKey = ((uint64_t)dc.shader->ID << 32) | (uint64_t)Mat->GetInternalID();
+			GBufferDrawCalls.push_back(dc);
 		}
-		Mat->RenderFrameNumer = (uint32_t)frame_number;
-
-		// 应用模型矩阵
-		MaterialSystem::Get().ApplyLocal(Mat, packet->geometries[i].model_mat);
-
-		// 绘制几何体
-		back_renderer->DrawGeometry(&packet->geometries[i]);
 	}
+
+	// 状态排序
+	std::sort(GBufferDrawCalls.begin(), GBufferDrawCalls.end(), [](const DrawCall& a, const DrawCall& b) {
+		return a.sortKey < b.sortKey;
+		});
+
+	// --- 收集 延迟光照 的 DrawCall ---
+	DrawCall LightingDC;
+	UMaterialInstance* DeferredLightingMat = FullscreenQuad->GetMaterialInstance();
+	LightingDC.geometry = FullscreenQuad;
+	LightingDC.model = Matrix4::Identity();
+	LightingDC.material = DeferredLightingMat;
+	LightingDC.shader = LightingShader;
+	LightingDC.userData = CurrentGBuffer;
+	LightingDC.sortKey = ((uint64_t)LightingDC.shader->ID << 32) | (uint64_t)DeferredLightingMat->GetInternalID();
+
+	LightingDrawCalls.push_back(LightingDC);
+
+
+	// 阶段二：第一通道 —— G-BUFFER 通道绘制（直接呼叫后端执行）
+	IRenderpass* GBufferPass = (IRenderpass*)&Passes[0];
+
+	// 绑定 Pass 全局不变量
+	FFrameData GBufferData;
+	GBufferData.projection = ProjectionMatrix;
+	GBufferData.view = WorldCamera->GetViewMatrix();
+	GBufferData.cameraPosition = WorldCamera->GetActorLocation();
+	GBufferData.renderMode = render_mode;
+	GBufferData.time = 0.0f;
+
+	uint8_t RTIndex = Renderer->GetWindowAttachmentIndex();
+	uint64_t FrameNumber = Renderer->GetFrameNum();
+
+	GBufferPass->Begin(&GBufferPass->Targets[RTIndex]);
+	Renderer->ExecuteDrawCalls(GBufferDrawCalls, FrameNumber, GBufferData);
 	GBufferPass->End();
 
-	// 第二通道：延迟光照
+	// 阶段三：第二通道 —— 延迟光照通道绘制（直接呼叫后端执行）
 	IRenderpass* LightingPass = (IRenderpass*)&Passes[1];
-	LightingPass->Begin(&LightingPass->Targets[render_target_index]);
 
-	if (!LightingShader->Use()) {
-		GLOG(Log::eError, "Failed to use deferred lighting shader.");
-		LightingPass->End();
-		return false;
-	}
+	// 绑定 Pass 全局不变量
+	FFrameData LightingData;
+	LightingData.time = 0.0f;
+	LightingData.gBuffer = CurrentGBuffer;
 
-	// 应用全局uniform (环境光、视角位置等) - 延迟光照专用接口
-	LightingShader->SetUniform("time", &packet->global_time);
-	LightingShader->ApplyGlobal();
-
-	// 创建延迟光照材质并应用
-	Material* DeferredLightingMat = FullscreenQuad->Material;
-
-	// 应用延迟光照材质
-	bool LightingNeedsUpdate = DeferredLightingMat->RenderFrameNumer != frame_number;
-	if (LightingNeedsUpdate) {
-		LightingShader->BindInstance(DeferredLightingMat->InternalID);
-		Vector4 LightIntensity = { 1.0f };
-		LightingShader->SetUniform("light_intensity", &LightIntensity);
-		LightingShader->SetUniform("debug_mode", &render_mode);
-
-		LightingShader->SetUniform("albedo_texture", &CurrentGBuffer->AlbedoTextureMap);		 // 复用DiffuseMap绑定点
-		LightingShader->SetUniform("normal_texture", &CurrentGBuffer->NormalTextureMap);		 // 复用NormalMap绑定点  
-		LightingShader->SetUniform("position_texture", &CurrentGBuffer->PositionTextureMap);	 // 复用SpecularMap绑定点
-		LightingShader->ApplyInstance(LightingNeedsUpdate);
-	}
-	else {
-		DeferredLightingMat->RenderFrameNumer = (uint32_t)frame_number;
-	}
-
-	// 渲染全屏四边形进行光照计算
-	GeometryRenderData QuadRenderData;
-	QuadRenderData.geometry = FullscreenQuad;
-	QuadRenderData.model_mat = Matrix4::Identity();
-	back_renderer->DrawGeometry(&QuadRenderData);
-
+	LightingPass->Begin(&LightingPass->Targets[RTIndex]);
+	Renderer->ExecuteDrawCalls(LightingDrawCalls, FrameNumber, LightingData);
 	LightingPass->End();
-
-	return true;
 }
 
 bool RenderViewWorldDeferred::CreateGBufferTextures(uint32_t width, uint32_t height) {
@@ -446,6 +391,6 @@ bool RenderViewWorldDeferred::CreateFullscreenQuad() {
 
 void RenderViewWorldDeferred::DestroyFullscreenQuad() {
 	if (FullscreenQuad) {
-		GeometrySystem::Get().Release(FullscreenQuad);
+		DeleteObject(FullscreenQuad);
 	}
 }

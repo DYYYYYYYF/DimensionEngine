@@ -192,6 +192,21 @@ public:
         return &Buckets_[idx].Data.Value;
     }
 
+    /*
+    * @brief 查找键，确保存在时调用
+    */
+    V& At(const K& key) {
+		size_t idx = FindBucket(key);
+        if (idx == kInvalid) GLOG(Log::eError, "Please call TMap::At() function after confirm.");
+		return Buckets_[idx].Data.Value;
+    }
+
+    const V& At(const K& key) const {
+		size_t idx = FindBucket(key);
+		if (idx == kInvalid) GLOG(Log::eError, "Please call TMap::At() function after confirm.");
+		return Buckets_[idx].Data.Value;
+    }
+
     /**
      * @brief 判断键是否存在。
      */
@@ -431,7 +446,7 @@ private:
                 slot.State == EBucketState::Deleted) {
                 // 找到空槽：放入候选
                 if (!result) result = &slot.Data.Value;
-                slot = static_cast<Bucket&&>(candidate);
+                slot = std::move(candidate);
                 ++Count_;
                 return result;
             }
@@ -446,13 +461,13 @@ private:
             if (slot.ProbeLen < candidate.ProbeLen) {
                 if (!result) result = &slot.Data.Value;
                 // 交换 candidate 和 slot
-                Bucket tmp = static_cast<Bucket&&>(slot);
-                slot = static_cast<Bucket&&>(candidate);
-                candidate = static_cast<Bucket&&>(tmp);
+                Bucket tmp = std::move(slot);
+                slot = std::move(candidate);
+                candidate = std::move(tmp);
             }
 
-            ++probe;
-            candidate.ProbeLen = probe;
+            probe++;
+            candidate.ProbeLen++;
         }
     }
 

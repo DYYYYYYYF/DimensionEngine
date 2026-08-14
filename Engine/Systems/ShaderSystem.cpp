@@ -56,7 +56,7 @@ bool ShaderSystem::Initialize(IRenderer* renderer, ShaderSystem::Config config) 
 void ShaderSystem::Shutdown() {
 	if (Initilized) {
 		for (auto& Pair : Shaders) {
-			Shader* Val = Pair.Second();
+			UShader* Val = Pair.Second();
 			if (Val) {
 				Val->Destroy();
 				DeleteObject(Val);
@@ -85,7 +85,7 @@ void ShaderSystem::Shutdown() {
 }
 
 bool ShaderSystem::ReloadShader(const FString& shader_name, EShaderLanguage language) {
-	Shader* s = Get(shader_name);
+	UShader* s = Get(shader_name);
 	if (s == nullptr) {
 		return false;
 	}
@@ -93,7 +93,7 @@ bool ShaderSystem::ReloadShader(const FString& shader_name, EShaderLanguage lang
 	return ReloadShader(s, language);
 }
 
-bool ShaderSystem::ReloadShader(Shader* shader, EShaderLanguage language) {
+bool ShaderSystem::ReloadShader(UShader* shader, EShaderLanguage language) {
 	// Change shader status.
 	shader->Status = EShaderStatus::eShader_State_Reloading;
 	GLOBAL_SHADER_TYPE = language;
@@ -120,10 +120,10 @@ bool ShaderSystem::OnReloadShader(eEventCode code, void* sender, void* listenerI
 	return true;
 }
 
-bool ShaderSystem::Create(IRenderpass* pass, ShaderConfig* config) {
+bool ShaderSystem::Create(IRenderpass* pass, FShaderConfig* config) {
 	uint32_t ID = GetShaderID(config->name);
 
-	Shader* OutShader = nullptr;
+	UShader* OutShader = nullptr;
 	if (ID == INVALID_ID) {
 		RendererBackendType BackendAPI = Renderer->GetBackendType();
 		switch (BackendAPI)
@@ -210,7 +210,7 @@ unsigned ShaderSystem::GetID(const FString& shader_name) {
 	return GetShaderID(shader_name);
 }
 
-Shader* ShaderSystem::GetByID(uint32_t shader_id) {
+UShader* ShaderSystem::GetByID(uint32_t shader_id) {
 	if (shader_id >= ShaderSystemConfig.max_shader_count || Shaders[shader_id]->ID == INVALID_ID) {
 		return nullptr;
 	}
@@ -218,7 +218,7 @@ Shader* ShaderSystem::GetByID(uint32_t shader_id) {
 	return Shaders[shader_id];
 }
 
-Shader* ShaderSystem::Get(const FString& shader_name) {
+UShader* ShaderSystem::Get(const FString& shader_name) {
 	uint32_t ShaderID = GetShaderID(shader_name);
 	if (ShaderID != INVALID_ID) {
 		return GetByID(ShaderID);

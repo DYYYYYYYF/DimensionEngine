@@ -4,6 +4,7 @@
 #include <Core/EngineLogger.hpp>
 #include <Framework/Classes/CameraActor.h>
 #include <Framework/Components/CameraComponent.h>
+#include "GameConsole.h"
 
 void Keybind::GameOnEscape(eKeys key, KeymapEntryBindType type, KeymapModifierFlags modifiers, void* user_data) {
 	(void)modifiers;

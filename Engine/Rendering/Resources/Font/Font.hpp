@@ -10,7 +10,13 @@
 
 // Forward declarations
 class IRenderer;
-struct SystemFontContext;
+struct FSystemFontContext;
+
+enum class UITextType {
+	eUI_Text_Type_Bitmap,
+	eUI_Text_Type_System,
+	eUI_Text_Type_Unknown
+};
 
 // ─────────────────────────────────────────────
 //  IFont —— 渲染层接口
@@ -26,11 +32,11 @@ public:
 	virtual bool VerifyAtlas(const FString& text) = 0;
 
 	// ── 数据访问 ──────────────────────────────
-	virtual const FontGlyph* GetGlyphs()       const = 0;
+	virtual const FFontGlyph* GetGlyphs()       const = 0;
 	virtual uint32_t           GetGlyphCount()   const = 0;
-	virtual const FontKerning* GetKernings()     const = 0;
+	virtual const FFontKerning* GetKernings()     const = 0;
 	virtual uint32_t           GetKerningCount() const = 0;
-	virtual const TextureMap& GetAtlas()        const = 0;
+	virtual const FTextureMap& GetAtlas()        const = 0;
 	virtual int                GetLineHeight()   const = 0;
 	virtual int                GetBaseLine()     const = 0;
 	virtual float              GetTabXAdvance()  const = 0;
@@ -38,9 +44,21 @@ public:
 	virtual unsigned int       GetSize()         const = 0;
 
 public:
+	uint32_t GetFontSize() const { return FontSize; }
+	void SetFontSize(uint32_t Size) { FontSize = Size; }
+
+	const FString& GetFontName() const { return FontName; }
+	void SetFontName(const FString& Name) { FontName = Name; }
+
+	UITextType GetFontType() const { return TextType; }
 	void AddRef() { ++refCount_; }
 	bool Release() { return --refCount_ == 0; }
 
+protected:
+	UITextType TextType = UITextType::eUI_Text_Type_Unknown;
+
 private:
+	FString FontName;
+	uint32_t FontSize;
 	int refCount_ = 0;
 };

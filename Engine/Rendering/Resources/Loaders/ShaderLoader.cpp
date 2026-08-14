@@ -31,8 +31,8 @@ bool ShaderLoader::Load(const FString& name, void* params, UAsset* resource) {
 	resource->Name = name;
 
 	// Set some defaults, create arrays.
-	ShaderConfig* ResourceData = (ShaderConfig*)Memory::Allocate(sizeof(ShaderConfig), MemoryType::eMemory_Type_Resource);
-	ResourceData = new(ResourceData)ShaderConfig();
+	FShaderConfig* ResourceData = (FShaderConfig*)Memory::Allocate(sizeof(FShaderConfig), MemoryType::eMemory_Type_Resource);
+	ResourceData = new(ResourceData)FShaderConfig();
 	ASSERT(ResourceData);
 
 	AssetFile.ReadLineByLine([this, ResourceData](size_t index, const FString& line) {
@@ -41,12 +41,12 @@ bool ShaderLoader::Load(const FString& name, void* params, UAsset* resource) {
 
 	resource->Data = ResourceData;
 	resource->DataCount = 1;
-	resource->DataSize = sizeof(ShaderConfig);
+	resource->DataSize = sizeof(FShaderConfig);
 
 	return true;
 }
 
-bool ShaderLoader::ParseLineData(size_t index, const FString& line, ShaderConfig* resource) {
+bool ShaderLoader::ParseLineData(size_t index, const FString& line, FShaderConfig* resource) {
 	// Trim the string.
 	FString TrimmedLine = line.Trimmed();
 
@@ -294,6 +294,9 @@ bool ShaderLoader::ParseLineData(size_t index, const FString& line, ShaderConfig
 				Uniform.scope = ShaderScope::eShader_Scope_Global;
 			}
 
+			// Parse semantic 方便应用材质参数
+			Uniform.semantic = ParseSemantic(Fields[2]);
+
 			// Take a copy of the uniform name.
 			Uniform.name_length = (unsigned short)Fields[2].Length();
 			Uniform.name = Fields[2];
@@ -310,8 +313,30 @@ bool ShaderLoader::ParseLineData(size_t index, const FString& line, ShaderConfig
 	return true;
 }
 
+ShaderSemantic ShaderLoader::ParseSemantic(const FString& semantic) {
+	if (semantic.Compare("projection") == 0) return ShaderSemantic::eShaderSemantic_Projection;
+	if (semantic.Compare("view") == 0) return ShaderSemantic::eShaderSemantic_View;
+	if (semantic.Compare("ambient_color") == 0) return ShaderSemantic::eShaderSemantic_AmbientColor;
+	if (semantic.Compare("view_position") == 0) return ShaderSemantic::eShaderSemantic_ViewPosition;
+	if (semantic.Compare("render_mode") == 0) return ShaderSemantic::eShaderSemantic_RenderMode;
+	if (semantic.Compare("time") == 0) return ShaderSemantic::eShaderSemantic_Time;
+	if (semantic.Compare("model") == 0) return ShaderSemantic::eShaderSemantic_Model_Matrix;
+
+	if (semantic.Compare("gbuffer_albedo_texture") == 0) return ShaderSemantic::eSemantic_GBuffer_Albedo;
+	if (semantic.Compare("gbuffer_normal_texture") == 0) return ShaderSemantic::eSemantic_GBuffer_Normal;
+	if (semantic.Compare("gbuffer_position_texture") == 0) return ShaderSemantic::eSemantic_GBuffer_Position;
+
+	if (semantic.Compare("diffuse_texture") == 0) return ShaderSemantic::eSemantic_Diffuse_Texture;
+	if (semantic.Compare("normal_texture") == 0) return ShaderSemantic::eSemantic_Normal_Texture;
+	if (semantic.Compare("roughness_metallic_texture") == 0) return ShaderSemantic::eSemantic_Roughness_Metallic_Texture;
+
+	if (semantic.Compare("skybox_texture") == 0) return ShaderSemantic::eSemantic_Skybox_Texture;
+
+	return ShaderSemantic::eShaderSemantic_None;
+}
+
 void ShaderLoader::Unload(UAsset* resource) {
-	ShaderConfig* Data = (ShaderConfig*)resource->Data;
+	FShaderConfig* Data = (FShaderConfig*)resource->Data;
 
 	Data->stage_filenames.Clear();
 	Data->stage_names.Clear();

@@ -8,14 +8,14 @@ struct SPlatformState;
 struct ShaderUniform;
 struct GeometryRenderData;
 struct RenderTarget;
-struct TextureMap;
+struct FTextureMap;
 struct RenderBackendConfig;
-struct ShaderConfig;
+struct FShaderConfig;
 
 class Texture;
-class Material;
-class Geometry;
-class Shader;
+class UMaterial;
+class UGeometry;
+class UShader;
 class IRenderpass;
 class IGPUBuffer;
 
@@ -29,17 +29,18 @@ public:
 	// Generic
 	virtual bool Initialize(const RenderBackendConfig* config, unsigned char* out_window_render_target_count, SPlatformState* plat_state) = 0;
 	virtual void Shutdown() = 0;
-	virtual bool BeginFrame(double delta_time) = 0;
-	virtual bool EndFrame(double delta_time) = 0;
+	virtual bool BeginFrame() = 0;
+	virtual bool EndFrame() = 0;
 	virtual void Resize(unsigned short width, unsigned short height) = 0;
 	virtual void DrawGeometry(GeometryRenderData* geometry) = 0;
+	virtual void ExecuteDrawCalls(const std::vector<DrawCall>& draw_calls, size_t frame_number, const FFrameData& data) = 0;
 
 	// Texture
 	virtual UTexture* AcquireTexture(const FString& name, bool auto_release) = 0;
 
 	// Geometry
-	virtual bool CreateGeometry(Geometry* geometry, uint32_t vertex_size, uint32_t vertex_count, const void* vertices, uint32_t index_size, uint32_t index_count, const void* indices) = 0;
-	virtual void DestroyGeometry(Geometry* geometry) = 0;
+	virtual bool CreateGeometry(UGeometry* geometry, const FGeometryConfig& config) = 0;
+	virtual void DestroyGeometry(UGeometry* geometry) = 0;
 	
 	// Renderpass
 	virtual bool BeginRenderpass(IRenderpass* pass, RenderTarget* target) = 0;
@@ -63,12 +64,12 @@ public:
 	virtual void ResetScissor() = 0;
 
 	// Shader
-	virtual bool CreateShader(Shader* shader, const ShaderConfig* config, IRenderpass* pass, const TArray<FString>& stage_filenames, std::vector<ShaderStage>& stages) = 0;
-	virtual uint32_t AcquireInstanceResource(Shader* shader, std::vector<TextureMap*>& maps) = 0;
-	virtual bool ReleaseInstanceResource(Shader* shader, uint64_t instance_id) = 0;
+	virtual bool CreateShader(UShader* shader, const FShaderConfig* config, IRenderpass* pass, const TArray<FString>& stage_filenames, std::vector<ShaderStage>& stages) = 0;
+	virtual uint32_t AcquireInstanceResource(UShader* shader, std::vector<FTextureMap*>& maps) = 0;
+	virtual bool ReleaseInstanceResource(UShader* shader, uint64_t instance_id) = 0;
 
-	virtual bool AcquireTextureMap(TextureMap* map) = 0;
-	virtual void ReleaseTextureMap(TextureMap* map) = 0;
+	virtual bool AcquireTextureMap(FTextureMap* map) = 0;
+	virtual void ReleaseTextureMap(FTextureMap* map) = 0;
 	virtual bool GetEnabledMultiThread() const { return false; }
 
 public:

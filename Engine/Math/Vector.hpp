@@ -147,6 +147,10 @@ public:
 			Dabs(z - vec.z) <= tolerance;
 	}
 
+	constexpr bool Equals(const TVector3_Base& vec, T tolerance = T(0.000001)) const noexcept {
+		return Compare(vec, tolerance);
+	}
+
 	constexpr T Dot(const TVector3_Base& vec) const noexcept {
 		return x * vec.x + y * vec.y + z * vec.z;
 	}
@@ -236,6 +240,10 @@ public:
 	TVector3_Base& operator/=(T scalar) noexcept {
 		x /= scalar; y /= scalar; z /= scalar;
 		return *this;
+	}
+
+	bool operator==(const TVector3_Base& vec) const noexcept {
+		return x == vec.x && y == vec.y && z == vec.z;
 	}
 };
 
@@ -498,6 +506,11 @@ public:
             Dabs(z - vec.z) <= tolerance && Dabs(w - vec.w) <= tolerance;
     }
 
+
+	constexpr bool Equals(const TVector4_Base& vec, T tolerance = T(0.000001)) const noexcept {
+		return Compare(vec, tolerance);
+	}
+
     // Dot product
     T Dot(const TVector4_Base& vec) const noexcept {
         return x * vec.x + y * vec.y + z * vec.z + w * vec.w;
@@ -508,7 +521,7 @@ public:
         return diff.Length();
     }
 
-    static TVector4_Base StringToVec4(const char* str) {
+    static TVector4_Base FromString(const char* str) {
         if (str == nullptr) {
             return TVector4_Base{ T(1), T(1), T(1), T(1) };
         }

@@ -1,0 +1,10 @@
+#material file - Text Material
+
+version=0.1
+name=Material.Builtin.Text
+
+# 文本颜色
+diffuse_color=1.0 1.0 1.0 1.0
+
+# Shader - 使用UI着色器, 后续需要使用Text着色器
+shader=Shader.Builtin.UI

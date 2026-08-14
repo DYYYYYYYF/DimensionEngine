@@ -4,11 +4,11 @@
 #include "Rendering/Interface/IRenderView.hpp"
 #include "Rendering/Resources/Texture/Texture.hpp"
 
-class Shader;
+class UShader;
 class IREnderer;
 
 struct RenderviewPickShaderInfo {
-	Shader* UsedShader = nullptr;
+	UShader* UsedShader = nullptr;
 	VulkanRenderPass* Pass = nullptr;
 	float NearClip = 0.1f;
 	float FarClip = 10000.0f;
@@ -28,9 +28,6 @@ public:
 	virtual bool OnCreate(const RenderViewConfig& config) override;
 	virtual void OnDestroy() override;
 	virtual void OnResize(uint32_t width, uint32_t height) override;
-	virtual bool OnBuildPacket(IRenderviewPacketData* data, struct RenderViewPacket* out_packet) override;
-	virtual void OnDestroyPacket(struct RenderViewPacket* packet) override;
-	virtual bool OnRender(struct RenderViewPacket* packet, RHI* back_renderer, size_t frame_number, size_t render_target_index) override;
 	virtual bool RegenerateAttachmentTarget(uint32_t passIndex, RenderTargetAttachment* attachment) override;
 
 public:

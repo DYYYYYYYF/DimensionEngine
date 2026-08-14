@@ -147,7 +147,7 @@ public:
 	}
 
 	virtual ~TArray() {
-		Destroy();
+		Empty();
 	}
 
 	ElementType* begin() {
@@ -285,7 +285,6 @@ public:
 		return ArrayMemory[Length++];
 	}
 
-	// 修正了InsertAt函数的逻辑错误
 	void InsertAt(size_t index, const ElementType& val) {
 		if (index > Length) {
 			GLOG(Log::eError, "Index out of bounds! Length: %zu, Index: %zu", Length, index);
@@ -368,7 +367,7 @@ public:
 		}
 	}
 
-	void Destroy() {
+	void Empty() {
 		if (ArrayMemory != nullptr) {
 			if constexpr (!std::is_pointer<ElementType>::value) {
 				for (size_t i = 0; i < Length; ++i) {
@@ -398,7 +397,7 @@ public:
 		}
 
 		// 先销毁当前数据
-		Destroy();
+		Empty();
 
 		if (other.ArrayMemory == nullptr || other.Length == 0) {
 			*this = TArray(); // 重新初始化为空数组
@@ -450,7 +449,7 @@ public:
 
 	TArray& operator=(TArray&& other) noexcept {
 		if (this != &other) {
-			Destroy();
+			Empty();
 
 			ArrayMemory = other.ArrayMemory;
 			Capacity = other.Capacity;

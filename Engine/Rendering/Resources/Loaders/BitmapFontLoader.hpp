@@ -3,7 +3,7 @@
 #include "Rendering/Interface/IResourceLoader.hpp"
 
 struct FileHandle;
-struct BitmapFontResourceData;
+struct FBitmapFontResourceData;
 
 enum BitmapFontFileType {
 	eBitmap_Font_File_Type_Not_Found,
@@ -40,11 +40,11 @@ public:
 
 private:
 	// 从 .fnt 文本文件导入，并输出 .dbf 二进制缓存
-	bool ImportFntFile(const FString& asset_path, const FString& outDbfFilename, BitmapFontResourceData* outData);
+	bool ImportFntFile(const FString& asset_path, const FString& outDbfFilename, FBitmapFontResourceData* outData);
 	bool ParseFntLine(const FString& line, uint32_t lineNum, 
-		uint32_t* glyphsRead, uint32_t* kerningsRead, BitmapFontResourceData* outData);
+		uint32_t* glyphsRead, uint32_t* kerningsRead, FBitmapFontResourceData* outData);
 
 	// 读 / 写引擎二进制格式 .dbf
-	bool ReadDbfFile(const FString& asset_path, BitmapFontResourceData* data);
-	bool WriteDbfFile(const FString& asset_path, BitmapFontResourceData* data);
+	bool ReadDbfFile(const FString& asset_path, FBitmapFontResourceData* data);
+	bool WriteDbfFile(const FString& asset_path, FBitmapFontResourceData* data);
 };

@@ -6,31 +6,50 @@
 /**
  * @brief Transform 组件。
  *
- * 多重继承 UBaseComponent（组件身份）和 FTransform（变换数据与接口）。
+ * 多重继承 UBaseComponent（组件身份。
  * 不重复任何 FTransform 方法——所有位置、旋转、缩放、矩阵操作
- * 直接通过 FTransform 的公开接口使用。
  * 
  */
-class ENGINE_API alignas(16) UTransformComponent : public UComponent, public FTransform {
-public:
-    DECLARE_CLASS_TYPE(UTransformComponent)
+class ENGINE_API UTransformComponent : public UComponent
+{
+	DECLARE_CLASS_TYPE(UTransformComponent)
 
 public:
-    // 默认构造：零位移、单位四元数、一缩放
-    UTransformComponent() {
-		Name_ = "TransformComponent";
-    }
+	UTransformComponent() : UComponent("TransformComponent"), WorldTransform(Matrix4::Identity()) {}
+	UTransformComponent(const FString& Name) : UComponent(Name), WorldTransform(Matrix4::Identity()) {}
+	virtual void OnEnable() override;
+	virtual void Tick(float DeltaTime) override;
 
-    // 从现有 FTransform 构造
-    explicit UTransformComponent(const FTransform& trans)
-        : FTransform(trans) {
-        Name_ = "TransformComponent";
-    }
+public:
 
-    // 从列主序 4×4 矩阵数组构造，委托给 FTransform 模板构造
-    template<typename T>
-    explicit UTransformComponent(const T* dat, size_t count)
-        : FTransform(dat, count) {
-        Name_ = "TransformComponent";
-    }
+	void SetLocalTransform(const FTransform& Transform);
+	const FTransform& GetLocalTransform() const;
+
+	const Matrix4& GetLocalMatrix() const;
+	const Matrix4& GetWorldMatrix() const;
+	Vector3 TransformPointToWorld(const Vector3& LocalPoint) const;
+
+	void SetLocation(const Vector3& Position);
+	const Vector3& GetLocation() const;
+	void SetQuaternion(const Quaternion& Rotation);
+	const Quaternion& GetQuaternion() const;
+	void SetRotation(const Vector3& Rotation);
+	Vector3 GetRotation() const;
+	void SetScale(const Vector3& Scale);
+	const Vector3& GetScale() const;
+
+	void Rotate(const Quaternion& Rotation);
+
+	void UpdateTransform() const;
+
+protected:
+	virtual void OnTransformChanged() {}
+
+private:
+	void MarkTransformDirty();
+
+private:
+	mutable FTransform LocalTransform;
+	mutable Matrix4 WorldTransform;
+	mutable bool bTransformDirty = true;
 };

@@ -5,26 +5,30 @@
 
 #include <vector>
 
+class UGeometry;
+class UStaticMeshComponent;
+
 struct FMeshLoadParams {
 	FString resource_name;
 	class AStaticMeshActor* out_mesh = nullptr;
-	class UAsset mesh_resource;
+	UAsset mesh_resource;
 };
 
-class AStaticMeshActor : public AActor{
+class ENGINE_API AStaticMeshActor : public AActor{
 public:
 	DECLARE_CLASS_TYPE(AStaticMeshActor)
 
 public:
-	AStaticMeshActor() : AActor(), geometries(nullptr), geometry_count(0), Generation(INVALID_ID_U8){}
-	AStaticMeshActor(const FString& Name) : AActor(Name), geometries(nullptr), geometry_count(0), Generation(INVALID_ID_U8){}
+	AStaticMeshActor(const FString& Name);
 	virtual ~AStaticMeshActor() { Unload(); }
 
 public:
-	DAPI virtual void Draw();
+	virtual void Draw();
 
-	DAPI bool LoadFromResource(const FString& resource_name);
-	DAPI void Unload();
+	bool LoadFromResource(const FString& resource_name);
+	void Unload();
+
+	bool SetMeshResource(UGeometry* mesh_resource);
 
 private:
 	void LoadJobSuccess();
@@ -34,7 +38,9 @@ private:
 public:
 	unsigned char Generation;
 	unsigned short geometry_count;
-	Geometry** geometries;
+	UGeometry** geometries;
+
+	UStaticMeshComponent* MeshComponent = nullptr;
 
 	struct FMeshLoadParams LoadParams;
 };

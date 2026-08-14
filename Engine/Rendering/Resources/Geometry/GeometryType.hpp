@@ -9,27 +9,23 @@ enum MeshFileType {
 	eMesh_File_Type_3D_Model
 };
 
-struct SupportedMeshFileType {
+struct FSupportedMeshFileType {
 	std::string extension;
 	MeshFileType type;
 	bool is_binary;
 };
 
-struct MeshVertexIndexData {
+struct FMeshVertexIndexData {
 	uint32_t position_index;
 	uint32_t normal_index;
 	uint32_t texcoord_index;
 };
 
-struct MeshFaceData {
-	MeshVertexIndexData vertices[3];
+struct FMeshFaceData {
+	FMeshVertexIndexData vertices[3];
 };
 
-struct MeshGroupData {
-	std::vector<MeshFaceData> Faces;
-};
-
-struct SGeometryConfig {
+struct FGeometryConfig {
 public:
 	void SetMaterialName(const FString& mn) { material_name = mn; }
 	const FString& GetMaterialName() const { return material_name; }
