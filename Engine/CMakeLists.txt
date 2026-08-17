@@ -67,10 +67,13 @@ elseif(WIN32)
         "$<$<CONFIG:RelWithDebInfo>:shaderc_combined.lib>"
 	)
 
-# 链接库
-message("-- Shaderc: ${GLSLANGL_LIBS}")
+    # 链接库
+    message("-- Shaderc: ${Vulkan_LIBRARY_DIR}")
+    target_link_libraries(engine PUBLIC Vulkan::Vulkan)
+
+    # 把Vulkan目录下的动态库路径设置
+    target_link_directories(engine PUBLIC ${Vulkan_LIBRARY_DIR})
     target_link_libraries(engine PUBLIC ${GLSLANGL_LIBS})
-    target_link_libraries(engine PUBLIC "vulkan-1.lib")
 endif()
 
 target_link_libraries(engine PUBLIC 

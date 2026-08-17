@@ -82,32 +82,39 @@ endif()
 source_group(TREE ${CMAKE_SOURCE_DIR} FILES ${ALL_SRCS})
 
 if(APPLE)
-    message("-- Current environment: MacOS")
-
-    set(SYSTEM_LIBRARY_DIR "/usr/local/lib")
-    find_package(Vulkan QUIET)
-
-    include_directories(${Vulkan_INCLUDE_DIRS})
-    link_directories( ${SYSTEM_LIBRARY_DIR} ${LIBRARY_OUTPUT_PATH})
+    message(STATUS "Current environment: macOS")
 
 elseif(WIN32)
-    message("-- Current environment: Windows")
-	
-    if(DEFINED ENV{VULKAN_SDK})
-        set(Vulkan_DIR $ENV{VULKAN_SDK})
-    else()
-        message(FATAL_ERROR "VULKAN_SDK environment variable is not set.")
-    endif()
+    message(STATUS "Current environment: Windows")
 
-    set(Vulkan_LIBRARY_DIRS "${Vulkan_DIR}/Lib")
-    set(Vulkan_INCLUDE_DIRS "${Vulkan_DIR}/Include")
-	
-    message("-- Vulkan Lib: ${Vulkan_LIBRARY_DIRS}")
-    message("-- Vulkan Inc: ${Vulkan_INCLUDE_DIRS}")
+elseif(UNIX)
+    message(STATUS "Current environment: Linux")
 
-    include_directories(${Vulkan_INCLUDE_DIRS})
-    link_directories(${Vulkan_LIBRARY_DIRS})
+else()
+    message(FATAL_ERROR "Unsupported platform.")
 endif()
+
+find_package(Vulkan REQUIRED)
+find_path(SHADERC_INCLUDE_DIR
+    NAMES shaderc/shaderc.hpp
+    PATHS
+        "${Vulkan_INCLUDE_DIRS}"
+)
+if(NOT SHADERC_INCLUDE_DIR)
+    message(FATAL_ERROR "shaderc.hpp not found")
+endif()
+
+get_filename_component(
+    Vulkan_LIBRARY_DIR
+    "${Vulkan_LIBRARY}"
+    DIRECTORY
+)
+
+message(STATUS "Vulkan found:")
+message(STATUS "  Version  : ${Vulkan_VERSION}")
+message(STATUS "  Include  : ${Vulkan_INCLUDE_DIRS}")
+message(STATUS "  Library  : ${Vulkan_LIBRARIES}")
+message(STATUS "  Library_Path  : ${Vulkan_LIBRARY_DIR}")
 
 add_subdirectory(engine)
 add_subdirectory(Plugins)
