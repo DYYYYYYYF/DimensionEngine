@@ -1,7 +1,7 @@
 ﻿#include "Material.hpp"
 #include "Systems/MaterialSystem.h"
 
-UMaterial::UMaterial() {
+UMaterial::UMaterial(const FString& Name) : UAsset(Name) {
 	ReferenceCount = 0;
 	AutoRelease = false;
 	Generation = INVALID_ID;

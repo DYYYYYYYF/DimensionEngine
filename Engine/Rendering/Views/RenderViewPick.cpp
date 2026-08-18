@@ -104,7 +104,7 @@ bool RenderViewPick::OnCreate(const RenderViewConfig& config) {
 
 	// Builtin UI Pick shader.
 	const char* UIShaderName = "Shader.Builtin.UIPick";
-	UAsset ConfigResource;
+	UAsset ConfigResource(UIShaderName);
 	if (!ResourceSystem::Get().Load(UIShaderName, EAssetType::Shader, nullptr, &ConfigResource)) {
 		GLOG(Log::eError, "Failed to load builtin UI Pick shader.");
 		return false;

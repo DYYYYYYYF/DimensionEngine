@@ -77,7 +77,7 @@ private:
 
 class USystemFont : public UAsset {
 public:
-	USystemFont() = default;
+	USystemFont(const FString& Name) : UAsset(Name) {}
 	~USystemFont() = default;
 
 	// 禁止拷贝

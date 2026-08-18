@@ -129,7 +129,7 @@ bool ShaderSystem::Create(IRenderpass* pass, FShaderConfig* config) {
 		switch (BackendAPI)
 		{
 		case eRenderer_Backend_Type_Vulkan:
-			OutShader = NewObject<VulkanShader>();
+			OutShader = NewObject<VulkanShader>(config->name);
 			break;
 			// TODO
 		case eRenderer_Backend_Type_OpenGL:

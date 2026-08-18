@@ -33,7 +33,6 @@ class DAPI UAsset : public UObject, public TRequireClassType<UAsset> {
 	DECLARE_CLASS_TYPE(UAsset)
 
 public:
-	UAsset() : UObject() {}
 	UAsset(const FString& name) : UObject(), Name(name) {}
 
 	virtual ~UAsset() = default;

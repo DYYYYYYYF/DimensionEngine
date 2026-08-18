@@ -53,7 +53,7 @@ void MaterialSystem::Shutdown() {
 
 UMaterial* MaterialSystem::Acquire(const FString& name) {
 	// Load the given material configuration from disk.
-	UAsset MatResource;
+	UAsset MatResource(name);
 	if (!ResourceSystem::Get().Load(name, EAssetType::Material, nullptr, &MatResource)) {
 		GLOG(Log::eError, "Failed to load material resource, returning nullptr.");
 		return nullptr;
@@ -84,7 +84,7 @@ UMaterial* MaterialSystem::AcquireFromConfig(FMaterialConfig config) {
 		for (uint32_t i = 0; i < Count; ++i) {
 			if (RegisteredMaterials[i] == nullptr) {
 				// A free slot has been found. Use it index as the handle.
-				RegisteredMaterials[i] = NewObject<UMaterial>();
+				RegisteredMaterials[i] = NewObject<UMaterial>(config.name);
 				RegisteredMaterials[i]->SetInternalID(i);
 				MaterialMap[config.name] = i;
 				m = RegisteredMaterials[i];

@@ -75,7 +75,7 @@ constexpr uint32_t DESC_SET_INDEX_INSTANCE = 1;
 
 class VulkanShader : public UShader {
 public:
-	VulkanShader();
+	VulkanShader(const FString& Name);
 	
 	virtual ~VulkanShader() {
 		if (Status != EShaderStatus::eShader_State_Not_Created) {

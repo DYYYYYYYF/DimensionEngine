@@ -7,7 +7,6 @@
 
 class UTexture : public UAsset {
 public:
-	UTexture();
 	UTexture(const FString& name);
 	virtual ~UTexture();
 

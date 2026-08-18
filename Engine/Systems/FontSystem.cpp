@@ -73,7 +73,7 @@ bool FontSystem::RegisterBitmapFont(const BitmapFontConfig& config) {
 
 	// 从资源系统加载原始数据
 	// BitmapFont 继承自 UAsset，直接作为加载目标
-	UBitmapFont* font = NewObject<UBitmapFont>(MemoryType::eMemory_Type_Resource);
+	UBitmapFont* font = NewObject<UBitmapFont>(MemoryType::eMemory_Type_Resource, config.name);
 	if (!ResourceSystem::Get().Load(config.resourceName, EAssetType::BitmapFont, nullptr, font)) {
 		GLOG(Log::eError, "Failed to load bitmap font resource: %s.", config.resourceName.CStr());
 		return false;
@@ -92,7 +92,7 @@ bool FontSystem::RegisterBitmapFont(const BitmapFontConfig& config) {
 
 bool FontSystem::RegisterSystemFont(const SystemFontConfig& config) {
 	// 先加载资源，一个 TTF 文件可能包含多个字型（face）
-	UAsset loadedAsset;
+	UAsset loadedAsset(config.resourceName);
 	if (!ResourceSystem::Get().Load(config.resourceName.CStr(), EAssetType::SystemFont, nullptr, &loadedAsset)) {
 		GLOG(Log::eError, "Failed to load system font resource: %s.", config.resourceName.CStr());
 		return false;
@@ -114,7 +114,7 @@ bool FontSystem::RegisterSystemFont(const SystemFontConfig& config) {
 			return false;
 		}
 
-		USystemFont* font = NewObject<USystemFont>(MemoryType::eMemory_Type_Resource);
+		USystemFont* font = NewObject<USystemFont>(MemoryType::eMemory_Type_Resource, faceName);
 
 		// 传入 index=i，SystemFont 内部用它定位 TTF 文件内的具体字型
 		if (!font->InitFromResourceData(resourceData, i)) {

@@ -12,6 +12,9 @@ class IRenderer;
 
 class UShader : public UAsset{
 public:
+	UShader(const FString& Name) : UAsset(Name) {}
+
+public:
 	virtual bool Reload() = 0;
 	virtual void Destroy() = 0;
 

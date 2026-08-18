@@ -8,12 +8,6 @@
 class UGeometry;
 class UStaticMeshComponent;
 
-struct FMeshLoadParams {
-	FString resource_name;
-	class AStaticMeshActor* out_mesh = nullptr;
-	UAsset mesh_resource;
-};
-
 class ENGINE_API AStaticMeshActor : public AActor{
 public:
 	DECLARE_CLASS_TYPE(AStaticMeshActor)
@@ -23,8 +17,6 @@ public:
 	virtual ~AStaticMeshActor() { Unload(); }
 
 public:
-	virtual void Draw();
-
 	bool LoadFromResource(const FString& resource_name);
 	void Unload();
 
@@ -38,9 +30,7 @@ private:
 public:
 	unsigned char Generation;
 	unsigned short geometry_count;
-	UGeometry** geometries;
+	UGeometry* GeometryAsset;
 
 	UStaticMeshComponent* MeshComponent = nullptr;
-
-	struct FMeshLoadParams LoadParams;
 };

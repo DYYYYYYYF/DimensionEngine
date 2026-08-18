@@ -11,7 +11,7 @@ class UBitmapFont : public UAsset, public IFont {
 	friend class BitmapFontLoader;
 
 public:
-	UBitmapFont() = default;
+	UBitmapFont(const FString& Name) : UAsset(Name) {}
 	~UBitmapFont() = default;
 
 	// 禁止拷贝

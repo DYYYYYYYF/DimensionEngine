@@ -20,7 +20,7 @@ class UMaterial : public UAsset{
 	friend class MaterialSystem;
 
 public:
-	UMaterial();
+	UMaterial(const FString& Name);
 	virtual ~UMaterial();
 
 public:

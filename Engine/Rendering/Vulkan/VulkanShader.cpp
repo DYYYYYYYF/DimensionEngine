@@ -8,7 +8,7 @@
 #include "Core/Utils.hpp"
 #include "VulkanTexture.hpp"
 
-VulkanShader::VulkanShader() : UShader() {
+VulkanShader::VulkanShader(const FString& Name) : UShader(Name) {
 	ID = INVALID_ID;
 	MappedUniformBufferBlock = nullptr;
 	Renderpass = nullptr;
@@ -560,10 +560,10 @@ bool VulkanShader::CompileShaderFile(bool writeToDisk/* = true*/){
 		VulkanShaderStageConfig vkShaderStageConfig = Config.stages[i];
 
 		// Read the resource.
-		UAsset BinaryResource;
 		FString ShaderFile = ResourceSystem::Get().GetRootPath() + FString("/")
 			+ FString(vkShaderStageConfig.filename);
 
+		UAsset BinaryResource(ShaderFile);
 		File SPVFile(ShaderFile);
 		if (!SPVFile.IsExist() || Status == EShaderStatus::eShader_State_Reloading){
 			ShaderStage ShadercStage;

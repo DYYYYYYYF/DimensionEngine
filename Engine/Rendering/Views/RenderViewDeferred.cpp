@@ -80,7 +80,7 @@ RenderViewWorldDeferred::RenderViewWorldDeferred(const RenderViewConfig& config)
 bool RenderViewWorldDeferred::OnCreate(const RenderViewConfig& config) {
 	// 加载G-Buffer着色器
 	const char* GBufferShaderName = "Shader.Builtin.GBuffer";
-	UAsset ConfigResource;
+	UAsset ConfigResource(GBufferShaderName);
 	if (!ResourceSystem::Get().Load(GBufferShaderName, EAssetType::Shader, nullptr, &ConfigResource)) {
 		GLOG(Log::eError, "Failed to load builtin G-Buffer shader.");
 		return false;
