@@ -1,4 +1,4 @@
-﻿#include "VulkanShader.hpp"
+#include "VulkanShader.hpp"
 #include "Systems/TextureSystem.h"
 #include "Systems/ResourceSystem.h"
 #include "Core/EngineLogger.hpp"
@@ -7,6 +7,8 @@
 #include "VulkanBackend.hpp"
 #include "Core/Utils.hpp"
 #include "VulkanTexture.hpp"
+
+#include <algorithm>
 
 VulkanShader::VulkanShader(const FString& Name) : UShader(Name) {
 	ID = INVALID_ID;
@@ -175,6 +177,11 @@ void VulkanShader::Destroy(){
 
 	LogicalDevice.waitIdle();
 
+	// 着色器销毁后，实例槽位必须复位，避免后续复用已释放的描述符集。
+	for (uint32_t j = 0; j < VULKAN_MAX_MATERIAL_COUNT; ++j) {
+		InstanceStates[j].id = INVALID_ID;
+	}
+
 	// Descriptor set layouts.
 	for (uint32_t i = 0; i < Config.descriptor_set_count; ++i) {
 		if (DescriptorSetLayouts[i]) {
@@ -312,10 +319,26 @@ bool VulkanShader::ApplyInstance() {
 	VulkanContext& Context = Backend->Context;
 	uint32_t       ImageIndex = Context.ImageIndex;
 
+	// 防御：实例 id 越界会索引到未初始化的状态，绑定时会带上无效句柄
+	if (BoundInstanceId >= (uint64_t)VULKAN_MAX_MATERIAL_COUNT) {
+		GLOG(Log::eError, "VulkanShader::ApplyInstance invalid instance id %llu for shader '%s'.",
+			(unsigned long long)BoundInstanceId, Name.CStr());
+		return false;
+	}
+
 	VulkanShaderInstanceState& State = InstanceStates[BoundInstanceId];
 	vk::DescriptorSet          DescSet = State.descriptor_set_state.descriptorSets[ImageIndex];
 
 	std::vector<vk::WriteDescriptorSet> DescriptorWrites;
+
+	// 注意：WriteDescriptorSet 中的 pBufferInfo / pImageInfo 仅保存指针，
+	// 被指向的数据必须存活到 updateDescriptorSets 返回之后。
+	// 这里用 reserve 预分配，保证底层存储不再重分配，指针始终有效。
+	std::vector<vk::DescriptorBufferInfo> BufferInfoStore;
+	std::vector<vk::DescriptorImageInfo>  ImageInfoStore;
+	BufferInfoStore.reserve(1);
+	ImageInfoStore.reserve(VULKAN_SHADER_MAX_INSTANCE_TEXTURES);
+
 	uint32_t DescriptorIndex = 0;
 
 	// ── UBO ──────────────────────────────────────────────────────────────
@@ -324,7 +347,8 @@ bool VulkanShader::ApplyInstance() {
 			&State.descriptor_set_state.descriptor_states[DescriptorIndex].generations[ImageIndex];
 
 		if (*UboGeneration == INVALID_ID) {
-			vk::DescriptorBufferInfo BufferInfo;
+			BufferInfoStore.emplace_back();
+			vk::DescriptorBufferInfo& BufferInfo = BufferInfoStore.back();
 			BufferInfo.setBuffer(UniformBuffer.Buffer)
 				.setOffset(State.offset)
 				.setRange(UboStride);
@@ -334,7 +358,7 @@ bool VulkanShader::ApplyInstance() {
 				.setDstBinding(DescriptorIndex)
 				.setDescriptorType(vk::DescriptorType::eUniformBuffer)
 				.setDescriptorCount(1)
-				.setPBufferInfo(&BufferInfo);
+				.setPBufferInfo(BufferInfoStore.data());
 
 			DescriptorWrites.push_back(UboWrite);
 			*UboGeneration = 1;
@@ -350,10 +374,11 @@ bool VulkanShader::ApplyInstance() {
 		uint32_t TotalSamplerCount =
 			InstSetConfig.bindings[SamplerBindingIndex].descriptorCount;
 
-		vk::DescriptorImageInfo ImageInfos[VULKAN_SHADER_MAX_INSTANCE_TEXTURES];
-		uint32_t UpdateSamplerCount = 0;
+		// 防御：配置里的 descriptorCount 可能大于实际贴图槽位/上限定长，越界会读到脏指针
+		uint32_t MaxSamplerCount = (uint32_t)std::min<size_t>(TotalSamplerCount, State.instance_texture_maps.Size());
+		MaxSamplerCount = std::min(MaxSamplerCount, (uint32_t)VULKAN_SHADER_MAX_INSTANCE_TEXTURES);
 
-		for (uint32_t i = 0; i < TotalSamplerCount; ++i) {
+		for (uint32_t i = 0; i < MaxSamplerCount; ++i) {
 			FTextureMap* Map = State.instance_texture_maps[i];
 			if (!Map) continue;
 
@@ -378,20 +403,21 @@ bool VulkanShader::ApplyInstance() {
 			VulkanTexture* VkTex = static_cast<VulkanTexture*>(Tex);
 			if (!VkTex) continue;
 
-			ImageInfos[UpdateSamplerCount]
+			ImageInfoStore.emplace_back();
+			vk::DescriptorImageInfo& ImageInfo = ImageInfoStore.back();
+			ImageInfo
 				.setImageLayout(VkTex->ShaderReadLayout)
 				.setImageView(VkTex->ImageView)
 				.setSampler(*reinterpret_cast<vk::Sampler*>(&Map->internal_data));
-			UpdateSamplerCount++;
 		}
 
-		if (UpdateSamplerCount > 0) {
+		if (!ImageInfoStore.empty()) {
 			vk::WriteDescriptorSet SamplerWrite;
 			SamplerWrite.setDstSet(DescSet)
 				.setDstBinding(SamplerBindingIndex)   // ← 从配置读
 				.setDescriptorType(vk::DescriptorType::eCombinedImageSampler)
-				.setDescriptorCount(UpdateSamplerCount)
-				.setPImageInfo(ImageInfos);
+				.setDescriptorCount((uint32_t)ImageInfoStore.size())
+				.setPImageInfo(ImageInfoStore.data());
 			DescriptorWrites.push_back(SamplerWrite);
 		}
 	}

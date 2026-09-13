@@ -1,4 +1,4 @@
-﻿#include "VulkanBuffer.hpp"
+#include "VulkanBuffer.hpp"
 
 #include "VulkanContext.hpp"
 
@@ -31,6 +31,7 @@ VulkanBuffer::VulkanBuffer(EGPUBufferType type, size_t total_size, bool use_free
 		return;
 	}
 }
+
 
 bool VulkanBuffer::Create() {
 	if (!Context) {

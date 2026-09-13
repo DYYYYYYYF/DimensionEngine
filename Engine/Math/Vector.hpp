@@ -406,7 +406,7 @@ public:
 #endif
 #endif
 
-        T alignas(16) elements[4] = { T(0) };
+        alignas(16) T elements[4] = { T(0) };
         struct {
             union { T x, r, s; };
             union { T y, g, t; };

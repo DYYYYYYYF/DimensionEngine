@@ -44,14 +44,23 @@ if(MSVC)
     )
 
 else()
-    add_compile_options(${PROJECT_NAME} PRIVATE
-        -Wall -Wextra -Wpedantic
-    )
+    # 说明：add_compile_options 不是 target_* 系列命令，不接受「目标名 PRIVATE」这种写法，
+    # 原写法会把 DuckDuck / PRIVATE 当作编译输入文件传给编译器
+    # （clang++: error: no such file or directory: 'DuckDuck'）。
+    # 另外它是「目录级」作用域，会向下继承给之后 add_subdirectory 的所有子目录，
+    # 而 assimp 自身使用 -Wall -Werror，被 -Wextra/-Wpedantic 污染后会因警告报错，
+    # 因此这里先缓存选项，等三方库添加完之后再启用（只作用于工程自身目标）。
+    set(PROJECT_WARNING_OPTIONS -Wall -Wextra -Wpedantic)
 endif()
 
 # 第三方库
 message(STATUS "Configuring Third-Party Libraries...")
 add_subdirectory(3rd)
+
+# 只对工程自身的目标（engine/Plugins/Editor/Tests）启用严格警告
+if(NOT MSVC)
+    add_compile_options(${PROJECT_WARNING_OPTIONS})
+endif()
 
 ## Set build type
 if (NOT CMAKE_BUILD_TYPE)

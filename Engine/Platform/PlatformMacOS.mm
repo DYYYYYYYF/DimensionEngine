@@ -4,10 +4,10 @@
 
 #include "Core/Controller.hpp"
 #include "Core/Event.hpp"
-#include "Core/DThread.hpp"
-#include "Core/DMutex.hpp"
-#include "Renderer/Vulkan/VulkanPlatform.hpp"
-#include "Renderer/Vulkan/VulkanContext.hpp"
+#include "Platform/Thread/DThread.hpp"
+#include "Platform/Thread/DMutex.hpp"
+#include "Rendering/Vulkan/VulkanPlatform.hpp"
+#include "Rendering/Vulkan/VulkanContext.hpp"
 
 #include <mach/mach_time.h>
 #include <crt_externs.h>
@@ -527,7 +527,7 @@ int Platform::GetProcessorCount(){
 }
 
 void Platform::SetLogo(void* WindowHandle, const std::string& IconPath) {
-	NSString* path = [NSString stringWithUTF8String:IconPath];
+	NSString* path = [NSString stringWithUTF8String:IconPath.c_str()];
     NSImage* icon = [[NSImage alloc] initWithContentsOfFile:path];
 
     if (icon) {

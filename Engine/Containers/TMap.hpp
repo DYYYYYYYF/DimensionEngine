@@ -2,6 +2,7 @@
 
 #include "Defines.hpp"
 #include "Core/DMemory.hpp"
+#include <type_traits>
 
 /**
  * @brief 开放寻址（Robin Hood）哈希表，替代 std::unordered_map。
@@ -30,11 +31,29 @@
  //  默认哈希器（可针对具体类型特化）
  // ============================================================
 
-// ── 通用回退：枚举等可按整数转换的键类型（无显式特化时使用） ──
-template<typename K>
+// ── 通用回退：整型 / 枚举等可按整数转换的键类型（无显式特化时使用） ──
+// 说明：各平台 size_t / long 的底层类型不同
+//   Windows: size_t = unsigned long long (uint64_t)
+//   macOS  : size_t = unsigned long      (uint64_t = unsigned long long)
+//   Linux  : size_t = unsigned long      (uint64_t = unsigned long)
+// 仅按固定宽度类型特化会在部分平台漏掉（如 macOS 的 unsigned long），
+// 导致链接期找不到 operator()；这里用 enable_if 兜底所有整型 / 枚举键。
+// 注意：主模板不再提供函数体，避免在 uint64_t 显式特化之前就被具现化
+//       （clang 报错：explicit specialization ... after instantiation）。
+template<typename K, typename Enable = void>
 struct TDefaultHasher {
+    size_t operator()(const K& key) const noexcept;
+};
+
+template<typename K>
+struct TDefaultHasher<K, typename std::enable_if<
+    (std::is_integral<K>::value || std::is_enum<K>::value) && !std::is_same<K, bool>::value>::type> {
     size_t operator()(const K& key) const noexcept {
-        return TDefaultHasher<uint64_t>{}(static_cast<uint64_t>(key));
+        uint64_t v = static_cast<uint64_t>(key);
+        v ^= v >> 33;
+        v *= 0xff51afd7ed558ccdULL;
+        v ^= v >> 33;
+        return static_cast<size_t>(v);
     }
 };
 

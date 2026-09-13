@@ -44,7 +44,7 @@ template<typename T>
 void JsonObject::SetArray(const std::string& key, const std::vector<T>& values) {
 	nlohmann::json arr = nlohmann::json::array();
 	for (const auto& val : values) {
-		arr.push_back(val);
+		arr.push_back(static_cast<T>(val));
 	}
 	Handle->value[key] = arr;
 }
