@@ -199,6 +199,23 @@ bool VulkanDevice::SelectPhysicalDevice(vk::SurfaceKHR surface) {
 		return false;
 	}
 
+	// Apple Silicon（M 系列）只提供统一内存的集成 GPU，MoltenVK 会将其报告为
+	// eIntegratedGpu，不存在独立显卡；而 Intel Mac 可能同时具备独显与核显。
+	// 这里先在全部物理设备中探测是否存在独显：有则维持「必须独显」的原有策略，
+	// 没有（如 M1/M2/M3）则放宽为接受集成 GPU，保证两个平台都能选到可用设备。
+	bool bHasDiscreteGpu = false;
+	for (unsigned int i = 0; i < PhysicalDeviceCount; ++i) {
+		vk::PhysicalDeviceProperties DeviceProps;
+		PhysicalDevices[i].getProperties(&DeviceProps);
+		if (DeviceProps.deviceType == vk::PhysicalDeviceType::eDiscreteGpu) {
+			bHasDiscreteGpu = true;
+			break;
+		}
+	}
+	if (!bHasDiscreteGpu) {
+		GLOG(Log::eInfo, "No discrete GPU detected, integrated/unified GPU is acceptable.");
+	}
+
 	for (unsigned int i = 0; i < PhysicalDeviceCount; i++) {
 		vk::PhysicalDeviceProperties Properties;
 		PhysicalDevices[i].getProperties(&Properties);
@@ -222,7 +239,7 @@ bool VulkanDevice::SelectPhysicalDevice(vk::SurfaceKHR surface) {
 		DeviceRequirements.present = true;
 		DeviceRequirements.transfer = true;
 		DeviceRequirements.sampler_anisotropy = true;
-		DeviceRequirements.discrete_gpu = true;
+		DeviceRequirements.discrete_gpu = bHasDiscreteGpu;
 		DeviceRequirements.device_extensions_name.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
 
 		if (MeetsRequirements(PhysicalDevices[i], surface, &Properties, &Features)) {

@@ -44,14 +44,39 @@ if(MSVC)
     )
 
 else()
-    add_compile_options(${PROJECT_NAME} PRIVATE
-        -Wall -Wextra -Wpedantic
-    )
+    # 说明：add_compile_options 不是 target_* 系列命令，不接受「目标名 PRIVATE」这种写法，
+    # 原写法会把 DuckDuck / PRIVATE 当作编译输入文件传给编译器
+    # （clang++: error: no such file or directory: 'DuckDuck'）。
+    # 另外它是「目录级」作用域，会向下继承给之后 add_subdirectory 的所有子目录，
+    # 而 assimp 自身使用 -Wall -Werror，被 -Wextra/-Wpedantic 污染后会因警告报错，
+    # 因此这里先缓存选项，等三方库添加完之后再启用（只作用于工程自身目标）。
+    set(PROJECT_WARNING_OPTIONS -Wall -Wextra -Wpedantic)
 endif()
 
 # 第三方库
 message(STATUS "Configuring Third-Party Libraries...")
 add_subdirectory(3rd)
+
+# 只对工程自身的目标（engine/Plugins/Editor/Tests）启用严格警告
+if(NOT MSVC)
+    add_compile_options(${PROJECT_WARNING_OPTIONS})
+endif()
+
+# 源码编码：工程自身源码（Engine/Plugins/Editor/Tests）统一按 UTF-8 解析。
+# MSVC 默认按系统代码页读取「不带 BOM」的源文件：在中文环境下会把 macOS/其他编辑器
+# 保存的 UTF-8 中文误判为 GBK，导致中文落入字符串字面量时出现
+# C2001(常量中有换行)/C2143(缺少“;”)/C4819，即便只落在注释里也会产生 C4819 告警。
+# 这里放在 add_subdirectory(3rd) 之后，作用域与上面的警告选项一致：
+# 只覆盖工程自身目标，不改动三方库（assimp/openal/ULogger 等）的编译选项。
+#
+# 刻意只加 /source-charset:utf-8 而不加 /utf-8：/utf-8 等价于
+# /source-charset:utf-8 /execution-charset:utf-8 两条一起生效，会把「执行字符集」
+# 也改成 UTF-8；而 ULogger 在 Windows 上通过 WriteConsoleA / OutputDebugStringA
+# 输出日志（按系统代码页解释字节），执行字符集一变，日志里的中文会变成乱码。
+# 保持执行字符集为系统默认，即可在不改变现有运行期输出的前提下解决编译问题。
+if(MSVC)
+    add_compile_options("/source-charset:utf-8")
+endif()
 
 ## Set build type
 if (NOT CMAKE_BUILD_TYPE)

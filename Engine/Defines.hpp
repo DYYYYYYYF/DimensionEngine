@@ -195,11 +195,40 @@ inline bool is_avx2_supported() {
 
 #include <filesystem>
 #ifndef ROOT_PATH
-#if defined(DPLATFORM_MACOS)
-#define ROOT_PATH (std::filesystem::current_path().generic_string() + "/../..").c_str()
-#else
-#define ROOT_PATH (std::filesystem::current_path().generic_string() + "/..").c_str()
-#endif
+// 说明：原实现 `(current_path() + "/../..").c_str()` 返回的是临时 std::string 内部缓冲区的
+// 悬垂指针（临时对象在语句结束即析构），且硬编码了相对层级，Mac 与 Windows 的可执行文件
+// 输出目录不同，导致运行时找不到 Engine/Config.json、Editor/Config.json 而启动失败。
+// 现改为：从当前工作目录逐级向上查找同时包含 Editor 与 Engine 的项目根目录，
+// 结果缓存在静态字符串中，返回稳定的 const char*，两个平台行为一致。
+inline const char* DEngineRootPath() {
+	static const std::string RootPath = []() -> std::string {
+		std::error_code ec;
+		const std::filesystem::path Start = std::filesystem::current_path(ec);
+		if (ec) {
+			return std::string(".");
+		}
+
+		for (std::filesystem::path Cur = Start; ; ) {
+			const bool HasEditor = std::filesystem::exists(Cur / "Editor" / "Config.json", ec);
+			const bool HasEngine = std::filesystem::exists(Cur / "Engine" / "Config.json", ec)
+				|| std::filesystem::exists(Cur / "engine" / "Config.json", ec);
+			if (HasEditor && HasEngine) {
+				return Cur.generic_string();
+			}
+
+			const std::filesystem::path Parent = Cur.parent_path();
+			if (Parent.empty() || Parent == Cur) {
+				break;
+			}
+			Cur = Parent;
+		}
+
+		// 兜底：未找到项目根时，退化为工作目录的上一级
+		return (Start / "..").lexically_normal().generic_string();
+	}();
+	return RootPath.c_str();
+}
+#define ROOT_PATH DEngineRootPath()
 #endif
 
 #define ENGINE_CONFIG_PATH FString(ROOT_PATH) + "/Engine/Config.json"

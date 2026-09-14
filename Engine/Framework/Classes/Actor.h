@@ -104,7 +104,7 @@ public:
 		if (ContainComponents.Find(ID)) {
 			TArray<UComponent*>& TypeComponents = ContainComponents.At(ID);
 			for (size_t i = 0; i < TypeComponents.Size(); ++i) {
-				if (TypeComponents[i] && TypeComponents[i]->GetUniqueID() == T.GetUniqueID()) {
+				if (TypeComponents[i]) {
 					TypeComponents.PopAt(i);
 					break;
 				}

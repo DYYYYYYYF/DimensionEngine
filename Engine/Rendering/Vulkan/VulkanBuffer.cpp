@@ -32,6 +32,7 @@ VulkanBuffer::VulkanBuffer(EGPUBufferType type, size_t total_size, bool use_free
 	}
 }
 
+
 bool VulkanBuffer::Create() {
 	if (!Context) {
 		GLOG(Log::eError, "VulkanBuffer::Create() Context is null.");
