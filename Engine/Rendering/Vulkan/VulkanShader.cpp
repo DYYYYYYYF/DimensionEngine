@@ -1,4 +1,4 @@
-#include "VulkanShader.hpp"
+﻿#include "VulkanShader.hpp"
 #include "Systems/TextureSystem.h"
 #include "Systems/ResourceSystem.h"
 #include "Core/EngineLogger.hpp"

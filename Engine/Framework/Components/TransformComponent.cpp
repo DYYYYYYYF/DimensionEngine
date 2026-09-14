@@ -1,8 +1,8 @@
-#include "TransformComponent.h"
+ï»¿#include "TransformComponent.h"
 #include "Framework/Classes/Actor.h"
 
 void UTransformComponent::OnEnable() {
-	// ¿ªÊ¼Ê±ÏÈ¸üĞÂÒ»´Î£¬È·±£ LocalTransform µÄ¾ØÕóÊÇ×îĞÂµÄ
+	// å¼€å§‹æ—¶å…ˆæ›´æ–°ä¸€æ¬¡ï¼Œç¡®ä¿ LocalTransform çš„çŸ©é˜µæ˜¯æœ€æ–°çš„
 	UpdateTransform();
 }
 
@@ -111,7 +111,7 @@ void UTransformComponent::UpdateTransform() const {
 	LocalTransform.UpdateLocal();
 
 	const Matrix4& LocalMat = LocalTransform.GetLocal();
-	// ¸üĞÂWorldTransform
+	// æ›´æ–°WorldTransform
 	AActor* Owner = GetOwner();
 	if (Owner) {
 		AActor* OwnerParent = Owner->GetParent();
@@ -130,7 +130,7 @@ void UTransformComponent::UpdateTransform() const {
 }
 
 void UTransformComponent::MarkTransformDirty() {
-	// Èç¹ûÒÑ¾­±ê¼ÇÎªÔà£¬ÔòÎŞĞèÔÙ´Î±ê¼Ç
+	// å¦‚æœå·²ç»æ ‡è®°ä¸ºè„ï¼Œåˆ™æ— éœ€å†æ¬¡æ ‡è®°
 	if (bTransformDirty) return;
 	bTransformDirty = true;
 }
