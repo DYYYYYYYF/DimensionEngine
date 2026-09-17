@@ -121,6 +121,9 @@ enum ShaderScope {
 	eShader_Scope_Local = 2
 };
 
+// 单帧最多上传的点光源数量：与延迟光照着色器中声明的数组长度、场景配置保持一致
+static const uint32_t MAX_POINT_LIGHTS = 4;
+
 enum class ShaderSemantic {
 	eShaderSemantic_None = 0,
 
@@ -138,6 +141,12 @@ enum class ShaderSemantic {
 	eShaderSemantic_LightIntensity,
 	eShaderSemantic_ShadowBias,
 	eShaderSemantic_ShadowStrength,
+
+	// 点光源（由场景中的点光源 Actor 提供，Global 段；支持多盏，数组化上传）
+	eShaderSemantic_PointLightCount,
+	eShaderSemantic_PointLightPosition,
+	eShaderSemantic_PointLightColor,
+	eShaderSemantic_PointLightAttenuation,
 
 	// Dynamic Instance
 	eSemantic_GBuffer_Albedo,
@@ -167,7 +176,7 @@ enum class ShaderSemantic {
 struct ShaderUniform {
 	FString name;
 	size_t offset;
-	uint32_t location;
+	uint32_t location;   // 采样器：纹理槽位；数组元素：元素下标（0..N-1）；其它：uniform 自身序号
 	uint32_t index;
 	uint32_t size;
 	uint32_t set_index;
@@ -208,6 +217,12 @@ struct FFrameData {
 	Vector4 lightIntensity;   // (I, I, I, I)，用 w 便于着色器整体缩放
 	float shadowBias;         // 阴影深度偏置
 	float shadowStrength;     // 阴影强度：投射阴影为 1，否则为 0
+
+	// 点光源光照参数（由场景中的点光源 Actor 配置；超过 MAX_POINT_LIGHTS 的部分不参与渲染）
+	uint32_t pointLightCount;                                  // 本帧有效点光源数量
+	Vector4 pointLightPosition[MAX_POINT_LIGHTS];              // xyz = 世界空间位置，w 保留
+	Vector4 pointLightColor[MAX_POINT_LIGHTS];                 // 光源颜色（rgba）
+	Vector4 pointLightAttenuation[MAX_POINT_LIGHTS];           // x = Constant, y = Linear, z = Quadratic, w = 强度
 };
 
 struct ShaderAttribute {
@@ -229,6 +244,10 @@ struct ShaderUniformConfig {
 	FString name = nullptr;
 	unsigned short size;
 	uint32_t location;
+	// 数组元素下标：非数组 uniform 为 INVALID_ID；数组元素为 0..N-1。
+	// 数组在 scfg 中按元素逐条声明（如 'vec4,0,point_light_position,4' 展开为 4 条），
+	// 运行时据此下标把帧数据里的数组元素写到 UBO 中对应的偏移。
+	uint32_t array_index = INVALID_ID;
 	ShaderUniformType type;
 	ShaderSemantic semantic;
 	ShaderScope scope;

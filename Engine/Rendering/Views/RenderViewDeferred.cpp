@@ -23,6 +23,7 @@
 
 #include "Framework/Components/CameraComponent.h"
 #include "Framework/Components/DirectionalLightComponent.h"
+#include "Framework/Components/PointLightComponent.h"
 #include "Rendering/RenderWorld/RenderProxy.h"
 
 static bool RenderViewWorldDeferredOnEvent(eEventCode code, void* sender, void* listenerInst, SEventContext context) {
@@ -453,13 +454,15 @@ void RenderViewWorldDeferred::Render(const TArray<FRenderProxy*>& RenderProxies)
 
 	// 阴影贴图固定为 SHADOW_MAP_SIZE²，但后端的动态视口/裁剪是在每帧 BeginFrame 时按交换链
 	// （窗口）尺寸设置的，RenderPass::Begin 只用 RenderArea 限制 vkCmdBeginRenderPass 的渲染区域，
-	// 不会改写动态视口。若不覆盖，光栅化只会落在贴图左下角一块窗口大小的范围内、且 v 方向被
-	// 负高度视口翻转，与延迟光照采样端 proj.xy*0.5+0.5 的贴图 uv 约定不一致，阴影随即错位/丢失。
-	// 这里显式覆盖为整张阴影贴图，并使用正高度视口：使光空间 NDC 到贴图行号的映射与采样端一致。
+	// 不会改写动态视口。若不覆盖，光栅化只会落在贴图一角、且 v 方向被负高度视口翻转，与延迟光照
+	// 采样端 proj.xy*0.5+0.5 的贴图 uv 约定不一致，阴影随即错位/丢失。
+	// 注意：必须在 Pass::Begin 之后再覆盖，避免被通道开始流程重置。
+	ShadowPass->Begin(ShadowTarget);
+
+	// 显式覆盖为整张阴影贴图，并使用正高度视口：使光空间 NDC 到贴图行号的映射与采样端一致。
 	Renderer->SetViewport(Vector4(0.0f, 0.0f, (float)SHADOW_MAP_SIZE, (float)SHADOW_MAP_SIZE));
 	Renderer->SetScissor(Vector4(0.0f, 0.0f, (float)SHADOW_MAP_SIZE, (float)SHADOW_MAP_SIZE));
 
-	ShadowPass->Begin(ShadowTarget);
 	Renderer->ExecuteDrawCalls(ShadowDrawCalls, SharedFrameNumber, ShadowData);
 	ShadowPass->End();
 
@@ -512,6 +515,10 @@ void RenderViewWorldDeferred::Render(const TArray<FRenderProxy*>& RenderProxies)
 	LightingData.lightIntensity = LightIntensity;
 	LightingData.shadowBias = ShadowBias;
 	LightingData.shadowStrength = ShadowStrength;
+
+	// 点光源：同样全部来自场景中的点光源 Actor（APointLightActor → UPointLightComponent），
+	// 着色器按 point_light_count 循环累加，着色器内不再有任何硬编码点光源
+	FillPointLightData(LightingData);
 
 	// 延迟光照通道输出到 source=Default 的窗口颜色附件，必须使用 RTIndex 与 swapchain 图像对齐
 	RenderTarget* LightingTarget = AcquirePassTarget(LightingPass, RTIndex, "DeferredLighting");
@@ -672,6 +679,34 @@ void RenderViewWorldDeferred::UpdateLightSpaceMatrix() {
 		OrthoNear, OrthoFar, false, true);
 	Matrix4 LightView = Matrix4::LookAt(LightPosition, Vector3(0.0f, 0.0f, 0.0f), Vector3(0.0f, 1.0f, 0.0f));
 	LightSpaceMatrix = LightProjection * LightView;
+}
+
+void RenderViewWorldDeferred::FillPointLightData(FFrameData& FrameData) {
+	FrameData.pointLightCount = 0;
+
+	// 每帧重新收集：光源可随时被启用/禁用或移动，不做缓存
+	const TArray<UPointLightComponent*>& PointLights = LightSystem::Get().GetPointLights();
+	for (UPointLightComponent* PointLight : PointLights) {
+		if (!PointLight || !PointLight->IsEnabled()) {
+			continue;
+		}
+
+		if (FrameData.pointLightCount >= MAX_POINT_LIGHTS) {
+			GLOG(Log::eWarn, "Deferred lighting: enabled point lights exceed MAX_POINT_LIGHTS (%u), the extra ones are ignored.",
+				MAX_POINT_LIGHTS);
+			break;
+		}
+
+		const uint32_t LightIndex = FrameData.pointLightCount;
+		const Vector3 WorldPosition = PointLight->GetWorldPosition();
+
+		// 布局与 scfg/HLSL 的 point_light_position/color/attenuation 一致：
+		// position.xyz = 世界位置，color.rgb = 颜色，attenuation = (constant, linear, quadratic, 强度)
+		FrameData.pointLightPosition[LightIndex] = Vector4(WorldPosition.x, WorldPosition.y, WorldPosition.z, 1.0f);
+		FrameData.pointLightColor[LightIndex] = PointLight->GetColor();
+		FrameData.pointLightAttenuation[LightIndex] = PointLight->GetAttenuationVector();
+		FrameData.pointLightCount++;
+	}
 }
 
 bool RenderViewWorldDeferred::CreateFullscreenQuad() {

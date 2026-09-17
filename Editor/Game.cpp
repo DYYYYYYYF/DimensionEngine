@@ -12,9 +12,11 @@
 #include "UI/Console/Keybinds.h"
 #include "UI/Console/GameCommand.h"
 #include "GameLogic/LogicActors/RotationCubeActor.h"
+#include "GameLogic/BaseActors/CubeActor.h"
 #include "Framework/Components/CameraComponent.h"
 #include "Framework/Classes/SkyboxActor.h"
 #include "Framework/Classes/DirectionalLightActor.h"
+#include "Framework/Classes/PointLightActor.h"
 
 bool GameOnEvent(eEventCode code, void* sender, void* listender_inst, SEventContext context) {
 	switch (code)
@@ -177,6 +179,25 @@ bool GameInstance::Initialize() {
 		World->AddActor(DirectionalLightActor);
 	}
 
+	// 点光源 Actor：数量与参数完全由 Editor/Config.json 的 PointLights 数组决定，
+	// 未配置该数组时场景中不存在点光源（延迟光照着色器内已无任何硬编码光源）
+	JsonObject PointLightArray = Content.Read("PointLights");
+	if (PointLightArray.IsArray()) {
+		for (size_t PointLightIndex = 0; PointLightIndex < PointLightArray.Size(); ++PointLightIndex) {
+			JsonObject PointLightConfig = PointLightArray.ArrayItemAt(PointLightIndex);
+			FString ActorName("PointLight_%u", (unsigned int)PointLightIndex);
+
+			APointLightActor* PointLightActor = NewObject<APointLightActor>(ActorName);
+			if (!PointLightActor) {
+				continue;
+			}
+
+			PointLightActor->LoadFromConfig(PointLightConfig);
+			World->AddActor(PointLightActor);
+			PointLightActors.Push(PointLightActor);
+		}
+	}
+
 	// World meshes
 	ARotationCubeActor* CubeMesh = NewObject<ARotationCubeActor>("TestCube");
 	CubeMesh->SetActorLocation(Vector(0.0f, 0.0f, 0.0f));
@@ -240,6 +261,19 @@ void GameInstance::Shutdown() {
 			DirectionalLightActor->SaveToConfig(Content);
 		}
 
+		// 点光源配置写回：按创建顺序组装 PointLights 数组，下次启动即按此重建
+		JsonObject PointLightArray(JsonObject::Type::eArray);
+		for (APointLightActor* PointLightActor : PointLightActors) {
+			if (!PointLightActor) {
+				continue;
+			}
+
+			JsonObject PointLightConfig(JsonObject::Type::eObject);
+			PointLightActor->SaveToConfig(PointLightConfig);
+			PointLightArray.ArrayPush(PointLightConfig);
+		}
+		Content.Write("PointLights", PointLightArray);
+
 		Content.SaveToFile(MaterialAsset);
 	}
 
@@ -294,23 +328,57 @@ void LoadScene1(GameInstance* GameInst) {
 }
 
 void LoadScene2(GameInstance* GameInst) {
+	// ---- 地面：由多块立方体拼接而成 ----
+	// 基础立方体为 10x10x10，每块地面在 X/Z 放大 20 倍、Y 向不缩放 -> 200 x 10 x 200：
+	//   * Y 向不缩放，厚度 = 一个小立方体的边长（10）
+	//   * 4 x 4 = 16 块拼出 800 x 800 的地面，足够放下三个模型（含 sponza 约 229 x 372 的占地）
+	//     且模型/建筑投出的阴影也能完整落在地面上（阴影水平延伸约 130 单位）
+	//   * 地面顶面整体下沉一个小立方体边长（y = -10），避免把原点处默认加载的三个立方体切开
+	// 注意：必须用不带动画的 ACubeActor；ARotationCubeActor 会在 Tick 中持续自转，不能当地面
+	const float GroundTopY = -10.0f;
+	const float GroundTileSizeXZ = 200.0f;
+	const float GroundTileHeight = 10.0f;
+	const int   GroundTileCount = 4;
+
+	for (int ix = 0; ix < GroundTileCount; ++ix) {
+		for (int iz = 0; iz < GroundTileCount; ++iz) {
+			const float PosX = (static_cast<float>(ix) - (GroundTileCount - 1) * 0.5f) * GroundTileSizeXZ;
+			const float PosZ = (static_cast<float>(iz) - (GroundTileCount - 1) * 0.5f) * GroundTileSizeXZ;
+
+			ACubeActor* GroundTile = NewObject<ACubeActor>(FString::Format("GroundTile_%d_%d", ix, iz));
+			GroundTile->SetActorLocation(Vector(PosX, GroundTopY - GroundTileHeight * 0.5f, PosZ));
+			GroundTile->SetActorRotation(Vector(0.0f));
+			GroundTile->SetWorldScale(Vector(GroundTileSizeXZ / 10.0f, GroundTileHeight / 10.0f, GroundTileSizeXZ / 10.0f));
+			GameInst->GetWorld()->AddActor(GroundTile);
+		}
+	}
+
+	// 模型贴地微调量：让模型底面刚好落在地面顶面之上，避免与地面共面产生 Z-Fighting
+	const float ModelLiftEpsilon = 0.05f;
+
+	// ---- 模型 1: sponza（左后方） ----
+	// 模型原始包围盒 min.y = -126.443，缩放 0.1 -> 原点距底面 12.6443，需抬高
 	AStaticMeshActor* Model1 = NewObject<AStaticMeshActor>("sponza");
 	Model1->LoadFromResource("sponza");
-	Model1->SetActorLocation(Vector(0.0f, -10.0f, 0.0f));
+	Model1->SetActorLocation(Vector(-200.0f, GroundTopY + 126.443f * 0.1f + ModelLiftEpsilon, -10.0f));
 	Model1->SetActorRotation(Vector(0.0f, 90.0f, 0.0f));
 	Model1->SetWorldScale(Vector(0.1f));
 	GameInst->GetWorld()->AddActor(Model1);
 
+	// ---- 模型 2: bunny（右前方） ----
+	// 模型原始包围盒 min.y = 0，缩放 5 -> 原点即底面
 	AStaticMeshActor* Model2 = NewObject<AStaticMeshActor>("bunny");
 	Model2->LoadFromResource("bunny");
-	Model2->SetActorLocation(Vector(30.0f, 0.0f, 0.0f));
+	Model2->SetActorLocation(Vector(25.0f, GroundTopY + ModelLiftEpsilon, 5.0f));
 	Model2->SetActorRotation(Vector(0.0f, 90.0f, 0.0f));
 	Model2->SetWorldScale(Vector(5.0f));
 	GameInst->GetWorld()->AddActor(Model2);
 
+	// ---- 模型 3: falcon（正前方） ----
+	// 模型原始包围盒 min.y = -0.201，缩放 1 -> 需抬高 0.201
 	AStaticMeshActor* Model3 = NewObject<AStaticMeshActor>("falcon");
 	Model3->LoadFromResource("falcon");
-	Model3->SetActorLocation(Vector(-30.0f, 0.0f, 0.0f));
+	Model3->SetActorLocation(Vector(0.0f, GroundTopY + 0.201f + ModelLiftEpsilon, 15.0f));
 	GameInst->GetWorld()->AddActor(Model3);
 }
 

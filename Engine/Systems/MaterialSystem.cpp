@@ -305,6 +305,13 @@ bool MaterialSystem::CreateTextureMap(FTextureMap& map, TextureUsage usage, cons
 			map.repeat_w = TextureRepeat::eTexture_Repeat_Clamp_To_Edge;
 			map.usage = TextureUsage::eTexture_Usage_Map_Cubemap;
 		} break;
+
+		default:
+			// 未识别的采样器语义：禁止静默留空贴图（下游会兜成默认漫反射棋盘格，表现为表面出现 8x8 方格）。
+			// 显式回退到默认 ORM 并告警，便于定位命名或配置错误。
+			GLOG(Log::eWarn, "CreateTextureMap(): unrecognized texture usage, fallback to default roughness-metallic texture.");
+			map.texture = texSys.GetDefaultRoughnessMetallicTexture();
+			break;
 		}
 	}
 
@@ -323,7 +330,7 @@ TextureUsage MaterialSystem::GetTextureUsageFromUniformName(const FString& name)
 	else if (name.Compare("normal_texture") == 0) {
 		return TextureUsage::eTexture_Usage_Map_Normal;
 	}
-	else if (name.Compare("roughnessMetillc_texture") == 0) {
+	else if (name.Compare("roughness_metallic_texture") == 0) {
 		return TextureUsage::eTexture_Usage_Map_RoughnessMetallic;
 	}
 	else if (name.Compare("cubemap_texture") == 0) {
@@ -417,6 +424,32 @@ bool MaterialSystem::ApplyGlobal(uint32_t shader_id, size_t renderer_frame_numbe
 		case ShaderSemantic::eShaderSemantic_ShadowStrength:
 			MATERIAL_APPLY_OR_FAIL(UsedShader->SetUniform(&uniform, &data.shadowStrength));
 			break;
+
+		// 点光源光照参数：同样来自场景中的光源 Actor（可多盏），逐盏按数组元素下标上传
+		case ShaderSemantic::eShaderSemantic_PointLightCount:
+			MATERIAL_APPLY_OR_FAIL(UsedShader->SetUniform(&uniform, &data.pointLightCount));
+			break;
+
+		case ShaderSemantic::eShaderSemantic_PointLightPosition: {
+			const uint32_t LightIndex = uniform.location;
+			if (LightIndex >= MAX_POINT_LIGHTS) break;
+			MATERIAL_APPLY_OR_FAIL(UsedShader->SetUniform(&uniform, &data.pointLightPosition[LightIndex]));
+			break;
+		}
+
+		case ShaderSemantic::eShaderSemantic_PointLightColor: {
+			const uint32_t LightIndex = uniform.location;
+			if (LightIndex >= MAX_POINT_LIGHTS) break;
+			MATERIAL_APPLY_OR_FAIL(UsedShader->SetUniform(&uniform, &data.pointLightColor[LightIndex]));
+			break;
+		}
+
+		case ShaderSemantic::eShaderSemantic_PointLightAttenuation: {
+			const uint32_t LightIndex = uniform.location;
+			if (LightIndex >= MAX_POINT_LIGHTS) break;
+			MATERIAL_APPLY_OR_FAIL(UsedShader->SetUniform(&uniform, &data.pointLightAttenuation[LightIndex]));
+			break;
+		}
 
 		default:
 			break;

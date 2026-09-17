@@ -204,11 +204,12 @@ void UShader::AddUniform(const ShaderUniformConfig& config) {
 		return;
 	}
 
-	AddUniform(config.name, config.size, config.type, config.scope, config.semantic, 0, false);
+	AddUniform(config.name, config.size, config.type, config.scope, config.semantic, 0, false, config.array_index);
 }
 
 void UShader::AddUniform(const FString& uniform_name, uint32_t size, ShaderUniformType type, 
-	ShaderScope scope, ShaderSemantic semantic, uint32_t set_location, bool is_sampler){
+	ShaderScope scope, ShaderSemantic semantic, uint32_t set_location, bool is_sampler,
+	uint32_t array_index){
 	uint16_t UniformCount = (uint16_t)Uniforms.Size();
 	ShaderUniform Entry;
 	Entry.name = uniform_name;
@@ -220,6 +221,10 @@ void UShader::AddUniform(const FString& uniform_name, uint32_t size, ShaderUnifo
 	bool IsGlobal = (scope == eShader_Scope_Global);
 	if (is_sampler) {
 		Entry.location = set_location;
+	}
+	else if (array_index != INVALID_ID) {
+		// 数组元素：location 记录元素下标，供上传时按 index 取帧数据里的对应元素
+		Entry.location = array_index;
 	}
 	else {
 		Entry.location = Entry.index;

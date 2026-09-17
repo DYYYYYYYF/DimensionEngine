@@ -34,6 +34,12 @@ uniform=vec4,0,light_intensity
 uniform=float,0,time
 uniform=float,0,shadow_bias
 uniform=float,0,shadow_strength
+# 点光源数组：数量与参数全部来自场景中的点光源 Actor（Editor/Config.json 的 PointLights 数组），
+# 逐元素展开为独立 uniform，UBO 内连续排布；长度必须与引擎的 MAX_POINT_LIGHTS 一致（4）。
+uniform=u32,0,point_light_count
+uniform=vec4,0,point_light_position,4
+uniform=vec4,0,point_light_color,4
+uniform=vec4,0,point_light_attenuation,4
 uniform=u32,1,debug_mode
 uniform=samp,1,gbuffer_albedo_texture
 uniform=samp,1,gbuffer_normal_texture

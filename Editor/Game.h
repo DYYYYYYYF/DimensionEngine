@@ -18,6 +18,7 @@
 class DebugConsoleActor;
 class ACameraActor;
 class ADirectionalLightActor;
+class APointLightActor;
 
 class GameInstance : public IGame {
 public:
@@ -37,6 +38,9 @@ public:
 	DebugConsoleActor* GameConsole;
 	// 方向光 Actor：Initialize 中创建，Shutdown 时把光照配置写回 Editor/Config.json
 	ADirectionalLightActor* DirectionalLightActor = nullptr;
+	// 点光源 Actor 列表：数据源为 Editor/Config.json 的 PointLights 数组，
+	// 每个元素对应一盏灯；Shutdown 时按同一顺序写回
+	TArray<APointLightActor*> PointLightActors;
 
 	// TODO: temp
 	Keymap* ConsoleKeymap;

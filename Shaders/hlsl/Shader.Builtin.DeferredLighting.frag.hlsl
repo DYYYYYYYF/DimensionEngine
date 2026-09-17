@@ -12,6 +12,13 @@ struct GlobalUniformObject
     float global_time;
     float shadow_bias;
     float shadow_strength;    // 0 = 无阴影，1 = 全阴影
+
+    // 点光源数组：数量与参数全部来自场景中的点光源 Actor（Editor/Config.json 的 PointLights 数组），
+    // 逐帧上传；着色器内不存在任何硬编码光源。数组长度必须与引擎的 MAX_POINT_LIGHTS 一致（4）。
+    uint point_light_count;              // 本帧有效点光源数量，0 表示场景中没有点光源
+    float4 point_light_position[4];      // xyz = 世界空间位置
+    float4 point_light_color[4];         // rgb = 颜色
+    float4 point_light_attenuation[4];   // x = Constant, y = Linear, z = Quadratic, w = 强度
 };
 
 // 常量定义
@@ -63,132 +70,30 @@ struct PSOutput
 [[vk::binding(1, 1)]] Texture2D Samplers[4];
 [[vk::binding(1, 1)]] SamplerState DefaultSampler[4];
 
-// 方向光不再使用硬编码常量：方向、颜色、强度、阴影偏置/强度全部来自 GlobalUBO，
-// 数据由场景中的方向光 Actor 配置并逐帧上传。
-
-static PointLight point_light_0 = 
-{
-    float3(-5.5f, 10.0f, -5.5f),
-    float4(0.0f, 1.0f, 0.0f, 1.0f),
-    1.0f,   // Constant
-    0.35f,  // Linear
-    0.44f   // Quadratic
-};
-
-static PointLight point_light_1 = 
-{
-    float3(5.5f, 10.0f, -5.5f),
-    float4(1.0f, 0.0f, 0.0f, 1.0f),
-    1.0f,   // Constant
-    0.35f,  // Linear
-    0.44f   // Quadratic
-};
+// 方向光与点光源都不再使用硬编码常量：方向、颜色、强度、阴影偏置/强度来自 GlobalUBO 的方向光字段，
+// 点光源来自 GlobalUBO 的 point_light_* 数组，数据均由场景中的光源 Actor 配置并逐帧上传。
 
 // PBR常量
 static const float PI = 3.14159265359;
 
-// Fresnel-Schlick近似
-float3 fresnelSchlick(float cosTheta, float3 F0)
-{
-    return F0 + (1.0f - F0) * pow(1.0f - cosTheta, 5.0f);
-}
-
-// GGX分布函数
-float DistributionGGX(float3 N, float3 H, float roughness)
-{
-    float a = roughness * roughness;
-    float a2 = a * a;
-    float NdotH = max(dot(N, H), 0.0f);
-    float NdotH2 = NdotH * NdotH;
-
-    float nom = a2;
-    float denom = (NdotH2 * (a2 - 1.0f) + 1.0f);
-    denom = PI * denom * denom;
-
-    return nom / denom;
-}
-
-// Smith几何遮蔽函数
-float GeometrySchlickGGX(float NdotV, float roughness)
-{
-    float r = (roughness + 1.0f);
-    float k = (r * r) / 8.0f;
-
-    float nom = NdotV;
-    float denom = NdotV * (1.0f - k) + k;
-
-    return nom / denom;
-}
-
-float GeometrySmith(float3 N, float3 V, float3 L, float roughness)
-{
-    float NdotV = max(dot(N, V), 0.0f);
-    float NdotL = max(dot(N, L), 0.0f);
-    float ggx2 = GeometrySchlickGGX(NdotV, roughness);
-    float ggx1 = GeometrySchlickGGX(NdotL, roughness);
-
-    return ggx1 * ggx2;
-}
-
-// PBR光照计算
-float4 PBR(PointLight light, float3 norm, float3 albedo, float3 camPos, float3 fragPos, float metallic, float roughness, float ao)
-{
-    // 视线方向和法线
-    float3 N = normalize(norm);
-    float3 V = normalize(camPos - fragPos);
-
-    // 环境光的基本反射率
-    float3 F0 = float3(0.04f, 0.04f, 0.04f); // 非金属表面的F0反射率
-    F0 = lerp(F0, albedo, metallic);
-
-    // 计算光线方向和半程向量
-    float3 L = normalize(light.position - fragPos);
-    float3 H = normalize(V + L);
-
-    // 计算距离衰减
-    float distance = length(light.position - fragPos);
-    float attenuation = 1.0 / (light.fconstant + light.linear_attenuation * distance + light.quadratic * distance * distance);
-    float3 radiance = light.color.rgb * light.color.a * attenuation;
-
-    // Cook-Torrance BRDF
-    float NDF = DistributionGGX(N, H, roughness); // 法线分布
-    float G = GeometrySmith(N, V, L, roughness);  // 几何遮蔽
-    float3 F = fresnelSchlick(max(dot(H, V), 0.0f), F0); // 菲涅耳
-
-    float3 nominator = NDF * G * F;
-    float denominator = 4.0 * max(dot(N, V), 0.0f) * max(dot(N, L), 0.0f) + 0.001f;
-    float3 specular = nominator / denominator;
-
-    // 漫反射
-    float3 kS = F;
-    float3 kD = float3(1.0f, 1.0f, 1.0f) - kS;
-    kD *= 1.0f - metallic;
-
-    float NdotL = max(dot(N, L), 0.0f);
-    float3 Lo = (kD * albedo / PI + specular) * radiance * NdotL;
-
-    // 环境光（近似处理）
-    float3 ambient = float3(0.03f, 0.03f, 0.03f) * albedo * ao;
-    float3 color = ambient + Lo;
-
-    // HDR映射 
-    float3 HDR_Map_Param = float3(1.0f, 1.0f, 1.0f);
-    color = color / (color + HDR_Map_Param);
-    // gamma校正
-    float gamma_correct_param = 2.2f;
-    color = pow(color, float3(1.0f / gamma_correct_param, 1.0f / gamma_correct_param, 1.0f / gamma_correct_param));
-
-    return float4(color, 1.0f) * GlobalUBO.light_intensity;
-}
-
 // 阴影计算(3x3 PCF)
 float CalculateShadow(float3 worldPosition, float3 worldNormal)
 {
-    float4 lightSpacePos = mul(GlobalUBO.light_space_matrix, float4(worldPosition, 1.0));
+    // 法线偏移（normal-offset）：太阳贴近地平线时，光照方向与地面夹角很小，
+    // 单个纹素覆盖的世界范围在光空间深度上的投影会被放大（斜度自阴影/痤疮），
+    // 先把采样点沿法线推出一个世界尺度的小距离，再叠加斜率相关 bias。
+    const float NORMAL_OFFSET_WORLD = 1.5f;
+    float3 samplePosition = worldPosition + normalize(worldNormal) * NORMAL_OFFSET_WORLD;
+
+    float4 lightSpacePos = mul(GlobalUBO.light_space_matrix, float4(samplePosition, 1.0));
     float3 proj = lightSpacePos.xyz / lightSpacePos.w;
-    proj = proj * 0.5 + 0.5;                       // NDC -> [0,1]
+    // light_space_matrix 由 zero_to_one=true 的正交矩阵生成：z 已落在 [0,1]（与阴影贴图里光栅化
+    // 写入的深度同域），因此只有 xy 需要从 NDC[-1,1] 映射到贴图 uv[0,1]，z 必须原样保留。
+    proj.xy = proj.xy * 0.5 + 0.5;
     if (proj.z > 1.0 || proj.x < 0.0 || proj.x > 1.0 || proj.y < 0.0 || proj.y > 1.0) return 0.0;
-    float bias = max(GlobalUBO.shadow_bias * (1.0 - dot(worldNormal, normalize(-GlobalUBO.light_direction.xyz))), 0.0015);
+    // bias 位于归一化光空间深度域 [0,1]，其世界尺度 = bias * (OrthoFar - OrthoNear)。
+    // 当前 far-near = 800，故下限 0.0008 约合 0.64 世界单位，斜率项由 shadow_bias 提供。
+    float bias = max(GlobalUBO.shadow_bias * (1.0 - dot(worldNormal, normalize(-GlobalUBO.light_direction.xyz))), 0.0008);
     float shadow = 0.0;
     float2 texelSize = 1.0 / float2(2048.0, 2048.0);
     for (int x = -1; x <= 1; ++x) {
@@ -200,23 +105,25 @@ float CalculateShadow(float3 worldPosition, float3 worldNormal)
     return shadow / 9.0;                            // 3x3 PCF
 }
 
-// 方向光计算
-float4 CalculateDirectionalLight(DirectionalLight light, float3 normal, float3 view_direction, float3 albedo, float metallic, float roughness, float4 ambient_color)
+// 方向光计算（只返回直射项：漫反射 + 高光；环境光由 main 统一累加，避免阴影项把环境光一起吃掉）
+float4 CalculateDirectionalLight(DirectionalLight light, float3 normal, float3 view_direction, float3 albedo, float metallic, float roughness)
 {
     float fDiffuseFactor = max(dot(normal, -light.direction), 0.0f);
     
     float3 HalfDirection = normalize(-view_direction - light.direction);
     float SpecularFactor = pow(max(dot(HalfDirection, normal), 0.0f), lerp(128.0, 1.0, roughness));
     
-    float4 Ambient = float4(ambient_color.rgb * albedo, 1.0);
-    float4 Diffuse = float4(albedo * fDiffuseFactor, 1.0);
-    float4 Specular = float4(light.color.rgb * SpecularFactor * (1.0 - metallic), 1.0);
+    // 光源辐照度（颜色）必须进入漫反射项，否则太阳的暖色只会作用于高光
+    float3 Radiance = light.color.rgb;
+    float3 Diffuse = albedo * fDiffuseFactor * Radiance;
+    float3 Specular = Radiance * SpecularFactor * (1.0 - metallic);
     
-    return (Ambient + Diffuse + Specular) * GlobalUBO.light_intensity;
+    // 强度来自光照 Actor 的 Intensity（方向光照 Actor 的 light_intensity.w == Intensity）
+    return float4((Diffuse + Specular) * GlobalUBO.light_intensity.rgb, 1.0);
 }
 
-// 点光源计算
-float4 CalculatePointLight(PointLight light, float3 normal, float3 frag_position, float3 view_direction, float3 albedo, float metallic, float roughness, float4 ambient_color)
+// 点光源计算（漫反射 + 高光 + 距离衰减；环境光同样由 main 统一累加）
+float4 CalculatePointLight(PointLight light, float3 normal, float3 frag_position, float3 view_direction, float3 albedo, float metallic, float roughness)
 {
     float3 LightDirection = normalize(light.position - frag_position);
     float Diff = max(dot(normal, LightDirection), 0.0f);
@@ -228,19 +135,15 @@ float4 CalculatePointLight(PointLight light, float3 normal, float3 frag_position
     float Distance = length(light.position - frag_position);
     float Attenuation = 1.0f / (light.fconstant + light.linear_attenuation * Distance + light.quadratic * (Distance * Distance));
     
-    float4 Ambient = ambient_color;
-    float4 Diffuse = light.color * Diff;
-    float4 Specular = light.color * Spec * (1.0 - metallic);
+    // light.color.a = 该盏点光源 Actor 配置的 Intensity（RGB 为颜色）
+    float3 Radiance = light.color.rgb;
+    float Intensity = light.color.a;
     
-    Diffuse *= float4(albedo, 1.0);
-    Ambient *= float4(albedo, 1.0);
+    float3 Diffuse = albedo * Diff * Radiance * Attenuation;
+    float3 Specular = Radiance * Spec * (1.0 - metallic) * Attenuation;
     
-    // 应用衰减
-    Diffuse *= Attenuation;
-    Ambient *= Attenuation;
-    Specular *= Attenuation;
-    
-    return (Ambient + Diffuse + Specular) * GlobalUBO.light_intensity;
+    // 每盏点光源使用各自的强度，不共享方向光的强度
+    return float4((Diffuse + Specular) * Intensity, 1.0);
 }
 
 // 片段着色器主函数
@@ -293,7 +196,7 @@ PSOutput main(PSInput input)
     }
     else
     {
-        // 标准光照计算
+        // 标准光照计算：线性累加「环境光 + 方向光(含阴影) + 所有点光源」，最后整帧统一做 HDR 映射与 gamma 校正
         float3 viewDirection = normalize(input.view_position - worldPosition);
 
         // 方向光：参数来源于光照 Actor（GlobalUBO），不再使用硬编码常量
@@ -301,24 +204,36 @@ PSOutput main(PSInput input)
         dir_light.direction = normalize(GlobalUBO.light_direction.xyz);
         dir_light.color = GlobalUBO.light_color;
 
-        // PBR光照计算
-        output.FragColor = PBR(point_light_0, worldNormal, albedo, input.view_position, worldPosition, metallic, roughness, 1.0);
-        
-        // 方向光阴影(仅作用于方向光分量)，强度由光照 Actor 配置的 shadow_strength 缩放
+        float4 color = float4(0.0, 0.0, 0.0, 1.0);
+
+        // 环境光（来自光照 Actor 配置的 AmbientColor）
+        color.rgb += input.ambient_color.rgb * albedo;
+
+        // 方向光阴影(仅作用于方向光直射分量)，强度由光照 Actor 配置的 shadow_strength 缩放
         float shadow = CalculateShadow(worldPosition, worldNormal) * clamp(GlobalUBO.shadow_strength, 0.0, 1.0);
-        
-        // 添加方向光
-        output.FragColor += CalculateDirectionalLight(dir_light, worldNormal, viewDirection, albedo, metallic, roughness, input.ambient_color) * (1.0 - shadow);
-        
-        // 添加第二个点光源
-        output.FragColor += CalculatePointLight(point_light_1, worldNormal, worldPosition, viewDirection, albedo, metallic, roughness, input.ambient_color);
-        
-        // 应用环境光
-        float3 ambient = input.ambient_color.rgb * albedo;
-        output.FragColor.rgb += ambient;
-        
+
+        // 方向光（太阳）直射分量
+        color += CalculateDirectionalLight(dir_light, worldNormal, viewDirection, albedo, metallic, roughness) * (1.0 - shadow);
+
+        // 点光源：数量与参数全部来自场景中的点光源 Actor，逐盏累加（着色器内无任何硬编码光源）
+        [loop] for (uint lightIndex = 0; lightIndex < GlobalUBO.point_light_count && lightIndex < 4; ++lightIndex) {
+            PointLight pointLight;
+            pointLight.position = GlobalUBO.point_light_position[lightIndex].xyz;
+            // 强度随颜色一起传入（沿用 color.a 作为强度通道），与 LightActor 的 Intensity 对应
+            pointLight.color = float4(GlobalUBO.point_light_color[lightIndex].rgb, GlobalUBO.point_light_attenuation[lightIndex].w);
+            pointLight.fconstant = GlobalUBO.point_light_attenuation[lightIndex].x;
+            pointLight.linear_attenuation = GlobalUBO.point_light_attenuation[lightIndex].y;
+            pointLight.quadratic = GlobalUBO.point_light_attenuation[lightIndex].z;
+
+            color += CalculatePointLight(pointLight, worldNormal, worldPosition, viewDirection, albedo, metallic, roughness);
+        }
+
+        // HDR 映射 + gamma 校正（整帧只做一次）
+        float3 mapped = color.rgb / (color.rgb + 1.0);
+        color.rgb = pow(mapped, float3(1.0 / 2.2, 1.0 / 2.2, 1.0 / 2.2));
+
         // 确保alpha为1
-        output.FragColor.a = 1.0;
+        output.FragColor = float4(color.rgb, 1.0);
     }
     
     return output;

@@ -1,6 +1,8 @@
 ﻿#include "LightSystem.h"
 #include "Core/EngineLogger.hpp"
 #include "Framework/Components/DirectionalLightComponent.h"
+#include "Framework/Components/PointLightComponent.h"
+#include "Rendering/Resources/Shader/ShaderType.hpp"
 
 LightSystem& LightSystem::Get() {
 	static LightSystem LightSystemInstance;
@@ -48,4 +50,41 @@ void LightSystem::UnregisterLight(UDirectionalLightComponent* Light) {
 
 	GLOG(Log::eDebug, "Directional light unregistered. total=%zu, has_main=%d.",
 		Lights.Size(), MainLight ? 1 : 0);
+}
+
+void LightSystem::RegisterPointLight(UPointLightComponent* Light) {
+	if (!Light) {
+		return;
+	}
+
+	for (UPointLightComponent* Registered : PointLights) {
+		if (Registered == Light) {
+			return;
+		}
+	}
+
+	if (PointLights.Size() >= (size_t)MAX_POINT_LIGHTS) {
+		// 超出上传数组容量的光源仍记录在列表里，但不参与渲染（渲染通道上传时会再次截断）
+		GLOG(Log::eWarn, "Point lights registered %zu exceed the upload limit %u, the extra ones will not be rendered.",
+			PointLights.Size() + 1, MAX_POINT_LIGHTS);
+	}
+
+	PointLights.Push(Light);
+
+	GLOG(Log::eDebug, "Point light registered. total=%zu.", PointLights.Size());
+}
+
+void LightSystem::UnregisterPointLight(UPointLightComponent* Light) {
+	if (!Light) {
+		return;
+	}
+
+	for (size_t i = 0; i < PointLights.Size(); ++i) {
+		if (PointLights[i] == Light) {
+			PointLights.RemoveAt(i);
+			break;
+		}
+	}
+
+	GLOG(Log::eDebug, "Point light unregistered. total=%zu.", PointLights.Size());
 }

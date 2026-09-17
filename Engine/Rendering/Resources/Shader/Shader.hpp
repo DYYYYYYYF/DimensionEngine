@@ -54,7 +54,8 @@ public:
 	virtual void AddSampler(const ShaderUniformConfig& config);
 	virtual void AddUniform(const ShaderUniformConfig& config);
 	virtual void AddUniform(const FString& uniform_name, uint32_t size, ShaderUniformType type, 
-		ShaderScope scope, ShaderSemantic semantic, uint32_t set_location, bool is_sampler);
+		ShaderScope scope, ShaderSemantic semantic, uint32_t set_location, bool is_sampler,
+		uint32_t array_index = INVALID_ID);
 
 	/**
 	 * @brief Returns the uniform index for a uniform with the given name, if found.

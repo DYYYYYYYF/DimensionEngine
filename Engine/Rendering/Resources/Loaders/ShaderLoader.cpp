@@ -217,9 +217,10 @@ bool ShaderLoader::ParseLineData(size_t index, const FString& line, FShaderConfi
 	}
 	else if (TrimmedVarName.Compare("uniform") == 0) {
 		// Parse field type.
+		// 支持可选的第 4 个字段：数组长度（如 'vec4,0,point_light_position,4' 表示 vec4[4]）
 		TArray<FString> Fields = TrimmedValue.Split(',', true, true);
-		if (Fields.Size() != 3) {
-			GLOG(Log::eError, "shader_loader_load: Invalid file layout. Uniform fields must be 'type,scope,name'. Skipping.");
+		if (Fields.Size() != 3 && Fields.Size() != 4) {
+			GLOG(Log::eError, "shader_loader_load: Invalid file layout. Uniform fields must be 'type,scope,name' or 'type,scope,name,array_length'. Skipping.");
 		}
 		else {
 			ShaderUniformConfig Uniform;
@@ -278,6 +279,17 @@ bool ShaderLoader::ParseLineData(size_t index, const FString& line, FShaderConfi
 				Uniform.size = 4;
 			}
 
+			// 可选的第 4 个字段：数组长度。size 记录「单个元素」的字节数，
+			// location 记录元素下标（0..count-1），数组元素在 UBO 中按 std140 连续排布。
+			uint32_t ArrayCount = 1;
+			if (Fields.Size() == 4) {
+				ArrayCount = (uint32_t)Fields[3].ToInt();
+				if (ArrayCount == 0) {
+					GLOG(Log::eWarn, "shader_loader_load: uniform '%s' array length is 0, treated as 1.", Fields[2].CStr());
+					ArrayCount = 1;
+				}
+			}
+
 			// Parse the scope.
 			if (Fields[1].Compare("0") == 0) {
 				Uniform.scope = ShaderScope::eShader_Scope_Global;
@@ -297,12 +309,26 @@ bool ShaderLoader::ParseLineData(size_t index, const FString& line, FShaderConfi
 			// Parse semantic 方便应用材质参数
 			Uniform.semantic = ParseSemantic(Fields[2]);
 
-			// Take a copy of the uniform name.
+			// Take a copy of the uniform name（数组元素共用基础名，用 array_index 区分下标）。
 			Uniform.name_length = (unsigned short)Fields[2].Length();
 			Uniform.name = Fields[2];
 
-			// Add the uniform.
-			resource->uniforms.Push(Uniform);
+			// Add the uniform：数组逐元素展开，元素在 UBO 中连续排布，
+			// 每个元素都是一个独立 uniform（offset 依次递增一个元素大小）。
+			// 元素名追加下标（如 point_light_position_0）：同一 shader 不允许重名 uniform。
+			if (ArrayCount <= 1) {
+				Uniform.array_index = INVALID_ID;
+				resource->uniforms.Push(Uniform);
+			}
+			else {
+				for (uint32_t ElementIndex = 0; ElementIndex < ArrayCount; ++ElementIndex) {
+					ShaderUniformConfig Element = Uniform;
+					Element.name = FString("%s_%u", Fields[2].CStr(), ElementIndex);
+					Element.name_length = (unsigned short)Element.name.Length();
+					Element.array_index = ElementIndex;
+					resource->uniforms.Push(Element);
+				}
+			}
 		}
 
 		Fields.Clear();
@@ -327,6 +353,11 @@ ShaderSemantic ShaderLoader::ParseSemantic(const FString& semantic) {
 	if (semantic.Compare("light_intensity") == 0) return ShaderSemantic::eShaderSemantic_LightIntensity;
 	if (semantic.Compare("shadow_bias") == 0) return ShaderSemantic::eShaderSemantic_ShadowBias;
 	if (semantic.Compare("shadow_strength") == 0) return ShaderSemantic::eShaderSemantic_ShadowStrength;
+	// 点光源（多光源）：数量 + 逐盏的位置/颜色/衰减参数
+	if (semantic.Compare("point_light_count") == 0) return ShaderSemantic::eShaderSemantic_PointLightCount;
+	if (semantic.Compare("point_light_position") == 0) return ShaderSemantic::eShaderSemantic_PointLightPosition;
+	if (semantic.Compare("point_light_color") == 0) return ShaderSemantic::eShaderSemantic_PointLightColor;
+	if (semantic.Compare("point_light_attenuation") == 0) return ShaderSemantic::eShaderSemantic_PointLightAttenuation;
 	if (semantic.Compare("model") == 0) return ShaderSemantic::eShaderSemantic_Model_Matrix;
 
 	if (semantic.Compare("gbuffer_albedo_texture") == 0) return ShaderSemantic::eSemantic_GBuffer_Albedo;

@@ -6,6 +6,7 @@
 
 class UShader;
 class ACameraActor;
+struct FFrameData;
 
 class RenderViewWorldDeferred : public IRenderView {
 public:
@@ -135,4 +136,6 @@ private:
 	bool CreateShadowResources();
 	void DestroyShadowResources();
 	void UpdateLightSpaceMatrix();
+	// 逐帧从 LightSystem 收集启用的点光源，打包进帧数据（超出 MAX_POINT_LIGHTS 的忽略）
+	void FillPointLightData(FFrameData& FrameData);
 };
