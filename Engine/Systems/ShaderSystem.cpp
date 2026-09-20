@@ -176,6 +176,8 @@ bool ShaderSystem::Create(IRenderpass* pass, FShaderConfig* config) {
 
 	// Process flags.
 	OutShader->Flags = ShaderFlags::eShader_Flag_None;
+	// 配置附加标志（scfg 中 blend 等字段），与 depth 标志合并后传入管线
+	OutShader->Flags |= config->flags;
 	if (config->depthTest) {
 		OutShader->Flags |= ShaderFlags::eShader_Flag_DepthTest;
 	}

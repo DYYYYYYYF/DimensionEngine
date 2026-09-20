@@ -18,6 +18,9 @@ struct GeometryData {
 	uint32_t index_count = 0;
 	uint32_t index_element_size = 0;
 	size_t index_buffer_offset = 0;
+	// 合批 UI 专用：几何数据所在的 host-visible 缓冲对（双缓冲轮转）
+	bool host_visible = false;
+	uint32_t host_buffer_index = 0;
 };
 
 class DAPI GeometrySystem {

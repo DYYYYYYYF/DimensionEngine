@@ -72,7 +72,7 @@ bool VulkanPipeline::Create(VulkanContext* context, const VulkanPipelineConfig& 
 
 	std::vector<vk::PipelineColorBlendAttachmentState> ColorBlendAttachmentStates(ColorAttachmentCount);
 	for (uint32_t i = 0; i < ColorAttachmentCount; ++i) {
-		ColorBlendAttachmentStates[i].setBlendEnable(VK_FALSE)		// 开启VK_TRUE时可能会导致透明
+		ColorBlendAttachmentStates[i].setBlendEnable((config.shaderFlags & eShader_Flag_Blend) ? VK_TRUE : VK_FALSE)	// 由 shader 配置控制：scfg 中 blend=1 时开启 alpha 混合
 			.setSrcColorBlendFactor(vk::BlendFactor::eSrcAlpha)
 			.setDstColorBlendFactor(vk::BlendFactor::eOneMinusSrcAlpha)
 			.setColorBlendOp(vk::BlendOp::eAdd)

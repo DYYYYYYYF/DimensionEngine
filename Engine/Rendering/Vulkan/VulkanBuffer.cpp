@@ -48,11 +48,15 @@ bool VulkanBuffer::Create() {
 	{
 	case EGPUBufferType::eRenderbuffer_Type_Vertex:
 		Usage = vk::BufferUsageFlagBits::eVertexBuffer | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eTransferSrc;
-		MemoryPropertyFlags = vk::MemoryPropertyFlagBits::eDeviceLocal;
+		MemoryPropertyFlags = HostVisible
+			? (vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent)
+			: vk::MemoryPropertyFlagBits::eDeviceLocal;
 		break;
 	case EGPUBufferType::eRenderbuffer_Type_Index:
 		Usage = vk::BufferUsageFlagBits::eIndexBuffer | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eTransferSrc;
-		MemoryPropertyFlags = vk::MemoryPropertyFlagBits::eDeviceLocal;
+		MemoryPropertyFlags = HostVisible
+			? (vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent)
+			: vk::MemoryPropertyFlagBits::eDeviceLocal;
 		break;
 	case EGPUBufferType::eRenderbuffer_Type_Uniform:
 	{

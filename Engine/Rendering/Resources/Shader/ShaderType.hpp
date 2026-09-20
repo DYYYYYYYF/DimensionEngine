@@ -85,6 +85,7 @@ enum ShaderFlags {
 	eShader_Flag_None = 0x0,
 	eShader_Flag_DepthTest = 0x1,
 	eShader_Flag_DepthWrite = 0x2,
+	eShader_Flag_Blend = 0x4,
 };
 
 typedef unsigned int ShaderFlagBits;
@@ -277,4 +278,7 @@ public:
 
 	bool depthTest;
 	bool depthWrite;
+
+	// 附加渲染标志（如 eShader_Flag_Blend 开启 alpha 混合），由 scfg 中 blend 字段解析
+	ShaderFlagBits flags = eShader_Flag_None;
 };

@@ -382,11 +382,43 @@ bool VulkanShader::ApplyInstance() {
 		uint32_t* SamplerGeneration =
 			&State.descriptor_set_state.descriptor_states[SamplerBindingIndex].generations[ImageIndex];
 
-		if (*SamplerGeneration == INVALID_ID) {
-			// 防御：配置里的 descriptorCount 可能大于实际贴图槽位/上限定长，越界会读到脏指针
-			uint32_t MaxSamplerCount = (uint32_t)std::min<size_t>(TotalSamplerCount, State.instance_texture_maps.Size());
-			MaxSamplerCount = std::min(MaxSamplerCount, (uint32_t)VULKAN_SHADER_MAX_INSTANCE_TEXTURES);
+		// 采样器指纹（按槽失效）：逐槽比较"本帧环上一次写入的纹理指针"，全部一致则跳过
+		// update；任一槽变化则全段重写并刷新指纹。相比旧的"帧首全量复位 + 整 set 守卫"：
+		// 1) 帧环（ImageIndex % 3）轮转天然实现跨帧失效，异步加载纹理完成即可自动重绑，
+		//    无需每帧帧首遍历全部已用 instance 槽复位 generation（消除 O(VULKAN_MAX_MATERIAL_COUNT) 开销）；
+		// 2) 同帧同 set 仍最多一次 update，避免录制期对已绑定命令缓冲的描述符集连续 update。
+		const uint32_t FrameSlot = ImageIndex % 3;
+		UTexture* (&FrameFingerprint)[VULKAN_SHADER_MAX_INSTANCE_TEXTURES] = State.last_sampled_textures[FrameSlot];
 
+		// 防御：配置里的 descriptorCount 可能大于实际贴图槽位/上限定长，越界会读到脏指针
+		uint32_t MaxSamplerCount = (uint32_t)std::min<size_t>(TotalSamplerCount, State.instance_texture_maps.Size());
+		MaxSamplerCount = std::min(MaxSamplerCount, (uint32_t)VULKAN_SHADER_MAX_INSTANCE_TEXTURES);
+
+		// 先比较指纹：全部一致说明本帧已按当前纹理集写入，跳过 update
+		bool bFingerprintMatches = true;
+		for (uint32_t i = 0; i < MaxSamplerCount; ++i) {
+			FTextureMap* Map = State.instance_texture_maps[i];
+			UTexture* Tex = Map ? Map->texture : nullptr;
+			if (Tex && !Tex->IsLoaded()) {
+				TextureSystem& TextureSys = TextureSystem::Get();
+				switch (Map->usage) {
+				case eTexture_Usage_Map_Normal:
+					Tex = TextureSys.GetDefaultNormalTexture(); break;
+				case eTexture_Usage_Map_Specular:
+					Tex = TextureSys.GetDefaultSpecularTexture(); break;
+				case eTexture_Usage_Map_RoughnessMetallic:
+					Tex = TextureSys.GetDefaultRoughnessMetallicTexture(); break;
+				default:
+					Tex = TextureSys.GetDefaultDiffuseTexture(); break;
+				}
+			}
+			if (FrameFingerprint[i] != Tex) {
+				bFingerprintMatches = false;
+				break;
+			}
+		}
+
+		if (!bFingerprintMatches) {
 			for (uint32_t i = 0; i < MaxSamplerCount; ++i) {
 				FTextureMap* Map = State.instance_texture_maps[i];
 				if (!Map) continue;
@@ -418,6 +450,8 @@ bool VulkanShader::ApplyInstance() {
 					.setImageLayout(VkTex->ShaderReadLayout)
 					.setImageView(VkTex->ImageView)
 					.setSampler(*reinterpret_cast<vk::Sampler*>(&Map->internal_data));
+
+				FrameFingerprint[i] = Tex;
 			}
 
 			if (!ImageInfoStore.empty()) {

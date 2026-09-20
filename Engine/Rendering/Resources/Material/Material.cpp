@@ -1,6 +1,8 @@
 ﻿#include "Material.hpp"
 #include "Systems/MaterialSystem.h"
 
+#include <cstring>
+
 UMaterial::UMaterial(const FString& Name) : UAsset(Name) {
 	ReferenceCount = 0;
 	AutoRelease = false;
@@ -65,6 +67,19 @@ bool UMaterialInstance::SetTextureOnBinding(const FString& UniformName, FTexture
 	for (TextureBinding& binding : TextureBindings) {
 		if (binding.uniform && binding.uniform->name == UniformName) {
 			binding.texture.texture = Texture.texture;
+			return true;
+		}
+	}
+	return false;
+}
+
+bool UMaterialInstance::SetUniformValue(const FString& UniformName, const void* Value, uint32_t Size) {
+	for (UniformValue& UV : UniformValues) {
+		if (UV.uniform && UV.uniform->name == UniformName) {
+			const uint32_t CopySize = Size < sizeof(UV.data) ? Size : (uint32_t)sizeof(UV.data);
+			if (Value) {
+				memcpy(UV.data, Value, CopySize);
+			}
 			return true;
 		}
 	}

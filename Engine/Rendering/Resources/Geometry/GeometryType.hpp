@@ -42,6 +42,10 @@ public:
 	uint32_t index_count = 0;
 	void* indices = nullptr;
 
+	// 为 true 时使用 host-visible 顶点/索引缓冲（map/copy 直写，无 staging/waitIdle）。
+	// 供 UI 合批等每帧高频小量上传使用，需配合后端双缓冲轮转。
+	bool bHostVisible = false;
+
 	Vector3 center;
 	Vector3 min_extents;
 	Vector3 max_extents;

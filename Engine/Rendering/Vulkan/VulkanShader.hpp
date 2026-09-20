@@ -7,6 +7,7 @@
 
 class VulkanRenderPass;
 class VulkanCommandBuffer;
+class UTexture;
 
 #define VULKAN_SHADER_MAX_STAGES 8
 #define VULKAN_SHADER_MAX_GLOBAL_TEXTURES 31
@@ -66,6 +67,12 @@ struct VulkanShaderInstanceState {
 	size_t offset = 0;
 	VulkanShaderDescriptorSetState descriptor_set_state;
 	TArray<FTextureMap*> instance_texture_maps;
+	// 采样器指纹：按"帧环 × 槽"记录上一次写入描述符集的纹理指针。
+	// 帧环（ImageIndex % 3）轮转天然实现跨帧失效：异步加载的纹理加载完成后，
+	// 下一帧首次 ApplyInstance 即按新指纹全段重写，正确贴图自动重绑；
+	// 同帧内第二次 ApplyInstance 若指纹一致则跳过 update，避免录制期
+	// 对已绑定命令缓冲的描述符集连续 update 触发校验错误。
+	UTexture* last_sampled_textures[3][VULKAN_SHADER_MAX_INSTANCE_TEXTURES] = {};
 };
 
 // The index of the global descriptor set.

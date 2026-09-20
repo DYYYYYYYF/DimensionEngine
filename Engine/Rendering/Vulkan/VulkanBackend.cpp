@@ -320,6 +320,34 @@ bool VulkanRHI::Initialize(const RenderBackendConfig* config, unsigned char* out
 	Context.ObjectIndexBuffer->Bind(0);
 	GLOG(Log::eInfo, "VulkanBackend::CreateRenderbuffer(): Success allocated memory %llu bytes. Enable freelist: %s", IndexBufferSize, "true");
 
+	// UI 合批 host-visible 双缓冲对（vertex/index 各 2 份，按帧轮转）。
+	// CPU map/copy 直写，无 staging + waitIdle；轮转保证上一帧 GPU 读取期间
+	// 当前帧写另一份，避免读写同一块内存。
+	for (uint32_t i = 0; i < 2; ++i) {
+		Context.UIObjectVertexBuffers[i] = NewObject<VulkanBuffer>();
+		Context.UIObjectVertexBuffers[i]->Type = EGPUBufferType::eRenderbuffer_Type_Vertex;
+		Context.UIObjectVertexBuffers[i]->TotalSize = VertexBufferSize;
+		Context.UIObjectVertexBuffers[i]->UseFreelist = true;
+		Context.UIObjectVertexBuffers[i]->HostVisible = true;
+		if (!Context.UIObjectVertexBuffers[i]->Create()) {
+			GLOG(Log::eError, "Error creating UI host-visible vertex buffer %u.", i);
+			return false;
+		}
+		Context.UIObjectVertexBuffers[i]->Bind(0);
+
+		Context.UIObjectIndexBuffers[i] = NewObject<VulkanBuffer>();
+		Context.UIObjectIndexBuffers[i]->Type = EGPUBufferType::eRenderbuffer_Type_Index;
+		Context.UIObjectIndexBuffers[i]->TotalSize = IndexBufferSize;
+		Context.UIObjectIndexBuffers[i]->UseFreelist = true;
+		Context.UIObjectIndexBuffers[i]->HostVisible = true;
+		if (!Context.UIObjectIndexBuffers[i]->Create()) {
+			GLOG(Log::eError, "Error creating UI host-visible index buffer %u.", i);
+			return false;
+		}
+		Context.UIObjectIndexBuffers[i]->Bind(0);
+	}
+	GLOG(Log::eInfo, "VulkanBackend::CreateRenderbuffer(): Created UI host-visible double buffers (vertex/index x2, HostVisible=true).");
+
 	// Mark all geometry as invalid.
 	for (uint32_t i = 0; i < GEOMETRY_MAX_COUNT; ++i) {
 		Geometries[i].id = INVALID_ID;
@@ -336,6 +364,14 @@ void VulkanRHI::Shutdown() {
 	GLOG(Log::eDebug, "Destroying Buffers");
 	Context.ObjectVertexBuffer->Destroy();
 	Context.ObjectIndexBuffer->Destroy();
+	for (uint32_t i = 0; i < 2; ++i) {
+		if (Context.UIObjectVertexBuffers[i]) {
+			Context.UIObjectVertexBuffers[i]->Destroy();
+		}
+		if (Context.UIObjectIndexBuffers[i]) {
+			Context.UIObjectIndexBuffers[i]->Destroy();
+		}
+	}
 
 	GLOG(Log::eDebug, "Destroying sync objects.");
 	for (uint32_t i = 0; i < Context.Swapchain.MaxFramesInFlight; ++i) {
@@ -431,18 +467,14 @@ bool VulkanRHI::BeginFrame(){
 		return false;
 	}
 
-	// 每帧帧首复位所有 shader 已用 instance 槽的 sampler generation 守卫，把
-	// "generation 守卫"语义从"整个生命周期只写一次"调整为"每帧首绑才重写"：
-	// 场景切换/纹理复用走异步加载，正确贴图在若干帧后才就绪，若首帧已用 fallback
-	// 默认贴图写完描述符且永不重写，正确贴图将永远不显示（贴图丢失）。每帧复位后，
-	// 就绪的纹理在下一帧首次 ApplyInstance 时自动重绑；同帧内仍只写一次，保持对
-	// 录制期连续 updateDescriptorSets（InvalidCommandBuffer）校验的规避。
-	for (uint32_t i = 0; i < ShaderRegistryCount; ++i) {
-		if (ShaderRegistry[i] == nullptr || ShaderRegistry[i]->ID == INVALID_ID) {
-			continue;
-		}
-		ShaderRegistry[i]->ResetInstanceSamplerGenerations();
-	}
+	// 当前帧 host-visible UI 合批缓冲对下标：与 fence 槽（CurrentFrame）对齐轮转。
+	// 帧 N 写组 g、帧 N+2 再次写组 g 前，BeginFrame 已 waitForFences 保证帧 N 完成，
+	// 避免 CPU 覆盖仍在被 GPU 读取的顶点数据。
+	CurrentUIHostBufferIndex = Context.CurrentFrame % 2;
+
+	// 采样器失效已由 R3 帧环指纹方案接管（VulkanShader::ApplyInstance 按
+	// ImageIndex%3 槽记录纹理指针，跨帧轮转天然失效），帧首遍历全部已创建
+	// shader × 512 槽复位 generation 的 O(N*M) 开销已无消费者，不再执行。
 
 	// Begin recording commands
 	VulkanCommandBuffer* CommandBuffer = &Context.GraphicsCommandBuffers[Context.ImageIndex];
@@ -692,46 +724,83 @@ bool VulkanRHI::CreateGeometry(UGeometry* geometry, const FGeometryConfig& confi
 		return false;
 	}
 
+	// UI 合批（bHostVisible=true）走 host-visible 双缓冲对：CPU map/copy 直写，
+	// 无 staging + waitIdle；其余几何走 device-local 主缓冲（原路径不变）。
+	const bool bHostVisible = config.bHostVisible;
+	VulkanBuffer* VertexBuffer = bHostVisible ? Context.UIObjectVertexBuffers[CurrentUIHostBufferIndex] : Context.ObjectVertexBuffer;
+	VulkanBuffer* IndexBuffer = bHostVisible ? Context.UIObjectIndexBuffers[CurrentUIHostBufferIndex] : Context.ObjectIndexBuffer;
+	// 旧块可能位于另一组缓冲对（双缓冲轮转），释放时必须回到旧块所在缓冲
+	VulkanBuffer* OldVertexBuffer = InternalData->host_visible ? Context.UIObjectVertexBuffers[InternalData->host_buffer_index] : Context.ObjectVertexBuffer;
+	VulkanBuffer* OldIndexBuffer = InternalData->host_visible ? Context.UIObjectIndexBuffers[InternalData->host_buffer_index] : Context.ObjectIndexBuffer;
+
 	size_t NewVertexOffset = 0;
 	const size_t NewVertexSize = static_cast<size_t>(config.vertex_size) * config.vertex_count;
-	if (!Context.ObjectVertexBuffer->AllocateMemory(NewVertexSize, &NewVertexOffset)) {
-		return false;
+
+	// host-visible 同尺寸复用：顶点尺寸、缓冲对均未变化时，直接 map 覆盖既有 offset，
+	// 避免每帧 Allocate/Free 造成 freelist 抖动与块漂移（UI 动画帧路径）。
+	const bool bReuseSameSize = bHostVisible
+		&& InternalData->vertex_count != 0
+		&& InternalData->vertex_element_size == config.vertex_size
+		&& InternalData->vertex_count == config.vertex_count
+		&& InternalData->host_visible == bHostVisible
+		&& InternalData->host_buffer_index == CurrentUIHostBufferIndex;
+
+	if (bReuseSameSize) {
+		NewVertexOffset = InternalData->vertext_buffer_offset;
+		if (!VertexBuffer->Load(NewVertexOffset, NewVertexSize, config.vertices)) {
+			return false;
+		}
+	}
+	else {
+		if (!VertexBuffer->AllocateMemory(NewVertexSize, &NewVertexOffset)) {
+			return false;
+		}
+
+		if (!VertexBuffer->Load(NewVertexOffset, NewVertexSize, config.vertices)) {
+			VertexBuffer->FreeMemory(NewVertexSize, NewVertexOffset);
+			return false;
+		}
 	}
 
-	if (!Context.ObjectVertexBuffer->Load(NewVertexOffset, NewVertexSize, config.vertices)) {
-		Context.ObjectVertexBuffer->FreeMemory(NewVertexOffset, NewVertexSize);
-		return false;
-	}
+	// 索引可省略：省略时保留既有索引（UI 等四边形索引恒定，避免每帧重传索引）。
+	// 只有首次创建或索引确有变化时才需要传入 indices。
+	const bool bUpdateIndex = (config.index_count != 0 && config.indices != nullptr);
 
 	// 分配缓冲区内存
 	size_t NewIndexOffset = 0;
 	size_t NewIndexSize = 0;
-	if (config.index_count != 0 && config.indices != nullptr) {
+	if (bUpdateIndex) {
 		NewIndexSize = static_cast<size_t>(config.index_size) * config.index_count;
 
-		if (!Context.ObjectIndexBuffer->AllocateMemory(NewIndexSize, &NewIndexOffset)) {
-			Context.ObjectVertexBuffer->FreeMemory(NewVertexSize, NewVertexOffset);
+		if (!IndexBuffer->AllocateMemory(NewIndexSize, &NewIndexOffset)) {
+			if (!bReuseSameSize) {
+				VertexBuffer->FreeMemory(NewVertexSize, NewVertexOffset);
+			}
 			return false;
 		}
 
-		if (!Context.ObjectIndexBuffer->Load(NewIndexOffset, NewIndexSize, config.indices)) {
-			Context.ObjectIndexBuffer->FreeMemory(NewIndexOffset, NewIndexSize);
-			Context.ObjectVertexBuffer->FreeMemory(NewVertexSize, NewVertexOffset);
+		if (!IndexBuffer->Load(NewIndexOffset, NewIndexSize, config.indices)) {
+			IndexBuffer->FreeMemory(NewIndexOffset, NewIndexSize);
+			if (!bReuseSameSize) {
+				VertexBuffer->FreeMemory(NewVertexSize, NewVertexOffset);
+			}
 			return false;
 		}
 	}
 
-	// 释放旧资源
-	if (InternalData->vertex_count != 0 && InternalData->vertex_element_size != 0) {
+	// 释放旧资源（同尺寸复用路径不释放，旧块继续沿用）
+	if (!bReuseSameSize && InternalData->vertex_count != 0 && InternalData->vertex_element_size != 0) {
 		const size_t OldVertexSize =
 			static_cast<size_t>(InternalData->vertex_element_size) * InternalData->vertex_count;
-		Context.ObjectVertexBuffer->FreeMemory(OldVertexSize, InternalData->vertext_buffer_offset);
+		OldVertexBuffer->FreeMemory(OldVertexSize, InternalData->vertext_buffer_offset);
 	}
 
-	if (InternalData->index_count != 0 && InternalData->index_element_size != 0) {
+	// 仅当本次提供了新索引时才释放旧索引；省略索引表示沿用既有索引，
+	// 否则会在“仅更新顶点”路径下误释放仍在被引用的旧索引块。
+	if (bUpdateIndex && InternalData->index_count != 0 && InternalData->index_element_size != 0) {
 		const size_t OldIndexSize = 
 			static_cast<size_t>(InternalData->index_element_size) * InternalData->index_count;
-		Context.ObjectIndexBuffer->FreeMemory(OldIndexSize, InternalData->index_buffer_offset);
+		OldIndexBuffer->FreeMemory(OldIndexSize, InternalData->index_buffer_offset);
 	}
 
 	// Commit new state.
@@ -739,9 +808,12 @@ bool VulkanRHI::CreateGeometry(UGeometry* geometry, const FGeometryConfig& confi
 	InternalData->vertex_element_size = config.vertex_size;
 	InternalData->vertext_buffer_offset = NewVertexOffset;
 
-	InternalData->index_count = config.index_count;
-	InternalData->index_element_size = config.index_count != 0 ? config.index_size : 0;
-	InternalData->index_buffer_offset = config.index_count != 0 ? NewIndexOffset : 0;
+	InternalData->index_count = bUpdateIndex ? config.index_count : InternalData->index_count;
+	InternalData->index_element_size = bUpdateIndex ? (config.index_count != 0 ? config.index_size : 0) : InternalData->index_element_size;
+	InternalData->index_buffer_offset = bUpdateIndex ? NewIndexOffset : InternalData->index_buffer_offset;
+
+	InternalData->host_visible = bHostVisible;
+	InternalData->host_buffer_index = CurrentUIHostBufferIndex;
 
 	if (InternalData->generation == INVALID_ID) {
 		InternalData->generation = 0;
@@ -758,12 +830,16 @@ void VulkanRHI::DestroyGeometry(UGeometry* geometry) {
 		Context.Device.GetLogicalDevice().waitIdle();
 		GeometryData* InternalData = &Geometries[geometry->InternalID];
 
+		// UI 合批几何的块在 host-visible 缓冲对上，按创建时记录的缓冲对下标释放
+		VulkanBuffer* VertexBuffer = InternalData->host_visible ? Context.UIObjectVertexBuffers[InternalData->host_buffer_index] : Context.ObjectVertexBuffer;
+		VulkanBuffer* IndexBuffer = InternalData->host_visible ? Context.UIObjectIndexBuffers[InternalData->host_buffer_index] : Context.ObjectIndexBuffer;
+
 		// Free vertex data.
-		Context.ObjectVertexBuffer->FreeMemory(InternalData->vertex_element_size * InternalData->vertex_count, InternalData->vertext_buffer_offset);
+		VertexBuffer->FreeMemory(InternalData->vertex_element_size * InternalData->vertex_count, InternalData->vertext_buffer_offset);
 
 		// Free index data.
 		if (InternalData->index_element_size > 0) {
-			Context.ObjectIndexBuffer->FreeMemory(InternalData->index_element_size * InternalData->index_count, InternalData->index_buffer_offset);
+			IndexBuffer->FreeMemory(InternalData->index_element_size * InternalData->index_count, InternalData->index_buffer_offset);
 		}
 
 		// Clean up date.
@@ -784,14 +860,18 @@ void VulkanRHI::DrawGeometry(GeometryRenderData* geometry) {
 	}
 
 	GeometryData* BufferData = &Geometries[geometry->geometry->InternalID];
+	// UI 合批几何从 host-visible 缓冲对读取（按创建时记录的缓冲对下标）
+	VulkanBuffer* VertexBuffer = BufferData->host_visible ? Context.UIObjectVertexBuffers[BufferData->host_buffer_index] : Context.ObjectVertexBuffer;
+	VulkanBuffer* IndexBuffer = BufferData->host_visible ? Context.UIObjectIndexBuffers[BufferData->host_buffer_index] : Context.ObjectIndexBuffer;
+
 	bool IncludIndexData = BufferData->index_count > 0;
-	if (!DrawRenderbuffer(Context.ObjectVertexBuffer, BufferData->vertext_buffer_offset, BufferData->vertex_count, IncludIndexData)) {
+	if (!DrawRenderbuffer(VertexBuffer, BufferData->vertext_buffer_offset, BufferData->vertex_count, IncludIndexData)) {
 		GLOG(Log::eError, "VulkanBackend::DrawGeometry() Failed to draw vertex buffer.");
 		return;
 	}
 
 	if (IncludIndexData) {
-		if (!DrawRenderbuffer(Context.ObjectIndexBuffer, BufferData->index_buffer_offset, BufferData->index_count, !IncludIndexData)) {
+		if (!DrawRenderbuffer(IndexBuffer, BufferData->index_buffer_offset, BufferData->index_count, !IncludIndexData)) {
 			GLOG(Log::eError, "VulkanBackend::DrawGeometry() Failed to draw index buffer.");
 			return;
 		}
@@ -1077,11 +1157,6 @@ bool VulkanRHI::CreateShader(UShader* shader, const FShaderConfig* config, IRend
 	OutShader->Config.cull_mode = config->cull_mode;
 	OutShader->Config.pology_mode = config->polygon_mode;
 	OutShader->Config.PrimTopo = config->PrimTopo;
-
-	// 登记到 RHI 已创建 shader 表，供 BeginFrame 帧首复位 sampler generation 守卫。
-	if (ShaderRegistryCount < ShaderRegistryCapacity) {
-		ShaderRegistry[ShaderRegistryCount++] = OutShader;
-	}
 
 	return true;
 }

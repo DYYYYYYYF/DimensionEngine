@@ -46,6 +46,10 @@ public:
 	vk::Buffer Buffer;
 	vk::BufferUsageFlags Usage;
 	bool IsLocked = false;
+	// 为 true 时顶点/索引缓冲使用 HOST_VISIBLE|HOST_COHERENT 内存（替代 device-local）：
+	// Load 走 map/copy 直写，省去 staging 缓冲与 CopyRange 内部的 waitIdle 全队列停顿。
+	// 用于 UI 合批等每帧高频小量上传场景（配合双缓冲轮转避免 CPU 写与 GPU 读竞争）。
+	bool HostVisible = false;
 	vk::DeviceMemory Memory;
 	vk::MemoryRequirements MemoryRequirements;
 	int MemoryIndex = -1;

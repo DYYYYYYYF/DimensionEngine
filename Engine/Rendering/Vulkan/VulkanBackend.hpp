@@ -68,11 +68,8 @@ public:
 	virtual bool VerifyShaderID(uint32_t shader_id);
 
 private:
-	// 已创建 shader 登记表（Context.Shaders 从未被分配，不能遍历），
-	// 供 BeginFrame 帧首复位 instance sampler generation 守卫使用。
-	static constexpr uint32_t ShaderRegistryCapacity = 512;
-	VulkanShader* ShaderRegistry[ShaderRegistryCapacity] = {};
-	uint32_t ShaderRegistryCount = 0;
+	// 当前帧使用的 host-visible UI 合批缓冲对下标（与 ImageIndex 交替轮转）
+	uint32_t CurrentUIHostBufferIndex = 0;
 
 private:
 	uint32_t QueryInstanceVersion();

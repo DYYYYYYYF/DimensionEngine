@@ -1,0 +1,22 @@
+# Dimension shader config file - UI 合批着色器
+version=1.0
+name=Shader.Builtin.UIBatched
+renderpass=Renderpass.Builtin.UI
+stages=vertex,fragment
+stagefiles=Shaders/Shader.Builtin.UIBatched.vert.spv,Shaders/Shader.Builtin.UIBatched.frag.spv
+depth_test=0
+depth_write=0
+blend=1
+
+# Attributes: type,name
+attribute=vec2,in_position
+attribute=vec2,in_texcoord
+attribute=vec4,in_color
+
+# Uniforms: type,scope,name
+# NOTE: For scope: 0=global, 1=instance, 2=local
+uniform=mat4,0,projection
+uniform=mat4,0,view
+uniform=vec4,1,diffuse_color
+uniform=samp,1,diffuse_texture
+uniform=mat4,2,model

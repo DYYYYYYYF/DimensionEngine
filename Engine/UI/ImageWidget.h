@@ -1,33 +1,35 @@
-﻿#pragma once
+#pragma once
 #include "Widget.h"
+#include "Rendering/Resources/Texture/Texture.hpp"
 
-class UImageWidget : public UWidget {
+class UCanvasRenderer;
+
+/**
+ * 图片/纯色矩形控件：
+ * - 设置纹理后显示图片；
+ * - 未设置纹理时绑定白色纹理 + Color，可绘制任意纯色矩形。
+ */
+class ENGINE_API UImageWidget : public UWidget {
 public:
-	UImageWidget() : TextureHandle(nullptr) {}
+	UImageWidget() { DesiredWidth = 100.0f; DesiredHeight = 100.0f; }
 
-	void SetTexture(const FString& Path) {
-		// 调用 ResourceSystem 加载纹理并记录句柄[cite: 1]
-	}
+	// 直接绑定已加载纹理
+	void SetTexture(UTexture* InTexture) { Texture = InTexture; }
 
-	virtual void OnDraw(class UCanvasRenderer* CanvasRenderer) override {
-		if (!bIsVisible || !TextureHandle) return;
+	// 通过资源系统按名称加载纹理（如 "DimensionEngine"）
+	void SetTexture(const FString& Path);
 
-		//// 构造专属于 UI 的 2D 渲染命令（传递屏幕坐标、宽高、UV、颜色、纹理句柄）
-		//UIDrawCallElement Element;
-		//Element.PositionX = this->PositionX;
-		//Element.PositionY = this->PositionY;
-		//Element.Width = this->Width;
-		//Element.Height = this->Height;
-		//Element.Texture = this->TextureHandle;
-		//Element.Color = FVector4(1, 1, 1, 1); // 支持运行时改Alpha或颜色
+	// 设置 UV 范围（默认整张纹理 0,0 -> 1,1）
+	void SetUV(float U0, float V0, float U1, float V1) { UV0 = Vector2(U0, V0); UV1 = Vector2(U1, V1); }
 
-		//// 提交给专用的 UI 渲染器
-		//CanvasRenderer->PushElement(Element);
+	// 测量：尺寸 = DesiredSize（未设置时使用默认 100x100）
+	virtual void OnMeasure(float ParentWidth, float ParentHeight) override;
 
-		//// 调用基类绘制可能存在的子控件（比如Image控件里叠个文字）
-		//UWidget::OnDraw(CanvasRenderer);
-	}
+	// 绘制：推入绘制元素后递归绘制子控件
+	virtual void OnDraw(class UCanvasRenderer* CanvasRenderer) override;
 
 private:
-	void* TextureHandle = nullptr; // 底层图形API对应的纹理句柄
+	UTexture* Texture = nullptr;
+	Vector2 UV0 = Vector2(0.0f, 0.0f);
+	Vector2 UV1 = Vector2(1.0f, 1.0f);
 };

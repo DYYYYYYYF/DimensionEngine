@@ -74,6 +74,8 @@ public:
 public:
 	bool IsTextureBindingExist(const FString& UniformName) const;
 	bool SetTextureOnBinding(const FString& UniformName, FTextureMap Texture);
+	// 按名称设置实例 uniform 值（Value 指向原始数据，Size 为字节数）
+	bool SetUniformValue(const FString& UniformName, const void* Value, uint32_t Size);
 
 public:
 	UMaterial* GetParentMaterial() const { return BaseMaterial; }

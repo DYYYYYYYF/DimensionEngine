@@ -1,4 +1,5 @@
 ﻿#include "VulkanTexture.hpp"
+#include <algorithm>
 #include "VulkanContext.hpp"
 
 #include "Core/DMemory.hpp"
@@ -291,8 +292,18 @@ void VulkanTexture::CreateImage(vk::Format format, vk::ImageTiling tiling,
 		break;
 	}
 
+	// mip 数不能超过纹理尺寸允许的最大层级（4x4 小纹理仅允许 3 级，
+	// 硬编码 4 会触发 VUID-VkImageCreateInfo-mipLevels-00958 校验失败，导致小纹理创建异常）
+	uint32_t MaxDim = std::max(Width, Height);
+	uint32_t MipLevels = 1u;
+	while (MaxDim > 1u) {
+		MaxDim >>= 1u;
+		++MipLevels;
+	}
+	MipLevels = std::min(4u, MipLevels);
+
 	ImageCreateInfo.setExtent(Extent)
-		.setMipLevels(4)		// TODO: Support mip mapping
+		.setMipLevels(MipLevels)
 		.setArrayLayers(1)		
 		.setFormat(format)
 		.setTiling(tiling)

@@ -369,12 +369,20 @@ void RenderViewWorldDeferred::Render(const TArray<FRenderProxy*>& RenderProxies)
 
 			DrawCall dc;
 			UMaterialInstance* Mat = Geometry->GetMaterialInstance();
+			if (!Mat) {
+				continue;
+			}
 			dc.geometry = Geometry;
 			dc.model = RenderProxy->GetModelMatrix();
 			dc.material = Mat;
 			dc.shader = GBufferShader;
 			dc.userData = nullptr;
-			dc.sortKey = ((uint64_t)dc.shader->ID << 32) | (uint64_t)Mat->GetInternalID();
+			if (!dc.shader) {
+				continue;
+			}
+			uint32_t ShaderDBGID = dc.shader->ID;
+			uint32_t MatDBGID = Mat->GetInternalID();
+			dc.sortKey = ((uint64_t)ShaderDBGID << 32) | (uint64_t)MatDBGID;
 			GBufferDrawCalls.Push(dc);
 		}
 	}

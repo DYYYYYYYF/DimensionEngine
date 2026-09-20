@@ -8,6 +8,7 @@
 #include <Scene/World.h>
 #include "UI/Console/GameConsole.h"
 #include "GameLogic/UI/WindowDataPanel.h"
+#include "GameLogic/UI/UISampleActor.h"
 
 // TODO: Temp
 #include "UI/Console/Keybinds.h"
@@ -185,6 +186,20 @@ bool GameInstance::Initialize() {
 		TestText->SetTextFont(TestTextName, UITextType::eUI_Text_Type_Bitmap);
 		TestText->SetActorLocation(Vector3(350, 600, 0));
 		World->AddActor(TestText);
+	}
+
+	// UI 系统演示：Widget 树（垂直盒 + 图片/纯色矩形）渲染
+	UISampleActor* UISample = NewObject<UISampleActor>("UI System Sample");
+	if (UISample) {
+		World->AddActor(UISample);
+	}
+
+	// UI 系统演示说明文字（文本走 RenderViewUI 原有 FTextRenderProxy 路径）
+	ATextActor* UITipText = NewObject<ATextActor>("UI system tip.", UITextType::eUI_Text_Type_System,
+		"Noto Sans CJK JP", 20, "UI System Demo: VerticalBox + ImageWidget (top-left)");
+	if (UITipText) {
+		UITipText->SetActorLocation(Vector3(100, 40, 0));
+		World->AddActor(UITipText);
 	}
 
 	FString TestSystemName = "Noto Sans CJK JP";

@@ -148,6 +148,11 @@ bool ShaderLoader::ParseLineData(size_t index, const FString& line, FShaderConfi
 	else if (TrimmedVarName.Compare("depth_write") == 0) {
 		resource->depthWrite = FString::ToBool(TrimmedValue);
 	}
+	else if (TrimmedVarName.Compare("blend") == 0) {
+		if (FString::ToBool(TrimmedValue)) {
+			resource->flags |= eShader_Flag_Blend;
+		}
+	}
 	else if (TrimmedVarName.Compare("attribute") == 0) {
 		// Parse attribute.
 		TArray<FString> Fields = TrimmedValue.Split(',', true, true);

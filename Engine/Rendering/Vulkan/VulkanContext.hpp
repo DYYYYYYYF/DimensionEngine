@@ -94,6 +94,11 @@ public:
 	VulkanBuffer* ObjectVertexBuffer = nullptr;
 	VulkanBuffer* ObjectIndexBuffer = nullptr;
 
+	// UI 合批专用 host-visible 顶点/索引缓冲对（双缓冲轮转，消除 staging + waitIdle）。
+	// 下标与交换链图像索引交替使用：CPU 写当前帧缓冲，GPU 读上一帧缓冲。
+	VulkanBuffer* UIObjectVertexBuffers[2] = { nullptr, nullptr };
+	VulkanBuffer* UIObjectIndexBuffers[2] = { nullptr, nullptr };
+
 	// Framebuffers used for world rendering, one per frame.
 	//RenderTarget WorldRenderTargets[3];
 
