@@ -374,51 +374,62 @@ bool VulkanShader::ApplyInstance() {
 		uint32_t TotalSamplerCount =
 			InstSetConfig.bindings[SamplerBindingIndex].descriptorCount;
 
-		// 防御：配置里的 descriptorCount 可能大于实际贴图槽位/上限定长，越界会读到脏指针
-		uint32_t MaxSamplerCount = (uint32_t)std::min<size_t>(TotalSamplerCount, State.instance_texture_maps.Size());
-		MaxSamplerCount = std::min(MaxSamplerCount, (uint32_t)VULKAN_SHADER_MAX_INSTANCE_TEXTURES);
+		// 同父材质多实例共享同一 instance 槽时，同一帧会对共享描述符集连续调用
+		// ApplyInstance：UBO 侧已有 generation 守卫，sampler 侧同样加守卫——只有
+		// 该帧该 set 首次绑定才 updateDescriptorSets，避免对同一描述符集在命令缓冲
+		// 录制期被连续 update（第二次起旧描述符即失效，触发
+		// UNASSIGNED-CoreValidation-DrawState-InvalidCommandBuffer-VkDescriptorSet）。
+		uint32_t* SamplerGeneration =
+			&State.descriptor_set_state.descriptor_states[SamplerBindingIndex].generations[ImageIndex];
 
-		for (uint32_t i = 0; i < MaxSamplerCount; ++i) {
-			FTextureMap* Map = State.instance_texture_maps[i];
-			if (!Map) continue;
+		if (*SamplerGeneration == INVALID_ID) {
+			// 防御：配置里的 descriptorCount 可能大于实际贴图槽位/上限定长，越界会读到脏指针
+			uint32_t MaxSamplerCount = (uint32_t)std::min<size_t>(TotalSamplerCount, State.instance_texture_maps.Size());
+			MaxSamplerCount = std::min(MaxSamplerCount, (uint32_t)VULKAN_SHADER_MAX_INSTANCE_TEXTURES);
 
-			UTexture* Tex = Map->texture;
-			if (!Tex || !Tex->IsLoaded()) {
-				TextureSystem& TextureSys = TextureSystem::Get();
-				// fallback 到默认贴图
-				switch (Map->usage) {
-				case eTexture_Usage_Map_Diffuse:
-					Tex = TextureSys.GetDefaultDiffuseTexture(); break;
-				case eTexture_Usage_Map_Normal:
-					Tex = TextureSys.GetDefaultNormalTexture(); break;
-				case eTexture_Usage_Map_Specular:
-					Tex = TextureSys.GetDefaultSpecularTexture(); break;
-				case eTexture_Usage_Map_RoughnessMetallic:
-					Tex = TextureSys.GetDefaultRoughnessMetallicTexture(); break;
-				default:
-					Tex = TextureSys.GetDefaultDiffuseTexture(); break;
+			for (uint32_t i = 0; i < MaxSamplerCount; ++i) {
+				FTextureMap* Map = State.instance_texture_maps[i];
+				if (!Map) continue;
+
+				UTexture* Tex = Map->texture;
+				if (!Tex || !Tex->IsLoaded()) {
+					TextureSystem& TextureSys = TextureSystem::Get();
+					// fallback 到默认贴图
+					switch (Map->usage) {
+					case eTexture_Usage_Map_Diffuse:
+						Tex = TextureSys.GetDefaultDiffuseTexture(); break;
+					case eTexture_Usage_Map_Normal:
+						Tex = TextureSys.GetDefaultNormalTexture(); break;
+					case eTexture_Usage_Map_Specular:
+						Tex = TextureSys.GetDefaultSpecularTexture(); break;
+					case eTexture_Usage_Map_RoughnessMetallic:
+						Tex = TextureSys.GetDefaultRoughnessMetallicTexture(); break;
+					default:
+						Tex = TextureSys.GetDefaultDiffuseTexture(); break;
+					}
 				}
+
+				VulkanTexture* VkTex = static_cast<VulkanTexture*>(Tex);
+				if (!VkTex) continue;
+
+				ImageInfoStore.emplace_back();
+				vk::DescriptorImageInfo& ImageInfo = ImageInfoStore.back();
+				ImageInfo
+					.setImageLayout(VkTex->ShaderReadLayout)
+					.setImageView(VkTex->ImageView)
+					.setSampler(*reinterpret_cast<vk::Sampler*>(&Map->internal_data));
 			}
 
-			VulkanTexture* VkTex = static_cast<VulkanTexture*>(Tex);
-			if (!VkTex) continue;
-
-			ImageInfoStore.emplace_back();
-			vk::DescriptorImageInfo& ImageInfo = ImageInfoStore.back();
-			ImageInfo
-				.setImageLayout(VkTex->ShaderReadLayout)
-				.setImageView(VkTex->ImageView)
-				.setSampler(*reinterpret_cast<vk::Sampler*>(&Map->internal_data));
-		}
-
-		if (!ImageInfoStore.empty()) {
-			vk::WriteDescriptorSet SamplerWrite;
-			SamplerWrite.setDstSet(DescSet)
-				.setDstBinding(SamplerBindingIndex)   // ← 从配置读
-				.setDescriptorType(vk::DescriptorType::eCombinedImageSampler)
-				.setDescriptorCount((uint32_t)ImageInfoStore.size())
-				.setPImageInfo(ImageInfoStore.data());
-			DescriptorWrites.push_back(SamplerWrite);
+			if (!ImageInfoStore.empty()) {
+				vk::WriteDescriptorSet SamplerWrite;
+				SamplerWrite.setDstSet(DescSet)
+					.setDstBinding(SamplerBindingIndex)   // ← 从配置读
+					.setDescriptorType(vk::DescriptorType::eCombinedImageSampler)
+					.setDescriptorCount((uint32_t)ImageInfoStore.size())
+					.setPImageInfo(ImageInfoStore.data());
+				DescriptorWrites.push_back(SamplerWrite);
+				*SamplerGeneration = 1;
+			}
 		}
 	}
 
@@ -433,6 +444,29 @@ bool VulkanShader::ApplyInstance() {
 		1, 1, &DescSet, 0, nullptr);
 
 	return true;
+}
+
+void VulkanShader::ResetInstanceSamplerGenerations() {
+	// 仅当 shader 存在实例纹理（sampler 描述符）时才需要复位。
+	if (InstanceUniformSamplerCount == 0) {
+		return;
+	}
+
+	const VulkanDescriptorSetConfig& InstSetConfig = Config.descriptor_sets[DESC_SET_INDEX_INSTANCE];
+	unsigned char SamplerBindingIndex = InstSetConfig.sampler_binding_index;
+
+	// 遍历全部槽位而非 InstanceCount：槽位释放后 InstanceCount 不随 Release 递减，
+	// 而 Acquire 总是复用最小空槽，已用槽集合可能不再前缀连续，逐槽按 id 判断最稳妥。
+	for (uint32_t i = 0; i < VULKAN_MAX_MATERIAL_COUNT; ++i) {
+		VulkanShaderInstanceState& State = InstanceStates[i];
+		if (State.id == INVALID_ID) {
+			continue;
+		}
+		VulkanDescriptorState& DS = State.descriptor_set_state.descriptor_states[SamplerBindingIndex];
+		for (uint32_t f = 0; f < 3; ++f) {
+			DS.generations[f] = INVALID_ID;
+		}
+	}
 }
 
 bool VulkanShader::SetUniform(const FString& name, const void* value) {

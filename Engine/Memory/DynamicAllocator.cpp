@@ -4,6 +4,14 @@
 #include "Core/EngineLogger.hpp"
 #include "Platform/Platform.hpp"
 
+#ifdef _MSC_VER
+#include <intrin.h>
+#endif
+
+// [DIAG] 手动声明，避免引入 windows.h 造成宏污染
+extern "C" __declspec(dllimport) void* __stdcall LoadLibraryA(const char*);
+extern "C" __declspec(dllimport) void* __stdcall GetProcAddress(void*, const char*);
+
 // The storage size in bytes of a node's user memory block size.
 #define DSIZE_STORAGE sizeof(uint32_t)
 
@@ -146,6 +154,26 @@ bool DynamicAllocator::FreeAligned(void* block) {
 	if (block < MemoryBlock || block >= EndOfBlock) {
 		GLOG(Log::eError, "DynamicAllocator::FreeAligned(): Trying to release block (0x%p) outside of allocator range (0x%p)-(0x%p). Sub size: %uul, Total size: %uul.",
 			block, MemoryBlock, EndOfBlock, (size_t)block - (size_t)MemoryBlock, TotalSize);
+		// [DIAG] 通过 ntdll RtlCaptureStackBackTrace 打印调用栈定位越界释放来源
+		{
+			typedef unsigned short(__stdcall* RtlCaptureFn)(unsigned long, unsigned long, void**, unsigned long*);
+			static RtlCaptureFn s_capture = nullptr;
+			if (!s_capture) {
+				void* ntdll = LoadLibraryA("ntdll.dll");
+				if (ntdll)
+					s_capture = (RtlCaptureFn)GetProcAddress(ntdll, "RtlCaptureStackBackTrace");
+			}
+			if (s_capture) {
+				void* frames[20] = {};
+				unsigned short n = s_capture(0, 20, frames, nullptr);
+				GLOG(Log::eError, "  [stack] %u frames:", (unsigned)n);
+				for (unsigned short i = 0; i < n; ++i) {
+					GLOG(Log::eError, "  [stack] #%u 0x%p", (unsigned)i, frames[i]);
+				}
+			} else {
+				GLOG(Log::eError, "  [stack] RtlCaptureStackBackTrace unavailable");
+			}
+		}
 		return false;
 	}
 

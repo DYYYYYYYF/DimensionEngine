@@ -78,9 +78,33 @@ void Memory::AllocateReport(size_t size, MemoryType type) {
 }
 
 void  Memory::Free(void* block, MemoryType type) {
+	if (block == nullptr) return;
+
 	size_t alloc_size = 0;
-	Memory::GetAlignmentSize(block, &alloc_size, nullptr);
-	FreeAligned(block, alloc_size, type);
+
+	// 整个「读取 header + 释放」必须位于同一个 AllocationMutex 临界区内：
+	// 若分两步锁（先无锁读 header、再加锁 Free），另一线程可能在两步之间
+	// 分配/释放同一区域并改写 header，导致 alloc_size 读到脏值，
+	// DynamicAllocator::FreeAligned 随后按错误 size 释放而报
+	// "block outside of allocator range"（疯狂按 P 切换场景时高频触发）。
+	if (!AllocationMutex.Lock()) {
+		GLOG(Log::eFatal, "Unable to obtain mutex lock for free operation. Heap corruption is likely.");
+		return;
+	}
+
+	DynamicAllocator::Get().GetAlignmentSize(block, &alloc_size, nullptr);
+	stats.total_allocated -= alloc_size;
+	stats.tagged_allocations[type] -= alloc_size;
+	AllocateCount--;
+
+	bool Result = DynamicAllocator::Get().FreeAligned(block);
+	AllocationMutex.UnLock();
+
+	if (!Result) {
+		Platform::PlatformFree(block, false);
+	}
+
+	block = nullptr;
 }
 
 void Memory::FreeAligned(void* block, size_t size, MemoryType type) {
@@ -122,7 +146,16 @@ void Memory::FreeReport(size_t size, MemoryType type) {
 }
 
 bool Memory::GetAlignmentSize(void* block, size_t* out_size, size_t* out_alignment) {
-	return DynamicAllocator::Get().GetAlignmentSize(block, out_size, out_alignment);
+	// 读取分配头也必须加锁：与 AllocateAligned/FreeAligned 写头并发时可能读到半更新状态
+	if (!AllocationMutex.Lock()) {
+		GLOG(Log::eFatal, "Unable to obtain mutex lock for GetAlignmentSize. Heap corruption is likely.");
+		return false;
+	}
+
+	bool Result = DynamicAllocator::Get().GetAlignmentSize(block, out_size, out_alignment);
+
+	AllocationMutex.UnLock();
+	return Result;
 }
 
 void* Memory::Zero(void* block, size_t size) {
@@ -169,8 +202,16 @@ FString Memory::GetMemoryUsageStr() {
 	// Compute total usage.
 	{
 		DynamicAllocator& Allocator = DynamicAllocator::Get();
+		if (!AllocationMutex.Lock()) {
+			GLOG(Log::eFatal, "Unable to obtain mutex lock for memory usage report.");
+			return buffer;
+		}
+
 		size_t TotalSpace = Allocator.GetTotalSpace();
 		size_t FreeSpace = Allocator.GetFreeSpace();
+
+		AllocationMutex.UnLock();
+
 		size_t UsedSpace = TotalSpace - FreeSpace;
 
 		float UsedAmount = 1.0f;

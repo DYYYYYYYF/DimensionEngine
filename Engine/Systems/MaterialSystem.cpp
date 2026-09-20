@@ -77,6 +77,9 @@ UMaterial* MaterialSystem::Acquire(const FString& name) {
 }
 
 UMaterial* MaterialSystem::AcquireFromConfig(FMaterialConfig config) {
+	// 标记本次是否为首次创建（缓存未命中）：实例资源只在首次创建时分配一次
+	bool bFirstCreate = false;
+
 	// 如果找不到材质，则创建一个新的材质。
 	if (!MaterialMap.Contains(config.name)) {
 		uint32_t Count = MaterialSystemConfig.max_material_count;
@@ -101,6 +104,10 @@ UMaterial* MaterialSystem::AcquireFromConfig(FMaterialConfig config) {
 		// Create new material.
 		if (!LoadMaterial(config, m)) {
 			GLOG(Log::eError, "Load %s material failed.", config.name.CStr());
+			// 回滚半创建状态，避免缓存残留未加载完成的材质（否则下次命中缓存会返回空材质）
+			MaterialMap.Remove(config.name);
+			RegisteredMaterials[m->GetInternalID()] = nullptr;
+			DeleteObject(m);
 			return nullptr;
 		}
 
@@ -110,6 +117,8 @@ UMaterial* MaterialSystem::AcquireFromConfig(FMaterialConfig config) {
 		else {
 			m->Generation++;
 		}
+
+		bFirstCreate = true;
 	}
 
 	uint32_t MaterialID = MaterialMap[config.name];
@@ -127,10 +136,18 @@ UMaterial* MaterialSystem::AcquireFromConfig(FMaterialConfig config) {
 	}
 
 	UShader* s = ShaderSystem::Get().Get(config.shader_name);
-	Mat->InternalID = Renderer->AcquireInstanceResource(s, Maps);
-	if (Mat->InternalID == INVALID_ID) {
-		GLOG(Log::eError, "Failed to acquire renderer resources for material '%s'.", Mat->Name.CStr());
-		return nullptr;
+
+	// 实例资源（instance 槽 / UBO / 描述符集）仅在材质首次创建时分配一次；
+	// 缓存命中（同名字材被重复获取，如场景切换反复按 P 重新加载同款材质）时共享
+	// 已分配的实例资源，不再重复 AcquireInstanceResource，避免 Vulkan 后端有限资源
+	// （instance 槽 1024 / UBO 1024 / 描述符集池 1024）被反复 Acquire 却从不 Release 而耗尽。
+	// 例外：首次分配失败（InternalID 被置回 INVALID_ID）的缓存材质在下次获取时重试分配。
+	if (bFirstCreate || Mat->InternalID == INVALID_ID) {
+		Mat->InternalID = Renderer->AcquireInstanceResource(s, Maps);
+		if (Mat->InternalID == INVALID_ID) {
+			GLOG(Log::eError, "Failed to acquire renderer resources for material '%s'.", Mat->Name.CStr());
+			return nullptr;
+		}
 	}
 
 
@@ -242,7 +259,8 @@ void MaterialSystem::DestroyMaterial(UMaterial* mat) {
 	// Release texture references.
 	TextureSystem& TextureSystemInst = TextureSystem::Get();
 	for (TextureBinding& TexBinding : mat->TextureBindings) {
-		if (!TexBinding.texture.texture) {
+		// NOTE: 判空条件为正（有纹理才 Release），此前写反导致对 nullptr 调 GetName() 崩溃。
+		if (TexBinding.texture.texture) {
 			TextureSystemInst.Release(TexBinding.texture.texture->GetName());
 		}
 		Renderer->ReleaseTextureMap(&TexBinding.texture);

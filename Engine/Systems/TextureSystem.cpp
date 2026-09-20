@@ -473,7 +473,15 @@ bool TextureSystem::LoadTexture(const FString& name, UTexture* texture) {
 	Job.on_success = [this, Params]() { return LoadJobSuccess(Params.get()); };
 	Job.on_failed = [this, Params]() { return LoadJobFail(Params.get()); };
 	Job.type = JobType::eResource_Load;
-	JobSystem::Submit(Job);
+	// 去重键：同纹理名在队列中已有未取消的加载 job 时不再重复提交，
+	// 防止疯狂按 P 高频场景切换时同一纹理被反复提交 load job 造成积压吃内存。
+	Job.dedup_key = name.CStr();
+	if (!JobSystem::Submit(Job)) {
+		// 队列满被拒绝：直接走失败路径释放纹理，避免悬挂（进程不会因积压吃内存而崩溃）。
+		GLOG(Log::eWarn, "TextureSystem: load job rejected (queue full), texture '%s'.", name.CStr());
+		LoadJobFail(Params.get());
+		return false;
+	}
 
 	return true;
 }
@@ -579,6 +587,33 @@ bool TextureSystem::ProcessTextureReference(const FString& name, TextureType typ
 	}
 	else {
 		// Incrementing. Check if the handle is now or not.
+		// 纹理对象可能曾因引用计数归零被 DestroyTexture 释放了 GPU 资源（ImageView
+		// 已销毁），但 UTexture 对象仍留在 TextureMap 中。重新引用时必须重建 GPU
+		// 资源，否则 ApplyInstance 会用空 ImageView 写描述符（VUID-02997/02699）
+		// 并导致贴图丢失。LoadTexture 走异步 job，完成后由下一帧重绑描述符。
+		// 仅重建"曾从磁盘加载成功过"的纹理；GBuffer 等 writeable 纹理从未从磁盘
+		// 加载（HasEverLoaded=false），其 GPU 资源由渲染器按帧生命周期管理。
+		if (!Tex->IsLoaded() && Tex->HasEverLoaded()) {
+			if (type == TextureType::eTexture_Type_2D) {
+				if (!LoadTexture(name, Tex)) {
+					GLOG(Log::eError, "TextureSystem::ProcessTextureReference() failed to reload texture '%s'.", name.CStr());
+					return false;
+				}
+			}
+			else {
+				TArray<FString> TextureNames;
+				TextureNames.Push(FString::Format("%s_r", name.CStr()));	// Right texture.
+				TextureNames.Push(FString::Format("%s_l", name.CStr()));	// Left texture.
+				TextureNames.Push(FString::Format("%s_u", name.CStr()));	// Up texture.
+				TextureNames.Push(FString::Format("%s_d", name.CStr()));	// Down texture.
+				TextureNames.Push(FString::Format("%s_f", name.CStr()));	// Front texture.
+				TextureNames.Push(FString::Format("%s_b", name.CStr()));	// Back texture.
+				if (!LoadCubeTexture(name, TextureNames, Tex)) {
+					GLOG(Log::eError, "TextureSystem::ProcessTextureReference() failed to reload cube texture '%s'.", name.CStr());
+					return false;
+				}
+			}
+		}
 		GLOG(Log::eDebug, "Texture '%s' already exists, ref_count increased to %i.", name.CStr(), Tex->GetReferenceCount());
 	}
 

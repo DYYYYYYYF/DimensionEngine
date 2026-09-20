@@ -38,6 +38,11 @@ public:
 	void SetHeight(uint32_t H) { Height = H; }
 	uint32_t GetHeight() const { return Height; }
 
+	// 是否曾从磁盘加载成功过。用于区分"曾加载成功、后因引用归零被释放（需重建）"
+	// 与"从未加载成功（如 GBuffer 等 writeable 纹理，重建应由渲染器负责）"。
+	bool HasEverLoaded() const { return bHasEverLoaded; }
+	void SetHasEverLoaded(bool b = true) { bHasEverLoaded = b; }
+
 	uint32_t GetSize() const { return GetWidth() * GetHeight() * GetChannelCount(); }
 
 	void SetTextureType(TextureType t) { Type = t; }
@@ -68,4 +73,6 @@ protected:
 	TextureFlag Flags = 0;
 
 	unsigned char* Pixels = nullptr;
+
+	bool bHasEverLoaded = false;
 };

@@ -50,8 +50,33 @@ void UStaticMeshComponent::UpdateRenderProxy() {
 }
 
 void UStaticMeshComponent::SetMesh(TArray<UGeometry*> InMesh) {
+	// 释放被替换掉的旧几何引用：旧几何若不在新数组中，则引用计数减一。
+	// 此前直接覆盖 Mesh 数组导致旧几何的引用计数永不归零，
+	// Geometry/MaterialInstance/GPU buffer 每轮切换场景持续泄漏
+	// （压测中 Array 池 414MiB、父材质引用计数 516 居高不下）。
+	for (UGeometry* G : Mesh) {
+		if (!G) continue;
+
+		bool bStillReferenced = false;
+		for (UGeometry* NG : InMesh) {
+			if (NG == G) {
+				bStillReferenced = true;
+				break;
+			}
+		}
+		if (!bStillReferenced) {
+			G->DecreaseReferenceCount();
+		}
+	}
+
 	Mesh = InMesh;
 	UpdateBounding();
+}
+
+void UStaticMeshComponent::ClearGeometries() {
+	// 仅清空数组，不递减引用：调用方（Actor::Unload）已负责 Decrease，
+	// 避免对已销毁几何二次 Decrease 造成 Use-After-Free。
+	Mesh.Clear();
 }
 
 void UStaticMeshComponent::UpdateBounding() {

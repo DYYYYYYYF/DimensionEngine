@@ -42,6 +42,19 @@ public:
 	// 每个元素对应一盏灯；Shutdown 时按同一顺序写回
 	TArray<APointLightActor*> PointLightActors;
 
+	// 场景切换（LoadScene2 / P 键）创建的 Actor：下次切换前清理，释放几何体/材质实例资源，
+	// 避免多次按 P 累积 Actor 与 Vulkan 实例资源导致实例槽/UBO/描述符池耗尽后崩溃
+	TArray<AActor*> SceneActors;
+
+	// 延迟删除（deferred deletion）队列：ClearSceneActors 只做"摘除渲染收集 + 标记待删"，
+	// 真正释放（Destroy / World::RemoveActor / DeleteObject 触发引用计数递减与实例资源释放）
+	// 由主循环在 DrawFrame 提交完当前帧命令缓冲后调用 FlushDeferredDestroys 统一执行，
+	// 避免渲染期（命令缓冲/绘制仍引用）立即销毁 DescriptorSet / 纹理导致 InvalidCommandBuffer 崩溃
+	TArray<AActor*> PendingDestroyActors;
+
+	// 帧末冲刷延迟删除队列：对 PendingDestroyActors 走标准释放链（Destroy + RemoveActor + DeleteObject）
+	virtual void FlushDeferredDestroys() override;
+
 	// TODO: temp
 	Keymap* ConsoleKeymap;
 	CPythonModule TestPython;

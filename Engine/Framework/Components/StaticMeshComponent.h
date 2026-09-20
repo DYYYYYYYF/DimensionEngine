@@ -15,6 +15,7 @@ public:
 	virtual void UpdateRenderProxy() override;
 
 	void SetMesh(TArray<UGeometry*> InMesh);
+	void ClearGeometries();
 	const TArray<UGeometry*>& GetGeometries() const { return Mesh; }
 
 protected:

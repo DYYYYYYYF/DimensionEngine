@@ -431,6 +431,19 @@ bool VulkanRHI::BeginFrame(){
 		return false;
 	}
 
+	// 每帧帧首复位所有 shader 已用 instance 槽的 sampler generation 守卫，把
+	// "generation 守卫"语义从"整个生命周期只写一次"调整为"每帧首绑才重写"：
+	// 场景切换/纹理复用走异步加载，正确贴图在若干帧后才就绪，若首帧已用 fallback
+	// 默认贴图写完描述符且永不重写，正确贴图将永远不显示（贴图丢失）。每帧复位后，
+	// 就绪的纹理在下一帧首次 ApplyInstance 时自动重绑；同帧内仍只写一次，保持对
+	// 录制期连续 updateDescriptorSets（InvalidCommandBuffer）校验的规避。
+	for (uint32_t i = 0; i < ShaderRegistryCount; ++i) {
+		if (ShaderRegistry[i] == nullptr || ShaderRegistry[i]->ID == INVALID_ID) {
+			continue;
+		}
+		ShaderRegistry[i]->ResetInstanceSamplerGenerations();
+	}
+
 	// Begin recording commands
 	VulkanCommandBuffer* CommandBuffer = &Context.GraphicsCommandBuffers[Context.ImageIndex];
 	CommandBuffer->Reset();
@@ -1065,6 +1078,11 @@ bool VulkanRHI::CreateShader(UShader* shader, const FShaderConfig* config, IRend
 	OutShader->Config.pology_mode = config->polygon_mode;
 	OutShader->Config.PrimTopo = config->PrimTopo;
 
+	// 登记到 RHI 已创建 shader 表，供 BeginFrame 帧首复位 sampler generation 守卫。
+	if (ShaderRegistryCount < ShaderRegistryCapacity) {
+		ShaderRegistry[ShaderRegistryCount++] = OutShader;
+	}
+
 	return true;
 }
 
@@ -1175,6 +1193,9 @@ uint32_t VulkanRHI::AcquireInstanceResource(UShader* shader, TArray<FTextureMap*
 	if (Size > 0) {
 		if (!VkShader->UniformBuffer.AllocateMemory(Size, &InstanceState->offset)) {
 			GLOG(Log::eError, "vulkan_material_shader_acquire_resources failed to acquire ubo space");
+			// 回滚：释放已占用的 instance 槽，避免失败路径残留悬挂槽位导致资源泄漏
+			InstanceState->id = INVALID_ID;
+			InstanceState->offset = 0;
 			return INVALID_ID;
 		}
 	}
@@ -1205,6 +1226,13 @@ uint32_t VulkanRHI::AcquireInstanceResource(UShader* shader, TArray<FTextureMap*
 	if(Context.Device.GetLogicalDevice().allocateDescriptorSets(&AllocInfo, InstanceState->descriptor_set_state.descriptorSets.data())
 		!= vk::Result::eSuccess) {
 			GLOG(Log::eError, "Allocate descriptor sets failed.");
+			// 回滚：释放已占用的 instance 槽，并归还已分配的 UBO 空间，
+			// 避免失败路径残留槽位/UBO 导致资源泄漏
+			if (Size > 0) {
+				VkShader->UniformBuffer.FreeMemory(Size, InstanceState->offset);
+				InstanceState->offset = 0;
+			}
+			InstanceState->id = INVALID_ID;
 			return INVALID_ID;
 	}
 	VkShader->InstanceCount = OutInstanceID;
@@ -1226,13 +1254,23 @@ bool VulkanRHI::ReleaseInstanceResource(UShader* shader, uint64_t instance_id) {
 	// Free 3 descriptor sets (one per frame)
 	Context.Device.GetLogicalDevice().freeDescriptorSets(VkShader->DescriptorPool, 3, InstanceState->descriptor_set_state.descriptorSets.data());
 
-	// Destroy descriptor states.
-	Memory::Zero(InstanceState->descriptor_set_state.descriptor_states, sizeof(VulkanDescriptorState) * VULKAN_SHADER_MAX_BINDINGS);
-
-	if (InstanceState->instance_texture_maps.Size() > 0) {
-		for (uint32_t i = 0; i < InstanceState->instance_texture_maps.Size(); ++i) {
-			InstanceState->instance_texture_maps[i]->texture = nullptr;
+	// 复位描述符状态。注意不能用 Memory::Zero：UBO/sampler 的 generation 守卫以
+	// INVALID_ID 作为"需重新 updateDescriptorSets"的标记，零值会导致槽位复用时
+	// 新材质沿用旧描述符（旧 UBO offset / 旧贴图绑定）。显式逐槽置回 INVALID_ID，
+	// 保证 instance 槽被复用后 ApplyInstance 的 generation 守卫重新生效。
+	for (uint32_t b = 0; b < VULKAN_SHADER_MAX_BINDINGS; ++b) {
+		VulkanDescriptorState& DS = InstanceState->descriptor_set_state.descriptor_states[b];
+		for (uint32_t f = 0; f < 3; ++f) {
+			DS.generations[f] = INVALID_ID;
+			DS.ids[f] = INVALID_ID;
 		}
+	}
+
+	// NOTE: instance_texture_maps 保存的是材质自身 TextureBindings 中 FTextureMap 的地址
+	// （AcquireInstanceResource 仅记录引用，不复制纹理），此处只清空数组引用，
+	// 严禁把 maps[i]->texture 置空——否则释放一个实例会破坏所有共享该材质的纹理绑定，
+	// 后续 DrawCall 对空纹理指针采样直接崩溃。
+	if (InstanceState->instance_texture_maps.Size() > 0) {
 		InstanceState->instance_texture_maps.Clear();
 	}
 

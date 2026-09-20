@@ -128,6 +128,16 @@ public:
 	virtual bool ApplyInstance() override;
 
 	/**
+	 * @brief 将本 shader 所有已用 instance 槽的 sampler generation 守卫复位为 INVALID_ID。
+	 *        由渲染后端每帧帧首调用：纹理为异步加载，加载完成发生在场景切换的若干帧之后，
+	 *        若 generation 只复位一次，首次 ApplyInstance 已用 fallback 默认贴图写完描述符，
+	 *        后续帧因守卫跳过重写，正确贴图将永远不显示。每帧复位后，sampler 描述符在
+	 *        "该帧首次 ApplyInstance" 时重写，正确贴图加载完成即可自动重绑；同帧内仍只
+	 *        写一次，避免录制期对同一描述符集连续 updateDescriptorSets 触发校验错误。
+	 */
+	void ResetInstanceSamplerGenerations();
+
+	/**
 	 * @brief Sets the uniform of the given shader to the provided value.
 	 *
 	 * @param uniform A constant pointer to the uniform.

@@ -27,6 +27,16 @@ bool VulkanTexture::Load(const unsigned char* pixels) {
 		return false;
 	}
 
+	// 防止同一实例重复 Load 造成 GPU 资源覆盖泄漏：
+	// 纹理生命周期抖动时（ref_count 归零销毁后又被 reload），若上一次 Load 创建的
+	// Image/ImageView/DeviceMemory 尚未被销毁，CreateImage 会直接覆盖句柄导致旧
+	// VkImage 永久泄漏（vkDestroyDevice 时报 VUID-vkDestroyDevice-device-00378）。
+	// 重建前先销毁旧资源，保证任意 Load 顺序下 GPU 资源不泄漏。
+	if (Image || ImageView || DeviceMemory) {
+		GLOG(Log::eDebug, "VulkanTexture::Load() rebuilding existing GPU resources (name='%s'), destroying old ones first.", GetName().CStr());
+		Destroy();
+	}
+
 	// Internal data creation.
 	vk::DeviceSize ImageSize = Width * Height * ChannelCount * (Type == TextureType::eTexture_Type_Cube ? 6 : 1);
 
@@ -48,6 +58,7 @@ bool VulkanTexture::Load(const unsigned char* pixels) {
 	}
 
 	SetLoaded();
+	SetHasEverLoaded();
 	return true;
 }
 bool VulkanTexture::LoadWriteable(){
@@ -248,6 +259,12 @@ void VulkanTexture::Destroy() {
 	bool IsDeviceMemory = (MemoryFlags & vk::MemoryPropertyFlagBits::eDeviceLocal) == vk::MemoryPropertyFlagBits::eDeviceLocal;
 	Memory::FreeReport(MemoryRequirements.size, IsDeviceMemory ? MemoryType::eMemory_Type_GPU_Local : MemoryType::eMemory_Type_Vulkan);
 	Memory::Zero(&MemoryRequirements, sizeof(vk::MemoryRequirements));
+
+	// GPU 资源（Image/ImageView/DeviceMemory）已全部释放，必须同步状态标记。
+	// 否则该 UTexture 对象被 TextureMap 复用时 IsLoaded() 仍为 true 但 ImageView
+	// 已为空，ApplyInstance 的 fallback 不会生效，描述符会写入空 imageView，
+	// 触发 VUID-VkWriteDescriptorSet-descriptorType-02997 / 02699 并导致贴图丢失。
+	SetLoaded(false);
 }
 
 void VulkanTexture::CreateImage(vk::Format format, vk::ImageTiling tiling,

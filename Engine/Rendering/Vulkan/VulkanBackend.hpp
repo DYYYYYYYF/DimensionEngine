@@ -4,6 +4,7 @@
 #include "VulkanContext.hpp"
 
 class VulkanBuffer;
+class VulkanShader;
 
 class VulkanRHI : public RHI {
 	friend class VulkanShader;
@@ -65,6 +66,13 @@ public:
 	virtual bool RecreateSwapchain();
 
 	virtual bool VerifyShaderID(uint32_t shader_id);
+
+private:
+	// 已创建 shader 登记表（Context.Shaders 从未被分配，不能遍历），
+	// 供 BeginFrame 帧首复位 instance sampler generation 守卫使用。
+	static constexpr uint32_t ShaderRegistryCapacity = 512;
+	VulkanShader* ShaderRegistry[ShaderRegistryCapacity] = {};
+	uint32_t ShaderRegistryCount = 0;
 
 private:
 	uint32_t QueryInstanceVersion();

@@ -260,6 +260,11 @@ bool Engine::Run() {
 			// 渲染帧数据
 			Renderer->DrawFrame(GameInst->GetWorld());
 
+			// 帧末冲刷延迟删除队列：当前帧命令缓冲已提交，此刻执行 Actor 完整释放链
+			// （几何/材质/描述符集/纹理），不会破坏仍在录制的命令缓冲；提升连续按 P
+			// 切换场景时的效率与稳定性（清除只标记、释放集中到安全时机）。
+			GameInst->FlushDeferredDestroys();
+
 			double FrameEndTime = Platform::PlatformGetAbsoluteTime();
 			FrameElapsedTime = FrameEndTime - FrameStartTime;
 			double RemainingSceonds = TargetFrameSeconds - FrameElapsedTime;
@@ -286,6 +291,12 @@ bool Engine::Run() {
 	// Shut down the game.
 	GameInst->Shutdown();
 
+	// 先于所有资源系统关闭 JobSystem：纹理/网格加载 job 的 entry（LoadJobStart）
+	// 在 worker 线程中直接写入 out_texture/GeometryAsset 对象。若先销毁这些资源
+	// 对象，worker 线程可能仍在写入已释放内存（use-after-free）。先停 job 线程池
+	// 并丢弃 pending_results（on_success 不再执行），确保后续销毁阶段无异步访问。
+	JobSystem::Shutdown();
+
 	// Shutdown event system
 	EngineEvent::Unregister(eEventCode::Application_Quit, nullptr,
 		std::bind(&Engine::OnEvent, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
@@ -298,7 +309,6 @@ bool Engine::Run() {
 	GeometrySystem::Get().Shutdown();
 	MaterialSystem::Get().Shutdown();
 	TextureSystem::Get().Shutdown();
-	JobSystem::Shutdown();
 	ShaderSystem::Get().Shutdown();
 
 	Renderer->Shutdown();

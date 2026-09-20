@@ -24,6 +24,10 @@ public:
 		return true;
 	};
 
+	// 帧末冲刷延迟删除队列：渲染帧命令缓冲提交后由主循环调用，对 PendingDestroy 的
+	// Actor / 资源执行完整释放链。默认空实现，需要延迟删除的游戏实例覆写。
+	virtual void FlushDeferredDestroys() {}
+
 	virtual void Shutdown() = 0;
 
 	virtual bool Initialize() = 0;

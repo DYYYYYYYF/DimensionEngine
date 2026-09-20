@@ -42,7 +42,7 @@ void GeometrySystem::Shutdown() {
 }
 
 UGeometry* GeometrySystem::AcquireByID(uint32_t id) {
-	if (id < RegisteredGeometries.Size() && RegisteredGeometries[id]->ID != INVALID_ID) {
+	if (id < RegisteredGeometries.Size() && RegisteredGeometries[id] && RegisteredGeometries[id]->ID != INVALID_ID) {
 		RegisteredGeometries[id]->IncreaseReferenceCount();
 		return RegisteredGeometries[id];
 	}
@@ -59,8 +59,9 @@ UGeometry* GeometrySystem::AcquireFromConfig(FGeometryConfig config, bool auto_r
 		return nullptr;
 	}
 
-	RegisteredGeometries.Push(geometry);
-	geometry->ID = (uint32_t)RegisteredGeometries.Size() - 1;
+	// NOTE: CreateGeometry 内部已 Push 到 RegisteredGeometries 并分配 ID，
+	// 这里不再重复 Push，避免同一几何在注册表中出现多个槽位（重复 Push 会导致
+	// ID 错位，且 DestroyGeometry 只能清理其中一个槽位，其余槽位残留悬垂指针）。
 
 	// 获取就增加引用计数
 	geometry->IncreaseReferenceCount();
@@ -252,6 +253,14 @@ void GeometrySystem::ConfigDispose(FGeometryConfig* config) {
 
 void GeometrySystem::DestroyGeometry(UGeometry* geometry) {
 	Renderer->DestroyGeometry(geometry);
+
+	// 从注册表清除对应槽位，避免悬垂指针在后续 AcquireByID / 新几何复用 ID 时被再次访问。
+	if (geometry->ID != INVALID_ID && geometry->ID < RegisteredGeometries.Size()) {
+		if (RegisteredGeometries[geometry->ID] == geometry) {
+			RegisteredGeometries[geometry->ID] = nullptr;
+		}
+	}
+
 	geometry->ID = INVALID_ID;
 	geometry->Generation = INVALID_ID;
 	geometry->InternalID = INVALID_ID;

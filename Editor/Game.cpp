@@ -2,6 +2,7 @@
 
 #include <Core/Controller.hpp>
 #include <Core/Event.hpp>
+#include <Core/DMemory.hpp>
 #include <Systems/CameraSystem.h>
 #include <Platform/File/JsonObject.h>
 #include <Scene/World.h>
@@ -14,9 +15,11 @@
 #include "GameLogic/LogicActors/RotationCubeActor.h"
 #include "GameLogic/BaseActors/CubeActor.h"
 #include "Framework/Components/CameraComponent.h"
+#include "Framework/Components/StaticMeshComponent.h"
 #include "Framework/Classes/SkyboxActor.h"
 #include "Framework/Classes/DirectionalLightActor.h"
 #include "Framework/Classes/PointLightActor.h"
+#include "Systems/JobSystem.hpp"
 
 bool GameOnEvent(eEventCode code, void* sender, void* listender_inst, SEventContext context) {
 	switch (code)
@@ -35,6 +38,48 @@ void LoadScene1(GameInstance* Game);
 void LoadScene2(GameInstance* Game);
 void LoadScene3(GameInstance* Game);
 void LoadScene4(GameInstance* Game);
+
+// 加载新场景前清理上一轮场景切换（LoadScene2）创建的 Actor，避免多次按 P 累积资源：
+//  1) UnregisterComponents：从 RenderWorld 移除并销毁该 Actor 的 RenderProxy，本帧不再绘制。
+//  2) 将 Actor 推入 PendingDestroyActors 延迟删除队列，不在此处立即 Destroy / DeleteObject /
+//     减几何引用——几何体 / 材质 / Vulkan 实例资源的完整释放链（~AStaticMeshActor → Unload
+//     → 引用计数递减 → MaterialSystem::DestroyMaterial → ReleaseInstanceResource）统一延迟到
+//     DrawFrame 提交完当前帧命令缓冲后由 FlushDeferredDestroys 执行，避免渲染期仍引用
+//     DescriptorSet / 纹理时被立即销毁，造成 InvalidCommandBuffer / 空 ImageView 崩溃。
+static void ClearSceneActors(GameInstance* GameInst) {
+	for (AActor* Actor : GameInst->SceneActors) {
+		if (!Actor) continue;
+
+		// 从 RenderWorld 摘除渲染收集，本帧起不再参与绘制
+		Actor->UnregisterComponents();
+
+		// 推入延迟删除队列，帧末由 FlushDeferredDestroys 走标准释放链
+		GameInst->PendingDestroyActors.Push(Actor);
+	}
+	GameInst->SceneActors.Clear();
+}
+
+// 帧末延迟删除冲刷：渲染帧命令缓冲（EndFrame 提交）之后由主循环调用，对延迟删除队列中的
+// Actor 走标准释放链（Destroy + World::RemoveActor + DeleteObject）。
+// 析构链触发 UGeometry 引用计数递减 → 归零时销毁 UMaterialInstance（父材质引用 -1）→
+// UMaterial 归零时 MaterialSystem::DestroyMaterial → ReleaseInstanceResource（内部 waitIdle
+// 兜底，确保 in-flight 命令缓冲不再引用后才 freeDescriptorSets / 纹理），因此不会出现
+// 渲染期立即释放描述符集/纹理导致的 InvalidCommandBuffer 与空 ImageView 校验错误。
+void GameInstance::FlushDeferredDestroys() {
+	if (PendingDestroyActors.Size() == 0) {
+		return;
+	}
+
+	UWorld* GameWorld = GetWorld();
+	for (AActor* Actor : PendingDestroyActors) {
+		if (!Actor) continue;
+
+		Actor->Destroy();
+		if (GameWorld) GameWorld->RemoveActor(Actor);
+		DeleteObject(Actor);
+	}
+	PendingDestroyActors.Clear();
+}
 
 bool GameOnDebugEvent(eEventCode code, void* sender, void* listener_instance, SEventContext context) {
 	GameInstance* GameInst = (GameInstance*)listener_instance;
@@ -328,6 +373,28 @@ void LoadScene1(GameInstance* GameInst) {
 }
 
 void LoadScene2(GameInstance* GameInst) {
+	// 加载新场景前，先等待上一轮异步资源加载 job 全部收尾（队列清空 + 完成回调已执行）：
+	// 疯狂按 P 时，若场景切换快于 eResource_Load worker 的加载速度，同资源 load job 会
+	// 持续重复提交并在队列中无限积压，最终吃光内存触发
+	// "RequiredSize < 4294967295U is null!" 分配器断言崩溃。等待收尾后再清理旧 Actor、
+	// 创建新 Actor，确保任何时刻在途的资源 load job 只有"当前场景"这一批。
+	// 注意：此处必须位于 ClearSceneActors 之前——等待期间上一轮 Actor 仍存活且未
+	// UnregisterComponents，job 完成回调（LoadJobSuccess）访问 Actor 完全安全；
+	// 若在清理之后等待，回调将触碰已摘除渲染的 Actor，存在悬垂风险。
+	JobSystem::WaitForIdle(JobType::eResource_Load);
+
+	// 加载新场景前清理上一轮场景切换创建的 Actor（地面砖 + 模型），
+	// 释放几何体引用与 Vulkan 实例资源，避免多次按 P 累积导致实例槽/UBO/描述符池耗尽崩溃
+	ClearSceneActors(GameInst);
+
+	// 立即冲刷延迟删除队列：ClearSceneActors 只把旧 Actor 推入 PendingDestroy（几何缓冲仍占用
+	// freelist），真正释放要等帧末 FlushDeferredDestroys。若此处不提前冲刷，下面提交的新一批
+	// load job 会在 worker 线程立刻创建 sponza 几何，而旧 sponza 几何仍占着渲染缓冲 freelist，
+	// 双份几何短暂共存即可挤爆 128MB 缓冲，出现 "Freelist find block, no block with enough
+	// free space found" 几何创建失败、返回 nullptr 后解引用崩溃（engine.dll 0xc0000005）。
+	// 此处处于事件处理阶段（DrawFrame 之前），上一帧命令缓冲已提交完毕，提前释放安全。
+	GameInst->FlushDeferredDestroys();
+
 	// ---- 地面：由多块立方体拼接而成 ----
 	// 基础立方体为 10x10x10，每块地面在 X/Z 放大 20 倍、Y 向不缩放 -> 200 x 10 x 200：
 	//   * Y 向不缩放，厚度 = 一个小立方体的边长（10）
@@ -350,6 +417,7 @@ void LoadScene2(GameInstance* GameInst) {
 			GroundTile->SetActorRotation(Vector(0.0f));
 			GroundTile->SetWorldScale(Vector(GroundTileSizeXZ / 10.0f, GroundTileHeight / 10.0f, GroundTileSizeXZ / 10.0f));
 			GameInst->GetWorld()->AddActor(GroundTile);
+			GameInst->SceneActors.Push(GroundTile);
 		}
 	}
 
@@ -364,6 +432,7 @@ void LoadScene2(GameInstance* GameInst) {
 	Model1->SetActorRotation(Vector(0.0f, 90.0f, 0.0f));
 	Model1->SetWorldScale(Vector(0.1f));
 	GameInst->GetWorld()->AddActor(Model1);
+	GameInst->SceneActors.Push(Model1);
 
 	// ---- 模型 2: bunny（右前方） ----
 	// 模型原始包围盒 min.y = 0，缩放 5 -> 原点即底面
@@ -373,6 +442,9 @@ void LoadScene2(GameInstance* GameInst) {
 	Model2->SetActorRotation(Vector(0.0f, 90.0f, 0.0f));
 	Model2->SetWorldScale(Vector(5.0f));
 	GameInst->GetWorld()->AddActor(Model2);
+	// NOTE: bunny 此前漏 Push 进 SceneActors，导致 ClearSceneActors 每轮都无法清理它，
+	// 其子网格/实例资源持续累积直到耗尽。此处与其他 Actor 保持一致登记进清理列表。
+	GameInst->SceneActors.Push(Model2);
 
 	// ---- 模型 3: falcon（正前方） ----
 	// 模型原始包围盒 min.y = -0.201，缩放 1 -> 需抬高 0.201
@@ -380,6 +452,10 @@ void LoadScene2(GameInstance* GameInst) {
 	Model3->LoadFromResource("falcon");
 	Model3->SetActorLocation(Vector(0.0f, GroundTopY + 0.201f + ModelLiftEpsilon, 15.0f));
 	GameInst->GetWorld()->AddActor(Model3);
+	GameInst->SceneActors.Push(Model3);
+
+	// [诊断] 每次切换场景后输出内存统计，用于定位疯狂按 P 时全局池被吃空的泄漏点
+	Memory::ShowMemoryUsage();
 }
 
 void LoadScene3(GameInstance* GameInst) {
