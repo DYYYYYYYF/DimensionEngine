@@ -73,6 +73,13 @@ struct VulkanShaderInstanceState {
 	// 同帧内第二次 ApplyInstance 若指纹一致则跳过 update，避免录制期
 	// 对已绑定命令缓冲的描述符集连续 update 触发校验错误。
 	UTexture* last_sampled_textures[3][VULKAN_SHADER_MAX_INSTANCE_TEXTURES] = {};
+	// 每 ImageIndex 帧环槽最近一次 sampler update 的渲染帧号。
+	// 同父材质多实例共享同一 instance 槽时，后续实例 SetUniform 会覆盖
+	// instance_texture_maps，若仅靠指纹判断会误判"需重写"，导致同一描述符集
+	// 在同帧命令缓冲录制期内被连续 update，触发
+	// UNASSIGNED-CoreValidation-DrawState-InvalidCommandBuffer-VkDescriptorSet。
+	// 以帧号为硬守卫：同一渲染帧内每个 set 最多 update 一次，第二次起仅 bind。
+	uint32_t sampler_updated_frame[3] = { INVALID_ID, INVALID_ID, INVALID_ID };
 };
 
 // The index of the global descriptor set.

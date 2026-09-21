@@ -52,7 +52,6 @@ struct PointLight
 // 片段着色器输入 - 对应原始GLSL的in_dto结构
 struct PSInput
 {
-    [[vk::location(0)]] float  global_time     : TEXCOORD0;
     [[vk::location(1)]] float2 vTexcoord       : TEXCOORD1;
     [[vk::location(2)]] float4 ambient_color   : COLOR0;
     [[vk::location(3)]] float3 view_position   : VECTOR0;

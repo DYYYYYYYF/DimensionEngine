@@ -8,6 +8,7 @@
 #include <Containers/TArray.hpp>
 #include "Framework/Classes/StaticMeshActor.h"
 #include "Framework/Classes/TextActor.h"
+#include "GameLogic/EditorCore/SimpleEditorActor.h"
 
 #ifndef EIDTOR_MODE
 #define EIDTOR_MODE
@@ -59,5 +60,23 @@ public:
 	Keymap* ConsoleKeymap;
 	CPythonModule TestPython;
 	// TODO: end temp
+
+public:
+	// ---- 简易编辑器窗口支持 ----
+	// 场景视图覆盖层 Actor（工具栏 / 层级面板 / 属性面板）
+	ASimpleEditorActor* EditorActor = nullptr;
+	// 编辑器运行状态（Play / Pause 控制世界 actor tick 冻结）
+	EditorPlayState EditorState = EditorPlayState::Idle;
+	// 滚轮增量累计：Mouse_Wheel 事件回调写入，GameInstance::Update 消费后清零（相机缩放）
+	int WheelDelta = 0;
+
+	// 保存当前场景（窗口尺寸 / 相机位姿 / 灯光）到 Editor/Config.json
+	void SaveSceneConfig();
+	// 切换编辑器运行状态：Pause 时冻结所有非编辑器 actor 的 tick，恢复时全部开启
+	void SetEditorPlayState(EditorPlayState NewState);
+	EditorPlayState GetEditorPlayState() const { return EditorState; }
+	// 窗口尺寸访问器（IGame::WindowSize 为 protected，供编辑器覆盖层 Actor 读取布局）
+	unsigned int GetWindowWidth() const { return WindowSize.Width; }
+	unsigned int GetWindowHeight() const { return WindowSize.Height; }
 
 };

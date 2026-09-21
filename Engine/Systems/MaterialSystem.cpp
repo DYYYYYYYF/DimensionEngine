@@ -313,6 +313,11 @@ bool MaterialSystem::CreateTextureMap(FTextureMap& map, TextureUsage usage, cons
 		case TextureUsage::eTexture_Usage_Map_RoughnessMetallic:
 			map.texture = texSys.GetDefaultRoughnessMetallicTexture();
 			break;
+		case TextureUsage::eTexture_Usage_Map_Shadow:
+			// shadow_map_texture 等阴影深度采样器：阴影图由渲染目标提供，
+			// 材质创建阶段仅需占位默认纹理，避免落入 default 告警分支。
+			map.texture = texSys.GetDefaultRoughnessMetallicTexture();
+			break;
 		case TextureUsage::eTexture_Usage_Map_Cubemap:
 		{
 			// Cubemap需要特殊处理
@@ -362,6 +367,15 @@ TextureUsage MaterialSystem::GetTextureUsageFromUniformName(const FString& name)
 	}
 	else if (name.Compare("shadow_map_texture") == 0) {
 		return TextureUsage::eTexture_Usage_Map_Shadow;
+	}
+	else if (name.Compare("gbuffer_albedo_texture") == 0) {
+		return TextureUsage::eTexture_Usage_Map_Diffuse;
+	}
+	else if (name.Compare("gbuffer_normal_texture") == 0) {
+		return TextureUsage::eTexture_Usage_Map_Normal;
+	}
+	else if (name.Compare("gbuffer_position_texture") == 0) {
+		return TextureUsage::eTexture_Usage_Map_Diffuse;
 	}
 
 	return TextureUsage::eTexture_Usage_Unknown;

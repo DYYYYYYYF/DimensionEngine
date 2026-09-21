@@ -52,6 +52,9 @@ void AWindowDataPanel::Tick(float DeltaTime) {
 	);
 
 	SetText(FPSText);
-	SetActorLocation(Vector3(450, WindowSize.y - 200, 0));
+	// 编辑器 Log 窗口接管位置后，不再覆盖；否则保持默认屏幕位置
+	if (!bUseAnchor) {
+		SetActorLocation(Vector3(450, WindowSize.y - 200, 0));
+	}
 }
 

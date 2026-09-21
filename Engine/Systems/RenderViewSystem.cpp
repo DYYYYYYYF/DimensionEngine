@@ -13,6 +13,8 @@
 #include "Rendering/Views/RenderViewPick.hpp"
 #include "Platform/File/JsonObject.h"
 #include "ResourceSystem.h"
+#include "Systems/ShaderSystem.h"
+#include "Rendering/Vulkan/VulkanShader.hpp"
 
 RenderViewSystem& RenderViewSystem::Get() {
 	static RenderViewSystem RenderviewSystemInstance;
@@ -183,6 +185,23 @@ void RenderViewSystem::RegenerateRendertargets(IRenderView* view) {
 				Pass, Target->attachments[0].texture->GetWidth(), 
 				Target->attachments[0].texture->GetHeight(),
 				&Pass->Targets[i]);
+		}
+	}
+
+	// resize / rendertarget 重建后，swapchain 附件与 G-Buffer 等纹理的 ImageView 均被
+	// 销毁重建，但 UTexture 对象指针保持不变。VulkanShader::ApplyInstance 的采样器指纹
+	// 仅比较 UTexture 指针，会误判为"无需更新"，导致引用旧 ImageView 的实例描述符集被
+	// 继续绑定，触发 UNASSIGNED-CoreValidation-DrawState-InvalidCommandBuffer-VkDescriptorSet
+	// 校验错误。复位全部 shader 的 sampler generation，强制下一帧 ApplyInstance 重写描述符。
+	{
+		ShaderSystem& SS = ShaderSystem::Get();
+		for (auto& Pair : SS.Shaders) {
+			UShader* S = Pair.Value;
+			if (!S) continue;
+			VulkanShader* VkShader = dynamic_cast<VulkanShader*>(S);
+			if (VkShader) {
+				VkShader->ResetInstanceSamplerGenerations();
+			}
 		}
 	}
 }

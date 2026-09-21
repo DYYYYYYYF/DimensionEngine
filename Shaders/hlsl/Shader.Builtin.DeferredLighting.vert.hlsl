@@ -24,7 +24,6 @@ struct VSInput
 struct VSOutput
 {
     float4 position : SV_POSITION;
-    [[vk::location(0)]] float  out_time        : TEXCOORD0;
     [[vk::location(1)]] float2 vTexcoord       : TEXCOORD1;
     [[vk::location(2)]] float4 ambient_color   : COLOR0;
     [[vk::location(3)]] float3 view_position   : VECTOR0;
@@ -65,7 +64,6 @@ VSOutput main(VSInput input)
     }
     
     // 传递数据
-    output.out_time = GlobalUBO.global_time;
     // 环境光由光照 Actor 通过全局 UBO 提供
     output.ambient_color = GlobalUBO.ambient_color;
     output.view_position = float3(0, 0, 0); // 需要从别处获取

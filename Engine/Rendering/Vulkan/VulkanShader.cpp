@@ -394,27 +394,45 @@ bool VulkanShader::ApplyInstance() {
 		uint32_t MaxSamplerCount = (uint32_t)std::min<size_t>(TotalSamplerCount, State.instance_texture_maps.Size());
 		MaxSamplerCount = std::min(MaxSamplerCount, (uint32_t)VULKAN_SHADER_MAX_INSTANCE_TEXTURES);
 
-		// 先比较指纹：全部一致说明本帧已按当前纹理集写入，跳过 update
+		// 同帧防重复 update 硬守卫：同一渲染帧内每个 instance 描述符集最多 update 一次。
+		// 同父材质多实例共享同一 instance 槽时，后续实例 SetUniform 会覆盖
+		// instance_texture_maps 导致指纹误判"需重写"，若不加此守卫会在命令缓冲
+		// 录制期内对已绑定的描述符集连续 update，触发
+		// UNASSIGNED-CoreValidation-DrawState-InvalidCommandBuffer-VkDescriptorSet。
 		bool bFingerprintMatches = true;
-		for (uint32_t i = 0; i < MaxSamplerCount; ++i) {
-			FTextureMap* Map = State.instance_texture_maps[i];
-			UTexture* Tex = Map ? Map->texture : nullptr;
-			if (Tex && !Tex->IsLoaded()) {
-				TextureSystem& TextureSys = TextureSystem::Get();
-				switch (Map->usage) {
-				case eTexture_Usage_Map_Normal:
-					Tex = TextureSys.GetDefaultNormalTexture(); break;
-				case eTexture_Usage_Map_Specular:
-					Tex = TextureSys.GetDefaultSpecularTexture(); break;
-				case eTexture_Usage_Map_RoughnessMetallic:
-					Tex = TextureSys.GetDefaultRoughnessMetallicTexture(); break;
-				default:
-					Tex = TextureSys.GetDefaultDiffuseTexture(); break;
+		if (State.sampler_updated_frame[FrameSlot] == RenderFrameNumber) {
+			// 本帧已处理过该 set：第二次起仅 bind，跳过指纹判断与重写。
+			bFingerprintMatches = true;
+		} else {
+			// 本帧首次处理：先记录帧号（无论是否实际重写），确保同帧内后续
+			// 实例（共享 instance 槽）只做 bind，避免录制期重复 update。
+			State.sampler_updated_frame[FrameSlot] = RenderFrameNumber;
+
+			// 本帧尚未 update：按指纹判断是否需要（重新）写入。注意 generation 为
+			// INVALID_ID 时（如 rendertarget/swapchain 纹理因 resize 重建 ImageView
+			// 后由 RenderViewSystem 复位）必须强制重写，不能仅凭 UTexture 指针相同
+			// 就跳过——指针不变但 ImageView 可能已销毁重建，继续绑定旧描述符集
+			// 会触发 UNASSIGNED-CoreValidation-DrawState-InvalidCommandBuffer-VkDescriptorSet。
+			for (uint32_t i = 0; i < MaxSamplerCount; ++i) {
+				FTextureMap* Map = State.instance_texture_maps[i];
+				UTexture* Tex = Map ? Map->texture : nullptr;
+				if (Tex && !Tex->IsLoaded()) {
+					TextureSystem& TextureSys = TextureSystem::Get();
+					switch (Map->usage) {
+					case eTexture_Usage_Map_Normal:
+						Tex = TextureSys.GetDefaultNormalTexture(); break;
+					case eTexture_Usage_Map_Specular:
+						Tex = TextureSys.GetDefaultSpecularTexture(); break;
+					case eTexture_Usage_Map_RoughnessMetallic:
+						Tex = TextureSys.GetDefaultRoughnessMetallicTexture(); break;
+					default:
+						Tex = TextureSys.GetDefaultDiffuseTexture(); break;
+					}
 				}
-			}
-			if (FrameFingerprint[i] != Tex) {
-				bFingerprintMatches = false;
-				break;
+				if (FrameFingerprint[i] != Tex || *SamplerGeneration == INVALID_ID) {
+					bFingerprintMatches = false;
+					break;
+				}
 			}
 		}
 
@@ -463,6 +481,7 @@ bool VulkanShader::ApplyInstance() {
 					.setPImageInfo(ImageInfoStore.data());
 				DescriptorWrites.push_back(SamplerWrite);
 				*SamplerGeneration = 1;
+				State.sampler_updated_frame[FrameSlot] = RenderFrameNumber;
 			}
 		}
 	}
@@ -499,6 +518,7 @@ void VulkanShader::ResetInstanceSamplerGenerations() {
 		VulkanDescriptorState& DS = State.descriptor_set_state.descriptor_states[SamplerBindingIndex];
 		for (uint32_t f = 0; f < 3; ++f) {
 			DS.generations[f] = INVALID_ID;
+			State.sampler_updated_frame[f] = INVALID_ID;
 		}
 	}
 }
@@ -761,6 +781,7 @@ bool VulkanShader::CreateUniformBuffer() {
 bool VulkanShader::CreatePipeline() {
 	VulkanRHI* vkRenderer = static_cast<VulkanRHI*>(Renderer->GetRenderBackend());
 	VulkanContext& Context = vkRenderer->Context;
+	GLOG(Log::eDebug, "VulkanShader::CreatePipeline: shader '%s' attribute_count=%u stride=%u", Name.CStr(), (uint32_t)Attributes.Size(), AttributeStride);
 
 	RequiredUboAlignment = Context.Device.GetDeviceProperties().limits.minUniformBufferOffsetAlignment;
 	GlobalUboStride = PaddingAligned(GlobalUboSize, RequiredUboAlignment);

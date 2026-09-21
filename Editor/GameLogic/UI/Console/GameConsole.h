@@ -1,6 +1,7 @@
 ﻿#include <Core/Event.hpp>
 #include <Platform/Thread/DMutex.hpp>
 #include <Framework/Classes/Actor.h>
+#include <Math/MathTypes.hpp>
 
 class IFont;
 class IRenderer;
@@ -14,6 +15,9 @@ public:
 public:
 	virtual bool Initialize() override;
 	virtual void Tick(float DeltaTime) override;
+
+	// 由编辑器 Log 窗口设置面板整体位置（日志文本 + 命令输入行）
+	void SetPanelLocation(const Vector3& Pos);
 
 	void MoveUp();
 	void MoveDown();

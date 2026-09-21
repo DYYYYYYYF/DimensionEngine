@@ -18,9 +18,7 @@ cull_mode=none
 #triangle_list / triangle_strip
 #primitive_topology=triangle_strip
 
-# Attributes: type,name (minimal for fullscreen quad)
-attribute=vec3,in_position
-attribute=vec2,in_texcoord
+# Attributes: type,name (none — fullscreen quad generated via SV_VertexID, no vertex buffer bound)
 
 # Uniforms: type,scope,name
 # NOTE: For scope: 0=global, 1=instance, 2=local

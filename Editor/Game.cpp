@@ -8,7 +8,6 @@
 #include <Scene/World.h>
 #include "UI/Console/GameConsole.h"
 #include "GameLogic/UI/WindowDataPanel.h"
-#include "GameLogic/UI/UISampleActor.h"
 
 // TODO: Temp
 #include "UI/Console/Keybinds.h"
@@ -80,6 +79,19 @@ void GameInstance::FlushDeferredDestroys() {
 		DeleteObject(Actor);
 	}
 	PendingDestroyActors.Clear();
+}
+
+// 滚轮事件回调：WM_MOUSEWHEEL 归一化为 ±1 写入 context.data.u8[0]，
+// 此处累加进 GameInstance::WheelDelta，由 Update 消费（相机 dolly 缩放）后清零。
+bool GameOnWheel(eEventCode code, void* sender, void* listener_instance, SEventContext context) {
+	GameInstance* GameInst = (GameInstance*)listener_instance;
+	if (code == eEventCode::Mouse_Wheel) {
+		if (GameInst) {
+			GameInst->WheelDelta += (int)((signed char)context.data.u8[0]);
+		}
+		return true;
+	}
+	return false;
 }
 
 bool GameOnDebugEvent(eEventCode code, void* sender, void* listener_instance, SEventContext context) {
@@ -178,7 +190,7 @@ bool GameInstance::Initialize() {
 	
 
 	// Create test ui text objects.
-	ATextActor* TestText = NewObject<AWindowDataPanel>("Render information window.");
+	AWindowDataPanel* TestText = NewObject<AWindowDataPanel>("Render information window.");
 	if (TestText) {
 		FString TestTextName = "Ubuntu Mono 21px";
 		FString TestTextContent = "Test! \n Yooo!";
@@ -186,20 +198,6 @@ bool GameInstance::Initialize() {
 		TestText->SetTextFont(TestTextName, UITextType::eUI_Text_Type_Bitmap);
 		TestText->SetActorLocation(Vector3(350, 600, 0));
 		World->AddActor(TestText);
-	}
-
-	// UI 系统演示：Widget 树（垂直盒 + 图片/纯色矩形）渲染
-	UISampleActor* UISample = NewObject<UISampleActor>("UI System Sample");
-	if (UISample) {
-		World->AddActor(UISample);
-	}
-
-	// UI 系统演示说明文字（文本走 RenderViewUI 原有 FTextRenderProxy 路径）
-	ATextActor* UITipText = NewObject<ATextActor>("UI system tip.", UITextType::eUI_Text_Type_System,
-		"Noto Sans CJK JP", 20, "UI System Demo: VerticalBox + ImageWidget (top-left)");
-	if (UITipText) {
-		UITipText->SetActorLocation(Vector3(100, 40, 0));
-		World->AddActor(UITipText);
 	}
 
 	FString TestSystemName = "Noto Sans CJK JP";
@@ -284,7 +282,24 @@ bool GameInstance::Initialize() {
 	EngineEvent::Register(eEventCode::Debug_2, this, GameOnDebugEvent);
 	EngineEvent::Register(eEventCode::Debug_3, this, GameOnDebugEvent);
 	EngineEvent::Register(eEventCode::Object_Hover_ID_Changed, this, GameOnEvent);
+	EngineEvent::Register(eEventCode::Mouse_Wheel, this, GameOnWheel);
 	// TEMP
+
+	// ---- 简易编辑器窗口 ----
+	// 场景视图覆盖层 Actor：顶部工具栏 / 层级大纲 / 属性面板（Widget 树由构造函数构建，
+	// 文本 actor 由 CreateEditorOverlayTexts 创建并注册进 World，两者均复用引擎 UI 系统）。
+	// 必须放在 World->Initialize() 之前 AddActor，保证所有覆盖层在首帧已注册完成。
+	EditorActor = NewObject<ASimpleEditorActor>("SimpleEditor", this);
+	if (EditorActor) {
+		World->AddActor(EditorActor);
+		EditorActor->CreateEditorOverlayTexts(World);
+
+		// 把场景中原本的三个文本 UI 注册到底部 Log 窗口（内容原样保留，位置由 Log 窗口接管）：
+		// 0=Render（渲染统计面板） 1=Keyboard（按键说明） 2=Console（调试控制台）
+		EditorActor->RegisterLogTextActor(0, TestText, "Render");
+		EditorActor->RegisterLogTextActor(1, TestSysText, "Keyboard");
+		EditorActor->RegisterLogTextActor(2, GameConsole, "Console");
+	}
 
 	// 优先初始化World
 	// World->Actor->Component
@@ -301,41 +316,7 @@ void GameInstance::BeginPlay() {
 
 void GameInstance::Shutdown() {
 	// 序列化数据（必须在 World 销毁前完成：相机与方向光 Actor 的组件此时仍然有效）
-	File MaterialAsset(EDITOR_CONFIG_PATH);
-	if (MaterialAsset.IsExist()) {
-		UCameraComponent* CameraComp = WorldCamera ? WorldCamera->GetCameraComponent() : nullptr;
-		if (!CameraComp) {
-			GLOG(Log::eError, "GameInstance::Shutdown: camera component is nullptr.");
-		}
-
-		JsonObject Content = JsonObject(MaterialAsset);
-		Content.WriteInt("Window.Width", (int)WindowSize.Width);
-		Content.WriteInt("Window.Height", (int)WindowSize.Height);
-		if (CameraComp) {
-			Content.WriteVector3("Camera.Position", CameraComp->GetPosition());
-			Content.WriteVector3("Camera.Rotation", CameraComp->GetEulerAngles());
-		}
-
-		// 方向光配置（方向/颜色/强度/环境光/阴影）写回 Editor/Config.json，下次启动即可复用
-		if (DirectionalLightActor) {
-			DirectionalLightActor->SaveToConfig(Content);
-		}
-
-		// 点光源配置写回：按创建顺序组装 PointLights 数组，下次启动即按此重建
-		JsonObject PointLightArray(JsonObject::Type::eArray);
-		for (APointLightActor* PointLightActor : PointLightActors) {
-			if (!PointLightActor) {
-				continue;
-			}
-
-			JsonObject PointLightConfig(JsonObject::Type::eObject);
-			PointLightActor->SaveToConfig(PointLightConfig);
-			PointLightArray.ArrayPush(PointLightConfig);
-		}
-		Content.Write("PointLights", PointLightArray);
-
-		Content.SaveToFile(MaterialAsset);
-	}
+	SaveSceneConfig();
 
 	if (World) {
 		// Actor示例由World清空
@@ -348,6 +329,7 @@ void GameInstance::Shutdown() {
 	EngineEvent::Unregister(eEventCode::Debug_2, this, GameOnDebugEvent);
 	EngineEvent::Unregister(eEventCode::Debug_3, this, GameOnDebugEvent);
 	EngineEvent::Unregister(eEventCode::Object_Hover_ID_Changed, this, GameOnEvent);
+	EngineEvent::Unregister(eEventCode::Mouse_Wheel, this, GameOnWheel);
 	// TEMP
 }
 
@@ -366,7 +348,21 @@ bool GameInstance::Update(float delta_time) {
 		return false;
 	}
 
-	if (Controller::IsButtonDown(eButtons::Right)) {
+	// 滚轮缩放（dolly）：GameOnWheel 事件回调累积增量，逐帧消费后清零
+	if (WheelDelta != 0) {
+		CameraComp->MoveForward((float)WheelDelta * 1.5f);
+		WheelDelta = 0;
+	}
+
+	// 中键拖拽平移（pan）：场景跟随鼠标方向移动
+	const bool bMiddle = Controller::IsButtonDown(eButtons::Middle);
+	if (bMiddle && (cx != px || cy != py)) {
+		const float PanPerPixel = 0.03f;
+		CameraComp->MoveLeft((float)(cx - px) * PanPerPixel);
+		CameraComp->MoveDown((float)(py - cy) * PanPerPixel);
+	}
+	// 右键拖拽旋转（orbit）：与中键平移互斥，优先中键
+	else if (Controller::IsButtonDown(eButtons::Right)) {
 		if (cx != px) {
 			CameraComp->RotateYaw((px - cx) * MouseMoveSpeed);
 		}
@@ -381,6 +377,74 @@ bool GameInstance::Update(float delta_time) {
 
 void GameInstance::OnResize(unsigned int width, unsigned int height) {
 	WindowSize = { (uint16_t)width, (uint16_t)height };
+}
+
+// 保存当前场景（窗口尺寸 / 相机位姿 / 方向光 / 点光源）到 Editor/Config.json：
+// 供编辑器工具栏 Save 按钮与 Shutdown 共用，须在 World 销毁前调用（相机与灯光 Actor 组件仍有效）。
+void GameInstance::SaveSceneConfig() {
+	File MaterialAsset(EDITOR_CONFIG_PATH);
+	if (!MaterialAsset.IsExist()) {
+		return;
+	}
+
+	UCameraComponent* CameraComp = WorldCamera ? WorldCamera->GetCameraComponent() : nullptr;
+	if (!CameraComp) {
+		GLOG(Log::eError, "GameInstance::SaveSceneConfig: camera component is nullptr.");
+	}
+
+	JsonObject Content = JsonObject(MaterialAsset);
+	Content.WriteInt("Window.Width", (int)WindowSize.Width);
+	Content.WriteInt("Window.Height", (int)WindowSize.Height);
+	if (CameraComp) {
+		Content.WriteVector3("Camera.Position", CameraComp->GetPosition());
+		Content.WriteVector3("Camera.Rotation", CameraComp->GetEulerAngles());
+	}
+
+	// 方向光配置（方向/颜色/强度/环境光/阴影）写回 Editor/Config.json，下次启动即可复用
+	if (DirectionalLightActor) {
+		DirectionalLightActor->SaveToConfig(Content);
+	}
+
+	// 点光源配置写回：按创建顺序组装 PointLights 数组，下次启动即按此重建
+	JsonObject PointLightArray(JsonObject::Type::eArray);
+	for (APointLightActor* PointLightActor : PointLightActors) {
+		if (!PointLightActor) {
+			continue;
+		}
+
+		JsonObject PointLightConfig(JsonObject::Type::eObject);
+		PointLightActor->SaveToConfig(PointLightConfig);
+		PointLightArray.ArrayPush(PointLightConfig);
+	}
+	Content.Write("PointLights", PointLightArray);
+
+	Content.SaveToFile(MaterialAsset);
+}
+
+// 切换编辑器运行状态：Pause 时冻结所有非编辑器 actor 的 tick（编辑器覆盖层仍响应），
+// 恢复（Play / Stop）时全部重新开启。仅切换状态，不暂停渲染。
+void GameInstance::SetEditorPlayState(EditorPlayState NewState) {
+	if (EditorState == NewState) {
+		return;
+	}
+	EditorState = NewState;
+	if (!World) {
+		return;
+	}
+
+	const bool bPause = (NewState == EditorPlayState::Paused);
+	const TArray<AActor*>& Actors = World->GetWorldActors();
+	for (size_t i = 0; i < Actors.Size(); ++i) {
+		AActor* A = Actors[i];
+		if (!A) {
+			continue;
+		}
+		// 编辑器自持 actor（覆盖层 UI + 文本）永远保持 tick，保证面板仍可交互
+		if (EditorActor && EditorActor->IsEditorActor(A)) {
+			continue;
+		}
+		A->SetEnableTick(!bPause);
+	}
 }
 
 void LoadScene1(GameInstance* GameInst) {

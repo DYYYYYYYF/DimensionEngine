@@ -62,6 +62,15 @@ bool DebugConsoleActor::Write(Log::Logger::Level level, const std::string& msg) 
 	return true;
 }
 
+void DebugConsoleActor::SetPanelLocation(const Vector3& Pos) {
+	if (ConsolePanelComponent) {
+		ConsolePanelComponent->SetLocation(Pos);
+	}
+	if (EntryPanelComponent) {
+		EntryPanelComponent->SetLocation(Vector3(Pos.x, Pos.y + 31.0f * DisplayLineCount, 0.0f));
+	}
+}
+
 void DebugConsoleActor::SetVisible(bool visiblable) {
 	Visible = visiblable;
 	if (Visible) {
