@@ -16,6 +16,8 @@ public:
 	virtual void OnDestroy() override;
 	virtual void OnResize(uint32_t width, uint32_t height) override;
 	virtual bool RegenerateAttachmentTarget(uint32_t passIndex, RenderTargetAttachment* attachment) override;
+	// 覆写：视口矩形变化时按新矩形重建 G-Buffer / 投影 / 渲染区域（懒更新，见 UpdateViewportState）
+	virtual void SetViewportRect(const Vector4& rect) override;
 
 	virtual void Render(const TArray<FRenderProxy*>& RenderProxies) override;
 
@@ -138,4 +140,11 @@ private:
 	void UpdateLightSpaceMatrix();
 	// 逐帧从 LightSystem 收集启用的点光源，打包进帧数据（超出 MAX_POINT_LIGHTS 的忽略）
 	void FillPointLightData(FFrameData& FrameData);
+
+	// 应用视口矩形（懒更新基准）。窗口尺寸或视口矩形变化时重建：
+	// 投影矩阵（按视口宽高比）、G-Buffer 纹理（按视口尺寸）、pass 渲染区域、渲染目标。
+	void UpdateViewportState(uint32_t winW, uint32_t winH);
+
+	// 已应用的视口矩形；(0,0,0,0) 表示尚未按视口配置过资源
+	Vector4 AppliedViewportRect = Vector4(0.0f, 0.0f, 0.0f, 0.0f);
 };

@@ -729,9 +729,11 @@ bool VulkanRHI::CreateGeometry(UGeometry* geometry, const FGeometryConfig& confi
 	const bool bHostVisible = config.bHostVisible;
 	VulkanBuffer* VertexBuffer = bHostVisible ? Context.UIObjectVertexBuffers[CurrentUIHostBufferIndex] : Context.ObjectVertexBuffer;
 	VulkanBuffer* IndexBuffer = bHostVisible ? Context.UIObjectIndexBuffers[CurrentUIHostBufferIndex] : Context.ObjectIndexBuffer;
-	// 旧块可能位于另一组缓冲对（双缓冲轮转），释放时必须回到旧块所在缓冲
+	// 旧块可能位于另一组缓冲对（双缓冲轮转），释放时必须回到旧块所在缓冲。
+	// 注意：顶点块与索引块可能位于不同缓冲对（索引省略更新时索引块保留在旧对），
+	// 因此索引释放必须使用 index_buffer_index 而非 host_buffer_index。
 	VulkanBuffer* OldVertexBuffer = InternalData->host_visible ? Context.UIObjectVertexBuffers[InternalData->host_buffer_index] : Context.ObjectVertexBuffer;
-	VulkanBuffer* OldIndexBuffer = InternalData->host_visible ? Context.UIObjectIndexBuffers[InternalData->host_buffer_index] : Context.ObjectIndexBuffer;
+	VulkanBuffer* OldIndexBuffer = InternalData->host_visible ? Context.UIObjectIndexBuffers[InternalData->index_buffer_index] : Context.ObjectIndexBuffer;
 
 	size_t NewVertexOffset = 0;
 	const size_t NewVertexSize = static_cast<size_t>(config.vertex_size) * config.vertex_count;
@@ -780,7 +782,8 @@ bool VulkanRHI::CreateGeometry(UGeometry* geometry, const FGeometryConfig& confi
 		}
 
 		if (!IndexBuffer->Load(NewIndexOffset, NewIndexSize, config.indices)) {
-			IndexBuffer->FreeMemory(NewIndexOffset, NewIndexSize);
+			// 注意：FreeMemory(size, offset)，不要写反参数顺序
+			IndexBuffer->FreeMemory(NewIndexSize, NewIndexOffset);
 			if (!bReuseSameSize) {
 				VertexBuffer->FreeMemory(NewVertexSize, NewVertexOffset);
 			}
@@ -814,6 +817,10 @@ bool VulkanRHI::CreateGeometry(UGeometry* geometry, const FGeometryConfig& confi
 
 	InternalData->host_visible = bHostVisible;
 	InternalData->host_buffer_index = CurrentUIHostBufferIndex;
+	// 索引块所在缓冲对：仅在本帧实际分配新索引块时才更新；
+	// 省略索引更新（bUpdateIndex=false）时旧索引块仍位于 index_buffer_index 记录的对，
+	// 保持原值，否则后续释放会 Free 到错误缓冲对的 freelist（重叠块检测崩溃）。
+	InternalData->index_buffer_index = bUpdateIndex ? CurrentUIHostBufferIndex : InternalData->index_buffer_index;
 
 	if (InternalData->generation == INVALID_ID) {
 		InternalData->generation = 0;
@@ -830,9 +837,10 @@ void VulkanRHI::DestroyGeometry(UGeometry* geometry) {
 		Context.Device.GetLogicalDevice().waitIdle();
 		GeometryData* InternalData = &Geometries[geometry->InternalID];
 
-		// UI 合批几何的块在 host-visible 缓冲对上，按创建时记录的缓冲对下标释放
+		// UI 合批几何的块在 host-visible 缓冲对上，按创建时记录的缓冲对下标释放。
+		// 索引块可能因“省略索引更新”位于与顶点块不同的缓冲对，必须用 index_buffer_index。
 		VulkanBuffer* VertexBuffer = InternalData->host_visible ? Context.UIObjectVertexBuffers[InternalData->host_buffer_index] : Context.ObjectVertexBuffer;
-		VulkanBuffer* IndexBuffer = InternalData->host_visible ? Context.UIObjectIndexBuffers[InternalData->host_buffer_index] : Context.ObjectIndexBuffer;
+		VulkanBuffer* IndexBuffer = InternalData->host_visible ? Context.UIObjectIndexBuffers[InternalData->index_buffer_index] : Context.ObjectIndexBuffer;
 
 		// Free vertex data.
 		VertexBuffer->FreeMemory(InternalData->vertex_element_size * InternalData->vertex_count, InternalData->vertext_buffer_offset);

@@ -57,8 +57,8 @@ public:
 	Vector2 GetWindowOffset() const { return WindowOffset; }
 	void SetWindowOffset(const Vector2& Offset) { WindowOffset = Offset; }
 
-	const std::string& GetApplicationName() const { return ApplicationName; }
-	void SetApplicationName(const std::string& Name) { ApplicationName = Name; }
+	const FString& GetApplicationName() const { return ApplicationName; }
+	void SetApplicationName(const FString& Name) { ApplicationName = Name; }
 
 	const FontSystemConfig& GetFontConfig() const { return FontConfig; }
 
@@ -71,7 +71,7 @@ public:
 	float DeltaTime;
 
 protected:
-	std::string ApplicationName;
+	FString ApplicationName;
 	Vector2 WindowOffset;
 	WindowRect WindowSize;
 	FontSystemConfig FontConfig;

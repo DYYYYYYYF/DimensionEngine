@@ -20,7 +20,12 @@ struct GeometryData {
 	size_t index_buffer_offset = 0;
 	// 合批 UI 专用：几何数据所在的 host-visible 缓冲对（双缓冲轮转）
 	bool host_visible = false;
+	// 顶点块所在缓冲对（host-visible 双缓冲轮转）
 	uint32_t host_buffer_index = 0;
+	// 索引块所在缓冲对：顶点与索引可能因“省略索引更新”位于不同缓冲对，
+	// 释放索引块时必须回到本字段记录的缓冲对，否则会 Free 到错误的 freelist
+	// 导致重叠块检测命中（Node==nullptr）崩溃。
+	uint32_t index_buffer_index = 0;
 };
 
 class DAPI GeometrySystem {

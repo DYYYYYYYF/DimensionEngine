@@ -139,14 +139,17 @@ bool RenderViewWorldDeferred::OnCreate(const RenderViewConfig& config) {
 	FarClip = 1000.0f;
 	Fov = Deg2Rad(45.0f);
 
-	ProjectionMatrix = Matrix4::Perspective(Fov, (float)config.width / config.height, NearClip, FarClip);
+	// 投影矩阵按有效视口矩形（未设置时回退全窗口）的宽高比计算
+	const Vector4 ViewRect = ResolveViewportRect(config.width, config.height);
+	ProjectionMatrix = Matrix4::Perspective(Fov, ViewRect.z / ViewRect.w, NearClip, FarClip);
+	AppliedViewportRect = ViewRect;
 	WorldCamera = CameraSystem::Get().GetMainCamera();
 
 	// 环境光与方向光参数统一由场景中的方向光 Actor 提供，
 	// 每次计算光空间矩阵时从 LightSystem 刷新（见 UpdateLightSpaceMatrix）
 
-	// 创建G-Buffer纹理
-	if (!CreateGBufferTextures(config.width, config.height)) {
+	// 创建G-Buffer纹理（尺寸与视口矩形一致，保证渲染区域等于视口）
+	if (!CreateGBufferTextures((uint32_t)ViewRect.z, (uint32_t)ViewRect.w)) {
 		GLOG(Log::eError, "Failed to create G-Buffer textures.");
 		return false;
 	}
@@ -157,8 +160,12 @@ bool RenderViewWorldDeferred::OnCreate(const RenderViewConfig& config) {
 		return false;
 	}
 
-	// 阴影通道的渲染区域固定为阴影贴图尺寸（配置里的默认渲染区域是窗口尺寸，会只渲染到贴图的一部分）
+	// 各通道渲染区域显式设置，避免沿用配置里的全窗口默认值（会与视口/附件尺寸不匹配）：
+	// pass0=阴影贴图尺寸；pass1=视口尺寸（G-Buffer 纹理原点即视口原点）；
+	// pass2=窗口中央视口矩形（输出到全窗口 swapchain，渲染区域必须与动态视口/裁剪一致）
 	Passes[0].SetRenderArea(Vector4(0.0f, 0.0f, (float)SHADOW_MAP_SIZE, (float)SHADOW_MAP_SIZE));
+	Passes[1].SetRenderArea(Vector4(0.0f, 0.0f, ViewRect.z, ViewRect.w));
+	Passes[2].SetRenderArea(ViewRect);
 
 	if (!EngineEvent::Register(eEventCode::Default_Rendertarget_Refresh_Required, this, RenderViewWorldDeferredOnEvent)) {
 		GLOG(Log::eError, "Unable to listen for refresh required event, creation failed.");
@@ -189,19 +196,52 @@ void RenderViewWorldDeferred::OnResize(uint32_t width, uint32_t height) {
 
 	Width = (uint16_t)width;
 	Height = (uint16_t)height;
-	ProjectionMatrix = Matrix4::Perspective(Fov, (float)Width / (float)Height, NearClip, FarClip);
 
-	// 重新创建G-Buffer纹理
+	// 窗口尺寸已变化：旧的视口矩形（若存在）相对新窗口已失效，
+	// 置空已应用基准，迫使 UpdateViewportState 在下一帧按新窗口重新解析并重建资源。
+	AppliedViewportRect = Vector4(0.0f, 0.0f, 0.0f, 0.0f);
+	UpdateViewportState(width, height);
+}
+
+void RenderViewWorldDeferred::SetViewportRect(const Vector4& rect) {
+	IRenderView::SetViewportRect(rect);
+	// 视口矩形变化时立即按新矩形重建资源（懒更新基准比对保证幂等）
+	UpdateViewportState(Width, Height);
+}
+
+void RenderViewWorldDeferred::UpdateViewportState(uint32_t winW, uint32_t winH) {
+	// 解析有效视口矩形：未设置（宽或高为 0）时回退为全窗口
+	const Vector4 ViewRect = ResolveViewportRect(winW, winH);
+	if (ViewRect.x == AppliedViewportRect.x && ViewRect.y == AppliedViewportRect.y &&
+		ViewRect.z == AppliedViewportRect.z && ViewRect.w == AppliedViewportRect.w) {
+		// 视口未变化：无需重建任何资源
+		return;
+	}
+	AppliedViewportRect = ViewRect;
+
+	const uint32_t ViewW = (uint32_t)ViewRect.z;
+	const uint32_t ViewH = (uint32_t)ViewRect.w;
+
+	// 投影矩阵按视口宽高比更新，保证渲染画面不变形
+	ProjectionMatrix = Matrix4::Perspective(Fov, (float)ViewW / (float)ViewH, NearClip, FarClip);
+
+	// 重新创建G-Buffer纹理（尺寸与视口矩形一致）
 	DestroyGBufferTextures();
-	CreateGBufferTextures(width, height);
+	CreateGBufferTextures(ViewW, ViewH);
 
 	for (uint32_t i = 0; i < RenderpassCount; ++i) {
-		// pass 0 = 阴影通道：渲染区域固定为阴影贴图尺寸；其余通道跟随窗口尺寸
+		// pass 0 = 阴影通道：渲染区域固定为阴影贴图尺寸；
+		// pass 1 = G-Buffer：输出到视口尺寸纹理，渲染区域与纹理原点一致；
+		// pass 2 = 延迟光照：输出到全窗口 swapchain，渲染区域必须与动态视口/裁剪一致（窗口中央视口矩形），
+		//          否则视口偏移后会越出渲染区域（Vulkan 非法状态），四周 UI 区域也不应被触碰（保留 Skybox 底色）
 		if (i == 0) {
 			Passes[i].SetRenderArea(Vector4(0, 0, (float)SHADOW_MAP_SIZE, (float)SHADOW_MAP_SIZE));
 		}
+		else if (i == 1) {
+			Passes[i].SetRenderArea(Vector4(0, 0, (float)ViewW, (float)ViewH));
+		}
 		else {
-			Passes[i].SetRenderArea(Vector4(0, 0, (float)Width, (float)Height));
+			Passes[i].SetRenderArea(ViewRect);
 		}
 
 		// 更新所有渲染目标的纹理引用
@@ -246,6 +286,9 @@ void RenderViewWorldDeferred::OnResize(uint32_t width, uint32_t height) {
 			// 光照通道使用swapchain，无需更新纹理引用
 		}
 	}
+
+	// 纹理引用更新后重建渲染目标（framebuffer），使附件尺寸与视口一致
+	RenderViewSystem::Get().RegenerateRendertargets(this);
 }
 
 bool RenderViewWorldDeferred::RegenerateAttachmentTarget(uint32_t passIndex, RenderTargetAttachment* attachment) {
@@ -341,6 +384,10 @@ void RenderViewWorldDeferred::Render(const TArray<FRenderProxy*>& RenderProxies)
 			return;
 		}
 	}
+
+	// 兜底：窗口尺寸或视口矩形变化后的资源重建（幂等，视口未变化时零开销）
+	UpdateViewportState(Width, Height);
+	const Vector4 ViewRect = ResolveViewportRect(Width, Height);
 
 	// 逐帧刷新光空间矩阵（阴影通道与延迟光照通道都依赖它）
 	UpdateLightSpaceMatrix();
@@ -501,8 +548,23 @@ void RenderViewWorldDeferred::Render(const TArray<FRenderProxy*>& RenderProxies)
 	}
 
 	GBufferPass->Begin(GBufferTarget);
+
+	// G-Buffer 通道输出到视口尺寸的纹理：显式设置视口/裁剪为视口矩形，
+	// 否则后端默认的窗口尺寸动态视口会把光栅化铺满整张纹理（比例与位置都错误）。
+	// 注意必须使用负高度视口 (0, vh, vw, -vh) 翻转 NDC y：引擎投影为 OpenGL 风格
+	// （NDC y 向上，后端默认视口即为负高度翻转），若像本处旧代码那样用正高度
+	// (0,0,vw,vh)，会把场景垂直镜像写入 G-Buffer 纹理；
+	// 而延迟光照全屏三角形按 vTexcoord（v=0 对应窗口顶部）采样该纹理，
+	// 最终呈现的画面就会上下颠倒。
+	Renderer->SetViewport(Vector4(0.0f, ViewRect.w, ViewRect.z, -ViewRect.w));
+	Renderer->SetScissor(Vector4(0.0f, 0.0f, ViewRect.z, ViewRect.w));
+
 	Renderer->ExecuteDrawCalls(GBufferDrawCalls, SharedFrameNumber, GBufferData);
 	GBufferPass->End();
+
+	// 还原后端默认视口/裁剪，避免影响后续延迟光照通道
+	Renderer->ResetViewport();
+	Renderer->ResetScissor();
 
 	// 阶段五：第 2 通道 —— 延迟光照通道绘制（直接呼叫后端执行，采样阴影贴图）
 	IRenderpass* LightingPass = (IRenderpass*)&Passes[2];
@@ -536,8 +598,19 @@ void RenderViewWorldDeferred::Render(const TArray<FRenderProxy*>& RenderProxies)
 	}
 
 	LightingPass->Begin(LightingTarget);
+
+	// 延迟光照输出到窗口颜色附件（swapchain，全窗口尺寸）：
+	// 视口必须把 NDC 映射到窗口中央的视口矩形（swapchain 坐标 y 向下，负高度视口翻转 NDC y），
+	// 裁剪同样限制在视口矩形，使渲染结果恰好覆盖 UI 留出的中央区域。
+	Renderer->SetViewport(Vector4(ViewRect.x, ViewRect.y + ViewRect.w, ViewRect.z, -ViewRect.w));
+	Renderer->SetScissor(Vector4(ViewRect.x, ViewRect.y, ViewRect.z, ViewRect.w));
+
 	Renderer->ExecuteDrawCalls(LightingDrawCalls, SharedFrameNumber, LightingData);
 	LightingPass->End();
+
+	// 还原后端默认视口/裁剪
+	Renderer->ResetViewport();
+	Renderer->ResetScissor();
 }
 
 bool RenderViewWorldDeferred::CreateGBufferTextures(uint32_t width, uint32_t height) {

@@ -60,7 +60,7 @@ bool Engine::Initialize(){
 
 	// Platform
 	if (!Platform::PlatformStartup(&platform,
-		GameInst->GetApplicationName(),
+		GameInst->GetApplicationName().CStr(),
 		(int)GameInst->GetWindowOffsetX(),
 		(int)GameInst->GetWindowOffsetY(),
 		GameInst->GetWindowWidth(),
@@ -131,7 +131,7 @@ bool Engine::Initialize(){
 	}
 
 	// Render system.
-	if (!Renderer->Initialize(GameInst->GetApplicationName(),Vector2(width, height), &platform)) {
+	if (!Renderer->Initialize(GameInst->GetApplicationName().CStr(),Vector2(width, height), &platform)) {
 		GLOG(Log::eFatal, "Renderer failed to initialize!");
 		return false;
 	}

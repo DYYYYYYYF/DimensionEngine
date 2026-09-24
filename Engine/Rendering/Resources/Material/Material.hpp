@@ -83,6 +83,12 @@ public:
 	uint32_t GetInternalID() const { return InternalID; }
 	void SetInternalID(uint32_t ID) { InternalID = ID; }
 
+	// 为实例分配独立的 instance 槽（不复用父材质的共享槽）。
+	// 同一父材质下若存在多组几何绑定不同纹理（如 UI 合批的矩形组/文字组），共享槽会触发
+	// VulkanShader::ApplyInstance 的“同帧每槽仅更新一次采样器”守卫：后序组复用首组的纹理绑定，
+	// 文字组会采样到首组纹理（白色矩形）而被渲染为白色方块。独立槽让每组拥有独立描述符集。
+	bool AcquireIndependentInstanceSlot();
+
 	void SetFrameNumber(size_t Framenumber) { RenderFrameNumer = Framenumber; }
 	bool IsNeedUpdate(size_t CurrentFramenumber) const { return RenderFrameNumer != CurrentFramenumber; }
 
@@ -100,5 +106,7 @@ private:
 	UMaterial* BaseMaterial;
 	uint32_t InternalID = INVALID_ID;
 	size_t RenderFrameNumer = 0;
+	// 是否为自分配的独立 instance 槽（析构时须显式归还给后端，防止槽位泄漏）
+	bool bHasIndependentSlot = false;
 
 };

@@ -78,6 +78,34 @@ public:
 		}
 	}
 
+	// ── 输入事件（UE 风格 Widget 交互的最小事件系统） ──────────────
+
+	// 命中测试：判断屏幕坐标是否落在本控件矩形内（容器可覆写裁剪规则）
+	virtual bool HitTest(float X, float Y) const {
+		if (!bIsVisible) return false;
+		return X >= PositionX && X <= PositionX + Width &&
+			Y >= PositionY && Y <= PositionY + Height;
+	}
+
+	// 点击事件：命中后触发（Button 等交互控件覆写并消费事件）。
+	// 返回 true 表示事件已被消费，不再继续冒泡。
+	virtual bool OnMouseClick(float X, float Y) { return false; }
+
+	// 从本节点（含子树）分发一次点击：子节点优先（上层覆盖下层），
+	// 任一子节点消费则停止。命中自身时触发 OnMouseClick。
+	// 返回 true 表示事件已被消费。
+	virtual bool DispatchMouseClick(float X, float Y) {
+		if (!bIsVisible) return false;
+		for (auto* Child : Children) {
+			if (!Child) continue;
+			if (Child->DispatchMouseClick(X, Y)) return true;
+		}
+		if (HitTest(X, Y)) {
+			return OnMouseClick(X, Y);
+		}
+		return false;
+	}
+
 protected:
 	UWidget* Parent = nullptr;
 	TArray<UWidget*> Children;

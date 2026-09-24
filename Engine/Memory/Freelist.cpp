@@ -138,6 +138,8 @@ bool Freelist::FreeBlock(size_t size, size_t offset)
 	}
 
 	// 检查和前一个 free block 是否重叠
+	// 注意：此处 Node 可能为 nullptr（offset 位于链表末尾之后），
+	// 日志必须使用非空的 Prev 信息，禁止解引用 Node（read access violation）。
 	if (Prev != nullptr) {
 		const size_t PrevEnd = Prev->offset + Prev->size;
 
@@ -149,9 +151,9 @@ bool Freelist::FreeBlock(size_t size, size_t offset)
 				offset,
 				offset + size,
 				size,
-				Node->offset,
-				Node->offset + Node->size,
-				Node->size);
+				Prev->offset,
+				Prev->offset + Prev->size,
+				Prev->size);
 			return false;
 		}
 	}

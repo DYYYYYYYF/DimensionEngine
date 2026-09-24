@@ -71,7 +71,9 @@ bool RenderViewSkybox::OnCreate(const RenderViewConfig& config) {
 	Fov = Deg2Rad(45.0f);
 
 	// Default
-	ProjectionMatrix = Matrix4::Perspective(Fov, (float)config.width / config.height, NearClip, FarClip);
+	const Vector4 ViewRect = ResolveViewportRect(config.width, config.height);
+	ProjectionMatrix = Matrix4::Perspective(Fov, ViewRect.z / ViewRect.w, NearClip, FarClip);
+	AppliedViewportRect = ViewRect;
 	WorldCamera = CameraSystem::Get().GetMainCamera();
 
 	if (!EngineEvent::Register(eEventCode::Default_Rendertarget_Refresh_Required, this, RenderViewSkyboxOnEvent)) {
@@ -95,11 +97,28 @@ void RenderViewSkybox::OnResize(uint32_t width, uint32_t height) {
 
 	Width = (uint16_t)width;
 	Height = (uint16_t)height;
-	ProjectionMatrix = Matrix4::Perspective(Fov, (float)Width / (float)Height, NearClip, FarClip);
+
+	// 窗口尺寸已变化：旧的视口矩形（若存在）相对新窗口已失效，强制下次按新窗口解析
+	AppliedViewportRect = Vector4(0.0f, 0.0f, 0.0f, 0.0f);
+	const Vector4 ViewRect = ResolveViewportRect(width, height);
+	ProjectionMatrix = Matrix4::Perspective(Fov, ViewRect.z / ViewRect.w, NearClip, FarClip);
+	AppliedViewportRect = ViewRect;
 
 	for (uint32_t i = 0; i < RenderpassCount; ++i) {
 		Passes[i].SetRenderArea(Vector4(0, 0, (float)Width, (float)Height));
 	}
+}
+
+void RenderViewSkybox::SetViewportRect(const Vector4& rect) {
+	IRenderView::SetViewportRect(rect);
+	// 按视口宽高比更新投影（懒更新基准比对保证幂等）
+	const Vector4 ViewRect = ResolveViewportRect(Width, Height);
+	if (ViewRect.x == AppliedViewportRect.x && ViewRect.y == AppliedViewportRect.y &&
+		ViewRect.z == AppliedViewportRect.z && ViewRect.w == AppliedViewportRect.w) {
+		return;
+	}
+	AppliedViewportRect = ViewRect;
+	ProjectionMatrix = Matrix4::Perspective(Fov, ViewRect.z / ViewRect.w, NearClip, FarClip);
 }
 
 bool RenderViewSkybox::RegenerateAttachmentTarget(uint32_t passIndex, RenderTargetAttachment* attachment) {
@@ -159,6 +178,17 @@ void RenderViewSkybox::Render(const TArray<FRenderProxy*>& RenderObejcts) {
 	uint64_t FrameNumber = Renderer->GetFrameNum();
 
 	SkyboxPass->Begin(&SkyboxPass->Targets[RTIndex]);
+
+	// Skybox 输出到全窗口 swapchain：视口/裁剪限制到窗口中央的视口矩形，
+	// 使天空盒仅填充编辑器留出的渲染区域，四周被 UI 面板遮挡/覆盖。
+	const Vector4 ViewRect = ResolveViewportRect(Width, Height);
+	Renderer->SetViewport(Vector4(ViewRect.x, ViewRect.y + ViewRect.w, ViewRect.z, -ViewRect.w));
+	Renderer->SetScissor(Vector4(ViewRect.x, ViewRect.y, ViewRect.z, ViewRect.w));
+
 	Renderer->ExecuteDrawCalls(DrawCalls, FrameNumber, Data);
 	SkyboxPass->End();
+
+	// 还原后端默认视口/裁剪
+	Renderer->ResetViewport();
+	Renderer->ResetScissor();
 }

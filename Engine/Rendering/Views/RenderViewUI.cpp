@@ -159,7 +159,13 @@ void RenderViewUI::Render(const TArray<FRenderProxy*>& RenderObejcts) {
 				dc.material = Mat;
 				dc.shader = UsedShader;
 				dc.userData = nullptr;
-				dc.sortKey = ((uint64_t)dc.shader->ID << 32) | (uint64_t)Mat->GetInternalID();
+				// 文字必须绘制在所有 UI 矩形之上：DrawCall.sortKey 是 uint32_t
+				// （shaderID<<32 赋值会被截断为 materialID），矩形走 UIBatched 合批路径
+				// 按材质 ID 排序，顺序不可控，半透明面板背景/边框会盖住文字
+				// （表现即"文字被一层透明层遮住"）。
+				// 这里把文字 sortKey 直接置为 uint32 最大值，确保文字始终最后绘制、
+				// 处于 UI 最上层。
+				dc.sortKey = 0xFFFFFFFFu;
 
 				UIDrawCalls.Push(dc);
 				continue;
@@ -171,6 +177,11 @@ void RenderViewUI::Render(const TArray<FRenderProxy*>& RenderObejcts) {
 				FUIRenderProxy* UIProxy = static_cast<FUIRenderProxy*>(RenderProxy);
 				// 合批 shader 可用时用合批路径；否则回退原 UI shader 逐几何绘制
 				UShader* UIShader = BatchedShader ? BatchedShader : UsedShader;
+				// 组序：UI 合批几何按纹理分组（组0=矩形/高亮，组1=文字等），
+				// 同材质 DrawCall 此前 sortKey 相同导致 std::sort 顺序不稳定，
+				// 面板背景矩形可能覆盖文字（表现：文字消失/显示异常）。
+				// 组序编入低 16 位，保证同材质组内按首现顺序稳定绘制（后组覆盖前组）。
+				uint32_t GroupIndex = 0;
 				for (UGeometry* Geometry : UIProxy->GetMesh()) {
 					if (!Geometry) continue;
 
@@ -186,7 +197,8 @@ void RenderViewUI::Render(const TArray<FRenderProxy*>& RenderObejcts) {
 					dc.material = Mat;
 					dc.shader = UIShader;
 					dc.userData = nullptr;
-					dc.sortKey = ((uint64_t)dc.shader->ID << 32) | (uint64_t)Mat->GetInternalID();
+					dc.sortKey = ((uint32_t)Mat->GetInternalID() << 16) | (uint32_t)(GroupIndex & 0xFFFFu);
+					++GroupIndex;
 
 					UIDrawCalls.Push(dc);
 				}

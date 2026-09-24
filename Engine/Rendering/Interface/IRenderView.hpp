@@ -58,6 +58,19 @@ public:
 	virtual TArray<class VulkanRenderPass>& GetRenderpass() { return Passes; }
 
 public:
+	// ---- 视口矩形（窗口坐标系：x=水平偏移, y=垂直偏移, z=宽度, w=高度）----
+	// 默认 (0,0,0,0) 表示未设置，视图渲染时回退为全窗口。
+	virtual void SetViewportRect(const Vector4& rect) { ViewportRect = rect; }
+	virtual const Vector4& GetViewportRect() const { return ViewportRect; }
+	// 解析有效视口矩形：未设置（宽或高为 0）时回退为全窗口。
+	Vector4 ResolveViewportRect(uint32_t winW, uint32_t winH) const {
+		if (ViewportRect.z > 0.0f && ViewportRect.w > 0.0f) {
+			return ViewportRect;
+		}
+		return Vector4(0.0f, 0.0f, (float)winW, (float)winH);
+	}
+
+public:
 	uint16_t ID = INVALID_ID_U16;
 	FString Name;
 	uint16_t Width = 1920;
@@ -71,6 +84,11 @@ public:
 	// 绑定各自的多缓冲资源（如按 swapchain 图像索引区分的 G-Buffer 套件、阴影贴图）。
 	// 默认 0，对不读取该字段的视图保持原有行为。
 	uint32_t RegeneratingTargetIndex = 0;
+
+	// 视口矩形（窗口坐标系：x=水平偏移, y=垂直偏移, z=宽度, w=高度）。
+	// 默认 (0,0,0,0) 表示未设置，ResolveViewportRect 会回退为全窗口。
+	Vector4 ViewportRect = Vector4(0.0f, 0.0f, 0.0f, 0.0f);
+
 	FString CustomShaderName;
 	EShaderRenderMode render_mode = EShaderRenderMode::eShader_Render_Mode_Default;
 

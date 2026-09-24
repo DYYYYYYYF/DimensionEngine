@@ -274,6 +274,14 @@ bool UUIWidgetComponent::RebuildGeometry() {
 			FTextureMap TextureMap;
 			TextureMap.texture = (UTexture*)GroupTex;
 			MaterialInstance->SetTextureOnBinding("diffuse_texture", TextureMap);
+
+			// 关键修复：每组分配独立 instance 槽。UI 合批各组合用父材质 Material.UI.Batched，
+			// 默认继承其共享 InternalID（instance 槽）；VulkanShader::ApplyInstance 的同帧
+			// 采样器守卫只对每个槽每帧更新一次描述符，导致后序组（文字组）复用首组
+			// （矩形白纹理）的绑定，文字被渲染成白色方块/乱码。
+			if (!MaterialInstance->AcquireIndependentInstanceSlot()) {
+				GLOG(Log::eError, "UUIWidgetComponent: failed to acquire independent instance slot for UI batch group %u.", g);
+			}
 		}
 
 		BatchGroups[g].Texture = GroupTextures[g];

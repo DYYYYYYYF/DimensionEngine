@@ -52,11 +52,14 @@ bool DynamicAllocator::Resize(size_t total_size) {
 		return false;
 	}
 
+	// [FIX] 持锁：Resize 会 Destroy 并重建整个 MemoryBlock，必须阻塞其它线程分配。
+	std::lock_guard<std::mutex> lock(Mtx);
+
 	if (TotalSize > 0)  GLOG(Log::eWarn, "Dynamic allocator resize will clear all memory!");
 	if (total_size < TotalSize) GLOG(Log::eWarn, "Dynamic allocator resize from %llu to %llu. Memory will be cut.", TotalSize, total_size);
 
-	// 先清空
-	Destroy();
+	// 先清空（内部实现不加锁，锁由调用方持有，避免同一线程重复锁定 std::mutex）
+	DestroyInternal();
 
 	TotalSize = total_size;
 	if (!List.Create(TotalSize)) {
@@ -73,6 +76,11 @@ bool DynamicAllocator::Resize(size_t total_size) {
 }
 
 bool DynamicAllocator::Destroy() {
+	std::lock_guard<std::mutex> lock(Mtx);
+	return DestroyInternal();
+}
+
+bool DynamicAllocator::DestroyInternal() {
 	if (MemoryBlock != nullptr) {
 		List.Destroy();
 		Platform::PlatformFree(MemoryBlock, false);
@@ -91,6 +99,9 @@ void* DynamicAllocator::Allocate(size_t size) {
 }
 
 void* DynamicAllocator::AllocateAligned(size_t size, size_t alignment) {
+	// [FIX] 持锁：防止 job 线程与主线程并发修改 FreeList 空闲块链表。
+	std::lock_guard<std::mutex> lock(Mtx);
+
 	if (size > 0 && alignment > 0) {
 		// The size required is based on the requested size, plus the alignment, header and a u32 to hold
 		// the size for quick/easy lookups.
@@ -145,6 +156,9 @@ bool DynamicAllocator::Free(void* block, size_t size) {
 }
 
 bool DynamicAllocator::FreeAligned(void* block) {
+	// [FIX] 持锁：与 AllocateAligned 互斥，防止并发 FreeBlock 破坏空闲链表。
+	std::lock_guard<std::mutex> lock(Mtx);
+
 	if (block == nullptr || MemoryBlock == nullptr) {
 		GLOG(Log::eError, "DynamicAllocator::FreeAligned(): Free requires a valid block (0x%p).", block);
 		return false;

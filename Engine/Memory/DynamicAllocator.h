@@ -14,6 +14,8 @@
 #include "Defines.hpp"
 #include "Memory/Freelist.hpp"
 
+#include <mutex>
+
 class DAPI DynamicAllocator {
 public:
 	DynamicAllocator();
@@ -37,6 +39,11 @@ public:
 	 * @return True on success.
 	 */
 	bool Destroy();
+
+	/**
+	 * @brief Internal destroy without locking. Caller MUST hold Mtx.
+	 */
+	bool DestroyInternal();
 
 	/**
 	 * @brief Allocates the given amount of memory from the allocator.
@@ -103,4 +110,9 @@ private:
 	size_t TotalSize;
 	Freelist List;
 	void* MemoryBlock;
+
+	// [FIX] 多线程安全：纹理加载 job 线程与主线程（UI/Editor）会并发 Allocate/Free，
+	// 原实现无锁导致 FreeList 空闲块链表并发损坏 → 内存块错乱/悬垂 → 崩溃。
+	// 所有会改动 FreeList 或 MemoryBlock 的操作必须持有该互斥锁。
+	mutable std::mutex Mtx;
 };

@@ -476,7 +476,14 @@ uint32_t FString::UTF8Length(const FString& str) {
 		else if ((c & 0xE0) == 0xC0)  i += 2;
 		else if ((c & 0xF0) == 0xE0)  i += 3;
 		else if ((c & 0xF8) == 0xF0)  i += 4;
-		else { GLOG(Log::eError, "Invalid UTF-8 sequence"); return 0; }
+		else {
+			// 节流：非法 UTF-8 会被每帧重复统计，全量打印会刷爆日志
+			static uint32_t sInvalidUtf8LengthCounter = 0;
+			if ((sInvalidUtf8LengthCounter++ % 60) == 0) {
+				GLOG(Log::eError, "Invalid UTF-8 sequence");
+			}
+			return 0;
+		}
 	}
 	return length;
 }

@@ -242,6 +242,18 @@ LRESULT CALLBACK win32_process_message(HWND hwnd, UINT32 msg, WPARAM w_param, LP
 		}break;
 		case WM_MOUSEWHEEL: {
 			int DeltaZ = GET_WHEEL_DELTA_WPARAM(w_param);
+			{
+				static int WheelMsgCount = 0;
+				if (WheelMsgCount < 20) {
+					WheelMsgCount++;
+					FILE* WT = nullptr;
+					fopen_s(&WT, "C:/Users/dongyf/AppData/Roaming/Tencent/Marvis/User/oAN1i2WRMFSrJ52wfk3jOkgo9DVc/workspace/conv_d5042d99ddef4e598969646c91ea7532/temp/wheel_trace.txt", "a");
+					if (WT) {
+						fprintf(WT, "WM_MOUSEWHEEL wParam=0x%llX DeltaZ=%d\n", (unsigned long long)w_param, DeltaZ);
+						fclose(WT);
+					}
+				}
+			}
 			if (DeltaZ != 0) {
 				DeltaZ = (DeltaZ < 0) ? -1 : 1;
 				Controller::ProcessMouseWheel((char)DeltaZ);

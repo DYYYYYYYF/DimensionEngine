@@ -303,6 +303,12 @@ bool UTextComponent::BuildGeometry() {
 
 		if (TextMaterial && TextMaterial->IsTextureBindingExist("diffuse_texture")) {
 			TextMaterial->SetTextureOnBinding("diffuse_texture", TextFont->GetAtlas());
+
+			// 独立 instance 槽：防止多个文本几何共享父材质槽时，同帧采样器守卫
+			// 只更新首个纹理绑定，导致不同字体 atlas 的文本互相串扰（复用首文本纹理）。
+			if (!TextMaterial->AcquireIndependentInstanceSlot()) {
+				GLOG(Log::eError, "TextComponent: failed to acquire independent instance slot for '%s'.", GetOwner() ? GetOwner()->GetName().CStr() : "?");
+			}
 		}
 	}
 	else {
@@ -328,6 +334,12 @@ bool UTextComponent::BuildGeometry() {
 		UMaterialInstance* TextMaterial = TextGeometry->GetMaterialInstance();
 		if (TextMaterial && TextMaterial->IsTextureBindingExist("diffuse_texture")) {
 			TextMaterial->SetTextureOnBinding("diffuse_texture", TextFont->GetAtlas());
+
+			// 独立 instance 槽：防止多个文本几何共享父材质槽时，同帧采样器守卫
+			// 只更新首个纹理绑定，导致不同字体 atlas 的文本互相串扰（复用首文本纹理）。
+			if (!TextMaterial->AcquireIndependentInstanceSlot()) {
+				GLOG(Log::eError, "TextComponent: failed to acquire independent instance slot for '%s'.", GetOwner() ? GetOwner()->GetName().CStr() : "?");
+			}
 		}
 	}
 

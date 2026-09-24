@@ -2,6 +2,7 @@
 
 #include "UIDrawCallElement.h"
 #include "Containers/TArray.hpp"
+#include "Rendering/Resources/Font/Font.hpp"
 
 /**
  * 屏幕空间 UI 画布渲染器：
@@ -23,6 +24,10 @@ public:
 
 	// 推入一个绘制元素（宽高非正时忽略）
 	void PushElement(const UIDrawCallElement& Element);
+
+	// 推入一段文字：按字体 Atlas 将文本逐字形转换为四边形绘制元素。
+	// X/Y 为文字绘制区域左上角（屏幕坐标，Y 向下）；文字颜色经顶点色调制。
+	void PushText(const FString& Text, float X, float Y, IFont* Font, const Vector4& Color);
 
 	const TArray<UIDrawCallElement>& GetElements() const { return Elements; }
 	uint32_t GetViewportWidth() const { return ViewportWidth; }

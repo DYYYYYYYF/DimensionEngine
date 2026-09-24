@@ -1,5 +1,7 @@
 ﻿#include "Material.hpp"
 #include "Systems/MaterialSystem.h"
+#include "Systems/ShaderSystem.h"
+#include "Rendering/Renderer.hpp"
 
 #include <cstring>
 
@@ -48,10 +50,52 @@ UMaterialInstance::UMaterialInstance(UMaterial* BaseMat) : BaseMaterial(BaseMat)
 }
 
 UMaterialInstance::~UMaterialInstance() {
+	// 独立槽释放：若实例持有自分配的独立 instance 槽（非父材质共享槽），
+	// 必须显式归还给后端，否则每次几何重建都会泄漏槽位/UBO/描述符集。
+	if (bHasIndependentSlot && InternalID != INVALID_ID && BaseMaterial) {
+		UShader* Shader = ShaderSystem::Get().GetByID(BaseMaterial->GetShaderID());
+		IRenderer* Renderer = IRenderer::GetRenderer();
+		if (Shader && Renderer) {
+			Renderer->ReleaseInstanceResource(Shader, InternalID);
+		}
+	}
+
 	if (BaseMaterial) {
 		BaseMaterial->DecreaseReferenceCount();
 		BaseMaterial = nullptr;
 	}
+}
+
+bool UMaterialInstance::AcquireIndependentInstanceSlot() {
+	if (bHasIndependentSlot) {
+		return InternalID != INVALID_ID;
+	}
+
+	if (!BaseMaterial) {
+		return false;
+	}
+
+	UShader* Shader = ShaderSystem::Get().GetByID(BaseMaterial->GetShaderID());
+	if (!Shader) {
+		GLOG(Log::eError, "UMaterialInstance::AcquireIndependentInstanceSlot failed to find shader for material '%s'.", BaseMaterial->GetName().CStr());
+		return false;
+	}
+
+	TArray<FTextureMap*> Maps;
+	for (TextureBinding& TB : TextureBindings) {
+		Maps.Push(&TB.texture);
+	}
+
+	IRenderer* Renderer = IRenderer::GetRenderer();
+	uint32_t NewID = Renderer->AcquireInstanceResource(Shader, Maps);
+	if (NewID == INVALID_ID) {
+		GLOG(Log::eError, "UMaterialInstance::AcquireIndependentInstanceSlot failed to acquire instance resource for material '%s'.", BaseMaterial->GetName().CStr());
+		return false;
+	}
+
+	InternalID = NewID;
+	bHasIndependentSlot = true;
+	return true;
 }
 
 bool UMaterialInstance::IsTextureBindingExist(const FString& UniformName) const {

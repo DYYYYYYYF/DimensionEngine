@@ -215,6 +215,19 @@ void RenderViewSystem::OnWindowResize(uint32_t width, uint32_t height) {
 	}
 }
 
+void RenderViewSystem::SetWorldViewportRect(const Vector4& rect) {
+	for (uint32_t i = 0; i < RegisteredViews.Size(); ++i) {
+		IRenderView* View = RegisteredViews[i];
+		if (View == nullptr) {
+			continue;
+		}
+		// 只推给世界渲染视图（Skybox / Deferred）；UI / Pick 视图按全窗口渲染不受影响
+		if (View->Type == ERenderViewType::Skybox || View->Type == ERenderViewType::Deferred) {
+			View->SetViewportRect(rect);
+		}
+	}
+}
+
 IRenderView* RenderViewSystem::Get(ERenderViewType Type) {
 	if (Initialized) {
 		if (!RegisteredViewMap.Contains(Type)){
