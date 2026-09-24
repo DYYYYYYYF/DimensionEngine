@@ -76,6 +76,14 @@ enum class eEventCode : unsigned int {
 	 */
 	Mouse_Wheel = 0x07,
 
+	// Window moved on screen.
+	/* Context usage:
+	 * int client_origin_x = data.data.i32[0];
+	 * int client_origin_y = data.data.i32[1];
+	 * (客户区左上角屏幕坐标，与 Window.OffsetX/OffsetY 序列化语义一致)
+	 */
+	Window_Moved = 0x0B,
+
 	/**
 	* @brief The hoverd-over object id, if there is one.
 	* Context usage:

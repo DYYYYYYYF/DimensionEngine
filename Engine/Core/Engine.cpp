@@ -57,6 +57,8 @@ bool Engine::Initialize(){
 		std::bind(&Engine::OnEvent, this, std::placeholders::_1, this, std::placeholders::_3, std::placeholders::_4));
 	EngineEvent::Register(eEventCode::Resize, nullptr,
 		std::bind(&Engine::OnResized, this, std::placeholders::_1, this, std::placeholders::_3, std::placeholders::_4));
+	EngineEvent::Register(eEventCode::Window_Moved, nullptr,
+		std::bind(&Engine::OnWindowMoved, this, std::placeholders::_1, this, std::placeholders::_3, std::placeholders::_4));
 
 	// Platform
 	if (!Platform::PlatformStartup(&platform,
@@ -383,4 +385,21 @@ bool Engine::OnResized(eEventCode code, void* sender, void* listener_instance, S
 void Engine::GetFramebufferSize(unsigned int* w, unsigned int* h) {
 	*w = this->width;
 	*h = this->height;
+}
+
+bool Engine::OnWindowMoved(eEventCode code, void* sender, void* listener_instance, SEventContext context) {
+	(void)listener_instance;
+	(void)sender;
+
+	if (code == eEventCode::Window_Moved) {
+		if (GameInst) {
+			// Window_Moved 事件由 PlatformWin32 的 WM_MOVE 触发，data.i32[0/1] 为
+			// 客户区左上角屏幕坐标（客户区原点）。写入 IGame::WindowOffset，
+			// 供 SaveSceneConfig 序列化到 Editor/Config.json 的 Window.OffsetX/Y。
+			GameInst->SetWindowOffsetX(context.data.i32[0]);
+			GameInst->SetWindowOffsetY(context.data.i32[1]);
+		}
+	}
+
+	return true;
 }

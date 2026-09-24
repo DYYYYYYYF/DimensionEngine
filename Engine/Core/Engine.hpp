@@ -28,6 +28,7 @@ public:
 	// Event handlers
 	bool OnEvent(eEventCode code, void* sender, void* listener_instance, SEventContext context);
 	bool OnResized(eEventCode code, void* sender, void* listener_instance, SEventContext context);
+	bool OnWindowMoved(eEventCode code, void* sender, void* listener_instance, SEventContext context);
 
 public:
 	IRenderer* Renderer;

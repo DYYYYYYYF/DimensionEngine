@@ -222,6 +222,18 @@ LRESULT CALLBACK win32_process_message(HWND hwnd, UINT32 msg, WPARAM w_param, LP
 			EngineEvent::Fire(eEventCode::Resize, 0, Context);
 			break;
 		}
+		case WM_MOVE: {
+			// 窗口被拖动/移动：记录客户区左上角屏幕坐标（与序列化 Window.OffsetX/Y 语义一致）。
+			// 注意不能用 lParam（那是窗口外框左上角，含标题栏/边框），必须换算客户区原点，
+			// 才能与创建窗口时 "Offset 作为客户区原点 + AdjustWindowRectEx 得到外框" 的语义闭环。
+			POINT ClientOrigin = { 0, 0 };
+			ClientToScreen(hwnd, &ClientOrigin);
+			SEventContext Context = SEventContext();
+			Context.data.i32[0] = (int)ClientOrigin.x;
+			Context.data.i32[1] = (int)ClientOrigin.y;
+			EngineEvent::Fire(eEventCode::Window_Moved, 0, Context);
+			break;
+		}
 		case WM_KEYDOWN:
 		case WM_SYSKEYDOWN:
 		case WM_KEYUP:
