@@ -22,7 +22,7 @@ extern bool CreateGame(IGame* out_game) {
 	out_game->SetWindowHeight(Content.ReadInt("Window.Height"));
 	out_game->SetWindowOffsetX(Content.ReadInt("Window.OffsetX"));
 	out_game->SetWindowOffsetY(Content.ReadInt("Window.OffsetY"));
-	out_game->SetApplicationName(Content.ReadString("Window.Title")); 
+	out_game->SetApplicationName(Content.ReadString("Window.Title").c_str()); 
 
     return true;
 }

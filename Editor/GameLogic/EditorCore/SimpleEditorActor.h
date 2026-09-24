@@ -10,6 +10,10 @@ class AActor;
 class ATextActor;
 class UImageWidget;
 class UPanelWidget;
+class UAnchorPanelWidget;
+class UScrollBoxWidget;
+class UButtonWidget;
+class IFont;
 class DebugConsoleActor;
 class AWindowDataPanel;
 
@@ -65,6 +69,9 @@ public:
 	bool IsEditorActor(const AActor* Actor) const;
 	const TArray<AActor*>& GetEditorActors() const { return EditorActors; }
 
+	// 中央视口矩形（窗口坐标系：x/y 偏移 + z/w 尺寸），供 GameInstance 将相机操控限制在渲染视口内
+	Vector4 GetViewportRect() const { return Vector4(ViewportX, ViewportY, ViewportW, ViewportH); }
+
 	virtual void Tick(float DeltaTime) override;
 
 private:
@@ -74,8 +81,10 @@ private:
 	void UpdateLayout();
 	// 层级列表（过滤相机 / 编辑器自持 actor）
 	void RebuildHierarchyList(UWorld* World);
-	// 每帧刷新层级行文本
-	void RefreshHierarchyTexts();
+	// 每帧同步层级列表：滚动范围 / 按钮池 / 行文本 / 选中高亮
+	void SyncHierarchyList();
+	// 层级行 Button 点击回调（OnClick 驱动选中与右侧属性刷新）
+	void OnHierarchyButtonClicked(int Row, UButtonWidget* Btn);
 	// 每帧刷新属性面板文本
 	void RefreshPropertiesText();
 	// 每帧刷新工具栏状态
@@ -92,17 +101,25 @@ private:
 	// 属性编辑
 	void ApplyPropertyDelta(float Delta);
 
-	float RowY(int RowIndex) const { return HierarchyRowStartY + RowIndex * (RowHeight + RowGap); }
-
 private:
 	GameInstance* Owner = nullptr;
 
 	// ---- Widget 树（构建于构造函数） ----
 	UPanelWidget* RootPanel = nullptr;
 	UImageWidget* ToolbarBG = nullptr;
+	// 左侧对象列表：UE 风格 —— 锚点 Panel 固定左侧，内套 ScrollBox，ScrollBox 放 Button 列表项
+	UAnchorPanelWidget* HierarchyPanel = nullptr;
 	UImageWidget* HierarchyBG = nullptr;
+	UScrollBoxWidget* HierarchyScrollBox = nullptr;
+	TArray<UButtonWidget*> HierarchyButtons;   // 列表项按钮池（与 DisplayActors 一一对应）
+	IFont* HierarchyFont = nullptr;            // 列表项文字字体（懒加载）
 	UImageWidget* PropertiesBG = nullptr;
-	UImageWidget* SelectionBar = nullptr;
+	// 中央视口容器（UE5 风格）：仅绘制标题条与四边框，渲染区中央不覆盖 UI，
+	// 否则不透明矩形会盖住下方 Skybox/Deferred 的 3D 渲染结果（表现为黑屏）。
+	UImageWidget* ViewportBorderTop = nullptr;    // 标题条 + 上边框
+	UImageWidget* ViewportBorderBottom = nullptr; // 下边框
+	UImageWidget* ViewportBorderLeft = nullptr;   // 左边框
+	UImageWidget* ViewportBorderRight = nullptr;  // 右边框
 	TArray<UImageWidget*> ToolbarButtonWidgets;
 
 	// ---- 工具栏按钮命中矩形 ----
@@ -114,8 +131,8 @@ private:
 	ATextActor* PropertiesTitle = nullptr;
 	ATextActor* PropertiesText = nullptr;
 	ATextActor* ToolbarStatusText = nullptr;
+	ATextActor* ViewportTitle = nullptr;   // 中央视口标题条（UE5 风格视口名称）
 	ATextActor* ToolbarBtnLabels[4] = { nullptr, nullptr, nullptr, nullptr };
-	TArray<ATextActor*> RowTextActors;
 	TArray<AActor*> EditorActors;
 
 	// ---- 层级列表状态 ----
@@ -168,6 +185,11 @@ private:
 	static constexpr float LogTextX = 16.0f;        // 文本内容 x 偏移（相对 LogBG 左）
 	static constexpr float LogTextY = 44.0f;        // 文本内容 y 偏移（相对 LogBG 顶）
 
+	// ---- 中央视口（场景视图）布局参数（UE5 风格：视口居中、四周 UI） ----
+	static constexpr float ViewportGap = 8.0f;        // 视口容器与侧边/底部面板的间距
+	static constexpr float ViewportTitleBarH = 30.0f; // 视口标题条高度
+	static constexpr float ViewportBorder = 3.0f;     // 视口容器内缩边框（渲染区到容器边缘）
+
 	float WindowWidth = 1280.0f;
 	float WindowHeight = 720.0f;
 	float HierarchyPanelH = 658.0f;
@@ -177,6 +199,12 @@ private:
 	float LogY = 520.0f;
 	float LogW = 1280.0f;
 
+	// 中央视口矩形（窗口坐标系：x/y 偏移 + w/h 尺寸），每帧由 UpdateLayout 计算并推送给世界渲染视图
+	float ViewportX = 0.0f;
+	float ViewportY = 0.0f;
+	float ViewportW = 0.0f;
+	float ViewportH = 0.0f;
+
 	// ---- 输入状态 ----
 	bool bPrevLeftDown = false;
 	bool bPrevTabDown = false;
@@ -184,4 +212,7 @@ private:
 
 	// ---- 工具栏反馈 ----
 	float SaveFlashTime = 0.0f;
+
+	// ---- 诊断 ----
+	int DiagFrame = 0;
 };

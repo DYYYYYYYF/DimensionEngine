@@ -6,7 +6,7 @@
         "passes": [
           {
             "name": "Renderpass.Builtin.Skybox",
-            "clear_color": [0.0, 0.0, 0.2, 1.0],
+            "clear_color": [0.10, 0.10, 0.12, 1.0],
             "clear_flags": ["Color"],
             "depth": 1.0,
             "stencil": 0,

@@ -144,15 +144,23 @@ bool GameInstance::Boot() {
 	BmpFontConfig.resourceName = "UbuntuMono21px";
 	BmpFontConfig.size = 21;
 
+	// CJK 位图字体（NotoSans21px.fnt + NotoSans21px_0.png，含 44813 字形）
+	// Hierarchy 列表使用，保证中文 Actor 名可渲染（Bitmap 渲染路径已验证正常）
+	BitmapFontConfig BmpFontConfigCJK;
+	BmpFontConfigCJK.name = "Noto Sans 21px";
+	BmpFontConfigCJK.resourceName = "NotoSans21px";
+	BmpFontConfigCJK.size = 21;
+
 	SystemFontConfig SysFontConfig;
 	SysFontConfig.defaultSize = 20;
 	SysFontConfig.name = "Noto Sans";
 	SysFontConfig.resourceName = "NotoSansCJK";
 
 	FontConfig.autoRelease = false;
-	FontConfig.defaultBitmapFontCount = 1;
-	FontConfig.bitmapFontConfigs = (BitmapFontConfig*)Memory::Allocate(sizeof(BitmapFontConfig) * 1, MemoryType::eMemory_Type_Array);
+	FontConfig.defaultBitmapFontCount = 2;
+	FontConfig.bitmapFontConfigs = (BitmapFontConfig*)Memory::Allocate(sizeof(BitmapFontConfig) * 2, MemoryType::eMemory_Type_Array);
 	new (static_cast<BitmapFontConfig*>(FontConfig.bitmapFontConfigs)) BitmapFontConfig(BmpFontConfig);
+	new (static_cast<BitmapFontConfig*>(FontConfig.bitmapFontConfigs) + 1) BitmapFontConfig(BmpFontConfigCJK);
 	FontConfig.defaultSystemFontCount = 1;
 	FontConfig.systemFontConfigs = (SystemFontConfig*)Memory::Allocate(sizeof(SystemFontConfig) * 1, MemoryType::eMemory_Type_Array);
 	new (static_cast<SystemFontConfig*>(FontConfig.systemFontConfigs)) SystemFontConfig(SysFontConfig);
@@ -210,7 +218,7 @@ bool GameInstance::Initialize() {
 		\nF2: Normal view.\
 		\nF3: Material view.\
 		\nF4: Depth view.";
-	ATextActor* TestSysText = NewObject<ATextActor>("Keyboard map texts.", UITextType::eUI_Text_Type_System, TestSystemName, 25, TestSystemContent);
+	ATextActor* TestSysText = NewObject<ATextActor>("Keyboard map texts.", UITextType::eUI_Text_Type_Bitmap, "Ubuntu Mono 21px", 21, TestSystemContent);
 
 	if (TestSysText) {
 		TestSysText->SetActorLocation(Vector3(100, 600, 0));
@@ -349,26 +357,41 @@ bool GameInstance::Update(float delta_time) {
 	}
 
 	// 滚轮缩放（dolly）：GameOnWheel 事件回调累积增量，逐帧消费后清零
+	// 相机操控仅限中央视口内（UE5 风格：渲染视口居中，四周为 UI 面板，面板上不响应视图操控）
+	bool bInViewport = true;
+	if (EditorActor) {
+		const Vector4 VP = EditorActor->GetViewportRect();
+		bInViewport = (VP.z > 0.0f && VP.w > 0.0f) &&
+			(float)cx >= VP.x && (float)cx <= VP.x + VP.z &&
+			(float)cy >= VP.y && (float)cy <= VP.y + VP.w;
+	}
+
 	if (WheelDelta != 0) {
-		CameraComp->MoveForward((float)WheelDelta * 1.5f);
+		// 鼠标在视口外（UI 面板上）时只清零不缩放，避免残留增量进入视口后相机突然跳动
+		if (bInViewport) {
+			CameraComp->MoveForward((float)WheelDelta * 1.5f);
+		}
 		WheelDelta = 0;
 	}
 
-	// 中键拖拽平移（pan）：场景跟随鼠标方向移动
-	const bool bMiddle = Controller::IsButtonDown(eButtons::Middle);
-	if (bMiddle && (cx != px || cy != py)) {
-		const float PanPerPixel = 0.03f;
-		CameraComp->MoveLeft((float)(cx - px) * PanPerPixel);
-		CameraComp->MoveDown((float)(py - cy) * PanPerPixel);
-	}
-	// 右键拖拽旋转（orbit）：与中键平移互斥，优先中键
-	else if (Controller::IsButtonDown(eButtons::Right)) {
-		if (cx != px) {
-			CameraComp->RotateYaw((px - cx) * MouseMoveSpeed);
+	// 中键拖拽平移（pan）/ 右键拖拽旋转（orbit）：仅在中央视口内响应
+	if (bInViewport) {
+		// 中键拖拽平移（pan）：场景跟随鼠标方向移动
+		const bool bMiddle = Controller::IsButtonDown(eButtons::Middle);
+		if (bMiddle && (cx != px || cy != py)) {
+			const float PanPerPixel = 0.03f;
+			CameraComp->MoveLeft((float)(cx - px) * PanPerPixel);
+			CameraComp->MoveDown((float)(py - cy) * PanPerPixel);
 		}
+		// 右键拖拽旋转（orbit）：与中键平移互斥，优先中键
+		else if (Controller::IsButtonDown(eButtons::Right)) {
+			if (cx != px) {
+				CameraComp->RotateYaw((px - cx) * MouseMoveSpeed);
+			}
 
-		if (cy != py) {
-			CameraComp->RotatePitch((py - cy) * MouseMoveSpeed);
+			if (cy != py) {
+				CameraComp->RotatePitch((py - cy) * MouseMoveSpeed);
+			}
 		}
 	}
 
@@ -395,6 +418,8 @@ void GameInstance::SaveSceneConfig() {
 	JsonObject Content = JsonObject(MaterialAsset);
 	Content.WriteInt("Window.Width", (int)WindowSize.Width);
 	Content.WriteInt("Window.Height", (int)WindowSize.Height);
+	Content.WriteInt("Window.OffsetX", (int)WindowOffset.x);
+	Content.WriteInt("Window.OffsetY", (int)WindowOffset.y);
 	if (CameraComp) {
 		Content.WriteVector3("Camera.Position", CameraComp->GetPosition());
 		Content.WriteVector3("Camera.Rotation", CameraComp->GetEulerAngles());
