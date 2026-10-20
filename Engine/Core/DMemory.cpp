@@ -7,7 +7,7 @@
 struct Memory::SMemoryStats Memory::stats;
 size_t Memory::TotalAllocateSize;
 size_t Memory::AllocateCount;
-Mutex Memory::AllocationMutex;
+Mutex& Memory::AllocationMutex = *new Mutex();
 
 bool Memory::Initialize(size_t size) {
 	Platform::PlatformZeroMemory(&stats, sizeof(stats));

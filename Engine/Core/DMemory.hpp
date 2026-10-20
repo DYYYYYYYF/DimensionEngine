@@ -113,7 +113,11 @@ public:
 	static size_t TotalAllocateSize;
 	static size_t AllocateCount;
 	
-	static Mutex AllocationMutex;
+	// [FIX] 退出阶段静态析构顺序：普通全局 Mutex 与各静态 TArray（Console::
+	// RegisteredConsumers/Commands、Identifier::Owners 等）的析构顺序不可控，
+	// 可能先于它们析构，导致退出清理时 Lock() 失败（FATAL: Unable to obtain
+	// mutex lock）。改为引用绑定堆分配、永不析构的对象（定义见 DMemory.cpp）。
+	static Mutex& AllocationMutex;
 };
 
 template<typename T, typename... Args>

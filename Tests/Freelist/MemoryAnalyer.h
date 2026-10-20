@@ -1,4 +1,5 @@
 ﻿#include <Memory/DynamicAllocator.h>
+#include "Containers/TArray.hpp"
 #include <chrono>        
 #include <vector>        
 #include <random>        
@@ -25,7 +26,7 @@ private:
 		bool is_freed;
 	};
 
-	std::vector<AllocationInfo> allocation_history;
+	TArray<AllocationInfo> allocation_history;
 	std::atomic<size_t> operation_counter{ 0 };
 
 public:
@@ -60,7 +61,7 @@ public:
 		std::cout << "   (需要在Freelist中添加GetBlockCount()等分析接口)" << std::endl;
 
 		// 示例分析 - 尝试分配不同大小来检测碎片化
-		std::vector<size_t> test_sizes = { 16, 32, 64, 128, 256, 512, 1024, 2048, 4096 };
+		TArray<size_t> test_sizes = { 16, 32, 64, 128, 256, 512, 1024, 2048, 4096 };
 
 		for (size_t size : test_sizes) {
 			void* ptr = allocator->Allocate(size);
@@ -88,7 +89,7 @@ public:
 
 		// 启动多个工作线程
 		const int num_threads = std::thread::hardware_concurrency();
-		std::vector<std::thread> workers;
+		TArray<std::thread> workers;
 
 		auto worker_func = [&](int thread_id) {
 			std::random_device rd;
@@ -96,7 +97,7 @@ public:
 			std::uniform_int_distribution<> size_dist(16, 4096);
 			std::uniform_int_distribution<> op_dist(1, 100);
 
-			std::vector<std::pair<void*, size_t>> local_ptrs;
+			TArray<std::pair<void*, size_t>> local_ptrs;
 
 			while (!should_stop) {
 				if (op_dist(gen) <= 60 || local_ptrs.empty()) {
@@ -198,7 +199,7 @@ public:
 
 		auto start = std::chrono::high_resolution_clock::now();
 
-		std::vector<void*> ptrs;
+		TArray<void*> ptrs;
 		const int count = 1000;
 		const size_t size = 256;
 
@@ -228,7 +229,7 @@ public:
 
 		auto start = std::chrono::high_resolution_clock::now();
 
-		std::vector<std::pair<void*, size_t>> ptrs;
+		TArray<std::pair<void*, size_t>> ptrs;
 		const int count = 1000;
 
 		// 随机大小分配
@@ -259,7 +260,7 @@ public:
 		const int burst_size = 100;
 
 		for (int burst = 0; burst < burst_count; burst++) {
-			std::vector<void*> burst_ptrs;
+			TArray<void*> burst_ptrs;
 
 			// 突发分配
 			for (int i = 0; i < burst_size; i++) {
@@ -288,21 +289,21 @@ public:
 		auto start = std::chrono::high_resolution_clock::now();
 
 		// 小块分配
-		std::vector<void*> small_ptrs;
+		TArray<void*> small_ptrs;
 		for (int i = 0; i < 500; i++) {
 			void* ptr = allocator->Allocate(32);
 			if (ptr) small_ptrs.push_back(ptr);
 		}
 
 		// 中等块分配
-		std::vector<void*> medium_ptrs;
+		TArray<void*> medium_ptrs;
 		for (int i = 0; i < 100; i++) {
 			void* ptr = allocator->Allocate(512);
 			if (ptr) medium_ptrs.push_back(ptr);
 		}
 
 		// 大块分配
-		std::vector<void*> large_ptrs;
+		TArray<void*> large_ptrs;
 		for (int i = 0; i < 10; i++) {
 			void* ptr = allocator->Allocate(8192);
 			if (ptr) large_ptrs.push_back(ptr);
@@ -433,7 +434,7 @@ bool TestBoundaryWrites() {
 	if (!allocator.Resize(1024 * 1024)) return false;
 
 	// 分配相邻的内存块并验证边界
-	std::vector<std::pair<void*, size_t>> blocks;
+	TArray<std::pair<void*, size_t>> blocks;
 
 	for (int i = 0; i < 10; i++) {
 		size_t size = 100;

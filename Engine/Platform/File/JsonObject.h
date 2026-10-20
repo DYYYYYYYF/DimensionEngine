@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "File.hpp"
+#include "Containers/TArray.hpp"
 #include "Math/MathTypes.hpp"
 #include <string>
 #include <memory>
@@ -18,7 +19,7 @@ public:
 
 public:
 	template<typename T>
-	DAPI void SetArray(const std::string& key, const std::vector<T>& values);
+	DAPI void SetArray(const std::string& key, const TArray<T>& values);
 
 	// 设置向量
 	DAPI void WriteVector2(const std::string& key, const Vector2& value);
@@ -73,7 +74,7 @@ public:
 	// 对象操作
 	DAPI bool HasKey(const std::string& key) const;
 	DAPI bool Remove(const std::string& key);
-	DAPI std::vector<std::string> GetKeys() const;
+	DAPI TArray<std::string> GetKeys() const;
 
 	// 文件操作
 	DAPI bool SaveToFile(File& file) const;
@@ -99,7 +100,7 @@ private:
 	void SetFloat(const std::string& key, float value);
 	void SetBool(const std::string& key, bool value);
 
-	std::vector<std::string> SplitPath(const std::string& path) const;
+	TArray<std::string> SplitPath(const std::string& path) const;
 
 private:
 	struct JsonHandle;

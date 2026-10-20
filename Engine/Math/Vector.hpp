@@ -419,31 +419,31 @@ public:
     // 构造函数
     TVector4_Base() noexcept : elements{ T(0), T(0), T(0), T(0) } {
 #if defined(SIMD_SUPPORTED)
-        SIMDHelper<T>::load(elements, simd_data_placeholder);
+        SIMDHelper<T>::Load(elements, simd_data_placeholder);
 #endif
     }
 
     TVector4_Base(const TVector3_Base<T>& vec, T w = T(1)) noexcept : x(vec.x), y(vec.y), z(vec.z), w(w) {
 #if defined(SIMD_SUPPORTED)
-        SIMDHelper<T>::load(elements, simd_data_placeholder);
+        SIMDHelper<T>::Load(elements, simd_data_placeholder);
 #endif
     }
 
     TVector4_Base(const TVector3_16<T>& vec, T w = T(1)) noexcept : x(vec.x), y(vec.y), z(vec.z), w(w) {
 #if defined(SIMD_SUPPORTED)
-        SIMDHelper<T>::load(elements, simd_data_placeholder);
+        SIMDHelper<T>::Load(elements, simd_data_placeholder);
 #endif
     }
 
     TVector4_Base(T xyzw) noexcept : x(xyzw), y(xyzw), z(xyzw), w(xyzw) {
 #if defined(SIMD_SUPPORTED)
-        SIMDHelper<T>::load(elements, simd_data_placeholder);
+        SIMDHelper<T>::Load(elements, simd_data_placeholder);
 #endif
     }
 
     TVector4_Base(T x, T y, T z, T w) noexcept : x(x), y(y), z(z), w(w) {
 #if defined(SIMD_SUPPORTED)
-        SIMDHelper<T>::load(elements, simd_data_placeholder);
+        SIMDHelper<T>::Load(elements, simd_data_placeholder);
 #endif
     }
 
@@ -455,14 +455,14 @@ public:
     void Zero() noexcept {
         x = y = z = w = T(0);
 #if defined(SIMD_SUPPORTED)
-        SIMDHelper<T>::load(elements, simd_data_placeholder);
+        SIMDHelper<T>::Load(elements, simd_data_placeholder);
 #endif
     }
 
     void One() noexcept {
         x = y = z = w = T(1);
 #if defined(SIMD_SUPPORTED)
-        SIMDHelper<T>::load(elements, simd_data_placeholder);
+        SIMDHelper<T>::Load(elements, simd_data_placeholder);
 #endif
     }
 
@@ -491,7 +491,7 @@ public:
         x *= inv_len; y *= inv_len; z *= inv_len; w *= inv_len;
 
 #if defined(SIMD_SUPPORTED)
-        SIMDHelper<T>::load(elements, simd_data_placeholder);
+        SIMDHelper<T>::Load(elements, simd_data_placeholder);
 #endif
         return *this;
     }
@@ -534,7 +534,7 @@ public:
             sscanf(str, "%lf %lf %lf %lf", &result.x, &result.y, &result.z, &result.w);
         }
 #if defined(SIMD_SUPPORTED)
-        SIMDHelper<T>::load(result.elements, result.simd_data_placeholder);
+        SIMDHelper<T>::Load(result.elements, result.simd_data_placeholder);
 #endif
         return result;
     }
@@ -586,7 +586,7 @@ public:
     TVector4_Base& operator+=(const TVector4_Base& vec) noexcept {
         x += vec.x; y += vec.y; z += vec.z; w += vec.w;
 #if defined(SIMD_SUPPORTED)
-        SIMDHelper<T>::load(elements, simd_data_placeholder);
+        SIMDHelper<T>::Load(elements, simd_data_placeholder);
 #endif
         return *this;
     }
@@ -594,7 +594,7 @@ public:
     TVector4_Base& operator-=(const TVector4_Base& vec) noexcept {
         x -= vec.x; y -= vec.y; z -= vec.z; w -= vec.w;
 #if defined(SIMD_SUPPORTED)
-        SIMDHelper<T>::load(elements, simd_data_placeholder);
+        SIMDHelper<T>::Load(elements, simd_data_placeholder);
 #endif
         return *this;
     }
@@ -602,7 +602,7 @@ public:
     TVector4_Base& operator*=(T scalar) noexcept {
         x *= scalar; y *= scalar; z *= scalar; w *= scalar;
 #if defined(SIMD_SUPPORTED)
-        SIMDHelper<T>::load(elements, simd_data_placeholder);
+        SIMDHelper<T>::Load(elements, simd_data_placeholder);
 #endif
         return *this;
     }
@@ -610,7 +610,7 @@ public:
     TVector4_Base& operator/=(T scalar) noexcept {
         x /= scalar; y /= scalar; z /= scalar; w /= scalar;
 #if defined(SIMD_SUPPORTED)
-        SIMDHelper<T>::load(elements, simd_data_placeholder);
+        SIMDHelper<T>::Load(elements, simd_data_placeholder);
 #endif
         return *this;
     }
@@ -650,31 +650,31 @@ public:
     // 构造函数
     TVector4_SIMD() noexcept : elements{ T(0), T(0), T(0), T(0) } {
 #if defined(SIMD_SUPPORTED)
-        SIMDHelper<T>::load(elements, simd_data_placeholder);
+        SIMDHelper<T>::Load(elements, simd_data_placeholder);
 #endif
     }
 
     TVector4_SIMD(const TVector3_Base<T>& vec, T w = T(1)) noexcept : x(vec.x), y(vec.y), z(vec.z), w(w) {
 #if defined(SIMD_SUPPORTED)
-        SIMDHelper<T>::load(elements, simd_data_placeholder);
+        SIMDHelper<T>::Load(elements, simd_data_placeholder);
 #endif
     }
 
     TVector4_SIMD(const TVector3_16<T>& vec, T w = T(1)) noexcept : x(vec.x), y(vec.y), z(vec.z), w(w) {
 #if defined(SIMD_SUPPORTED)
-        SIMDHelper<T>::load(elements, simd_data_placeholder);
+        SIMDHelper<T>::Load(elements, simd_data_placeholder);
 #endif
     }
 
     TVector4_SIMD(T xyzw) noexcept : x(xyzw), y(xyzw), z(xyzw), w(xyzw) {
 #if defined(SIMD_SUPPORTED)
-        SIMDHelper<T>::load(elements, simd_data_placeholder);
+        SIMDHelper<T>::Load(elements, simd_data_placeholder);
 #endif
     }
 
     TVector4_SIMD(T x, T y, T z, T w) noexcept : x(x), y(y), z(z), w(w) {
 #if defined(SIMD_SUPPORTED)
-        SIMDHelper<T>::load(elements, simd_data_placeholder);
+        SIMDHelper<T>::Load(elements, simd_data_placeholder);
 #endif
     }
 
@@ -686,14 +686,14 @@ public:
     void Zero() noexcept {
         x = y = z = w = T(0);
 #if defined(SIMD_SUPPORTED)
-        SIMDHelper<T>::load(elements, simd_data_placeholder);
+        SIMDHelper<T>::Load(elements, simd_data_placeholder);
 #endif
     }
 
     void One() noexcept {
         x = y = z = w = T(1);
 #if defined(SIMD_SUPPORTED)
-        SIMDHelper<T>::load(elements, simd_data_placeholder);
+        SIMDHelper<T>::Load(elements, simd_data_placeholder);
 #endif
     }
 
@@ -722,7 +722,7 @@ public:
         x *= inv_len; y *= inv_len; z *= inv_len; w *= inv_len;
 
 #if defined(SIMD_SUPPORTED)
-        SIMDHelper<T>::load(elements, simd_data_placeholder);
+        SIMDHelper<T>::Load(elements, simd_data_placeholder);
 #endif
         return *this;
     }
@@ -760,7 +760,7 @@ public:
             sscanf(str, "%lf %lf %lf %lf", &result.x, &result.y, &result.z, &result.w);
         }
 #if defined(SIMD_SUPPORTED)
-        SIMDHelper<T>::load(result.elements, result.simd_data_placeholder);
+        SIMDHelper<T>::Load(result.elements, result.simd_data_placeholder);
 #endif
         return result;
     }
@@ -812,7 +812,7 @@ public:
     TVector4_SIMD& operator+=(const TVector4_SIMD& vec) noexcept {
         x += vec.x; y += vec.y; z += vec.z; w += vec.w;
 #if defined(SIMD_SUPPORTED)
-        SIMDHelper<T>::load(elements, simd_data_placeholder);
+        SIMDHelper<T>::Load(elements, simd_data_placeholder);
 #endif
         return *this;
     }
@@ -820,7 +820,7 @@ public:
     TVector4_SIMD& operator-=(const TVector4_SIMD& vec) noexcept {
         x -= vec.x; y -= vec.y; z -= vec.z; w -= vec.w;
 #if defined(SIMD_SUPPORTED)
-        SIMDHelper<T>::load(elements, simd_data_placeholder);
+        SIMDHelper<T>::Load(elements, simd_data_placeholder);
 #endif
         return *this;
     }
@@ -828,7 +828,7 @@ public:
     TVector4_SIMD& operator*=(T scalar) noexcept {
         x *= scalar; y *= scalar; z *= scalar; w *= scalar;
 #if defined(SIMD_SUPPORTED)
-        SIMDHelper<T>::load(elements, simd_data_placeholder);
+        SIMDHelper<T>::Load(elements, simd_data_placeholder);
 #endif
         return *this;
     }
@@ -836,7 +836,7 @@ public:
     TVector4_SIMD& operator/=(T scalar) noexcept {
         x /= scalar; y /= scalar; z /= scalar; w /= scalar;
 #if defined(SIMD_SUPPORTED)
-        SIMDHelper<T>::load(elements, simd_data_placeholder);
+        SIMDHelper<T>::Load(elements, simd_data_placeholder);
 #endif
         return *this;
     }

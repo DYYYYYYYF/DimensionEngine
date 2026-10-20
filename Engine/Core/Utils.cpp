@@ -12,8 +12,8 @@ std::string Utils::Strtrim(const std::string& str) {
     return str.substr(start, end - start + 1);
 }
 
-std::vector<std::string> Utils::StringSplit(const std::string& str, char delimiter, bool trim_entries, bool include_empty) {
-	std::vector<std::string> Result;
+TArray<std::string> Utils::StringSplit(const std::string& str, char delimiter, bool trim_entries, bool include_empty) {
+	TArray<std::string> Result;
 	size_t Head = 0;
 	size_t Rear = str.find(delimiter);
 

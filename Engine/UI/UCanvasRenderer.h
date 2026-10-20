@@ -15,7 +15,7 @@ public:
 	UCanvasRenderer() = default;
 
 	// 开始一帧 UI 记录（指定视口尺寸，供元素坐标使用与校验）
-	void Begin(uint32_t ViewportWidth, uint32_t ViewportHeight);
+	void Begin(uint32_t InViewportWidth, uint32_t InViewportHeight);
 	// 结束一帧 UI 记录
 	void End();
 

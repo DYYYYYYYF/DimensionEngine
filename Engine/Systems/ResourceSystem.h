@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include "Containers/TArray.hpp"
 #include "Rendering/Resources/Asset.hpp"
 #include <vector>
 
@@ -30,7 +31,7 @@ public:
 
 public:
 	SResourceSystemConfig Config;
-	std::vector<IResourceLoader*> RegisteredLoaders;
+	TArray<IResourceLoader*> RegisteredLoaders;
 
 	bool Initilized = false;
 };

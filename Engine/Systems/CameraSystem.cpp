@@ -45,7 +45,7 @@ void CameraSystem::Shutdown() {
 	}
 
 	Cameras.clear();
-	std::vector<ACameraActor*>().swap(Cameras);
+	TArray<ACameraActor*>().swap(Cameras);
 }
 
 ACameraActor* CameraSystem::Acquire(const FString& name) {

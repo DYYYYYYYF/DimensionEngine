@@ -63,7 +63,7 @@ bool UTextureHelper::Load(const FString& name, void* params, UTexture* resource)
 	int Width, Height, ChannelCount;
 	File AssetFile(FullFilePath.CStr());
 	size_t FileSize = AssetFile.GetFileSize();
-	std::vector<unsigned char> fileData = AssetFile.ReadBytes();
+	TArray<unsigned char> fileData = AssetFile.ReadBytes();
 	if (fileData.empty()) {
 		GLOG(Log::eError, "Unable to read file: '%s'.", FullFilePath.CStr());
 		return false;

@@ -14,7 +14,13 @@
 #include "Defines.hpp"
 #include "Memory/Freelist.hpp"
 
+#include <memory>
 #include <mutex>
+
+// C4251: STL 类型成员（std::recursive_mutex / unique_ptr）跨 DLL 接口为
+// MSVC 已知良性警告（同一 CRT），局部抑制；锁语义不受影响。
+#pragma warning(push)
+#pragma warning(disable : 4251)
 
 class DAPI DynamicAllocator {
 public:
@@ -114,5 +120,13 @@ private:
 	// [FIX] 多线程安全：纹理加载 job 线程与主线程（UI/Editor）会并发 Allocate/Free，
 	// 原实现无锁导致 FreeList 空闲块链表并发损坏 → 内存块错乱/悬垂 → 崩溃。
 	// 所有会改动 FreeList 或 MemoryBlock 的操作必须持有该互斥锁。
-	mutable std::mutex Mtx;
+	// [FIX2] 改为 std::recursive_mutex：AllocateAligned/FreeAligned 的错误分支在
+	// 持锁状态下 GLOG 打印日志，而日志消费端（Console consumer）可能再次触发引擎
+	// 内存分配（TArray/FString），同线程递归加锁 std::mutex 会抛
+	// resource_deadlock_would_occur（0xC0000409）。错误分支不会修改 FreeList
+	//（AllocateBlock 失败/越界 return 均不触碰空闲链表），重入分配是安全的。
+	// [FIX3] 改用 std::unique_ptr 持有：避免 std::recursive_mutex 作为 DLL 导出类
+	// 成员触发 C4251（dll-interface 警告），行为不变（类仍不可拷贝/移动）。
+	mutable std::unique_ptr<std::recursive_mutex> Mtx = std::make_unique<std::recursive_mutex>();
 };
+#pragma warning(pop)

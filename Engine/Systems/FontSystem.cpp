@@ -47,13 +47,13 @@ void FontSystem::Shutdown() {
 	if (!Initialized) { return; }
 
 	// 释放 GPU 资源
-	for (auto& [name, font] : BitmapFonts) {
-		if (font) font->ReleaseResource();
+	for (auto& Pair : BitmapFonts) {
+		if (Pair.Value) Pair.Value->ReleaseResource();
 	}
 	BitmapFonts.Clear();
 
-	for (auto& [name, font] : SystemFonts) {
-		if(font) font->ReleaseResource(Renderer);
+	for (auto& Pair : SystemFonts) {
+		if (Pair.Value) Pair.Value->ReleaseResource(Renderer);
 	}
 	SystemFonts.Clear();
 
@@ -187,10 +187,10 @@ bool FontSystem::Release(IFont* font) {
 		if (Config.autoRelease) {
 			// 需要找到这个 font 属于哪张注册表并移除
 			// BitmapFont 直接在 BitmapFonts 里找
-			for (auto& [name, bitmapFont] : BitmapFonts) {
-				if (bitmapFont == font) {
-					bitmapFont->ReleaseResource();
-					BitmapFonts.Remove(name);
+			for (auto& Pair : BitmapFonts) {
+				if (Pair.Value == font) {
+					Pair.Value->ReleaseResource();
+					BitmapFonts.Remove(Pair.Key);
 					return true;
 				}
 			}

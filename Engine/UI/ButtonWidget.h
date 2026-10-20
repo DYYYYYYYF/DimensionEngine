@@ -3,6 +3,10 @@
 #include "Rendering/Resources/Font/Font.hpp"
 #include <functional>
 
+// C4251: std::function 成员跨 DLL 接口为 MSVC 已知良性警告（同一 CRT），局部抑制
+#pragma warning(push)
+#pragma warning(disable : 4251)
+
 class UCanvasRenderer;
 
 /**
@@ -65,3 +69,4 @@ private:
 	bool bSelected = false;
 	OnClickHandler OnClickHandler_;
 };
+#pragma warning(pop)

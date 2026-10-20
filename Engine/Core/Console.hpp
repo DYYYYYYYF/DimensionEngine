@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include "Containers/TArray.hpp"
 #include "Defines.hpp"
 #include <functional>
 #include <string>
@@ -11,7 +12,7 @@ typedef std::function<bool(Log::Logger::Level, const std::string&)> PFN_ConsoleW
 
 struct CommandContext {
 public:
-	std::vector<std::string> Arguments;
+	TArray<std::string> Arguments;
 };
 typedef std::function<void(CommandContext context)> PFN_ConsoleCommand;
 
@@ -44,6 +45,6 @@ public:
 	static DAPI bool ExecuteCommand(const std::string& cmd);
 
 private:
-	static std::vector<Consumer> RegisteredConsumers;
-	static std::vector<Command> RegisteredCommands;
+	static TArray<Consumer> RegisteredConsumers;
+	static TArray<Command> RegisteredCommands;
 };

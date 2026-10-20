@@ -41,7 +41,7 @@ JsonObject::~JsonObject() {
 
 // SetArray 模板实现
 template<typename T>
-void JsonObject::SetArray(const std::string& key, const std::vector<T>& values) {
+void JsonObject::SetArray(const std::string& key, const TArray<T>& values) {
 	nlohmann::json arr = nlohmann::json::array();
 	for (const auto& val : values) {
 		arr.push_back(static_cast<T>(val));
@@ -50,15 +50,15 @@ void JsonObject::SetArray(const std::string& key, const std::vector<T>& values) 
 }
 
 // 显式实例化常用类型
-template DAPI void JsonObject::SetArray<int>(const std::string&, const std::vector<int>&);
-template DAPI void JsonObject::SetArray<float>(const std::string&, const std::vector<float>&);
-template DAPI void JsonObject::SetArray<double>(const std::string&, const std::vector<double>&);
-template DAPI void JsonObject::SetArray<bool>(const std::string&, const std::vector<bool>&);
-template DAPI void JsonObject::SetArray<std::string>(const std::string&, const std::vector<std::string>&);
+template DAPI void JsonObject::SetArray<int>(const std::string&, const TArray<int>&);
+template DAPI void JsonObject::SetArray<float>(const std::string&, const TArray<float>&);
+template DAPI void JsonObject::SetArray<double>(const std::string&, const TArray<double>&);
+template DAPI void JsonObject::SetArray<bool>(const std::string&, const TArray<bool>&);
+template DAPI void JsonObject::SetArray<std::string>(const std::string&, const TArray<std::string>&);
 
 // SetArray for JsonObject
 template<>
-void JsonObject::SetArray<JsonObject>(const std::string& key, const std::vector<JsonObject>& values) {
+void JsonObject::SetArray<JsonObject>(const std::string& key, const TArray<JsonObject>& values) {
 	nlohmann::json arr = nlohmann::json::array();
 	for (const auto& val : values) {
 		arr.push_back(val.Handle->value);
@@ -174,7 +174,7 @@ JsonObject JsonObject::Read(const std::string& path) const {
 		return result;
 	}
 
-	std::vector<std::string> tokens = SplitPath(path);
+	TArray<std::string> tokens = SplitPath(path);
 	nlohmann::json current = Handle->value;
 
 	try {
@@ -240,7 +240,7 @@ bool JsonObject::ReadBool() const {
 void JsonObject::Write(const std::string& path, const JsonObject& value) {
 	if (path.empty()) return;
 
-	std::vector<std::string> tokens = SplitPath(path);
+	TArray<std::string> tokens = SplitPath(path);
 
 	if (tokens.empty()) return;
 
@@ -356,8 +356,8 @@ bool JsonObject::Remove(const std::string& key) {
 	return Handle->value.erase(key) > 0;
 }
 
-std::vector<std::string> JsonObject::GetKeys() const {
-	std::vector<std::string> keys;
+TArray<std::string> JsonObject::GetKeys() const {
+	TArray<std::string> keys;
 	if (IsObject()) {
 		for (auto it = Handle->value.begin(); it != Handle->value.end(); ++it) {
 			keys.push_back(it.key());
@@ -474,8 +474,8 @@ void JsonObject::Clear() {
 	Handle->value = nlohmann::json();
 }
 
-std::vector<std::string> JsonObject::SplitPath(const std::string& path) const {
-	std::vector<std::string> tokens;
+TArray<std::string> JsonObject::SplitPath(const std::string& path) const {
+	TArray<std::string> tokens;
 	std::stringstream ss(path);
 	std::string token;
 

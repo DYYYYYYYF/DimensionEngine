@@ -2,7 +2,9 @@
 
 #include "Defines.hpp"
 #include "Core/DMemory.hpp"
+#include <string>
 #include <type_traits>
+#include <utility>
 
 /**
  * @brief 开放寻址（Robin Hood）哈希表，替代 std::unordered_map。
@@ -75,6 +77,17 @@ template<> struct TDefaultHasher<uint32_t> { size_t operator()(uint32_t v) const
 template<> struct TDefaultHasher<uint64_t> { size_t operator()(uint64_t v) const noexcept { v ^= v >> 33; v *= 0xff51afd7ed558ccdULL; v ^= v >> 33; return static_cast<size_t>(v); } };
 template<> struct TDefaultHasher<int32_t> { size_t operator()(int32_t  v) const noexcept { return TDefaultHasher<uint32_t>{}(static_cast<uint32_t>(v)); } };
 template<> struct TDefaultHasher<int64_t> { size_t operator()(int64_t  v) const noexcept { return TDefaultHasher<uint64_t>{}(static_cast<uint64_t>(v)); } };
+template<> struct TDefaultHasher<float>   { size_t operator()(float v)    const noexcept { return TDefaultHasher<uint32_t>{}(*reinterpret_cast<uint32_t*>(&v)); } };
+template<> struct TDefaultHasher<double>  { size_t operator()(double v)   const noexcept { return TDefaultHasher<uint64_t>{}(*reinterpret_cast<uint64_t*>(&v)); } };
+template<> struct TDefaultHasher<std::string> {
+    size_t operator()(const std::string& key) const noexcept {
+        size_t hash = 5381;
+        for (char c : key)
+            hash = ((hash << 5) + hash) ^ static_cast<unsigned char>(c);
+        return hash;
+    }
+};
+template<> struct TDefaultHasher<bool> { size_t operator()(bool v) const noexcept { return v ? 1 : 0; } };
 
 // ── 指针特化 ─────────────────────────────────────────────────
 template<typename T>
@@ -101,6 +114,22 @@ public:
     struct Pair {
         K Key;
         V Value;
+
+        // std::pair 风格成员（引用绑定到 Key/Value，避免冗余存储）
+        K& first;
+        V& second;
+
+        Pair() : Key{}, Value{}, first(Key), second(Value) {}
+        Pair(const K& k, const V& v) : Key(k), Value(v), first(Key), second(Value) {}
+        Pair(const Pair& other) : Key(other.Key), Value(other.Value), first(Key), second(Value) {}
+
+        Pair& operator=(const Pair& other) {
+            if (this != &other) {
+                Key = other.Key;
+                Value = other.Value;
+            }
+            return *this;
+        }
 
         K& First() { return Key; }
         const K& First()  const { return Key; }
@@ -380,6 +409,25 @@ public:
         }
     };
 
+    // ─────────────────────────────────────────────────────
+    //  std::unordered_map 兼容别名
+    // ─────────────────────────────────────────────────────
+    // (迭代器类型已在上方定义，此处别名可安全引用)
+
+    Iterator      find(const K& key)       { return FindIterator(key); }
+    ConstIterator find(const K& key) const { return FindConstIterator(key); }
+
+    size_t erase(const K& key) { return Remove(key) ? 1 : 0; }
+    size_t count(const K& key) const { return Contains(key) ? 1 : 0; }
+
+    size_t size()  const { return Count_; }
+    bool   empty() const { return Count_ == 0; }
+    void   clear() { Clear(); }
+
+    // std::map 风格 at()：不存在时断言（与 TMap::At 语义一致）
+    V& at(const K& key) { return At(key); }
+    const V& at(const K& key) const { return At(key); }
+
     Iterator      begin() { return Iterator(Buckets_, Buckets_ + Capacity_); }
     Iterator      end() { return Iterator(Buckets_ + Capacity_, Buckets_ + Capacity_); }
     ConstIterator begin()  const { return ConstIterator(Buckets_, Buckets_ + Capacity_); }
@@ -518,6 +566,19 @@ private:
         }
     }
 
+    // find() 兼容：返回指向键所在桶的迭代器；未找到返回 end()
+    Iterator FindIterator(const K& key) {
+        size_t idx = FindBucket(key);
+        if (idx == kInvalid) return end();
+        return Iterator(Buckets_ + idx, Buckets_ + Capacity_);
+    }
+
+    ConstIterator FindConstIterator(const K& key) const {
+        size_t idx = FindBucket(key);
+        if (idx == kInvalid) return end();
+        return ConstIterator(Buckets_ + idx, Buckets_ + Capacity_);
+    }
+
 
 };
 
@@ -551,6 +612,19 @@ public:
 
     Iterator begin() { return Iterator(Map_.begin()); }
     Iterator end() { return Iterator(Map_.end()); }
+
+    // std::set 兼容别名
+    std::pair<Iterator, bool> insert(const K& key) {
+        bool existed = Map_.Contains(key);
+        Map_.Insert(key, true);
+        return { Iterator(Map_.FindIterator(key)), !existed };
+    }
+    size_t erase(const K& key) { return Map_.Remove(key) ? 1 : 0; }
+    Iterator find(const K& key) { return Iterator(Map_.FindIterator(key)); }
+    size_t count(const K& key) const { return Map_.Contains(key) ? 1 : 0; }
+    size_t size()  const { return Map_.Size(); }
+    bool   empty() const { return Map_.IsEmpty(); }
+    void   clear() { Map_.Clear(); }
 
 private:
     TMap<K, bool, Hasher> Map_;

@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include "Containers/TMap.hpp"
 #include <unordered_map>
 #include <mutex>
 #include <atomic>
@@ -75,7 +76,7 @@ private:
 
 private:
 
-	std::unordered_map<IDType, void*> objects;
+	TMap<IDType, void*> objects;
 
 	std::mutex mutex;
 

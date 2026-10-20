@@ -3,9 +3,9 @@
 #include "Core/CoreMinimal.hpp"
 #include "Core/EngineLogger.hpp"
 
-void UCanvasRenderer::Begin(uint32_t ViewportWidth, uint32_t ViewportHeight) {
-	this->ViewportWidth = ViewportWidth;
-	this->ViewportHeight = ViewportHeight;
+void UCanvasRenderer::Begin(uint32_t InViewportWidth, uint32_t InViewportHeight) {
+	this->ViewportWidth = InViewportWidth;
+	this->ViewportHeight = InViewportHeight;
 	Elements.Clear();
 	bIsRendering = true;
 }

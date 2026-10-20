@@ -1,4 +1,6 @@
 ﻿#include "JobSystem.hpp"
+#include "Containers/TArray.hpp"
+#include "Containers/TDeque.hpp"
 #include "Core/EngineLogger.hpp"
 #include "Platform/Platform.hpp"
 
@@ -32,7 +34,7 @@ struct JobSystemImpl {
 
 		// 按优先级从高到低排序的 pending 队列（同优先级保持插入序），
 		// 使用 deque 以便在队列满时线性扫描并淘汰已取消的任务。
-		std::deque<QueueEntry>  queue;
+		TDeque<QueueEntry>  queue;
 		Mutex                   mtx;
 		ConditionVariable       cv;
 
@@ -152,9 +154,9 @@ struct JobSystemImpl {
 	// 判断指定类型的异步加载是否真正收尾，避免只查队列空而漏掉 worker 正在执行的 job。
 	std::atomic<uint32_t> in_flight[static_cast<uint32_t>(JobType::eCount)]{};
 
-	std::vector<Worker> workers;
+	TArray<Worker> workers;
 	Mutex               result_mutex;
-	std::vector<ResultEntry> pending_results;
+	TArray<ResultEntry> pending_results;
 
 	TypedQueue& GetQueue(JobType type) {
 		uint32_t idx = static_cast<uint32_t>(type);
@@ -318,7 +320,7 @@ void JobSystem::Shutdown() {
 void JobSystem::Update() {
 	if (!g_impl.running.load()) return;
 
-	std::vector<JobSystemImpl::ResultEntry> frame_results;
+	TArray<JobSystemImpl::ResultEntry> frame_results;
 	{
 		MutexGuard guard(g_impl.result_mutex);
 		frame_results.swap(g_impl.pending_results);

@@ -4,10 +4,10 @@
 template<typename T>
 class SIMDHelper {
 public:
-    static void load(T* elements, int& dummy) {
+    static void Load(T* elements, int& dummy) {
         // 非SIMD版本不做任何事
     }
-    static void store(T* elements, const int& dummy) {
+    static void Store(T* elements, const int& dummy) {
         // 非SIMD版本不做任何事
     }
 };
@@ -35,15 +35,15 @@ public:
     using SIMDType = __m128;
 
 public:
-    static void load(float* elements, __m128& data) {
+    static void Load(float* elements, __m128& data) {
         data = _mm_load_ps(elements);
     }
 
-    static void store(float* elements, const __m128& data) {
+    static void Store(float* elements, const __m128& data) {
         _mm_store_ps(elements, data);
     }
 
-    static float horizontal_add(const __m128& v) {
+    static float HorizontalAdd(const __m128& v) {
 #if defined(SIMD_SUPPORTED_AVX2)
         __m128 result = _mm_hadd_ps(v, v);
         result = _mm_hadd_ps(result, result);
@@ -95,15 +95,15 @@ public:
     using SIMDType = __m256d;
 
 public:
-    static void load(double* elements, __m256d& data) {
+    static void Load(double* elements, __m256d& data) {
         data = _mm256_load_pd(elements);
     }
 
-    static void store(double* elements, const __m256d& data) {
+    static void Store(double* elements, const __m256d& data) {
         _mm256_store_pd(elements, data);
     }
 
-    static double horizontal_add(const __m256d& v) {
+    static double HorizontalAdd(const __m256d& v) {
         __m128d low = _mm256_castpd256_pd128(v);
         __m128d high = _mm256_extractf128_pd(v, 1);
         __m128d sum = _mm_add_pd(low, high);
@@ -152,15 +152,15 @@ public:
     using SIMDType = float32x4_t;
 
 public:
-    static void load(float* elements, float32x4_t& data) {
+    static void Load(float* elements, float32x4_t& data) {
         data = vld1q_f32(elements);
     }
 
-    static void store(float* elements, const float32x4_t& data) {
+    static void Store(float* elements, const float32x4_t& data) {
         vst1q_f32(elements, data);
     }
 
-    static float horizontal_add(const float32x4_t& v) {
+    static float HorizontalAdd(const float32x4_t& v) {
 #ifdef __aarch64__
         return vaddvq_f32(v);
 #else
@@ -223,15 +223,15 @@ public:
     using SIMDType = float64x2_t;
 
 public:
-    static void load(double* elements, float64x2_t& data) {
+    static void Load(double* elements, float64x2_t& data) {
         data = vld1q_f64(elements);
     }
 
-    static void store(double* elements, const float64x2_t& data) {
+    static void Store(double* elements, const float64x2_t& data) {
         vst1q_f64(elements, data);
     }
 
-    static double horizontal_add(const float64x2_t& v) {
+    static double HorizontalAdd(const float64x2_t& v) {
         return vaddvq_f64(v);
     }
 

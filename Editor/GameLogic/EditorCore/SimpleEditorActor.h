@@ -80,7 +80,7 @@ private:
 	// 布局随窗口尺寸更新
 	void UpdateLayout();
 	// 层级列表（过滤相机 / 编辑器自持 actor）
-	void RebuildHierarchyList(UWorld* World);
+	void RebuildHierarchyList(UWorld* InWorld);
 	// 每帧同步层级列表：滚动范围 / 按钮池 / 行文本 / 选中高亮
 	void SyncHierarchyList();
 	// 层级行 Button 点击回调（OnClick 驱动选中与右侧属性刷新）

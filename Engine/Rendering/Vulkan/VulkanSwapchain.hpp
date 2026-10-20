@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include "Containers/TArray.hpp"
 #include "vulkan/vulkan.hpp"
 #include "Rendering/RenderTypes.hpp"
 
@@ -25,9 +26,9 @@ public:
 
 	vk::SurfaceFormatKHR ImageFormat;
 	vk::SwapchainKHR Handle;
-	std::vector<VulkanTexture*> RenderTextures;
+	TArray<VulkanTexture*> RenderTextures;
 
-	std::vector<VulkanTexture*> DepthTexture;
+	TArray<VulkanTexture*> DepthTexture;
 	
 	// Framebuffers used for on-screen rendering
 	RenderTarget RenderTargets[3];

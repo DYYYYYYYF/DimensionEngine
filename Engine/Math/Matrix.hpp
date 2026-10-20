@@ -1,4 +1,5 @@
 ﻿#pragma once
+#include "Containers/TArray.hpp"
 #include "Vector.hpp"
 
 /**
@@ -32,7 +33,7 @@ public:
 		Memory::Zero(data, sizeof(T) * 16);
 	}
 
-	TMatrix4(const std::vector<T>& d) {
+	TMatrix4(const TArray<T>& d) {
 		if (d.size() == 16) {
 			for (size_t i = 0; i < d.size(); ++i) {
 				data[i] = static_cast<T>(d[i]);
@@ -585,17 +586,17 @@ public:
                     // 加载第一个矩阵的第i行
                     typename SIMDHelper<T>::SIMDType row1;
                     T row_data[4] = {MatPtr1[i * 4 + 0], MatPtr1[i * 4 + 1], MatPtr1[i * 4 + 2], MatPtr1[i * 4 + 3]};
-                    SIMDHelper<T>::load(row_data, row1);
+                    SIMDHelper<T>::Load(row_data, row1);
 
                     for (int j = 0; j < 4; j++) {
                         // 加载第二个矩阵的第j列
                         T col_data[4] = {MatPtr2[0 + j], MatPtr2[4 + j], MatPtr2[8 + j], MatPtr2[12 + j]};
                         typename SIMDHelper<T>::SIMDType col2;
-                        SIMDHelper<T>::load(col_data, col2);
+                        SIMDHelper<T>::Load(col_data, col2);
 
                         // 执行乘法并累加
                         typename SIMDHelper<T>::SIMDType result = SIMDHelper<T>::mul(row1, col2);
-                        T final_result = SIMDHelper<T>::horizontal_add(result);
+                        T final_result = SIMDHelper<T>::HorizontalAdd(result);
                         
                         DstPtr[i * 4 + j] = final_result;
                     }
@@ -639,17 +640,17 @@ public:
                 // 准备向量数据，包含齐次坐标
                 T vec_data[4] = {v.x, v.y, v.z, 1.0f};
                 typename SIMDHelper<T>::SIMDType vec_simd;
-                SIMDHelper<T>::load(vec_data, vec_simd);
+                SIMDHelper<T>::Load(vec_data, vec_simd);
 
                 T result_data[3];
                 for (int i = 0; i < 3; ++i) {
                     // 加载矩阵行
                     typename SIMDHelper<T>::SIMDType row;
-                    SIMDHelper<T>::load(&m.data[i * 4], row);
+                    SIMDHelper<T>::Load(&m.data[i * 4], row);
                     
                     // 执行点积
                     typename SIMDHelper<T>::SIMDType mul_result = SIMDHelper<T>::mul(vec_simd, row);
-                    result_data[i] = SIMDHelper<T>::horizontal_add(mul_result);
+                    result_data[i] = SIMDHelper<T>::HorizontalAdd(mul_result);
                 }
 
                 return TVector3<T>(result_data[0], result_data[1], result_data[2]);
@@ -675,18 +676,18 @@ public:
                 // 准备向量数据，包含齐次坐标
                 T vec_data[4] = {v.x, v.y, v.z, 1.0f};
                 typename SIMDHelper<T>::SIMDType vec_simd;
-                SIMDHelper<T>::load(vec_data, vec_simd);
+                SIMDHelper<T>::Load(vec_data, vec_simd);
 
                 T result_data[3];
                 for (int i = 0; i < 3; ++i) {
                     // 加载矩阵列
                     T col_data[4] = {m.data[i], m.data[i + 4], m.data[i + 8], m.data[i + 12]};
                     typename SIMDHelper<T>::SIMDType col;
-                    SIMDHelper<T>::load(col_data, col);
+                    SIMDHelper<T>::Load(col_data, col);
                     
                     // 执行点积
                     typename SIMDHelper<T>::SIMDType mul_result = SIMDHelper<T>::mul(vec_simd, col);
-                    result_data[i] = SIMDHelper<T>::horizontal_add(mul_result);
+                    result_data[i] = SIMDHelper<T>::HorizontalAdd(mul_result);
                 }
 
                 return TVector3<T>(result_data[0], result_data[1], result_data[2]);
@@ -713,17 +714,17 @@ public:
                 // 准备向量数据
                 T vec_data[4] = {v.x, v.y, v.z, v.w};
                 typename SIMDHelper<T>::SIMDType vec_simd;
-                SIMDHelper<T>::load(vec_data, vec_simd);
+                SIMDHelper<T>::Load(vec_data, vec_simd);
 
                 T result_data[4];
                 for (int i = 0; i < 4; ++i) {
                     // 加载矩阵行
                     typename SIMDHelper<T>::SIMDType row;
-                    SIMDHelper<T>::load(&m.data[i * 4], row);
+                    SIMDHelper<T>::Load(&m.data[i * 4], row);
                     
                     // 执行点积
                     typename SIMDHelper<T>::SIMDType mul_result = SIMDHelper<T>::mul(vec_simd, row);
-                    result_data[i] = SIMDHelper<T>::horizontal_add(mul_result);
+                    result_data[i] = SIMDHelper<T>::HorizontalAdd(mul_result);
                 }
 
                 return TVector4<T>(result_data[0], result_data[1], result_data[2], result_data[3]);
@@ -750,18 +751,18 @@ public:
                 // 准备向量数据
                 T vec_data[4] = {v.x, v.y, v.z, v.w};
                 typename SIMDHelper<T>::SIMDType vec_simd;
-                SIMDHelper<T>::load(vec_data, vec_simd);
+                SIMDHelper<T>::Load(vec_data, vec_simd);
 
                 T result_data[4];
                 for (int i = 0; i < 4; ++i) {
                     // 加载矩阵列
                     T col_data[4] = {m.data[i], m.data[i + 4], m.data[i + 8], m.data[i + 12]};
                     typename SIMDHelper<T>::SIMDType col;
-                    SIMDHelper<T>::load(col_data, col);
+                    SIMDHelper<T>::Load(col_data, col);
                     
                     // 执行点积
                     typename SIMDHelper<T>::SIMDType mul_result = SIMDHelper<T>::mul(vec_simd, col);
-                    result_data[i] = SIMDHelper<T>::horizontal_add(mul_result);
+                    result_data[i] = SIMDHelper<T>::HorizontalAdd(mul_result);
                 }
 
                 return TVector4<T>(result_data[0], result_data[1], result_data[2], result_data[3]);

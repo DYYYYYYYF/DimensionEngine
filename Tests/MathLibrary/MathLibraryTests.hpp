@@ -1,6 +1,7 @@
 ﻿// MathLibraryTests.hpp
 #pragma once
 
+#include "Containers/TArray.hpp"
 #include <Math/MathTypes.hpp>
 #include "Framework/Components/TransformComponent.h"
 
@@ -382,7 +383,7 @@ public:
 		std::cout << "\n=== Testing GeometryUtils ===" << std::endl;
 
 		// 创建一个简单的三角形
-		std::vector<Vertex> vertices(3);
+		TArray<Vertex> vertices(3);
 		vertices[0].position = Vector3(0.0f, 0.0f, 0.0f);
 		vertices[0].texcoord = Vector2(0.0f, 0.0f);
 
@@ -392,7 +393,7 @@ public:
 		vertices[2].position = Vector3(0.0f, 1.0f, 0.0f);
 		vertices[2].texcoord = Vector2(0.0f, 1.0f);
 
-		std::vector<uint32_t> indices = { 0, 1, 2 };
+		TArray<uint32_t> indices = { 0, 1, 2 };
 
 		// 法线生成测试
 		GeometryUtils::GenerateNormals(
@@ -416,9 +417,9 @@ public:
 			"GeometryUtils tangent generation");
 
 		// 顶点去重测试
-		std::vector<Vertex> dup_vertices = vertices;
+		TArray<Vertex> dup_vertices = vertices;
 		dup_vertices.push_back(vertices[0]);  // 重复第一个顶点
-		std::vector<uint32_t> dup_indices = { 0, 1, 2, 3, 1, 2 };  // 使用重复顶点
+		TArray<uint32_t> dup_indices = { 0, 1, 2, 3, 1, 2 };  // 使用重复顶点
 
 		uint32_t out_vertex_count;
 		Vertex* out_vertices;

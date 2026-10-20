@@ -12,7 +12,7 @@
 // Platforms
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__)
 #define DPLATFORM_WINDOWS 1
-#include <Cstddef>
+#include <cstddef>
 #ifndef _WIN64
 #error "64-bit is required on Windows"
 #endif
@@ -75,12 +75,6 @@
 #include <intrin.h>  
 #include <immintrin.h>
 
-#ifdef __AVX__
-
-#elif defined(__AVX2__)
-static A = 0;
-#endif
-
 
 #if defined(_MSC_VER)
 // MSVC 特别处理
@@ -98,41 +92,41 @@ static A = 0;
 #endif
 #endif
 
-inline void cpuid(int info[4], int function_id) {
+inline void Cpuid(int info[4], int function_id) {
 	__cpuid(info, function_id);
 }
 
-inline bool is_sse_supported() {
+inline bool IsSSESupported() {
 	int info[4];
-	cpuid(info, 1);
+	Cpuid(info, 1);
 	return (info[3] & (1 << 25)) != 0;  // SSE bit
 }
 
-inline bool is_sse2_supported() {
+inline bool IsSSE2Supported() {
 	int info[4];
-	cpuid(info, 1);
+	Cpuid(info, 1);
 	return (info[3] & (1 << 26)) != 0;  // SSE2 bit
 }
 
-inline bool is_avx_supported() {
+inline bool IsAVXSupported() {
 	int info[4];
-	cpuid(info, 1);
+	Cpuid(info, 1);
 	return (info[2] & (1 << 28)) != 0;  // AVX bit
 }
 
-inline bool is_avx2_supported() {
+inline bool IsAVX2Supported() {
 	int info[4];
-	cpuid(info, 7);
+	Cpuid(info, 7);
 	return (info[1] & (1 << 5)) != 0;  // AVX2 bit
 }
 #endif
 
 // SIMD Macros
 #ifdef _MSC_VER
-#define SIMD_SUPPORTED_AVX		is_avx_supported()
-#define SIMD_SUPPORTED_AVX2		is_avx2_supported()
-#define SIMD_SUPPORTED_SSE		is_avx2_supported()
-#define SIMD_SUPPORTED_SSE2		is_sse2_supported()
+#define SIMD_SUPPORTED_AVX		IsAVXSupported()
+#define SIMD_SUPPORTED_AVX2		IsAVX2Supported()
+#define SIMD_SUPPORTED_SSE		IsAVX2Supported()
+#define SIMD_SUPPORTED_SSE2		IsSSE2Supported()
 #else
 #if defined(__AVX2__)
 #define SIMD_SUPPORTED_AVX2
@@ -193,6 +187,10 @@ inline bool is_avx2_supported() {
 #define MEGABYTES(amount) (amount * 1000 * 1000)
 #define KIGABYTES(amount) (amount * 1000)
 
+// [FIX] DEngineRootPath() 使用 std::string / std::error_code，原头文件仅包含
+// <filesystem>，当本头被首个包含时 std::string 不可见导致整条包含链崩溃。
+#include <string>
+#include <system_error>
 #include <filesystem>
 #ifndef ROOT_PATH
 // 说明：原实现 `(current_path() + "/../..").c_str()` 返回的是临时 std::string 内部缓冲区的

@@ -2,7 +2,7 @@
 #include "DMemory.hpp"
 #include "Containers/TArray.hpp"
 
-std::vector<EngineEvent::SEventCodeEntry> EngineEvent::registered;
+TArray<EngineEvent::SEventCodeEntry> EngineEvent::registered;
 bool EngineEvent::IsInitialized;
 
 bool EngineEvent::Initialize() {

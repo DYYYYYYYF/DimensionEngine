@@ -1,5 +1,7 @@
 ﻿#pragma once
 
+#include "Containers/TArray.hpp"
+#include "Containers/TMap.hpp"
 #include <unordered_map>
 #include <Defines.hpp>
 #include "Framework/Classes/CameraActor.h"
@@ -53,8 +55,8 @@ private:
 	bool Initialized;
 
 	SCameraSystemConfig Config;
-	std::vector<ACameraActor*> Cameras;
-	std::unordered_map<FString, uint64_t> CameraMap;
+	TArray<ACameraActor*> Cameras;
+	TMap<FString, uint64_t> CameraMap;
 	
 	ACameraActor* MainCamera;
 };

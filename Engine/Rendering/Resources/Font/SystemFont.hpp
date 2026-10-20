@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include "Containers/TArray.hpp"
 #include "Font.hpp"
 
 // ─────────────────────────────────────────────
@@ -65,7 +66,7 @@ private:
 	uint32_t           glyphCount_ = 0;
 	FFontKerning* kernings_ = nullptr;
 	uint32_t           kerningCount_ = 0;
-	std::vector<int>   codepoints_;
+	TArray<int>   codepoints_;
 };
 
 

@@ -61,7 +61,7 @@ bool MeshLoader::Load(const FString& name, void* params, UAsset* resource) {
 	resource->Name = name;
 
 	// 资源数据是几何体配置的数组
-	std::vector<FGeometryConfig> ResourceDatas;
+	TArray<FGeometryConfig> ResourceDatas;
 	ResourceDatas.reserve(25968);
 	bool Result = false;
 
@@ -114,7 +114,7 @@ bool MeshLoader::Load(const FString& name, void* params, UAsset* resource) {
 	resource->DataSize = sizeof(FGeometryConfig);
 	resource->DataCount = ResourceDatas.size();
 
-	std::vector<FGeometryConfig>().swap(ResourceDatas);
+	TArray<FGeometryConfig>().swap(ResourceDatas);
 
 	GLOG(Log::eInfo, "Successfully loaded mesh resource '%s' with %u geometries", name.CStr(), resource->DataCount);
 	return true;
@@ -138,7 +138,7 @@ void MeshLoader::Unload(UAsset* resource) {
 	resource = nullptr;
 }
 
-bool MeshLoader::Import3DModelFile(const FString& model_file, const FString& out_dsm_filename, std::vector<FGeometryConfig>& out_geometries) {
+bool MeshLoader::Import3DModelFile(const FString& model_file, const FString& out_dsm_filename, TArray<FGeometryConfig>& out_geometries) {
 	Assimp::Importer importer;
 
 	// 设置后处理标志 - 适用于所有3D格式
@@ -170,7 +170,7 @@ bool MeshLoader::Import3DModelFile(const FString& model_file, const FString& out
 	GLOG(Log::eDebug, "Model contains %u meshes, %u materials", scene->mNumMeshes, scene->mNumMaterials);
 
 	// 材质配置
-	std::vector<FMaterialConfig> MaterialConfigs;
+	TArray<FMaterialConfig> MaterialConfigs;
 
 	// 处理材质
 	if (!ProcessAssimpMaterials(scene, out_dsm_filename, MaterialConfigs)) {
@@ -203,7 +203,7 @@ bool MeshLoader::Import3DModelFile(const FString& model_file, const FString& out
 	return WriteDsmFile(out_dsm_filename, model_file, out_geometries);
 }
 
-bool MeshLoader::ProcessAssimpMaterials(const aiScene* scene, const FString& out_dsm_filename, std::vector<FMaterialConfig>& materialConfigs) {
+bool MeshLoader::ProcessAssimpMaterials(const aiScene* scene, const FString& out_dsm_filename, TArray<FMaterialConfig>& materialConfigs) {
 	for (unsigned int i = 0; i < scene->mNumMaterials; ++i) {
 		const aiMaterial* mat = scene->mMaterials[i];
 		FMaterialConfig config;
@@ -366,7 +366,7 @@ void MeshLoader::ProcessAssimpTextures(const aiMaterial* mat, FMaterialConfig& c
 	}
 }
 
-void MeshLoader::ProcessAssimpNode(aiNode* node, const aiScene* scene, const std::vector<FMaterialConfig>& materialConfigs, const Matrix4& parentTransform, std::vector<FGeometryConfig>& out_geometries) {
+void MeshLoader::ProcessAssimpNode(aiNode* node, const aiScene* scene, const TArray<FMaterialConfig>& materialConfigs, const Matrix4& parentTransform, TArray<FGeometryConfig>& out_geometries) {
 	// 计算当前节点的变换矩阵
 	aiMatrix4x4 aiTrans = node->mTransformation;
 
@@ -393,7 +393,7 @@ void MeshLoader::ProcessAssimpNode(aiNode* node, const aiScene* scene, const std
 	}
 }
 
-void MeshLoader::ProcessAssimpMesh(aiMesh* mesh, const aiScene* scene, const std::vector<FMaterialConfig>& materialConfigs, const Matrix4& transform, std::vector<FGeometryConfig>& out_geometries) {
+void MeshLoader::ProcessAssimpMesh(aiMesh* mesh, const aiScene* scene, const TArray<FMaterialConfig>& materialConfigs, const Matrix4& transform, TArray<FGeometryConfig>& out_geometries) {
 	if (!mesh->HasFaces()) {
 		GLOG(Log::eWarn, "Mesh has no faces, skipping: %s", mesh->mName.C_Str());
 		return;
@@ -409,9 +409,9 @@ void MeshLoader::ProcessAssimpMesh(aiMesh* mesh, const aiScene* scene, const std
 		return;
 	}
 
-	std::vector<Vector3> positions;
-	std::vector<Vector3> normals;
-	std::vector<Vector2f> texcoords;
+	TArray<Vector3> positions;
+	TArray<Vector3> normals;
+	TArray<Vector2f> texcoords;
 
 	positions.reserve(mesh->mNumVertices);
 	normals.reserve(mesh->mNumVertices);
@@ -448,7 +448,7 @@ void MeshLoader::ProcessAssimpMesh(aiMesh* mesh, const aiScene* scene, const std
 	}
 
 	// 转换为MeshFaceData格式以复用现有逻辑
-	std::vector<FMeshFaceData> faces;
+	TArray<FMeshFaceData> faces;
 	faces.reserve(mesh->mNumFaces);
 
 	for (unsigned int i = 0; i < mesh->mNumFaces; ++i) {
@@ -524,9 +524,9 @@ void MeshLoader::ProcessAssimpMesh(aiMesh* mesh, const aiScene* scene, const std
 		newData.name.CStr(), newData.vertex_count, (uint32_t)faces.size());
 }
 
-void MeshLoader::ProcessSubobject(std::vector<Vector3>& positions, std::vector<Vector3>& normals, std::vector<Vector2f>& texcoords, std::vector<FMeshFaceData>& faces, FGeometryConfig* out_data) {
-	std::vector<uint32_t> Indices;
-	std::vector<Vertex> Vertices;
+void MeshLoader::ProcessSubobject(TArray<Vector3>& positions, TArray<Vector3>& normals, TArray<Vector2f>& texcoords, TArray<FMeshFaceData>& faces, FGeometryConfig* out_data) {
+	TArray<uint32_t> Indices;
+	TArray<Vertex> Vertices;
 	Indices.reserve(65535);
 	Vertices.reserve(65535);
 	
@@ -637,8 +637,8 @@ void MeshLoader::ProcessSubobject(std::vector<Vector3>& positions, std::vector<V
 	out_data->indices = Memory::Allocate(out_data->index_count * out_data->index_size, MemoryType::eMemory_Type_Array);
 	Memory::Copy(out_data->indices, Indices.data(), out_data->index_count * out_data->index_size);
 
-	std::vector<uint32_t>().swap(Indices);
-	std::vector<Vertex>().swap(Vertices);
+	TArray<uint32_t>().swap(Indices);
+	TArray<Vertex>().swap(Vertices);
 }	
 bool MeshLoader::WriteDmtFile(const FString& mtl_file_path, FMaterialConfig* config) {
 	// 从 mtl 文件路径提取目录，拼接目标路径
@@ -713,7 +713,7 @@ bool MeshLoader::WriteDmtFile(const FString& mtl_file_path, FMaterialConfig* con
 	return true;
 }
 
-bool MeshLoader::LoadDsmFile(const FString& path, std::vector<FGeometryConfig>& out_geometries) {
+bool MeshLoader::LoadDsmFile(const FString& path, TArray<FGeometryConfig>& out_geometries) {
 	File f(path.CStr());
 	if (!f.IsExist()) {
 		GLOG(Log::eError, "DSM file '%s' does not exist.", path.CStr());
@@ -790,7 +790,7 @@ bool MeshLoader::LoadDsmFile(const FString& path, std::vector<FGeometryConfig>& 
 	return true;
 }
 
-bool MeshLoader::WriteDsmFile(const FString& path, const FString& name, std::vector<FGeometryConfig>& geometries) {
+bool MeshLoader::WriteDsmFile(const FString& path, const FString& name, TArray<FGeometryConfig>& geometries) {
 	File f(path.CStr());
 
 	if (f.IsExist()) {
@@ -850,7 +850,7 @@ bool MeshLoader::WriteDsmFile(const FString& path, const FString& name, std::vec
 	f.Close();
 	return true;
 }
-bool MeshLoader::DeduplicateGeometry(std::vector<FGeometryConfig>& outGeometries) {
+bool MeshLoader::DeduplicateGeometry(TArray<FGeometryConfig>& outGeometries) {
 	size_t Count = outGeometries.size();
 	uint32_t NewVertCount = 0;
 	Vertex* UniqueVerts = nullptr;

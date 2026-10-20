@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include "Containers/TArray.hpp"
 #include "Defines.hpp"
 #include "DMemory.hpp"
 #include <vector>
@@ -214,5 +215,5 @@ private:
 	static SMouseState mouse_current;
 	static SMouseState mouse_previous;
 
-	static std::vector<Keymap*> KeymapStack;
+	static TArray<Keymap*> KeymapStack;
 };

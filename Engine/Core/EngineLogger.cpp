@@ -1,11 +1,16 @@
 ﻿#include "EngineLogger.hpp"
+#include "Console.hpp"
+
+void EngineLogger::ConsoleWrite(Log::Logger::Level level, const char* str) {
+	Console::WriteLine(level, std::string(str ? str : ""));
+}
 
 #ifdef __APPLE__
 using namespace std::filesystem;
 #elif _WIN32
 #define _SILENCE_EXPERIMENTAL_FILESYSTEM_DEPRECATION_WARNING
-#include <experimental/filesystem>
-using namespace std::experimental::filesystem;
+#include <filesystem>
+using namespace std::filesystem;
 #endif
 
 EngineLogger::EngineLogger(){

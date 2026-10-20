@@ -114,15 +114,19 @@ bool Freelist::FreeBlock(size_t size, size_t offset)
 	MutexGuard Guard(freelist_mutex);
 
 	if (ListMemory == nullptr || size == 0) {
+		GLOG(Log::eError, "Freelist::FreeBlock invalid: ListMemory=0x%p size=%zu", ListMemory, size);
 		return false;
 	}
 
 	// 如果有 TotalSize，建议在这里检查：
-	if (offset > TotalSize || size > TotalSize - offset)
+	if (offset > TotalSize || size > TotalSize - offset) {
+		GLOG(Log::eError, "Freelist::FreeBlock out of range: offset=%zu size=%zu TotalSize=%zu", offset, size, TotalSize);
 		return false;
+	}
 
 	// 防止 offset + size 溢出
 	if (size > SIZE_MAX - offset) {
+		GLOG(Log::eError, "Freelist::FreeBlock overflow: offset=%zu size=%zu", offset, size);
 		return false;
 	}
 

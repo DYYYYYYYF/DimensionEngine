@@ -7,6 +7,10 @@
 #include <memory>
 #include <vector>
 
+// C4251: std::shared_ptr 等 STL 类型成员跨 DLL 接口为 MSVC 已知良性警告（同一 CRT），局部抑制
+#pragma warning(push)
+#pragma warning(disable : 4251)
+
 class UGeometry;
 class UStaticMeshComponent;
 
@@ -47,3 +51,4 @@ public:
 
 	UStaticMeshComponent* MeshComponent = nullptr;
 };
+#pragma warning(pop)

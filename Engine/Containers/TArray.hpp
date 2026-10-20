@@ -30,22 +30,18 @@ struct TIsCompleteType<T, std::void_t<decltype(sizeof(T))>> : std::true_type {};
 template<typename ElementType>
 class DAPI TArray {
 public:
-	TArray() : ArrayMemory(nullptr), Capacity(0), Stride(sizeof(ElementType)), Length(0) {
-		size_t ArrayMemSize = ARRAY_DEFAULT_CAPACITY * sizeof(ElementType);
-		ArrayMemory = (ElementType*)Memory::Allocate(ArrayMemSize, MemoryType::eMemory_Type_Array);
-		if (!ArrayMemory) {
-			GLOG(Log::eError, "Failed to allocate memory for TArray");
-			return;
-		}
-		Platform::PlatformSetMemory(ArrayMemory, 0, ArrayMemSize);
-		Capacity = ARRAY_DEFAULT_CAPACITY;
-	}
+	// [FIX] 默认构造不再分配内存（对齐 std::vector 语义）。
+	// 原实现默认即分配 1 个元素，导致全局/静态 TArray（如 EngineEvent::registered、
+	// Console::RegisteredConsumers）在 main() 之前的静态初始化期就从 DynamicAllocator
+	// 的 10MB 初始块分配内存；随后 Memory::Initialize(500MB) 的 Resize 会销毁该旧块，
+	// 使这些 TArray 持有的指针悬垂，首次 push/resize/reserve 释放时触发
+	// FreeAligned 失败/越界释放，进而 0xC0000005 崩溃。
+	TArray() : ArrayMemory(nullptr), Capacity(0), Stride(sizeof(ElementType)), Length(0) {}
 
 	// 拷贝构造函数 - 修正了内存分配失败处理
 	TArray(const TArray& arr) : ArrayMemory(nullptr), Capacity(0), Stride(sizeof(ElementType)), Length(0) {
 		if (arr.ArrayMemory == nullptr || arr.Length == 0) {
-			*this = TArray(); // 调用默认构造函数
-			return;
+			return; // [FIX] 源为空时保持空数组，不再 *this = TArray()（会无限递归）
 		}
 
 		Capacity = arr.Capacity;
@@ -82,8 +78,7 @@ public:
 	// 构造函数 - 修正了非指针类型的初始化
 	TArray(size_t size) : ArrayMemory(nullptr), Capacity(0), Stride(sizeof(ElementType)), Length(0) {
 		if (size == 0) {
-			*this = TArray(); // 调用默认构造函数
-			return;
+			return; // [FIX] 保持空数组
 		}
 
 		size_t ArrayMemSize = size * sizeof(ElementType);
@@ -119,12 +114,52 @@ public:
 		}
 	}
 
+	// 构造：填充 size 个 value（std::vector(size, value) 兼容）
+	TArray(size_t size, const ElementType& value) : ArrayMemory(nullptr), Capacity(0), Stride(sizeof(ElementType)), Length(0) {
+		if (size == 0) {
+			return; // [FIX] 保持空数组
+		}
+
+		size_t ArrayMemSize = size * sizeof(ElementType);
+		ArrayMemory = (ElementType*)Memory::Allocate(ArrayMemSize, MemoryType::eMemory_Type_Array);
+		if (!ArrayMemory) {
+			GLOG(Log::eError, "Failed to allocate memory for TArray with size %zu and fill value", size);
+			return;
+		}
+
+		Capacity = size;
+		Length = size;
+
+		if constexpr (std::is_pointer<ElementType>::value) {
+			Platform::PlatformSetMemory(ArrayMemory, 0, ArrayMemSize);
+			for (size_t i = 0; i < size; ++i) {
+				new(ArrayMemory + i) ElementType(value);
+			}
+		}
+		else {
+			for (size_t i = 0; i < size; ++i) {
+				try {
+					new(ArrayMemory + i) ElementType(value);
+				}
+				catch (...) {
+					for (size_t j = 0; j < i; ++j) {
+						ArrayMemory[j].~ElementType();
+					}
+					Memory::Free(ArrayMemory, MemoryType::eMemory_Type_Array);
+					ArrayMemory = nullptr;
+					Capacity = 0;
+					Length = 0;
+					throw;
+				}
+			}
+		}
+	}
+
 	TArray(std::initializer_list<ElementType> list)
 		: ArrayMemory(nullptr), Capacity(0), Stride(sizeof(ElementType)), Length(0)
 	{
 		if (list.size() == 0) {
-			*this = TArray();
-			return;
+			return; // [FIX] 保持空数组
 		}
 
 		size_t ArrayMemSize = list.size() * sizeof(ElementType);
@@ -180,6 +215,12 @@ public:
 	// 修正了Resize函数的异常安全性
 	void Resize(size_t newSize = 0) {
 		size_t NewCapacity = newSize > 0 ? newSize : Capacity * ARRAY_DEFAULT_RESIZE_FACTOR;
+		// [FIX] 空数组（默认构造后 Capacity==0）首次扩容至少分配 1 个元素，
+		// 否则 NewCapacity 恒为 0，会误入下方 newSize==0 分支直接 return，
+		// 导致 Push/Emplace 对 nullptr 的 ArrayMemory 执行 placement new。
+		if (NewCapacity == 0) {
+			NewCapacity = ARRAY_DEFAULT_CAPACITY;
+		}
 
 		if (NewCapacity == Capacity) {
 			if (newSize > 0 && newSize != Length) {
@@ -438,8 +479,9 @@ public:
 		}
 
 		Capacity = 0;
-		Stride = 0;
 		Length = 0;
+		// [FIX] Empty() 后保留 Stride：数组为空但元素类型未变，
+		// 之后 push_back 时 Allocate(NewCapacity * Stride) 才能按真实元素大小分配。
 	}
 
 	bool IsEmpty() const { return Length == 0; }
@@ -475,8 +517,7 @@ public:
 		Empty();
 
 		if (other.ArrayMemory == nullptr || other.Length == 0) {
-			*this = TArray(); // 重新初始化为空数组
-			return *this;
+			return *this; // [FIX] 源为空时保持空数组，不再 *this = TArray()（会无限递归）
 		}
 
 		Capacity = other.Capacity;
@@ -518,7 +559,9 @@ public:
 		Stride(other.Stride), Length(other.Length) {
 		other.ArrayMemory = nullptr;
 		other.Capacity = 0;
-		other.Stride = 0;
+		// [FIX] 移动后保留 Stride：元素类型不变，Stride 不应归零。
+		// 归零会使源对象后续 push_back/Resize 走 Allocate(NewCapacity*0)=Allocate(0)
+		// 拿到 0 字节块/空指针，placement new 或元素访问触发 0xC0000005。
 		other.Length = 0;
 	}
 
@@ -533,7 +576,7 @@ public:
 
 			other.ArrayMemory = nullptr;
 			other.Capacity = 0;
-			other.Stride = 0;
+			// [FIX] 移动后保留 Stride（理由同上：源对象复用需按真实元素大小分配）。
 			other.Length = 0;
 		}
 		return *this;
@@ -553,6 +596,167 @@ public:
 			GLOG(Log::eError, "Index out of bounds! Length: %zu, Index: %lld", Length, static_cast<long long>(i));
 		}
 		return ArrayMemory[i];
+	}
+
+	// ══════════════════════════════════════════════════════════════
+	//  std::vector 兼容别名（无侵入替换 std::vector 时使用）
+	// ══════════════════════════════════════════════════════════════
+	using value_type = ElementType;
+	using size_type = size_t;
+	using reference = ElementType&;
+	using const_reference = const ElementType&;
+	using pointer = ElementType*;
+	using const_pointer = const ElementType*;
+	// 迭代器即裸指针（与 begin()/end() 返回类型一致）
+	using iterator = ElementType*;
+	using const_iterator = const ElementType*;
+
+	void push_back(const ElementType& value) { Push(value); }
+	void push_back(ElementType&& value) { Push(std::move(value)); }
+
+	template<typename... Args>
+	reference emplace_back(Args&&... args) { return Emplace(std::forward<Args>(args)...); }
+
+	reference at(size_t i) {
+		if (i >= Length) {
+			GLOG(Log::eError, "Index out of bounds! Length: %zu, Index: %zu", Length, i);
+			// std::vector::at 语义：越界抛出异常；这里在越界时返回末尾元素兜底，
+			// 避免无界 UB（调用方本应保证索引有效）。
+			i = Length > 0 ? Length - 1 : 0;
+		}
+		return ArrayMemory[i];
+	}
+
+	const_reference at(size_t i) const {
+		if (i >= Length) {
+			GLOG(Log::eError, "Index out of bounds! Length: %zu, Index: %zu", Length, i);
+			i = Length > 0 ? Length - 1 : 0;
+		}
+		return ArrayMemory[i];
+	}
+
+	// 删除指定迭代器位置的元素，返回下一个元素的迭代器（std::vector::erase 语义）
+	iterator erase(iterator pos) {
+		size_t idx = static_cast<size_t>(pos - begin());
+		if (idx >= Length) return end();
+		RemoveAt(idx);
+		return begin() + idx;
+	}
+
+	iterator erase(const_iterator pos) {
+		size_t idx = static_cast<size_t>(pos - cbegin());
+		if (idx >= Length) return end();
+		RemoveAt(idx);
+		return begin() + idx;
+	}
+
+	// 删除 [first, last) 范围内的元素，返回 last 之后的下一个元素迭代器
+	iterator erase(iterator first, iterator last) {
+		size_t first_idx = static_cast<size_t>(first - begin());
+		size_t last_idx = static_cast<size_t>(last - begin());
+		if (first_idx >= Length) return end();
+		if (last_idx > Length) last_idx = Length;
+		if (last_idx <= first_idx) return begin() + last_idx;
+
+		size_t count = last_idx - first_idx;
+		// 把 last 之后的元素逐个移动回 first 处
+		for (size_t i = first_idx; i + count < Length; ++i) {
+			ArrayMemory[i].~ElementType();
+			new (ArrayMemory + i) ElementType(std::move(ArrayMemory[i + count]));
+		}
+		// 销毁尾部多余元素
+		if constexpr (TIsCompleteType<ElementType>::value && !std::is_pointer<ElementType>::value) {
+			for (size_t i = Length - count; i < Length; ++i) {
+				ArrayMemory[i].~ElementType();
+			}
+		}
+		Length -= count;
+		return begin() + first_idx;
+	}
+
+	// 在迭代器位置之前插入元素，返回指向新元素的迭代器（std::vector::insert 语义）
+	iterator insert(iterator pos, const ElementType& value) {
+		size_t idx = static_cast<size_t>(pos - begin());
+		if (idx > Length) {
+			GLOG(Log::eError, "Index out of bounds! Length: %zu, Index: %zu", Length, idx);
+			return end();
+		}
+		if (Length >= Capacity) Resize();
+		// 从后往前移动元素，为新元素腾出空间
+		for (size_t i = Length; i > idx; --i) {
+			new (ArrayMemory + i) ElementType(std::move(ArrayMemory[i - 1]));
+			ArrayMemory[i - 1].~ElementType();
+		}
+		new (ArrayMemory + idx) ElementType(value);
+		++Length;
+		return begin() + idx;
+	}
+
+	iterator insert(const_iterator pos, const ElementType& value) {
+		size_t idx = static_cast<size_t>(pos - ArrayMemory);
+		if (idx > Length) {
+			GLOG(Log::eError, "Index out of bounds! Length: %zu, Index: %zu", Length, idx);
+			return end();
+		}
+		if (Length >= Capacity) Resize();
+		for (size_t i = Length; i > idx; --i) {
+			new (ArrayMemory + i) ElementType(std::move(ArrayMemory[i - 1]));
+			ArrayMemory[i - 1].~ElementType();
+		}
+		new (ArrayMemory + idx) ElementType(value);
+		++Length;
+		return begin() + idx;
+	}
+
+	iterator insert(iterator pos, ElementType&& value) {
+		size_t idx = static_cast<size_t>(pos - begin());
+		if (idx > Length) {
+			GLOG(Log::eError, "Index out of bounds! Length: %zu, Index: %zu", Length, idx);
+			return end();
+		}
+		if (Length >= Capacity) Resize();
+		// 从后往前移动元素，为新元素腾出空间
+		for (size_t i = Length; i > idx; --i) {
+			new (ArrayMemory + i) ElementType(std::move(ArrayMemory[i - 1]));
+			ArrayMemory[i - 1].~ElementType();
+		}
+		new (ArrayMemory + idx) ElementType(std::move(value));
+		++Length;
+		return begin() + idx;
+	}
+
+	void pop_back() { if (Length > 0) RemoveAt(Length - 1); }
+	void pop_front() { if (Length > 0) RemoveAt(0); }
+
+	reference front() { return ArrayMemory[0]; }
+	const_reference front() const { return ArrayMemory[0]; }
+	reference back() { return ArrayMemory[Length > 0 ? Length - 1 : 0]; }
+	const_reference back() const { return ArrayMemory[Length > 0 ? Length - 1 : 0]; }
+
+	bool empty() const { return Length == 0; }
+	size_t size() const { return Length; }
+	size_t capacity() const { return Capacity; }
+	pointer data() { return ArrayMemory; }
+	const_pointer data() const { return ArrayMemory; }
+	pointer cbegin() { return ArrayMemory; }
+	pointer cend() { return ArrayMemory + Length; }
+
+	void resize(size_t newSize) { Resize(newSize); }
+	void resize(size_t newSize, const ElementType& value) {
+		size_t oldSize = Length;
+		Resize(newSize);
+		for (size_t i = oldSize; i < Length; ++i) {
+			ArrayMemory[i] = value;
+		}
+	}
+	void reserve(size_t newCapacity) { Reserve(newCapacity); }
+	void clear() { Clear(); }
+
+	void swap(TArray& other) noexcept {
+		std::swap(ArrayMemory, other.ArrayMemory);
+		std::swap(Capacity, other.Capacity);
+		std::swap(Stride, other.Stride);
+		std::swap(Length, other.Length);
 	}
 
 private:

@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include "Containers/TArray.hpp"
 #include "defines.hpp"
 #include <string>
 #include <vector>
@@ -21,6 +22,6 @@ public:
 	 * @param include_empty 是否保留空字符串
 	 * @return 拆分后的字符串数组
 	 */
-	static std::vector<std::string> StringSplit(const std::string& str, char delimiter, bool trim_entries, bool include_empty);
+	static TArray<std::string> StringSplit(const std::string& str, char delimiter, bool trim_entries, bool include_empty);
 };
 

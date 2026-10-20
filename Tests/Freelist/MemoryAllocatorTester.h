@@ -1,4 +1,5 @@
 ﻿#include <Memory/DynamicAllocator.h>
+#include "Containers/TArray.hpp"
 #include <chrono>
 #include <vector>
 #include <random>
@@ -11,8 +12,8 @@
 class AllocatorTester {
 private:
 	DynamicAllocator allocator;
-	std::vector<void*> allocated_blocks;
-	std::vector<size_t> block_sizes;
+	TArray<void*> allocated_blocks;
+	TArray<size_t> block_sizes;
 
 public:
 	// ================================
@@ -94,7 +95,7 @@ public:
 		}
 
 		// 测试不同对齐要求
-		std::vector<unsigned short> alignments = { 1, 2, 4, 8, 16, 32, 64, 128 };
+		TArray<unsigned short> alignments = { 1, 2, 4, 8, 16, 32, 64, 128 };
 
 		for (auto alignment : alignments) {
 			void* ptr = allocator.AllocateAligned(100, alignment);
@@ -184,7 +185,7 @@ public:
 			uint8_t pattern;
 		};
 
-		std::vector<Block> blocks;
+		TArray<Block> blocks;
 		uint8_t pattern = 0x10;
 
 		for (size_t size = 16; size <= 1024; size *= 2) {
@@ -238,7 +239,7 @@ public:
 			return false;
 		}
 
-		std::vector<void*> ptrs;
+		TArray<void*> ptrs;
 
 		// 分配许多小块
 		for (int i = 0; i < 100; i++) {
@@ -325,7 +326,7 @@ public:
 
 		auto start = std::chrono::high_resolution_clock::now();
 
-		std::vector<void*> ptrs;
+		TArray<void*> ptrs;
 		ptrs.reserve(num_allocations);
 
 		// 分配测试
@@ -359,7 +360,7 @@ public:
 		std::cout << "[PERF] 测试不同大小模式..." << std::endl;
 
 		// 修复: 为不同大小使用不同的分配次数，避免内存不足
-		std::vector<std::pair<size_t, int>> size_ops_pairs = {
+		TArray<std::pair<size_t, int>> size_ops_pairs = {
 			{16, 5000},      // 16字节: 5000次 ≈ 0.5MB
 			{64, 5000},      // 64字节: 5000次 ≈ 2MB  
 			{256, 5000},     // 256字节: 5000次 ≈ 8MB
@@ -380,7 +381,7 @@ public:
 
 			auto start = std::chrono::high_resolution_clock::now();
 
-			std::vector<void*> ptrs;
+			TArray<void*> ptrs;
 			ptrs.reserve(num_ops); // 预分配容器空间
 
 			// 分配阶段
@@ -421,7 +422,7 @@ public:
 		if (!allocator.Resize(32 * 1024 * 1024)) return;
 
 		// 创建碎片化场景
-		std::vector<void*> ptrs;
+		TArray<void*> ptrs;
 		for (int i = 0; i < 1000; i++) {
 			void* ptr = allocator.Allocate(1024);
 			if (ptr) ptrs.push_back(ptr);
@@ -435,7 +436,7 @@ public:
 		// 测试在碎片化环境下的分配性能
 		auto start = std::chrono::high_resolution_clock::now();
 
-		std::vector<void*> new_ptrs;
+		TArray<void*> new_ptrs;
 		for (int i = 0; i < 500; i++) {
 			void* ptr = allocator.Allocate(512);
 			if (ptr) new_ptrs.push_back(ptr);
@@ -468,7 +469,7 @@ public:
 		if (!allocator.Resize(64 * 1024 * 1024)) return;
 
 		auto start = std::chrono::high_resolution_clock::now();
-		std::vector<void*> custom_ptrs;
+		TArray<void*> custom_ptrs;
 		for (int i = 0; i < num_allocations; i++) {
 			void* ptr = allocator.Allocate(alloc_size);
 			if (ptr) custom_ptrs.push_back(ptr);
@@ -483,7 +484,7 @@ public:
 
 		// 测试系统malloc
 		start = std::chrono::high_resolution_clock::now();
-		std::vector<void*> malloc_ptrs;
+		TArray<void*> malloc_ptrs;
 		for (int i = 0; i < num_allocations; i++) {
 			void* ptr = malloc(alloc_size);
 			if (ptr) malloc_ptrs.push_back(ptr);
@@ -514,7 +515,7 @@ public:
 
 		// 执行一系列分配和释放操作
 		for (int cycle = 0; cycle < 10; cycle++) {
-			std::vector<void*> ptrs;
+			TArray<void*> ptrs;
 
 			// 分配
 			for (int i = 0; i < 100; i++) {

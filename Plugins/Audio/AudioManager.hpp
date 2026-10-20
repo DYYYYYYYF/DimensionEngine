@@ -1,4 +1,5 @@
 ﻿#pragma once
+#include "Containers/TMap.hpp"
 #include <Al/al.h>
 #include "Sound.hpp"
 #include <string>
@@ -20,5 +21,5 @@ public:
 	DLLEXPORT void StopSound(const std::string& filename);
 
 private:
-	std::unordered_map<std::string, Sound*> Sounds;
+	TMap<std::string, Sound*> Sounds;
 };

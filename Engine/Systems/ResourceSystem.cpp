@@ -47,7 +47,7 @@ void ResourceSystem::Shutdown() {
 		}
 
 		RegisteredLoaders.clear();
-		std::vector<IResourceLoader*>().swap(RegisteredLoaders);
+		TArray<IResourceLoader*>().swap(RegisteredLoaders);
 	}
 }
 

@@ -11,7 +11,7 @@ Controller::SKeyboardState Controller::keyboard_previous;
 Controller::SMouseState Controller::mouse_current;
 Controller::SMouseState Controller::mouse_previous;
 
-std::vector<Keymap*> Controller::KeymapStack;
+TArray<Keymap*> Controller::KeymapStack;
 
 Controller::~Controller() {
 	for (size_t i = 0; i < KeymapStack.size(); ++i) {

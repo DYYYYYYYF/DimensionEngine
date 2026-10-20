@@ -133,8 +133,8 @@ void ASimpleEditorActor::BuildWidgetTree() {
 	SetRootWidget(RootPanel);
 }
 
-void ASimpleEditorActor::CreateEditorOverlayTexts(UWorld* World) {
-	if (!World) {
+void ASimpleEditorActor::CreateEditorOverlayTexts(UWorld* InWorld) {
+	if (!InWorld) {
 		return;
 	}
 
@@ -144,7 +144,7 @@ void ASimpleEditorActor::CreateEditorOverlayTexts(UWorld* World) {
 		"Noto Sans 21px", 21, FString("\xe5\xb1\x82\xe7\xba\xa7\xe5\x88\x97\xe8\xa1\xa8 Hierarchy"));
 	if (HierarchyTitle) {
 		HierarchyTitle->SetActorLocation(Vector3(HierarchyX + 10.0f, HierarchyY + 6.0f, 0.0f));
-		World->AddActor(HierarchyTitle);
+		InWorld->AddActor(HierarchyTitle);
 		EditorActors.Push(HierarchyTitle);
 	}
 
@@ -153,7 +153,7 @@ void ASimpleEditorActor::CreateEditorOverlayTexts(UWorld* World) {
 		"Ubuntu Mono 21px", 20, FString("Properties"));
 	if (PropertiesTitle) {
 		PropertiesTitle->SetActorLocation(Vector3(PropertiesX + 10.0f, HierarchyY + 8.0f, 0.0f));
-		World->AddActor(PropertiesTitle);
+		InWorld->AddActor(PropertiesTitle);
 		EditorActors.Push(PropertiesTitle);
 	}
 
@@ -161,7 +161,7 @@ void ASimpleEditorActor::CreateEditorOverlayTexts(UWorld* World) {
 		"Ubuntu Mono 21px", 20, FString(" "));
 	if (PropertiesText) {
 		PropertiesText->SetActorLocation(Vector3(PropertiesX + 10.0f, HierarchyY + 36.0f, 0.0f));
-		World->AddActor(PropertiesText);
+		InWorld->AddActor(PropertiesText);
 		EditorActors.Push(PropertiesText);
 	}
 
@@ -170,7 +170,7 @@ void ASimpleEditorActor::CreateEditorOverlayTexts(UWorld* World) {
 		"Ubuntu Mono 21px", 20, FString("Viewport | Perspective"));
 	if (ViewportTitle) {
 		ViewportTitle->SetActorLocation(Vector3(ViewportX + 14.0f, ViewportY + 5.0f, 0.0f));
-		World->AddActor(ViewportTitle);
+		InWorld->AddActor(ViewportTitle);
 		EditorActors.Push(ViewportTitle);
 	}
 
@@ -184,7 +184,7 @@ void ASimpleEditorActor::CreateEditorOverlayTexts(UWorld* World) {
 			ToolbarBtnLabels[i]->SetActorLocation(Vector3(
 				ToolbarButtons[i].X + ToolbarBtnW * 0.5f - 20.0f,
 				ToolbarButtons[i].Y + 6.0f, 0.0f));
-			World->AddActor(ToolbarBtnLabels[i]);
+			InWorld->AddActor(ToolbarBtnLabels[i]);
 			EditorActors.Push(ToolbarBtnLabels[i]);
 		}
 	}
@@ -194,7 +194,7 @@ void ASimpleEditorActor::CreateEditorOverlayTexts(UWorld* World) {
 		"Ubuntu Mono 21px", 20, FString("Idle"));
 	if (ToolbarStatusText) {
 		ToolbarStatusText->SetActorLocation(Vector3(480.0f, 12.0f, 0.0f));
-		World->AddActor(ToolbarStatusText);
+		InWorld->AddActor(ToolbarStatusText);
 		EditorActors.Push(ToolbarStatusText);
 	}
 
@@ -208,7 +208,7 @@ void ASimpleEditorActor::CreateEditorOverlayTexts(UWorld* World) {
 			LogTabLabels[i]->SetActorLocation(Vector3(
 				LogX + LogTabX0 + i * LogTabGap + 14.0f,
 				LogY + LogTabY + 4.0f, 0.0f));
-			World->AddActor(LogTabLabels[i]);
+			InWorld->AddActor(LogTabLabels[i]);
 			EditorActors.Push(LogTabLabels[i]);
 		}
 	}
@@ -237,13 +237,13 @@ void ASimpleEditorActor::Tick(float DeltaTime) {
 	// 此前未调用基类导致背景矩形几何从未构建（Log 中无 Material.UI.Batched 重建痕迹）。
 	AUIActor::Tick(DeltaTime);
 
-	UWorld* World = GetWorld();
-	if (!World || !Owner) {
+	UWorld* WorldPtr = GetWorld();
+	if (!WorldPtr || !Owner) {
 		return;
 	}
 
 	UpdateLayout();
-	RebuildHierarchyList(World);
+	RebuildHierarchyList(WorldPtr);
 	HandleMouseInput();
 	HandleKeyboardInput();
 	SyncHierarchyList();
@@ -348,13 +348,13 @@ void ASimpleEditorActor::UpdateLayout() {
 	}
 }
 
-void ASimpleEditorActor::RebuildHierarchyList(UWorld* World) {
+void ASimpleEditorActor::RebuildHierarchyList(UWorld* InWorld) {
 	DisplayActors.Clear();
-	if (!World) {
+	if (!InWorld) {
 		return;
 	}
 
-	const TArray<AActor*>& WorldActors = World->GetWorldActors();
+	const TArray<AActor*>& WorldActors = InWorld->GetWorldActors();
 	AActor* MainCam = CameraSystem::Get().GetMainCamera();
 	for (size_t i = 0; i < WorldActors.Size(); ++i) {
 		AActor* A = WorldActors[i];

@@ -1,0 +1,283 @@
+#pragma once
+
+#include "Defines.hpp"
+#include "Core/DMemory.hpp"
+#include "Core/EngineLogger.hpp"
+#include "Platform/Platform.hpp"
+#include <cstddef>
+#include <utility>
+#include <initializer_list>
+
+/**
+ * @brief 双端队列容器，替代 std::deque。
+ *
+ * 提供 std::deque 风格的接口：push_back / push_front / pop_back / pop_front、
+ * 迭代器随机访问、insert / erase 等。
+ * 内部以动态数组 + 头部偏移实现，队头/队尾操作均为 O(1) 摊还。
+ */
+template<typename ElementType>
+class TDeque {
+public:
+	using value_type = ElementType;
+	using size_type = size_t;
+	using reference = ElementType&;
+	using const_reference = const ElementType&;
+	using iterator = ElementType*;
+	using const_iterator = const ElementType*;
+
+	TDeque()
+		: Data_(nullptr), Capacity_(0), Length_(0), Head_(0) {
+	}
+
+	explicit TDeque(size_t size)
+		: Data_(nullptr), Capacity_(0), Length_(0), Head_(0) {
+		reserve(size);
+		for (size_t i = 0; i < size; ++i)
+			PushBack(ElementType());
+	}
+
+	TDeque(const TDeque& other)
+		: Data_(nullptr), Capacity_(0), Length_(0), Head_(0) {
+		for (size_t i = 0; i < other.Length_; ++i)
+			PushBack(other.AtLinear(i));
+	}
+
+	TDeque(TDeque&& other) noexcept
+		: Data_(other.Data_), Capacity_(other.Capacity_),
+		Length_(other.Length_), Head_(other.Head_) {
+		other.Data_ = nullptr;
+		other.Capacity_ = 0;
+		other.Length_ = 0;
+		other.Head_ = 0;
+	}
+
+	~TDeque() {
+		clear();
+		Memory::Free(Data_, MemoryType::eMemory_Type_Array);
+		Data_ = nullptr;
+		Capacity_ = 0;
+	}
+
+	TDeque& operator=(const TDeque& other) {
+		if (this == &other) return *this;
+		clear();
+		for (size_t i = 0; i < other.Length_; ++i)
+			PushBack(other.AtLinear(i));
+		return *this;
+	}
+
+	TDeque& operator=(TDeque&& other) noexcept {
+		if (this != &other) {
+			clear();
+			Memory::Free(Data_, MemoryType::eMemory_Type_Array);
+			Data_ = other.Data_;
+			Capacity_ = other.Capacity_;
+			Length_ = other.Length_;
+			Head_ = other.Head_;
+			other.Data_ = nullptr;
+			other.Capacity_ = 0;
+			other.Length_ = 0;
+			other.Head_ = 0;
+		}
+		return *this;
+	}
+
+	TDeque(std::initializer_list<ElementType> list)
+		: Data_(nullptr), Capacity_(0), Length_(0), Head_(0) {
+		reserve(list.size());
+		for (const ElementType& v : list)
+			PushBack(v);
+	}
+
+	// ── 容量 ─────────────────────────────────────────────
+
+	size_t size() const noexcept { return Length_; }
+	bool   empty() const noexcept { return Length_ == 0; }
+	size_t capacity() const noexcept { return Capacity_; }
+
+	void clear() {
+		for (size_t i = 0; i < Length_; ++i)
+			AtLinear(i).~ElementType();
+		Length_ = 0;
+		Head_ = 0;
+	}
+
+	// 预留容量（不改变元素数量）
+	void reserve(size_t newCapacity) {
+		if (newCapacity <= Capacity_) return;
+		Grow(newCapacity);
+	}
+
+	// ── 元素访问 ─────────────────────────────────────────
+
+	reference       operator[](size_t i)       { return AtLinear(i); }
+	const_reference operator[](size_t i) const { return AtLinear(i); }
+
+	reference       front()       { return AtLinear(0); }
+	const_reference front() const { return AtLinear(0); }
+	reference       back()        { return AtLinear(Length_ - 1); }
+	const_reference back()  const { return AtLinear(Length_ - 1); }
+
+	// ── 迭代器 ───────────────────────────────────────────
+
+	iterator       begin()       { return Data_ + Head_; }
+	const_iterator begin() const { return Data_ + Head_; }
+	iterator       end()         { return Data_ + Head_ + Length_; }
+	const_iterator end()   const { return Data_ + Head_ + Length_; }
+
+	// ── 修改 ─────────────────────────────────────────────
+
+	void push_back(const ElementType& v) {
+		if (Length_ >= Capacity_) Grow(Capacity_ ? Capacity_ * 2 : 4);
+		new (Data_ + Head_ + Length_) ElementType(v);
+		++Length_;
+	}
+
+	void push_back(ElementType&& v) {
+		if (Length_ >= Capacity_) Grow(Capacity_ ? Capacity_ * 2 : 4);
+		new (Data_ + Head_ + Length_) ElementType(std::move(v));
+		++Length_;
+	}
+
+	template<typename... Args>
+	reference emplace_back(Args&&... args) {
+		if (Length_ >= Capacity_) Grow(Capacity_ ? Capacity_ * 2 : 4);
+		new (Data_ + Head_ + Length_) ElementType(std::forward<Args>(args)...);
+		++Length_;
+		return back();
+	}
+
+	void pop_back() {
+		if (Length_ == 0) return;
+		AtLinear(Length_ - 1).~ElementType();
+		--Length_;
+	}
+
+	void push_front(const ElementType& v) {
+		if (Length_ >= Capacity_) Grow(Capacity_ ? Capacity_ * 2 : 4);
+		if (Head_ == 0) Recenter();
+		--Head_;
+		new (Data_ + Head_) ElementType(v);
+		++Length_;
+	}
+
+	void push_front(ElementType&& v) {
+		if (Length_ >= Capacity_) Grow(Capacity_ ? Capacity_ * 2 : 4);
+		if (Head_ == 0) Recenter();
+		--Head_;
+		new (Data_ + Head_) ElementType(std::move(v));
+		++Length_;
+	}
+
+	void pop_front() {
+		if (Length_ == 0) return;
+		AtLinear(0).~ElementType();
+		++Head_;
+		--Length_;
+		if (Length_ == 0) Head_ = 0;
+	}
+
+	// 在迭代器位置之前插入，返回指向新元素的迭代器（与 std::deque 语义一致）
+	iterator insert(iterator pos, const ElementType& v) {
+		size_t idx = static_cast<size_t>(pos - begin());
+		if (idx > Length_) idx = Length_;
+		if (Length_ >= Capacity_) Grow(Capacity_ ? Capacity_ * 2 : 4);
+		// 若扩容导致指针失效，重新计算 idx 指向的位置
+		pos = begin() + idx;
+		if (idx == Length_) {
+			// 尾部插入
+			new (Data_ + Head_ + Length_) ElementType(v);
+			++Length_;
+			return begin() + idx;
+		}
+		if (idx == 0) {
+			push_front(v);
+			return begin();
+		}
+		// 中间插入：把尾部元素往后搬一格，再在 idx 处构造
+		new (Data_ + Head_ + Length_) ElementType(std::move(back()));
+		for (size_t i = Length_; i > idx + 1; --i)
+			AtLinear(i) = std::move(AtLinear(i - 1));
+		AtLinear(idx) = ElementType(v);
+		++Length_;
+		return begin() + idx;
+	}
+
+	iterator insert(iterator pos, ElementType&& v) {
+		size_t idx = static_cast<size_t>(pos - begin());
+		if (idx > Length_) idx = Length_;
+		if (Length_ >= Capacity_) Grow(Capacity_ ? Capacity_ * 2 : 4);
+		pos = begin() + idx;
+		if (idx == Length_) {
+			new (Data_ + Head_ + Length_) ElementType(std::move(v));
+			++Length_;
+			return begin() + idx;
+		}
+		if (idx == 0) {
+			push_front(std::move(v));
+			return begin();
+		}
+		new (Data_ + Head_ + Length_) ElementType(std::move(back()));
+		for (size_t i = Length_; i > idx + 1; --i)
+			AtLinear(i) = std::move(AtLinear(i - 1));
+		AtLinear(idx) = ElementType(std::move(v));
+		++Length_;
+		return begin() + idx;
+	}
+
+	// 删除迭代器位置的元素，返回下一元素的迭代器（std::deque 语义）
+	iterator erase(iterator pos) {
+		size_t idx = static_cast<size_t>(pos - begin());
+		if (idx >= Length_) return end();
+		if (idx == 0) {
+			pop_front();
+			return begin();
+		}
+		if (idx == Length_ - 1) {
+			pop_back();
+			return end();
+		}
+		AtLinear(idx).~ElementType();
+		for (size_t i = idx; i + 1 < Length_; ++i)
+			AtLinear(i) = std::move(AtLinear(i + 1));
+		AtLinear(Length_ - 1).~ElementType();
+		--Length_;
+		return begin() + idx;
+	}
+
+private:
+	ElementType* Data_;
+	size_t       Capacity_;
+	size_t       Length_;
+	size_t       Head_;
+
+	// 逻辑下标 -> 物理下标
+	ElementType& AtLinear(size_t i) { return Data_[Head_ + i]; }
+	const ElementType& AtLinear(size_t i) const { return Data_[Head_ + i]; }
+
+	// 当队头没有空位时，把元素搬到数组头部，腾出队头空间
+	void Recenter() {
+		if (Length_ == 0) { Head_ = 0; return; }
+		for (size_t i = 0; i < Length_; ++i)
+			Data_[i] = std::move(Data_[Head_ + i]);
+		Head_ = 0;
+	}
+
+	void Grow(size_t newCapacity) {
+		if (newCapacity <= Capacity_) return;
+		ElementType* newData = (ElementType*)Memory::Allocate(
+			newCapacity * sizeof(ElementType), MemoryType::eMemory_Type_Array);
+		if (!newData) {
+			GLOG(Log::eFatal, "TDeque::Grow: allocation failed");
+			return;
+		}
+		for (size_t i = 0; i < Length_; ++i)
+			new (newData + i) ElementType(std::move(AtLinear(i)));
+		for (size_t i = 0; i < Length_; ++i)
+			AtLinear(i).~ElementType();
+		Memory::Free(Data_, MemoryType::eMemory_Type_Array);
+		Data_ = newData;
+		Capacity_ = newCapacity;
+		Head_ = 0;
+	}
+};

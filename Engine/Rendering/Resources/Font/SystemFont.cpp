@@ -42,8 +42,8 @@ bool USystemFont::InitFromResourceData(FSystemFontResourceData* resourceData, in
 
 void USystemFont::ReleaseResource(IRenderer* renderer) {
 	// 清理所有 Variant
-	for (auto& [size, variant] : variants_) {
-		variant->Cleanup();
+	for (auto& Pair : variants_) {
+		Pair.Value->Cleanup();
 	}
 	variants_.Clear();
 }

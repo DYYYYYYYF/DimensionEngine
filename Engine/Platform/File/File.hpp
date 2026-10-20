@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include "Containers/TArray.hpp"
 #include "Defines.hpp"
 #include "Containers/FString.hpp"
 
@@ -38,7 +39,7 @@ public:
     // ─── 整体读写 ──────────────────────────────────────────────────────────────
 
     DAPI FString                    ReadText()  const;
-    DAPI std::vector<unsigned char> ReadBytes() const;
+    DAPI TArray<unsigned char> ReadBytes() const;
 
     DAPI bool WriteText(const FString& text,
         std::ios::openmode mode = std::ios::out);
@@ -48,7 +49,7 @@ public:
 
     // ─── 按行读写 ──────────────────────────────────────────────────────────────
 
-    DAPI std::vector<FString> ReadLines() const;
+    DAPI TArray<FString> ReadLines() const;
 
     DAPI bool ReadLineByLine(
         const std::function<bool(size_t line_index, const FString& line)>& callback) const;
@@ -57,7 +58,7 @@ public:
 
     DAPI bool AppendLine(const FString& line);
 
-    DAPI bool WriteLines(const std::vector<FString>& lines,
+    DAPI bool WriteLines(const TArray<FString>& lines,
         std::ios::openmode mode = std::ios::out);
 
     // ─── 流式读写 ─────────────────────────────────────────────────────────────

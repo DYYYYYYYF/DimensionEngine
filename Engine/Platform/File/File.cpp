@@ -69,7 +69,7 @@ FString File::ReadText() const {
 	return StrFromStd(buf.str());
 }
 
-std::vector<unsigned char> File::ReadBytes() const {
+TArray<unsigned char> File::ReadBytes() const {
 	std::ifstream f(FullPath.CStr(), std::ios::binary);
 	if (!f.is_open()) {
 		GLOG(Log::eError, "File::ReadBytes: cannot open '%s'", FullPath.CStr());
@@ -80,7 +80,7 @@ std::vector<unsigned char> File::ReadBytes() const {
 	size_t size = static_cast<size_t>(f.tellg());
 	f.seekg(0, std::ios::beg);
 
-	std::vector<unsigned char> buffer(size);
+	TArray<unsigned char> buffer(size);
 	f.read(reinterpret_cast<char*>(buffer.data()), size);
 
 	if (static_cast<size_t>(f.gcount()) != size) {
@@ -116,14 +116,14 @@ bool File::WriteBytes(const char* source, size_t size, std::ios::openmode mode) 
 	return f.good();
 }
 
-std::vector<FString> File::ReadLines() const {
+TArray<FString> File::ReadLines() const {
 	std::ifstream f(FullPath.CStr());
 	if (!f.is_open()) {
 		GLOG(Log::eError, "File::ReadLines: cannot open '%s'", FullPath.CStr());
 		return {};
 	}
 
-	std::vector<FString> lines;
+	TArray<FString> lines;
 	std::string raw;
 	while (std::getline(f, raw)) {
 		FString line = StrFromStd(raw);
@@ -190,7 +190,7 @@ bool File::AppendLine(const FString& line) {
 	return f.good();
 }
 
-bool File::WriteLines(const std::vector<FString>& lines, std::ios::openmode mode) {
+bool File::WriteLines(const TArray<FString>& lines, std::ios::openmode mode) {
 	std::ofstream f(FullPath.CStr(), mode);
 	if (!f.is_open()) {
 		GLOG(Log::eError, "File::WriteLines: cannot open '%s'", FullPath.CStr());

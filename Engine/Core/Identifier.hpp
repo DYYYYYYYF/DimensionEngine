@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include "Containers/TArray.hpp"
 #include "Defines.hpp"
 #include <vector>
 
@@ -9,5 +10,5 @@ public:
 	CORE_API static void ReleaseID(uint32_t id);
 
 private:
-	static std::vector<void*> Owners;
+	static TArray<void*> Owners;
 };

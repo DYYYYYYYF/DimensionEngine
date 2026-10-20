@@ -1,4 +1,6 @@
 ﻿#include "GeometryUtils.hpp"
+#include "Containers/TArray.hpp"
+#include "Containers/TMap.hpp"
 #include "Core/EngineLogger.hpp"
 
 void GeometryUtils::GenerateNormals(uint32_t vertex_count, Vertex* vertices,
@@ -70,8 +72,8 @@ void GeometryUtils::GenerateTangents(uint32_t vertex_count, Vertex* vertices,
 	}
 
 	// 为每个顶点初始化切线和双切线累积器
-	std::vector<Vector3> tangents(vertex_count, Vector3(0.0f));
-	std::vector<Vector3> bitangents(vertex_count, Vector3(0.0f));
+	TArray<Vector3> tangents(vertex_count, Vector3(0.0f));
+	TArray<Vector3> bitangents(vertex_count, Vector3(0.0f));
 
 	for (uint32_t i = 0; i < index_count; i += 3) {
 		uint32_t i0 = indices[i + 0];
@@ -187,9 +189,9 @@ void GeometryUtils::DeduplicateVertices(uint32_t vertex_count, Vertex* vertices,
 		}
 	};
 
-	std::unordered_map<Vertex, uint32_t, VertexHash> vertex_map;
-	std::vector<Vertex> unique_vertices;
-	std::vector<uint32_t> remap_table(vertex_count);
+	TMap<Vertex, uint32_t, VertexHash> vertex_map;
+	TArray<Vertex> unique_vertices;
+	TArray<uint32_t> remap_table(vertex_count);
 
 	// 第一遍：建立唯一顶点列表和重映射表
 	for (uint32_t i = 0; i < vertex_count; ++i) {

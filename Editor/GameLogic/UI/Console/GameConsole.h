@@ -1,4 +1,5 @@
 ﻿#include <Core/Event.hpp>
+#include "Containers/TArray.hpp"
 #include <Platform/Thread/DMutex.hpp>
 #include <Framework/Classes/Actor.h>
 #include <Math/MathTypes.hpp>
@@ -35,7 +36,7 @@ private:
 private:
 	int DisplayLineCount;
 	int LineOffset;
-	std::vector<std::string> Lines;
+	TArray<std::string> Lines;
 
 	bool isContentDirty;
 	bool Visible;

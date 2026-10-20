@@ -1,7 +1,7 @@
 ﻿#include "Identifier.hpp"
 #include "EngineLogger.hpp"
 
-std::vector<void*> Identifier::Owners;
+TArray<void*> Identifier::Owners;
 
 uint32_t Identifier::AcquireNewID(void* owner) {
 	if (Owners.size() == 0) {

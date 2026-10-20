@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include "Containers/TArray.hpp"
 #include "Defines.hpp"
 #include <functional>
 
@@ -122,7 +123,7 @@ public:
 	};
 
 	struct SEventCodeEntry {
-		std::vector<SRegisterEvent> events;
+		TArray<SRegisterEvent> events;
 	};
 
 public:
@@ -134,7 +135,7 @@ public:
 	static bool DAPI Fire(eEventCode code, void* sender, SEventContext context);
 
 public:
-	static std::vector<SEventCodeEntry> registered;
+	static TArray<SEventCodeEntry> registered;
 	static bool IsInitialized;
 
 };

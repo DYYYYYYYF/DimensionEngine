@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include "Containers/TMap.hpp"
 #include "Rendering/RenderTypes.hpp"
 #include "Rendering/Resources/Texture/Texture.hpp"
 
@@ -64,7 +65,7 @@ private:
 	UTexture* DefaultRoughnessMetallicTexture;
 
 	// Hashtable for texture lookups.
-	std::unordered_map<FString, UTexture*> TextureMap;
+	TMap<FString, UTexture*> TextureMap;
 
 	bool Initilized;
 

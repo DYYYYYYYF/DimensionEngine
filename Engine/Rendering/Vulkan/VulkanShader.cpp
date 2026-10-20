@@ -406,7 +406,7 @@ bool VulkanShader::ApplyInstance() {
 		} else {
 			// 本帧首次处理：先记录帧号（无论是否实际重写），确保同帧内后续
 			// 实例（共享 instance 槽）只做 bind，避免录制期重复 update。
-			State.sampler_updated_frame[FrameSlot] = RenderFrameNumber;
+			State.sampler_updated_frame[FrameSlot] = (uint32_t)RenderFrameNumber;
 
 			// 本帧尚未 update：按指纹判断是否需要（重新）写入。注意 generation 为
 			// INVALID_ID 时（如 rendertarget/swapchain 纹理因 resize 重建 ImageView
@@ -481,7 +481,7 @@ bool VulkanShader::ApplyInstance() {
 					.setPImageInfo(ImageInfoStore.data());
 				DescriptorWrites.push_back(SamplerWrite);
 				*SamplerGeneration = 1;
-				State.sampler_updated_frame[FrameSlot] = RenderFrameNumber;
+				State.sampler_updated_frame[FrameSlot] = (uint32_t)RenderFrameNumber;
 			}
 		}
 	}
@@ -639,7 +639,7 @@ bool VulkanShader::CreateModule() {
 			return false;
 		}
 
-		std::vector<unsigned char> FileData = AssetFile.ReadBytes();
+		TArray<unsigned char> FileData = AssetFile.ReadBytes();
 
 		Memory::Zero(&vkShaderStage->create_info, sizeof(vk::ShaderModuleCreateInfo));
 		vkShaderStage->create_info.sType = vk::StructureType::eShaderModuleCreateInfo;

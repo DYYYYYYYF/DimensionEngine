@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include "Containers/TStaticArray.hpp"
 #include "Defines.hpp"
 #include "Event.hpp"
 #include "Controller.hpp"
@@ -52,5 +53,5 @@ public:
 
 public:
 	bool OverrideAll;
-	std::array<Keymap::Entry, (size_t)eKeys::Max> Entries;
+	TStaticArray<Keymap::Entry, (size_t)eKeys::Max> Entries;
 };

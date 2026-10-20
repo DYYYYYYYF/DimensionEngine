@@ -5,8 +5,8 @@
 
 const uint32_t MAX_CONSUMER_COUNT = 10;
 
-std::vector<Console::Consumer> Console::RegisteredConsumers;
-std::vector<Console::Command> Console::RegisteredCommands;
+TArray<Console::Consumer> Console::RegisteredConsumers;
+TArray<Console::Command> Console::RegisteredCommands;
 
 void Console::Initialize() {
 
@@ -66,10 +66,10 @@ bool Console::ExecuteCommand(const std::string& cmd) {
 	}
 
 	// TODO: If strings are ever used as arguments, this will split improperly.
-	std::vector<std::string> Parts = Utils::StringSplit(cmd, '-', true, false);
+	TArray<std::string> Parts = Utils::StringSplit(cmd, '-', true, false);
 	if (Parts.size() < 1){
 		Parts.clear();
-		std::vector<std::string>().swap(Parts);
+		TArray<std::string>().swap(Parts);
 		return false;
 	}
 
@@ -104,7 +104,7 @@ bool Console::ExecuteCommand(const std::string& cmd) {
             Cmd->Func(Context);
             if (!Context.Arguments.empty()) {
                 Context.Arguments.clear();
-                std::vector<std::string>().swap(Context.Arguments);
+                TArray<std::string>().swap(Context.Arguments);
             }
 
 			break;
@@ -118,7 +118,7 @@ bool Console::ExecuteCommand(const std::string& cmd) {
 
 	if (!Parts.empty()) {
 		Parts.clear();
-		std::vector<std::string>().swap(Parts);
+		TArray<std::string>().swap(Parts);
 	}
 
 	return !HasError;
