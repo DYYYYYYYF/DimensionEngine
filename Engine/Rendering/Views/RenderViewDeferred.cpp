@@ -204,6 +204,12 @@ void RenderViewWorldDeferred::OnResize(uint32_t width, uint32_t height) {
 }
 
 void RenderViewWorldDeferred::SetViewportRect(const Vector4& rect) {
+	{
+		static uint32_t s_dbgCount = 0;
+		if (s_dbgCount < 5) {
+			++s_dbgCount;
+		}
+	}
 	IRenderView::SetViewportRect(rect);
 	// 视口矩形变化时立即按新矩形重建资源（懒更新基准比对保证幂等）
 	UpdateViewportState(Width, Height);
@@ -388,6 +394,12 @@ void RenderViewWorldDeferred::Render(const TArray<FRenderProxy*>& RenderProxies)
 	// 兜底：窗口尺寸或视口矩形变化后的资源重建（幂等，视口未变化时零开销）
 	UpdateViewportState(Width, Height);
 	const Vector4 ViewRect = ResolveViewportRect(Width, Height);
+	{
+		static uint32_t s_dbgCount = 0;
+		if (s_dbgCount < 5) {
+			++s_dbgCount;
+		}
+	}
 
 	// 逐帧刷新光空间矩阵（阴影通道与延迟光照通道都依赖它）
 	UpdateLightSpaceMatrix();

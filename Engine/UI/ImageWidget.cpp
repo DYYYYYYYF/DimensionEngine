@@ -23,8 +23,8 @@ void UImageWidget::OnMeasure(float ParentWidth, float ParentHeight) {
 	}
 }
 
-void UImageWidget::OnDraw(class UCanvasRenderer* CanvasRenderer) {
-	if (!bIsVisible || !CanvasRenderer) return;
+void UImageWidget::OnDraw(class UCanvasRenderer* InCanvasRenderer) {
+	if (!bIsVisible || !InCanvasRenderer) return;
 
 	// 构造专属于 UI 的 2D 渲染命令（传递屏幕坐标、宽高、UV、颜色、纹理句柄）
 	UIDrawCallElement Element;
@@ -38,8 +38,8 @@ void UImageWidget::OnDraw(class UCanvasRenderer* CanvasRenderer) {
 	Element.Texture = this->Texture;
 
 	// 提交给专用的 UI 渲染器
-	CanvasRenderer->PushElement(Element);
+	InCanvasRenderer->PushElement(Element);
 
 	// 调用基类绘制可能存在的子控件（比如Image控件里叠个文字）
-	UWidget::OnDraw(CanvasRenderer);
+	UWidget::OnDraw(InCanvasRenderer);
 }

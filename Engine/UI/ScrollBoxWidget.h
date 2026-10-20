@@ -42,7 +42,7 @@ public:
 	void LayoutChildren();
 
 	virtual void OnLayout(float Left, float Top, float Right, float Bottom) override;
-	virtual void OnDraw(class UCanvasRenderer* CanvasRenderer) override;
+	virtual void OnDraw(class UCanvasRenderer* InCanvasRenderer) override;
 	// 命中分发与 OnDraw 同裁剪判据：仅当点击落在本控件可视矩形内时
 	// 才向子项分发，避免可视区外的按钮（滚出面板但仍挂在树上的行）
 	// 被误命中，导致点击行与实际高亮行错位。

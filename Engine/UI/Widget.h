@@ -3,8 +3,24 @@
 #include "Framework/Object.h"
 #include "Containers/TArray.hpp"
 #include "Math/MathTypes.hpp"
+#include "UCanvasRenderer.h"
+#include "UIDrawCallElement.h"
 
-class UCanvasRenderer;
+class UWorld;
+class URenderWorld;
+class UTexture;
+class UGeometry;
+class FRenderProxy;
+
+/**
+ * UI 合批分组：按纹理聚合一批绘制元素，记录批内元素数与上一帧顶点数。
+ * 由 UI 宿主（UWidget）在 RebuildGeometry 中填充，用于几何扩容/缩容与索引复用判断。
+ */
+struct UIBlendGroup {
+	UTexture* Texture = nullptr;
+	uint32_t ElementCount = 0;
+	uint32_t LastVertexCount = 0;
+};
 
 /**
  * UI 控件基类：维护 Widget 树（AddChild/ClearChildren），
@@ -70,11 +86,11 @@ public:
 	}
 
 	// 绘制：将自身绘制指令推入画布，并递归绘制子控件
-	virtual void OnDraw(class UCanvasRenderer* CanvasRenderer) {
+	virtual void OnDraw(class UCanvasRenderer* InCanvasRenderer) {
 		if (!bIsVisible) return;
 		// 递归绘制子控件
 		for (auto* Child : Children) {
-			Child->OnDraw(CanvasRenderer);
+			Child->OnDraw(InCanvasRenderer);
 		}
 	}
 
@@ -106,6 +122,21 @@ public:
 		return false;
 	}
 
+	// ---- UI 宿主生命周期（取代 UUIWidgetComponent / AUIActor 的宿主职责） ----
+	// UWidget 作为 UI 根节点使用时，本节点对象拥有整个 Widget 树（Content 树就是自身 AddChild 结果）。
+	// 设置所属 UWorld 并注册代理（FUIRenderProxy 加入 RenderWorld 的屏幕空间 UI 索引）。
+	void SetUIWorld(UWorld* InWorld);
+	UWorld* GetUIWorld() const { return UIWorld; }
+
+	// 创建并加入 FUIRenderProxy 到 RenderWorld；时机通常由 UWorld::AddUIRoot 流程处理。
+	void RegisterUI();
+	// 从 RenderWorld 移除并释放几何/代理；时机通常由 UWorld::RemoveUIRoot / UWorld::Destroy 流程处理。
+	void UnregisterUI();
+
+	// 每帧 UI 根生命周期：测量 -> 布局 -> 绘制 -> 脏检测（元素/几何/材质并懒更新并上传代理）。
+	// 替代 UUIWidgetComponent::Tick 的驱动职责。
+	void TickUI(float DeltaTime);
+
 protected:
 	UWidget* Parent = nullptr;
 	TArray<UWidget*> Children;
@@ -121,4 +152,25 @@ protected:
 	Vector4 Color = Vector4(1.0f);
 
 	bool bIsVisible;
+
+private:
+	// 渲染提交状态（迁移自 UUIWidgetComponent）
+	UCanvasRenderer CanvasRenderer;
+	TArray<UGeometry*> GeometryPool;
+	TArray<UIBlendGroup> BatchGroups;
+	UTexture* WhiteTexture = nullptr;
+	TArray<UIDrawCallElement> CachedElements;
+	bool bElementsDirty = true;
+
+	// UI 宿主状态
+	UWorld* UIWorld = nullptr;
+	FRenderProxy* UIRenderProxy = nullptr;
+	bool bUIProxyRegistered = false;
+
+	bool CreateRenderProxy();
+	void UpdateRenderProxy();
+	UTexture* GetWhiteTexture();
+	bool RebuildGeometry();
+	bool AreElementsEqual(const TArray<UIDrawCallElement>& A, const TArray<UIDrawCallElement>& B) const;
+	void ReleaseUIResources();
 };

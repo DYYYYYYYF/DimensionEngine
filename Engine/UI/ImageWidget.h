@@ -26,7 +26,7 @@ public:
 	virtual void OnMeasure(float ParentWidth, float ParentHeight) override;
 
 	// 绘制：推入绘制元素后递归绘制子控件
-	virtual void OnDraw(class UCanvasRenderer* CanvasRenderer) override;
+	virtual void OnDraw(class UCanvasRenderer* InCanvasRenderer) override;
 
 private:
 	UTexture* Texture = nullptr;

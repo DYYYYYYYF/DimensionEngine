@@ -58,7 +58,7 @@ public:
 	}
 
 	// 绘制：选中/悬停时先画背景矩形，再画文字
-	virtual void OnDraw(class UCanvasRenderer* CanvasRenderer) override;
+	virtual void OnDraw(class UCanvasRenderer* InCanvasRenderer) override;
 
 private:
 	FString Text;

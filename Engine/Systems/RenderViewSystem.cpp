@@ -216,6 +216,12 @@ void RenderViewSystem::OnWindowResize(uint32_t width, uint32_t height) {
 }
 
 void RenderViewSystem::SetWorldViewportRect(const Vector4& rect) {
+	{
+		static uint32_t s_dbgCount = 0;
+		if (s_dbgCount < 5) {
+			++s_dbgCount;
+		}
+	}
 	for (uint32_t i = 0; i < RegisteredViews.Size(); ++i) {
 		IRenderView* View = RegisteredViews[i];
 		if (View == nullptr) {

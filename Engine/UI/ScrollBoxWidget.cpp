@@ -39,8 +39,8 @@ void UScrollBoxWidget::LayoutChildren() {
 	}
 }
 
-void UScrollBoxWidget::OnDraw(UCanvasRenderer* CanvasRenderer) {
-	if (!bIsVisible || !CanvasRenderer) {
+void UScrollBoxWidget::OnDraw(UCanvasRenderer* InCanvasRenderer) {
+	if (!bIsVisible || !InCanvasRenderer) {
 		return;
 	}
 
@@ -63,7 +63,7 @@ void UScrollBoxWidget::OnDraw(UCanvasRenderer* CanvasRenderer) {
 		if (ChildBottom < ViewTop || ChildTop > ViewBottom) {
 			continue;
 		}
-		Child->OnDraw(CanvasRenderer);
+		Child->OnDraw(InCanvasRenderer);
 	}
 }
 

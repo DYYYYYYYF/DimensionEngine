@@ -2,8 +2,8 @@
 
 #include "UCanvasRenderer.h"
 
-void UButtonWidget::OnDraw(UCanvasRenderer* CanvasRenderer) {
-	if (!bIsVisible || !CanvasRenderer) {
+void UButtonWidget::OnDraw(UCanvasRenderer* InCanvasRenderer) {
+	if (!bIsVisible || !InCanvasRenderer) {
 		return;
 	}
 
@@ -15,7 +15,7 @@ void UButtonWidget::OnDraw(UCanvasRenderer* CanvasRenderer) {
 		Elem.Width = Width;
 		Elem.Height = Height;
 		Elem.Color = SelectedColor;
-		CanvasRenderer->PushElement(Elem);
+		InCanvasRenderer->PushElement(Elem);
 	}
 
 	// 文字：垂直居中（按字体行高近似居中），左侧留 4px 内边距
@@ -25,11 +25,11 @@ void UButtonWidget::OnDraw(UCanvasRenderer* CanvasRenderer) {
 		if (LineHeight > 0.0f && Height > LineHeight) {
 			TextY = PositionY + (Height - LineHeight) * 0.5f;
 		}
-		CanvasRenderer->PushText(Text, PositionX + 4.0f, TextY, Font, TextColor);
+		InCanvasRenderer->PushText(Text, PositionX + 4.0f, TextY, Font, TextColor);
 	}
 
 	// 递归绘制子控件
 	for (auto* Child : Children) {
-		Child->OnDraw(CanvasRenderer);
+		Child->OnDraw(InCanvasRenderer);
 	}
 }

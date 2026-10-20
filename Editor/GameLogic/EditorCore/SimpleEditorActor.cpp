@@ -20,7 +20,11 @@
 #include "GameLogic/UI/Console/GameConsole.h"
 
 ASimpleEditorActor::ASimpleEditorActor(const FString& Name, GameInstance* InOwner)
-	: AUIActor(Name), Owner(InOwner) {
+	: AActor(Name), Owner(InOwner) {
+	// UI 架构重构（AUIActor/UUIWidgetComponent -> UWidget/AActor 宿主）后，
+	// AActor 默认不启用 Tick，必须显式开启：布局刷新（UpdateLayout ->
+	// SetWorldViewportRect）、层级/属性/日志/交互全部依赖每帧 Tick 驱动。
+	SetEnableTick(true);
 	if (Owner) {
 		WindowWidth = (float)Owner->GetWindowWidth();
 		WindowHeight = (float)Owner->GetWindowHeight();
@@ -30,6 +34,19 @@ ASimpleEditorActor::ASimpleEditorActor(const FString& Name, GameInstance* InOwne
 	HierarchyPanelH = LogY - HierarchyY - 10.0f;
 	PropertiesX = WindowWidth - PropertiesMargin;
 	BuildWidgetTree();
+}
+
+ASimpleEditorActor::~ASimpleEditorActor() {
+	// 从 World UI 根列表移除并注销渲染代理（World 可能已被销毁，需判空）
+	if (UWorld* WorldPtr = GetWorld()) {
+		WorldPtr->RemoveUIWidgetRoot(RootPanel);
+	}
+
+	// Widget 树所有权归本 Actor（UWidget 析构递归清理子节点）
+	if (RootPanel) {
+		delete RootPanel;
+		RootPanel = nullptr;
+	}
 }
 
 void ASimpleEditorActor::BuildWidgetTree() {
@@ -130,13 +147,17 @@ void ASimpleEditorActor::BuildWidgetTree() {
 	ViewportBorderRight->SetColor(Vector4(0.13f, 0.14f, 0.16f, 1.0f));
 	RootPanel->AddChild(ViewportBorderRight);
 
-	SetRootWidget(RootPanel);
+	// 注：RootPanel 由 CreateEditorOverlayTexts 注册进 World UI 根列表，
+	// 由 UWorld 每帧驱动 测量/布局/绘制 并提交渲染。
 }
 
 void ASimpleEditorActor::CreateEditorOverlayTexts(UWorld* InWorld) {
 	if (!InWorld) {
 		return;
 	}
+
+	// 注册 UI 根到 World：UWorld 每帧驱动 Widget 树生命周期并提交渲染代理
+	InWorld->AddUIWidgetRoot(RootPanel);
 
 	// 层级面板标题
 	// [TEST] 中文渲染验证：UTF-8 字节转义（源码字面量会编译为 GBK 执行字符集）
@@ -232,10 +253,9 @@ bool ASimpleEditorActor::IsEditorActor(const AActor* Actor) const {
 }
 
 void ASimpleEditorActor::Tick(float DeltaTime) {
-	// 必须调用基类 Tick：AActor::Tick 会驱动 UUIWidgetComponent::Tick，
-	// 进而触发 Widget 树测量/布局/绘制与 RebuildGeometry 生成合批几何。
-	// 此前未调用基类导致背景矩形几何从未构建（Log 中无 Material.UI.Batched 重建痕迹）。
-	AUIActor::Tick(DeltaTime);
+	// 必须调用基类 Tick：AActor::Tick 会驱动组件 Tick。
+	// UI 根由 UWorld 每帧直接驱动（测量/布局/绘制/提交代理），不再经组件转发。
+	AActor::Tick(DeltaTime);
 
 	UWorld* WorldPtr = GetWorld();
 	if (!WorldPtr || !Owner) {

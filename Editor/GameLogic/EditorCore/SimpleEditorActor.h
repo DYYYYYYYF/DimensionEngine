@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Framework/Classes/UIActor.h"
+#include "Framework/Classes/Actor.h"
 #include "Containers/TArray.hpp"
 #include "Math/MathTypes.hpp"
 
@@ -43,17 +43,17 @@ enum class EditorEditCategory : int {
 
 /**
  * 简易编辑器窗口 Actor（场景视图 UI 覆盖层）：
- * 复用引擎 UI 系统（AUIActor + UImageWidget + ATextActor）绘制
+ * 复用引擎 UI 系统（UWidget 宿主 + UImageWidget + ATextActor）绘制
  * 顶部工具栏 / 层级大纲面板 / 属性细节面板，在 Tick 中处理
  * 鼠标点击命中（工具栏按钮 / 层级行选中）与键盘属性编辑。
  *
  * 相机操控（旋转 / 平移 / 缩放）由 GameInstance::Update 负责
  * （右键旋转 + 中键平移 + 滚轮缩放），本 Actor 只负责 UI 与交互。
  */
-class ASimpleEditorActor : public AUIActor {
+class ASimpleEditorActor : public AActor {
 public:
 	ASimpleEditorActor(const FString& Name, GameInstance* InOwner);
-	virtual ~ASimpleEditorActor() = default;
+	virtual ~ASimpleEditorActor();
 
 	// GameInstance::Initialize 中调用：创建全部编辑器覆盖层文本 actor 并注册进 World
 	void CreateEditorOverlayTexts(UWorld* InWorld);
