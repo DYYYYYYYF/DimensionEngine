@@ -472,6 +472,11 @@ bool VulkanRHI::BeginFrame(){
 	// 避免 CPU 覆盖仍在被 GPU 读取的顶点数据。
 	CurrentUIHostBufferIndex = Context.CurrentFrame % 2;
 
+	// 本帧将写入 CurrentUIHostBufferIndex 对；该对上一轮使用帧（帧 N-2）的命令
+	// 已在上面 waitForFences 确认完成，此时可安全释放该对上累积的延迟释放块
+	//（此前跨缓冲对搬移释放的旧块），再开始本帧的分配与写入。
+	FlushDeferredUIHostFrees();
+
 	// 采样器失效已由 R3 帧环指纹方案接管（VulkanShader::ApplyInstance 按
 	// ImageIndex%3 槽记录纹理指针，跨帧轮转天然失效），帧首遍历全部已创建
 	// shader × 512 槽复位 generation 的 O(N*M) 开销已无消费者，不再执行。
@@ -738,14 +743,12 @@ bool VulkanRHI::CreateGeometry(UGeometry* geometry, const FGeometryConfig& confi
 	size_t NewVertexOffset = 0;
 	const size_t NewVertexSize = static_cast<size_t>(config.vertex_size) * config.vertex_count;
 
-	// host-visible 同尺寸复用：顶点尺寸、缓冲对均未变化时，直接 map 覆盖既有 offset，
-	// 避免每帧 Allocate/Free 造成 freelist 抖动与块漂移（UI 动画帧路径）。
-	const bool bReuseSameSize = bHostVisible
-		&& InternalData->vertex_count != 0
-		&& InternalData->vertex_element_size == config.vertex_size
-		&& InternalData->vertex_count == config.vertex_count
-		&& InternalData->host_visible == bHostVisible
-		&& InternalData->host_buffer_index == CurrentUIHostBufferIndex;
+	// [FIX-UI-GARBLE] host-visible 同尺寸快速复用路径禁用：静止帧缓存使几何缓冲
+	// 长期驻留在同一缓冲对，UI 重建（点击/文本更新触发）若 map 覆盖该对既有 offset，
+	// 会撕裂 GPU 仍在读取的 in-flight 数据，表现为文字乱码/层级列表时隐时现/
+	// 文字贴图原图。改为始终分配新块（当前写入对），旧块经延迟释放（在该对再次
+	// 成为写入对时统一回 freelist），保证新写入位置与 GPU 正在读取的旧块不重叠。
+	const bool bReuseSameSize = false;
 
 	if (bReuseSameSize) {
 		NewVertexOffset = InternalData->vertext_buffer_offset;
@@ -791,11 +794,20 @@ bool VulkanRHI::CreateGeometry(UGeometry* geometry, const FGeometryConfig& confi
 		}
 	}
 
-	// 释放旧资源（同尺寸复用路径不释放，旧块继续沿用）
+	// 释放旧资源（同尺寸复用路径不释放，旧块继续沿用）。
+	// host-visible UI 合批几何跨缓冲对搬移时，旧块不能立即 Free 回 freelist：
+	// 旧块所在缓冲对的上一次命令可能仍在 GPU 执行，立即释放并复用会覆盖
+	// in-flight 数据（表现：层级列表时隐时现、文字贴图原图）。延迟到该缓冲对
+	// 再次成为写入对（BeginFrame fence 等待确认完成）后统一释放。
 	if (!bReuseSameSize && InternalData->vertex_count != 0 && InternalData->vertex_element_size != 0) {
 		const size_t OldVertexSize =
 			static_cast<size_t>(InternalData->vertex_element_size) * InternalData->vertex_count;
-		OldVertexBuffer->FreeMemory(OldVertexSize, InternalData->vertext_buffer_offset);
+		if (InternalData->host_visible) {
+			DeferredUIHostFrees.Push(DeferredBufferFree{ InternalData->host_buffer_index, false, OldVertexSize, InternalData->vertext_buffer_offset });
+		}
+		else {
+			OldVertexBuffer->FreeMemory(OldVertexSize, InternalData->vertext_buffer_offset);
+		}
 	}
 
 	// 仅当本次提供了新索引时才释放旧索引；省略索引表示沿用既有索引，
@@ -803,7 +815,12 @@ bool VulkanRHI::CreateGeometry(UGeometry* geometry, const FGeometryConfig& confi
 	if (bUpdateIndex && InternalData->index_count != 0 && InternalData->index_element_size != 0) {
 		const size_t OldIndexSize = 
 			static_cast<size_t>(InternalData->index_element_size) * InternalData->index_count;
-		OldIndexBuffer->FreeMemory(OldIndexSize, InternalData->index_buffer_offset);
+		if (InternalData->host_visible) {
+			DeferredUIHostFrees.Push(DeferredBufferFree{ InternalData->index_buffer_index, true, OldIndexSize, InternalData->index_buffer_offset });
+		}
+		else {
+			OldIndexBuffer->FreeMemory(OldIndexSize, InternalData->index_buffer_offset);
+		}
 	}
 
 	// Commit new state.
@@ -857,6 +874,30 @@ void VulkanRHI::DestroyGeometry(UGeometry* geometry) {
 	}
 }
 
+void VulkanRHI::FlushDeferredUIHostFrees() {
+	// 释放本帧即将写入的缓冲对上累积的延迟释放块。该对上一轮使用帧的命令
+	// 已在 BeginFrame 的 waitForFences 确认完成，Free 回 freelist 后可安全复用。
+	if (DeferredUIHostFrees.Size() == 0) {
+		return;
+	}
+
+	TArray<DeferredBufferFree> Remaining;
+	Remaining.Reserve(DeferredUIHostFrees.Size());
+	for (size_t i = 0; i < DeferredUIHostFrees.Size(); ++i) {
+		const DeferredBufferFree& D = DeferredUIHostFrees[i];
+		if (D.buffer_index == CurrentUIHostBufferIndex) {
+			VulkanBuffer* Buffer = D.bIsIndex
+				? Context.UIObjectIndexBuffers[D.buffer_index]
+				: Context.UIObjectVertexBuffers[D.buffer_index];
+			Buffer->FreeMemory(D.size, D.offset);
+		}
+		else {
+			Remaining.Push(D);
+		}
+	}
+	DeferredUIHostFrees = Remaining;
+}
+
 void VulkanRHI::DrawGeometry(GeometryRenderData* geometry) {
 	// Ignore non-uploaded geometries.
 	if (geometry->geometry == nullptr) {
@@ -868,9 +909,63 @@ void VulkanRHI::DrawGeometry(GeometryRenderData* geometry) {
 	}
 
 	GeometryData* BufferData = &Geometries[geometry->geometry->InternalID];
-	// UI 合批几何从 host-visible 缓冲对读取（按创建时记录的缓冲对下标）
+	// UI 合批几何从 host-visible 缓冲对读取（按创建时记录的缓冲对下标）。
+	// 顶点块按 host_buffer_index（创建帧写入对）；索引块必须按 index_buffer_index：
+	// 索引省略更新（元素数不变）时索引块留在旧缓冲对，与顶点块不在同一对。
+	// 若这里用 host_buffer_index 取索引缓冲，会绑定到"当前对"上其他几何的索引数据，
+	// 索引错位导致 UI 文字只显示部分行、选中高亮偏移/错乱（点击后层级列表时隐时现）。
 	VulkanBuffer* VertexBuffer = BufferData->host_visible ? Context.UIObjectVertexBuffers[BufferData->host_buffer_index] : Context.ObjectVertexBuffer;
-	VulkanBuffer* IndexBuffer = BufferData->host_visible ? Context.UIObjectIndexBuffers[BufferData->host_buffer_index] : Context.ObjectIndexBuffer;
+	VulkanBuffer* IndexBuffer = BufferData->host_visible ? Context.UIObjectIndexBuffers[BufferData->index_buffer_index] : Context.ObjectIndexBuffer;
+
+	// [DIAG-UI-DRAW] 节流输出 UI 合批几何的缓冲绑定状态，用于核对绘制用块与上传块是否一致。
+	if (BufferData->host_visible) {
+		static uint64_t DrawDiagCount = 0;
+		if ((DrawDiagCount++ % 90) == 0) {
+			FILE* F = nullptr;
+			fopen_s(&F, "D:/dongyf/DimensionEngine/Bin/ui_draw_diag.txt", "a");
+			if (F) {
+				fprintf(F, "[DRAW] geom=%llu vbuf=%u voff=%llu vsize=%llu vcnt=%u ibuf=%u ioff=%llu isize=%llu icnt=%u gen=%llu\n",
+					(unsigned long long)geometry->geometry->InternalID,
+					BufferData->host_buffer_index,
+					(unsigned long long)BufferData->vertext_buffer_offset,
+					(unsigned long long)BufferData->vertex_element_size,
+					BufferData->vertex_count,
+					BufferData->index_buffer_index,
+					(unsigned long long)BufferData->index_buffer_offset,
+					(unsigned long long)BufferData->index_element_size,
+					BufferData->index_count,
+					(unsigned long long)BufferData->generation);
+
+				// 读回顶点内容，校验矩形组内各四边形实际 Y（UIVertex: pos.x,pos.y,uv.x,uv.y,color.r,g,b,a = 32B）
+				if (BufferData->vertex_element_size >= 32 && BufferData->vertex_count >= 28) {
+					TArray<uint8_t> Verts = VertexBuffer->Read(BufferData->vertext_buffer_offset, (size_t)BufferData->vertex_count * (size_t)BufferData->vertex_element_size);
+					if (Verts.Size() >= (size_t)28 * 32) {
+						const float* Fp = (const float*)Verts.Data();
+						fprintf(F, "  QUAD0_Y=%f QUAD5_Y=%f QUAD6_Y=%f QUAD7_Y=%f\n",
+							(double)Fp[1], (double)Fp[(5 * 4) * 8 + 1], (double)Fp[(6 * 4) * 8 + 1], (double)Fp[(7 * 4) * 8 + 1]);
+						// 全量 dump 前 16 个四边形 Y
+						fprintf(F, "  ALLY:");
+						for (int qi = 0; qi < 16; ++qi) {
+							fprintf(F, " %d=%.1f", qi, (double)Fp[(qi * 4) * 8 + 1]);
+						}
+						fprintf(F, "\n");
+					}
+				}
+
+				// 读回索引内容，校验 QUAD0 / QUAD6 的三角形顶点引用
+				if (BufferData->index_element_size >= 4 && BufferData->index_count >= 42) {
+					TArray<uint8_t> Idx = IndexBuffer->Read(BufferData->index_buffer_offset, (size_t)BufferData->index_count * (size_t)BufferData->index_element_size);
+					if (Idx.Size() >= (size_t)42 * 4) {
+						const uint32_t* Ip = (const uint32_t*)Idx.Data();
+						fprintf(F, "  IDX_Q0=%u,%u,%u,%u,%u,%u IDX_Q6=%u,%u,%u,%u,%u,%u\n",
+							Ip[0], Ip[1], Ip[2], Ip[3], Ip[4], Ip[5],
+							Ip[6 * 6], Ip[6 * 6 + 1], Ip[6 * 6 + 2], Ip[6 * 6 + 3], Ip[6 * 6 + 4], Ip[6 * 6 + 5]);
+					}
+				}
+				fclose(F);
+			}
+		}
+	}
 
 	bool IncludIndexData = BufferData->index_count > 0;
 	if (!DrawRenderbuffer(VertexBuffer, BufferData->vertext_buffer_offset, BufferData->vertex_count, IncludIndexData)) {

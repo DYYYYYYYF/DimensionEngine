@@ -1,4 +1,4 @@
-#include "SimpleEditorActor.h"
+﻿#include "SimpleEditorActor.h"
 
 #include <Core/Controller.hpp>
 #include <Core/DMemory.hpp>
@@ -21,9 +21,9 @@
 
 ASimpleEditorActor::ASimpleEditorActor(const FString& Name, GameInstance* InOwner)
 	: AActor(Name), Owner(InOwner) {
-	// UI 架构重构（AUIActor/UUIWidgetComponent -> UWidget/AActor 宿主）后，
-	// AActor 默认不启用 Tick，必须显式开启：布局刷新（UpdateLayout ->
-	// SetWorldViewportRect）、层级/属性/日志/交互全部依赖每帧 Tick 驱动。
+	// UI 鏋舵瀯閲嶆瀯锛圓UIActor/UUIWidgetComponent -> UWidget/AActor 瀹夸富锛夊悗锛?
+	// AActor 榛樿涓嶅惎鐢?Tick锛屽繀椤绘樉寮忓紑鍚細甯冨眬鍒锋柊锛圲pdateLayout ->
+	// SetWorldViewportRect锛夈€佸眰绾?灞炴€?鏃ュ織/浜や簰鍏ㄩ儴渚濊禆姣忓抚 Tick 椹卞姩銆?
 	SetEnableTick(true);
 	if (Owner) {
 		WindowWidth = (float)Owner->GetWindowWidth();
@@ -37,12 +37,12 @@ ASimpleEditorActor::ASimpleEditorActor(const FString& Name, GameInstance* InOwne
 }
 
 ASimpleEditorActor::~ASimpleEditorActor() {
-	// 从 World UI 根列表移除并注销渲染代理（World 可能已被销毁，需判空）
+	// 浠?World UI 鏍瑰垪琛ㄧЩ闄ゅ苟娉ㄩ攢娓叉煋浠ｇ悊锛圵orld 鍙兘宸茶閿€姣侊紝闇€鍒ょ┖锛?
 	if (UWorld* WorldPtr = GetWorld()) {
 		WorldPtr->RemoveUIWidgetRoot(RootPanel);
 	}
 
-	// Widget 树所有权归本 Actor（UWidget 析构递归清理子节点）
+	// Widget 鏍戞墍鏈夋潈褰掓湰 Actor锛圲Widget 鏋愭瀯閫掑綊娓呯悊瀛愯妭鐐癸級
 	if (RootPanel) {
 		delete RootPanel;
 		RootPanel = nullptr;
@@ -53,14 +53,14 @@ void ASimpleEditorActor::BuildWidgetTree() {
 	RootPanel = new UPanelWidget();
 	RootPanel->SetDesiredSize(-1.0f, -1.0f);
 
-	// 顶部工具栏背景（半透明深色底板，与 3D 场景分离）
+	// 椤堕儴宸ュ叿鏍忚儗鏅紙鍗婇€忔槑娣辫壊搴曟澘锛屼笌 3D 鍦烘櫙鍒嗙锛?
 	ToolbarBG = new UImageWidget();
 	ToolbarBG->SetDesiredSize(WindowWidth, ToolbarHeight);
 	ToolbarBG->SetPosition(0.0f, 0.0f);
 	ToolbarBG->SetColor(Vector4(0.10f, 0.11f, 0.13f, 0.92f));
 	RootPanel->AddChild(ToolbarBG);
 
-	// 工具栏按钮（Save / Play / Pause / Stop）
+	// 宸ュ叿鏍忔寜閽紙Save / Play / Pause / Stop锛?
 	for (int i = 0; i < 4; ++i) {
 		UImageWidget* Btn = new UImageWidget();
 		Btn->SetDesiredSize(ToolbarBtnW, ToolbarBtnH);
@@ -71,23 +71,23 @@ void ASimpleEditorActor::BuildWidgetTree() {
 		ToolbarButtons[i] = { ToolbarBtnX0 + i * ToolbarBtnGap, ToolbarBtnY, ToolbarBtnW, ToolbarBtnH, i };
 	}
 
-	// ---- 左侧对象列表（UE 风格重构）：锚点 Panel 固定左侧 → 内套 ScrollBox → Button 列表项 ----
-	// 1) 锚点面板：AnchorMin=(0,0) AnchorMax=(0,1) 锚定屏幕左侧并垂直拉伸；
+	// ---- 宸︿晶瀵硅薄鍒楄〃锛圲E 椋庢牸閲嶆瀯锛夛細閿氱偣 Panel 鍥哄畾宸︿晶 鈫?鍐呭 ScrollBox 鈫?Button 鍒楄〃椤?----
+	// 1) 閿氱偣闈㈡澘锛欰nchorMin=(0,0) AnchorMax=(0,1) 閿氬畾灞忓箷宸︿晶骞跺瀭鐩存媺浼革紱
 	//    Offsets=(Left=HierarchyX, Top=HierarchyY, Right=HierarchyX+HierarchyW,
-	//    Bottom=-(LogPanelH+10))：底边相对父底部上移 Log 窗口 + 间隙高度，
-	//    保证面板底始终位于 Log 上方，天然不与 Log 重叠。
+	//    Bottom=-(LogPanelH+10))锛氬簳杈圭浉瀵圭埗搴曢儴涓婄Щ Log 绐楀彛 + 闂撮殭楂樺害锛?
+	//    淇濊瘉闈㈡澘搴曞缁堜綅浜?Log 涓婃柟锛屽ぉ鐒朵笉涓?Log 閲嶅彔銆?
 	HierarchyPanel = new UAnchorPanelWidget();
 	HierarchyPanel->SetAnchors(Vector2(0.0f, 0.0f), Vector2(0.0f, 1.0f));
 	HierarchyPanel->SetOffsets(HierarchyX, HierarchyY, HierarchyX + HierarchyW, -(LogPanelH + 10.0f));
 	RootPanel->AddChild(HierarchyPanel);
 
-	// 2) 面板背景（铺满锚点面板）
+	// 2) 闈㈡澘鑳屾櫙锛堥摵婊￠敋鐐归潰鏉匡級
 	HierarchyBG = new UImageWidget();
 	HierarchyBG->SetDesiredSize(-1.0f, -1.0f);
 	HierarchyBG->SetColor(Vector4(0.07f, 0.08f, 0.10f, 0.92f));
 	HierarchyPanel->AddChild(HierarchyBG);
 
-	// 3) ScrollBox：位于面板标题（30px）之下，管理滚动偏移与可视裁剪
+	// 3) ScrollBox锛氫綅浜庨潰鏉挎爣棰橈紙30px锛変箣涓嬶紝绠＄悊婊氬姩鍋忕Щ涓庡彲瑙嗚鍓?
 	HierarchyScrollBox = new UScrollBoxWidget();
 	HierarchyScrollBox->SetContentStartY(30.0f);
 	HierarchyScrollBox->SetContentMarginX(2.0f);
@@ -95,21 +95,21 @@ void ASimpleEditorActor::BuildWidgetTree() {
 	HierarchyScrollBox->SetRowHeight(RowHeight);
 	HierarchyPanel->AddChild(HierarchyScrollBox);
 
-	// 属性面板背景（半透明深色底板）
+	// 灞炴€ч潰鏉胯儗鏅紙鍗婇€忔槑娣辫壊搴曟澘锛?
 	PropertiesBG = new UImageWidget();
 	PropertiesBG->SetPosition(PropertiesX, HierarchyY);
 	PropertiesBG->SetDesiredSize(PropertiesW, HierarchyPanelH);
 	PropertiesBG->SetColor(Vector4(0.07f, 0.08f, 0.10f, 0.92f));
 	RootPanel->AddChild(PropertiesBG);
 
-	// 底部 Log 窗口背景（类似 UE Log/Debug 输出窗口）
+	// 搴曢儴 Log 绐楀彛鑳屾櫙锛堢被浼?UE Log/Debug 杈撳嚭绐楀彛锛?
 	LogBG = new UImageWidget();
 	LogBG->SetDesiredSize(LogW, LogPanelH);
 	LogBG->SetPosition(LogX, LogY);
 	LogBG->SetColor(Vector4(0.05f, 0.06f, 0.08f, 0.92f));
 	RootPanel->AddChild(LogBG);
 
-	// 底部 Log 窗口页签（Render / Keyboard / Console）
+	// 搴曢儴 Log 绐楀彛椤电锛圧ender / Keyboard / Console锛?
 	for (int i = 0; i < 3; ++i) {
 		UImageWidget* Tab = new UImageWidget();
 		Tab->SetDesiredSize(LogTabW, LogTabH);
@@ -119,10 +119,10 @@ void ASimpleEditorActor::BuildWidgetTree() {
 		LogTabWidgets[i] = Tab;
 	}
 
-	// 中央视口容器（UE5 风格：视口居中，四周为 UI 面板）。
-	// 位置/尺寸由 UpdateLayout 每帧按窗口重算（此处先按初始窗口铺满中央区域）。
-	// 注意：仅绘制标题条与四边框，渲染区（ViewportX/Y/W/H）内不放置任何 UI 矩形，
-	// 否则不透明 UI 层会盖住下方 Skybox/Deferred 的 3D 渲染结果（表现为黑屏）。
+	// 涓ぎ瑙嗗彛瀹瑰櫒锛圲E5 椋庢牸锛氳鍙ｅ眳涓紝鍥涘懆涓?UI 闈㈡澘锛夈€?
+	// 浣嶇疆/灏哄鐢?UpdateLayout 姣忓抚鎸夌獥鍙ｉ噸绠楋紙姝ゅ鍏堟寜鍒濆绐楀彛閾烘弧涓ぎ鍖哄煙锛夈€?
+	// 娉ㄦ剰锛氫粎缁樺埗鏍囬鏉′笌鍥涜竟妗嗭紝娓叉煋鍖猴紙ViewportX/Y/W/H锛夊唴涓嶆斁缃换浣?UI 鐭╁舰锛?
+	// 鍚﹀垯涓嶉€忔槑 UI 灞備細鐩栦綇涓嬫柟 Skybox/Deferred 鐨?3D 娓叉煋缁撴灉锛堣〃鐜颁负榛戝睆锛夈€?
 	ViewportBorderTop = new UImageWidget();
 	ViewportBorderTop->SetDesiredSize(1.0f, 1.0f);
 	ViewportBorderTop->SetPosition(0.0f, 0.0f);
@@ -147,8 +147,8 @@ void ASimpleEditorActor::BuildWidgetTree() {
 	ViewportBorderRight->SetColor(Vector4(0.13f, 0.14f, 0.16f, 1.0f));
 	RootPanel->AddChild(ViewportBorderRight);
 
-	// 注：RootPanel 由 CreateEditorOverlayTexts 注册进 World UI 根列表，
-	// 由 UWorld 每帧驱动 测量/布局/绘制 并提交渲染。
+	// 娉細RootPanel 鐢?CreateEditorOverlayTexts 娉ㄥ唽杩?World UI 鏍瑰垪琛紝
+	// 鐢?UWorld 姣忓抚椹卞姩 娴嬮噺/甯冨眬/缁樺埗 骞舵彁浜ゆ覆鏌撱€?
 }
 
 void ASimpleEditorActor::CreateEditorOverlayTexts(UWorld* InWorld) {
@@ -156,11 +156,11 @@ void ASimpleEditorActor::CreateEditorOverlayTexts(UWorld* InWorld) {
 		return;
 	}
 
-	// 注册 UI 根到 World：UWorld 每帧驱动 Widget 树生命周期并提交渲染代理
+	// 娉ㄥ唽 UI 鏍瑰埌 World锛歎World 姣忓抚椹卞姩 Widget 鏍戠敓鍛藉懆鏈熷苟鎻愪氦娓叉煋浠ｇ悊
 	InWorld->AddUIWidgetRoot(RootPanel);
 
-	// 层级面板标题
-	// [TEST] 中文渲染验证：UTF-8 字节转义（源码字面量会编译为 GBK 执行字符集）
+	// 灞傜骇闈㈡澘鏍囬
+	// [TEST] 涓枃娓叉煋楠岃瘉锛歎TF-8 瀛楄妭杞箟锛堟簮鐮佸瓧闈㈤噺浼氱紪璇戜负 GBK 鎵ц瀛楃闆嗭級
 	HierarchyTitle = NewObject<ATextActor>("EditorHierarchyTitle", UITextType::eUI_Text_Type_Bitmap,
 		"Noto Sans 21px", 21, FString("\xe5\xb1\x82\xe7\xba\xa7\xe5\x88\x97\xe8\xa1\xa8 Hierarchy"));
 	if (HierarchyTitle) {
@@ -169,7 +169,7 @@ void ASimpleEditorActor::CreateEditorOverlayTexts(UWorld* InWorld) {
 		EditorActors.Push(HierarchyTitle);
 	}
 
-	// 属性面板标题与内容
+	// 灞炴€ч潰鏉挎爣棰樹笌鍐呭
 	PropertiesTitle = NewObject<ATextActor>("EditorPropertiesTitle", UITextType::eUI_Text_Type_Bitmap,
 		"Ubuntu Mono 21px", 20, FString("Properties"));
 	if (PropertiesTitle) {
@@ -186,7 +186,7 @@ void ASimpleEditorActor::CreateEditorOverlayTexts(UWorld* InWorld) {
 		EditorActors.Push(PropertiesText);
 	}
 
-	// 中央视口标题条（UE5 风格：视口名称 + 视图模式）
+	// 涓ぎ瑙嗗彛鏍囬鏉★紙UE5 椋庢牸锛氳鍙ｅ悕绉?+ 瑙嗗浘妯″紡锛?
 	ViewportTitle = NewObject<ATextActor>("EditorViewportTitle", UITextType::eUI_Text_Type_Bitmap,
 		"Ubuntu Mono 21px", 20, FString("Viewport | Perspective"));
 	if (ViewportTitle) {
@@ -195,7 +195,7 @@ void ASimpleEditorActor::CreateEditorOverlayTexts(UWorld* InWorld) {
 		EditorActors.Push(ViewportTitle);
 	}
 
-	// 工具栏按钮标签
+	// 宸ュ叿鏍忔寜閽爣绛?
 	static const char* Labels[4] = { "Save", "Play", "Pause", "Stop" };
 	for (int i = 0; i < 4; ++i) {
 		ToolbarBtnLabels[i] = NewObject<ATextActor>(
@@ -210,7 +210,7 @@ void ASimpleEditorActor::CreateEditorOverlayTexts(UWorld* InWorld) {
 		}
 	}
 
-	// 工具栏状态文本
+	// 宸ュ叿鏍忕姸鎬佹枃鏈?
 	ToolbarStatusText = NewObject<ATextActor>("EditorToolbarStatus", UITextType::eUI_Text_Type_Bitmap,
 		"Ubuntu Mono 21px", 20, FString("Idle"));
 	if (ToolbarStatusText) {
@@ -219,7 +219,7 @@ void ASimpleEditorActor::CreateEditorOverlayTexts(UWorld* InWorld) {
 		EditorActors.Push(ToolbarStatusText);
 	}
 
-	// 底部 Log 窗口页签标签（Render / Keyboard / Console）
+	// 搴曢儴 Log 绐楀彛椤电鏍囩锛圧ender / Keyboard / Console锛?
 	static const char* LogTabNames3[3] = { "Render", "Keyboard", "Console" };
 	for (int i = 0; i < 3; ++i) {
 		LogTabLabels[i] = NewObject<ATextActor>(
@@ -234,8 +234,8 @@ void ASimpleEditorActor::CreateEditorOverlayTexts(UWorld* InWorld) {
 		}
 	}
 
-	// 层级行文本已移入 ScrollBox 内的 Button 列表项（UButtonWidget 自带文字绘制），
-	// 不再创建独立 ATextActor 行文本（见 SyncHierarchyList）。
+	// 灞傜骇琛屾枃鏈凡绉诲叆 ScrollBox 鍐呯殑 Button 鍒楄〃椤癸紙UButtonWidget 鑷甫鏂囧瓧缁樺埗锛夛紝
+	// 涓嶅啀鍒涘缓鐙珛 ATextActor 琛屾枃鏈紙瑙?SyncHierarchyList锛夈€?
 
 	EditorActors.Push(this);
 }
@@ -253,8 +253,8 @@ bool ASimpleEditorActor::IsEditorActor(const AActor* Actor) const {
 }
 
 void ASimpleEditorActor::Tick(float DeltaTime) {
-	// 必须调用基类 Tick：AActor::Tick 会驱动组件 Tick。
-	// UI 根由 UWorld 每帧直接驱动（测量/布局/绘制/提交代理），不再经组件转发。
+	// 蹇呴』璋冪敤鍩虹被 Tick锛欰Actor::Tick 浼氶┍鍔ㄧ粍浠?Tick銆?
+	// UI 鏍圭敱 UWorld 姣忓抚鐩存帴椹卞姩锛堟祴閲?甯冨眬/缁樺埗/鎻愪氦浠ｇ悊锛夛紝涓嶅啀缁忕粍浠惰浆鍙戙€?
 	AActor::Tick(DeltaTime);
 
 	UWorld* WorldPtr = GetWorld();
@@ -311,10 +311,10 @@ void ASimpleEditorActor::UpdateLayout() {
 		}
 	}
 
-	// ---- 中央视口矩形（UE5 风格：渲染区居中，四周为 UI 面板） ----
-	// 视口容器 = 顶部工具栏下、左右面板之间、底部 Log 上方的剩余区域；
-	// 渲染区 = 容器内缩（顶部让出标题条，四周让出边框）。
-	// UI 仅绘制容器边框（含标题条），渲染区中央留给 3D 画面，避免不透明 UI 盖住场景。
+	// ---- 涓ぎ瑙嗗彛鐭╁舰锛圲E5 椋庢牸锛氭覆鏌撳尯灞呬腑锛屽洓鍛ㄤ负 UI 闈㈡澘锛?----
+	// 瑙嗗彛瀹瑰櫒 = 椤堕儴宸ュ叿鏍忎笅銆佸乏鍙抽潰鏉夸箣闂淬€佸簳閮?Log 涓婃柟鐨勫墿浣欏尯鍩燂紱
+	// 娓叉煋鍖?= 瀹瑰櫒鍐呯缉锛堥《閮ㄨ鍑烘爣棰樻潯锛屽洓鍛ㄨ鍑鸿竟妗嗭級銆?
+	// UI 浠呯粯鍒跺鍣ㄨ竟妗嗭紙鍚爣棰樻潯锛夛紝娓叉煋鍖轰腑澶暀缁?3D 鐢婚潰锛岄伩鍏嶄笉閫忔槑 UI 鐩栦綇鍦烘櫙銆?
 	const float ContainerX = HierarchyX + HierarchyW + ViewportGap;
 	const float ContainerY = HierarchyY;
 	const float ContainerW = PropertiesX - ContainerX - ViewportGap;
@@ -324,22 +324,22 @@ void ASimpleEditorActor::UpdateLayout() {
 		const float BorderTopH = ViewportTitleBarH;
 		const float SideH = ContainerH - ViewportTitleBarH - ViewportBorder;
 		if (SideH > 0.0f) {
-			// 顶部：标题条 + 上边框（渲染区上方）
+			// 椤堕儴锛氭爣棰樻潯 + 涓婅竟妗嗭紙娓叉煋鍖轰笂鏂癸級
 			if (ViewportBorderTop) {
 				ViewportBorderTop->SetPosition(ContainerX, ContainerY);
 				ViewportBorderTop->SetDesiredSize(ContainerW, BorderTopH);
 			}
-			// 底部：下边框
+			// 搴曢儴锛氫笅杈规
 			if (ViewportBorderBottom) {
 				ViewportBorderBottom->SetPosition(ContainerX, ContainerY + ContainerH - ViewportBorder);
 				ViewportBorderBottom->SetDesiredSize(ContainerW, ViewportBorder);
 			}
-			// 左侧边框（标题条之下）
+			// 宸︿晶杈规锛堟爣棰樻潯涔嬩笅锛?
 			if (ViewportBorderLeft) {
 				ViewportBorderLeft->SetPosition(ContainerX, ContainerY + ViewportTitleBarH);
 				ViewportBorderLeft->SetDesiredSize(ViewportBorder, SideH);
 			}
-			// 右侧边框（标题条之下）
+			// 鍙充晶杈规锛堟爣棰樻潯涔嬩笅锛?
 			if (ViewportBorderRight) {
 				ViewportBorderRight->SetPosition(ContainerX + ContainerW - ViewportBorder, ContainerY + ViewportTitleBarH);
 				ViewportBorderRight->SetDesiredSize(ViewportBorder, SideH);
@@ -357,10 +357,10 @@ void ASimpleEditorActor::UpdateLayout() {
 			ViewportTitle->SetActorLocation(Vector3(ContainerX + 14.0f, ContainerY + 5.0f, 0.0f));
 		}
 
-		// 推送视口矩形给世界渲染视图（Skybox / Deferred），使 3D 渲染恰好落在中央区域
+		// 鎺ㄩ€佽鍙ｇ煩褰㈢粰涓栫晫娓叉煋瑙嗗浘锛圫kybox / Deferred锛夛紝浣?3D 娓叉煋鎭板ソ钀藉湪涓ぎ鍖哄煙
 		RenderViewSystem::Get().SetWorldViewportRect(Vector4(ViewportX, ViewportY, ViewportW, ViewportH));
 
-		// 同步相机宽高比（视锥剔除），保持与视口一致
+		// 鍚屾鐩告満瀹介珮姣旓紙瑙嗛敟鍓旈櫎锛夛紝淇濇寔涓庤鍙ｄ竴鑷?
 		ACameraActor* MainCam = CameraSystem::Get().GetMainCamera();
 		if (MainCam && MainCam->GetCameraComponent()) {
 			MainCam->GetCameraComponent()->SetAspectRatio(ViewportW / ViewportH);
@@ -387,7 +387,7 @@ void ASimpleEditorActor::RebuildHierarchyList(UWorld* InWorld) {
 		DisplayActors.Push(A);
 	}
 
-	// 选中 actor 可能已被场景切换删除 → 失效时清空
+	// 閫変腑 actor 鍙兘宸茶鍦烘櫙鍒囨崲鍒犻櫎 鈫?澶辨晥鏃舵竻绌?
 	bool bStillExists = false;
 	if (SelectedActor) {
 		for (size_t i = 0; i < DisplayActors.Size(); ++i) {
@@ -418,28 +418,28 @@ void ASimpleEditorActor::SyncHierarchyList() {
 		return;
 	}
 
-	// ---- ScrollBox：同步内容数量（滚动范围随内容行数变化） ----
+	// ---- ScrollBox锛氬悓姝ュ唴瀹规暟閲忥紙婊氬姩鑼冨洿闅忓唴瀹硅鏁板彉鍖栵級 ----
 	HierarchyScrollBox->SetContentCount(N);
 	HierarchyScrollBox->SetRowStep(RowHeight + RowGap);
 	HierarchyScrollBox->SetRowHeight(RowHeight);
 	HierarchyScrollBox->LayoutChildren();
 
-	// ---- 字体懒加载（与 ATextActor 同一字体族） ----
-	// [FIX] 中文 Actor 名渲染：使用含 CJK 字形的位图字体 Noto Sans 21px
-	//（Bitmap 渲染路径与 Ubuntu Mono 相同已验证正常；System 字体 variant 渲染存在缺陷）
+	// ---- 瀛椾綋鎳掑姞杞斤紙涓?ATextActor 鍚屼竴瀛椾綋鏃忥級 ----
+	// [FIX] 涓枃 Actor 鍚嶆覆鏌擄細浣跨敤鍚?CJK 瀛楀舰鐨勪綅鍥惧瓧浣?Noto Sans 21px
+	//锛圔itmap 娓叉煋璺緞涓?Ubuntu Mono 鐩稿悓宸查獙璇佹甯革紱System 瀛椾綋 variant 娓叉煋瀛樺湪缂洪櫡锛?
 	if (!HierarchyFont) {
 		HierarchyFont = FontSystem::Get().Acquire("Noto Sans 21px",
 			UITextType::eUI_Text_Type_Bitmap, 21);
 	}
 
-	// ---- 按钮池：不足时创建（每个按钮绑定固定行索引的回调） ----
+	// ---- 鎸夐挳姹狅細涓嶈冻鏃跺垱寤猴紙姣忎釜鎸夐挳缁戝畾鍥哄畾琛岀储寮曠殑鍥炶皟锛?----
 	while ((int)HierarchyButtons.Size() < N) {
 		UButtonWidget* Btn = new UButtonWidget();
 		Btn->SetDesiredSize(-1.0f, RowHeight);
 		Btn->SetFont(HierarchyFont);
 		Btn->SetTextColor(Vector4(0.82f, 0.84f, 0.88f, 1.0f));
 		const int RowIndex = (int)HierarchyButtons.Size();
-		// OnClick 回调：驱动选中高亮 + 右侧 Properties 面板刷新
+		// OnClick 鍥炶皟锛氶┍鍔ㄩ€変腑楂樹寒 + 鍙充晶 Properties 闈㈡澘鍒锋柊
 		Btn->SetOnClick([this, RowIndex](UButtonWidget* ClickedBtn) {
 			OnHierarchyButtonClicked(RowIndex, ClickedBtn);
 		});
@@ -447,12 +447,12 @@ void ASimpleEditorActor::SyncHierarchyList() {
 		HierarchyButtons.Push(Btn);
 	}
 
-	// ---- 按钮池收缩：超出内容数量的按钮隐藏 ----
+	// ---- 鎸夐挳姹犳敹缂╋細瓒呭嚭鍐呭鏁伴噺鐨勬寜閽殣钘?----
 	for (int i = N; i < (int)HierarchyButtons.Size(); ++i) {
 		HierarchyButtons[i]->SetVisible(false);
 	}
 
-	// ---- 同步行文本与选中高亮（选中态由 Button 自身底色呈现） ----
+	// ---- 鍚屾琛屾枃鏈笌閫変腑楂樹寒锛堥€変腑鎬佺敱 Button 鑷韩搴曡壊鍛堢幇锛?----
 	for (int i = 0; i < N; ++i) {
 		UButtonWidget* Btn = HierarchyButtons[i];
 		if (!Btn) {
@@ -463,14 +463,14 @@ void ASimpleEditorActor::SyncHierarchyList() {
 		Btn->SetSelected(i == SelectedRow);
 	}
 
-	// 滚动裁剪由 UScrollBoxWidget::OnDraw 处理：只绘制落在可视矩形内的子项，
-	// 超出的行不绘制，天然不与下方 Log 窗口重叠。
+	// 婊氬姩瑁佸壀鐢?UScrollBoxWidget::OnDraw 澶勭悊锛氬彧缁樺埗钀藉湪鍙鐭╁舰鍐呯殑瀛愰」锛?
+	// 瓒呭嚭鐨勮涓嶇粯鍒讹紝澶╃劧涓嶄笌涓嬫柟 Log 绐楀彛閲嶅彔銆?
 
-	// [诊断] 每 120 帧写一次按钮池/ScrollBox 状态到中间产物目录，验证列表构建与布局
+	// [璇婃柇] 姣?120 甯у啓涓€娆℃寜閽睜/ScrollBox 鐘舵€佸埌涓棿浜х墿鐩綍锛岄獙璇佸垪琛ㄦ瀯寤轰笌甯冨眬
 	++DiagFrame;
-	if ((DiagFrame % 120) == 0) {
+	if (true) {
 		FILE* F = nullptr;
-		fopen_s(&F, "C:/Users/dongyf/AppData/Roaming/Tencent/Marvis/User/oAN1i2WRMFSrJ52wfk3jOkgo9DVc/workspace/conv_d5042d99ddef4e598969646c91ea7532/temp/hierarchy_diag.txt", "w");
+		fopen_s(&F, "D:/dongyf/DimensionEngine/Bin/hierarchy_diag.txt", "w");
 		if (F) {
 			fprintf(F, "N=%d SelectedRow=%d\n", N, SelectedRow);
 			fprintf(F, "ScrollBox: children=%d pos=(%.1f,%.1f) size=(%.1f,%.1f) visible=%d scroll=%.1f max=%.1f\n",
@@ -479,6 +479,20 @@ void ASimpleEditorActor::SyncHierarchyList() {
 				HierarchyScrollBox->GetWidth(), HierarchyScrollBox->GetHeight(),
 				HierarchyScrollBox->IsVisible() ? 1 : 0,
 				HierarchyScrollBox->GetScrollOffset(), HierarchyScrollBox->GetMaxScrollOffset());
+			// [FIX-DIAG] Children 槽位 -> 按钮池索引映射：验证绘制顺序与命中顺序是否错位
+			fprintf(F, "ChildrenMap: ");
+			for (size_t k = 0; k < HierarchyScrollBox->GetChildren().Size() && k < 8; ++k) {
+				UWidget* C = HierarchyScrollBox->GetChildren()[k];
+				int BtnIdx = -1;
+				for (int b = 0; b < (int)HierarchyButtons.Size(); ++b) {
+					if (C == HierarchyButtons[b]) { BtnIdx = b; break; }
+				}
+				fprintf(F, "[%d]=%s ", (int)k, BtnIdx >= 0 ? "Btn%d" : "other");
+				if (BtnIdx >= 0) {
+					fprintf(F, "(idx=%d) ", BtnIdx);
+				}
+			}
+			fprintf(F, "\n");
 			for (int i = 0; i < N && i < 5; ++i) {
 				UButtonWidget* Btn = HierarchyButtons[i];
 				if (Btn) {
@@ -495,7 +509,7 @@ void ASimpleEditorActor::SyncHierarchyList() {
 
 void ASimpleEditorActor::OnHierarchyButtonClicked(int Row, UButtonWidget* Btn) {
 	FILE* T = nullptr;
-	fopen_s(&T, "C:/Users/dongyf/AppData/Roaming/Tencent/Marvis/User/oAN1i2WRMFSrJ52wfk3jOkgo9DVc/workspace/conv_d5042d99ddef4e598969646c91ea7532/temp/click_trace.txt", "w");
+	fopen_s(&T, "D:/dongyf/DimensionEngine/Bin/click_trace.txt", "w");
 	if (T) {
 		fprintf(T, "OnHierarchyButtonClicked Row=%d Btn=%p DisplayActors.Size=%d\n", Row, (void*)Btn, (int)DisplayActors.Size());
 		fclose(T);
@@ -504,27 +518,37 @@ void ASimpleEditorActor::OnHierarchyButtonClicked(int Row, UButtonWidget* Btn) {
 		return;
 	}
 
-	// 1) 更新选中状态
+	// 1) 鏇存柊閫変腑鐘舵€?
 	SelectedActor = DisplayActors[Row];
 	SelectedRow = Row;
 	if (T) {
-		fopen_s(&T, "C:/Users/dongyf/AppData/Roaming/Tencent/Marvis/User/oAN1i2WRMFSrJ52wfk3jOkgo9DVc/workspace/conv_d5042d99ddef4e598969646c91ea7532/temp/click_trace.txt", "a");
+		fopen_s(&T, "D:/dongyf/DimensionEngine/Bin/click_trace.txt", "a");
 		fprintf(T, "step1 selected=%s\n", SelectedActor ? SelectedActor->GetName().CStr() : "(null)");
 		fclose(T);
 	}
 
-	// 2) 通过 Button 选中态刷新高亮（替代旧 SelectionBar 矩形）
+	// 2) 閫氳繃 Button 閫変腑鎬佸埛鏂伴珮浜紙鏇夸唬鏃?SelectionBar 鐭╁舰锛?
 	for (int i = 0; i < (int)HierarchyButtons.Size(); ++i) {
 		if (HierarchyButtons[i]) {
 			HierarchyButtons[i]->SetSelected(i == Row);
 		}
 	}
 
-	// 3) 回调驱动右侧 Properties 面板内容刷新
+	// 3) 鍥炶皟椹卞姩鍙充晶 Properties 闈㈡澘鍐呭鍒锋柊
 	RefreshPropertiesText();
 	if (T) {
-		fopen_s(&T, "C:/Users/dongyf/AppData/Roaming/Tencent/Marvis/User/oAN1i2WRMFSrJ52wfk3jOkgo9DVc/workspace/conv_d5042d99ddef4e598969646c91ea7532/temp/click_trace.txt", "a");
+		fopen_s(&T, "D:/dongyf/DimensionEngine/Bin/click_trace.txt", "a");
 		fprintf(T, "done\n");
+		fprintf(T, "ClickSnapshot Row=%d BtnPos=(%.1f,%.1f) BtnSize=(%.1f,%.1f)\n",
+			Row, Btn->GetPositionX(), Btn->GetPositionY(), Btn->GetWidth(), Btn->GetHeight());
+		for (int i = 0; i < (int)HierarchyButtons.Size() && i < 8; ++i) {
+			UButtonWidget* B = HierarchyButtons[i];
+			if (B) {
+				fprintf(T, "  Btn[%d] pos=(%.1f,%.1f) size=(%.1f,%.1f) vis=%d sel=%d text=%s\n",
+					i, B->GetPositionX(), B->GetPositionY(), B->GetWidth(), B->GetHeight(),
+					B->IsVisible() ? 1 : 0, B->IsSelected() ? 1 : 0, B->GetText().CStr());
+			}
+		}
 		fclose(T);
 	}
 }
@@ -613,16 +637,16 @@ void ASimpleEditorActor::HandleMouseInput() {
 	Controller::GetMousePosition(mx, my);
 	const bool bLeft = Controller::IsButtonDown(eButtons::Left);
 
-	// ---- Hierarchy ScrollBox：滚轮在层级面板上时滚动内容 ----
-	// 滚轮增量由 GameOnWheel 事件回调写入 Owner->WheelDelta（相机 dolly 用）。
-	// 此处抢先消费并清零，GameInstance::Update 中相机 dolly 便不再响应，
-	// 实现「Hierarchy 区域滚轮 → 滚动层级；中央视口滚轮 → 相机缩放」的路由区分。
+	// ---- Hierarchy ScrollBox锛氭粴杞湪灞傜骇闈㈡澘涓婃椂婊氬姩鍐呭 ----
+	// 婊氳疆澧為噺鐢?GameOnWheel 浜嬩欢鍥炶皟鍐欏叆 Owner->WheelDelta锛堢浉鏈?dolly 鐢級銆?
+	// 姝ゅ鎶㈠厛娑堣垂骞舵竻闆讹紝GameInstance::Update 涓浉鏈?dolly 渚夸笉鍐嶅搷搴旓紝
+	// 瀹炵幇銆孒ierarchy 鍖哄煙婊氳疆 鈫?婊氬姩灞傜骇锛涗腑澶鍙ｆ粴杞?鈫?鐩告満缂╂斁銆嶇殑璺敱鍖哄垎銆?
 	if (Owner && Owner->WheelDelta != 0 &&
 		IsPointInRect((float)mx, (float)my, HierarchyX, HierarchyY, HierarchyW, HierarchyPanelH)) {
 		const float RowStep = RowHeight + RowGap;
-		// UE 语义：滚轮向上（WheelDelta>0）内容向下移动（显示更靠前的行），
-		// 滚轮向下（WheelDelta<0）内容向上移动（显示更靠后的行）。
-		// ScrollBox::ScrollBy 的 Delta>0 表示向下滚动，故对 WheelDelta 取负。
+		// UE 璇箟锛氭粴杞悜涓婏紙WheelDelta>0锛夊唴瀹瑰悜涓嬬Щ鍔紙鏄剧ず鏇撮潬鍓嶇殑琛岋級锛?
+		// 婊氳疆鍚戜笅锛圵heelDelta<0锛夊唴瀹瑰悜涓婄Щ鍔紙鏄剧ず鏇撮潬鍚庣殑琛岋級銆?
+		// ScrollBox::ScrollBy 鐨?Delta>0 琛ㄧず鍚戜笅婊氬姩锛屾晠瀵?WheelDelta 鍙栬礋銆?
 		if (HierarchyScrollBox) {
 			HierarchyScrollBox->ScrollBy((float)(-Owner->WheelDelta) * RowStep);
 		}
@@ -632,7 +656,7 @@ void ASimpleEditorActor::HandleMouseInput() {
 	if (bLeft && !bPrevLeftDown) {
 		bool bHandled = false;
 
-		// 1) 工具栏按钮
+		// 1) 宸ュ叿鏍忔寜閽?
 		for (int i = 0; i < 4; ++i) {
 			const ToolbarButtonRect& B = ToolbarButtons[i];
 			if (IsPointInRect((float)mx, (float)my, B.X, B.Y, B.W, B.H)) {
@@ -642,7 +666,7 @@ void ASimpleEditorActor::HandleMouseInput() {
 			}
 		}
 
-		// 2) 底部 Log 窗口页签
+		// 2) 搴曢儴 Log 绐楀彛椤电
 		if (!bHandled && (float)my >= LogY) {
 			for (int i = 0; i < 3; ++i) {
 				const float TX = LogX + LogTabX0 + i * LogTabGap;
@@ -654,16 +678,16 @@ void ASimpleEditorActor::HandleMouseInput() {
 			}
 		}
 
-		// 3) 层级面板点击：走 Widget 树输入分发（Button OnClick 回调驱动选中与高亮）。
-		//    命中/裁剪完全由 Widget 树自身矩形与可见性决定，替代旧的
-		//    「数组下标 + 固定坐标」行命中；滚动后点击不再错位。
+		// 3) 灞傜骇闈㈡澘鐐瑰嚮锛氳蛋 Widget 鏍戣緭鍏ュ垎鍙戯紙Button OnClick 鍥炶皟椹卞姩閫変腑涓庨珮浜級銆?
+		//    鍛戒腑/瑁佸壀瀹屽叏鐢?Widget 鏍戣嚜韬煩褰笌鍙鎬у喅瀹氾紝鏇夸唬鏃х殑
+		//    銆屾暟缁勪笅鏍?+ 鍥哄畾鍧愭爣銆嶈鍛戒腑锛涙粴鍔ㄥ悗鐐瑰嚮涓嶅啀閿欎綅銆?
 		if (!bHandled && (float)my >= HierarchyRowStartY &&
 			IsPointInRect((float)mx, (float)my, HierarchyX, HierarchyY, HierarchyW, HierarchyPanelH)) {
 			if (HierarchyPanel && HierarchyPanel->DispatchMouseClick((float)mx, (float)my)) {
-				// Button 命中：OnClick 回调已更新选中状态 / 高亮 / 右侧属性刷新
+				// Button 鍛戒腑锛歄nClick 鍥炶皟宸叉洿鏂伴€変腑鐘舵€?/ 楂樹寒 / 鍙充晶灞炴€у埛鏂?
 			}
 			else {
-				// 点击面板空白（行间空隙 / 无内容区）：取消选中
+				// 鐐瑰嚮闈㈡澘绌虹櫧锛堣闂寸┖闅?/ 鏃犲唴瀹瑰尯锛夛細鍙栨秷閫変腑
 				SelectedActor = nullptr;
 				SelectedRow = -1;
 				RefreshPropertiesText();
@@ -671,9 +695,9 @@ void ASimpleEditorActor::HandleMouseInput() {
 			bHandled = true;
 		}
 
-		// 4) 中央视口空白点击 → 取消选中。
-		//    与 UE5 一致：仅点击渲染视口区域内的空白才清空选中；
-		//    点击四周 UI 面板（工具栏/层级/属性/Log）不会误取消选中。
+		// 4) 涓ぎ瑙嗗彛绌虹櫧鐐瑰嚮 鈫?鍙栨秷閫変腑銆?
+		//    涓?UE5 涓€鑷达細浠呯偣鍑绘覆鏌撹鍙ｅ尯鍩熷唴鐨勭┖鐧芥墠娓呯┖閫変腑锛?
+		//    鐐瑰嚮鍥涘懆 UI 闈㈡澘锛堝伐鍏锋爮/灞傜骇/灞炴€?Log锛変笉浼氳鍙栨秷閫変腑銆?
 		if (!bHandled) {
 			if (IsPointInRect((float)mx, (float)my, ViewportX, ViewportY, ViewportW, ViewportH)) {
 				SelectedActor = nullptr;
@@ -686,7 +710,7 @@ void ASimpleEditorActor::HandleMouseInput() {
 }
 
 void ASimpleEditorActor::HandleKeyboardInput() {
-	// Tab：循环选中
+	// Tab锛氬惊鐜€変腑
 	const bool bTab = Controller::IsKeyDown(eKeys::Tab);
 	if (bTab && !bPrevTabDown) {
 		if (DisplayActors.Size() > 0) {
@@ -700,7 +724,7 @@ void ASimpleEditorActor::HandleKeyboardInput() {
 	}
 	bPrevTabDown = bTab;
 
-	// BackSpace：取消选中
+	// BackSpace锛氬彇娑堥€変腑
 	const bool bBS = Controller::IsKeyDown(eKeys::BackSpace);
 	if (bBS && !bPrevBackSpaceDown) {
 		SelectedActor = nullptr;
@@ -708,7 +732,7 @@ void ASimpleEditorActor::HandleKeyboardInput() {
 	}
 	bPrevBackSpaceDown = bBS;
 
-	// 属性类别
+	// 灞炴€х被鍒?
 	if (Controller::IsKeyDown(eKeys::Num_1)) {
 		EditCategory = EditorEditCategory::Location;
 	}
@@ -718,7 +742,7 @@ void ASimpleEditorActor::HandleKeyboardInput() {
 	if (Controller::IsKeyDown(eKeys::Num_3)) {
 		EditCategory = EditorEditCategory::Scale;
 	}
-	// 属性轴
+	// 灞炴€ц酱
 	if (Controller::IsKeyDown(eKeys::X)) {
 		EditAxis = 0;
 	}
@@ -729,7 +753,7 @@ void ASimpleEditorActor::HandleKeyboardInput() {
 		EditAxis = 2;
 	}
 
-	// 数值调整
+	// 鏁板€艰皟鏁?
 	float Step = 1.0f;
 	if (Controller::IsKeyDown(eKeys::Control)) {
 		Step = 0.1f;
@@ -852,7 +876,7 @@ void ASimpleEditorActor::RefreshLogWindow() {
 	const Vector3 Hidden(-9999.0f, -9999.0f, 0.0f);
 
 	for (int i = 0; i < 3; ++i) {
-		// 页签高亮：激活页蓝色，非激活页深灰
+		// 椤电楂樹寒锛氭縺娲婚〉钃濊壊锛岄潪婵€娲婚〉娣辩伆
 		if (LogTabWidgets[i]) {
 			LogTabWidgets[i]->SetColor(i == LogActiveTab
 				? Vector4(0.22f, 0.45f, 0.90f, 0.92f)
@@ -864,7 +888,7 @@ void ASimpleEditorActor::RefreshLogWindow() {
 			? Vector3(LogX + LogTextX, LogY + LogTextY, 0.0f)
 			: Hidden;
 
-		// 仅激活页文本显示在 Log 窗口内，其余移出屏幕（内容原样保留）
+		// 浠呮縺娲婚〉鏂囨湰鏄剧ず鍦?Log 绐楀彛鍐咃紝鍏朵綑绉诲嚭灞忓箷锛堝唴瀹瑰師鏍蜂繚鐣欙級
 		const LogTextSource& Src = LogSources[i];
 		if (Src.RenderPanel) {
 			Src.RenderPanel->SetAnchorPosition(Target);

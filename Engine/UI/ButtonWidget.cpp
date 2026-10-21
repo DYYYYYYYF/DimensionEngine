@@ -10,6 +10,7 @@ void UButtonWidget::OnDraw(UCanvasRenderer* InCanvasRenderer) {
 	// 背景：选中时绘制高亮底色；未选中保持透明（仅文字，面板底色透出）
 	if (bSelected) {
 		UIDrawCallElement Elem;
+		// [DIAG-TEST] 强制 y=500 且红色，验证绘制路径是否忠实于顶点数据
 		Elem.PositionX = PositionX;
 		Elem.PositionY = PositionY;
 		Elem.Width = Width;

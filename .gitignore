@@ -28,3 +28,4 @@ Assets/Materials/*.dmt
 # python midden files
 Scripts/__pycache__
 
+/build_out.txt

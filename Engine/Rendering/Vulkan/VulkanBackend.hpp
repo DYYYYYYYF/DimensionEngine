@@ -71,6 +71,23 @@ private:
 	// 当前帧使用的 host-visible UI 合批缓冲对下标（与 ImageIndex 交替轮转）
 	uint32_t CurrentUIHostBufferIndex = 0;
 
+	// host-visible UI 合批几何重建时，跨缓冲对搬移的旧块不能立即 Free：
+	// 旧块所在缓冲对的上一次命令可能仍在 GPU 执行（BeginFrame 只等待当前
+	// fence 槽对应的帧，未等待对侧缓冲对的上一帧）。若立即 Free 回 freelist，
+	// 后续分配会覆盖该块，导致仍在 in-flight 的 UI DrawCall 读到被篡改的
+	// 顶点/索引数据（表现：层级列表时隐时现、文字贴图原图、点击后错乱）。
+	// 延迟到旧块所在缓冲对再次成为写入对、BeginFrame 的 fence 等待确认其
+	// in-flight 命令全部完成后统一释放。
+	struct DeferredBufferFree {
+		uint32_t buffer_index;  // UI 缓冲对下标 0/1
+		bool bIsIndex;          // true=index 缓冲, false=vertex 缓冲
+		size_t size;
+		size_t offset;
+	};
+	TArray<DeferredBufferFree> DeferredUIHostFrees;
+
+	void FlushDeferredUIHostFrees();
+
 private:
 	uint32_t QueryInstanceVersion();
 	uint32_t SelectTargetApiVersion(uint32_t instanceVersion);
