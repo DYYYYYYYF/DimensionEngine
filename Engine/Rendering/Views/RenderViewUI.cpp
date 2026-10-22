@@ -214,43 +214,6 @@ void RenderViewUI::Render(const TArray<FRenderProxy*>& RenderObejcts) {
 		CachedUIDrawGeneration = ContentGen;
 		bUIDrawCacheValid = true;
 
-		// [DIAG] 缓存重建诊断：记录代次/文本代理/每组 DrawCall 排序键。
-		// 节流到每 120 帧写一次：bHasTextProxy 存在时每帧走重建路径，若每帧
-		// append 写文件（累计可达上百 MB）会阻塞 UI 帧率，放大闪烁/错乱观感。
-		{
-			static uint64_t DiagCount = 0;
-			static uint64_t DiagFrameThrottle = 0;
-			if ((DiagFrameThrottle++ % 120) == 0) {
-				FILE* F = nullptr;
-				fopen_s(&F, "D:/dongyf/DimensionEngine/Bin/ui_cache_diag.txt", "a");
-				if (F) {
-					fprintf(F, "[REBUILD #%llu] ContentGen=%llu bHasTextProxy=%d drawcalls=%u\n",
-						DiagCount++, (unsigned long long)ContentGen, bHasTextProxy ? 1 : 0, (uint32_t)CachedUIDrawCalls.Size());
-					for (uint32_t di = 0; di < CachedUIDrawCalls.Size(); ++di) {
-						const DrawCall& dc = CachedUIDrawCalls[di];
-						UMaterialInstance* Mat = dc.material;
-						uint32_t MatID = Mat ? Mat->GetInternalID() : 0xFFFFFFFFu;
-						fprintf(F, "  dc[%u] sortKey=0x%08X matID=%u shader=%p geom=%p text=%d\n",
-							di, dc.sortKey, MatID, (void*)dc.shader, (void*)dc.geometry,
-							(dc.sortKey == 0xFFFFFFFFu) ? 1 : 0);
-					}
-					fclose(F);
-				}
-			}
-		}
-	}
-	else {
-		// [DIAG] 缓存命中诊断：每 300 帧记录一次
-		static uint64_t HitCount = 0;
-		if ((HitCount++ % 300) == 0) {
-			FILE* F = nullptr;
-			fopen_s(&F, "D:/dongyf/DimensionEngine/Bin/ui_cache_diag.txt", "a");
-			if (F) {
-				fprintf(F, "[HIT] ContentGen=%llu bHasTextProxy=%d drawcalls=%u\n",
-					(unsigned long long)ContentGen, bHasTextProxy ? 1 : 0, (uint32_t)CachedUIDrawCalls.Size());
-				fclose(F);
-			}
-		}
 	}
 
 	FFrameData UIData;

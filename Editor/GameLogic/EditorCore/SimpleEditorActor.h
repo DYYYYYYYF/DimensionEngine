@@ -91,6 +91,8 @@ private:
 	void RefreshToolbar(float DeltaTime);
 	// 每帧刷新底部 Log 窗口（页签高亮 + 文本位置）
 	void RefreshLogWindow();
+	// 应用 Keyboard 页滚轮滚动：按 KeyboardLineOffset 截取可见行写入 TextActor
+	void SyncKeyboardScroll();
 
 	// 输入处理
 	void HandleMouseInput();
@@ -158,6 +160,13 @@ private:
 		DebugConsoleActor* Console = nullptr;    // Console 页：调试控制台
 	};
 	LogTextSource LogSources[3];
+
+	// ---- 底部 Log 窗口滚动状态 ----
+	// Keyboard 页是静态 ATextActor（整段文本几何，无内置滚动），由编辑器侧
+	// 缓存全文并按行截取可见片段实现滚轮滚动（与 Console 页 LineOffset 语义一致）。
+	FString KeyboardFullText;   // Keyboard 页完整文本（首次滚动时缓存）
+	int KeyboardLineOffset = 0; // 已上滚行数（MoveUp 语义：越大显示越靠前的内容）
+	int KeyboardMaxOffset = 0;  // 行数 - 可见行数（下限 0）
 
 	// ---- 布局参数 ----
 	static constexpr float ToolbarHeight = 44.0f;

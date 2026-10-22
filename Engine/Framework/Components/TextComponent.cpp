@@ -141,9 +141,8 @@ bool UTextComponent::BuildGeometry() {
 	const int LineHeight = TextFont->GetLineHeight();
 	const float TabXAdvance = TextFont->GetTabXAdvance();
 
-	const FTextureMap& Atlas = TextFont->GetAtlas();
-	const int AtlasSizeX = Atlas.texture ? Atlas.texture->GetWidth() : 1024;
-	const int AtlasSizeY = Atlas.texture ? Atlas.texture->GetHeight() : 1024;
+	const int AtlasSizeX = TextFont->GetAtlasWidth();
+	const int AtlasSizeY = TextFont->GetAtlasHeight();
 
 	// UTF-8 字节长度，用作最大 Quad 数量。
 	// 实际 Quad 数量可能更少，因为：
@@ -268,6 +267,28 @@ bool UTextComponent::BuildGeometry() {
 		delete[] Vertices;
 		delete[] Indices;
 		return false;
+	}
+
+	// System 字体（stbtt 打包）的 glyph.offsetY 为负值：字形位图顶部会高出
+	// 行顶（即组件位置上方）。若不补偿，文本首行字形会视觉上探，例如
+	// Log 面板 Console 页首行被顶到页签栏正下方、紧贴甚至压入页签区域。
+	// 这里将整个文本几何向下平移 |minOffsetY|，保证任何字形顶部都不超出
+	// 组件位置顶部；位图字体 offsetY 语义不同（非负），不参与补偿。
+	if (TextFont->GetFontType() == UITextType::eUI_Text_Type_System) {
+		float MinGlyphY = 0.0f;
+		for (uint32_t i = 0; i < QuadIndex; ++i) {
+			const float TopY = Vertices[i * 4 + 0].position.y;
+			if (TopY < MinGlyphY) {
+				MinGlyphY = TopY;
+			}
+		}
+		float Dy = 0.0f;
+		if (MinGlyphY < 0.0f) {
+			Dy = -MinGlyphY;
+			for (uint32_t i = 0; i < QuadIndex * 4; ++i) {
+				Vertices[i].position.y += Dy;
+			}
+		}
 	}
 
 	// 实际 Geometry 数量

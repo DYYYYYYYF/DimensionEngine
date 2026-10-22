@@ -917,56 +917,6 @@ void VulkanRHI::DrawGeometry(GeometryRenderData* geometry) {
 	VulkanBuffer* VertexBuffer = BufferData->host_visible ? Context.UIObjectVertexBuffers[BufferData->host_buffer_index] : Context.ObjectVertexBuffer;
 	VulkanBuffer* IndexBuffer = BufferData->host_visible ? Context.UIObjectIndexBuffers[BufferData->index_buffer_index] : Context.ObjectIndexBuffer;
 
-	// [DIAG-UI-DRAW] 节流输出 UI 合批几何的缓冲绑定状态，用于核对绘制用块与上传块是否一致。
-	if (BufferData->host_visible) {
-		static uint64_t DrawDiagCount = 0;
-		if ((DrawDiagCount++ % 90) == 0) {
-			FILE* F = nullptr;
-			fopen_s(&F, "D:/dongyf/DimensionEngine/Bin/ui_draw_diag.txt", "a");
-			if (F) {
-				fprintf(F, "[DRAW] geom=%llu vbuf=%u voff=%llu vsize=%llu vcnt=%u ibuf=%u ioff=%llu isize=%llu icnt=%u gen=%llu\n",
-					(unsigned long long)geometry->geometry->InternalID,
-					BufferData->host_buffer_index,
-					(unsigned long long)BufferData->vertext_buffer_offset,
-					(unsigned long long)BufferData->vertex_element_size,
-					BufferData->vertex_count,
-					BufferData->index_buffer_index,
-					(unsigned long long)BufferData->index_buffer_offset,
-					(unsigned long long)BufferData->index_element_size,
-					BufferData->index_count,
-					(unsigned long long)BufferData->generation);
-
-				// 读回顶点内容，校验矩形组内各四边形实际 Y（UIVertex: pos.x,pos.y,uv.x,uv.y,color.r,g,b,a = 32B）
-				if (BufferData->vertex_element_size >= 32 && BufferData->vertex_count >= 28) {
-					TArray<uint8_t> Verts = VertexBuffer->Read(BufferData->vertext_buffer_offset, (size_t)BufferData->vertex_count * (size_t)BufferData->vertex_element_size);
-					if (Verts.Size() >= (size_t)28 * 32) {
-						const float* Fp = (const float*)Verts.Data();
-						fprintf(F, "  QUAD0_Y=%f QUAD5_Y=%f QUAD6_Y=%f QUAD7_Y=%f\n",
-							(double)Fp[1], (double)Fp[(5 * 4) * 8 + 1], (double)Fp[(6 * 4) * 8 + 1], (double)Fp[(7 * 4) * 8 + 1]);
-						// 全量 dump 前 16 个四边形 Y
-						fprintf(F, "  ALLY:");
-						for (int qi = 0; qi < 16; ++qi) {
-							fprintf(F, " %d=%.1f", qi, (double)Fp[(qi * 4) * 8 + 1]);
-						}
-						fprintf(F, "\n");
-					}
-				}
-
-				// 读回索引内容，校验 QUAD0 / QUAD6 的三角形顶点引用
-				if (BufferData->index_element_size >= 4 && BufferData->index_count >= 42) {
-					TArray<uint8_t> Idx = IndexBuffer->Read(BufferData->index_buffer_offset, (size_t)BufferData->index_count * (size_t)BufferData->index_element_size);
-					if (Idx.Size() >= (size_t)42 * 4) {
-						const uint32_t* Ip = (const uint32_t*)Idx.Data();
-						fprintf(F, "  IDX_Q0=%u,%u,%u,%u,%u,%u IDX_Q6=%u,%u,%u,%u,%u,%u\n",
-							Ip[0], Ip[1], Ip[2], Ip[3], Ip[4], Ip[5],
-							Ip[6 * 6], Ip[6 * 6 + 1], Ip[6 * 6 + 2], Ip[6 * 6 + 3], Ip[6 * 6 + 4], Ip[6 * 6 + 5]);
-					}
-				}
-				fclose(F);
-			}
-		}
-	}
-
 	bool IncludIndexData = BufferData->index_count > 0;
 	if (!DrawRenderbuffer(VertexBuffer, BufferData->vertext_buffer_offset, BufferData->vertex_count, IncludIndexData)) {
 		GLOG(Log::eError, "VulkanBackend::DrawGeometry() Failed to draw vertex buffer.");

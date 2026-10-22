@@ -335,52 +335,6 @@ bool UWidget::RebuildGeometry() {
 		BatchGroups[g].LastVertexCount = GroupVertexCount;
 	}
 
-	// [DIAG] 合批组诊断：记录组数、每组纹理/元素数/材质实例 ID，并打印每组首尾元素顶点坐标范围
-	{
-		FILE* F = nullptr;
-		fopen_s(&F, "D:/dongyf/DimensionEngine/Bin/ui_geo_diag.txt", "a");
-		if (F) {
-			fprintf(F, "[GEO] uid=%u groups=%u elems=%u\n",
-				(uint32_t)GetUniqueID(), GroupCount, ElementCount);
-			for (uint32_t g = 0; g < GroupCount; ++g) {
-				UTexture* Tex = GroupTextures[g];
-				UMaterialInstance* Mat = GeometryPool[g] ? GeometryPool[g]->GetMaterialInstance() : nullptr;
-				fprintf(F, "  g[%u] tex='%s' elems=%u matID=%u geom=%p",
-					g, Tex ? Tex->GetName().CStr() : "(null)",
-					GroupCounts[g], Mat ? Mat->GetInternalID() : 0xFFFFFFFFu, (void*)GeometryPool[g]);
-				// 收集本组元素坐标范围
-				float MinX = 1e9f, MinY = 1e9f, MaxX = -1e9f, MaxY = -1e9f;
-				uint32_t FirstIdx = 0xFFFFFFFFu, LastIdx = 0;
-				for (uint32_t i = 0; i < ElementCount; ++i) {
-					UTexture* ETex = Elements[i].Texture ? Elements[i].Texture : WhiteTex;
-					if (ETex != GroupTextures[g]) continue;
-					if (FirstIdx == 0xFFFFFFFFu) FirstIdx = i;
-					LastIdx = i;
-					const float Ex = Elements[i].PositionX;
-					const float Ey = Elements[i].PositionY;
-					const float Ew = Elements[i].Width;
-					const float Eh = Elements[i].Height;
-					if (Ex < MinX) MinX = Ex;
-					if (Ey < MinY) MinY = Ey;
-					if (Ex + Ew > MaxX) MaxX = Ex + Ew;
-					if (Ey + Eh > MaxY) MaxY = Ey + Eh;
-				}
-				fprintf(F, " range=(%.1f,%.1f)-(%.1f,%.1f) firstEl=%u lastEl=%u\n",
-					MinX, MinY, MaxX, MaxY, FirstIdx, LastIdx);
-				// [DIAG-ELEM] 输出本组全部元素明细（坐标/颜色），用于定位选中高亮矩形位置
-				for (uint32_t i = 0; i < ElementCount; ++i) {
-					UTexture* ETex = Elements[i].Texture ? Elements[i].Texture : WhiteTex;
-					if (ETex != GroupTextures[g]) continue;
-					const UIDrawCallElement& E = Elements[i];
-					fprintf(F, "    [EL] x=%.1f y=%.1f w=%.1f h=%.1f c=(%.2f,%.2f,%.2f,%.2f)\n",
-						E.PositionX, E.PositionY, E.Width, E.Height,
-						E.Color.x, E.Color.y, E.Color.z, E.Color.w);
-				}
-			}
-			fclose(F);
-		}
-	}
-
 	return true;
 }
 

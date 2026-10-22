@@ -18,9 +18,76 @@ void UCanvasRenderer::Clear() {
 	Elements.Clear();
 }
 
+void UCanvasRenderer::PushClipRect(float X, float Y, float W, float H) {
+	if (W <= 0.0f || H <= 0.0f) {
+		// 无效裁剪矩形：推入空矩形，使后续元素全部被丢弃
+		FClipRect Dummy;
+		Dummy.X = 0.0f; Dummy.Y = 0.0f; Dummy.W = 0.0f; Dummy.H = 0.0f;
+		ClipStack.Push(Dummy);
+		return;
+	}
+	// 与当前栈顶求交，保持嵌套裁剪单调收窄（空栈视为未裁剪）
+	FClipRect C;
+	C.X = X; C.Y = Y; C.W = W; C.H = H;
+	if (!ClipStack.IsEmpty()) {
+		const FClipRect& P = ClipStack[ClipStack.Size() - 1];
+		const float L = (X > P.X) ? X : P.X;
+		const float T = (Y > P.Y) ? Y : P.Y;
+		const float R = (X + W < P.X + P.W) ? X + W : P.X + P.W;
+		const float B = (Y + H < P.Y + P.H) ? Y + H : P.Y + P.H;
+		C.X = L; C.Y = T; C.W = (R > L) ? R - L : 0.0f; C.H = (B > T) ? B - T : 0.0f;
+	}
+	ClipStack.Push(C);
+}
+
+void UCanvasRenderer::PopClipRect() {
+	if (!ClipStack.IsEmpty()) {
+		ClipStack.pop_back();
+	}
+}
+
 void UCanvasRenderer::PushElement(const UIDrawCallElement& Element) {
 	if (Element.Width <= 0.0f || Element.Height <= 0.0f) {
 		return;
+	}
+
+	if (!ClipStack.IsEmpty()) {
+		const FClipRect& C = ClipStack[ClipStack.Size() - 1];
+		if (C.W <= 0.0f || C.H <= 0.0f) {
+			return; // 空裁剪矩形：全部丢弃
+		}
+		const float L0 = Element.PositionX;
+		const float T0 = Element.PositionY;
+		const float R0 = Element.PositionX + Element.Width;
+		const float B0 = Element.PositionY + Element.Height;
+		const float CL = C.X, CT = C.Y, CR = C.X + C.W, CB = C.Y + C.H;
+		const float L1 = (L0 > CL) ? L0 : CL;
+		const float T1 = (T0 > CT) ? T0 : CT;
+		const float R1 = (R0 < CR) ? R0 : CR;
+		const float B1 = (B0 < CB) ? B0 : CB;
+		if (L1 >= R1 || T1 >= B1) {
+			return; // 完全在裁剪区外
+		}
+		if (L1 != L0 || T1 != T0 || R1 != R0 || B1 != B0) {
+			// 部分相交：裁剪矩形并按比例插值 UV，保证字形/纹理不拉伸错位
+			UIDrawCallElement E = Element;
+			const float U0 = E.UV0.x, V0 = E.UV0.y;
+			const float U1 = E.UV1.x, V1 = E.UV1.y;
+			const float InvW = (R0 - L0) > 0.0f ? 1.0f / (R0 - L0) : 0.0f;
+			const float InvH = (B0 - T0) > 0.0f ? 1.0f / (B0 - T0) : 0.0f;
+			const float uL = U0 + (U1 - U0) * (L1 - L0) * InvW;
+			const float uR = U0 + (U1 - U0) * (R1 - L0) * InvW;
+			const float vT = V0 + (V1 - V0) * (T1 - T0) * InvH;
+			const float vB = V0 + (V1 - V0) * (B1 - T0) * InvH;
+			E.PositionX = L1;
+			E.PositionY = T1;
+			E.Width = R1 - L1;
+			E.Height = B1 - T1;
+			E.UV0 = Vector2(uL, vT);
+			E.UV1 = Vector2(uR, vB);
+			Elements.Push(E);
+			return;
+		}
 	}
 
 	Elements.Push(Element);
@@ -41,8 +108,9 @@ void UCanvasRenderer::PushText(const FString& Text, float X, float Y, IFont* Fon
 	const uint32_t KerningCount = Font->GetKerningCount();
 
 	const FTextureMap& Atlas = Font->GetAtlas();
-	const int AtlasSizeX = Atlas.texture ? (int)Atlas.texture->GetWidth() : 1024;
-	const int AtlasSizeY = Atlas.texture ? (int)Atlas.texture->GetHeight() : 1024;
+	const int AtlasSizeX = Font->GetAtlasWidth();
+	const int AtlasSizeY = Font->GetAtlasHeight();
+	// [UI-DIAG] 每帧刷屏，验证后已移除；atlas 尺寸统一走 Font->GetAtlasWidth()
 
 	const bool bBitmap = (Font->GetFontType() == UITextType::eUI_Text_Type_Bitmap);
 

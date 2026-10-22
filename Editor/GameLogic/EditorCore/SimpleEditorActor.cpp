@@ -3,6 +3,7 @@
 #include <Core/Controller.hpp>
 #include <Core/DMemory.hpp>
 #include <Core/Event.hpp>
+#include <Core/Utils.hpp>
 #include <Systems/CameraSystem.h>
 #include <Systems/RenderViewSystem.hpp>
 #include <Systems/FontSystem.hpp>
@@ -653,6 +654,34 @@ void ASimpleEditorActor::HandleMouseInput() {
 		Owner->WheelDelta = 0;
 	}
 
+	// ---- 底部 Log 窗口滚轮：按激活页签滚动内容 ----
+	// Console 页：DebugConsoleActor 内置 LineOffset 滚动（MoveUp/MoveDown）；
+	// Keyboard 页：静态 ATextActor 无内置滚动，由编辑器按行截取可见片段；
+	// Render 页内容较短，不滚动。鼠标位于 Log 面板矩形内时抢先消费
+	// WheelDelta，避免触发视口相机 dolly。
+	if (Owner && Owner->WheelDelta != 0 &&
+		IsPointInRect((float)mx, (float)my, LogX, LogY, LogW, LogPanelH)) {
+		FILE* WD = nullptr;
+		fopen_s(&WD, "D:/dongyf/DimensionEngine/Bin/wheel_diag.txt", "a");
+		if (WD) {
+			fprintf(WD, "wheel delta=%d mx=%d my=%d tab=%d\n", Owner->WheelDelta, mx, my, LogActiveTab);
+			fclose(WD);
+		}
+		if (LogActiveTab == 2 && LogSources[2].Console) {
+			if (Owner->WheelDelta > 0) {
+				LogSources[2].Console->MoveUp();
+			}
+			else {
+				LogSources[2].Console->MoveDown();
+			}
+		}
+		else if (LogActiveTab == 1 && LogSources[1].Text) {
+			KeyboardLineOffset += (Owner->WheelDelta > 0) ? 1 : -1;
+			SyncKeyboardScroll();
+		}
+		Owner->WheelDelta = 0;
+	}
+
 	if (bLeft && !bPrevLeftDown) {
 		bool bHandled = false;
 
@@ -668,6 +697,12 @@ void ASimpleEditorActor::HandleMouseInput() {
 
 		// 2) 搴曢儴 Log 绐楀彛椤电
 		if (!bHandled && (float)my >= LogY) {
+			FILE* TD = nullptr;
+			fopen_s(&TD, "D:/dongyf/DimensionEngine/Bin/tab_diag.txt", "a");
+			if (TD) {
+				fprintf(TD, "click mx=%d my=%d LogX=%.1f LogY=%.1f\n", mx, my, LogX, LogY);
+				fclose(TD);
+			}
 			for (int i = 0; i < 3; ++i) {
 				const float TX = LogX + LogTabX0 + i * LogTabGap;
 				if (IsPointInRect((float)mx, (float)my, TX, LogY + LogTabY, LogTabW, LogTabH)) {
@@ -847,6 +882,12 @@ void ASimpleEditorActor::RegisterLogTextActor(int Index, ATextActor* Actor, cons
 	}
 	LogSources[Index].Text = Actor;
 	LogTabNames[Index] = DisplayName;
+	// 缓存 Keyboard 页完整文本，供 SyncKeyboardScroll 按行截取（静态 ATextActor 无内置滚动）
+	if (Index == 1) {
+		KeyboardFullText = Actor ? Actor->GetText() : FString();
+		KeyboardLineOffset = 0;
+		KeyboardMaxOffset = 0;
+	}
 }
 
 void ASimpleEditorActor::RegisterLogTextActor(int Index, AWindowDataPanel* Actor, const FString& DisplayName) {
@@ -866,6 +907,12 @@ void ASimpleEditorActor::RegisterLogTextActor(int Index, DebugConsoleActor* Acto
 }
 
 void ASimpleEditorActor::SetLogActiveTab(int Index) {
+	FILE* LT = nullptr;
+	fopen_s(&LT, "D:/dongyf/DimensionEngine/Bin/log_tab_diag.txt", "a");
+	if (LT) {
+		fprintf(LT, "SetLogActiveTab(%d) prev=%d\n", Index, LogActiveTab);
+		fclose(LT);
+	}
 	if (Index < 0 || Index >= 3) {
 		return;
 	}
@@ -900,5 +947,61 @@ void ASimpleEditorActor::RefreshLogWindow() {
 		if (Src.Console) {
 			Src.Console->SetPanelLocation(Target);
 		}
+	}
+}
+
+void ASimpleEditorActor::SyncKeyboardScroll() {
+	ATextActor* KT = LogSources[1].Text;
+	if (!KT) {
+		return;
+	}
+	if (KeyboardFullText.Length() == 0) {
+		KeyboardFullText = KT->GetText();
+	}
+	TArray<std::string> Lines = Utils::StringSplit(KeyboardFullText.CStr(), '\n', true, false);
+	if (Lines.size() == 0) {
+		return;
+	}
+	// 可见行数：Log 文本区高度 / 行高（行高从字体取，取不到用 26px 兜底）
+	float LineH = 26.0f;
+	UTextComponent* TC = KT->GetTextComponent();
+	if (TC && TC->GetFont()) {
+		const float FontLineH = (float)TC->GetFont()->GetLineHeight();
+		if (FontLineH > 0.0f) {
+			LineH = FontLineH;
+		}
+	}
+	const float TextAreaH = LogPanelH - LogTextY;
+	int VisibleLines = (int)(TextAreaH / LineH);
+	if (VisibleLines < 1) {
+		VisibleLines = 1;
+	}
+	KeyboardMaxOffset = (int)Lines.size() - VisibleLines;
+	if (KeyboardMaxOffset < 0) {
+		KeyboardMaxOffset = 0;
+	}
+	if (KeyboardLineOffset < 0) {
+		KeyboardLineOffset = 0;
+	}
+	if (KeyboardLineOffset > KeyboardMaxOffset) {
+		KeyboardLineOffset = KeyboardMaxOffset;
+	}
+	// 起始行 = 末尾可见窗 - 已上滚行数（上滚显示更靠前的内容，与 Console MoveUp 语义一致）
+	int First = (int)Lines.size() - VisibleLines - KeyboardLineOffset;
+	if (First < 0) {
+		First = 0;
+	}
+	std::string Buffer;
+	for (int i = First; i < First + VisibleLines && i < (int)Lines.size(); ++i) {
+		Buffer += Lines[i];
+		Buffer += "\n";
+	}
+	KT->SetText(Buffer.c_str());
+	FILE* KD = nullptr;
+	fopen_s(&KD, "D:/dongyf/DimensionEngine/Bin/keyboard_diag.txt", "a");
+	if (KD) {
+		fprintf(KD, "Sync: total=%zu visible=%d offset=%d max=%d first=%d textAreaH=%.1f lineH=%.1f\n",
+			Lines.size(), VisibleLines, KeyboardLineOffset, KeyboardMaxOffset, First, TextAreaH, LineH);
+		fclose(KD);
 	}
 }

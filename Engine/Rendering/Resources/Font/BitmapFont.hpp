@@ -31,6 +31,10 @@ public:
 	const FFontKerning* GetKernings()     const override { return kernings_; }
 	uint32_t           GetKerningCount() const override { return kerningCount_; }
 	const FTextureMap& GetAtlas()        const override { return atlas_; }
+	// Bitmap 字体 UV 归一化必须以 .fnt 声明的 scaleW/scaleH 为准（异步纹理加载完成前
+	// Atlas.texture->GetWidth() 仍是 UTexture 默认 100，用它算 UV 会放大 glyph 坐标）。
+	int                GetAtlasWidth()   const override { return atlasSizeX_; }
+	int                GetAtlasHeight()   const override { return atlasSizeY_; }
 	int                GetLineHeight()   const override { return lineHeight_; }
 	int                GetBaseLine()     const override { return baseLine_; }
 	float              GetTabXAdvance()  const override { return tabXAdvance_; }

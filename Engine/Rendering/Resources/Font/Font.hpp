@@ -37,6 +37,17 @@ public:
 	virtual const FFontKerning* GetKernings()     const = 0;
 	virtual uint32_t           GetKerningCount() const = 0;
 	virtual const FTextureMap& GetAtlas()        const = 0;
+	// Atlas 尺寸：默认取纹理对象实际宽高；BitmapFont 覆写为 .fnt 声明的
+	// scaleW/scaleH（纹理走异步加载 job，加载完成前 GetWidth() 仍是默认 100，
+	// 用它做 UV 归一化会把 glyph 坐标放大几十倍导致文本不可见）。
+	virtual int GetAtlasWidth() const {
+		const FTextureMap& Atlas = GetAtlas();
+		return Atlas.texture ? (int)Atlas.texture->GetWidth() : 1024;
+	}
+	virtual int GetAtlasHeight() const {
+		const FTextureMap& Atlas = GetAtlas();
+		return Atlas.texture ? (int)Atlas.texture->GetHeight() : 1024;
+	}
 	virtual int                GetLineHeight()   const = 0;
 	virtual int                GetBaseLine()     const = 0;
 	virtual float              GetTabXAdvance()  const = 0;

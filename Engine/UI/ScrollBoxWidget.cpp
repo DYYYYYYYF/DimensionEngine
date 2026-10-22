@@ -53,7 +53,10 @@ void UScrollBoxWidget::OnDraw(UCanvasRenderer* InCanvasRenderer) {
 	const float ViewTop = PositionY;
 	const float ViewBottom = PositionY + Height;
 
-	// 只绘制与可视区相交的子项（滚动裁剪，面板外内容不绘制）
+	// 只绘制与可视区相交的子项（滚动裁剪，面板外内容不绘制）。
+	// 部分可见（跨边界）的行不再整块绘制到面板外：子项绘制期间套用
+	// 可视区裁剪矩形，矩形/文字元素统一被裁剪到 ViewTop..ViewBottom 内，
+	// 从根源上杜绝“最下面 item 越过深色面板底部边界”的问题。
 	for (auto* Child : Children) {
 		if (!Child || !Child->IsVisible()) {
 			continue;
@@ -63,7 +66,9 @@ void UScrollBoxWidget::OnDraw(UCanvasRenderer* InCanvasRenderer) {
 		if (ChildBottom < ViewTop || ChildTop > ViewBottom) {
 			continue;
 		}
+		InCanvasRenderer->PushClipRect(PositionX, ViewTop, Width, Height);
 		Child->OnDraw(InCanvasRenderer);
+		InCanvasRenderer->PopClipRect();
 	}
 }
 
